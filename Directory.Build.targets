@@ -4,6 +4,14 @@
     <HectonUnityPackageCliShimProjects>|Unity.RenderPipelines.Core.Editor|Unity.RenderPipelines.Universal.Editor|Unity.RenderPipelines.Universal.Runtime|Unity.ShaderGraph.Editor|</HectonUnityPackageCliShimProjects>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);$(HectonUnityCliVersionDefines)</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'BakeryRuntimeAssembly' Or '$(MSBuildProjectName)' == 'AmplifyImpostors.Runtime'">
+    <DefineConstants>$(DefineConstants);UNITY_EDITOR;UNITY_EDITOR_WIN</DefineConstants>
+  </PropertyGroup>
+
   <PropertyGroup Condition="$([System.String]::Copy('$(HectonVendorGeneratedWarningProjects)').Contains('|$(MSBuildProjectName)|'))">
     <NoWarn>$(NoWarn);0618;0649;2008;UNT0006</NoWarn>
   </PropertyGroup>
