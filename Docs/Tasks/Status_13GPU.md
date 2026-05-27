@@ -5,7 +5,7 @@ Agent: 13GPU
 Domain: GPU instancing, procedural flora, rocks, micro-detail optimization, visual scalability.
 Batch XML: `<AGENT_PROMPT id="13GPU">` not found in `Docs/Tasks/CURRENT_BATCH.md`.
 Closest active batch domain: `1316` vegetation memory sovereignty, 20 tasks. Not adopted as identity because user assigned `13GPU`.
-Status: STATIC VERIFIED / COMPILE NOT RELAUNCHED DUE ACTIVE DOTNET PROCESS
+Status: STATIC VERIFIED / COMPILE GATE PENDING
 
 ## Mandates Read
 
@@ -49,6 +49,11 @@ Status: STATIC VERIFIED / COMPILE NOT RELAUNCHED DUE ACTIVE DOTNET PROCESS
 - [x] Loop 27: Abyssal voxel rock finite-contract audit | Justification: clean `Hecton_AbyssalVoxelRock.shader` used unchecked values before biome-grid int casts, 2D/3D carve-mask sampling, caustic time/noise math, and vertex displacement. | Alternatives Rejected: editing terrain/voxel runtime owners or disabling visual features. | Estimate: 12-40 us avoided only in corrupt rock/geology payload frames; normal gain is crash/NaN containment.
 - [x] Loop 28: Rock shader static verification pass | Justification: `git diff --check` passed for geology billboard, voxel SSAO, and abyssal voxel rock with CRLF warnings only. | Alternatives Rejected: claiming Unity shader compiler proof without Unity shader compiler. | Estimate: no runtime claim.
 - [x] Loop 29: Compile gate recheck after rock pass | Justification: CPU was `73`, after 30 seconds `77`, and no `dotnet/csc` process was active; build remains forbidden because CPU is above 50%. | Alternatives Rejected: launching compile on saturated shared host. | Estimate: no runtime claim.
+- [x] Loop 30: Batch prompt re-extraction and clean candidate selection | Justification: `CURRENT_BATCH.md` still has no `<AGENT_PROMPT id="13GPU">`; clean candidates were selected from terrain/flora/micro-detail GPU files while dirty sibling shader/runtime files were skipped. | Alternatives Rejected: adopting 1316 vegetation-memory prompt or editing dirty `SargassumMicroFaunaBoids.compute`. | Estimate: no runtime claim.
+- [x] Loop 31: Terrain damage volume compute bounds audit | Justification: clean `Hecton_TerrainDamageVolume.compute` trusted authored resolution and finite stamp/world params before 3D texture Load/write and radius math. | Alternatives Rejected: CPU-side stamp validation or changing terrain damage authoring contracts. | Estimate: 4-12 us avoided only in malformed damage-volume dispatches; normal valid frames pay scalar/resource dimension guards.
+- [x] Loop 32: Blood/micro-particle compute finite and buffer audit | Justification: clean `ParticleUpdate.compute` cast published particle count to `uint` without a non-negative buffer clamp and sampled flow-field indices from unchecked resolution/params. | Alternatives Rejected: readback validation or CPU particle simulation. | Estimate: 6-20 us avoided only in corrupt micro-particle/flow payload frames; valid frames retain GPU fake dispersion.
+- [x] Loop 33: Sargassum flora shader ingress audit | Justification: clean `Hecton_SargassumMaster.shader` used raw vertex/color/UV/time/prop-wash/cut-mask/sink-mask values in forward and shadow passes before motion, sampling, and clip. | Alternatives Rejected: disabling sargassum motion, editing dirty boids compute, or pushing CPU material validation. | Estimate: 6-18 us avoided only in malformed sargassum payload frames; normal gain is deterministic fail-closed flora presentation.
+- [x] Loop 34: New shader/compute static verification pass | Justification: `git diff --check` passed for `Hecton_SargassumMaster.shader`, `ParticleUpdate.compute`, and `Hecton_TerrainDamageVolume.compute` with CRLF warnings only; hot-path scan found no C# allocation/upload/draw patterns. | Alternatives Rejected: claiming shader compile proof without Unity shader compiler. | Estimate: no runtime claim.
 
 ## Verification
 
@@ -79,5 +84,11 @@ Status: STATIC VERIFIED / COMPILE NOT RELAUNCHED DUE ACTIVE DOTNET PROCESS
 - [x] SHA256 `Hecton_VoxelSSAO.compute`: `460E30EF3DED02069087B6C46A2B7CFA76D6F437A57EFEF06B2DD3713246677C`.
 - [x] Static scan: `Hecton_AbyssalVoxelRock.shader` adds finite guards for vertex/absolute positions, origin offset, biome grid casts, carve volumes, and caustic/noise math only; no new buffers, draw path, readback, or CPU route.
 - [x] SHA256 `Hecton_AbyssalVoxelRock.shader`: `DC6692A28DCC69F409509772D675220CB732A841902DC3E679010B33AF53DD35`.
+- [x] Static scan: `Hecton_TerrainDamageVolume.compute` adds 3D texture dimension guards, finite stamp/world param guards, and fail-closed current/stamp writes only; no new buffers, draw path, readback, or CPU route.
+- [x] SHA256 `Hecton_TerrainDamageVolume.compute`: `756F8943EA98D7AB68CAA9DC2AD3954B04001B8B15E1E72F2FA23D545E2A7B58`.
+- [x] Static scan: `ParticleUpdate.compute` adds structured-buffer count guards, finite particle/flow parameter guards, and bounded visual dt only; no new buffers, draw path, readback, or CPU route.
+- [x] SHA256 `ParticleUpdate.compute`: `8B1DE2809F2BE7704F138A7541A4A5D507076D520247E4839F6A45BA8559EA61`.
+- [x] Static scan: `Hecton_SargassumMaster.shader` adds finite guards for flora vertex/UV/color/time/motion/cut/sink/clip paths in forward and shadow passes only; no new buffers, draw path, readback, or CPU route.
+- [x] SHA256 `Hecton_SargassumMaster.shader`: `ED11787EE3D75DBDDF9EAD42243A134A1D5A6842485E40DC4A8EBD905C81C89D`.
 - [ ] Compile: NOT RELAUNCHED. Earlier `dotnet build Assembly-CSharp.csproj --no-restore -v quiet /clp:ErrorsOnly -maxcpucount:1` reported Candice SQLite missing `Mono.Data` / `SqliteDataReader`; later guarded build hit MSBuild circular `ResolveProjectReferences` in Unity editor projects and `--no-dependencies` hit missing `Temp/CodexBuild/Unity.ShaderGraph.Editor.dll`. Latest gate after rock pass: CPU `73`, then `77` after 30 seconds, no active `dotnet/csc`; build remains forbidden because CPU is above 50%. No touched 13GPU files were reported in previous compiler errors.
 - [ ] Shader compile: NOT RUN. No Unity shader compiler pass was available; `diff --check` passed.

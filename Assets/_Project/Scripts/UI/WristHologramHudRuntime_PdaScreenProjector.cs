@@ -660,7 +660,7 @@ namespace Hecton8.UI
                 target,
                 GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 count,
-                stride); // COLD ALLOC: GraphicsBuffer - double-buffered screen-space PDA projection payload - owner: SHINOBU_348
+                stride); // COLD ALLOC: GraphicsBuffer - double-buffered screen-space PDA projection payload - owner: WristHologramHudRuntime
         }
 
         private static bool IsValidPdaProjectionBuffer(GraphicsBuffer buffer, int requiredCount)
@@ -695,23 +695,18 @@ namespace Hecton8.UI
             if (enableMockWristProjection && AllowPdaProjectionMockSource())
             {
                 double3 cameraAup = ResolveCameraAupAbsoluteDouble3();
-                GenerateMockWristMatricesJob mockJob = new GenerateMockWristMatricesJob
-                {
-                    Inputs = inputs,
-                    CameraAup = cameraAup,
-                    TimeSeconds = (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
-                    FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                    ActiveTabHashID = _pdaProjectionActiveTabHash,
-                    BootSequenceProgress01 = _pdaProjectionBoot01,
-                    ScreenWidthMeters = math.max(0.01f, tuningRow.Params0.x),
-                    ScreenHeightMeters = math.max(0.01f, tuningRow.Params0.y),
-                    LocalScreenOffset = MakeFloat3(pdaProjectionLocalXOffsetMeters, pdaProjectionLocalYOffsetMeters, pdaProjectionLocalZOffsetMeters),
-                    GlassRefractionIndex = tuningRow.Params1.y,
-                    ScreenCurvatureScalar = tuningRow.Params1.z,
-                    GlobalQualityWeight01 = quality,
-                    Flags = flags | PdaProjectionFlagMockSource
-                };
-                mockJob.Run(inputs.Length);
+                inputs[0] = BuildMockPdaProjectionInput(
+                    cameraAup,
+                    (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
+                    _pdaProjectionActiveTabHash,
+                    _pdaProjectionBoot01,
+                    math.max(0.01f, tuningRow.Params0.x),
+                    math.max(0.01f, tuningRow.Params0.y),
+                    MakeFloat3(pdaProjectionLocalXOffsetMeters, pdaProjectionLocalYOffsetMeters, pdaProjectionLocalZOffsetMeters),
+                    tuningRow.Params1.y,
+                    tuningRow.Params1.z,
+                    quality,
+                    flags | PdaProjectionFlagMockSource);
                 return true;
             }
 
@@ -729,6 +724,45 @@ namespace Hecton8.UI
             input.PdaFlags = flags;
             inputs[0] = input;
             return true;
+        }
+
+        private static PdaProjectionInputDTO BuildMockPdaProjectionInput(
+            double3 cameraAup,
+            float timeSeconds,
+            uint activeTabHashID,
+            float bootSequenceProgress01,
+            float screenWidthMeters,
+            float screenHeightMeters,
+            float3 localScreenOffset,
+            float glassRefractionIndex,
+            float screenCurvatureScalar,
+            float globalQualityWeight01,
+            uint flags)
+        {
+            float t = timeSeconds;
+            float orbit = TriangleWaveSigned(t * 0.1162f) * 0.035f;
+            float3 local = MakeFloat3(
+                orbit,
+                -0.08f + TriangleWaveSigned(t * 0.1862f + 0.19f) * 0.018f,
+                0.54f + TriangleWaveSigned(t * 0.1448f + 0.25f) * 0.025f);
+            quaternion rotation = quaternion.EulerXYZ(
+                math.radians(-18f + TriangleWaveSigned(t * 0.1003f) * 8f),
+                math.radians(4f + TriangleWaveSigned(t * 0.0653f + 0.31f) * 12f),
+                math.radians(TriangleWaveSigned(t * 0.1385f + 0.07f) * 7f));
+            PdaProjectionInputDTO input = default;
+            input.WristAup = cameraAup + MakeDouble3(local.x, local.y, local.z);
+            input.CameraAup = cameraAup;
+            input.WristRotation = rotation.value;
+            input.LocalScreenOffset = localScreenOffset;
+            input.ScreenWidthMeters = screenWidthMeters;
+            input.ScreenHeightMeters = screenHeightMeters;
+            input.BootSequenceProgress01 = bootSequenceProgress01;
+            input.ActiveTabHashID = activeTabHashID;
+            input.PdaFlags = flags;
+            input.GlassRefractionIndex = glassRefractionIndex;
+            input.ScreenCurvatureScalar = screenCurvatureScalar;
+            input.GlobalQualityWeight01 = globalQualityWeight01;
+            return input;
         }
 
         private bool TryBuildRealPdaProjectionInput(out PdaProjectionInputDTO input)
@@ -794,10 +828,8 @@ namespace Hecton8.UI
         }
 
         private void UploadPdaProjectionGpu(
-            NativeArray<PdaStateDTO> states,
-            NativeArray<PdaProjectionTuningDTO> tuning,
-            NativeArray<PdaInterfaceProfileDTO> profiles,
-            in PdaStateDTO state)
+            in PdaStateDTO state,
+            in PdaProjectionGlobalsDTO globals)
         {
             GraphicsBuffer stateWrite = ReferenceEquals(_pdaProjectionActiveStateBuffer, _pdaProjectionStateBufferA)
                 ? _pdaProjectionStateBufferB
@@ -812,38 +844,74 @@ namespace Hecton8.UI
                 return;
             }
 
-            NativeArray<PdaStateDTO> mappedState = stateWrite.LockBufferForWrite<PdaStateDTO>(0, 1);
             try
             {
-                UnsafeUtility.MemCpy(
-                    NativeArrayUnsafeUtility.GetUnsafePtr(mappedState),
-                    NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(states),
-                    UnsafeUtility.SizeOf<PdaStateDTO>());
-            }
-            finally
-            {
-                stateWrite.UnlockBufferAfterWrite<PdaStateDTO>(1);
-            }
+                PdaStateDTO stateCopy = state;
+                NativeArray<PdaStateDTO> mappedState = stateWrite.LockBufferForWrite<PdaStateDTO>(0, 1);
+                try
+                {
+                    UnsafeUtility.MemCpy(
+                        NativeArrayUnsafeUtility.GetUnsafePtr(mappedState),
+                        UnsafeUtility.AddressOf(ref stateCopy),
+                        UnsafeUtility.SizeOf<PdaStateDTO>());
+                }
+                finally
+                {
+                    stateWrite.UnlockBufferAfterWrite<PdaStateDTO>(1);
+                }
 
-            PdaProjectionGlobalsDTO globals = BuildPdaProjectionGlobals(tuning, profiles, in state);
-            NativeArray<PdaProjectionGlobalsDTO> mappedGlobals = globalsWrite.LockBufferForWrite<PdaProjectionGlobalsDTO>(0, 1);
-            try
-            {
-                UnsafeUtility.MemCpy(
-                    NativeArrayUnsafeUtility.GetUnsafePtr(mappedGlobals),
-                    UnsafeUtility.AddressOf(ref globals),
-                    UnsafeUtility.SizeOf<PdaProjectionGlobalsDTO>());
+                PdaProjectionGlobalsDTO globalsCopy = globals;
+                NativeArray<PdaProjectionGlobalsDTO> mappedGlobals = globalsWrite.LockBufferForWrite<PdaProjectionGlobalsDTO>(0, 1);
+                try
+                {
+                    UnsafeUtility.MemCpy(
+                        NativeArrayUnsafeUtility.GetUnsafePtr(mappedGlobals),
+                        UnsafeUtility.AddressOf(ref globalsCopy),
+                        UnsafeUtility.SizeOf<PdaProjectionGlobalsDTO>());
+                }
+                finally
+                {
+                    globalsWrite.UnlockBufferAfterWrite<PdaProjectionGlobalsDTO>(1);
+                }
             }
-            finally
+            catch (ObjectDisposedException)
             {
-                globalsWrite.UnlockBufferAfterWrite<PdaProjectionGlobalsDTO>(1);
+                ReportPdaProjectionGpuUploadFaultClosed();
+                return;
+            }
+            catch (InvalidOperationException)
+            {
+                ReportPdaProjectionGpuUploadFaultClosed();
+                return;
+            }
+            catch (ArgumentException)
+            {
+                ReportPdaProjectionGpuUploadFaultClosed();
+                return;
+            }
+            catch (NotSupportedException)
+            {
+                ReportPdaProjectionGpuUploadFaultClosed();
+                return;
+            }
+            catch (UnityException)
+            {
+                ReportPdaProjectionGpuUploadFaultClosed();
+                return;
             }
 
             _pdaProjectionActiveStateBuffer = stateWrite;
             _pdaProjectionActiveGlobalsBuffer = globalsWrite;
             _pdaProjectionGpuPayloadValid = true;
+            _pdaProjectionFlags &= ~PdaProjectionFlagGpuUploadFault;
             _pdaProjectionWriteBufferIndex ^= 1;
             _pdaProjectionGlobalsWriteBufferIndex ^= 1;
+        }
+
+        private void ReportPdaProjectionGpuUploadFaultClosed()
+        {
+            _pdaProjectionGpuPayloadValid = false;
+            _pdaProjectionFlags |= PdaProjectionFlagGpuUploadFault;
         }
 
         private PdaProjectionGlobalsDTO BuildPdaProjectionGlobals(
