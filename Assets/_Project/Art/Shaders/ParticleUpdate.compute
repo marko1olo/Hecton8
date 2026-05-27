@@ -32,12 +32,12 @@ bool IsFiniteFloat(float value)
 
 bool IsFiniteFloat2(float2 value)
 {
-    return all(!isnan(value)) && all(!isinf(value));
+    return !(any(isnan(value)) || any(isinf(value)));
 }
 
 bool IsFiniteFloat3(float3 value)
 {
-    return all(!isnan(value)) && all(!isinf(value));
+    return !(any(isnan(value)) || any(isinf(value)));
 }
 
 float ResolveFiniteFloat(float value, float fallbackValue)
@@ -146,7 +146,8 @@ void SimulateBloodDispersion(uint3 dispatchThreadID : SV_DispatchThreadID)
     _AbyssalFlowField.GetDimensions(flowSampleCount, flowSampleStride);
 
     uint bufferParticleCount = min(readParticleCount, writeParticleCount);
-    uint particleCount = min((uint)max(round(ResolveFiniteFloat(_FieldParams.y, 0.0)), 0.0), bufferParticleCount);
+    float requestedParticleCount = min(max(round(ResolveFiniteFloat(_FieldParams.y, 0.0)), 0.0), (float)bufferParticleCount);
+    uint particleCount = (uint)requestedParticleCount;
     if (index >= particleCount)
         return;
 

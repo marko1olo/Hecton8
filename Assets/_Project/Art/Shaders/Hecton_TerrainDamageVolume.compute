@@ -24,7 +24,7 @@ bool HectonDamageVolumeFinite(float value)
 
 bool HectonDamageVolumeFinite3(float3 value)
 {
-    return all(!isnan(value)) && all(!isinf(value));
+    return !(any(isnan(value)) || any(isinf(value)));
 }
 
 float HectonDamageVolumeFiniteOr(float value, float fallbackValue)

@@ -187,6 +187,30 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void BiomeMatrixRuntimeEvaluation_DoesNotRepairPlayerReferences()
+        {
+            string path = Path.Combine(Directory.GetCurrentDirectory(), "Assets", "_Project", "Scripts", "BiomeMatrixDirector.cs");
+            string source = File.ReadAllText(path);
+
+            int evaluateIndex = source.IndexOf("private void EvaluateMatrix(bool forcePublish)", StringComparison.Ordinal);
+            int resolveReferencesIndex = source.IndexOf("private void ResolveReferences()", evaluateIndex, StringComparison.Ordinal);
+            Assert.That(evaluateIndex, Is.GreaterThanOrEqualTo(0));
+            Assert.That(resolveReferencesIndex, Is.GreaterThan(evaluateIndex));
+
+            string evaluateBlock = source.Substring(evaluateIndex, resolveReferencesIndex - evaluateIndex);
+            int editorGuardIndex = evaluateBlock.IndexOf("if (!Application.isPlaying)", StringComparison.Ordinal);
+            int resolveCallIndex = evaluateBlock.IndexOf("ResolveReferences();", StringComparison.Ordinal);
+            Assert.That(editorGuardIndex, Is.GreaterThanOrEqualTo(0));
+            Assert.That(resolveCallIndex, Is.GreaterThan(editorGuardIndex));
+            Assert.That(evaluateBlock.IndexOf("ResolveReferences();", resolveCallIndex + 1, StringComparison.Ordinal), Is.LessThan(0));
+
+            Assert.That(source.Contains("RebindPlayerRuntimeContext(previousService, currentService);"), Is.True);
+            Assert.That(source.Contains("private void RebindPlayerRuntimeContext(object previousService, object currentService)"), Is.True);
+            Assert.That(source.Contains("if (playerContext.PlayerTransform != null)"), Is.True);
+            Assert.That(source.Contains("if (playerContext.PlayerMovement != null)"), Is.True);
+        }
+
+        [Test]
         public void MapMagicSplatColorReadPath_UsesCachedTerrainLayers()
         {
             string path = Path.Combine(Directory.GetCurrentDirectory(), "Assets", "_Project", "Scripts", "Plugins", "MapMagic", "MapMagicRuntimeBridge.cs");
