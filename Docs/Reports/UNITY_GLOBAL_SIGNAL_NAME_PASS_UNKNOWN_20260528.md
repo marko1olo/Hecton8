@@ -55,6 +55,9 @@ The public/root DTO names that remain are now unique in the first-party source s
   - `RUNTIME_SYNC_FILE_IO_REVIEW=57`
   - `DUPLICATE_SIGNAL_LIKE_NAME_REVIEW=0`
   - `EDITOR_MANAGED_STRING_IN_SIGNAL_REVIEW=0`
+- Documentation gates after this report:
+  - `VerifyDocStructure.py`: `pass=true`, `activeDocCount=705`, `encodingWithoutUtf8Sig=0`
+  - `OOP_Doc_Scanner.py`: `finalPass=true`, `activeFileCount=705`, `sourceSyncPass=true`, `wordReductionPercent=31.170258220190806`
 
 ## Residuals
 

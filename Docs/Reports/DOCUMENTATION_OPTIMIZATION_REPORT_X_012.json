@@ -1,13 +1,13 @@
 ﻿{
   "schema": "hecton8.documentation_actuality_scan.x012.v1",
-  "generatedUtc": "2026-05-27T22:34:49.645271+00:00",
+  "generatedUtc": "2026-05-27T22:35:59.286614+00:00",
   "repoRoot": "C:\\hades\\Hecton8",
   "scope": "repository root approved text anchors plus Docs/**/*.md/txt",
   "checks": {
     "activeFileCount": 705,
-    "activeWordCount": 1448021,
+    "activeWordCount": 1448217,
     "inventoryFileCount": 5626,
-    "inventoryWordCount": 38448056,
+    "inventoryWordCount": 38448252,
     "rootTextDocs": [
       "AGENTS.md",
       "BUILD_PLAYTEST_ISSUES.md",
@@ -33,11 +33,11 @@
     "sourceSyncPass": true,
     "wordReduction": {
       "method": "current active words plus X_012 archived report/root words minus concise replacement anchor words",
-      "activeWordCountAfter": 1448021,
-      "reconstructedActiveWordCountBefore": 2103861,
+      "activeWordCountAfter": 1448217,
+      "reconstructedActiveWordCountBefore": 2104057,
       "retiredActiveWords": 655840,
-      "reductionRatio": 0.31173162105291174,
-      "reductionPercent": 31.173162105291176,
+      "reductionRatio": 0.31170258220190805,
+      "reductionPercent": 31.170258220190806,
       "reductionPass": true,
       "archivedRootFiles": 2,
       "archivedReportFiles": 160,
@@ -51,7 +51,7 @@
     },
     "architecture": {
       "activeArchitectureFileCount": 184,
-      "activeArchitectureWordCount": 158646,
+      "activeArchitectureWordCount": 158645,
       "markerHits": {
         "staleDocBoundaryRefreshMarkers": 0,
         "staleBoundary51Boilerplate": 0,
@@ -61,15 +61,8 @@
       "longNarrativeParagraphsOver180Words": [],
       "longNarrativeParagraphCount": 0,
       "strictUnstructuredParagraphThresholdWords": 27,
-      "strictUnstructuredParagraphsOverThreshold": [
-        {
-          "path": "Docs/ARCHITECTURE/VOCAL_SYNTHESIS_PIPELINE_SHINOBU_260.md",
-          "paragraph": 29,
-          "wordCount": 32,
-          "preview": "Voice playback is presentation-only. It must not enter StateRingBuffer, save Merkle, WAL, deterministic gameplay authority, or network rollback truth. Fault pro"
-        }
-      ],
-      "strictUnstructuredParagraphCount": 1,
+      "strictUnstructuredParagraphsOverThreshold": [],
+      "strictUnstructuredParagraphCount": 0,
       "strictUnstructuredSentenceThresholdWords": 27,
       "strictUnstructuredSentencesOverThreshold": [],
       "strictUnstructuredSentenceCount": 0,
@@ -83,9 +76,9 @@
       "strictNonContractTextFileCount": 0,
       "tutorialMarkerHits": [],
       "tutorialMarkerHitCount": 0,
-      "pass": false
+      "pass": true
     },
     "activeParameterSyncPass": true,
-    "finalPass": false
+    "finalPass": true
   }
 }

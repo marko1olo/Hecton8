@@ -16785,11 +16785,11 @@
   {
     "path": "Docs/ARCHITECTURE/VOCAL_SYNTHESIS_PIPELINE_SHINOBU_260.md",
     "active": true,
-    "bytes": 5381,
-    "lastWriteUtc": "2026-05-27T22:31:00.145431+00:00",
+    "bytes": 5378,
+    "lastWriteUtc": "2026-05-27T22:32:54.510497+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 613,
+    "wordCount": 612,
     "topic": "# SHINOBU_260 Vocal Synthesis Pipeline",
     "references": [],
     "staleFlags": {
@@ -16798,7 +16798,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "de2fd61083a98a35bc7d1095e69284d6a9fae7acac958fe03657cc72b60898ec"
+    "sha256": "3fefb885143d76ff7d2dc2592634259f7315d844245000008bdb1e58c1b53162"
   },
   {
     "path": "Docs/ARCHITECTURE/VOCAL_WARNING_QUEUE_SHINOBU_352.md",
@@ -122083,11 +122083,11 @@
   {
     "path": "Docs/Modding/External_Starter_Kit_File_Contract.md",
     "active": true,
-    "bytes": 8628,
-    "lastWriteUtc": "2026-05-27T22:17:56.338886+00:00",
+    "bytes": 9364,
+    "lastWriteUtc": "2026-05-27T22:35:35.261774+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1015,
+    "wordCount": 1094,
     "topic": "# HECTON-8 External Starter Kit File Contract",
     "references": [
       "README.md"
@@ -122098,7 +122098,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "e8bee0bc16afa71630c760e4e853608411c80ac479187cad929f7e2ed900cc8e"
+    "sha256": "ec396003b74e5d77968b91845eeaab38a06127e34866bd51ead14324e987ef1e"
   },
   {
     "path": "Docs/Modding/Future_Command_Kernel_Reservations.md",
@@ -122168,11 +122168,11 @@
   {
     "path": "Docs/Modding/Mod_API_Specification.md",
     "active": true,
-    "bytes": 42322,
-    "lastWriteUtc": "2026-05-27T22:16:41.291236+00:00",
+    "bytes": 42607,
+    "lastWriteUtc": "2026-05-27T22:34:49.212636+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 4748,
+    "wordCount": 4781,
     "topic": "# HECTON-8 Mod API Specification",
     "references": [
       "Signal_Audit_Matrix.md",
@@ -122193,7 +122193,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "27b2df264f26fd889f30bbe3f24404b0ba048f4f668eed657afe08e9b7336529"
+    "sha256": "3d8344558b2063246e0bd05e42f226603f87385d6466dee66613d5bb27aa08c4"
   },
   {
     "path": "Docs/Modding/Net_Protocol_v1.md",
@@ -122251,11 +122251,11 @@
   {
     "path": "Docs/Modding/README.md",
     "active": true,
-    "bytes": 11611,
-    "lastWriteUtc": "2026-05-27T22:15:56.343147+00:00",
+    "bytes": 11849,
+    "lastWriteUtc": "2026-05-27T22:34:49.210627+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 1307,
+    "wordCount": 1334,
     "topic": "# HECTON-8 Modding API Contract Index",
     "references": [
       "Mod_API_Sandbox_Quarantine.md",
@@ -122284,7 +122284,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "eb3cbd9914575b6d3ee0e8fbce34eb8be3ad3690775e3b04fee0885f43a1ca07"
+    "sha256": "c44befa11ecaae8450ae109c8214f80b58565d58d813847247069476d9d1b371"
   },
   {
     "path": "Docs/Modding/Resource_Content_Audit_Matrix.md",
@@ -122309,11 +122309,11 @@
   {
     "path": "Docs/Modding/Runtime_Verification_Playbook.md",
     "active": true,
-    "bytes": 26415,
-    "lastWriteUtc": "2026-05-27T22:18:02.790562+00:00",
+    "bytes": 26592,
+    "lastWriteUtc": "2026-05-27T22:35:41.501703+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 2462,
+    "wordCount": 2468,
     "topic": "# HECTON-8 Mod API Runtime Verification Playbook",
     "references": [
       "Docs/Modding/Signal_Audit_Matrix.md",
@@ -122342,7 +122342,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "197ab8e7c5260f272d882a685a76b6b4e647f21432d2bee4d6d0e6e107967712"
+    "sha256": "ded4e22bd867fc9926eed9e8b5bf4e75a1ca0618b60aae1499b9340da0297556"
   },
   {
     "path": "Docs/Modding/Sample_InfiniteO2_Mod.md",
@@ -122367,11 +122367,11 @@
   {
     "path": "Docs/Modding/SDK_Authoring_Interface_Plan.md",
     "active": true,
-    "bytes": 24223,
-    "lastWriteUtc": "2026-05-27T22:17:25.260280+00:00",
+    "bytes": 24625,
+    "lastWriteUtc": "2026-05-27T22:35:21.728589+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 2932,
+    "wordCount": 2978,
     "topic": "# HECTON-8 Modding SDK And Authoring Interface Plan",
     "references": [
       "Docs/Modding/Mod_API_Sandbox_Quarantine.md",
@@ -122391,16 +122391,16 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "1fb98528372774f64b394fec95c4d4bdeaf2a8461c9388f1beb8340fa26eb8e3"
+    "sha256": "83e4da772dae2f405aa6e238f6ce90e20c93326d3b7eb49d4a85bf012a10e3de"
   },
   {
     "path": "Docs/Modding/SDK_Product_Blueprint.md",
     "active": true,
-    "bytes": 17674,
-    "lastWriteUtc": "2026-05-27T22:17:43.710149+00:00",
+    "bytes": 17745,
+    "lastWriteUtc": "2026-05-27T22:35:21.747406+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 2127,
+    "wordCount": 2133,
     "topic": "# HECTON-8 Modding SDK Product Blueprint",
     "references": [
       "Docs/Modding/README.md",
@@ -122414,7 +122414,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "63ef52289d020b8a06409d12dcd0b7ad298409496ca4d197003211f763ce6be9"
+    "sha256": "b00bad57aa0a59401ef90ee18a47c5bb2bbf09a0edc052e559e1976e287c3298"
   },
   {
     "path": "Docs/Modding/Signal_Audit_Matrix.md",

@@ -32,6 +32,19 @@
       "confirmedErrors": 0,
       "warnings": 57,
       "infos": 1024
+    },
+    "documentation": {
+      "VerifyDocStructure.py": {
+        "pass": true,
+        "activeDocCount": 705,
+        "encodingWithoutUtf8Sig": 0
+      },
+      "OOP_Doc_Scanner.py": {
+        "finalPass": true,
+        "activeFileCount": 705,
+        "sourceSyncPass": true,
+        "wordReductionPercent": 31.170258220190806
+      }
     }
   },
   "closedWarningCategories": {

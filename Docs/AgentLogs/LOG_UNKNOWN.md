@@ -1602,6 +1602,7 @@ Proof:
 - Closed categories: `DUPLICATE_SIGNAL_LIKE_NAME_REVIEW=0`, `EDITOR_MANAGED_STRING_IN_SIGNAL_REVIEW=0`.
 - Touched source brace delta: `0`.
 - Scoped `git diff --check`: exit `0`; line-ending warnings only.
+- Documentation gates: `VerifyDocStructure.py pass=true activeDocCount=705 encodingWithoutUtf8Sig=0`; `OOP_Doc_Scanner.py finalPass=true activeFileCount=705 sourceSyncPass=true wordReductionPercent=31.170258220190806`.
 
 Residuals:
 - Remaining warnings are `RUNTIME_SYNC_FILE_IO_REVIEW=57`, spread outside the Core subtree.

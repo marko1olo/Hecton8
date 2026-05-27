@@ -421,6 +421,9 @@ Required result:
 - `ExternalStarterKitWritesReviewManifestBuilder = True`
 - `ExternalStarterKitWritesIdentityTool = True`
 - `ExternalStarterKitWritesPrepareTool = True`
+- `ExternalStarterKitWritesAllowedOpcodeListTool = True`
+- `ExternalStarterKitAllowedOpcodeListToolPasses = True`
+- `ExternalStarterKitAllowedOpcodeListToolSupportsJson = True`
 - `ExternalStarterKitIdentityToolValidatesCanonicalId = True`
 - `ExternalStarterKitToolsAvoidNestedPowerShell = True`
 - `ExternalStarterKitToolsUsePortableJoinPath = True`

@@ -77,7 +77,7 @@ function Read-AllowedOpcodeRows() {
     }
 
     if ($rows.Count -eq 0) { Fail 'Reference/allowed_opcodes.csv has no allowed graph opcodes.' }
-    return @($rows)
+    return $rows.ToArray()
 }
 
 $Root = (Resolve-Path -LiteralPath $Root).Path

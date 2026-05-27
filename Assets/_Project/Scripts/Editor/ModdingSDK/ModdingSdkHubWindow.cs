@@ -725,7 +725,7 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine("    }");
             builder.AppendLine();
             builder.AppendLine("    if ($rows.Count -eq 0) { Fail 'Reference/allowed_opcodes.csv has no allowed graph opcodes.' }");
-            builder.AppendLine("    return @($rows)");
+            builder.AppendLine("    return $rows.ToArray()");
             builder.AppendLine("}");
             builder.AppendLine();
             builder.AppendLine("$Root = (Resolve-Path -LiteralPath $Root).Path");

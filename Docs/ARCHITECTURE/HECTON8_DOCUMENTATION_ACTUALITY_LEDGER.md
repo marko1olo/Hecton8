@@ -273,8 +273,8 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 
 | Validator | Required state |
 |---|---|
-| Current `Tools/OOP_Doc_Scanner.py` | 2026-05-28 `finalPass=true`; activeFileCount `704`; sourceSyncPass `true`; active stale parameter files `0`; reduction above `31%` |
-| Current `Tools/VerifyDocStructure.py` | 2026-05-28 `pass=true`; activeDocCount `704`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0`; encodingWithoutUtf8Sig `0` |
+| Current `Tools/OOP_Doc_Scanner.py` | 2026-05-28 `finalPass=true`; activeFileCount `705`; sourceSyncPass `true`; active stale parameter files `0`; wordReductionPercent `31.170258220190806` |
+| Current `Tools/VerifyDocStructure.py` | 2026-05-28 `pass=true`; activeDocCount `705`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0`; encodingWithoutUtf8Sig `0` |
 | `Tools/OOP_Doc_Scanner.py` | `finalPass=true`; source sync; reduction `>=30%`; markers `0`; stale parameter files `0` |
 | `Tools/VerifyDocStructure.py` | `pass=true`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0` |
 | 1334 final scan | `DOCUMENTATION_OPTIMIZATION_REPORT_1334_FINAL_SCAN.json`: `finalPass=true`; active docs `693`; stale parameter files `0`; reduction `48.0975%` |
