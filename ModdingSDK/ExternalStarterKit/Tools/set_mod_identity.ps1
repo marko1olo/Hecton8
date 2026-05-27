@@ -50,6 +50,21 @@ function Validate-ModId([string]$Value, [string]$Label) {
     return $trimmed
 }
 
+function Validate-RequiredText([string]$Value, [string]$Label) {
+    if ([string]::IsNullOrWhiteSpace($Value)) { Fail ($Label + ' is required.') }
+    $trimmed = $Value.Trim()
+    if ($trimmed -ne $Value) { Fail ($Label + ' must not contain leading or trailing whitespace.') }
+    return $trimmed
+}
+
+function Validate-Version([string]$Value, [string]$Label) {
+    $trimmed = Validate-RequiredText $Value $Label
+    if ($trimmed -notmatch '^(0|[1-9][0-9]*)[.](0|[1-9][0-9]*)[.](0|[1-9][0-9]*)(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?([+][0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$') {
+        Fail ($Label + ' must use semantic version form MAJOR.MINOR.PATCH with optional -prerelease or +build metadata.')
+    }
+    return $trimmed
+}
+
 function Read-JsonFile([string]$Path) {
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
         Fail ('Missing file: ' + $Path)
@@ -78,18 +93,21 @@ $authoring.Id = $canonicalId
 $runtime.Id = $canonicalId
 
 if (-not [string]::IsNullOrWhiteSpace($DisplayName)) {
-    $authoring.DisplayName = $DisplayName.Trim()
-    $runtime.Name = $DisplayName.Trim()
+    $canonicalDisplayName = Validate-RequiredText $DisplayName 'DisplayName'
+    $authoring.DisplayName = $canonicalDisplayName
+    $runtime.Name = $canonicalDisplayName
 }
 
 if (-not [string]::IsNullOrWhiteSpace($Author)) {
-    $authoring.Author = $Author.Trim()
-    $runtime.Author = $Author.Trim()
+    $canonicalAuthor = Validate-RequiredText $Author 'Author'
+    $authoring.Author = $canonicalAuthor
+    $runtime.Author = $canonicalAuthor
 }
 
 if (-not [string]::IsNullOrWhiteSpace($Version)) {
-    $authoring.Version = $Version.Trim()
-    $runtime.Version = $Version.Trim()
+    $canonicalVersion = Validate-Version $Version 'Version'
+    $authoring.Version = $canonicalVersion
+    $runtime.Version = $canonicalVersion
 }
 
 Write-JsonFile $authoringPath $authoring

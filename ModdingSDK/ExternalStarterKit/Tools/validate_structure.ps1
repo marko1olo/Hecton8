@@ -70,6 +70,21 @@ function Validate-ModId([string]$Value, [string]$Label) {
     return $trimmed
 }
 
+function Validate-RequiredText([string]$Value, [string]$Label) {
+    if ([string]::IsNullOrWhiteSpace($Value)) { Fail ($Label + ' is required.') }
+    $trimmed = $Value.Trim()
+    if ($trimmed -ne $Value) { Fail ($Label + ' must not contain leading or trailing whitespace.') }
+    return $trimmed
+}
+
+function Validate-Version([string]$Value, [string]$Label) {
+    $trimmed = Validate-RequiredText $Value $Label
+    if ($trimmed -notmatch '^(0|[1-9][0-9]*)[.](0|[1-9][0-9]*)[.](0|[1-9][0-9]*)(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?([+][0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$') {
+        Fail ($Label + ' must use semantic version form MAJOR.MINOR.PATCH with optional -prerelease or +build metadata.')
+    }
+    return $trimmed
+}
+
 function Read-AllowedGraphOpcodeTokens() {
     $path = Require-File 'Reference/allowed_opcodes.csv'
     $tokens = @{}
@@ -155,10 +170,19 @@ foreach ($schemaFile in $schemaFiles) {
 }
 
 $authoringId = Validate-ModId ([string]$authoring.Id) 'mod.h8manifest.json Id'
+$authoringDisplayName = Validate-RequiredText ([string]$authoring.DisplayName) 'mod.h8manifest.json DisplayName'
+$authoringAuthor = Validate-RequiredText ([string]$authoring.Author) 'mod.h8manifest.json Author'
+$authoringVersion = Validate-Version ([string]$authoring.Version) 'mod.h8manifest.json Version'
 if ([string]$authoring.Compatibility.Runtime -ne 'envelope-only') { Fail 'mod.h8manifest.json Compatibility.Runtime must be envelope-only.' }
 if ([int]$authoring.RequiredAPIVersion -lt 2) { Fail 'mod.h8manifest.json RequiredAPIVersion must be >= 2.' }
 $runtimeId = Validate-ModId ([string]$runtime.Id) 'mod.json Id'
 if ($authoringId -ne $runtimeId) { Fail 'mod.h8manifest.json Id must match mod.json Id.' }
+$runtimeName = Validate-RequiredText ([string]$runtime.Name) 'mod.json Name'
+$runtimeAuthor = Validate-RequiredText ([string]$runtime.Author) 'mod.json Author'
+$runtimeVersion = Validate-Version ([string]$runtime.Version) 'mod.json Version'
+if ($authoringDisplayName -ne $runtimeName) { Fail 'mod.h8manifest.json DisplayName must match mod.json Name.' }
+if ($authoringAuthor -ne $runtimeAuthor) { Fail 'mod.h8manifest.json Author must match mod.json Author.' }
+if ($authoringVersion -ne $runtimeVersion) { Fail 'mod.h8manifest.json Version must match mod.json Version.' }
 if ($null -ne $runtime.Dependencies) {
     foreach ($dependencyId in @($runtime.Dependencies)) {
         if (-not [string]::IsNullOrWhiteSpace([string]$dependencyId)) {

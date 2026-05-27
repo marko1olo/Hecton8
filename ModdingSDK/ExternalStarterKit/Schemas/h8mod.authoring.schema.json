@@ -10,7 +10,7 @@
     "Id": { "type": "string", "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$" },
     "DisplayName": { "type": "string", "minLength": 1 },
     "Author": { "type": "string", "minLength": 1 },
-    "Version": { "type": "string", "minLength": 1 },
+    "Version": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?(\\+[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$" },
     "RequiredAPIVersion": { "type": "integer", "minimum": 2 },
     "Capabilities": { "type": "array", "items": { "type": "string" } },
     "Budgets": {
