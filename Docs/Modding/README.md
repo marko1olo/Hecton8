@@ -25,7 +25,7 @@ The human-facing modding answer is documented in [SDK_Authoring_Interface_Plan.m
 
 ## Current Contract Snapshot
 
-- Schema revision: `60`
+- Schema revision: `61`
 - Source `ISignal` structs: `173`
 - Mod-projected `SignalBus<T>` lanes: `2`
 - Denied-by-default `ISignal` structs: `171`

@@ -38,8 +38,9 @@ SDK authoring details are in [SDK_Authoring_Interface_Plan.md](SDK_Authoring_Int
 | Resource registry capacity | `256` | More resources require explicit registry capacity review. |
 | Resource owner proof | active `ModExecutionScope` id match | Registry rejects forged `modId` values before hashing. |
 | Internal asset loaders | `3` | `LoadPrefab`, `LoadAudioClip`, and `LoadTexture` are internal and throw from public facade. |
-| Raw PNG max bytes | `8388608` | Raw texture fallback is capped at 8 MB. |
+| Raw PNG max bytes | `8388608` | Raw texture fallback is capped at 8 MB before `File.ReadAllBytes`. |
 | Raw PNG max dimension | `2048` | Width or height above 2048 is rejected. |
+| Raw PNG read failure | fail closed | Inaccessible, IO-failed, or invalid raw file reads return null with a warning. |
 
 ## Public Resource Methods
 
@@ -85,4 +86,4 @@ Public content method count: `6`.
 
 ## Static Drift Gate
 
-`Docs/Modding/Validate_Mod_API_Static.ps1` must fail if resource method count, content method count, resource kind count, registry capacity, internal asset loader count, or raw texture caps drift without this audit and schema being updated.
+`Docs/Modding/Validate_Mod_API_Static.ps1` must fail if resource method count, content method count, resource kind count, registry capacity, internal asset loader count, raw texture caps, or raw texture fail-closed read handling drift without this audit and schema being updated.

@@ -391,6 +391,8 @@ Required result:
 - `PublicContentMethodCount = 6`
 - `RawTextureMaxBytes = 8388608`
 - `RawTextureMaxDimension = 2048`
+- `RawTextureByteCapEnforcedBeforeRead = True`
+- `RawTextureReadFailsClosed = True`
 
 Static opcode evidence: `TriggerSubtitleCue` and `SubtitleCue` are reserved subtitle aliases. They must be absent from `allowed_opcodes.csv`, `GenerateEmergencyMockOpcodes()`, and the editor runtime opcode tuner until localization owner proof exists.
 

@@ -684,3 +684,50 @@ Exact Microseconds saved:
 - Runtime: 0 us measured, 0 us claimed.
 - Static ledger impact: 0.
 - Risk reduction: late-frame global rebound telemetry now uses the same volatile read discipline as other registry state accessors.
+
+## 2026-05-27 - PendingChunk Hidden Alias Store Rebuilt
+
+What was wrong:
+- `HectonWorldGenerator` kept pending streamed chunk jobs in `List<PendingChunk>`.
+- `PendingChunk` was an ordinary struct with seven `NativeArray<T>` aliases.
+- The official direct MonoBehaviour ledger stayed at zero, but the MonoBehaviour still owned heap-storable native alias copies through the list.
+
+What was done:
+- Converted `PendingChunk` to a stack-only `ref struct` snapshot.
+- Added one fixed-capacity `PendingChunkStore` SoA owner for coord/lod/resolution/job/cancel metadata and seven native alias lanes.
+- Kept the prior overflow scheduled-dispose fence.
+- Did not introduce per-chunk managed classes.
+
+Cinematic Cheats used:
+- Fixed-capacity SoA owner instead of managed object allocation per streamed chunk.
+
+Verification:
+- `VAULT_NATIVE_ALIAS_LEDGER_AUDIT_NATIVE_STATE_AFTER_PENDING_CHUNK_STORE_11.json` reports `2442` scanned files, `0` parse failures, `0` forbidden MonoBehaviour candidates, `353` forbidden persistent candidates, and `783` stack-only ref-struct fields.
+- Ledger classification shows `PendingChunk` fields as stack-only and `PendingChunkStore` as the explicit persistent owner.
+- Scoped `git diff --check` reports only existing LF/CRLF warnings.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Static ledger persistent impact: 0; this is an owner-shape fix, not a counter-reduction trick.
+- Risk reduction: pending chunk native aliases are no longer copied through `List<struct>` storage.
+
+## 2026-05-27 - Dead MockUIBuffer Unsafe DTO Removed
+
+What was wrong:
+- `MockUIBuffer` was an unused internal raw-pointer DTO in `H8StaticDataContracts.cs`.
+- No source code referenced it.
+
+What was done:
+- Removed `MockUIBuffer`.
+
+Cinematic Cheats used:
+- Deleted dead unsafe surface instead of wrapping it.
+
+Verification:
+- `rg "MockUIBuffer" Assets/_Project/Scripts -g "*.cs"` returns no source hits.
+- Scoped `git diff --check` reports only existing LF/CRLF warnings.
+- Fresh scanner/build/import proof after this deletion is blocked by external `MapMagic.csproj` dotnet build PID `7236` and CPU `88%`.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Static risk reduction: one dead raw pointer DTO removed.
