@@ -79,3 +79,21 @@ Solution: Updated stable domain text to the current rule: fixed-size last-300-fr
 Rejected Alternatives: Erasing `.h8dump` completely despite retained source mirrors; leaving `.h8dump` as the generic doctrine.
 Scalability potential: All tiers get bounded fault evidence without teaching new agents an obsolete dump route.
 Hardware Impact: Runtime/game impact 0 us.
+
+Problem: Current static scene facts and route docs include `01_ORBIT`, while `AGENTS.md` still contains older no-orbit handoff wording.
+Solution: Marked the conflict explicitly in stable docs instead of editing `AGENTS.md` or pretending the static route is settled runtime doctrine.
+Rejected Alternatives: Changing `AGENTS.md` without explicit authorization; deleting `01_ORBIT` from docs despite BuildSettings; claiming Play Mode route proof from file state.
+Scalability potential: Low/Middle agents avoid following an unacknowledged authority split; High/Ultra route work has a clear integrator decision point.
+Hardware Impact: Runtime/game impact 0 us.
+
+Problem: Active architecture docs still pointed at absent source paths, absent AgentLogs proof files, and absent dated reports.
+Solution: Corrected current source anchors where a replacement exists, and downgraded absent paths to historical/planned targets where no current file exists.
+Rejected Alternatives: Creating fake placeholder proof files; removing route-card context wholesale; leaving absent files as proof anchors.
+Scalability potential: Agents spend less time chasing dead paths and avoid promoting historical reports into current contracts.
+Hardware Impact: Runtime/game impact 0 us.
+
+Problem: H8BIN/vocal docs repeated old `static_data.h8bin` missing language after the payload appeared on disk.
+Solution: Ran a scoped Python h8bin validator pass over current StreamingAssets and Data Monolith source roots, then updated docs to cite that payload/schema proof with strict non-claims.
+Rejected Alternatives: Running full default validator through broad source roots under the 10s tool watchdog; claiming Unity boot or audio proof from Python validation.
+Scalability potential: Binary payload source truth is less ambiguous for all tiers while runtime readiness remains blocked until player/boot/profiler proof.
+Hardware Impact: Runtime/game impact 0 us. Python validator processed 1.0495 MB in 0.491846 s outside the game.
