@@ -63,6 +63,7 @@ namespace Hecton8.Gameplay
         private const uint RadiationSystemHash = 0x53483237u;
         private const ushort RadiationCombatSourceId = 274;
         private const BufferID RadiationStatusSignalBuffer = (BufferID)72748;
+        private const BufferID RadiationSdfSnapshotBuffer = (BufferID)72752;
         private const SystemID OwnerSystemId = SystemID.GameplayRadiation;
         private const string RadiationDumpFileName = "Dump_SHINOBU_274.bin";
 
@@ -171,6 +172,7 @@ namespace Hecton8.Gameplay
         private VaultGenerationHandle<byte> _csvScratchHandle;
         private VaultGenerationHandle<RadiationTuningDTO> _tuningHandle;
         private VaultGenerationHandle<RadiationStatusSignal> _statusSignalHandle;
+        private VaultGenerationHandle<byte> _radiationSdfSnapshotHandle;
         private VaultGenerationHandle<BulkheadStateDTO> _bulkheadStatesReadHandle;
         private VaultGenerationHandle<BulkheadPlaneDTO> _bulkheadPlanesReadHandle;
         private AbsoluteUniversePosition _gridOriginAup;
@@ -190,7 +192,6 @@ namespace Hecton8.Gameplay
         private float _radiationCadenceAccumulatorSeconds;
         private float _lastCompletedIntegrationDeltaSeconds;
         private long _radiationSimulationStartTicks;
-        private VoxelSonarSdfReadLease _radiationSdfReadLease;
         private RadiationStateDTO _lastRadiationState;
         private AbsoluteUniversePosition _lastSimulationPlayerAup;
         private PlayerRuntimeContext _lastSimulationPlayerContext;
@@ -217,7 +218,7 @@ namespace Hecton8.Gameplay
         private bool _hasGridOrigin;
         private bool _diffusionJobActive;
         private bool _radiationSimulationJobActive;
-        private bool _radiationSdfReadLeaseLocked;
+        private bool _radiationSdfSnapshotLocked;
         private bool _radiationEvaluatedThisFrame;
         private bool _gridBuffersSwapped;
         private bool _registeredSimulationPhase;
@@ -786,6 +787,7 @@ namespace Hecton8.Gameplay
                 _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.Shinobu274RadiationCsvScratch, RadiationCsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
                 _tuningHandle = vault.EnsureGenerationHandle<RadiationTuningDTO>(BufferID.Shinobu274RadiationTuning, 1, OwnerSystemId);
                 _statusSignalHandle = vault.EnsureGenerationHandle<RadiationStatusSignal>(RadiationStatusSignalBuffer, 1, OwnerSystemId);
+                _radiationSdfSnapshotHandle = vault.EnsureGenerationHandle<byte>(RadiationSdfSnapshotBuffer, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
                 TryBindBulkheadReadHandles(vault);
                 _vaultInitialized = true;
             }
@@ -1257,6 +1259,8 @@ namespace Hecton8.Gameplay
                 ReleaseVaultHandle(vault, ref _csvScratchHandle);
                 ReleaseVaultHandle(vault, ref _tuningHandle);
                 ReleaseVaultHandle(vault, ref _statusSignalHandle);
+                ReleaseRadiationSdfSnapshotLock();
+                ReleaseVaultHandle(vault, ref _radiationSdfSnapshotHandle);
             }
 
             _gridReadHandle = default;
@@ -1271,6 +1275,7 @@ namespace Hecton8.Gameplay
             _csvScratchHandle = default;
             _tuningHandle = default;
             _statusSignalHandle = default;
+            _radiationSdfSnapshotHandle = default;
             _bulkheadStatesReadHandle = default;
             _bulkheadPlanesReadHandle = default;
             _gridRead = default;
@@ -1596,23 +1601,22 @@ namespace Hecton8.Gameplay
             {
                 DispatcherJobFence.TryComplete(ref _radiationSimulationJobHandle, forceComplete: true);
                 _radiationSimulationJobActive = false;
-                ReleaseRadiationSdfReadLease();
+                ReleaseRadiationSdfSnapshotLock();
             }
 
             CompleteDiffusionJobForTeardownRelease();
         }
 
-        private void ReleaseRadiationSdfReadLease()
+        private void ReleaseRadiationSdfSnapshotLock()
         {
-            if (!_radiationSdfReadLeaseLocked)
+            if (!_radiationSdfSnapshotLocked)
                 return;
 
-            IVoxelSonarSdfReadLeaseModel leaseModel = _voxelSdfReadLeaseModel;
-            if (leaseModel != null)
-                leaseModel.ReleaseNearestSonarSdfReadLease(in _radiationSdfReadLease);
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                vault.TryUnlockBuffer(RadiationSdfSnapshotBuffer, OwnerSystemId);
 
-            _radiationSdfReadLease = default;
-            _radiationSdfReadLeaseLocked = false;
+            _radiationSdfSnapshotLocked = false;
         }
 
         private float SampleGridNearest(in AbsoluteUniversePosition sampleAup)
@@ -1689,16 +1693,35 @@ namespace Hecton8.Gameplay
             IVoxelSonarSdfReadLeaseModel sdfReadLeaseModel = _voxelSdfReadLeaseModel;
             VoxelSonarSdfReadLease sdfReadLease = default;
             bool sdfReadLeaseLocked = false;
+            bool sdfSnapshotLocked = false;
             if (sdfReadLeaseModel != null)
             {
                 sdfReadLeaseLocked = sdfReadLeaseModel.TryAcquireNearestSonarSdfReadLease(
                     playerRuntime,
-                    out encodedSdf,
+                    out NativeArray<byte>.ReadOnly sourceSdf,
                     out sdfDimensions,
                     out sdfVolumeOrigin,
                     out sdfCellSize,
                     out sdfRange,
                     out sdfReadLease);
+                if (sdfReadLeaseLocked)
+                {
+                    if (!TryCopyRadiationSdfLeaseToSnapshot(sourceSdf, sdfDimensions, out encodedSdf, out sdfSnapshotLocked))
+                    {
+                        sdfReadLeaseModel.ReleaseNearestSonarSdfReadLease(in sdfReadLease);
+                        sdfReadLeaseLocked = false;
+                        sdfDimensions = default;
+                        sdfVolumeOrigin = default;
+                        sdfCellSize = default;
+                        sdfRange = 0f;
+                    }
+                }
+            }
+
+            if (sdfReadLeaseLocked && sdfReadLeaseModel != null)
+            {
+                sdfReadLeaseModel.ReleaseNearestSonarSdfReadLease(in sdfReadLease);
+                sdfReadLeaseLocked = false;
             }
 
             NativeArray<BulkheadStateDTO> bulkheadStates = default;
@@ -1752,24 +1775,108 @@ namespace Hecton8.Gameplay
                 SdfRange = SanitizeRange(sdfRange, 0.001f, 0.001f, 100000f),
                 SdfSampleCount = sdfSampleCount
             };
-            bool leaseClaimed = false;
+            bool snapshotClaimed = false;
             try
             {
                 JobHandle handle = job.Schedule(dependsOn);
-                if (sdfReadLeaseLocked)
+                if (sdfSnapshotLocked)
                 {
-                    _radiationSdfReadLease = sdfReadLease;
-                    _radiationSdfReadLeaseLocked = true;
-                    leaseClaimed = true;
+                    _radiationSdfSnapshotLocked = true;
+                    snapshotClaimed = true;
                 }
 
                 return handle;
             }
             finally
             {
-                if (!leaseClaimed && sdfReadLeaseLocked && sdfReadLeaseModel != null)
+                if (sdfReadLeaseLocked && sdfReadLeaseModel != null)
                     sdfReadLeaseModel.ReleaseNearestSonarSdfReadLease(in sdfReadLease);
+                if (!snapshotClaimed)
+                    UnlockRadiationSdfSnapshot(ref sdfSnapshotLocked);
             }
+        }
+
+        private bool TryCopyRadiationSdfLeaseToSnapshot(
+            NativeArray<byte>.ReadOnly sourceSdf,
+            int3 dimensions,
+            out NativeArray<byte>.ReadOnly snapshotSdf,
+            out bool snapshotLocked)
+        {
+            snapshotSdf = default;
+            snapshotLocked = false;
+            long expectedLong = (long)dimensions.x * dimensions.y * dimensions.z;
+            if (expectedLong <= 0L ||
+                expectedLong > int.MaxValue ||
+                !sourceSdf.IsCreated ||
+                sourceSdf.Length < expectedLong)
+            {
+                return false;
+            }
+
+            int requiredLength = (int)expectedLong;
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked)
+                return false;
+
+            if (!IsRadiationSdfSnapshotReady(vault, requiredLength, out NativeArray<byte> snapshot))
+            {
+                if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
+                    return false;
+
+                _radiationSdfSnapshotHandle = vault.EnsureGenerationHandle<byte>(
+                    RadiationSdfSnapshotBuffer,
+                    requiredLength,
+                    OwnerSystemId,
+                    NativeArrayOptions.UninitializedMemory);
+            }
+
+            if (vault.IsCompactionFenceActive ||
+                !vault.TryLockBuffer(RadiationSdfSnapshotBuffer, OwnerSystemId))
+            {
+                return false;
+            }
+
+            snapshotLocked = true;
+            if (vault.IsCompactionFenceActive)
+            {
+                UnlockRadiationSdfSnapshot(ref snapshotLocked);
+                return false;
+            }
+
+            if (!IsRadiationSdfSnapshotReady(vault, requiredLength, out snapshot))
+                return false;
+
+            for (int i = 0; i < requiredLength; i++)
+                snapshot[i] = sourceSdf[i];
+
+            snapshotSdf = snapshot.AsReadOnly();
+            return true;
+        }
+
+        private bool IsRadiationSdfSnapshotReady(IDataVault vault, int requiredLength, out NativeArray<byte> snapshot)
+        {
+            snapshot = default;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   !vault.IsCompactionFenceActive &&
+                   _radiationSdfSnapshotHandle.BufferID != 0u &&
+                   _radiationSdfSnapshotHandle.Generation != 0u &&
+                   vault.TryResolveHandle(in _radiationSdfSnapshotHandle, out snapshot) &&
+                   !vault.IsCompactionFenceActive &&
+                   snapshot.IsCreated &&
+                   snapshot.Length >= requiredLength;
+        }
+
+        private void UnlockRadiationSdfSnapshot(ref bool locked)
+        {
+            if (!locked)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                vault.TryUnlockBuffer(RadiationSdfSnapshotBuffer, OwnerSystemId);
+
+            locked = false;
         }
 
         private void ResolveBulkheadReadBuffers(

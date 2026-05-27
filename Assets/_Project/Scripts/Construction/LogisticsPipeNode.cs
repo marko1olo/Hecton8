@@ -130,7 +130,7 @@ namespace Hecton8.Construction
         private void Awake()
         {
             _cachedTransform = transform;
-            _powerNode = GetComponent<PowerNode>();
+            TryGetComponent(out _powerNode);
             _atmosphereSystem = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomReadModel>(this);
             _pipeLinkId = unchecked((int)EntityId.ToULong(GetEntityId()));
             CacheRegistryServicesCold();

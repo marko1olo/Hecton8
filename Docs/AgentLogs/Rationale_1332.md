@@ -797,3 +797,21 @@ Solution: Remove the unreachable cases and guard the source in editor tests.
 Rejected Alternatives: Keep dead branches as documentation. The legacy behavior is already documented by `Normalize()` and tested; dead branches weaken static proof.
 Scalability potential: Low/Middle/High/Ultra behavior unchanged. The continuous profile route remains low=0, middle=2, high=3, ultra=4 with legacy high=1 migrating to high.
 Hardware Impact: No measurable runtime delta; this is contract hygiene.
+
+Problem: `AccessibilitySettings` existed as a runtime component but no bootstrap route created it, and a GUID scan found no serialized scene/prefab placement. The color-filter CBuffer could therefore be fully implemented and still never run.
+Solution: Give `AccessibilitySettings` an owner-local `ActiveRuntimeInstance`, duplicate suppression, and idempotent shutdown. `GameBootstrapper.InitializePlayerLayerAsync` now creates `[AccessibilitySettings]` after the input/rebinding services and persists it.
+Rejected Alternatives: Assume scene authors will add the component manually, or scan the scene every frame. Manual placement is not a contract; hot scene search violates the global owner/read doctrine.
+Scalability potential: Low uses vector fallback when CBuffer is unsupported; Middle/High/Ultra keep the CBuffer route and can spend `GlobalQualityWeight` continuously in shader math. Input truth and settings identity are unchanged.
+Hardware Impact: One cold GameObject/AddComponent when missing. VisualSync remains a dirty 16-byte CBuffer upload; normal frame cost is unchanged.
+
+Problem: `UserOptionsPersistence.Save()` discarded the disk-write result, so non-domain callers could not verify cold settings persistence without reimplementing the save path.
+Solution: Add `TrySave()` and `LastSaveSucceeded`; keep `Save()` as a compatibility wrapper.
+Rejected Alternatives: Change all existing callers to a new interface immediately, or leave saves success-blind. Broad caller rewrites would cross multiple domains; success-blind saves hide disk failures.
+Scalability potential: Settings save identity is unchanged across Low/Middle/High/Ultra. The new bool route only improves failure visibility.
+Hardware Impact: Cold settings path only. Normal simulation frame cost 0 us.
+
+Problem: Legacy `options.h8cfg` JSON migration parsed float values through `Substring`, allocating a managed string even though `float.TryParse(ReadOnlySpan<char>, ...)` can parse the same token.
+Solution: Replace the substring token with `json.AsSpan(tokenStart, length)` and add a source guard.
+Rejected Alternatives: Leave it because migration is cold. The domain is menu/settings hitch prevention, and this allocation was avoidable without changing the public format.
+Scalability potential: No tier behavior change. Old JSON float settings migrate identically.
+Hardware Impact: Removes one cold managed string allocation per migrated float option.

@@ -1938,3 +1938,37 @@ Verification:
 - Source gate passed: `GlobalRegistryServiceSlot.Player` hotswap exists.
 - `git diff --check` passed on touched terrain/test/docs files with LF/CRLF warning only.
 - Compile was not run: no active compiler process was found, but CPU sampled at 62%, above the 50% coordination guard.
+
+## Fiftieth pass: ResourceDistribution cold worldgen dependency route
+
+What was wrong:
+- `ResourceDistributionDirector.SlowTick()` called `TryResolveRuntimeDependencies()`.
+- That resolver repaired player, MapMagic, vegetation, and voxel dependencies through `WorldRuntimeReferenceUtility` from the resource-sector residency loop.
+- Thermal-diamond voxel-face placement and meteor-impact crater application also resolved the voxel engine at event time.
+
+What was done:
+- Added `CacheWorldgenRuntimeReferencesCold()` for cold setup in `Awake` and `OnEnable`.
+- Replaced the slow-tick resolver with pure `HasRuntimeDependencies()`.
+- Removed `WorldRuntimeReferenceUtility.TryResolveVoxelEngine` from thermal-diamond face placement and meteor crater application.
+- Added hotswap rebinding for `MapMagicRuntime`, `MapMagicVegetationRuntime`, `VoxelEngineRuntime`, and `Player`.
+- Added source-contract coverage in `TerrainChunkSignalContractEditTests.ResourceDistributionRuntimeRoutes_DoNotRepairWorldgenDependencies`.
+- Updated `Docs/ARCHITECTURE/TERRAIN_RUNTIME_AUTHORITY_ROUTE.md`.
+
+Cinematic Cheats used:
+- No physical simulation changed.
+- Architectural cheat: resource residency and event-time voxel edits use cached owner references and fail closed instead of repairing dependencies from the active loop.
+
+Exact Microseconds saved:
+- Measured: 0 us. Unity profiler was not run.
+- Static estimate: 75 us hot-poll/stale-owner risk reduction from resource residency, thermal-diamond placement, and meteor-crater routes.
+
+Residual:
+- `DepthZoneDirector.Instance => GlobalRegistry.DepthZone` remains blocked because `DepthZoneDirector.cs` is invalid UTF-8 and `apply_patch` cannot edit it safely.
+- Unity/dotnet compile proof is still absent because another `dotnet` process and CPU guard blocked the build.
+
+Verification:
+- Source gate passed: `ResourceDistributionDirector.SlowTick`, `ResolveThermalDiamondVoxelFacePosition`, and `TryApplyMeteorImpactCrater` contain no `WorldRuntimeReferenceUtility`.
+- Source gate passed: old `TryResolveRuntimeDependencies` is absent from runtime source.
+- Source gate passed: MapMagic, vegetation, voxel, and player hotswap cases exist.
+- `git diff --check` passed on touched terrain/resource/test/docs files with LF/CRLF warnings only.
+- Compile was not run: `dotnet` PID 62068 was active and CPU sampled at 65%, above the project threshold.

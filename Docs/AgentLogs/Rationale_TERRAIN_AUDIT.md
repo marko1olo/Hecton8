@@ -499,3 +499,15 @@ Solution: Skipped `dotnet build` and recorded the missing compile proof explicit
 Rejected Alternatives: Starting a build above the 50% CPU threshold was rejected because it would interfere with parallel agents and violate the project rule.
 Scalability potential: None changed by the skipped build. Low/Middle/High/Ultra behavior is governed by the cached dependency route already patched.
 Hardware Impact: Exact microseconds saved: 0. This is a verification constraint, not a runtime optimization.
+
+Problem: `ResourceDistributionDirector.SlowTick()` called `TryResolveRuntimeDependencies()`, which repaired player, MapMagic, vegetation, and voxel dependencies through `WorldRuntimeReferenceUtility`. Thermal diamond voxel-face placement and meteor crater application also resolved the voxel engine from their runtime event paths.
+Solution: Add `CacheWorldgenRuntimeReferencesCold()` for cold setup, replace the slow-tick resolver with pure `HasRuntimeDependencies()`, remove per-event voxel-engine repair, and rebind MapMagic, vegetation, voxel, and player references through `GlobalRegistryServiceSlot` hotswap.
+Rejected Alternatives: Keeping a slow-tick resolver was rejected because resource sector residency is a runtime worldgen loop. Resolving voxel engine at crater/diamond event time was rejected because those are active gameplay/worldgen events. Clearing serialized MapMagic/voxel references on teardown was rejected because authored overrides must survive disable/enable.
+Scalability potential: Low = resource sectors and meteor/crystal events fail closed if cached owners are absent, with no hidden bootstrap/registry repair. Middle = normal cached resource residency. High = denser resource sectors and cave-embedded ore through the same refs. Ultra = richer meteor crater/resource dressing without changing dependency authority.
+Hardware Impact: Exact microseconds saved: 0 measured, profiler absent. Static estimate: 75 us hot-poll/stale-owner risk reduction. Main value is removing hidden dependency repair from resource residency, thermal-diamond placement, and meteor-crater voxel edit paths.
+
+Problem: Fiftieth-pass compile proof could not be taken without violating the local guard: `dotnet` PID 62068 was active and CPU sampled at 65%.
+Solution: Skipped `dotnet build` and recorded the missing compile proof explicitly.
+Rejected Alternatives: Starting a second build while another `dotnet` process was active and CPU exceeded 50% was rejected because it violates the project coordination rule.
+Scalability potential: None changed by the skipped build. Low/Middle/High/Ultra behavior is governed by the cached resource dependency route already patched.
+Hardware Impact: Exact microseconds saved: 0. This is a verification constraint, not a runtime optimization.

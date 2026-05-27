@@ -152,8 +152,29 @@ Shader "Hecton8/Flora/SargassumMaster"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
+            float SargassumFiniteOr(float value, float fallbackValue)
+            {
+                return isfinite(value) ? value : fallbackValue;
+            }
+
+            float2 SargassumFiniteOr(float2 value, float2 fallbackValue)
+            {
+                return all(isfinite(value)) ? value : fallbackValue;
+            }
+
+            float3 SargassumFiniteOr(float3 value, float3 fallbackValue)
+            {
+                return all(isfinite(value)) ? value : fallbackValue;
+            }
+
+            float4 SargassumFiniteOr(float4 value, float4 fallbackValue)
+            {
+                return all(isfinite(value)) ? value : fallbackValue;
+            }
+
             half SargassumTrianglePulse01(float phase)
             {
+                phase = SargassumFiniteOr(phase, 0.0);
                 return (half)(1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0));
             }
 
@@ -181,14 +202,16 @@ Shader "Hecton8/Flora/SargassumMaster"
 
             float2 SargassumSafeNormalize2(float2 value)
             {
+                value = SargassumFiniteOr(value, float2(1.0, 0.0));
                 float approxLen = SargassumApproxMagnitude2(value);
-                return approxLen > 0.0001 ? value * rcp(approxLen) : float2(1.0, 0.0);
+                return isfinite(approxLen) && approxLen > 0.0001 ? value * rcp(approxLen) : float2(1.0, 0.0);
             }
 
             float3 SargassumSafeNormalize3(float3 value)
             {
+                value = SargassumFiniteOr(value, float3(0.0, 1.0, 0.0));
                 float approxLen = SargassumApproxMagnitude3(value);
-                return approxLen > 0.0001 ? value * rcp(approxLen) : float3(0.0, 1.0, 0.0);
+                return isfinite(approxLen) && approxLen > 0.0001 ? value * rcp(approxLen) : float3(0.0, 1.0, 0.0);
             }
 
             half SargassumFastPower01(half value, half exponent)
@@ -218,52 +241,62 @@ Shader "Hecton8/Flora/SargassumMaster"
 
             half EvaluateLeafMask(half2 uv, half phase)
             {
+                uv = saturate((half2)SargassumFiniteOr((float2)uv, float2(0.5, 0.5)));
+                phase = (half)SargassumFiniteOr((float)phase, 0.0);
                 half edge = abs(uv.x * 2.0h - 1.0h);
-                half serration = SargassumTriangleSigned((uv.y * 18.0h + phase * _PhaseScale) * 6.28318h) * 0.08h;
+                half phaseScale = (half)SargassumFiniteOr((float)_PhaseScale, 0.0);
+                half serration = SargassumTriangleSigned((uv.y * 18.0h + phase * phaseScale) * 6.28318h) * 0.08h;
                 return saturate(1.0h - smoothstep(0.46h + serration, 0.94h, edge));
             }
 
             half EvaluateCutMask(float3 positionWS)
             {
-                float3 delta = positionWS - _InteractionPosition;
-                float radius = max((float)_InteractionRadius, 0.0001);
+                positionWS = SargassumFiniteOr(positionWS, float3(0.0, 0.0, 0.0));
+                float3 interactionPosition = SargassumFiniteOr(_InteractionPosition, positionWS);
+                float3 delta = positionWS - interactionPosition;
+                float radius = max(abs(SargassumFiniteOr((float)_InteractionRadius, 0.0)), 0.0001);
                 float invRadiusSq = rcp(max(radius * radius, 0.0001));
                 half normalized = saturate(1.0h - (half)(dot(delta, delta) * invRadiusSq));
-                return normalized * normalized * saturate(_InteractionCutStrength);
+                return normalized * normalized * saturate((half)SargassumFiniteOr((float)_InteractionCutStrength, 0.0));
             }
 
             half EvaluateGlobalCutMask(float3 positionWS)
             {
-                if (_SargassumCutMaskActive < 0.5)
+                if (!isfinite(_SargassumCutMaskActive) || _SargassumCutMaskActive < 0.5 || !all(isfinite(positionWS)))
                     return 0.0h;
 
+                float4 cutRect = SargassumFiniteOr(_SargassumCutMaskWorldRect, float4(0.0, 0.0, 0.0, 0.0));
                 float2 uv = float2(
-                    (positionWS.x - _SargassumCutMaskWorldRect.x) * _SargassumCutMaskWorldRect.z,
-                    (positionWS.z - _SargassumCutMaskWorldRect.y) * _SargassumCutMaskWorldRect.w);
+                    (positionWS.x - cutRect.x) * cutRect.z,
+                    (positionWS.z - cutRect.y) * cutRect.w);
                 if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
                     return 0.0h;
 
-                return SAMPLE_TEXTURE2D_LOD(_SargassumCutMaskRT, sampler_SargassumCutMaskRT, uv, 0).r;
+                return (half)SargassumFiniteOr(SAMPLE_TEXTURE2D_LOD(_SargassumCutMaskRT, sampler_SargassumCutMaskRT, uv, 0).r, 0.0);
             }
 
             half EvaluateBuoyancySinkOffset(float2 worldXZ)
             {
-                if (_SargassumBuoyancySinkDepth <= 0.0001h)
+                float sinkDepth = SargassumFiniteOr(_SargassumBuoyancySinkDepth, 0.0);
+                if (sinkDepth <= 0.0001 || !all(isfinite(worldXZ)))
                     return 0.0h;
 
-                float2 sampleXZ = worldXZ - _SargassumGlobalDriftOffset.xz;
+                float4 sinkRect = SargassumFiniteOr(_SargassumBuoyancySinkWorldRect, float4(0.0, 0.0, 0.0, 0.0));
+                float2 driftOffset = SargassumFiniteOr(_SargassumGlobalDriftOffset.xz, float2(0.0, 0.0));
+                float2 sampleXZ = worldXZ - driftOffset;
                 float2 uv = float2(
-                    (sampleXZ.x - _SargassumBuoyancySinkWorldRect.x) * _SargassumBuoyancySinkWorldRect.z,
-                    (sampleXZ.y - _SargassumBuoyancySinkWorldRect.y) * _SargassumBuoyancySinkWorldRect.w);
+                    (sampleXZ.x - sinkRect.x) * sinkRect.z,
+                    (sampleXZ.y - sinkRect.y) * sinkRect.w);
                 if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
                     return 0.0h;
 
-                half sink01 = SAMPLE_TEXTURE2D_LOD(_SargassumBuoyancySinkRT, sampler_SargassumBuoyancySinkRT, uv, 0).r;
-                return sink01 * _SargassumBuoyancySinkDepth;
+                half sink01 = (half)SargassumFiniteOr(SAMPLE_TEXTURE2D_LOD(_SargassumBuoyancySinkRT, sampler_SargassumBuoyancySinkRT, uv, 0).r, 0.0);
+                return sink01 * (half)sinkDepth;
             }
 
             float Hash21(float2 value)
             {
+                value = SargassumFiniteOr(value, float2(0.0, 0.0));
                 float3 hash = frac(float3(value.xyx) * float3(0.1031, 0.1030, 0.0973));
                 hash += dot(hash, hash.yzx + 33.33);
                 return frac((hash.x + hash.y) * hash.z);
@@ -271,10 +304,12 @@ Shader "Hecton8/Flora/SargassumMaster"
 
             float EvaluateOrganicDensity(float2 worldXZ)
             {
-                float2 sample = worldXZ * 0.028 + _SargassumGlobalDriftOffset.xz * 0.015;
+                float2 safeWorldXZ = SargassumFiniteOr(worldXZ, float2(0.0, 0.0));
+                float2 driftOffset = SargassumFiniteOr(_SargassumGlobalDriftOffset.xz, float2(0.0, 0.0));
+                float2 sample = safeWorldXZ * 0.028 + driftOffset * 0.015;
                 float coarse = Hash21(floor(sample));
                 float fine = Hash21(floor(sample * 1.93 + 17.0));
-                float wave = SargassumTrianglePulse01(sample.x * 1.2 + sample.y * 0.94 + _Time.y * 0.1);
+                float wave = SargassumTrianglePulse01(sample.x * 1.2 + sample.y * 0.94 + SargassumFiniteOr(_Time.y, 0.0) * 0.1);
                 return saturate(coarse * 0.46 + fine * 0.34 + wave * 0.20);
             }
 
@@ -345,47 +380,54 @@ Shader "Hecton8/Flora/SargassumMaster"
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
-                float3 positionOS = input.positionOS.xyz;
-                half phase = input.color.b;
-                half rigidity = saturate(input.color.a);
-                half heightMask = saturate(input.uv.y);
-                half swingScale = lerp(_BeardSwingMultiplier, 0.68h, rigidity);
-                half sway = SargassumTriangleSigned(_Time.y * _SwaySpeed + phase * _PhaseScale + positionOS.y * _SwayFrequency) * _SwayAmplitude * swingScale;
-                positionOS.xz += input.normalOS.xz * (sway * heightMask);
+                float3 normalOS = SargassumFiniteOr(input.normalOS, float3(0.0, 1.0, 0.0));
+                half4 vertexColor = saturate((half4)SargassumFiniteOr((float4)input.color, float4(1.0, 0.0, 0.0, 1.0)));
+                float2 uv = saturate(SargassumFiniteOr(input.uv, float2(0.5, 0.5)));
+                float timeSeconds = SargassumFiniteOr(_Time.y, 0.0);
+                float3 positionOS = SargassumFiniteOr(input.positionOS.xyz, float3(0.0, 0.0, 0.0));
+                half phase = vertexColor.b;
+                half rigidity = saturate(vertexColor.a);
+                half heightMask = saturate((half)uv.y);
+                half swingScale = lerp((half)SargassumFiniteOr((float)_BeardSwingMultiplier, 0.68), 0.68h, rigidity);
+                half sway = SargassumTriangleSigned(timeSeconds * SargassumFiniteOr((float)_SwaySpeed, 0.0) + phase * SargassumFiniteOr((float)_PhaseScale, 0.0) + positionOS.y * SargassumFiniteOr((float)_SwayFrequency, 0.0)) * (half)max(0.0, SargassumFiniteOr((float)_SwayAmplitude, 0.0)) * swingScale;
+                positionOS.xz += normalOS.xz * (sway * heightMask);
 
-                float3 positionWS_Interact = TransformObjectToWorld(positionOS) + _SargassumGlobalDriftOffset.xyz;
-                float3 washDir = positionWS_Interact - _HectonPropWashPosition.xyz;
-                float washRadius = max(_HectonPropWashPosition.w, 0.001);
+                float3 driftOffset = SargassumFiniteOr(_SargassumGlobalDriftOffset.xyz, float3(0.0, 0.0, 0.0));
+                float4 propWashPosition = SargassumFiniteOr(_HectonPropWashPosition, float4(0.0, 0.0, 0.0, 0.0));
+                float3 positionWS_Interact = TransformObjectToWorld(positionOS) + driftOffset;
+                float3 washDir = positionWS_Interact - propWashPosition.xyz;
+                float washRadius = max(abs(propWashPosition.w), 0.001);
                 float washDistSq = dot(washDir, washDir);
                 float washInvRadiusSq = rcp(max(washRadius * washRadius, 0.0001));
                 float washStrength = saturate(1.0 - washDistSq * washInvRadiusSq);
                 if (washDistSq > 0.0001)
-                    positionOS.xyz += SargassumSafeNormalize3(washDir) * (washStrength * _HectonPropWashForce * 0.45h * heightMask);
+                    positionOS.xyz += SargassumSafeNormalize3(washDir) * (washStrength * max(0.0, SargassumFiniteOr((float)_HectonPropWashForce, 0.0)) * 0.45h * heightMask);
 
-                float3 positionWS_Pulse = TransformObjectToWorld(positionOS) + _SargassumGlobalDriftOffset.xyz;
+                float3 positionWS_Pulse = TransformObjectToWorld(positionOS) + driftOffset;
                 float organicDensity = EvaluateOrganicDensity(positionWS_Pulse.xz);
                 float edgePulse = saturate(1.0 - abs(organicDensity * 2.0 - 1.0));
-                float pulsePhase = _Time.y * _PulsationSpeed + phase * (_PhaseScale * 0.41h) + organicDensity * (_PulsationFrequency * 6.28318h);
-                float pulse = SargassumTriangleSigned(pulsePhase) * _PulsationAmplitude * edgePulse * heightMask;
+                float pulsePhase = timeSeconds * SargassumFiniteOr((float)_PulsationSpeed, 0.0) + phase * (SargassumFiniteOr((float)_PhaseScale, 0.0) * 0.41h) + organicDensity * (SargassumFiniteOr((float)_PulsationFrequency, 0.0) * 6.28318h);
+                float pulse = SargassumTriangleSigned(pulsePhase) * max(0.0, SargassumFiniteOr((float)_PulsationAmplitude, 0.0)) * edgePulse * heightMask;
                 float2 radialOS = SargassumSafeNormalize2(positionOS.xz + float2(0.001, 0.001));
                 positionOS.xz += radialOS * pulse;
                 positionOS.y += pulse * 0.12;
 
-                float3 positionWS_Cut = TransformObjectToWorld(positionOS) + _SargassumGlobalDriftOffset.xyz;
+                float3 positionWS_Cut = TransformObjectToWorld(positionOS) + driftOffset;
                 half cutWarp = EvaluateCutMask(positionWS_Cut);
                 cutWarp = smoothstep(0.05h, 0.9h, cutWarp) * (1.0h - rigidity) * heightMask;
-                positionOS.xz -= radialOS * (_WoundCurlStrength * cutWarp);
-                positionOS.y -= _WoundCurlStrength * cutWarp * 0.24h;
+                half woundCurlStrength = saturate((half)SargassumFiniteOr((float)_WoundCurlStrength, 0.0));
+                positionOS.xz -= radialOS * (woundCurlStrength * cutWarp);
+                positionOS.y -= woundCurlStrength * cutWarp * 0.24h;
 
-                VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
-                float3 biolumOriginWS = TransformObjectToWorld(float3(0.0, 0.0, 0.0)) + _SargassumGlobalDriftOffset.xyz;
-                float3 positionWS = TransformObjectToWorld(positionOS) + _SargassumGlobalDriftOffset.xyz;
+                VertexNormalInputs normalInputs = GetVertexNormalInputs(normalOS);
+                float3 biolumOriginWS = TransformObjectToWorld(float3(0.0, 0.0, 0.0)) + driftOffset;
+                float3 positionWS = TransformObjectToWorld(positionOS) + driftOffset;
                 positionWS.y -= EvaluateBuoyancySinkOffset(positionWS.xz);
                 output.positionCS = TransformWorldToHClip(positionWS);
                 output.positionWS = positionWS;
                 output.normalWS = (half3)SargassumSafeNormalize3(normalInputs.normalWS);
-                output.color = input.color;
-                output.uv = input.uv;
+                output.color = vertexColor;
+                output.uv = uv;
                 output.viewDirWS = SafeNormalize(GetWorldSpaceViewDir(positionWS));
                 output.fogFactor = ComputeFogFactor(output.positionCS.z);
                 output.biolumLocalAupCoord = positionWS - biolumOriginWS;
@@ -413,7 +455,7 @@ Shader "Hecton8/Flora/SargassumMaster"
                 half alpha = lerp(leafMask, 1.0h, isBubble);
                 half cutMask = max(EvaluateCutMask(input.positionWS), EvaluateGlobalCutMask(input.positionWS));
                 alpha *= (1.0h - cutMask);
-                clip(alpha - _AlphaClip);
+                clip(alpha - saturate((half)SargassumFiniteOr((float)_AlphaClip, 0.36)));
 
                 half immersionDarkening = lerp(0.72h, 1.0h, ao);
                 half3 leafColor = lerp(_WetColor.rgb, _DryColor.rgb, saturate(input.uv.y + ao * 0.32h));
@@ -457,6 +499,7 @@ Shader "Hecton8/Flora/SargassumMaster"
                 color += specular;
                 color += _CutEdgeColor.rgb * cutEdge;
                 color = MixFog(color, input.fogFactor);
+                color = all(isfinite((float3)color)) ? color : half3(0.0h, 0.0h, 0.0h);
                 return half4(color, 1.0h);
             }
             ENDHLSL
@@ -554,8 +597,29 @@ Shader "Hecton8/Flora/SargassumMaster"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
+            float SargassumFiniteOr(float value, float fallbackValue)
+            {
+                return isfinite(value) ? value : fallbackValue;
+            }
+
+            float2 SargassumFiniteOr(float2 value, float2 fallbackValue)
+            {
+                return all(isfinite(value)) ? value : fallbackValue;
+            }
+
+            float3 SargassumFiniteOr(float3 value, float3 fallbackValue)
+            {
+                return all(isfinite(value)) ? value : fallbackValue;
+            }
+
+            float4 SargassumFiniteOr(float4 value, float4 fallbackValue)
+            {
+                return all(isfinite(value)) ? value : fallbackValue;
+            }
+
             half SargassumTrianglePulse01(float phase)
             {
+                phase = SargassumFiniteOr(phase, 0.0);
                 return (half)(1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0));
             }
 
@@ -583,58 +647,69 @@ Shader "Hecton8/Flora/SargassumMaster"
 
             float2 SargassumSafeNormalize2(float2 value)
             {
+                value = SargassumFiniteOr(value, float2(1.0, 0.0));
                 float approxLen = SargassumApproxMagnitude2(value);
-                return approxLen > 0.0001 ? value * rcp(approxLen) : float2(1.0, 0.0);
+                return isfinite(approxLen) && approxLen > 0.0001 ? value * rcp(approxLen) : float2(1.0, 0.0);
             }
 
             half EvaluateLeafMask(half2 uv, half phase)
             {
+                uv = saturate((half2)SargassumFiniteOr((float2)uv, float2(0.5, 0.5)));
+                phase = (half)SargassumFiniteOr((float)phase, 0.0);
                 half edge = abs(uv.x * 2.0h - 1.0h);
-                half serration = SargassumTriangleSigned((uv.y * 18.0h + phase * _PhaseScale) * 6.28318h) * 0.08h;
+                half phaseScale = (half)SargassumFiniteOr((float)_PhaseScale, 0.0);
+                half serration = SargassumTriangleSigned((uv.y * 18.0h + phase * phaseScale) * 6.28318h) * 0.08h;
                 return saturate(1.0h - smoothstep(0.46h + serration, 0.94h, edge));
             }
 
             half EvaluateCutMask(float3 positionWS)
             {
-                float3 delta = positionWS - _InteractionPosition;
-                float radius = max((float)_InteractionRadius, 0.0001);
+                positionWS = SargassumFiniteOr(positionWS, float3(0.0, 0.0, 0.0));
+                float3 interactionPosition = SargassumFiniteOr(_InteractionPosition, positionWS);
+                float3 delta = positionWS - interactionPosition;
+                float radius = max(abs(SargassumFiniteOr((float)_InteractionRadius, 0.0)), 0.0001);
                 float invRadiusSq = rcp(max(radius * radius, 0.0001));
                 half normalized = saturate(1.0h - (half)(dot(delta, delta) * invRadiusSq));
-                return normalized * normalized * saturate(_InteractionCutStrength);
+                return normalized * normalized * saturate((half)SargassumFiniteOr((float)_InteractionCutStrength, 0.0));
             }
 
             half EvaluateGlobalCutMask(float3 positionWS)
             {
-                if (_SargassumCutMaskActive < 0.5)
+                if (!isfinite(_SargassumCutMaskActive) || _SargassumCutMaskActive < 0.5 || !all(isfinite(positionWS)))
                     return 0.0h;
 
+                float4 cutRect = SargassumFiniteOr(_SargassumCutMaskWorldRect, float4(0.0, 0.0, 0.0, 0.0));
                 float2 uv = float2(
-                    (positionWS.x - _SargassumCutMaskWorldRect.x) * _SargassumCutMaskWorldRect.z,
-                    (positionWS.z - _SargassumCutMaskWorldRect.y) * _SargassumCutMaskWorldRect.w);
+                    (positionWS.x - cutRect.x) * cutRect.z,
+                    (positionWS.z - cutRect.y) * cutRect.w);
                 if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
                     return 0.0h;
 
-                return SAMPLE_TEXTURE2D_LOD(_SargassumCutMaskRT, sampler_SargassumCutMaskRT, uv, 0).r;
+                return (half)SargassumFiniteOr(SAMPLE_TEXTURE2D_LOD(_SargassumCutMaskRT, sampler_SargassumCutMaskRT, uv, 0).r, 0.0);
             }
 
             half EvaluateBuoyancySinkOffset(float2 worldXZ)
             {
-                if (_SargassumBuoyancySinkDepth <= 0.0001h)
+                float sinkDepth = SargassumFiniteOr(_SargassumBuoyancySinkDepth, 0.0);
+                if (sinkDepth <= 0.0001 || !all(isfinite(worldXZ)))
                     return 0.0h;
 
-                float2 sampleXZ = worldXZ - _SargassumGlobalDriftOffset.xz;
+                float4 sinkRect = SargassumFiniteOr(_SargassumBuoyancySinkWorldRect, float4(0.0, 0.0, 0.0, 0.0));
+                float2 driftOffset = SargassumFiniteOr(_SargassumGlobalDriftOffset.xz, float2(0.0, 0.0));
+                float2 sampleXZ = worldXZ - driftOffset;
                 float2 uv = float2(
-                    (sampleXZ.x - _SargassumBuoyancySinkWorldRect.x) * _SargassumBuoyancySinkWorldRect.z,
-                    (sampleXZ.y - _SargassumBuoyancySinkWorldRect.y) * _SargassumBuoyancySinkWorldRect.w);
+                    (sampleXZ.x - sinkRect.x) * sinkRect.z,
+                    (sampleXZ.y - sinkRect.y) * sinkRect.w);
                 if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
                     return 0.0h;
 
-                half sink01 = SAMPLE_TEXTURE2D_LOD(_SargassumBuoyancySinkRT, sampler_SargassumBuoyancySinkRT, uv, 0).r;
-                return sink01 * _SargassumBuoyancySinkDepth;
+                half sink01 = (half)SargassumFiniteOr(SAMPLE_TEXTURE2D_LOD(_SargassumBuoyancySinkRT, sampler_SargassumBuoyancySinkRT, uv, 0).r, 0.0);
+                return sink01 * (half)sinkDepth;
             }
 
             float Hash21(float2 value)
             {
+                value = SargassumFiniteOr(value, float2(0.0, 0.0));
                 float3 hash = frac(float3(value.xyx) * float3(0.1031, 0.1030, 0.0973));
                 hash += dot(hash, hash.yzx + 33.33);
                 return frac((hash.x + hash.y) * hash.z);
@@ -642,10 +717,12 @@ Shader "Hecton8/Flora/SargassumMaster"
 
             float EvaluateOrganicDensity(float2 worldXZ)
             {
-                float2 sample = worldXZ * 0.028 + _SargassumGlobalDriftOffset.xz * 0.015;
+                float2 safeWorldXZ = SargassumFiniteOr(worldXZ, float2(0.0, 0.0));
+                float2 driftOffset = SargassumFiniteOr(_SargassumGlobalDriftOffset.xz, float2(0.0, 0.0));
+                float2 sample = safeWorldXZ * 0.028 + driftOffset * 0.015;
                 float coarse = Hash21(floor(sample));
                 float fine = Hash21(floor(sample * 1.93 + 17.0));
-                float wave = SargassumTrianglePulse01(sample.x * 1.2 + sample.y * 0.94 + _Time.y * 0.1);
+                float wave = SargassumTrianglePulse01(sample.x * 1.2 + sample.y * 0.94 + SargassumFiniteOr(_Time.y, 0.0) * 0.1);
                 return saturate(coarse * 0.46 + fine * 0.34 + wave * 0.20);
             }
 
@@ -656,45 +733,52 @@ Shader "Hecton8/Flora/SargassumMaster"
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
-                float3 positionOS = input.positionOS.xyz;
-                half phase = input.color.b;
-                half rigidity = saturate(input.color.a);
-                half heightMask = saturate(input.uv.y);
-                half swingScale = lerp(_BeardSwingMultiplier, 0.68h, rigidity);
-                half sway = SargassumTriangleSigned(_Time.y * _SwaySpeed + phase * _PhaseScale + positionOS.y * _SwayFrequency) * _SwayAmplitude * swingScale;
-                positionOS.xz += input.normalOS.xz * (sway * heightMask);
+                float3 normalOS = SargassumFiniteOr(input.normalOS, float3(0.0, 1.0, 0.0));
+                half4 vertexColor = saturate((half4)SargassumFiniteOr((float4)input.color, float4(1.0, 0.0, 0.0, 1.0)));
+                float2 uv = saturate(SargassumFiniteOr(input.uv, float2(0.5, 0.5)));
+                float timeSeconds = SargassumFiniteOr(_Time.y, 0.0);
+                float3 positionOS = SargassumFiniteOr(input.positionOS.xyz, float3(0.0, 0.0, 0.0));
+                half phase = vertexColor.b;
+                half rigidity = saturate(vertexColor.a);
+                half heightMask = saturate((half)uv.y);
+                half swingScale = lerp((half)SargassumFiniteOr((float)_BeardSwingMultiplier, 0.68), 0.68h, rigidity);
+                half sway = SargassumTriangleSigned(timeSeconds * SargassumFiniteOr((float)_SwaySpeed, 0.0) + phase * SargassumFiniteOr((float)_PhaseScale, 0.0) + positionOS.y * SargassumFiniteOr((float)_SwayFrequency, 0.0)) * (half)max(0.0, SargassumFiniteOr((float)_SwayAmplitude, 0.0)) * swingScale;
+                positionOS.xz += normalOS.xz * (sway * heightMask);
 
-                float3 positionWS_Interact = TransformObjectToWorld(positionOS) + _SargassumGlobalDriftOffset.xyz;
-                float3 washDir = positionWS_Interact - _HectonPropWashPosition.xyz;
-                float washRadius = max(_HectonPropWashPosition.w, 0.001);
+                float3 driftOffset = SargassumFiniteOr(_SargassumGlobalDriftOffset.xyz, float3(0.0, 0.0, 0.0));
+                float4 propWashPosition = SargassumFiniteOr(_HectonPropWashPosition, float4(0.0, 0.0, 0.0, 0.0));
+                float3 positionWS_Interact = TransformObjectToWorld(positionOS) + driftOffset;
+                float3 washDir = positionWS_Interact - propWashPosition.xyz;
+                float washRadius = max(abs(propWashPosition.w), 0.001);
                 float washDistSq = dot(washDir, washDir);
                 float washInvRadiusSq = rcp(max(washRadius * washRadius, 0.0001));
                 float washStrength = saturate(1.0 - washDistSq * washInvRadiusSq);
                 if (washDistSq > 0.0001)
-                    positionOS.xyz += washDir * rcp(SargassumApproxMagnitude3(washDir) + 0.0001) * (washStrength * _HectonPropWashForce * 0.45h * heightMask);
+                    positionOS.xyz += washDir * rcp(SargassumApproxMagnitude3(washDir) + 0.0001) * (washStrength * max(0.0, SargassumFiniteOr((float)_HectonPropWashForce, 0.0)) * 0.45h * heightMask);
 
-                float3 positionWS_Pulse = TransformObjectToWorld(positionOS) + _SargassumGlobalDriftOffset.xyz;
+                float3 positionWS_Pulse = TransformObjectToWorld(positionOS) + driftOffset;
                 float organicDensity = EvaluateOrganicDensity(positionWS_Pulse.xz);
                 float edgePulse = saturate(1.0 - abs(organicDensity * 2.0 - 1.0));
-                float pulsePhase = _Time.y * _PulsationSpeed + phase * (_PhaseScale * 0.41h) + organicDensity * (_PulsationFrequency * 6.28318h);
-                float pulse = SargassumTriangleSigned(pulsePhase) * _PulsationAmplitude * edgePulse * heightMask;
+                float pulsePhase = timeSeconds * SargassumFiniteOr((float)_PulsationSpeed, 0.0) + phase * (SargassumFiniteOr((float)_PhaseScale, 0.0) * 0.41h) + organicDensity * (SargassumFiniteOr((float)_PulsationFrequency, 0.0) * 6.28318h);
+                float pulse = SargassumTriangleSigned(pulsePhase) * max(0.0, SargassumFiniteOr((float)_PulsationAmplitude, 0.0)) * edgePulse * heightMask;
                 float2 radialOS = SargassumSafeNormalize2(positionOS.xz + float2(0.001, 0.001));
                 positionOS.xz += radialOS * pulse;
                 positionOS.y += pulse * 0.12;
 
-                float3 positionWS_Cut = TransformObjectToWorld(positionOS) + _SargassumGlobalDriftOffset.xyz;
+                float3 positionWS_Cut = TransformObjectToWorld(positionOS) + driftOffset;
                 half cutWarp = EvaluateCutMask(positionWS_Cut);
                 cutWarp = smoothstep(0.05h, 0.9h, cutWarp) * (1.0h - rigidity) * heightMask;
-                positionOS.xz -= radialOS * (_WoundCurlStrength * cutWarp);
-                positionOS.y -= _WoundCurlStrength * cutWarp * 0.24h;
+                half woundCurlStrength = saturate((half)SargassumFiniteOr((float)_WoundCurlStrength, 0.0));
+                positionOS.xz -= radialOS * (woundCurlStrength * cutWarp);
+                positionOS.y -= woundCurlStrength * cutWarp * 0.24h;
 
-                float3 positionWS = TransformObjectToWorld(positionOS) + _SargassumGlobalDriftOffset.xyz;
+                float3 positionWS = TransformObjectToWorld(positionOS) + driftOffset;
                 positionWS.y -= EvaluateBuoyancySinkOffset(positionWS.xz);
-                float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
+                float3 normalWS = TransformObjectToWorldNormal(normalOS);
                 output.positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, _LightDirection));
-                output.uv = input.uv;
+                output.uv = uv;
                 output.positionWS = positionWS;
-                output.color = input.color;
+                output.color = vertexColor;
 
                 #if UNITY_REVERSED_Z
                 output.positionCS.z = min(output.positionCS.z, UNITY_NEAR_CLIP_VALUE);
@@ -717,7 +801,7 @@ Shader "Hecton8/Flora/SargassumMaster"
                 half isBubble = step(0.85h, sssMask);
                 half alpha = lerp(EvaluateLeafMask(input.uv, input.color.b), 1.0h, isBubble);
                 alpha *= (1.0h - max(EvaluateCutMask(input.positionWS), EvaluateGlobalCutMask(input.positionWS)));
-                clip(alpha - _AlphaClip);
+                clip(alpha - saturate((half)SargassumFiniteOr((float)_AlphaClip, 0.36)));
                 return 0;
             }
             ENDHLSL

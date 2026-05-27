@@ -870,6 +870,46 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void ResourceDistributionRuntimeRoutes_DoNotRepairWorldgenDependencies()
+        {
+            string path = Path.Combine(Directory.GetCurrentDirectory(), "Assets", "_Project", "Scripts", "World", "ResourceDistributionDirector.cs");
+            string source = File.ReadAllText(path);
+
+            int slowTickIndex = source.IndexOf("public void SlowTick()", StringComparison.Ordinal);
+            int lateFrameIndex = source.IndexOf("public void LateFrameTick()", slowTickIndex, StringComparison.Ordinal);
+            int thermalFaceIndex = source.IndexOf("private Vector3 ResolveThermalDiamondVoxelFacePosition", StringComparison.Ordinal);
+            int tickMeteorIndex = source.IndexOf("private void TickMeteorImpacts", thermalFaceIndex, StringComparison.Ordinal);
+            int meteorCraterIndex = source.IndexOf("private bool TryApplyMeteorImpactCrater", StringComparison.Ordinal);
+            int radiationIndex = source.IndexOf("private void RegisterMeteoriteRadiationHazard", meteorCraterIndex, StringComparison.Ordinal);
+
+            Assert.That(slowTickIndex, Is.GreaterThanOrEqualTo(0));
+            Assert.That(lateFrameIndex, Is.GreaterThan(slowTickIndex));
+            Assert.That(thermalFaceIndex, Is.GreaterThan(lateFrameIndex));
+            Assert.That(tickMeteorIndex, Is.GreaterThan(thermalFaceIndex));
+            Assert.That(meteorCraterIndex, Is.GreaterThan(thermalFaceIndex));
+            Assert.That(radiationIndex, Is.GreaterThan(meteorCraterIndex));
+
+            string slowTickBlock = source.Substring(slowTickIndex, lateFrameIndex - slowTickIndex);
+            string thermalFaceBlock = source.Substring(thermalFaceIndex, tickMeteorIndex - thermalFaceIndex);
+            string meteorCraterBlock = source.Substring(meteorCraterIndex, radiationIndex - meteorCraterIndex);
+
+            Assert.That(slowTickBlock.Contains("TryResolveRuntimeDependencies("), Is.False);
+            Assert.That(slowTickBlock.Contains("WorldRuntimeReferenceUtility."), Is.False);
+            Assert.That(thermalFaceBlock.Contains("WorldRuntimeReferenceUtility."), Is.False);
+            Assert.That(meteorCraterBlock.Contains("WorldRuntimeReferenceUtility."), Is.False);
+
+            Assert.That(source.Contains("private void CacheWorldgenRuntimeReferencesCold()"), Is.True);
+            Assert.That(source.Contains("private bool HasRuntimeDependencies()"), Is.True);
+            Assert.That(source.Contains("private bool TryResolveRuntimeDependencies()"), Is.False);
+            Assert.That(source.Contains("case GlobalRegistryServiceSlot.MapMagicRuntime:"), Is.True);
+            Assert.That(source.Contains("RebindMapMagicRuntime(previousService, currentService);"), Is.True);
+            Assert.That(source.Contains("case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:"), Is.True);
+            Assert.That(source.Contains("RebindVegetationRuntime(previousService, currentService);"), Is.True);
+            Assert.That(source.Contains("case GlobalRegistryServiceSlot.VoxelEngineRuntime:"), Is.True);
+            Assert.That(source.Contains("RebindVoxelEngineRuntime(previousService, currentService);"), Is.True);
+        }
+
+        [Test]
         public void SargassumRuntimeManagers_UseOwnerLocalPointersForWorldConsumers()
         {
             string root = Directory.GetCurrentDirectory();

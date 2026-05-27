@@ -242,10 +242,19 @@ namespace Hecton8.Construction
         {
             SanitizeDockingSettings();
             _cachedTransform = transform;
-            _triggerCollider = GetComponent<Collider>();
-            _triggerCollider.isTrigger = true;
-            _triggerVolume = CachedTriggerVolume.FromCollider(_triggerCollider, 3f);
-            _powerNode = GetComponent<PowerNode>();
+            if (TryGetComponent(out Collider triggerCollider))
+            {
+                _triggerCollider = triggerCollider;
+                _triggerCollider.isTrigger = true;
+                _triggerVolume = CachedTriggerVolume.FromCollider(_triggerCollider, 3f);
+            }
+            else
+            {
+                _triggerCollider = null;
+                _triggerVolume = default;
+            }
+
+            TryGetComponent(out _powerNode);
             _owningModule = GetComponentInParent<BaseModule>();
             _dockingSplineOwnerHash = ResolveDockingSplineOwnerHash();
             CacheDockTelemetryVaultCold();
@@ -504,7 +513,8 @@ namespace Hecton8.Construction
             if (transportBehaviour == null)
                 return false;
 
-            return TryResolveCandidatePose(transportBehaviour, out Vector3 candidatePosition, out _) &&
+            return _triggerCollider != null &&
+                   TryResolveCandidatePose(transportBehaviour, out Vector3 candidatePosition, out _) &&
                    _triggerVolume.Contains(_cachedTransform, candidatePosition);
         }
 

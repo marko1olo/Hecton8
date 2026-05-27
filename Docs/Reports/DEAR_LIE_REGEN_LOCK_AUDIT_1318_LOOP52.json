@@ -1,0 +1,44 @@
+{
+  "agentId": "1318",
+  "loop": 52,
+  "audit": "DEAR_LIE_REGEN_LOCK_AUDIT",
+  "source": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
+  "problem": {
+    "methodRemoved": "TryRestoreDearLieOriginalMatrix",
+    "violation": "lane matrix write under TryLockOrganicLifecycleReadBuffers",
+    "failOpen": "ProcessDearLieRegeneration ignored restore failure before TrySetRegrowthProgress(..., 1f)"
+  },
+  "fix": {
+    "matrixRestoreRoute": "private TrySetRegrowthProgress overload",
+    "lockRoute": "TryLockOrganicRegrowthMutationBuffers",
+    "commitOrder": [
+      "validate finite runtime position and original matrix",
+      "acquire regrowth mutation lock",
+      "write regrowth progress and position with rollback snapshot",
+      "restore original lane matrix when required",
+      "clear destroyed/decomposition/dead runtime state",
+      "apply regrowth visual and health",
+      "finalize only after matrix restore succeeds"
+    ],
+    "retryPolicy": "requeue popped regen record after 1 second only when regrowth mutation lock is unavailable"
+  },
+  "staticChecks": {
+    "lifecycleReadMutationHits": 0,
+    "oldRestoreHelperRefs": 0,
+    "directRecordOriginalMatrixWritePattern": 0,
+    "braceBalanced": true,
+    "sourceSha256": "6f5b5cfaa36c9827d08ae56230429810e72d074a6d871e7ea08606fec7bedf4e"
+  },
+  "verification": {
+    "gitDiffCheck": "LF_TO_CRLF_WARNING_ONLY",
+    "buildRun": false,
+    "blockedBy": "CPU_GT_50_AND_EXTERNAL_DOTNET",
+    "firstCpuAverage": 99.9,
+    "firstCompilerProcessCount": 0,
+    "finalCpuAverage": 87.9,
+    "finalCompilerProcessCount": 1,
+    "finalCompilerProcesses": [
+      "dotnet:62068"
+    ]
+  }
+}

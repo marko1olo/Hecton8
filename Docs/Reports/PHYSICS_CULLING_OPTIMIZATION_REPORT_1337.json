@@ -2,7 +2,7 @@
     "agent":  1337,
     "role":  "PHYSICS_CULLING_OVERSEER_AND_SLEEP_COORDINATOR",
     "taskCount":  19,
-    "phase":  "implementation_static_validation_apex_rerun33_clear_lock_acquisition_masks_static_green_build_deferred_cpu_gate",
+    "phase":  "implementation_static_validation_apex_rerun48_frame_telemetry_lock_explicit_static_green_build_deferred_cpu_gate",
     "batchPromptPath":  "Docs/Tasks/CURRENT_BATCH.md",
     "domain":  {
                    "declared":  "Assets/_Project/Scripts/Physics",
@@ -357,18 +357,18 @@
                                                    }
                        },
     "staticValidation":  {
-                             "rerun":  33,
-                             "nativeAudit":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1337_RERUN33.json",
-                             "nativeAuditSummary":  "files=7 parseFailures=0 totalNativeFieldDeclarations=18 persistent=0 jobTransient=18 hash=439f8107909258021dc8ac9b82594763f361338c82c478263cd40a4b3e2617c9",
-                             "zeroGcHotPathAudit":  "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN33.json",
-                             "zeroGcHotPathSummary":  "files=3 scannedHotMethods=21 zeroGcHotPathHits=0 hash=37d3eaae558afd5435b07b03d91bff82007b29bc958c42ca3b2ca2c062e54011",
-                             "branchAudit":  "Docs/Reports/PHYSICS_CULLING_BRANCH_AUDIT_1337_RERUN33.json",
-                             "branchAuditSummary":  "files=3 jobExecuteIfStatements=4 failClosedGuardIfStatements=4 jobExecuteNonGuardIfStatements=0 distanceSolverDecisionIfStatements=0 hash=c640b4f503d10054253cd16cc66b290615b8a0e0e50a82c184c764adfa6b6ab5",
+                             "rerun":  48,
+                             "nativeAudit":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1337_RERUN48.json",
+                             "nativeAuditSummary":  "files=5 parseFailures=0 totalNativeFieldDeclarations=18 persistent=0 jobTransient=18 hash=e189a6100f34a1a4baaa9bade70aca1a218c438e23f49a8263c1784738fe1341",
+                             "zeroGcHotPathAudit":  "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN48.json",
+                             "zeroGcHotPathSummary":  "files=5 scannedHotMethods=24 zeroGcHotPathHits=0 hash=94d193e6e22516b41c545a6dbcd321b7150b12a5cadd8a383d27833eebf1af00",
+                             "branchAudit":  "Docs/Reports/PHYSICS_CULLING_BRANCH_AUDIT_1337_RERUN48.json",
+                             "branchAuditSummary":  "files=5 jobExecuteIfStatements=5 failClosedGuardIfStatements=5 jobExecuteNonGuardIfStatements=0 distanceSolverDecisionIfStatements=0 hash=085890bc7a724cc11b797a7666abb49041154066326e391fe961a584fe932b18",
                              "forcePacketLockAudit":  "Docs/Reports/PHYSICS_APPLY_FORCE_PACKET_LOCK_AUDIT_1337_RERUN29.json",
                              "tokenAudit":  "Docs/Reports/PHYSICS_CULLING_TOKEN_AUDIT_1337_RERUN29.json",
                              "layoutAudit":  "Docs/Reports/PHYSICS_APPLY_LAYOUT_AUDIT_1337_RERUN29.json",
                              "gitDiffCheck":  "green except CRLF normalization warnings",
-                             "verificationHashSha256":  "5e6520e9987199ea00eca1e0a0733a66a8546b6bb00eadded13b5ac54fbdaf82"
+                             "verificationHashSha256":  "ebae3b2149e0cac9225bad9427e296909bd0bc23b1089cee5a898dada8e1f307"
                          },
     "buildGateRerun33":  {
                              "status":  "DEFERRED_CPU_GATE_RED",
@@ -391,7 +391,7 @@
     "rerun45":  {
                     "status":  "STATIC_GREEN_BUILD_DEFERRED_CPU_COMPILER_GATE_RED",
                     "report":  "Docs/Reports/PHYSICS_TARGET_WAKE_QUEUE_COUNTER_AUDIT_1337_RERUN45.json",
-                    "targetedWakeCounterFix":  "QueueTargetedPhysicsWakeRequest now treats capacity<=0 or writeIndex<0 as fail-closed corruption: Flags is set, counter.Value resets to 0, contention telemetry increments, and no wake mirror slot is written.",
+                    "targetedWakeCounterFix":  "QueueTargetedPhysicsWakeRequest now treats capacity\u003c=0 or writeIndex\u003c0 as fail-closed corruption: Flags is set, counter.Value resets to 0, contention telemetry increments, and no wake mirror slot is written.",
                     "targetedWakeFlushClamp":  "FlushPhysicsTargetWakeRequests now clamps counter.Value to [0, queueCapacity] before copying request DTOs into the fixed apply scratch.",
                     "nativeAuditSummary":  "3 primary C# files; 74 NativeArray token hits; 18 true native field declarations; persistent=0; jobTransient=18; methodLocal/signature views=46.",
                     "zeroGcHotPathAudit":  "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN45.json",
@@ -431,7 +431,23 @@
                     "branchAuditSummary":  "files=5 jobExecuteIfStatements=5 failClosedGuardIfStatements=5 jobExecuteNonGuardIfStatements=0 distanceSolverDecisionIfStatements=0 hash=482218313e23825fd1c37f1333a5a150b6be2c35d37bfc9f36e156ed9eca6cba",
                     "tokenAudit":  "direct absolute AUP float cast scan=0; throw/catch scan=0; telemetry lock-region Unity/API scan=0.",
                     "gitDiffCheck":  "green except CRLF normalization warning",
-                    "build":  "not launched: CPU=100%; no dotnet/csc process in sample, but AGENTS build throttle forbids dotnet build under CPU > 50%.",
+                    "build":  "not launched: CPU=100%; no dotnet/csc process in sample, but AGENTS build throttle forbids dotnet build under CPU \u003e 50%.",
                     "verificationHashSha256":  "14773c1ca5965315e11e683438093d22b74d54f3e8154f0a71e18194d46b8177"
+                },
+    "rerun48":  {
+                    "status":  "STATIC_GREEN_BUILD_DEFERRED_CPU_GATE_RED",
+                    "report":  "Docs/Reports/PHYSICS_CULLING_FRAME_TELEMETRY_LOCK_AUDIT_1337_RERUN48.json",
+                    "frameTelemetryLockCleanup":  "RecordShinobu37PhysicsCullingFrameTelemetry now acquires _physicsCullingFrameTelemetry once explicitly, writes through the resolved NativeArray, releases in finally, and only resets counters/advances the frame cursor after a successful write.",
+                    "dispatchTelemetryScalarSnapshot":  "FlushPhysicsCullingDispatchTelemetry snapshots frame, GlobalQualityWeight, and CCD intervention count before acquiring _physicsCullingTelemetry; the lock loop now only writes ring entries.",
+                    "lockRegionAudit":  "0 Unity/API/IO tokens inside frame telemetry and dispatch body telemetry ring locks.",
+                    "nativeAuditSummary":  "5 scoped C# files; 18 true native field declarations; persistent=0; jobTransient=18.",
+                    "zeroGcHotPathAudit":  "Docs/Reports/PHYSICS_CULLING_ZERO_GC_HOTPATH_AUDIT_1337_RERUN48.json",
+                    "zeroGcHotPathSummary":  "files=5 scannedHotMethods=24 zeroGcHotPathHits=0 hash=94d193e6e22516b41c545a6dbcd321b7150b12a5cadd8a383d27833eebf1af00",
+                    "branchAudit":  "Docs/Reports/PHYSICS_CULLING_BRANCH_AUDIT_1337_RERUN48.json",
+                    "branchAuditSummary":  "files=5 jobExecuteIfStatements=5 failClosedGuardIfStatements=5 jobExecuteNonGuardIfStatements=0 distanceSolverDecisionIfStatements=0 hash=085890bc7a724cc11b797a7666abb49041154066326e391fe961a584fe932b18",
+                    "tokenAudit":  "direct absolute AUP float cast=0; throw/catch=0; real LINQ=0; hidden Complete=0.",
+                    "gitDiffCheck":  "green except CRLF normalization warning",
+                    "build":  "not launched: CPU=99%, dotnet=0, csc=0; AGENTS build throttle forbids dotnet build under CPU \u003e 50%.",
+                    "verificationHashSha256":  "ebae3b2149e0cac9225bad9427e296909bd0bc23b1089cee5a898dada8e1f307"
                 }
 }

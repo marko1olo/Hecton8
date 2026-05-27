@@ -221,6 +221,10 @@ Resource distribution runtime identity is owner-local.
 
 Registry registration remains the cold brine/resource read-model publication route. Lifecycle teardown clears the active pointer before releasing runtime resource buffers.
 
+`ResourceDistributionDirector` worldgen dependency repair is cold/hotswap only.
+
+`SlowTick`, thermal-diamond voxel-face placement, and meteor-impact crater application must consume cached player, MapMagic, vegetation, and voxel references. Runtime repair through `WorldRuntimeReferenceUtility` belongs to cold lifecycle setup or `GlobalRegistryServiceSlot` hotswap rebinding.
+
 Voxel anomaly-to-resource binding uses the resource owner-local active pointer.
 
 `HectonVoxelEngine` must not bind chthonic pillar resources through `GlobalRegistry.ResourceDistribution`.

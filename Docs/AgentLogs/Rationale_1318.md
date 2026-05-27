@@ -870,3 +870,17 @@ Solution: Do not launch dotnet/Roslyn. Write `Docs/Reports/QUALITY_GATES_1318_LO
 Rejected Alternatives: Running dotnet under CPU load or beside an external dotnet process was rejected by the project gate. Claiming compile success from static checks was rejected because no compiler result exists for Loop51. Retrying the known Loop50 Unity-generated graph failure was rejected while the legal gate is closed.
 Scalability potential: No runtime change. Low/Middle/High/Ultra behavior is unchanged until a legal compiler/profiler window proves it.
 Hardware Impact: No runtime impact. Proof blocker only.
+
+## Decision 124: Loop52 Dear Lie Regeneration Matrix Commit
+Problem: `TryRestoreDearLieOriginalMatrix` wrote lane matrices while holding `TryLockOrganicLifecycleReadBuffers`, and `ProcessDearLieRegeneration` ignored the restore result before calling `TrySetRegrowthProgress(..., 1f)`. A popped regen record could therefore be marked recovered while the plant stayed zero-scaled or invisible.
+Solution: Delete the separate read-lock restore route. Add a private `TrySetRegrowthProgress` overload that restores `FloraDearLieRegenRecord.OriginalMatrix` under the regrowth mutation lock before clearing destroyed state, applying regrowth visuals, and finalizing. `ProcessDearLieRegeneration` now counts recovered only after that combined commit succeeds, and it requeues the popped record on transient regrowth lock failure.
+Rejected Alternatives: Keeping restore and regrowth as two independent lock passes was rejected because the record is already popped and success must be atomic. Holding `DearLieRegenRecordsBufferId` while mutating lane state was rejected because regen queue ownership should not cover bridge/lifecycle mutation. Completing regrowth after a failed matrix restore was rejected because it lies to telemetry and persistence.
+Scalability potential: Low avoids invisible recovered flora on weak devices without adding jobs or allocations. Middle keeps Dear Lie recovery deterministic under dense destruction. High and Ultra can keep richer regrowth visuals because the same commit gate restores truth and presentation before spending visual work.
+Hardware Impact: One matrix validity branch and one optional matrix write inside an existing regrowth mutation lock. No profiler microseconds are claimed; removed cost is downstream repair from false recovered state.
+
+## Decision 125: Loop52 Verification Wall
+Problem: Loop52 static checks passed, but compiler proof is illegal: the first gate sample was CPU 99.9% with 0 compiler processes, and the final gate sample was CPU 87.9% with external `dotnet:62068`. Root `.csproj` count is 90 and `Hecton8.slnx` exists. AGENTS.md forbids dotnet/Roslyn while CPU is above 50% or another dotnet/csc process is active.
+Solution: Do not launch dotnet/Roslyn. Write `Docs/Reports/QUALITY_GATES_1318_LOOP52.json`, mirror it to `Docs/Reports/QUALITY_GATES_1318.json`, and write `Docs/Reports/DEAR_LIE_REGEN_LOCK_AUDIT_1318_LOOP52.json`.
+Rejected Alternatives: Running dotnet at 87.9-99.9% CPU or beside external `dotnet:62068` was rejected by the project gate. Claiming compile success from static checks was rejected because no compiler result exists for Loop52. Retrying the known Unity-generated graph failures was rejected while the CPU/compiler gates are closed.
+Scalability potential: No runtime change. Low/Middle/High/Ultra behavior is unchanged until a legal compiler/profiler window proves it.
+Hardware Impact: No runtime impact. Proof blocker only.

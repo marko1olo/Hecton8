@@ -1,0 +1,56 @@
+{
+  "agentId": "1332",
+  "timestampLocal": "2026-05-27T21:03:24+04:00",
+  "domain": "Hecton8.Input plus PauseControlsPanel/PDAControlsRebindUI",
+  "pass": "accessibility_bootstrap_options_save_reaudit",
+  "changes": [
+    {
+      "file": "Assets/_Project/Scripts/Input/AccessibilitySettings.cs",
+      "summary": "Added active runtime-owner claim, duplicate suppression, and idempotent shutdown so the VisualSync CBuffer bridge has a deterministic owner."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "summary": "Ensures a bootstrap-owned [AccessibilitySettings] instance after input/rebinding services are available."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs",
+      "summary": "Added checked TrySave()/LastSaveSucceeded route and removed the legacy JSON float Substring allocation via ReadOnlySpan<char>."
+    },
+    {
+      "file": "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs",
+      "summary": "Added source guards for accessibility bootstrap ownership, checked options save, and span-based legacy float parse."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Input/INPUT_MIGRATION_GUIDE.md",
+      "summary": "Documented TrySave() as the checked options save route."
+    }
+  ],
+  "staticVerification": {
+    "bannedTokenScanHits": 0,
+    "nativeCollectionFieldDeclarations": 0,
+    "persistentNativeCollectionFields": 0,
+    "domainNativeAuditHashSha256": "ebcd48608bc4048d6767a19c1c1a58bba9b615110fe6901535b17a7fc42d59db",
+    "bootstrapNativeAuditHashSha256": "d9841e268c8c81ed55869976dab50d01881ce67f259231bf7ad00aa56e633930",
+    "diffCheck": "clean except LF-to-CRLF warnings on existing working-copy files"
+  },
+  "buildVerification": {
+    "status": "failed_external_generated_metadata",
+    "compilerProcesses": 0,
+    "cpuSamplesPercent": [99, 65, 37],
+    "command": "dotnet build .\\Hecton8.Core.csproj --no-restore --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly",
+    "error": "CS0006 Metadata file 'C:\\hades\\Hecton8\\Temp\\CodexBuild\\Unity.ShaderGraph.Editor\\Unity.ShaderGraph.Editor.dll' could not be found"
+  },
+  "residualRisks": [
+    "Unity Editor tests and Profiler/GCMonitor were not run in this tool context.",
+    "ControlRemapper retains one cold managed string allocation for valid arbitrary Unity control path restoration after restart.",
+    "Legacy options string values still allocate actual managed strings during old JSON migration because public option values are strings."
+  ],
+  "fileHashesSha256": {
+    "Assets/_Project/Scripts/Input/AccessibilitySettings.cs": "191AC3CF85DC4A38C1214202C7A31D5031237DEF2A85FFA71190E98494526A0D",
+    "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs": "980D768D9953B9C3063E18E7B397D04309A4D52566090AC3E6206C2DF027288F",
+    "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs": "E38C27C0A065CCF32F09CD600EC46C06AAA6CBC3387DBFF6787F20BBB2E74662",
+    "Assets/_Project/Tests/Editor/InputBindingContractsEditTests.cs": "5C3B5CA342D9E88BF1CDAFCF53C955CCD6A204BCFFCA712D55F5B715A0C8ED03",
+    "Assets/_Project/Scripts/Input/INPUT_MIGRATION_GUIDE.md": "3296099D58B53909BE22CEDC968D7C78CE7F8756595BF7DB9C75B1C6C5EADB9A"
+  },
+  "combinedVerificationHashSha256": "4dd87a6cfc99d42cae9834a08855768778b14268e76dbd7b0b79b9250edb6e65"
+}

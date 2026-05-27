@@ -2484,14 +2484,24 @@ namespace Hecton8.Construction
 
                     module = pool.Spawn(buildData.finalPrefab, pos, rot);
                 }
-                else if (!ConstructionRuntimeProxyFactory.TryCreatePlacedProxy(buildData, pos, rot, out module))
+                else
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Hecton8.Core.H8Debug.LogWarning(
-                        "[ConstructionManager] Module has no finalPrefab and proxy generation failed. Skipping.");
-#endif
+                    if (ConstructionRuntimeProxyFactory.TryCreatePlacedProxy(buildData, pos, rot, out module))
+                    {
+                        // Development-only proxy keeps broken authoring inspectable without shipping runtime fabrication.
+                    }
+                    else
+                    {
+                        Hecton8.Core.H8Debug.LogWarning(
+                            "[ConstructionManager] Module has no finalPrefab and development proxy generation failed. Skipping.");
+                        skippedCount++;
+                        continue;
+                    }
+#else
                     skippedCount++;
                     continue;
+#endif
                 }
 
                 if (module == null)

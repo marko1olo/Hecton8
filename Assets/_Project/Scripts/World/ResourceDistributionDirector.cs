@@ -444,6 +444,7 @@ namespace Hecton8.World
             EnsureGhostProxySnapStaging();
 
             CacheRegistryServicesCold();
+            CacheWorldgenRuntimeReferencesCold();
             CacheSpawnSdfValidationServicesCold();
             EnsureRuntimePrefab();
             UpdateDiagnostics(default);
@@ -456,6 +457,7 @@ namespace Hecton8.World
 
             PublishActiveRuntimeInstance();
             CacheRegistryServicesCold();
+            CacheWorldgenRuntimeReferencesCold();
             CacheSpawnSdfValidationServicesCold();
             TryRegisterHotSwapListener();
             EnsureGhostProxySnapStaging();
@@ -548,6 +550,78 @@ namespace Hecton8.World
                 _dataVault = GlobalRegistry.DataVault;
         }
 
+        private void CacheWorldgenRuntimeReferencesCold()
+        {
+            if (playerTransform == null)
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+
+            if (mapMagicBridge == null)
+                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
+
+            if (vegetationBridge == null)
+                WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
+
+            if (voxelEngine == null)
+                WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine);
+        }
+
+        private void RebindPlayerRuntimeContext(object previousService, object currentService)
+        {
+            IPlayerRuntimeContext previousContext = previousService as IPlayerRuntimeContext;
+            if (previousContext != null &&
+                previousContext.PlayerTransform != null &&
+                ReferenceEquals(playerTransform, previousContext.PlayerTransform))
+            {
+                playerTransform = null;
+            }
+
+            _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+            if (_playerRuntimeContext != null && _playerRuntimeContext.PlayerTransform != null)
+                playerTransform = _playerRuntimeContext.PlayerTransform;
+        }
+
+        private void RebindMapMagicRuntime(object previousService, object currentService)
+        {
+            MapMagicBridge currentMapMagic = currentService as MapMagicBridge;
+            if (currentMapMagic != null)
+            {
+                mapMagicBridge = currentMapMagic;
+                return;
+            }
+
+            MapMagicBridge previousMapMagic = previousService as MapMagicBridge;
+            if (previousMapMagic != null && ReferenceEquals(mapMagicBridge, previousMapMagic))
+                mapMagicBridge = null;
+        }
+
+        private void RebindVegetationRuntime(object previousService, object currentService)
+        {
+            HectonMapMagicVegetationBridge currentVegetation = currentService as HectonMapMagicVegetationBridge;
+            if (currentVegetation != null)
+            {
+                vegetationBridge = currentVegetation;
+                return;
+            }
+
+            HectonMapMagicVegetationBridge previousVegetation = previousService as HectonMapMagicVegetationBridge;
+            if (previousVegetation != null && ReferenceEquals(vegetationBridge, previousVegetation))
+                vegetationBridge = null;
+        }
+
+        private void RebindVoxelEngineRuntime(object previousService, object currentService)
+        {
+            HectonVoxelEngine currentVoxelEngine = currentService as HectonVoxelEngine;
+            if (currentVoxelEngine != null)
+            {
+                voxelEngine = currentVoxelEngine;
+                return;
+            }
+
+            HectonVoxelEngine previousVoxelEngine = previousService as HectonVoxelEngine;
+            if (previousVoxelEngine != null && ReferenceEquals(voxelEngine, previousVoxelEngine))
+                voxelEngine = null;
+        }
+
         private IDataVault CacheDataVaultCold()
         {
             if (_dataVault == null)
@@ -606,7 +680,16 @@ namespace Hecton8.World
                     }
                     break;
                 case GlobalRegistryServiceSlot.Player:
-                    _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    RebindPlayerRuntimeContext(previousService, currentService);
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicRuntime:
+                    RebindMapMagicRuntime(previousService, currentService);
+                    break;
+                case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
+                    RebindVegetationRuntime(previousService, currentService);
+                    break;
+                case GlobalRegistryServiceSlot.VoxelEngineRuntime:
+                    RebindVoxelEngineRuntime(previousService, currentService);
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     CancelMetamorphismJobForTeardown();
@@ -637,7 +720,7 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
-            if (!TryResolveRuntimeDependencies())
+            if (!HasRuntimeDependencies())
                 return;
 
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
@@ -1015,7 +1098,6 @@ namespace Hecton8.World
             ResourceNodeTemplate template)
         {
             float spawnOffset = math.max(template.SpawnOffsetMeters, safeRadius * 0.08f);
-            WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine);
             if (voxelEngine != null &&
                 voxelEngine.TryGetNearestActiveVolume(runtimePosition, out HectonVoxelVolume volume) &&
                 volume != null &&
@@ -1124,7 +1206,6 @@ namespace Hecton8.World
 
         private bool TryApplyMeteorImpactCrater(Vector3 runtimeEpicenter, float radiusMeters)
         {
-            WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine);
             if (voxelEngine == null ||
                 !voxelEngine.TryGetNearestActiveVolume(runtimeEpicenter, out HectonVoxelVolume volume) ||
                 volume == null)
@@ -1154,20 +1235,15 @@ namespace Hecton8.World
             return meteorImpactIntervalSeconds * math.lerp(0.75f, 1.25f, Next01(ref state));
         }
 
-        private bool TryResolveRuntimeDependencies()
+        private bool HasRuntimeDependencies()
         {
             if (resourceTemplates == null || resourceTemplates.Length == 0)
                 return false;
 
-            if (!WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform) || playerTransform == null)
+            if (_playerRuntimeContext == null || playerTransform == null)
                 return false;
 
-            if (!WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge) || mapMagicBridge == null)
-                return false;
-
-            WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
-            WorldRuntimeReferenceUtility.TryResolveVoxelEngine(ref voxelEngine);
-            return true;
+            return mapMagicBridge != null;
         }
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)

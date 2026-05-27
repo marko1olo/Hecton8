@@ -613,3 +613,21 @@ Solution: Did not launch `dotnet build`. Gate sample reported CPU=100%; sampled 
 Rejected Alternatives: Running MSBuild under CPU > 50%. That violates AGENTS and can disturb active workers.
 Scalability potential: N/A runtime; preserves workstation stability.
 Hardware Impact: Avoided a heavy compile on a saturated host.
+
+Problem: Frame telemetry still used the `VaultBufferBinding` indexer after all body telemetry had been batched. On write-lock contention, the setter could fail closed silently while the caller still advanced the frame cursor and cleared job/contention counters.
+Solution: `RecordShinobu37PhysicsCullingFrameTelemetry` now explicitly acquires `_physicsCullingFrameTelemetry`, writes through the resolved `NativeArray<PhysicsCullingFrameTelemetry>`, releases in `finally`, and only advances frame/write indices plus resets counters after a successful write. On contention it increments the frame contention counter and returns without losing the pending microsecond sample.
+Rejected Alternatives: Keeping the one-line indexer write because it is only one entry. One dropped frame entry is acceptable; clearing the counters after a dropped entry is not, because it destroys postmortem evidence for the exact frame that contended.
+Scalability potential: Low devices preserve contention/job microsecond evidence under pressure; Middle/High/Ultra keep the same fixed 300-frame ring and can correlate higher quality radius/cadence against actual sync cost.
+Hardware Impact: Adds one explicit write-lock acquire/release around an existing 64B frame telemetry write. Prevents silent telemetry loss; no managed allocation and no Unity API inside the lock.
+
+Problem: Dispatch body telemetry now used one scoped ring lock, but frame/quality/CCD metadata resolution still lived in the write path and quality was recomputed per telemetry entry.
+Solution: Snapshot `frame`, `GlobalQualityWeight`, and CCD intervention count before acquiring `_physicsCullingTelemetry`; the locked loop now only computes per-body hash and writes ring entries. Added a quality-weight overload for radius-squared scale so frame telemetry records quality and radius from one scalar snapshot.
+Rejected Alternatives: Leaving resolver calls inside the loop because they are scalar. The lock window should be data-local and predictable; repeated global reads inside the telemetry transaction are unnecessary.
+Scalability potential: Low devices shorten telemetry lock duration during mass sleep/wake frames. Higher tiers preserve telemetry truth while spending saved sync budget on continuous culling radius/cadence.
+Hardware Impact: Replaces up to `snapshotCount` quality reads and CCD resolver calls with one pre-lock snapshot each. Exact microseconds require Unity Profiler capture; the static improvement is shorter lock occupancy.
+
+Problem: Compile proof after rerun 48 is still unsafe under current host load.
+Solution: Did not launch `dotnet build`. Gate sample reported CPU=99%, dotnet=0, csc=0. Recorded native Roslyn, zero-GC hotpath, branch, token, lock-region, diff, and verification hash artifacts instead.
+Rejected Alternatives: Running MSBuild under CPU > 50%. That violates AGENTS and would interfere with the multi-agent host.
+Scalability potential: N/A runtime; preserves workstation stability.
+Hardware Impact: Avoided heavy compile load on a saturated machine.

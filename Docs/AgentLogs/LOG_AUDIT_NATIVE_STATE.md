@@ -383,3 +383,30 @@ Verification:
 Exact Microseconds saved:
 - Runtime: 0 us measured, 0 us claimed.
 - Static ledger impact: 88 fewer persistent native alias candidates in official all-scripts scanner.
+
+## 2026-05-27 22:25 +04 - View Carrier Ref-Struct Pass 3
+
+What was wrong:
+- After public carrier cleanup, more plain struct native view carriers remained in the persistent alias ledger.
+- They were not true owners, but their plain struct shape still allowed accidental field/collection storage of `NativeArray<T>` aliases.
+- Remaining true owner sets and explicit-layout unsafe pointer DTOs require separate design/compile proof, not mechanical conversion.
+
+What was done:
+- Converted these transient carriers to `ref struct`: `VRInteractionKinematicBridgeViews`, `UpgradeMatrixVaultViews`, `OceanKinematicsVaultRuntime.Views`, `SaveMerkleVaultBufferSet`, `AupNarrativePoiBuffers`, `LootMagnetVaultViews`, `UtilityAIAnxietyVaultBuffers`, `HandIkVaultViews`, `AlphaLeviathanVaultBuffers`, `ScavengingLootOracleVaultViews`, and `MockGlobalShaderDataKernel`.
+- Kept `ThermodynamicsHazardGridPointers` unchanged because it is unsafe explicit-layout pointer ABI and needs compile proof before byref-like conversion.
+- Kept actual owner buffer sets unchanged.
+
+Cinematic Cheats used:
+- None. This pass is native alias lifetime enforcement only.
+
+Verification:
+- Declaration grep confirms all target carriers are `ref struct`.
+- Storage grep for fields, arrays, and `List<T>` of the target carrier types returns no hits.
+- Scoped `git diff --check` over edited files reports only existing LF/CRLF warnings.
+- Official scanner artifact `VAULT_NATIVE_ALIAS_LEDGER_AUDIT_NATIVE_STATE_AFTER_VIEW_REFSTRUCT_3.json`: `scannedFiles=2441`, `parseFailures=0`, `forbiddenMonoBehaviourCandidates=0`, `forbiddenPersistentCandidates=386`, `stackOnlyRefStructViewFields=744`.
+- Remaining carrier-shaped forbidden entries are actual owner sets plus `ThermodynamicsHazardGridPointers`.
+- No compile/import/profiler proof: CPU guard sampled `100%`; no compiler processes were active, but project law blocks build above 50% CPU.
+
+Exact Microseconds saved:
+- Runtime: 0 us measured, 0 us claimed.
+- Static ledger impact: 85 fewer persistent native alias candidates in official all-scripts scanner.

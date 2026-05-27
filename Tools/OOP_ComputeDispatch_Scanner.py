@@ -1091,6 +1091,9 @@ def strip_csharp_comments_and_strings(text: str) -> str:
 
 def analyze_legacy_compute_buffer_contract(root: Path, path: Path) -> list[dict[str, Any]]:
     text = read_text(path)
+    if "ComputeBuffer" not in text:
+        return []
+
     stripped = strip_csharp_comments_and_strings(text)
     relative = repo_path(root, path)
     owner = "vendor" if is_vendor(relative) else "first_party"
@@ -1113,6 +1116,9 @@ def analyze_legacy_compute_buffer_contract(root: Path, path: Path) -> list[dict[
 
 def analyze_graphics_buffer_lock_contract(root: Path, path: Path) -> list[dict[str, Any]]:
     text = read_text(path)
+    if "GraphicsBuffer" not in text and "CopyCount" not in text:
+        return []
+
     relative = repo_path(root, path)
     owner = "vendor" if is_vendor(relative) else "first_party"
     buffer_field = r"(?:_|s_)[A-Za-z][A-Za-z0-9_]*"

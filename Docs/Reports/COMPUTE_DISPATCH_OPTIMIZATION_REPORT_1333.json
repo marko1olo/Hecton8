@@ -4493,7 +4493,7 @@
       "declarations": [
         {
           "kernel": "StampDamageVolume",
-          "line": 20,
+          "line": 40,
           "over_limit": false,
           "product": 64,
           "raw": [
@@ -4531,7 +4531,7 @@
           "name": "_HectonDamageVolumeStampCommands"
         }
       ],
-      "sha256": "883f3b5f418eb8d3ff31d5a3617963fdc59229dd81cce94b27e78aa08aeaf3d6",
+      "sha256": "756f8943ea98d7ab68caa9dc2ad3954b04001b8b15e1e72f2fa23d545e2a7b58",
       "unresolved_numthreads": 0
     },
     {
@@ -5146,7 +5146,7 @@
       "declarations": [
         {
           "kernel": "SimulateBloodDispersion",
-          "line": 88,
+          "line": 134,
           "over_limit": false,
           "product": 64,
           "raw": [
@@ -5184,7 +5184,7 @@
           "name": "_AbyssalFlowField"
         }
       ],
-      "sha256": "59c12de7187950838fa3313bdb9911409ac12544df30e00d52bbd9cd935681f9",
+      "sha256": "8b1de2809f2be7704f138a7541a4a5d507076d520247e4839f6a45ba8559ea61",
       "unresolved_numthreads": 0
     },
     {

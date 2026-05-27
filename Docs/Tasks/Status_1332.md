@@ -541,3 +541,20 @@ Current residuals after this pass:
 - Latest modal fail-closed patch has static/source-guard proof only; compile is blocked by host CPU/compiler gate.
 - The one managed `new string` in `ControlRemapper.TryDecodeControlPathString` remains cold and intentional for Unity `InputAction.ApplyBindingOverride` path restoration after restart.
 - Report artifact: `Docs/Reports/INPUT_UI_MODAL_FAILCLOSED_REAUDIT_1332.json`; scoped verification hash `0f5459e5d47785ed42b42dbb7ae3f7675242727327692bf7233d7d6384770e06`.
+
+## Deep Domain Reaudit - Accessibility Bootstrap and Checked Options Save Closure - 2026-05-27T21:03:24+04:00
+
+- [x] Status/rationale/prompt continuity restored | DOD practice: re-read disk status/rationale and re-extracted `<AGENT_PROMPT id="1332">` before edits. Rejected: treating the chat summary as authority. Microsecond estimate: 0 runtime us.
+- [x] Accessibility runtime owner gap fixed | DOD practice: `AccessibilitySettings` now claims `ActiveRuntimeInstance`, suppresses duplicates without publishing disabled shader state, and shuts down idempotently. Rejected: scene-only manual component placement for a required VisualSync CBuffer bridge. Microsecond estimate: cold owner claim only; dirty VisualSync upload remains one 16-byte write.
+- [x] Bootstrap creates accessibility owner | DOD practice: `GameBootstrapper.InitializePlayerLayerAsync` creates `[AccessibilitySettings]` after input/rebinding runtime services, then persists the service root. Rejected: relying on prefab/scene presence; GUID scan found no serialized component placement. Microsecond estimate: one cold GameObject/AddComponent only when missing.
+- [x] Checked options save route added | DOD practice: `UserOptionsPersistence.TrySave()` returns persistence success and records `LastSaveSucceeded`; legacy `Save()` remains a compatibility wrapper. Rejected: success-blind cold settings saves. Microsecond estimate: cold settings path only; normal frame 0 us.
+- [x] Legacy JSON float allocation removed | DOD practice: legacy `options.h8cfg` JSON float migration now parses `ReadOnlySpan<char>` instead of `Substring`. Rejected: avoidable cold managed string allocation. Microsecond estimate: cold migration only; hot frame 0 us.
+- [x] Regression guards/report refreshed | DOD practice: editor source guards now require accessibility bootstrap ownership, checked options save, and span float parse. Report written to `Docs/Reports/INPUT_ACCESSIBILITY_BOOTSTRAP_REAUDIT_1332.json`. Combined verification hash `4dd87a6cfc99d42cae9834a08855768778b14268e76dbd7b0b79b9250edb6e65`.
+- [x] Static verification repeated | DOD practice: exact-file scans found 0 broad/bare catch, 0 `throw new`, 0 `PlayerPrefs`, 0 `JsonUtility`, 0 `RemoveAllListeners`, 0 string formatting/interpolation/`.ToString`, 0 LINQ, 0 `foreach`, and 0 native collection field declarations. Roslyn native audits: input/UI scope 0 native fields, bootstrap scope 0 native fields. `git diff --check` returned only LF-to-CRLF warnings.
+- [ ] Build after latest patch | BLOCKED BY EXTERNAL GENERATED METADATA | DOD practice: after CPU dropped to 37% and no compiler processes were active, ran one constrained Core build. Result: CS0006 missing `Temp\CodexBuild\Unity.ShaderGraph.Editor\Unity.ShaderGraph.Editor.dll`; no Agent 1332 source file appeared in the compiler error. Rejected: claiming green compile or launching solution rebuild after a known external metadata wall. Microsecond estimate: not applicable.
+
+Current residuals after this pass:
+- Unity Editor test runner and Unity Profiler/GCMonitor remain unrun in this tool context.
+- Latest accessibility bootstrap/options patch has static/source-guard proof only; compile is blocked by missing generated Unity ShaderGraph metadata.
+- The one managed `new string` in `ControlRemapper.TryDecodeControlPathString` remains cold and intentional for Unity `InputAction.ApplyBindingOverride` path restoration after restart.
+- Legacy options string values still allocate actual managed strings during old JSON migration because public option values are strings.
