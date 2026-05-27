@@ -140,12 +140,3 @@ Solution: Add generated velocity fields under `previous_snapshot_delta.velocity`
 Rejected Alternatives: Reporting velocity only in chat was rejected because it would be unreproducible after the next JSONL write. Dividing by all-time LOC was rejected for velocity because it hides the current window's code-growth burn-rate.
 Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected; future audits can compare production cadence windows without rebuilding spreadsheet logic.
 Hardware Impact: 0 us runtime gain.
-
-
-## Decision 21 - 2026-05-27 explicit code-density economics
-
-Problem: Code-density rows had tokens per character and dollars per character, but the requested units are line and 1000 code characters.
-Solution: Add explicit tokens-per-1k-character and dollars-per-1k-character fields to scope economics and show them in the dated report, ledger, and agent log.
-Rejected Alternatives: Leaving users to multiply per-character values manually was rejected because it invites inconsistent reporting.
-Scalability potential: Future audits can compare code scopes without spreadsheet conversion.
-Hardware Impact: 0 us runtime gain.

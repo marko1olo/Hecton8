@@ -1613,3 +1613,51 @@ Rejected Alternatives: Keeping registry reads was rejected because command execu
 Scalability potential: Low-tier devices avoid dependency polling when legacy mod commands are processed. Higher tiers keep the same flow/acoustic response semantics without adding global lookups.
 
 Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof. The fix removes a global-route stability risk.
+
+## Decision 129 - Cache Dispatcher Availability For Live Lane Owners
+
+Problem: `ConnectionSplineBatchRenderer` and `SceneRuntimeService` still used dispatcher registry checks or registry wrappers from helpers reached by live runtime routes.
+
+Solution: Cache dispatcher availability from cold init and dispatcher hot-swap. Register or unregister directly through `SystemDispatcher` fixed lanes.
+
+Rejected Alternatives: Keeping `GlobalRegistry.TryRegister*` in helper methods was rejected because helper names hid live dependency mutation. Registering without dispatcher availability was rejected because the prior behavior intentionally waited for dispatcher ownership.
+
+Scalability potential: Low-tier devices avoid repeated registry checks in live visual and scene lifecycle routes. Middle, high, and ultra tiers keep the same presentation behavior with stricter phase ownership.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof.
+
+## Decision 130 - Remove ObjectPool Registry Fallback From Runtime Spawn Routes
+
+Problem: `ThreadSafeCommandQueue` and `ModWorldPersistenceManager` could read `GlobalRegistry.ObjectPoolService` from command drain, mod spawn, despawn, or restore routes.
+
+Solution: Bind `IObjectPoolService` in cold dependency refresh and update it through object-pool hot-swap. Runtime routes now read cached fields only.
+
+Rejected Alternatives: Lazy fallback polling was rejected because missing dependencies after bootstrap must be visible, not silently resolved from hot code. Removing object-pool use was rejected because pooled spawn/despawn is the correct owner route.
+
+Scalability potential: Low-tier devices avoid hidden registry lookup branches in structural command and mod persistence work. Higher tiers keep pooled spawn behavior without coupling the command drain to registry state.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; stability and route ownership fix only.
+
+## Decision 131 - Cache Physics Service For Late-Frame Artery Flush
+
+Problem: `SystemDispatcher.ResolvePhysicsLateFramePendingCount()` and `FlushPhysicsLateFrameEvents()` read `GlobalRegistry.Physics` during late-frame environment artery flush.
+
+Solution: Cache `IPhysicsService` in `SystemDispatcher` during cold dependency refresh and physics hot-swap, then read the cached field through `ResolveCachedPhysicsService()`.
+
+Rejected Alternatives: Keeping direct registry reads was rejected because late-frame artery flush is a dispatcher hot route. Moving physics flush to another bus was rejected because the owner contract already exposes pending count and flush methods.
+
+Scalability potential: Low-tier devices keep the environment artery predictable. Middle, high, and ultra tiers retain the same physics event flush semantics.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof.
+
+## Decision 132 - Cache Scene Transition Presentation Handles
+
+Problem: `SceneRuntimeService` transition overlay and world-drone crossfade read global services during transition presentation updates.
+
+Solution: Cache terminal boot service handles, tick dispatcher, audio transition bridge, and camera-juice system during cold init, then refresh them from registry hot-swap.
+
+Rejected Alternatives: Treating the transition as too rare to fix was rejected because it is a visible stability-critical path. Moving the transition UI to a new global service was rejected as unnecessary surface growth.
+
+Scalability potential: Low-tier devices keep transition presentation deterministic without live registry polling. Higher tiers keep the same visual and audio transition path.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof.

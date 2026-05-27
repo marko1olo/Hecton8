@@ -1115,3 +1115,35 @@ Verification:
 - PASS: touched-file trailing whitespace scan.
 - DEFERRED: dotnet compile was not launched because active `dotnet.exe` process `52044` was present, despite CPU sampling 33.95 percent. Last attempted dotnet compile still fails outside this domain on external Candice SQLite dependency errors from pass 32.
 - NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## MODDING_SDK_AUDIT - 2026-05-27 - pass 37
+
+What was wrong:
+- `ModAssetManager.LoadRawTexture` enforced file size before `File.ReadAllBytes`, but the read catch covered only `IOException`.
+- `UnauthorizedAccessException` or other invalid filesystem/read failures after the byte gate could escape from the dormant legacy raw PNG path.
+- Resource/content schema and audits recorded raw texture caps, but not fail-closed read behavior.
+
+What was done:
+- Added `System.UnauthorizedAccessException`, `IOException`, and `System.Exception` catch blocks around `File.ReadAllBytes`.
+- Kept the pre-read raw PNG byte cap and dimension cap unchanged: `8388608` bytes and `2048` px.
+- Updated `Signal_Schema.json` to schema revision `61`.
+- Updated `README.md`, `Mod_API_Specification.md`, `Resource_Content_Audit_Matrix.md`, and `Runtime_Verification_Playbook.md`.
+- Extended `Validate_Mod_API_Static.ps1` to prove raw texture byte cap before read, fail-closed catch coverage, schema snapshot, audit docs, spec closure revision, and playbook output.
+
+Cinematic cheats used:
+- No physical simulation cheat. The practical content-ingress cheat is fail-closed legacy file reads while real runtime UGC remains on CRC-approved `FutureCommandEnvelope` asset references.
+
+Exact microseconds saved:
+- Runtime frame: 0 us/frame measured/claimed.
+- Added cost: exception-path catch handling only around cold raw texture file reads.
+- Removed risk: unhandled raw PNG filesystem exception after the byte cap.
+
+Verification:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `61`, `RawTextureMaxBytes=8388608`, `RawTextureMaxDimension=2048`, `RawTextureByteCapEnforcedBeforeRead=True`, `RawTextureReadFailsClosed=True`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: `Signal_Schema.json` parsed with schema revision `61`, raw texture pre-read byte gate `True`, fail-closed read handling `True`, and matching last static validation snapshot flags.
+- PASS: source scan found `TryValidateRawTextureFile(filePath)` before `File.ReadAllBytes(filePath)`, plus `System.UnauthorizedAccessException`, `IOException`, and `System.Exception` catch blocks.
+- PASS: stale schema-60 scan found no stale current revision or false raw texture closure flags in touched modding docs/schema/validator.
+- PASS: scoped unstaged and cached `git diff --check` for touched source/docs. No whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- PASS: `dotnet build Assembly-CSharp.csproj -v:minimal` -> Build succeeded, 45 warnings, 0 errors. Warnings are existing/non-domain: MSB3246 reference metadata warnings, MoreMountains demo type conflict, and Candice unused-field warnings.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.

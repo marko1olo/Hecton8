@@ -175,14 +175,6 @@ Primary code density -> first-party project C# 1,866,854 lines / 80,343,622 char
 Evidence -> STATIC_LOCAL_CODEX_JSONL_AND_FILESYSTEM plus official OpenAI docs. Still not invoice proof: local JSONL lacks billing SKU, invoice IDs, enterprise discounts, subscription/internal routes.
 
 
-## 2026-05-27 TOKEN_USAGE_AUDIT code-density economics
-
-What was wrong -> Prior report exposed per-character economics but did not show the requested per-line and per-1000-code-character units directly.
-What was done -> Added explicit tokens/line, tokens/1k chars, output tokens/1k chars, GPT-5.5 dollars/1k lines, GPT-5.5 dollars/1k chars, and secondary Codex/observed-high dollars/1k chars to generated reports. Refreshed ledger/report from 2,940 JSONL files.
-Cinematic Cheats used -> None; audit/process hygiene only.
-Exact Microseconds saved -> 0 us game runtime. Static telemetry and docs only.
-Interesting stats -> primary code lines 1,869,185; code chars 80,441,252; tokens/line 57,909.94; tokens/1k code chars 1,345,632.80; output tokens/1k code chars 4,655.89; GPT-5.5 dollars/1k LOC $45.04; GPT-5.5 dollars/1k code chars $1.05; input/output 288.01:1; top output session 019e42c1-57ec-7701-a1d7-7b5fbb073503 output 4,094,167; top reasoning session 019e42fa-4ec0-7e32-8384-f0756a3470c0 reasoning 1,164,831.
-Evidence -> STATIC_LOCAL_CODEX_JSONL_AND_FILESYSTEM plus official OpenAI pricing pages. Runtime/Unity PlayMode proof absent.
 ## 2026-05-27 23:03 Europe/Samara - Token velocity refresh
 
 What was wrong:

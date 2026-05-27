@@ -350,6 +350,10 @@
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Den.Tools.Editor'">
     <Compile Include="Assets\MapMagic\Tools\**\Editor\**\*.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\MapMagic\Tools\GUI\Editor\Draw.cs'))" />
+    <Reference Include="Microsoft.CSharp" Condition="Exists('$(UnityEditorManagedDir)\..\NetStandard\EditorExtensions\Microsoft.CSharp.dll') And !$([System.String]::Copy('@(Reference)').Contains('Microsoft.CSharp'))">
+      <HintPath>$(UnityEditorManagedDir)\..\NetStandard\EditorExtensions\Microsoft.CSharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'AstarPathfindingProject'">

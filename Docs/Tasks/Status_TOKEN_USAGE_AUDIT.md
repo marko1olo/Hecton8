@@ -87,9 +87,3 @@
 - [x] Task 64 - Add generated velocity accounting | Justification: extended previous-snapshot delta with tokens/hour, tokens/second, code-lines/hour, dollars/hour, and dollars per net primary C# line/1k chars. Alternative rejected: keeping these as chat-only arithmetic. Microseconds saved: 0 audit-only.
 - [x] Task 65 - Regenerate current token surfaces | Justification: rebuilt the archived report/ledger from local Codex JSONL; current snapshot is 108,244,387,543 total tokens and 2,804 usage sessions. Alternative rejected: editing Markdown by hand without JSON authority. Microseconds saved: 0 audit-only.
 - [x] Task 66 - Verify velocity artifacts | Justification: py_compile passed, JSON assertions proved velocity fields exist, and Markdown/ledger grep found the velocity table. Alternative rejected: trusting rendered prose without machine-readable proof. Microseconds saved: 0 audit-only.
-
-
-## Code Density Economics 2026-05-27 23:03 Europe/Samara
-
-- [x] Task 47 - Add explicit code-density economics | Justification: added tokens per line, tokens per 1k chars, output tokens per 1k chars, GPT-5.5 dollars per 1k lines, and GPT-5.5 dollars per 1k chars. Alternative rejected: forcing readers to multiply per-character fields manually. Microseconds saved: 0 audit-only.
-- [x] Task 48 - Regenerate code-density report surfaces | Justification: refreshed dated Markdown/JSON, stable ledger, and agent log from generated telemetry. Alternative rejected: chat-only derived math. Microseconds saved: 0 audit-only.

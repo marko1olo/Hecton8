@@ -2,7 +2,7 @@
 
 Date: 2026-05-27
 Domain: Echelon 1 mod/API cold isolation, SDK package contracts, HectonEventBus boundary
-Status: STATIC_PASS_SCHEMA_60 / HYGIENE_PASS / DOTNET_COMPILE_DEFERRED_ACTIVE_DOTNET_PID52044 / UNITY_LOCKED
+Status: STATIC_PASS_SCHEMA_61 / HYGIENE_PASS / DOTNET_BUILD_PASS_WARNINGS45 / UNITY_LOCKED
 
 ## Mandates Applied
 
@@ -384,4 +384,22 @@ Evidence:
 - PASS: scoped `git diff --check` for touched schema 60 source/docs. Git line-ending warnings only; no whitespace errors.
 - PASS: touched-file trailing whitespace scan after schema 60.
 - DEFERRED: dotnet compile was not launched after schema 60 because an active `dotnet.exe` PID 52044 was present, although CPU sampled 33.95 percent. Last attempted dotnet compile still fails outside this domain on external Candice SQLite dependency errors from pass 32.
+- NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.
+
+## Pass 37 - Schema 61 Raw Texture Read Fail-Closed Closure
+
+- [x] Task 163: Audit raw texture file ingress after byte/dimension caps. DOD practice: source trace found `ModAssetManager.LoadRawTexture` validated size before `File.ReadAllBytes`, but the read itself only caught `IOException`. Rejected alternative: trust the earlier `FileInfo` check while access and invalid-read exceptions could still escape. Runtime us estimate: 0 us/frame, legacy cold content path only.
+- [x] Task 164: Make raw PNG read fail closed. DOD practice: added explicit `System.UnauthorizedAccessException`, `IOException`, and `System.Exception` guards around `File.ReadAllBytes`, returning null with warnings. Rejected alternative: let exceptional filesystem states propagate from dormant legacy mod content. Runtime us estimate: 0 us/frame; only exception-path branches around cold file read.
+- [x] Task 165: Extend schema/docs/static validator to schema 61. DOD practice: schema, resource/content audit, mod API spec, runtime playbook, README revision, and validator now prove raw texture byte cap before read and fail-closed file read handling. Rejected alternative: source-only catch patch with stale resource audit. Runtime us estimate: 0.
+- [x] Task 166: Verify schema 61 static proof and hygiene. DOD practice: validator PASS, JSON parse PASS, source ordering/catch scan PASS, stale schema-60 scan PASS, scoped cached/unstaged `git diff --check` PASS, touched-file trailing whitespace PASS. Rejected alternative: report the catch patch without machine proof. Runtime us estimate: 0.
+- [x] Task 167: Compile after C# change under build gate. DOD practice: CPU/process sampled before build; `dotnet build Assembly-CSharp.csproj -v:minimal` PASS with 45 warnings and 0 errors. Rejected alternative: skip compile after runtime C# edit or claim Unity proof while locked. Runtime us estimate: 0.
+
+Evidence:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision 61, `RawTextureMaxBytes=8388608`, `RawTextureMaxDimension=2048`, `RawTextureByteCapEnforcedBeforeRead=True`, `RawTextureReadFailsClosed=True`, `ModApiSpecCurrentClosureRevisionMatchesSchema=True`.
+- PASS: `Signal_Schema.json` parsed with `schemaRevision=61`, `resourceContentAudit.rawTextureByteCapEnforcedBeforeRead=True`, `resourceContentAudit.rawTextureReadFailsClosed=True`, and matching last static validation snapshot flags.
+- PASS: source scan found `TryValidateRawTextureFile(filePath)` before `File.ReadAllBytes(filePath)`, plus `System.UnauthorizedAccessException`, `IOException`, and `System.Exception` catch blocks.
+- PASS: stale schema-60 scan found no stale current-revision text or false raw texture closure flags in touched modding docs/schema/validator.
+- PASS: scoped unstaged and cached `git diff --check` for touched schema 61 source/docs. No whitespace errors.
+- PASS: touched-file trailing whitespace scan after schema 61.
+- PASS: `dotnet build Assembly-CSharp.csproj -v:minimal` -> Build succeeded, 45 warnings, 0 errors. Warnings are existing/non-domain: MSB3246 reference metadata warnings, MoreMountains demo type conflict, and Candice unused-field warnings.
 - NOT RUN: Unity batchmode compile was not launched because `Temp/UnityLockfile` exists.

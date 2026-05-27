@@ -221,6 +221,16 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 | SignalBus audit movement | Rebuilt-CLI recheck reports warnings `148 -> 145`, registered non-Vault telemetry rings `3 -> 0`, owner-local rings `7 -> 8`, and Vault aliases `3 -> 5` | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_DEEP_DOMAIN_RECHECK_FINAL.json` |
 | Tool build boundary | `SignalBusContractAuditCli` build succeeds with `0` warnings and `0` errors; full project compile errors are intentionally untouched | `../Reports/BUILD_UNKNOWN_SIGNAL_CLI_DEEP_DOMAIN_RECHECK_20260527.log` |
 
+## 2026-05-27 Global Route Cache Pass
+
+| Area | Current fact | Proof |
+|---|---|---|
+| Dispatcher lane registration | `ConnectionSplineBatchRenderer` and `SceneRuntimeService` use cached dispatcher availability plus direct `SystemDispatcher` lanes instead of registry wrappers in live helpers | `../Reports/UNITY_GLOBAL_ROUTE_CACHE_PASS_UNKNOWN_20260527.md` |
+| Object-pool command route | `ThreadSafeCommandQueue` and `ModWorldPersistenceManager` use cached object-pool dependencies for command drain, mod spawn, despawn, and restore routes | `../Reports/UNITY_GLOBAL_ROUTE_CACHE_PASS_UNKNOWN_20260527.md` |
+| Physics late-frame route | `SystemDispatcher` late-frame physics pending-count and flush now read cached `IPhysicsService`, not `GlobalRegistry.Physics` | `../Reports/UNITY_GLOBAL_ROUTE_CACHE_PASS_UNKNOWN_20260527.md` |
+| Transition presentation route | `SceneRuntimeService` terminal boot handles, world-drone audio bridge, tick dispatcher, and camera-juice handles are cached and hot-swap refreshed | `../Reports/UNITY_GLOBAL_ROUTE_CACHE_PASS_UNKNOWN_20260527.md` |
+| Static audit | SignalBus recheck reports `errors=0`, `confirmedErrors=0`, `warnings=145`, `infos=1172` | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_GLOBAL_ROUTE_CACHE_RECHECK.json` |
+
 ## Validation
 
 | Validator | Required state |

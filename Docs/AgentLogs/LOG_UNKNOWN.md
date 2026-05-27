@@ -1332,3 +1332,32 @@ Proof:
 - Documentation gates: `VerifyDocStructure.py pass=true activeDocCount=695 encodingWithoutUtf8Sig=0`;
   `OOP_Doc_Scanner.py finalPass=true activeFileCount=695 sourceSyncPass=true`.
 - Full project compile errors were intentionally not fixed by user instruction.
+
+## 2026-05-27 - Global Route Cache Pass
+
+What was wrong:
+- `ConnectionSplineBatchRenderer` still checked dispatcher registry state from live link update helpers.
+- `ThreadSafeCommandQueue` could read `GlobalRegistry.ObjectPoolService` during late-frame command drain.
+- `SystemDispatcher` read `GlobalRegistry.Physics` during late-frame environment artery count and flush.
+- `ModWorldPersistenceManager` read object-pool registry state during mod spawn, despawn, and restore.
+- `SceneRuntimeService` used registry wrappers and live registry reads in scene transition presentation routes.
+
+What was done:
+- Added cached dispatcher availability and direct `SystemDispatcher` lane registration for connection spline and scene runtime owners.
+- Bound `ThreadSafeCommandQueue` object-pool cache from `SystemDispatcher` cold refresh and object-pool hot-swap.
+- Added cached `IPhysicsService` route for SystemDispatcher late-frame physics pending-count and flush.
+- Added cached object-pool dependency for mod world persistence spawn/despawn/restore.
+- Cached scene transition terminal handles, audio bridge, tick dispatcher, and camera-juice service.
+
+Cinematic cheats used:
+- None. This was dependency route and dispatcher stability work, not simulation.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof has run.
+
+Proof:
+- `git diff --check` passed for touched source files.
+- Brace delta is `0` for all touched source files.
+- Static audit: `SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_GLOBAL_ROUTE_CACHE_RECHECK.json`.
+- Audit result: `files=2442`, `shaders=71`, `errors=0`, `confirmedErrors=0`, `warnings=145`, `infos=1172`.
+- Full project compile errors were intentionally not fixed by user instruction.

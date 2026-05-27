@@ -795,13 +795,14 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             set => Store(index, in value);
         }
 
-        public void Add(PendingChunk chunk)
+        public bool TryAdd(PendingChunk chunk)
         {
             if (_count >= PendingChunkMaxCapacity)
-                return;
+                return false;
 
             Store(_count, in chunk);
             _count++;
+            return true;
         }
 
         public void RemoveAt(int index)
@@ -1814,11 +1815,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         };
 
         pc.RegisterArrays();
-        if (_pendingChunks.Count < PendingChunkMaxCapacity)
-        {
-            _pendingChunks.Add(pc);
-        }
-        else
+        if (_pendingChunks.Count >= PendingChunkMaxCapacity || !_pendingChunks.TryAdd(pc))
         {
             JobHandle disposalHandle = pc.DisposeArrays(pc.combinedHandle);
             AccumulatePendingChunkOverflowDisposal(disposalHandle);

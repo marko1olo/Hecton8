@@ -695,6 +695,7 @@ What was wrong:
 What was done:
 - Converted `PendingChunk` to a stack-only `ref struct` snapshot.
 - Added one fixed-capacity `PendingChunkStore` SoA owner for coord/lod/resolution/job/cancel metadata and seven native alias lanes.
+- Store insertion is `TryAdd`; capacity failure falls through to scheduled native disposal instead of silently dropping an owned chunk.
 - Kept the prior overflow scheduled-dispose fence.
 - Did not introduce per-chunk managed classes.
 

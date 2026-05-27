@@ -578,3 +578,15 @@ Rejected Alternatives: Capping after `Directory.GetFiles` was rejected because i
 Scalability potential: Low tier avoids cold-load allocation spikes from polluted package folders. Middle tier gets predictable package rejection and bounded diagnostics. High tier can use curated SDK catalogs and richer package previews over the same caps. Ultra tier can add visual-overkill workbench analysis without making runtime package discovery unbounded or partially trusted.
 
 Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. Added work is cold bounded list allocation and sort for at most 32 DLL paths, 4 bundle paths, or 16 localization paths. Removed risk is unbounded top-level path-array allocation and ambiguous package trust after failed DLL identity discovery.
+
+## Decision 49 - Raw texture reads must fail closed after the byte gate
+
+Problem: `ModAssetManager.LoadRawTexture` validated raw PNG file size before `File.ReadAllBytes`, but the read block caught only `IOException`. A file can become inaccessible, invalid, or otherwise fail after the size check. In the dormant legacy content path this would still be a filesystem exception escape instead of a mod-content rejection.
+
+Solution: Catch `System.UnauthorizedAccessException`, `IOException`, and `System.Exception` around `File.ReadAllBytes`, log the rejected raw texture path, and return null. Schema revision 61 records `rawTextureByteCapEnforcedBeforeRead=true` and `rawTextureReadFailsClosed=true`; the static validator proves source ordering, catch coverage, schema snapshot, resource/content audit, spec, and runtime playbook evidence.
+
+Rejected Alternatives: Relying on the earlier `FileInfo` check was rejected because filesystem state can change between inspect and read. Catching only `IOException` was rejected because unauthorized access and other invalid read exceptions are common filesystem failure classes. Removing raw PNG fallback entirely was rejected because envelope-only quarantine already disables it at runtime, and the narrow defect was fail-closed behavior if legacy mode is reopened.
+
+Scalability potential: Low tier avoids crash-prone legacy raw file ingress and keeps envelope-only runtime at 0 us/frame. Middle tier gets deterministic null-return behavior for broken packages. High tier can reopen curated legacy content only with bounded file reads. Ultra tier can add richer workbench diagnostics for rejected texture files without changing runtime asset authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. Added cost is only exception-path catch handling around a cold file read. Removed risk is an unhandled raw texture filesystem exception after the byte cap.

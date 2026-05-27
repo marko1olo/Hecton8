@@ -1447,6 +1447,9 @@ def write_reports(report):
 
 
 def append_audit_files(report):
+    # Status/rationale/log entries are written explicitly per audit pass.
+    # The old auto-append path is kept inert to avoid duplicate stale sections.
+    return
     generated = datetime.datetime.fromisoformat(report["generated_at_samara"]).strftime("%Y-%m-%d %H:%M")
     primary = report["pricing"][PRIMARY_PRICE_KEY]
     io_stats = report["input_output_stats"]

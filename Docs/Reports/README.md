@@ -39,6 +39,7 @@ Evidence class: STATIC_DOC
 - signal residual contract cleanup reports
 - core memory and SignalBus ownership deep-pass reports
 - global route stability and registry hot-path reports
+- global route cache and dispatcher dependency reports
 - SignalBus hot-path audits
 - documentation structure scans
 
