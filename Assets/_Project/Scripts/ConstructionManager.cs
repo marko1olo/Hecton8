@@ -614,7 +614,7 @@ namespace Hecton8.Construction
         /// Registers a module and binds it to BuildableData.
         /// Automatically configures ModuleMarker.
         ///
-        /// Preferred method: guarantees the marker exists.
+        /// Preferred method: release builds require prefab-authored ModuleMarker; development builds can add one for inspection.
         /// </summary>
         /// <param name="module">Final module GameObject.</param>
         /// <param name="data">BuildableData used for binding.</param>
