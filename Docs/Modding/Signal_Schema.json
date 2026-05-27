@@ -1,6 +1,6 @@
 ﻿{
   "schemaVersion": 1,
-  "schemaRevision": 60,
+  "schemaRevision": 61,
   "schemaId": "hecton8.modding.signal_schema.v1",
   "status": "MOD_API_DEFINED_STATIC_SOURCE_RUNTIME_PENDING",
   "generatedBy": "MODDING_API_SCHEMA_BUILDER",
@@ -656,6 +656,8 @@
     "internalForbiddenAssetLoaderCount": 3,
     "rawTextureMaxBytes": 8388608,
     "rawTextureMaxDimension": 2048,
+    "rawTextureByteCapEnforcedBeforeRead": true,
+    "rawTextureReadFailsClosed": true,
     "resourceRegistryRejectsForgedOwner": true,
     "publicContentMethodCount": 6,
     "resourceResolutionShape": "hash_only_public_resolution_engine_owned_unity_asset_load",
@@ -850,6 +852,8 @@
       "internalForbiddenAssetLoaderCount": 3,
       "rawTextureMaxBytes": 8388608,
       "rawTextureMaxDimension": 2048,
+      "rawTextureByteCapEnforcedBeforeRead": true,
+      "rawTextureReadFailsClosed": true,
       "publicContentMethodCount": 6,
       "projectionBridgeSignals": [
         "CombatDamageSignal",
@@ -885,6 +889,7 @@
       "Loader and SDK builder reject non-canonical mod IDs, invalid dependency IDs, reserved filesystem device segments, and EntryAssembly path traversal",
       "ModLoader enforces manifest byte cap before File.ReadAllText",
       "ModLoader uses bounded manifest enumeration before candidate allocation",
+      "ModAssetManager enforces raw texture byte cap before File.ReadAllBytes and fails closed on raw file read exceptions",
       "ModExecutionScope rejects anonymous or blank active owners and requires a non-zero owner hash",
       "ModSaveStateStore public mod payload writes require active ModExecutionScope; engine-owned payloads use an explicit hecton.internal. route",
       "Unmanaged/native/projected event bridge routes and private channel implementations reject anonymous subscribers before token creation",

@@ -192,7 +192,7 @@ namespace Hecton8.Modding
             {
                 pngBytes = File.ReadAllBytes(filePath);
             }
-            catch (UnauthorizedAccessException exception)
+            catch (System.UnauthorizedAccessException exception)
             {
                 Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Rejected inaccessible raw texture '", filePath, "': ", exception.Message));
                 return null;
