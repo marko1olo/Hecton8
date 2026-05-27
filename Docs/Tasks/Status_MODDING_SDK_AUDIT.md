@@ -702,3 +702,26 @@ Evidence:
 - PASS: touched-file trailing whitespace scan including starter template/report files and editor C# ASCII scan.
 - DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because build/resource gate found CPU `60` and active `dotnet.exe` PID `43436`.
 - NOT RUN: Unity batchmode compile was not launched because CPU was `60` and an active dotnet process was present, despite no `Temp/UnityLockfile` at the sample time.
+
+## Pass 54 - Schema 78 Starter Opcode Discovery Helper
+
+- [x] Task 247: Audit graph-authoring discoverability after opcode validation. DOD practice: found that copied kits could reject bad graph opcodes but did not provide a direct no-Unity way for random authors to discover valid aliases/tokens without reading raw CSV comments. Rejected alternative: rely on README prose or future Workbench UI. Runtime us estimate: 0 us/frame, offline authoring only.
+- [x] Task 248: Add no-Unity opcode discovery helper. DOD practice: added `Tools/list_allowed_opcodes.ps1` to the versioned starter kit and SDK Hub generator; it reads `Reference/allowed_opcodes.csv`, rejects malformed/duplicate rows, prints alias/hash pairs, and supports `-Json` for future CLI/Workbench reuse. Rejected alternative: hardcode opcode names in docs or graph schema. Runtime us estimate: 0.
+- [x] Task 249: Extend docs/schema/static proof to schema 78. DOD practice: README, spec, authoring plan, product blueprint, external starter contract, runtime playbook, schema, and static validator now record the opcode list helper, text output proof, JSON output proof, and review-manifest inclusion. Rejected alternative: source-only tool addition without a drift gate. Runtime us estimate: 0.
+- [x] Task 250: Verify local, negative, and project static gates. DOD practice: local list helper text PASS, list helper JSON PASS, local starter validator PASS, review manifest PASS with `Tools/list_allowed_opcodes.ps1`, duplicate-opcode temp probe rejected, project static validator PASS, schema JSON parse PASS, stale schema-77 current-doc scan PASS, diff/whitespace/ASCII hygiene PASS. Rejected alternative: claim usability improvement without executing the public tool. Runtime us estimate: 0.
+- [x] Task 251: Obey compile/resource gate. DOD practice: sampled CPU/process/Unity state before compile decision. Rejected alternative: launch dotnet while CPU was above the gate and another dotnet process was active. Runtime us estimate: 0.
+
+Evidence:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/Tools/list_allowed_opcodes.ps1 -Root ModdingSDK/ExternalStarterKit` -> printed 8 envelope-only graph opcode alias/hash pairs including `SpawnItem 0x3A3DA9C4`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/Tools/list_allowed_opcodes.ps1 -Root ModdingSDK/ExternalStarterKit -Json` -> schema `hecton8.allowed_graph_opcodes.v1`, runtime `envelope-only`, count `8`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/Tools/validate_structure.ps1 -Root ModdingSDK/ExternalStarterKit` -> `PASS HECTON-8 external starter structure`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/Tools/build_review_manifest.ps1 -Root ModdingSDK/ExternalStarterKit` -> `PASS HECTON-8 review manifest: Reports/review_manifest.json`.
+- PASS: `Reports/review_manifest.json` parsed with schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, root id `com.example.starter`, `24` hashed files, `Tools/list_allowed_opcodes.ps1` included, and `Generated/`/`Reports/` excluded.
+- PASS: manual temp-copy duplicate opcode probe failed with `[H8MOD_OPCODE_LIST] Reference/allowed_opcodes.csv contains duplicate opcode token`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `78`, `ExternalStarterKitWritesAllowedOpcodeListTool=True`, `ExternalStarterKitAllowedOpcodeListToolPasses=True`, `ExternalStarterKitAllowedOpcodeListToolSupportsJson=True`.
+- PASS: `Signal_Schema.json` parsed with `schemaRevision=78` and matching sdkAuthoringAudit/staticValidation snapshot flags.
+- PASS: stale schema-77 current-text scan found no stale current-revision text in `Docs/Modding`.
+- PASS: scoped `git diff --check` for touched source/docs. No whitespace errors.
+- PASS: touched-file trailing whitespace scan and editor C# ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because build/resource gate found CPU `97` and active `dotnet.exe` PID `43436`.
+- NOT RUN: Unity batchmode compile was not launched because CPU was `97` and an active dotnet process was present, despite no `Temp/UnityLockfile` at the sample time.

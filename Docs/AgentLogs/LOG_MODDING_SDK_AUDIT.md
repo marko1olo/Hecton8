@@ -1646,3 +1646,31 @@ Verification:
 - PASS: `Signal_Schema.json` parsed with schema revision 77 and matching sdkAuthoringAudit/staticValidation snapshot flags.
 - PASS: stale schema-76 scan, scoped `git diff --check`, trailing whitespace scan, and editor C# ASCII scan.
 - DEFERRED: dotnet/Unity compile by resource rule. CPU sample was `60`, with active `dotnet.exe` PID `43436`; no `Temp/UnityLockfile` existed at sample time.
+## Pass 54 - Schema 78 Starter Opcode Discovery Helper
+
+What was wrong:
+- The copied starter kit could reject unsupported graph opcodes but did not give public authors a direct no-Unity command to list valid graph opcode aliases and hex tokens.
+- Authors had to infer alias usage from raw CSV comments, which is not an acceptable SDK usability path for random external modders.
+
+What was done:
+- Added `Tools/list_allowed_opcodes.ps1` to the versioned external starter kit and SDK Hub generator.
+- The helper reads `Reference/allowed_opcodes.csv`, rejects malformed/duplicate rows, prints alias/hash pairs, and supports `-Json` output with schema `hecton8.allowed_graph_opcodes.v1`.
+- Made `Tools/validate_structure.ps1` require the helper and made the review manifest include it.
+- Updated starter README, Tools README, Reference README, SDK authoring docs, product blueprint, external starter contract, runtime playbook, static validator, and `Signal_Schema.json` schema revision 78.
+
+Cinematic Cheats used:
+- None in runtime. This is a cold authoring helper. The performance cheat is avoiding Unity/Workbench startup for a pure allowlist read.
+
+Exact Microseconds saved:
+- Runtime: 0 us/frame.
+- Authoring path: avoids manual CSV inspection and invalid graph review loops; no runtime measurement claimed.
+
+Verification:
+- PASS: list helper text output printed 8 opcode aliases/hashes.
+- PASS: list helper JSON output reported schema `hecton8.allowed_graph_opcodes.v1`, runtime `envelope-only`, count `8`.
+- PASS: local starter validator.
+- PASS: review manifest builder with `24` source files and `Tools/list_allowed_opcodes.ps1` included.
+- PASS: duplicate-opcode temp probe rejected.
+- PASS: `Docs/Modding/Validate_Mod_API_Static.ps1` schema revision `78`.
+- PASS: `git diff --check`, touched-file whitespace scan, editor C# ASCII scan.
+- DEFERRED: dotnet/Unity compile by resource gate: CPU `97`, active `dotnet.exe` PID `43436`, no Unity lock.

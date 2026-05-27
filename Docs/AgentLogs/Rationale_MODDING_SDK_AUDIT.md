@@ -782,3 +782,15 @@ Rejected Alternatives: Hardcoding opcode names inside the JSON schema was reject
 Scalability potential: Low tier authors get immediate text-folder validation with no Unity install. Middle tier SDK Hub refresh produces the same local gate. High tier Workbench can call the same validator before visual graph compile. Ultra tier can add package diff, simulation, and graph visual diagnostics after the same allowlist/budget proof; runtime authority remains envelope-only.
 
 Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is offline authoring validation only. It prevents invalid graph submissions before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, or Burst/job paths are touched.
+
+## Decision 66 - Starter graph opcodes need a discoverable no-Unity list
+
+Problem: After schema 77, copied starter kits could fail invalid graph opcodes, but random public authors still had to open `Reference/allowed_opcodes.csv` and infer that the first comment token was an accepted alias. That is a poor SDK contract: validation existed, discovery did not.
+
+Solution: Add `Tools/list_allowed_opcodes.ps1` as the single offline discovery route. It reads the copied `Reference/allowed_opcodes.csv`, validates token shape, rejects duplicate hex tokens and aliases, prints alias/hash pairs for humans, and emits `hecton8.allowed_graph_opcodes.v1` JSON for future Workbench/CLI UI. The SDK Hub generator emits the same file, the local validator requires it, review manifests hash it, and schema revision 78/static validation prove text and JSON output.
+
+Rejected Alternatives: Hardcoding opcode aliases into Markdown was rejected because duplicated facts drift. Hardcoding aliases in JSON Schema was rejected because schema regex cannot remain the opcode authority. Requiring Unity/Workbench for opcode discovery was rejected because the current public path explicitly supports no-Unity authoring.
+
+Scalability potential: Low tier authors get a cheap text command before editing graph nodes. Middle tier can use the same helper in copied starter folders. High tier Workbench can consume the JSON output without inventing a second opcode route. Ultra tier can add graph previews and simulation after the same allowlist proof. Runtime authority remains envelope-only.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is offline authoring only. It prevents review churn and invalid graph submissions before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, or Burst/job paths are touched.

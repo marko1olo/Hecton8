@@ -129253,8 +129253,8 @@
   {
     "path": "Docs/Reports/UNITY_GLOBAL_SIGNAL_NAME_PASS_UNKNOWN_20260528.md",
     "active": true,
-    "bytes": 3642,
-    "lastWriteUtc": "2026-05-27T22:36:50.430377+00:00",
+    "bytes": 3641,
+    "lastWriteUtc": "2026-05-27T22:40:27.030244+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 350,
@@ -129266,7 +129266,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "aa464a84d57bd2300536aa2759cdde348003bc4a2604b5a6274abaf1c0034a4d"
+    "sha256": "f4edda4663f3833a24cffeb0d0673ae16d2de0d779ff1caffe2c9f1a742d2fc3"
   },
   {
     "path": "Docs/Reports/UNITY_LATEFRAME_REGISTRY_HOTPATH_PASS_UNKNOWN_20260527.md",
@@ -132644,11 +132644,11 @@
   {
     "path": "Docs/Tasks/Status_MODDING_SDK_AUDIT.md",
     "active": false,
-    "bytes": 143815,
-    "lastWriteUtc": "2026-05-27T22:22:01.756077+00:00",
+    "bytes": 148149,
+    "lastWriteUtc": "2026-05-27T22:40:47.867225+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 16666,
+    "wordCount": 17138,
     "topic": "# Status_MODDING_SDK_AUDIT",
     "references": [
       "Mod_API_Specification.md",
@@ -132661,7 +132661,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "ccb4338628380edc8b0afa4dbd047d183e09353f427a63ca5bd6f845b823b59d"
+    "sha256": "7ace636cb68ca85a62f3dcdd3a0538afa7ce5fc8859d70bcc81210b02541f267"
   },
   {
     "path": "Docs/Tasks/Status_PROGRESS_AUDIT.md",
@@ -132720,8 +132720,8 @@
   {
     "path": "Docs/Tasks/Status_UNKNOWN.md",
     "active": false,
-    "bytes": 106877,
-    "lastWriteUtc": "2026-05-27T22:36:35.736413+00:00",
+    "bytes": 106876,
+    "lastWriteUtc": "2026-05-27T22:40:14.630795+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
     "wordCount": 12489,
@@ -132748,7 +132748,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "ea469fb4e882a53c131c6ee7cc8543dfc23bbd255ec91f9a6d698e1c7f2d8358"
+    "sha256": "0dde0bb10ca7a4bf1a994973fb7bcad3db0ba0f28c601118e4879f2d53d3333c"
   },
   {
     "path": "Docs/Tasks/Status_VocalRuntimeContractsMemoryAuditor.md",
