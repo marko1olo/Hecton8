@@ -1022,9 +1022,7 @@ namespace Hecton8.UI
 #if UNITY_EDITOR
         private bool TryLoadPdaInterfaceProfilesCold()
         {
-            if (_pdaProjectionProfilesLoaded ||
-                !TryResolvePdaProjectionVaultBuffer(in _pdaProjectionProfileHandle, PdaProjectionProfilesBufferId, PdaProjectionInterfaceProfileCapacity, out NativeArray<PdaInterfaceProfileDTO> profiles) ||
-                !TryResolvePdaProjectionVaultBuffer(in _pdaProjectionCsvScratchHandle, PdaProjectionCsvScratchBufferId, PdaProjectionCsvScratchBytes, out NativeArray<byte> csvScratch))
+            if (_pdaProjectionProfilesLoaded)
             {
                 return false;
             }
@@ -1035,15 +1033,16 @@ namespace Hecton8.UI
             if (!File.Exists(path))
                 return false;
 
-            byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(csvScratch);
-            int byteCount = TryReadPdaProfileCsvBytes(path, scratchPtr, csvScratch.Length);
+            Span<byte> csvScratch = stackalloc byte[PdaProjectionCsvScratchBytes];
+            int byteCount = TryReadPdaProfileCsvBytes(path, csvScratch);
             if (byteCount <= 0)
                 return false;
 
-            ReadOnlySpan<byte> span = MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(scratchPtr), byteCount);
+            ReadOnlySpan<byte> span = csvScratch.Slice(0, byteCount);
+            Span<PdaInterfaceProfileDTO> parsed = stackalloc PdaInterfaceProfileDTO[PdaProjectionInterfaceProfileCapacity];
             int cursor = 0;
             int written = 0;
-            while (cursor < span.Length && written < profiles.Length)
+            while (cursor < span.Length && written < parsed.Length)
             {
                 ReadOnlySpan<byte> line = ReadLine(span, ref cursor);
                 if (line.Length == 0 || line[0] == '#')
@@ -1051,17 +1050,30 @@ namespace Hecton8.UI
                 if (!TryParsePdaProfileCsvLine(line, out PdaInterfaceProfileDTO profile))
                     continue;
 
-                profiles[written++] = profile;
+                parsed[written++] = profile;
             }
 
-            if (written < profiles.Length)
+            if (written <= 0)
+                return false;
+
+            if (!TryAcquirePdaProjectionVaultBuffer(in _pdaProjectionProfileHandle, PdaProjectionProfilesBufferId, PdaProjectionInterfaceProfileCapacity, out NativeArray<PdaInterfaceProfileDTO> profiles))
+                return false;
+
+            try
             {
-                for (int i = written; i < profiles.Length; i++)
+                int copyCount = math.min(written, profiles.Length);
+                for (int i = 0; i < copyCount; i++)
+                    profiles[i] = parsed[i];
+                for (int i = copyCount; i < profiles.Length; i++)
                     profiles[i] = default;
-            }
 
-            _pdaProjectionProfilesLoaded = written > 0;
-            return _pdaProjectionProfilesLoaded;
+                _pdaProjectionProfilesLoaded = copyCount > 0;
+                return _pdaProjectionProfilesLoaded;
+            }
+            finally
+            {
+                _vault?.ReleaseWriteLock(in _pdaProjectionProfileHandle, SystemID.UI);
+            }
         }
 
         private string ResolvePdaProfileCsvPath()
@@ -1073,9 +1085,9 @@ namespace Hecton8.UI
             return string.Empty;
         }
 
-        private static int TryReadPdaProfileCsvBytes(string path, byte* destination, int capacity)
+        private static int TryReadPdaProfileCsvBytes(string path, Span<byte> destination)
         {
-            if (destination == null || capacity <= 0)
+            if (destination.Length <= 0)
                 return 0;
 
             try
@@ -1086,9 +1098,9 @@ namespace Hecton8.UI
                     if (streamBytes < 0L)
                         streamBytes = 0L;
 
-                    long boundedBytes = streamBytes < capacity ? streamBytes : capacity;
+                    long boundedBytes = streamBytes < destination.Length ? streamBytes : destination.Length;
                     int targetBytes = (int)boundedBytes;
-                    Span<byte> target = MemoryMarshal.CreateSpan(ref UnsafeUtility.AsRef<byte>(destination), targetBytes);
+                    Span<byte> target = destination.Slice(0, targetBytes);
                     int total = 0;
                     while (total < targetBytes)
                     {

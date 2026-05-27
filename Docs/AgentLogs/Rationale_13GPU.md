@@ -1,7 +1,7 @@
 # Rationale_13GPU
 
 Date: 2026-05-27
-Status: STATIC VERIFIED / COMPILE NOT RELAUNCHED DUE ACTIVE DOTNET PROCESS
+Status: STATIC VERIFIED / COMPILE GATE PENDING
 
 ## Decision 001: Identity and Batch Mismatch
 
@@ -278,3 +278,51 @@ Rejected Alternatives: Launching compile under sustained CPU saturation was reje
 Scalability potential: No runtime change.
 
 Hardware Impact: Prevented additional build contention on the shared machine.
+
+## Decision 024: Terrain Damage Volume Bounds Contract
+
+Problem: `Hecton_TerrainDamageVolume.compute` trusted `_HectonDamageVolumeResolution`, source/result 3D texture dimensions, world-min/inv-size params, recovery, and stamp payloads before `Texture3D.Load`, `RWTexture3D` writes, radius math, and strength blending.
+
+Solution: Query source/result texture dimensions in-kernel, clamp active resolution to the shared valid 3D region, sanitize world parameters and recovery, skip malformed stamp centers, sanitize radius/strength, and force finite output.
+
+Rejected Alternatives: CPU-side stamp validation was rejected because the compute kernel is the final write barrier. Replacing the damage volume with physical terrain deformation was rejected because this is a visual dear-lie mask path.
+
+Scalability potential: Low keeps cheap volume damage masks stable; Middle/High/Ultra can raise damage-volume resolution or stamp count externally without undefined writes when authoring/runtime params drift.
+
+Hardware Impact: Estimated 4-12 us avoided only during malformed damage-volume dispatches by preventing out-of-resource texture writes and poisoned radius math. Normal valid frames pay scalar/resource dimension guards.
+
+## Decision 025: Micro Particle Flow Fail-Closed Path
+
+Problem: `ParticleUpdate.compute` cast `_FieldParams.y` to `uint` without a non-negative clamp or read/write buffer count guard. It also derived flow-field indices from raw resolution/origin/cell-size and consumed raw particle/flow samples before velocity integration.
+
+Solution: Query particle/flow buffer counts, clamp particle count to the shared read/write capacity, cap flow resolution to a sane visual-field range, reject flow sampling if required samples exceed the buffer, sanitize particle state, params, flow samples, dt, velocity, position, size, and life before writeback.
+
+Rejected Alternatives: CPU particle dispersion and GPU readback validation were rejected. The existing shader fake is retained; malformed data now collapses to bounded visual motion instead of undefined GPU indexing.
+
+Scalability potential: Low keeps blood/micro-particle dispersion bounded with cheap triangle turbulence; Middle/High/Ultra can feed richer flow fields without corrupting buffer indices if the flow payload is malformed.
+
+Hardware Impact: Estimated 6-20 us avoided only during corrupt micro-particle/flow payload frames by skipping bad flow samples and preventing huge uint particle windows. No normal-frame profiler saving is claimed.
+
+## Decision 026: Sargassum Flora Shader Finite Ingress
+
+Problem: `Hecton_SargassumMaster.shader` used raw vertex position, normal, color, UV, `_Time`, prop-wash position/radius/force, global drift, cut-mask rect, buoyancy sink rect/depth, interaction params, and alpha clip in forward and shadow passes. Malformed data could poison sway/pulse/cut motion, texture mask UVs, shadow caster positions, or cutout clip.
+
+Solution: Added finite helper overloads inside both passes, sanitized normalization, leaf mask, cut mask, sink mask, organic density, vertex ingress, prop-wash motion, pulse motion, wound curl, alpha clip, and final color output. The fake shader-driven motion path remains intact.
+
+Rejected Alternatives: Disabling sargassum motion was rejected because immersion is the goal. Editing dirty `SargassumMicroFaunaBoids.compute` was rejected to avoid sibling-agent collision. CPU material validation was rejected because shader-local last-mile guards are cheaper and closer to the hazard.
+
+Scalability potential: Low keeps stable cheap sargassum silhouettes and shadow casters; Middle keeps prop-wash/cut/sink response; High/Ultra preserve richer shader motion/biolum response without accepting corrupt inputs.
+
+Hardware Impact: Estimated 6-18 us avoided only during malformed sargassum payload frames by preventing NaN propagation through vertex/shadow/clip paths. Normal valid frames pay finite checks and keep visual detail.
+
+## Decision 027: TerrainMaster Binary Math LOD Residual Risk
+
+Problem: Clean `TerrainMaster.shader` still contains `_MATH_LOD_LOW` compile-time branches for terrain micro-detail. This violates the ideal continuous-weight mandate in principle, but the runtime contract for a terrain-wide quality property and material binding was not proven in this pass.
+
+Solution: Did not mutate `TerrainMaster.shader` blindly. Recorded it as residual risk for a targeted terrain-material contract pass where `_H8GlobalQualityWeight` binding, MX350 cost, and high-tier detail path can be verified together.
+
+Rejected Alternatives: Removing the binary variant now was rejected because it could force extra terrain texture sampling on MX350. Adding an unbound property and declaring compliance was rejected as fake compliance.
+
+Scalability potential: Low/Middle/High/Ultra fix path requires a continuous quality property plus dynamic micro-detail weight, not a cosmetic shader keyword rename.
+
+Hardware Impact: No runtime change. Avoided speculative terrain shader regression without proof.
