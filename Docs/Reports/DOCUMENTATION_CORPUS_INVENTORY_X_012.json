@@ -10685,11 +10685,11 @@
   {
     "path": "Docs/AgentLogs/LOG_AUDIT_NATIVE_STATE.md",
     "active": false,
-    "bytes": 120398,
-    "lastWriteUtc": "2026-05-27T22:31:50.371957+00:00",
+    "bytes": 122042,
+    "lastWriteUtc": "2026-05-27T22:34:26.074054+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 13585,
+    "wordCount": 13768,
     "topic": "# AUDIT_NATIVE_STATE Log",
     "references": [
       "Docs/Tasks/CURRENT_BATCH.md",
@@ -10701,7 +10701,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "c32fd56655cdea9079cadd0b9d3d8ffa97eb797d63cbedffcd3cc6aa4470da4b"
+    "sha256": "c59878d61268283f05f8c9e912dec843b99d10c32e1f2ce61434d64f35f2f1bb"
   },
   {
     "path": "Docs/AgentLogs/LOG_COMPILE_MEDIC.md",
@@ -12712,11 +12712,11 @@
   {
     "path": "Docs/AgentLogs/Rationale_AUDIT_NATIVE_STATE.md",
     "active": false,
-    "bytes": 154167,
-    "lastWriteUtc": "2026-05-27T22:31:40.761118+00:00",
+    "bytes": 156063,
+    "lastWriteUtc": "2026-05-27T22:33:40.076754+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
-    "wordCount": 18476,
+    "wordCount": 18709,
     "topic": "# AUDIT_NATIVE_STATE Rationale",
     "references": [
       "Docs/KnownAllocationSites.md"
@@ -12727,7 +12727,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "a6062dfb5c0168f89c63cbfa7cfd9db1d180ac7c07dc8bcc25232a081a4ec385"
+    "sha256": "4bee38fd87a6279417ad0a7bffda7108b515ab4ff920c3cbdd45459cb7470ed3"
   },
   {
     "path": "Docs/AgentLogs/Rationale_COMPILE_MEDIC.md",
@@ -16785,11 +16785,11 @@
   {
     "path": "Docs/ARCHITECTURE/VOCAL_SYNTHESIS_PIPELINE_SHINOBU_260.md",
     "active": true,
-    "bytes": 5378,
-    "lastWriteUtc": "2026-05-27T22:32:54.510497+00:00",
+    "bytes": 5391,
+    "lastWriteUtc": "2026-05-27T22:35:04.756813+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 612,
+    "wordCount": 609,
     "topic": "# SHINOBU_260 Vocal Synthesis Pipeline",
     "references": [],
     "staleFlags": {
@@ -16798,7 +16798,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "3fefb885143d76ff7d2dc2592634259f7315d844245000008bdb1e58c1b53162"
+    "sha256": "9703e3b2283c26f932eb1b2359201f5d9133cbc4a4017aa89e05beb00a02ad7b"
   },
   {
     "path": "Docs/ARCHITECTURE/VOCAL_WARNING_QUEUE_SHINOBU_352.md",
@@ -129253,11 +129253,11 @@
   {
     "path": "Docs/Reports/UNITY_GLOBAL_SIGNAL_NAME_PASS_UNKNOWN_20260528.md",
     "active": true,
-    "bytes": 3378,
-    "lastWriteUtc": "2026-05-27T22:26:47.147091+00:00",
+    "bytes": 3642,
+    "lastWriteUtc": "2026-05-27T22:36:50.430377+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 329,
+    "wordCount": 350,
     "topic": "# Unity Global Signal Name Pass - UNKNOWN - 2026-05-28",
     "references": [],
     "staleFlags": {
@@ -129266,7 +129266,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "1c523ac6ab65d1028999ef4cc1306d132d1dc205a08713d5c9cfa7755ed02002"
+    "sha256": "aa464a84d57bd2300536aa2759cdde348003bc4a2604b5a6274abaf1c0034a4d"
   },
   {
     "path": "Docs/Reports/UNITY_LATEFRAME_REGISTRY_HOTPATH_PASS_UNKNOWN_20260527.md",
@@ -130407,7 +130407,7 @@
     "path": "Docs/Tasks/CURRENT_BATCH.md",
     "active": false,
     "bytes": 536516,
-    "lastWriteUtc": "2026-05-27T22:30:21.841729+00:00",
+    "lastWriteUtc": "2026-05-27T22:38:27.149357+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": false,
     "wordCount": 71974,
@@ -132720,11 +132720,11 @@
   {
     "path": "Docs/Tasks/Status_UNKNOWN.md",
     "active": false,
-    "bytes": 106422,
-    "lastWriteUtc": "2026-05-27T22:26:39.104988+00:00",
+    "bytes": 106877,
+    "lastWriteUtc": "2026-05-27T22:36:35.736413+00:00",
     "encodingReadAs": "utf-8-sig",
     "utf8Sig": true,
-    "wordCount": 12438,
+    "wordCount": 12489,
     "topic": "# Status UNKNOWN - 13XX NativeArray / Native Ownership Audit",
     "references": [
       "Docs/Tasks/Status_UNKNOWN.md",
@@ -132748,7 +132748,7 @@
       "h8dmHeader16": 0,
       "saveVersion000AWriter": 0
     },
-    "sha256": "83640b4888caa8876cb7b6ae6a99d70453319e94b9e64c84875e59059bb2f389"
+    "sha256": "ea469fb4e882a53c131c6ee7cc8543dfc23bbd255ec91f9a6d698e1c7f2d8358"
   },
   {
     "path": "Docs/Tasks/Status_VocalRuntimeContractsMemoryAuditor.md",

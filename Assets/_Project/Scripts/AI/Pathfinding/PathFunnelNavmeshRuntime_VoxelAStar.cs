@@ -637,7 +637,7 @@ namespace Hecton8.AI.Pathfinding
             if (vault == null || requiredLength <= 0)
                 return false;
 
-            if (IsVaultHandleCreated(in handle) &&
+            if (IsOwnedVaultHandle(in handle, bufferId) &&
                 vault.TryResolveHandle(in handle, out buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)

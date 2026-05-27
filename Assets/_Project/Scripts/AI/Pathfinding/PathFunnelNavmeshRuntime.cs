@@ -59,8 +59,7 @@ namespace Hecton8.AI.Pathfinding
             if (!Application.isPlaying)
                 return;
 
-            if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
             BootstrapPathFunnelCold();
             BootstrapVoxelAStarCold();
             TryRegisterDispatcherTicks();
@@ -169,16 +168,24 @@ namespace Hecton8.AI.Pathfinding
                         TryRegisterDispatcherTicks();
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
-                    ForceCompleteVoxelAStarJobsForTeardown();
-                    ReleaseVoxelAStarVaultHandles(_dataVault);
-                    ReleaseVaultHandles(_dataVault);
-                    _dataVault = currentService as IDataVault;
-                    ClearVoxelAStarVaultHandles();
-                    ClearVaultHandles();
+                    RebindDataVaultForLifecycle(currentService as IDataVault);
                     BootstrapPathFunnelCold();
                     BootstrapVoxelAStarCold();
                     break;
             }
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault currentVault)
+        {
+            if (ReferenceEquals(_dataVault, currentVault))
+                return;
+
+            ForceCompleteVoxelAStarJobsForTeardown();
+            ReleaseVoxelAStarVaultHandles(_dataVault);
+            ReleaseVaultHandles(_dataVault);
+            ClearVoxelAStarVaultHandles();
+            ClearVaultHandles();
+            _dataVault = currentVault;
         }
 
         private void TryRegisterDispatcherTicks()
@@ -524,7 +531,7 @@ namespace Hecton8.AI.Pathfinding
             if (vault == null)
                 return false;
 
-            if (IsVaultHandleCreated(in handle) &&
+            if (IsOwnedVaultHandle(in handle, bufferId) &&
                 vault.TryResolveHandle(in handle, out buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)
@@ -563,11 +570,22 @@ namespace Hecton8.AI.Pathfinding
 
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (!IsVaultHandleCreated(in handle))
-                return;
+            if (IsOwnedVaultHandle(in handle))
+                vault.ReleaseBuffer(in handle);
 
-            vault.ReleaseBuffer(in handle);
             handle = default;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return IsVaultHandleCreated(in handle) &&
+                   handle.SystemID == (uint)SystemID.AIPathfinding;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            return IsOwnedVaultHandle(in handle) &&
+                   handle.BufferID == (uint)expectedBufferId;
         }
 
         private bool EnsureMutationViews(

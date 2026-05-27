@@ -3,7 +3,7 @@
     "Runtime":  "envelope-only",
     "RootId":  "com.example.starter",
     "FileCount":  24,
-    "TotalBytes":  36690,
+    "TotalBytes":  37049,
     "Limits":  {
                    "MaxFiles":  256,
                    "MaxFileBytes":  4194304,
@@ -37,13 +37,13 @@
                   },
                   {
                       "Path":  "mod.h8manifest.json",
-                      "Bytes":  567,
-                      "Sha256":  "8df4bb9873df856e38d169ef2b91d1c199280445c413a030843698de81cae3b2"
+                      "Bytes":  860,
+                      "Sha256":  "cc711f17a49aec7e70bf0a7fe1a04f701ed2a40c12f6b040ca00acfec2108c75"
                   },
                   {
                       "Path":  "mod.json",
-                      "Bytes":  294,
-                      "Sha256":  "6c5be00a7deb5a95cb3c091e727bbfc14ea866c48fa13c974c74d7cd42a816dd"
+                      "Bytes":  360,
+                      "Sha256":  "0f76464271fc4f3e1f14739ff0561597ddd30d980ffbe9db14f744b75232db04"
                   },
                   {
                       "Path":  "README.md",

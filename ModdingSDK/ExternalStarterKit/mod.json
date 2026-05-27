@@ -1,13 +1,14 @@
 {
-  "Id": "com.example.starter",
-  "Name": "Starter Mod",
-  "Version": "0.1.0",
-  "Author": "YourName",
-  "Description": "Envelope-only starter package. No managed runtime entry.",
-  "Dependencies": [],
-  "EntryAssembly": "",
-  "EntryType": "",
-  "RequiredAPIVersion": 2,
-  "ModPriority": 0
-}
+    "Id":  "com.example.starter",
+    "Name":  "Starter Mod",
+    "Version":  "0.1.0",
+    "Author":  "YourName",
+    "Description":  "Envelope-only starter package. No managed runtime entry.",
+    "Dependencies":  [
 
+                     ],
+    "EntryAssembly":  "",
+    "EntryType":  "",
+    "RequiredAPIVersion":  2,
+    "ModPriority":  0
+}
