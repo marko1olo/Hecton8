@@ -171,6 +171,7 @@ Shader "Hecton8/Flora/KelpMaster"
             float4 _HectonVegetationCurrentVector;
             float4 _GlobalOceanFlow;
             float _HectonCelestialBiolumMultiplier;
+            float _H8GlobalQualityWeight;
 
             float3 ResolvePropWashDominantDirection(float3 washDir)
             {
@@ -186,10 +187,21 @@ Shader "Hecton8/Flora/KelpMaster"
                 return sin(wrapped);
             }
 
+            half HectonKelpGlobalQualityWeight()
+            {
+                return (half)(isfinite(_H8GlobalQualityWeight) ? saturate(_H8GlobalQualityWeight) : 0.0);
+            }
+
+            half HectonKelpSmoothRange01(half low, half high, half value)
+            {
+                half t = saturate((value - low) * rcp(max(high - low, 0.0001h)));
+                return t * t * (3.0h - 2.0h * t);
+            }
+
             float3 HectonKelpSafeNormalize(float3 value, float3 fallback)
             {
                 float lengthSq = dot(value, value);
-                return lengthSq > 0.000001 ? value * rsqrt(lengthSq) : fallback;
+                return isfinite(lengthSq) && lengthSq > 0.000001 ? value * rsqrt(lengthSq) : fallback;
             }
 
             float HectonKelpHash12(float2 value)
@@ -202,11 +214,17 @@ Shader "Hecton8/Flora/KelpMaster"
             half ResolveKelpSineParabolaWave(float3 positionOS, float3 positionWS, half4 vertexColor, half heightMask)
             {
                 float tipParabola = (float)(heightMask * heightMask);
-                float speedNorm = max((float)_SwaySpeed, 0.001) * rcp(max((float)_SwayFrequency, 0.001));
-                float3 aupPos = positionWS + _TotalUniverseOffset.xyz;
+                float swaySpeed = isfinite((float)_SwaySpeed) ? max((float)_SwaySpeed, 0.001) : 0.001;
+                float swayFrequency = isfinite((float)_SwayFrequency) ? max((float)_SwayFrequency, 0.001) : 0.001;
+                float swayPhaseScale = isfinite((float)_SwayPhaseScale) ? (float)_SwayPhaseScale : 0.0;
+                float speedNorm = swaySpeed * rcp(swayFrequency);
+                float3 safeOffset = all(isfinite(_TotalUniverseOffset.xyz)) ? _TotalUniverseOffset.xyz : float3(0.0, 0.0, 0.0);
+                float3 aupPos = all(isfinite(positionWS)) ? positionWS + safeOffset : safeOffset;
                 float aupHash = HectonKelpHash12(floor(aupPos.xz * 0.0625));
-                float phaseSeed = dot(aupPos.xz, float2(0.173, -0.131)) * (float)_SwayPhaseScale + aupHash * 6.283185307 + (float)vertexColor.r * 2.1;
-                float basePhase = _Time.y * speedNorm + phaseSeed + aupPos.y * (float)_SwayFrequency * 0.071;
+                float vertexSeed = isfinite((float)vertexColor.r) ? (float)vertexColor.r : 0.0;
+                float phaseSeed = dot(aupPos.xz, float2(0.173, -0.131)) * swayPhaseScale + aupHash * 6.283185307 + vertexSeed * 2.1;
+                float safeTime = isfinite(_Time.y) ? _Time.y : 0.0;
+                float basePhase = safeTime * speedNorm + phaseSeed + aupPos.y * swayFrequency * 0.071;
                 float octave0 = HectonKelpBoundedSin(basePhase);
                 float octave1 = HectonKelpBoundedSin(basePhase * 1.73 + phaseSeed * 0.37 + 1.9);
                 float octave2 = HectonKelpBoundedSin(basePhase * 2.41 - aupPos.y * 0.29 + 3.7);
@@ -215,13 +233,16 @@ Shader "Hecton8/Flora/KelpMaster"
 
             void ApplyKelpLivingBiota(inout float3 positionOS, float3 normalOS, half4 vertexColor, half2 uv)
             {
-                half heightMask = saturate(uv.y);
+                half heightMask = isfinite((float)uv.y) ? saturate(uv.y) : 0.0h;
                 float tipParabola = (float)(heightMask * heightMask);
                 float3 positionWS = GetVertexPositionInputs(positionOS).positionWS;
                 half swayWave = ResolveKelpSineParabolaWave(positionOS, positionWS, vertexColor, heightMask);
-                half swayAmplitude = _SwayAmplitude;
+                half qualityWeight = HectonKelpGlobalQualityWeight();
+                half motionWeight = lerp(0.42h, 1.0h, HectonKelpSmoothRange01(0.05h, 0.85h, qualityWeight));
+                half interactionWeight = lerp(0.35h, 1.0h, HectonKelpSmoothRange01(0.18h, 0.72h, qualityWeight));
+                half swayAmplitude = _SwayAmplitude * motionWeight;
                 #if defined(_QUALITY_MX350)
-                swayAmplitude *= 0.72h;
+                swayAmplitude *= lerp(0.58h, 0.72h, HectonKelpSmoothRange01(0.0h, 0.45h, qualityWeight));
                 #endif
 
                 float3 flowVector = _HectonVegetationCurrentVector.xyz + _GlobalOceanFlow.xyz * 0.35;
@@ -229,7 +250,7 @@ Shader "Hecton8/Flora/KelpMaster"
                 positionOS.xz += normalOS.xz * (swayWave * swayAmplitude * heightMask);
                 positionOS.xz += flowDirection.xz * (swayWave * swayAmplitude * 0.35h * tipParabola);
 
-                half propWashAmount = _HectonPropWashForce * _PropWashDisplacement * heightMask;
+                half propWashAmount = _HectonPropWashForce * _PropWashDisplacement * heightMask * interactionWeight;
                 [branch]
                 if (abs(propWashAmount) > 0.0001h && _HectonPropWashPosition.w > 0.0001h)
                 {
@@ -254,7 +275,7 @@ Shader "Hecton8/Flora/KelpMaster"
                     float3 streamBasis = HectonKelpSafeNormalize(SubmarinePropwash.xyz, radialFallback);
                     float streamCone = saturate(dot(radialFallback, streamBasis));
                     float3 streamDirection = HectonKelpSafeNormalize(streamBasis + radialFallback * 0.085, radialFallback);
-                    positionOS.xyz += streamDirection * (submarineInfluence * streamCone * SubmarinePropwash.w * _PropWashDisplacement * 1.65 * tipParabola);
+                    positionOS.xyz += streamDirection * (submarineInfluence * streamCone * SubmarinePropwash.w * _PropWashDisplacement * 1.65 * tipParabola * interactionWeight);
                 }
 
                 float playerRadius = _HectonPlayerRuntimePosition.w;
@@ -266,9 +287,11 @@ Shader "Hecton8/Flora/KelpMaster"
                     float playerDistSq = dot(playerDelta, playerDelta);
                     float playerInvRadiusSq = rcp(max(playerRadius * playerRadius, 0.0001));
                     float playerInfluence = saturate(1.0 - playerDistSq * playerInvRadiusSq) * saturate(_HectonPlayerFloraInteractionParams.w);
-                    float flutterPhase = _Time.y * 6.1 + dot(positionOS.xz, float2(2.7, -3.1)) + vertexColor.g * 4.7;
+                    float flutterSeed = isfinite((float)vertexColor.g) ? (float)vertexColor.g : 0.0;
+                    float safeTime = isfinite(_Time.y) ? _Time.y : 0.0;
+                    float flutterPhase = safeTime * 6.1 + dot(positionOS.xz, float2(2.7, -3.1)) + flutterSeed * 4.7;
                     float flutter = HectonKelpBoundedSin(flutterPhase) * 0.045 * saturate(_HectonPlayerFloraInteractionParams.x * 0.25 + _HectonPlayerFloraInteractionParams.y);
-                    positionOS.xz += normalOS.xz * (flutter * playerInfluence * tipParabola);
+                    positionOS.xz += normalOS.xz * (flutter * playerInfluence * tipParabola * interactionWeight);
                 }
 
                 float decay01 = saturate(_HectonFloraLifecycleParams.y);
@@ -436,15 +459,17 @@ Shader "Hecton8/Flora/KelpMaster"
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
-                float3 positionOS = input.positionOS.xyz;
-                ApplyKelpLivingBiota(positionOS, input.normalOS, input.color, input.uv);
+                float3 positionOS = all(isfinite(input.positionOS.xyz)) ? input.positionOS.xyz : float3(0.0, 0.0, 0.0);
+                float3 normalOS = HectonKelpSafeNormalize(input.normalOS, float3(0.0, 1.0, 0.0));
+                float4 tangentOS = all(isfinite(input.tangentOS)) ? input.tangentOS : float4(1.0, 0.0, 0.0, 1.0);
+                ApplyKelpLivingBiota(positionOS, normalOS, input.color, input.uv);
 
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(positionOS);
-                VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS, input.tangentOS);
+                VertexNormalInputs normalInputs = GetVertexNormalInputs(normalOS, tangentOS);
                 output.positionCS = positionInputs.positionCS;
                 output.positionWS = positionInputs.positionWS;
                 output.normalWS = (half3)HectonCoreLitSafeNormalize(normalInputs.normalWS);
-                output.tangentWS = half4((half3)HectonCoreLitSafeNormalize(normalInputs.tangentWS), input.tangentOS.w);
+                output.tangentWS = half4((half3)HectonCoreLitSafeNormalize(normalInputs.tangentWS), tangentOS.w);
                 output.bitangentWS = (half3)HectonCoreLitSafeNormalize(normalInputs.bitangentWS);
                 output.color = input.color;
                 output.uv = input.uv;
@@ -479,7 +504,8 @@ Shader "Hecton8/Flora/KelpMaster"
                 float3 samplePositionWS = input.positionWS;
                 half4 maskSample = SampleFloraTriplanar(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), samplePositionWS, triplanarAxis);
                 #if defined(_QUALITY_HIGH)
-                samplePositionWS -= viewDirWS * ((maskSample.b - 0.5h) * _HeightScale);
+                half parallaxQualityWeight = HectonKelpSmoothRange01(0.55h, 0.95h, HectonKelpGlobalQualityWeight());
+                samplePositionWS -= viewDirWS * ((maskSample.b - 0.5h) * _HeightScale * parallaxQualityWeight);
                 maskSample = SampleFloraTriplanar(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), samplePositionWS, triplanarAxis);
                 #endif
 
