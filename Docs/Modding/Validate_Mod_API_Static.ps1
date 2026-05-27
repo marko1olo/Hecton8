@@ -610,6 +610,23 @@ $rawTextureMaxBytes = [long]$rawTextureBytesMatch.Groups[1].Value * [long]$rawTe
 $rawTextureDimensionMatch = [regex]::Match($modAssetManagerSource, 'private\s+const\s+int\s+MaxRawTextureDimension\s*=\s*(\d+);')
 Assert-True $rawTextureDimensionMatch.Success 'Missing ModAssetManager.MaxRawTextureDimension.'
 $rawTextureMaxDimension = [int]$rawTextureDimensionMatch.Groups[1].Value
+$rawTextureFileGateIndex = $modAssetManagerSource.IndexOf('if (!TryValidateRawTextureFile(filePath))', [System.StringComparison]::Ordinal)
+$rawTextureReadAllBytesIndex = $modAssetManagerSource.IndexOf('pngBytes = File.ReadAllBytes(filePath);', [System.StringComparison]::Ordinal)
+$rawTextureByteCapEnforcedBeforeRead =
+    $modAssetManagerSource.Contains('private static bool TryValidateRawTextureFile') -and
+    $modAssetManagerSource.Contains('fileInfo.Length > MaxRawTextureBytes') -and
+    $modAssetManagerSource.Contains('exceeded ", MaxRawTextureBytesLabel, " byte cap.') -and
+    ($rawTextureFileGateIndex -ge 0) -and
+    ($rawTextureReadAllBytesIndex -gt $rawTextureFileGateIndex)
+Assert-True $rawTextureByteCapEnforcedBeforeRead 'ModAssetManager must reject oversized raw textures before File.ReadAllBytes.'
+$rawTextureReadFailsClosed =
+    $modAssetManagerSource.Contains('catch (System.UnauthorizedAccessException exception)') -and
+    $modAssetManagerSource.Contains("Rejected inaccessible raw texture '") -and
+    $modAssetManagerSource.Contains('catch (IOException exception)') -and
+    $modAssetManagerSource.Contains("Failed to read raw texture '") -and
+    $modAssetManagerSource.Contains('catch (System.Exception exception)') -and
+    $modAssetManagerSource.Contains("Rejected invalid raw texture read '")
+Assert-True $rawTextureReadFailsClosed 'ModAssetManager raw texture File.ReadAllBytes must fail closed on access, IO, and invalid read exceptions.'
 $contentMethodPatterns = [ordered]@{
     'InjectBabelEnvelope' = 'public\s+static\s+void\s+InjectBabelEnvelope\s*\('
     'ShowInfo' = 'public\s+static\s+void\s+ShowInfo\s*\('
@@ -1127,6 +1144,8 @@ Assert-True ($resourceRegistryCapacity -eq [int]$schema.resourceContentAudit.res
 Assert-True ($internalAssetLoaderNames.Count -eq [int]$schema.resourceContentAudit.internalForbiddenAssetLoaderCount) "Internal asset loader count drift. Source=$($internalAssetLoaderNames.Count) Schema=$($schema.resourceContentAudit.internalForbiddenAssetLoaderCount)"
 Assert-True ($rawTextureMaxBytes -eq [long]$schema.resourceContentAudit.rawTextureMaxBytes) "Raw texture byte cap drift. Source=$rawTextureMaxBytes Schema=$($schema.resourceContentAudit.rawTextureMaxBytes)"
 Assert-True ($rawTextureMaxDimension -eq [int]$schema.resourceContentAudit.rawTextureMaxDimension) "Raw texture dimension cap drift. Source=$rawTextureMaxDimension Schema=$($schema.resourceContentAudit.rawTextureMaxDimension)"
+Assert-True ([bool]$schema.resourceContentAudit.rawTextureByteCapEnforcedBeforeRead) "Schema resourceContentAudit must record raw texture byte cap before File.ReadAllBytes."
+Assert-True ([bool]$schema.resourceContentAudit.rawTextureReadFailsClosed) "Schema resourceContentAudit must record fail-closed raw texture file reads."
 Assert-True ([bool]$schema.resourceContentAudit.resourceRegistryRejectsForgedOwner) "Schema resourceContentAudit must record resource registry owner-id match enforcement."
 Assert-True ($publicContentMethodNames.Count -eq [int]$schema.resourceContentAudit.publicContentMethodCount) "Public content method count drift. Source=$($publicContentMethodNames.Count) Schema=$($schema.resourceContentAudit.publicContentMethodCount)"
 
@@ -1295,6 +1314,7 @@ foreach ($method in $internalAssetLoaderNames) {
 Assert-True ($resourceContentAuditText.Contains([string]$resourceRegistryCapacity)) 'Resource/content audit missing resource registry capacity.'
 Assert-True ($resourceContentAuditText.Contains([string]$rawTextureMaxBytes)) 'Resource/content audit missing raw texture byte cap.'
 Assert-True ($resourceContentAuditText.Contains([string]$rawTextureMaxDimension)) 'Resource/content audit missing raw texture dimension cap.'
+Assert-True ($resourceContentAuditText.Contains('Raw PNG read failure') -and $resourceContentAuditText.Contains('fail closed')) 'Resource/content audit missing fail-closed raw texture read contract.'
 Assert-True ($resourceContentAuditText.Contains('No public Unity asset reference returned to mods')) 'Resource/content audit missing Unity object return prohibition.'
 Assert-True ($resourceContentAuditText.Contains('No resource registration under a `modId` different from the active `ModExecutionScope`.')) 'Resource/content audit missing forged owner prohibition.'
 
@@ -1436,6 +1456,8 @@ Assert-True (@($schema.commandApi.runtimeForbiddenFutureCommandOpcodes) -contain
 Assert-True ($lastStaticValidation.resourceFacadeRequiresActiveScope -eq $true) "Schema lastStaticValidationSnapshot must record resource facade active-scope ownership."
 Assert-True ($lastStaticValidation.resourceProxyRequiresActiveScope -eq $true) "Schema lastStaticValidationSnapshot must record resource proxy active-scope ownership."
 Assert-True ($lastStaticValidation.resourceRegistryRejectsForgedOwner -eq $true) "Schema lastStaticValidationSnapshot must record resource registry owner-id match enforcement."
+Assert-True ($lastStaticValidation.rawTextureByteCapEnforcedBeforeRead -eq $true) "Schema lastStaticValidationSnapshot must record raw texture byte cap before File.ReadAllBytes."
+Assert-True ($lastStaticValidation.rawTextureReadFailsClosed -eq $true) "Schema lastStaticValidationSnapshot must record fail-closed raw texture file reads."
 Assert-True ($lastStaticValidation.publicPropertyRoutesRequireActiveScope -eq $true) "Schema lastStaticValidationSnapshot must record public property route active-scope ownership."
 Assert-True ($lastStaticValidation.subscriptionDisposeRequiresOwnerScope -eq $true) "Schema lastStaticValidationSnapshot must record direct subscription Dispose owner-scope ownership."
 Assert-True ($lastStaticValidation.telemetryFacadeRequiresActiveScope -eq $true) "Schema lastStaticValidationSnapshot must record telemetry facade active-scope ownership."
@@ -1516,6 +1538,8 @@ Assert-True ($runtimePlaybookText.Contains('HectonEventBusPublicStaticMembersFor
 Assert-True ($runtimePlaybookText.Contains('FutureCommandSandboxPublicStaticMembersForbidden = True')) 'Runtime playbook missing FutureCommandSandbox public-static member closure evidence.'
 Assert-True ($runtimePlaybookText.Contains('MockModQueueMembersInternalOnly = True')) 'Runtime playbook missing MockModQueue member visibility closure evidence.'
 Assert-True ($runtimePlaybookText.Contains('ResourceRegistryRejectsForgedOwner = True')) 'Runtime playbook missing resource registry forged-owner closure evidence.'
+Assert-True ($runtimePlaybookText.Contains('RawTextureByteCapEnforcedBeforeRead = True')) 'Runtime playbook missing raw texture byte cap before read evidence.'
+Assert-True ($runtimePlaybookText.Contains('RawTextureReadFailsClosed = True')) 'Runtime playbook missing fail-closed raw texture read evidence.'
 Assert-True ($runtimePlaybookText.Contains('SaveStateStoreRequiresScopedOrEngineOwner = True')) 'Runtime playbook missing SaveState store scoped-or-engine owner proof evidence.'
 Assert-True ($runtimePlaybookText.Contains('ManifestByteCapEnforcedBeforeRead = True')) 'Runtime playbook missing manifest byte cap before read evidence.'
 Assert-True ($runtimePlaybookText.Contains('ManifestDiscoveryMaxCount = 64')) 'Runtime playbook missing manifest discovery cap evidence.'
@@ -1646,6 +1670,8 @@ $result = [pscustomobject]@{
     InternalAssetLoaderCount = $internalAssetLoaderNames.Count
     RawTextureMaxBytes = $rawTextureMaxBytes
     RawTextureMaxDimension = $rawTextureMaxDimension
+    RawTextureByteCapEnforcedBeforeRead = $rawTextureByteCapEnforcedBeforeRead
+    RawTextureReadFailsClosed = $rawTextureReadFailsClosed
     ResourceRegistryRejectsForgedOwner = $resourceRegistryRejectsForgedOwner
     PublicContentMethodCount = $publicContentMethodNames.Count
     RuntimePlaybook = $schema.staticValidation.runtimePlaybook

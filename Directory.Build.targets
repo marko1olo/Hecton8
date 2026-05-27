@@ -337,12 +337,19 @@
     <Compile Remove="Assets\MapMagic\Compatibility\MicroSplat\**\*.cs" />
     <Compile Remove="Assets\MapMagic\Core\Plugins\**\*.cs" />
     <Compile Remove="Assets\MapMagic\Tools\**\*.cs" />
+    <Compile Include="Assets\MapMagic\Compatibility\MicroSplat\Placeholders\**\*.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\MapMagic\Compatibility\MicroSplat\Placeholders\MicroSplatOutputPlaceholder.cs'))" />
+    <Compile Remove="Assets\MapMagic\Compatibility\MicroSplat\Placeholders\**\Editor\**\*.cs" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'MapMagic.Editor'">
     <Compile Include="Assets\MapMagic\**\Editor\**\*.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\MapMagic\Expose\Editor\CellExpose.cs'))" />
     <Compile Remove="Assets\MapMagic\Compatibility\MicroSplat\Editor\**\*.cs" />
     <Compile Remove="Assets\MapMagic\Tools\**\*.cs" />
+    <Compile Include="Assets\MapMagic\Compatibility\MicroSplat\Placeholders\Editor\**\*.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\MapMagic\Compatibility\MicroSplat\Placeholders\Editor\MicroSplatEditorPlaceholder.cs'))" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'Den.Tools.Editor'">
+    <Compile Include="Assets\MapMagic\Tools\**\Editor\**\*.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\MapMagic\Tools\GUI\Editor\Draw.cs'))" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'AstarPathfindingProject'">
