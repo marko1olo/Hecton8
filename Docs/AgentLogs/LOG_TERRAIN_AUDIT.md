@@ -1998,11 +1998,12 @@ Exact Microseconds saved:
 
 Residual:
 - `DepthZoneDirector.Instance => GlobalRegistry.DepthZone` remains blocked because `DepthZoneDirector.cs` is invalid UTF-8 and `apply_patch` cannot edit it safely.
-- Unity/dotnet compile proof is still absent because compile guard was red in the previous pass.
+- Unity/dotnet compile proof is still absent because `dotnet` PID 61776 was active and CPU sampled at 80%.
 
 Verification:
 - Source gate passed: `EvaluateMatrix` contains exactly one `ResolveReferences()` call and it is under `if (!Application.isPlaying)`.
 - Source gate passed: `RebindPlayerRuntimeContext(previousService, currentService)` exists.
 - Source gate passed: player context apply updates transform/movement only when context values are non-null.
-- `git diff --check` passed on touched biome-matrix/test/docs files with LF/CRLF warning only.
-- Compile was not run in this pass because the previous guard found active `dotnet` PID 62068 and CPU above threshold.
+- Resource distribution runtime blocks still contain no `WorldRuntimeReferenceUtility`.
+- `git diff --check` passed on touched biome-matrix/resource/test/docs files.
+- Compile was not run: `dotnet` PID 61776 was active and CPU sampled at 80%, above the project threshold.

@@ -1,7 +1,7 @@
 # Rationale_13GPU
 
 Date: 2026-05-27
-Status: STATIC VERIFIED / COMPILE GATE PENDING
+Status: STATIC VERIFIED / COMPILE BLOCKED BY PROJECT GRAPH
 
 ## Decision 001: Identity and Batch Mismatch
 
@@ -326,3 +326,15 @@ Rejected Alternatives: Removing the binary variant now was rejected because it c
 Scalability potential: Low/Middle/High/Ultra fix path requires a continuous quality property plus dynamic micro-detail weight, not a cosmetic shader keyword rename.
 
 Hardware Impact: No runtime change. Avoided speculative terrain shader regression without proof.
+
+## Decision 028: Micro-Detail Pass Build Blocker
+
+Problem: After the terrain-damage, particle, and sargassum shader/compute pass, the CPU/process gate allowed one narrow compile check, but `dotnet build Assembly-CSharp.csproj --no-restore -v quiet /clp:ErrorsOnly -maxcpucount:1` failed before domain compile on MSBuild circular `ResolveProjectReferences` in `Unity.RenderPipelines.Core.Editor.csproj` and `Unity.ShaderGraph.Editor.csproj`.
+
+Solution: Recorded compile as blocked by existing project graph. Did not edit Unity editor package project files or generated package references from the 13GPU domain.
+
+Rejected Alternatives: Repeated build retries were rejected because the same external project graph blocker already reproduced. Editing Unity package/editor project references was rejected as cross-domain interference and not relevant to HLSL-only changes.
+
+Scalability potential: No runtime change.
+
+Hardware Impact: No runtime change. Compile proof remains blocked externally; static shader/compute proof is limited to diff/pattern/JSON checks.

@@ -315,13 +315,13 @@ namespace Hecton8.UI
             if (!enableScreenSpacePdaProjection ||
                 !_pdaProjectionNativeBuffersReady ||
                 !_pdaProjectionGraphicsBuffersReady ||
-                !TryAcquirePdaProjectionWriteBuffers(
+                !TryAcquirePdaProjectionFrameBuffers(
                     out NativeArray<PdaStateDTO> states,
                     out NativeArray<PdaProjectionInputDTO> inputs,
                     out NativeArray<PdaProjectionTelemetryEntry> telemetry,
                     out NativeArray<int> telemetryCursor,
-                    out NativeArray<PdaProjectionTuningDTO> tuning,
-                    out NativeArray<PdaInterfaceProfileDTO> profiles,
+                    out NativeArray<PdaProjectionTuningDTO>.ReadOnly tuning,
+                    out NativeArray<PdaInterfaceProfileDTO>.ReadOnly profiles,
                     out acquiredMask))
             {
                 _pdaProjectionGpuPayloadValid = false;
@@ -458,6 +458,53 @@ namespace Hecton8.UI
             _pdaProjectionProfilesLoaded = false;
             _pdaProjectionNativeBuffersReady = false;
             _pdaProjectionGpuPayloadValid = false;
+        }
+
+        private bool TryAcquirePdaProjectionFrameBuffers(
+            out NativeArray<PdaStateDTO> states,
+            out NativeArray<PdaProjectionInputDTO> inputs,
+            out NativeArray<PdaProjectionTelemetryEntry> telemetry,
+            out NativeArray<int> telemetryCursor,
+            out NativeArray<PdaProjectionTuningDTO>.ReadOnly tuning,
+            out NativeArray<PdaInterfaceProfileDTO>.ReadOnly profiles,
+            out uint acquiredMask)
+        {
+            states = default;
+            inputs = default;
+            telemetry = default;
+            telemetryCursor = default;
+            tuning = default;
+            profiles = default;
+            acquiredMask = 0u;
+            bool success = false;
+            try
+            {
+                if (_vault == null)
+                    return false;
+                if (!TryAcquirePdaProjectionVaultBuffer(in _pdaProjectionStateHandle, PdaProjectionStateBufferId, PdaProjectionStateCapacity, out states))
+                    return false;
+                acquiredMask |= PdaProjectionWriteMaskState;
+                if (!TryAcquirePdaProjectionVaultBuffer(in _pdaProjectionInputHandle, PdaProjectionInputBufferId, PdaProjectionInputCapacity, out inputs))
+                    return false;
+                acquiredMask |= PdaProjectionWriteMaskInput;
+                if (!TryAcquirePdaProjectionVaultBuffer(in _pdaProjectionTelemetryHandle, PdaProjectionTelemetryBufferId, PdaProjectionTelemetryCapacity, out telemetry))
+                    return false;
+                acquiredMask |= PdaProjectionWriteMaskTelemetry;
+                if (!TryAcquirePdaProjectionVaultBuffer(in _pdaProjectionTelemetryCursorHandle, PdaProjectionTelemetryCursorBufferId, 1, out telemetryCursor))
+                    return false;
+                acquiredMask |= PdaProjectionWriteMaskTelemetryCursor;
+                if (!TryReadOnlyPdaProjectionVaultBuffer(in _pdaProjectionTuningHandle, PdaProjectionTuningBufferId, 1, out tuning))
+                    return false;
+                if (!TryReadOnlyPdaProjectionVaultBuffer(in _pdaProjectionProfileHandle, PdaProjectionProfilesBufferId, PdaProjectionInterfaceProfileCapacity, out profiles))
+                    return false;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                    ReleasePdaProjectionAcquiredBuffers(acquiredMask);
+            }
         }
 
         private bool TryAcquirePdaProjectionWriteBuffers(
@@ -681,7 +728,7 @@ namespace Hecton8.UI
             _pdaProjectionGpuPayloadValid = false;
         }
 
-        private bool BuildPdaProjectionInput(NativeArray<PdaProjectionInputDTO> inputs, NativeArray<PdaProjectionTuningDTO> tuning)
+        private bool BuildPdaProjectionInput(NativeArray<PdaProjectionInputDTO> inputs, NativeArray<PdaProjectionTuningDTO>.ReadOnly tuning)
         {
             if (!inputs.IsCreated || inputs.Length <= 0 || !tuning.IsCreated || tuning.Length <= 0)
                 return false;
@@ -915,8 +962,8 @@ namespace Hecton8.UI
         }
 
         private PdaProjectionGlobalsDTO BuildPdaProjectionGlobals(
-            NativeArray<PdaProjectionTuningDTO> tuning,
-            NativeArray<PdaInterfaceProfileDTO> profiles,
+            NativeArray<PdaProjectionTuningDTO>.ReadOnly tuning,
+            NativeArray<PdaInterfaceProfileDTO>.ReadOnly profiles,
             in PdaStateDTO state)
         {
             PdaProjectionTuningDTO tuningRow = tuning[0];
@@ -970,7 +1017,7 @@ namespace Hecton8.UI
             return value;
         }
 
-        private static float4 ResolvePdaProfileRect(NativeArray<PdaInterfaceProfileDTO> profiles, uint tabHash, float4 fallback)
+        private static float4 ResolvePdaProfileRect(NativeArray<PdaInterfaceProfileDTO>.ReadOnly profiles, uint tabHash, float4 fallback)
         {
             if (!profiles.IsCreated || profiles.Length <= 0)
                 return fallback;

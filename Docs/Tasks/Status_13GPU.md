@@ -5,7 +5,7 @@ Agent: 13GPU
 Domain: GPU instancing, procedural flora, rocks, micro-detail optimization, visual scalability.
 Batch XML: `<AGENT_PROMPT id="13GPU">` not found in `Docs/Tasks/CURRENT_BATCH.md`.
 Closest active batch domain: `1316` vegetation memory sovereignty, 20 tasks. Not adopted as identity because user assigned `13GPU`.
-Status: STATIC VERIFIED / COMPILE GATE PENDING
+Status: STATIC VERIFIED / COMPILE BLOCKED BY PROJECT GRAPH
 
 ## Mandates Read
 
@@ -54,6 +54,7 @@ Status: STATIC VERIFIED / COMPILE GATE PENDING
 - [x] Loop 32: Blood/micro-particle compute finite and buffer audit | Justification: clean `ParticleUpdate.compute` cast published particle count to `uint` without a non-negative buffer clamp and sampled flow-field indices from unchecked resolution/params. | Alternatives Rejected: readback validation or CPU particle simulation. | Estimate: 6-20 us avoided only in corrupt micro-particle/flow payload frames; valid frames retain GPU fake dispersion.
 - [x] Loop 33: Sargassum flora shader ingress audit | Justification: clean `Hecton_SargassumMaster.shader` used raw vertex/color/UV/time/prop-wash/cut-mask/sink-mask values in forward and shadow passes before motion, sampling, and clip. | Alternatives Rejected: disabling sargassum motion, editing dirty boids compute, or pushing CPU material validation. | Estimate: 6-18 us avoided only in malformed sargassum payload frames; normal gain is deterministic fail-closed flora presentation.
 - [x] Loop 34: New shader/compute static verification pass | Justification: `git diff --check` passed for `Hecton_SargassumMaster.shader`, `ParticleUpdate.compute`, and `Hecton_TerrainDamageVolume.compute` with CRLF warnings only; hot-path scan found no C# allocation/upload/draw patterns. | Alternatives Rejected: claiming shader compile proof without Unity shader compiler. | Estimate: no runtime claim.
+- [x] Loop 35: Guarded build recheck after micro-detail pass | Justification: CPU was `30` and no `dotnet/csc` process was active, so one narrow `dotnet build Assembly-CSharp.csproj --no-restore -maxcpucount:1` was legal; it failed only on existing MSBuild circular `ResolveProjectReferences` in Unity editor package projects. | Alternatives Rejected: editing Unity editor package project graph from 13GPU or repeatedly retrying builds after the same infrastructure blocker. | Estimate: no runtime claim.
 
 ## Verification
 
@@ -90,5 +91,5 @@ Status: STATIC VERIFIED / COMPILE GATE PENDING
 - [x] SHA256 `ParticleUpdate.compute`: `3E77322ADF3932AE2DB60B3BAD30555595026043A9D60DAFC23F5E65F51E553D`.
 - [x] Static scan: `Hecton_SargassumMaster.shader` adds finite guards for flora vertex/UV/color/time/motion/cut/sink/clip paths in forward and shadow passes only; no new buffers, draw path, readback, or CPU route.
 - [x] SHA256 `Hecton_SargassumMaster.shader`: `ED11787EE3D75DBDDF9EAD42243A134A1D5A6842485E40DC4A8EBD905C81C89D`.
-- [ ] Compile: NOT RELAUNCHED. Earlier `dotnet build Assembly-CSharp.csproj --no-restore -v quiet /clp:ErrorsOnly -maxcpucount:1` reported Candice SQLite missing `Mono.Data` / `SqliteDataReader`; later guarded build hit MSBuild circular `ResolveProjectReferences` in Unity editor projects and `--no-dependencies` hit missing `Temp/CodexBuild/Unity.ShaderGraph.Editor.dll`. Latest gate after rock pass: CPU `73`, then `77` after 30 seconds, no active `dotnet/csc`; build remains forbidden because CPU is above 50%. No touched 13GPU files were reported in previous compiler errors.
+- [ ] Compile: BLOCKED BY PROJECT GRAPH. Latest legal build gate: CPU `30`, no active `dotnet/csc`; `dotnet build Assembly-CSharp.csproj --no-restore -v quiet /clp:ErrorsOnly -maxcpucount:1` failed on MSBuild circular `ResolveProjectReferences` in `Unity.RenderPipelines.Core.Editor.csproj` and `Unity.ShaderGraph.Editor.csproj`. Earlier blockers also included Candice SQLite missing `Mono.Data` / `SqliteDataReader` and `--no-dependencies` missing `Temp/CodexBuild/Unity.ShaderGraph.Editor.dll`. No touched 13GPU files were reported in compiler errors.
 - [ ] Shader compile: NOT RUN. No Unity shader compiler pass was available; `diff --check` passed.

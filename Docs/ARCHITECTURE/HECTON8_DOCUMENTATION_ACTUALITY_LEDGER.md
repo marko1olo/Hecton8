@@ -196,8 +196,8 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 | Cache-line classifier | `ProgressionEventSignal` and `VocalCueSignal` false stride debt is removed by global struct-layout indexing | `../Reports/UNITY_SIGNAL_LAYOUT_ALIAS_CLASSIFIER_UNKNOWN_20260527.md` |
 | Native telemetry aliases | Expression-bodied Vault accessors, private-ref nested buffers, H8Memory release helpers, and DataVault allocator aliases are classified separately | `../Reports/UNITY_SIGNAL_LAYOUT_ALIAS_CLASSIFIER_UNKNOWN_20260527.md` |
 | Signal-like DTO layouts | `FaunaDirector.AcousticPanicCommand` and `VocalWarningSystem.VocalWarningTelemetrySnapshot` now have explicit layout proof | `../Reports/UNITY_SIGNAL_LAYOUT_ALIAS_CLASSIFIER_UNKNOWN_20260527.md` |
-| Latest verified audit | Interim recheck reports `errors=0`, `confirmedErrors=0`, `warnings=245`, `SIGNAL_LAYOUT_REVIEW=0`, `CACHELINE_CRITICAL_SIGNAL_STRIDE_DEBT=1` | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_LAYOUT_ALIAS_RECHECK2.json` |
-| Current gap | Final borrowed-view classifier patch is source-only until CPU drops below the build guard threshold | `../Reports/UNITY_SIGNAL_LAYOUT_ALIAS_CLASSIFIER_UNKNOWN_20260527.md` |
+| Latest verified audit | Final recheck reports `errors=0`, `confirmedErrors=0`, `warnings=155`, `infos=1171`, `SIGNAL_LAYOUT_REVIEW=0`, `CACHELINE_CRITICAL_SIGNAL_STRIDE_DEBT=1` | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_LAYOUT_ALIAS_FINAL.json` |
+| Closed gap | Final borrowed-view classifier build passed in `UnknownFinal` with `0` warnings and `0` errors | `../Reports/BUILD_UNKNOWN_SIGNAL_CLI_LAYOUT_ALIAS_FINAL2_20260527.log` |
 
 ## Validation
 

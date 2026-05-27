@@ -254,3 +254,18 @@ Cinematic Cheats used: none.
 Exact Microseconds saved: no runtime claim.
 
 Verification: documented residual risk only. No code changed in `TerrainMaster.shader`.
+
+---
+
+Date: 2026-05-27
+Status: STATIC VERIFIED / COMPILE BLOCKED BY PROJECT GRAPH
+
+What was wrong: compile proof after this pass is blocked by the existing Unity editor project graph.
+
+What was done: CPU/process gate was legal (`30`, no active `dotnet/csc`), so one narrow `dotnet build Assembly-CSharp.csproj --no-restore -v quiet /clp:ErrorsOnly -maxcpucount:1` was run. It failed on circular `ResolveProjectReferences` in `Unity.RenderPipelines.Core.Editor.csproj` and `Unity.ShaderGraph.Editor.csproj`.
+
+Cinematic Cheats used: none in verification.
+
+Exact Microseconds saved: no runtime claim.
+
+Verification: JSON report parsed. `git diff --check` passed for new shader/compute/docs with CRLF warnings only. Build errors did not reference touched 13GPU files. Shader compiler was not available.

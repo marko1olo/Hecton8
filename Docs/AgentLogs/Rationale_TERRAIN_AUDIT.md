@@ -518,8 +518,8 @@ Rejected Alternatives: Leaving per-evaluation player repair was rejected because
 Scalability potential: Low = biome matrix slow tick reads cached transform only. Middle = normal depth/region profile transitions. High = denser biome-linked dust/current/decal responses through the same cached context. Ultra = richer biome presentation without switching player authority or repairing dependencies during evaluation.
 Hardware Impact: Exact microseconds saved: 0 measured, profiler absent. Static estimate: 35 us mutation-risk reduction. Main value is route hygiene and stale-player prevention, not a measured frame-time claim.
 
-Problem: Fifty-first-pass compile proof was not taken because the previous compile guard found active `dotnet` PID 62068 and CPU above the project threshold.
+Problem: Fifty-first-pass compile proof could not be taken without violating the local guard: `dotnet` PID 61776 was active and CPU sampled at 80%.
 Solution: Kept verification to source gates and `git diff --check`.
-Rejected Alternatives: Starting a build while the guard was red was rejected by the project coordination rule.
+Rejected Alternatives: Starting a build while another `dotnet` process was active and CPU exceeded 50% was rejected by the project coordination rule.
 Scalability potential: None changed by skipped compile. Low/Middle/High/Ultra behavior is governed by the cached biome matrix player route already patched.
 Hardware Impact: Exact microseconds saved: 0. This is a verification constraint, not a runtime optimization.
