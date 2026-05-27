@@ -1602,9 +1602,42 @@ Proof:
 - Closed categories: `DUPLICATE_SIGNAL_LIKE_NAME_REVIEW=0`, `EDITOR_MANAGED_STRING_IN_SIGNAL_REVIEW=0`.
 - Touched source brace delta: `0`.
 - Scoped `git diff --check`: exit `0`; line-ending warnings only.
-- Documentation gates: `VerifyDocStructure.py pass=true activeDocCount=705 encodingWithoutUtf8Sig=0`; `OOP_Doc_Scanner.py finalPass=true activeFileCount=705 sourceSyncPass=true wordReductionPercent=31.170258220190806`.
+- Documentation gates: `VerifyDocStructure.py pass=true activeDocCount=705 encodingWithoutUtf8Sig=0`; `OOP_Doc_Scanner.py finalPass=true activeFileCount=705 sourceSyncPass=true wordReductionPercent=31.17003909081188`.
 
 Residuals:
 - Remaining warnings are `RUNTIME_SYNC_FILE_IO_REVIEW=57`, spread outside the Core subtree.
 - Full solution build was not run by this agent; user assigned overall compile errors to another agent.
 - No Unity Editor import, Play Mode, profiler, GC, save/load, or player-build proof.
+
+## Repository Publication Pass - 2026-05-28
+
+What was wrong:
+- Desktop projects `dvachbot` and `stomchat` were local-only and not published as private GitHub repositories.
+- `dental-crm` was local-only at the start of the pass and received extra edits after its first push.
+- `Hecton8` had a large dirty workspace from parallel agent activity. Active build and doc-scan processes caused one short-read race during Git indexing.
+
+What was done:
+- Created private GitHub repositories under `marko1olo`: `dvachbot`, `stomchat`, and `dental-crm`.
+- Published `dvachbot` to `https://github.com/marko1olo/dvachbot` at commit `e26441349`.
+- Published `stomchat` to `https://github.com/marko1olo/stomchat` at commit `a242edc22`.
+- Published `dental-crm` to `https://github.com/marko1olo/dental-crm` at commit `b4af16684`.
+- Pushed `Hecton8` to `https://github.com/marko1olo/Hecton8` through commits `459f66ac9`, `03023aabd`, and `e5ae8588e`.
+- Added conservative `.gitignore` and `.gitattributes` files to the newly initialized projects before their first commits.
+- Excluded local secrets, sessions, runtime logs, databases, caches, generated browser/debug state, and large local media where appropriate.
+- Preserved the broken original `dvachbot` Git directory as `C:\Users\danat\Desktop\dvachbot_git_broken_20260528_0158`.
+
+Cinematic cheats used:
+- None. This was repository hygiene and publication work.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No player/profiler proof.
+- Operational impact: reduced recovery and handoff time by moving local-only work into private remotes.
+
+Proof:
+- GitHub API check reported `private=True` for `dvachbot`, `stomchat`, `dental-crm`, and `Hecton8`.
+- Final checked branches after publication were tracking `origin/main`.
+- Staged secret scans for the newly initialized projects found no real token payloads in committed content. Dental follow-up scan only matched variable names and synthetic test values already in tracked files.
+
+Residuals:
+- No full Hecton8 build was launched by this pass. Existing external build/doc-scan processes were not killed.
+- Local `C:\Users\danat\.git-credentials` contains GitHub personal access tokens; do not paste it into chats or logs.
