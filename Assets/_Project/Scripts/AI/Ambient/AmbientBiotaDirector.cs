@@ -491,10 +491,7 @@ namespace Hecton8.AI.Ambient
 
         private void RefreshRegistryDependencies()
         {
-            if (_vault == null)
-            {
-                _vault = GlobalRegistry.DataVault;
-            }
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
 
             if (_ecosystem == null || !_ecosystem.IsInitialized)
                 _ecosystem = GlobalRegistry.EcosystemDirector;
@@ -586,10 +583,7 @@ namespace Hecton8.AI.Ambient
                     return;
 
                 case GlobalRegistryServiceSlot.DataVault:
-                    CompleteActiveJobForTeardown();
-                    ReleaseVaultHandles(_vault);
-                    ClearVaultHandles();
-                    _vault = currentService as IDataVault;
+                    RebindDataVaultForLifecycle(currentService as IDataVault);
                     EnsureVaultBuffers();
                     _gpuPayloadDirty = true;
                     return;
@@ -714,6 +708,19 @@ namespace Hecton8.AI.Ambient
             return true;
         }
 
+        private void RebindDataVaultForLifecycle(IDataVault currentVault)
+        {
+            if (ReferenceEquals(_vault, currentVault))
+                return;
+
+            CompleteActiveJobForTeardown();
+            ReleaseVaultHandles(_vault);
+            ClearVaultHandles();
+            _vault = currentVault;
+            _capacity = 0;
+            ResetCapacityDependentRuntimeState();
+        }
+
         private bool HasVaultBuffersReadyNoGrow()
         {
             return _vault != null &&
@@ -734,6 +741,13 @@ namespace Hecton8.AI.Ambient
             return handle.BufferID != 0u;
         }
 
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == (uint)expectedBufferId &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)SystemID.AmbientBiota;
+        }
+
         private static VaultGenerationHandle<T> ClaimVaultBuffer<T>(
             IDataVault vault,
             BufferID bufferId,
@@ -747,7 +761,8 @@ namespace Hecton8.AI.Ambient
 
             if (vault.IsAllocationLocked)
             {
-                return vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> existing)
+                return vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> existing) &&
+                       IsOwnedVaultHandle(in existing, bufferId)
                     ? existing
                     : default;
             }

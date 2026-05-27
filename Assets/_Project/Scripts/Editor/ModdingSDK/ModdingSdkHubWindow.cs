@@ -441,7 +441,7 @@ namespace Hecton8.Editor.ModdingSDK
                 "    \"Id\": { \"type\": \"string\", \"pattern\": \"^[a-z0-9]+([._-][a-z0-9]+)*$\" },",
                 "    \"DisplayName\": { \"type\": \"string\", \"minLength\": 1 },",
                 "    \"Author\": { \"type\": \"string\", \"minLength\": 1 },",
-                "    \"Version\": { \"type\": \"string\", \"minLength\": 1 },",
+                "    \"Version\": { \"type\": \"string\", \"pattern\": \"^(0|[1-9][0-9]*)\\\\.(0|[1-9][0-9]*)\\\\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?(\\\\+[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$\" },",
                 "    \"RequiredAPIVersion\": { \"type\": \"integer\", \"minimum\": " + CurrentRequiredApiVersion + " },",
                 "    \"Capabilities\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },",
                 "    \"Budgets\": {",
@@ -487,7 +487,7 @@ namespace Hecton8.Editor.ModdingSDK
                 "  \"properties\": {",
                 "    \"Id\": { \"type\": \"string\", \"pattern\": \"^[a-z0-9]+([._-][a-z0-9]+)*$\" },",
                 "    \"Name\": { \"type\": \"string\", \"minLength\": 1 },",
-                "    \"Version\": { \"type\": \"string\", \"minLength\": 1 },",
+                "    \"Version\": { \"type\": \"string\", \"pattern\": \"^(0|[1-9][0-9]*)\\\\.(0|[1-9][0-9]*)\\\\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?(\\\\+[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$\" },",
                 "    \"Author\": { \"type\": \"string\", \"minLength\": 1 },",
                 "    \"Description\": { \"type\": \"string\" },",
                 "    \"Dependencies\": { \"type\": \"array\", \"items\": { \"type\": \"string\", \"pattern\": \"^[a-z0-9]+([._-][a-z0-9]+)*$\" } },",
@@ -975,6 +975,21 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine("    return $trimmed");
             builder.AppendLine("}");
             builder.AppendLine();
+            builder.AppendLine("function Validate-RequiredText([string]$Value, [string]$Label) {");
+            builder.AppendLine("    if ([string]::IsNullOrWhiteSpace($Value)) { Fail ($Label + ' is required.') }");
+            builder.AppendLine("    $trimmed = $Value.Trim()");
+            builder.AppendLine("    if ($trimmed -ne $Value) { Fail ($Label + ' must not contain leading or trailing whitespace.') }");
+            builder.AppendLine("    return $trimmed");
+            builder.AppendLine("}");
+            builder.AppendLine();
+            builder.AppendLine("function Validate-Version([string]$Value, [string]$Label) {");
+            builder.AppendLine("    $trimmed = Validate-RequiredText $Value $Label");
+            builder.AppendLine("    if ($trimmed -notmatch '^(0|[1-9][0-9]*)[.](0|[1-9][0-9]*)[.](0|[1-9][0-9]*)(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?([+][0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$') {");
+            builder.AppendLine("        Fail ($Label + ' must use semantic version form MAJOR.MINOR.PATCH with optional -prerelease or +build metadata.')");
+            builder.AppendLine("    }");
+            builder.AppendLine("    return $trimmed");
+            builder.AppendLine("}");
+            builder.AppendLine();
             builder.AppendLine("function Read-JsonFile([string]$Path) {");
             builder.AppendLine("    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {");
             builder.AppendLine("        Fail ('Missing file: ' + $Path)");
@@ -1003,18 +1018,21 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine("$runtime.Id = $canonicalId");
             builder.AppendLine();
             builder.AppendLine("if (-not [string]::IsNullOrWhiteSpace($DisplayName)) {");
-            builder.AppendLine("    $authoring.DisplayName = $DisplayName.Trim()");
-            builder.AppendLine("    $runtime.Name = $DisplayName.Trim()");
+            builder.AppendLine("    $canonicalDisplayName = Validate-RequiredText $DisplayName 'DisplayName'");
+            builder.AppendLine("    $authoring.DisplayName = $canonicalDisplayName");
+            builder.AppendLine("    $runtime.Name = $canonicalDisplayName");
             builder.AppendLine("}");
             builder.AppendLine();
             builder.AppendLine("if (-not [string]::IsNullOrWhiteSpace($Author)) {");
-            builder.AppendLine("    $authoring.Author = $Author.Trim()");
-            builder.AppendLine("    $runtime.Author = $Author.Trim()");
+            builder.AppendLine("    $canonicalAuthor = Validate-RequiredText $Author 'Author'");
+            builder.AppendLine("    $authoring.Author = $canonicalAuthor");
+            builder.AppendLine("    $runtime.Author = $canonicalAuthor");
             builder.AppendLine("}");
             builder.AppendLine();
             builder.AppendLine("if (-not [string]::IsNullOrWhiteSpace($Version)) {");
-            builder.AppendLine("    $authoring.Version = $Version.Trim()");
-            builder.AppendLine("    $runtime.Version = $Version.Trim()");
+            builder.AppendLine("    $canonicalVersion = Validate-Version $Version 'Version'");
+            builder.AppendLine("    $authoring.Version = $canonicalVersion");
+            builder.AppendLine("    $runtime.Version = $canonicalVersion");
             builder.AppendLine("}");
             builder.AppendLine();
             builder.AppendLine("Write-JsonFile $authoringPath $authoring");
@@ -1104,6 +1122,21 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine("    return $trimmed");
             builder.AppendLine("}");
             builder.AppendLine();
+            builder.AppendLine("function Validate-RequiredText([string]$Value, [string]$Label) {");
+            builder.AppendLine("    if ([string]::IsNullOrWhiteSpace($Value)) { Fail ($Label + ' is required.') }");
+            builder.AppendLine("    $trimmed = $Value.Trim()");
+            builder.AppendLine("    if ($trimmed -ne $Value) { Fail ($Label + ' must not contain leading or trailing whitespace.') }");
+            builder.AppendLine("    return $trimmed");
+            builder.AppendLine("}");
+            builder.AppendLine();
+            builder.AppendLine("function Validate-Version([string]$Value, [string]$Label) {");
+            builder.AppendLine("    $trimmed = Validate-RequiredText $Value $Label");
+            builder.AppendLine("    if ($trimmed -notmatch '^(0|[1-9][0-9]*)[.](0|[1-9][0-9]*)[.](0|[1-9][0-9]*)(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?([+][0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$') {");
+            builder.AppendLine("        Fail ($Label + ' must use semantic version form MAJOR.MINOR.PATCH with optional -prerelease or +build metadata.')");
+            builder.AppendLine("    }");
+            builder.AppendLine("    return $trimmed");
+            builder.AppendLine("}");
+            builder.AppendLine();
             builder.AppendLine("function Read-AllowedGraphOpcodeTokens() {");
             builder.AppendLine("    $path = Require-File 'Reference/allowed_opcodes.csv'");
             builder.AppendLine("    $tokens = @{}");
@@ -1189,10 +1222,19 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine("}");
             builder.AppendLine();
             builder.AppendLine("$authoringId = Validate-ModId ([string]$authoring.Id) 'mod.h8manifest.json Id'");
+            builder.AppendLine("$authoringDisplayName = Validate-RequiredText ([string]$authoring.DisplayName) 'mod.h8manifest.json DisplayName'");
+            builder.AppendLine("$authoringAuthor = Validate-RequiredText ([string]$authoring.Author) 'mod.h8manifest.json Author'");
+            builder.AppendLine("$authoringVersion = Validate-Version ([string]$authoring.Version) 'mod.h8manifest.json Version'");
             builder.AppendLine("if ([string]$authoring.Compatibility.Runtime -ne 'envelope-only') { Fail 'mod.h8manifest.json Compatibility.Runtime must be envelope-only.' }");
             builder.AppendLine("if ([int]$authoring.RequiredAPIVersion -lt 2) { Fail 'mod.h8manifest.json RequiredAPIVersion must be >= 2.' }");
             builder.AppendLine("$runtimeId = Validate-ModId ([string]$runtime.Id) 'mod.json Id'");
             builder.AppendLine("if ($authoringId -ne $runtimeId) { Fail 'mod.h8manifest.json Id must match mod.json Id.' }");
+            builder.AppendLine("$runtimeName = Validate-RequiredText ([string]$runtime.Name) 'mod.json Name'");
+            builder.AppendLine("$runtimeAuthor = Validate-RequiredText ([string]$runtime.Author) 'mod.json Author'");
+            builder.AppendLine("$runtimeVersion = Validate-Version ([string]$runtime.Version) 'mod.json Version'");
+            builder.AppendLine("if ($authoringDisplayName -ne $runtimeName) { Fail 'mod.h8manifest.json DisplayName must match mod.json Name.' }");
+            builder.AppendLine("if ($authoringAuthor -ne $runtimeAuthor) { Fail 'mod.h8manifest.json Author must match mod.json Author.' }");
+            builder.AppendLine("if ($authoringVersion -ne $runtimeVersion) { Fail 'mod.h8manifest.json Version must match mod.json Version.' }");
             builder.AppendLine("if ($null -ne $runtime.Dependencies) {");
             builder.AppendLine("    foreach ($dependencyId in @($runtime.Dependencies)) {");
             builder.AppendLine("        if (-not [string]::IsNullOrWhiteSpace([string]$dependencyId)) {");
