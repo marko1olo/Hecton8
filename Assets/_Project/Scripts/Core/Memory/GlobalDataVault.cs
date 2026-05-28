@@ -3376,6 +3376,8 @@ namespace Hecton8.Core.Memory
                 _buffers.Dispose();
             if (_metadata.IsCreated)
                 _metadata.Dispose();
+            if (_metadataGenerationByBufferId.IsCreated)
+                _metadataGenerationByBufferId.Dispose();
             if (_metadataByBufferId.IsCreated)
             {
                 H8Memory.Release(ref _metadataByBufferId, SystemID.CoreDataVault);
