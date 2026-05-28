@@ -1,6 +1,6 @@
 {
-  "generated_at_utc": "2026-05-28T09:04:42.411098+00:00",
-  "generated_at_samara": "2026-05-28T13:04:42.411098+04:00",
+  "generated_at_utc": "2026-05-28T09:19:19.035628+00:00",
+  "generated_at_samara": "2026-05-28T13:19:19.035628+04:00",
   "evidence_class": "FAST_INCREMENTAL_LOCAL_CODEX_JSONL_AND_FILESYSTEM",
   "roots": [
     {
@@ -19,23 +19,23 @@
       "exists": true
     }
   ],
-  "file_count": 3013,
+  "file_count": 3014,
   "unique_session_or_path_keys": 2830,
-  "sessions_with_usage": 2873,
+  "sessions_with_usage": 2874,
   "sessions_without_usage": 26,
   "duplicate_records_removed": 110,
   "files_missing_session_id": 2,
   "parse_errors_first_pass": 0,
   "parse_errors_increment_pass": 0,
   "first_selected_timestamp_utc": "2026-04-03T17:11:28.591000+00:00",
-  "last_selected_timestamp_utc": "2026-05-28T09:04:41.985000+00:00",
+  "last_selected_timestamp_utc": "2026-05-28T09:19:18.799000+00:00",
   "day_span": 55,
   "totals": {
-    "input_tokens": 110475153995,
-    "cached_input_tokens": 106153131008,
-    "output_tokens": 384227358,
-    "reasoning_output_tokens": 120535145,
-    "total_tokens": 110860414953
+    "input_tokens": 110544782904,
+    "cached_input_tokens": 106219997056,
+    "output_tokens": 384475108,
+    "reasoning_output_tokens": 120609066,
+    "total_tokens": 110930291612
   },
   "daily_delta_sum": {
     "input_tokens": 107937149058,
@@ -51,10 +51,10 @@
     "reasoning_output_tokens": 73314,
     "total_tokens": 67621154
   },
-  "uncached_input_tokens": 4322022987,
-  "cache_ratio": 0.9608778731623618,
-  "output_ratio": 0.0034658661359232303,
-  "reasoning_output_ratio_of_output": 0.31370786720502086,
+  "uncached_input_tokens": 4324785848,
+  "cache_ratio": 0.9608775219020896,
+  "output_ratio": 0.0034659163192753114,
+  "reasoning_output_ratio_of_output": 0.3136979832775026,
   "averages": {
     "tokens_per_day_span": 1968079773.509091,
     "tokens_per_session_with_usage": 38603561.89122682,
@@ -169,57 +169,57 @@
   "loc": {
     "first_party_assets_project_cs": {
       "files": 2556,
-      "bytes": 84160753,
-      "lines": 1893068,
-      "nonblank_lines": 1659050,
-      "characters": 81565555,
-      "non_whitespace_characters": 56981364,
-      "alphanumeric_characters": 50205619
+      "bytes": 84181193,
+      "lines": 1893555,
+      "nonblank_lines": 1659490,
+      "characters": 81585710,
+      "non_whitespace_characters": 56994713,
+      "alphanumeric_characters": 50217791
     },
     "first_party_scripts_cs": {
       "files": 2455,
-      "bytes": 82656849,
-      "lines": 1860409,
-      "nonblank_lines": 1630564,
-      "characters": 80101742,
-      "non_whitespace_characters": 55913665,
-      "alphanumeric_characters": 49294473
+      "bytes": 82675756,
+      "lines": 1860875,
+      "nonblank_lines": 1630985,
+      "characters": 80120385,
+      "non_whitespace_characters": 55925764,
+      "alphanumeric_characters": 49305538
     },
     "all_repo_cs_excluding_generated": {
       "files": 6437,
-      "bytes": 132045538,
-      "lines": 3060384,
-      "nonblank_lines": 2673856,
-      "characters": 127624746,
-      "non_whitespace_characters": 90046323,
-      "alphanumeric_characters": 79189341
+      "bytes": 132065988,
+      "lines": 3060871,
+      "nonblank_lines": 2674296,
+      "characters": 127644919,
+      "non_whitespace_characters": 90059690,
+      "alphanumeric_characters": 79201526
     },
     "all_repo_source_broad": {
       "files": 7814,
-      "bytes": 148387502,
-      "lines": 3412256,
-      "nonblank_lines": 2982534,
-      "characters": 143434577,
-      "non_whitespace_characters": 102443794,
-      "alphanumeric_characters": 89626661
+      "bytes": 148410922,
+      "lines": 3412764,
+      "nonblank_lines": 2982995,
+      "characters": 143457699,
+      "non_whitespace_characters": 102459925,
+      "alphanumeric_characters": 89641284
     },
     "tools_scripts": {
       "files": 239,
-      "bytes": 5434908,
-      "lines": 119422,
-      "nonblank_lines": 106074,
-      "characters": 5258159,
-      "non_whitespace_characters": 4147101,
-      "alphanumeric_characters": 3375732
+      "bytes": 5435271,
+      "lines": 119428,
+      "nonblank_lines": 106080,
+      "characters": 5258516,
+      "non_whitespace_characters": 4147399,
+      "alphanumeric_characters": 3375977
     },
     "docs_markdown_text": {
       "files": 1063,
-      "bytes": 29744030,
-      "lines": 288665,
-      "nonblank_lines": 236700,
-      "characters": 29336058,
-      "non_whitespace_characters": 26139335,
-      "alphanumeric_characters": 23667650
+      "bytes": 29808136,
+      "lines": 289204,
+      "nonblank_lines": 237122,
+      "characters": 29399617,
+      "non_whitespace_characters": 26195713,
+      "alphanumeric_characters": 23719439
     }
   },
   "ratios": {
@@ -236,180 +236,180 @@
   "scope_economics": {
     "first_party_assets_project_cs": {
       "files": 2556,
-      "bytes": 84160753,
-      "lines": 1893068,
-      "nonblank_lines": 1659050,
-      "characters": 81565555,
-      "non_whitespace_characters": 56981364,
-      "alphanumeric_characters": 50205619,
-      "tokens_per_line": 58561.24288879216,
-      "tokens_per_1k_characters": 1359157.244170042,
-      "output_tokens_per_1k_characters": 4710.65706596369,
-      "tokens_per_1k_non_whitespace_characters": 1945555.6548804273,
-      "gpt_5_5_standard_usd_per_1k_lines": 45.54168216831091,
-      "gpt_5_5_standard_usd_per_1k_characters": 1.056984178909835,
-      "gpt_5_3_codex_standard_usd_per_1k_characters": 0.3864317623493152,
-      "observed_model_high_bound_usd_per_1k_characters": 1.056984178909835
+      "bytes": 84181193,
+      "lines": 1893555,
+      "nonblank_lines": 1659490,
+      "characters": 81585710,
+      "non_whitespace_characters": 56994713,
+      "alphanumeric_characters": 50217791,
+      "tokens_per_line": 58583.083993863394,
+      "tokens_per_1k_characters": 1359677.958456205,
+      "output_tokens_per_1k_characters": 4712.530025172301,
+      "tokens_per_1k_non_whitespace_characters": 1946325.9971499462,
+      "gpt_5_5_standard_usd_per_1k_lines": 45.55884619564787,
+      "gpt_5_5_standard_usd_per_1k_characters": 1.057393273993693,
+      "gpt_5_3_codex_standard_usd_per_1k_characters": 0.38658150098589567,
+      "observed_model_high_bound_usd_per_1k_characters": 1.057393273993693
     },
     "first_party_scripts_cs": {
       "files": 2455,
-      "bytes": 82656849,
-      "lines": 1860409,
-      "nonblank_lines": 1630564,
-      "characters": 80101742,
-      "non_whitespace_characters": 55913665,
-      "alphanumeric_characters": 49294473,
-      "tokens_per_line": 59589.2703986059,
-      "tokens_per_1k_characters": 1383995.0565993933,
-      "output_tokens_per_1k_characters": 4796.741598952991,
-      "tokens_per_1k_non_whitespace_characters": 1982706.9993176088,
-      "gpt_5_5_standard_usd_per_1k_lines": 46.34115464878959,
-      "gpt_5_5_standard_usd_per_1k_characters": 1.07629995336431,
-      "gpt_5_3_codex_standard_usd_per_1k_characters": 0.393493579273844,
-      "observed_model_high_bound_usd_per_1k_characters": 1.07629995336431
+      "bytes": 82675756,
+      "lines": 1860875,
+      "nonblank_lines": 1630985,
+      "characters": 80120385,
+      "non_whitespace_characters": 55925764,
+      "alphanumeric_characters": 49305538,
+      "tokens_per_line": 59611.89849506281,
+      "tokens_per_1k_characters": 1384545.1642799769,
+      "output_tokens_per_1k_characters": 4798.71767965169,
+      "tokens_per_1k_non_whitespace_characters": 1983527.5135803241,
+      "gpt_5_5_standard_usd_per_1k_lines": 46.35893383918856,
+      "gpt_5_5_standard_usd_per_1k_characters": 1.0767319828530528,
+      "gpt_5_3_codex_standard_usd_per_1k_characters": 0.39365170587734943,
+      "observed_model_high_bound_usd_per_1k_characters": 1.0767319828530528
     },
     "all_repo_cs_excluding_generated": {
       "files": 6437,
-      "bytes": 132045538,
-      "lines": 3060384,
-      "nonblank_lines": 2673856,
-      "characters": 127624746,
-      "non_whitespace_characters": 90046323,
-      "alphanumeric_characters": 79189341,
-      "tokens_per_line": 36224.34797496001,
-      "tokens_per_1k_characters": 868643.569743128,
-      "output_tokens_per_1k_characters": 3010.6023325601764,
-      "tokens_per_1k_non_whitespace_characters": 1231148.7161224785,
-      "gpt_5_5_standard_usd_per_1k_lines": 28.17081162984776,
-      "gpt_5_5_standard_usd_per_1k_characters": 0.6755233908869053,
-      "gpt_5_3_codex_standard_usd_per_1k_characters": 0.24697029497437745,
-      "observed_model_high_bound_usd_per_1k_characters": 0.6755233908869053
+      "bytes": 132065988,
+      "lines": 3060871,
+      "nonblank_lines": 2674296,
+      "characters": 127644919,
+      "non_whitespace_characters": 90059690,
+      "alphanumeric_characters": 79201526,
+      "tokens_per_line": 36241.413510076054,
+      "tokens_per_1k_characters": 869053.7193415432,
+      "output_tokens_per_1k_characters": 3012.0674681927608,
+      "tokens_per_1k_non_whitespace_characters": 1231741.8771039518,
+      "gpt_5_5_standard_usd_per_1k_lines": 28.184193652068316,
+      "gpt_5_5_standard_usd_per_1k_characters": 0.6758450056911391,
+      "gpt_5_3_codex_standard_usd_per_1k_characters": 0.24708798813057334,
+      "observed_model_high_bound_usd_per_1k_characters": 0.6758450056911391
     },
     "all_repo_source_broad": {
       "files": 7814,
-      "bytes": 148387502,
-      "lines": 3412256,
-      "nonblank_lines": 2982534,
-      "characters": 143434577,
-      "non_whitespace_characters": 102443794,
-      "alphanumeric_characters": 89626661,
-      "tokens_per_line": 32488.891499641293,
-      "tokens_per_1k_characters": 772898.8175075805,
-      "output_tokens_per_1k_characters": 2678.763838094632,
-      "tokens_per_1k_non_whitespace_characters": 1082158.426824762,
-      "gpt_5_5_standard_usd_per_1k_lines": 25.265836203086756,
-      "gpt_5_5_standard_usd_per_1k_characters": 0.6010649801616523,
-      "gpt_5_3_codex_standard_usd_per_1k_characters": 0.2197484164899095,
-      "observed_model_high_bound_usd_per_1k_characters": 0.6010649801616523
+      "bytes": 148410922,
+      "lines": 3412764,
+      "nonblank_lines": 2982995,
+      "characters": 143457699,
+      "non_whitespace_characters": 102459925,
+      "alphanumeric_characters": 89641284,
+      "tokens_per_line": 32504.53052481801,
+      "tokens_per_1k_characters": 773261.3333774438,
+      "output_tokens_per_1k_characters": 2680.05907441747,
+      "tokens_per_1k_non_whitespace_characters": 1082670.045015161,
+      "gpt_5_5_standard_usd_per_1k_lines": 25.278097462350164,
+      "gpt_5_5_standard_usd_per_1k_characters": 0.6013492591150511,
+      "gpt_5_3_codex_standard_usd_per_1k_characters": 0.21985244745072902,
+      "observed_model_high_bound_usd_per_1k_characters": 0.6013492591150511
     },
     "tools_scripts": {
       "files": 239,
-      "bytes": 5434908,
-      "lines": 119422,
-      "nonblank_lines": 106074,
-      "characters": 5258159,
-      "non_whitespace_characters": 4147101,
-      "alphanumeric_characters": 3375732,
-      "tokens_per_line": 928308.142159736,
-      "tokens_per_1k_characters": 21083503.7420892,
-      "output_tokens_per_1k_characters": 73072.60164631765,
-      "tokens_per_1k_non_whitespace_characters": 26732026.770749014,
-      "gpt_5_5_standard_usd_per_1k_lines": 721.9231061194754,
-      "gpt_5_5_standard_usd_per_1k_characters": 16.396138112027423,
-      "gpt_5_3_codex_standard_usd_per_1k_characters": 5.994402444971709,
-      "observed_model_high_bound_usd_per_1k_characters": 16.396138112027423
+      "bytes": 5435271,
+      "lines": 119428,
+      "nonblank_lines": 106080,
+      "characters": 5258516,
+      "non_whitespace_characters": 4147399,
+      "alphanumeric_characters": 3375977,
+      "tokens_per_line": 928846.598888033,
+      "tokens_per_1k_characters": 21095360.670577023,
+      "output_tokens_per_1k_characters": 73114.75480915148,
+      "tokens_per_1k_non_whitespace_characters": 26746954.322938304,
+      "gpt_5_5_standard_usd_per_1k_lines": 722.3446847305489,
+      "gpt_5_5_standard_usd_per_1k_characters": 16.405423318670135,
+      "gpt_5_3_codex_standard_usd_per_1k_characters": 5.997799803366577,
+      "observed_model_high_bound_usd_per_1k_characters": 16.405423318670135
     },
     "docs_markdown_text": {
       "files": 1063,
-      "bytes": 29744030,
-      "lines": 288665,
-      "nonblank_lines": 236700,
-      "characters": 29336058,
-      "non_whitespace_characters": 26139335,
-      "alphanumeric_characters": 23667650,
-      "tokens_per_line": 384045.2252715085,
-      "tokens_per_1k_characters": 3778981.31211085,
-      "output_tokens_per_1k_characters": 13097.44335793173,
-      "tokens_per_1k_non_whitespace_characters": 4241133.714878363,
-      "gpt_5_5_standard_usd_per_1k_lines": 298.66281391578474,
-      "gpt_5_5_standard_usd_per_1k_characters": 2.9388236544596418,
-      "gpt_5_3_codex_standard_usd_per_1k_characters": 1.0744293308136355,
-      "observed_model_high_bound_usd_per_1k_characters": 2.9388236544596418
+      "bytes": 29808136,
+      "lines": 289204,
+      "nonblank_lines": 237122,
+      "characters": 29399617,
+      "non_whitespace_characters": 26195713,
+      "alphanumeric_characters": 23719439,
+      "tokens_per_line": 383571.0834289982,
+      "tokens_per_1k_characters": 3773188.324596201,
+      "output_tokens_per_1k_characters": 13077.554989917046,
+      "tokens_per_1k_non_whitespace_characters": 4234673.498369752,
+      "gpt_5_5_standard_usd_per_1k_lines": 298.29525528000994,
+      "gpt_5_5_standard_usd_per_1k_characters": 2.934330097157388,
+      "gpt_5_3_codex_standard_usd_per_1k_characters": 1.0727869764697955,
+      "observed_model_high_bound_usd_per_1k_characters": 2.934330097157388
     }
   },
   "pricing": {
     "gpt-5.3-codex_standard_api_equivalent": {
-      "uncached_input_cost_usd": 7563.5402272500005,
-      "cached_input_cost_usd": 18576.7979264,
-      "output_cost_usd": 5379.1830119999995,
-      "total_cost_usd": 31519.521165649996
+      "uncached_input_cost_usd": 7568.375234000001,
+      "cached_input_cost_usd": 18588.4994848,
+      "output_cost_usd": 5382.6515119999995,
+      "total_cost_usd": 31539.5262308
     },
     "gpt-5.3-codex_priority_api_equivalent": {
-      "uncached_input_cost_usd": 15127.080454500001,
-      "cached_input_cost_usd": 37153.5958528,
-      "output_cost_usd": 10758.366023999999,
-      "total_cost_usd": 63039.04233129999
+      "uncached_input_cost_usd": 15136.750468000002,
+      "cached_input_cost_usd": 37176.9989696,
+      "output_cost_usd": 10765.303023999999,
+      "total_cost_usd": 63079.0524616
     },
     "gpt-5.4_standard_short_context_equivalent": {
-      "uncached_input_cost_usd": 10805.0574675,
-      "cached_input_cost_usd": 26538.282752,
-      "output_cost_usd": 5763.41037,
-      "total_cost_usd": 43106.7505895
+      "uncached_input_cost_usd": 10811.96462,
+      "cached_input_cost_usd": 26554.999264,
+      "output_cost_usd": 5767.12662,
+      "total_cost_usd": 43134.090504
     },
     "gpt-5.5_standard_short_context_equivalent": {
-      "uncached_input_cost_usd": 21610.114935,
-      "cached_input_cost_usd": 53076.565504,
-      "output_cost_usd": 11526.82074,
-      "total_cost_usd": 86213.501179
+      "uncached_input_cost_usd": 21623.92924,
+      "cached_input_cost_usd": 53109.998528,
+      "output_cost_usd": 11534.25324,
+      "total_cost_usd": 86268.181008
     },
     "gpt-5.5_batch_short_context_equivalent": {
-      "uncached_input_cost_usd": 10805.0574675,
-      "cached_input_cost_usd": 26538.282752,
-      "output_cost_usd": 5763.41037,
-      "total_cost_usd": 43106.7505895
+      "uncached_input_cost_usd": 10811.96462,
+      "cached_input_cost_usd": 26554.999264,
+      "output_cost_usd": 5767.12662,
+      "total_cost_usd": 43134.090504
     },
     "gpt-5.5_flex_short_context_equivalent": {
-      "uncached_input_cost_usd": 10805.0574675,
-      "cached_input_cost_usd": 26538.282752,
-      "output_cost_usd": 5763.41037,
-      "total_cost_usd": 43106.7505895
+      "uncached_input_cost_usd": 10811.96462,
+      "cached_input_cost_usd": 26554.999264,
+      "output_cost_usd": 5767.12662,
+      "total_cost_usd": 43134.090504
     },
     "gpt-5.5_priority_short_context_equivalent": {
-      "uncached_input_cost_usd": 54025.287337500005,
-      "cached_input_cost_usd": 132691.41376,
-      "output_cost_usd": 28817.05185,
-      "total_cost_usd": 215533.75294749998
+      "uncached_input_cost_usd": 54059.82310000001,
+      "cached_input_cost_usd": 132774.99631999998,
+      "output_cost_usd": 28835.6331,
+      "total_cost_usd": 215670.45252
     },
     "gpt-5.4_mini_standard_equivalent": {
-      "uncached_input_cost_usd": 3241.51724025,
-      "cached_input_cost_usd": 7961.4848256,
-      "output_cost_usd": 1729.023111,
-      "total_cost_usd": 12932.02517685
+      "uncached_input_cost_usd": 3243.5893860000006,
+      "cached_input_cost_usd": 7966.4997791999995,
+      "output_cost_usd": 1730.137986,
+      "total_cost_usd": 12940.227151199999
     },
     "gpt-5.5_standard_long_context_surcharge_upper_bound_equivalent": {
-      "uncached_input_cost_usd": 43220.22987,
-      "cached_input_cost_usd": 106153.131008,
-      "output_cost_usd": 17290.23111,
-      "total_cost_usd": 166663.591988
+      "uncached_input_cost_usd": 43247.85848,
+      "cached_input_cost_usd": 106219.997056,
+      "output_cost_usd": 17301.379859999997,
+      "total_cost_usd": 166769.23539599997
     },
     "gpt-5.5_standard_regional_10pct_equivalent": {
-      "uncached_input_cost_usd": 23771.1264285,
-      "cached_input_cost_usd": 58384.2220544,
-      "output_cost_usd": 12679.502814,
-      "total_cost_usd": 94834.85129690001
+      "uncached_input_cost_usd": 23786.322164,
+      "cached_input_cost_usd": 58420.9983808,
+      "output_cost_usd": 12687.678564,
+      "total_cost_usd": 94894.99910880001
     }
   },
   "pricing_upper_bound_no_cache_usd": {
-    "gpt-5.3-codex_standard_api_equivalent": 198710.70250324998,
-    "gpt-5.3-codex_priority_api_equivalent": 397421.40500649996,
-    "gpt-5.4_standard_short_context_equivalent": 281951.2953575,
-    "gpt-5.5_standard_short_context_equivalent": 563902.590715,
-    "gpt-5.5_batch_short_context_equivalent": 281951.2953575,
-    "gpt-5.5_flex_short_context_equivalent": 281951.2953575,
-    "gpt-5.5_priority_short_context_equivalent": 1409756.4767874999,
-    "gpt-5.4_mini_standard_equivalent": 84585.38860725,
-    "gpt-5.5_standard_long_context_surcharge_upper_bound_equivalent": 1122041.7710600002,
-    "gpt-5.5_standard_regional_10pct_equivalent": 620292.8497865
+    "gpt-5.3-codex_standard_api_equivalent": 198836.02159400002,
+    "gpt-5.3-codex_priority_api_equivalent": 397672.04318800004,
+    "gpt-5.4_standard_short_context_equivalent": 282129.08388,
+    "gpt-5.5_standard_short_context_equivalent": 564258.16776,
+    "gpt-5.5_batch_short_context_equivalent": 282129.08388,
+    "gpt-5.5_flex_short_context_equivalent": 282129.08388,
+    "gpt-5.5_priority_short_context_equivalent": 1410645.4194,
+    "gpt-5.4_mini_standard_equivalent": 84638.725164,
+    "gpt-5.5_standard_long_context_surcharge_upper_bound_equivalent": 1122749.2089,
+    "gpt-5.5_standard_regional_10pct_equivalent": 620683.984536
   },
   "primary_price_key": "gpt-5.5_standard_short_context_equivalent",
   "primary_price_label": "gpt-5.5 standard under-272K-input API-equivalent",
@@ -469,7 +469,7 @@
     "2026-05-25": 3524.457898,
     "2026-05-26": 3338.9016900000006,
     "2026-05-27": 3929.8841349999993,
-    "2026-05-28": 1915.4709430000003
+    "2026-05-28": 1970.150772
   },
   "weekly_gpt_5_5_standard_costs_usd": {
     "2026-W14": 329.099025,
@@ -480,11 +480,11 @@
     "2026-W19": 10763.822497,
     "2026-W20": 16047.471218,
     "2026-W21": 32734.548676,
-    "2026-W22": 12708.714666
+    "2026-W22": 12763.394495
   },
   "monthly_gpt_5_5_standard_costs_usd": {
     "2026-04": 11550.994991,
-    "2026-05": 74731.54090600001
+    "2026-05": 74786.220735
   },
   "daily_gpt_5_3_codex_standard_costs_usd": {
     "2026-04-03": 13.014706599999998,
@@ -5767,11 +5767,11 @@
       "total_tokens": 5042091205
     },
     "2026-05-28": {
-      "input_tokens": 2456209625,
-      "cached_input_tokens": 2365283456,
-      "output_tokens": 9273279,
-      "reasoning_output_tokens": 2707329,
-      "total_tokens": 2465482904
+      "input_tokens": 2525838534,
+      "cached_input_tokens": 2432149504,
+      "output_tokens": 9521029,
+      "reasoning_output_tokens": 2781250,
+      "total_tokens": 2535359563
     }
   },
   "weekly": {
@@ -5832,11 +5832,11 @@
       "total_tokens": 41892989053
     },
     "2026-W22": {
-      "input_tokens": 16451119866,
-      "cached_input_tokens": 15830361472,
-      "output_tokens": 56324732,
-      "reasoning_output_tokens": 16033150,
-      "total_tokens": 16507444598
+      "input_tokens": 16520748775,
+      "cached_input_tokens": 15897227520,
+      "output_tokens": 56572482,
+      "reasoning_output_tokens": 16107071,
+      "total_tokens": 16577321257
     }
   },
   "monthly": {
@@ -5848,11 +5848,11 @@
       "total_tokens": 14427675605
     },
     "2026-05": {
-      "input_tokens": 96171282554,
-      "cached_input_tokens": 92443824512,
-      "output_tokens": 329077948,
-      "reasoning_output_tokens": 98989894,
-      "total_tokens": 96500360502
+      "input_tokens": 96240911463,
+      "cached_input_tokens": 92510690560,
+      "output_tokens": 329325698,
+      "reasoning_output_tokens": 99063815,
+      "total_tokens": 96570237161
     }
   },
   "top_days": [
@@ -8455,70 +8455,71 @@
     "All dollar values are API-equivalent estimates, not local invoice proof"
   ],
   "previous_snapshot_delta": {
-    "previous_report_path": "C:\\hades\\Hecton8\\Docs\\DEPRECATED\\Root_Docs_Noise_2026-05-26\\TOKEN_USAGE_AUDIT_2026-05-27.json",
-    "previous_generated_at_samara": "2026-05-27T23:03:32.917743+04:00",
-    "elapsed_hours": 14.019303709722221,
-    "file_count_delta": 73,
-    "sessions_with_usage_delta": 69,
+    "previous_report_path": "C:\\hades\\Hecton8\\Docs\\DEPRECATED\\Root_Docs_Noise_2026-05-26\\TOKEN_USAGE_AUDIT_2026-05-28.json",
+    "previous_snapshot_mode": "same_day_existing_report",
+    "previous_generated_at_samara": "2026-05-28T13:04:42.411098+04:00",
+    "elapsed_hours": 0.2435068138888889,
+    "file_count_delta": 1,
+    "sessions_with_usage_delta": 1,
     "totals_delta": {
-      "input_tokens": 2606325783,
-      "cached_input_tokens": 2510593408,
-      "output_tokens": 9701627,
-      "reasoning_output_tokens": 2836269,
-      "total_tokens": 2616027410
+      "input_tokens": 69628909,
+      "cached_input_tokens": 66866048,
+      "output_tokens": 247750,
+      "reasoning_output_tokens": 73921,
+      "total_tokens": 69876659
     },
-    "gpt_5_5_standard_cost_usd_delta": 2025.0073890000058,
-    "gpt_5_5_priority_cost_usd_delta": 5062.518472499971,
-    "gpt_5_3_codex_standard_cost_usd_delta": 742.7082806500002,
-    "primary_code_lines_delta": 23883,
-    "primary_code_characters_delta": 1124303,
+    "gpt_5_5_standard_cost_usd_delta": 54.67982900000061,
+    "gpt_5_5_priority_cost_usd_delta": 136.69957250001607,
+    "gpt_5_3_codex_standard_cost_usd_delta": 20.005065150002338,
+    "primary_code_lines_delta": 487,
+    "primary_code_characters_delta": 20155,
     "velocity": {
-      "total_tokens_per_hour": 186601807.34837893,
-      "total_tokens_per_day": 4478443376.361094,
-      "total_tokens_per_minute": 3110030.122472982,
-      "total_tokens_per_second": 51833.8353745497,
-      "input_tokens_per_hour": 185909788.17247134,
-      "cached_input_tokens_per_hour": 179081176.92456675,
-      "uncached_input_tokens_per_hour": 6828611.247904611,
-      "output_tokens_per_hour": 692019.1759075763,
-      "reasoning_output_tokens_per_hour": 202311.6881356298,
-      "sessions_with_usage_per_hour": 4.921785092090509,
-      "jsonl_files_per_hour": 5.207105966994307,
-      "primary_code_lines_per_hour": 1703.5796138318497,
-      "primary_code_lines_per_day": 40885.910731964395,
-      "primary_code_characters_per_hour": 80196.7789042411,
-      "primary_code_characters_per_day": 1924722.6937017865,
-      "tokens_per_net_primary_code_line": 109535.12582171419,
-      "input_tokens_per_net_primary_code_line": 109128.91106644894,
-      "output_tokens_per_net_primary_code_line": 406.2147552652514,
-      "reasoning_tokens_per_net_primary_code_line": 118.7568144705439,
-      "tokens_per_1k_net_primary_code_chars": 2326799.2791978675,
-      "output_tokens_per_1k_net_primary_code_chars": 8629.01459837784,
-      "gpt_5_5_standard_usd_per_hour": 144.44421997903413,
-      "gpt_5_5_standard_usd_per_day": 3466.661279496819,
-      "gpt_5_5_priority_usd_per_hour": 361.11054994758223,
-      "gpt_5_3_codex_standard_usd_per_hour": 52.977544108338336,
-      "gpt_5_5_standard_usd_per_net_primary_code_line": 0.08478865255621178,
-      "gpt_5_5_standard_usd_per_1k_net_primary_code_chars": 1.8011224634284582
+      "total_tokens_per_hour": 286959768.73930275,
+      "total_tokens_per_day": 6887034449.743266,
+      "total_tokens_per_minute": 4782662.812321712,
+      "total_tokens_per_second": 79711.04687202854,
+      "input_tokens_per_hour": 285942343.4112664,
+      "cached_input_tokens_per_hour": 274596209.16608393,
+      "uncached_input_tokens_per_hour": 11346134.245182484,
+      "output_tokens_per_hour": 1017425.3280363943,
+      "reasoning_output_tokens_per_hour": 303568.5072604573,
+      "sessions_with_usage_per_hour": 4.106661263517232,
+      "jsonl_files_per_hour": 4.106661263517232,
+      "primary_code_lines_per_hour": 1999.944035332892,
+      "primary_code_lines_per_day": 47998.65684798941,
+      "primary_code_characters_per_hour": 82769.75776618981,
+      "primary_code_characters_per_day": 1986474.1863885554,
+      "tokens_per_net_primary_code_line": 143483.89938398357,
+      "input_tokens_per_net_primary_code_line": 142975.17248459958,
+      "output_tokens_per_net_primary_code_line": 508.72689938398355,
+      "reasoning_tokens_per_net_primary_code_line": 151.78850102669404,
+      "tokens_per_1k_net_primary_code_chars": 3466963.9791614986,
+      "output_tokens_per_1k_net_primary_code_chars": 12292.235177375342,
+      "gpt_5_5_standard_usd_per_hour": 224.5515356500487,
+      "gpt_5_5_standard_usd_per_day": 5389.236855601169,
+      "gpt_5_5_priority_usd_per_hour": 561.3788391251815,
+      "gpt_5_3_codex_standard_usd_per_hour": 82.15402612565315,
+      "gpt_5_5_standard_usd_per_net_primary_code_line": 0.11227890965092528,
+      "gpt_5_5_standard_usd_per_1k_net_primary_code_chars": 2.71296596378073
     }
   },
   "schema": "hecton8.codex_token_usage.fast_refresh.v1",
-  "fast_refresh_base_report": "C:\\hades\\Hecton8\\Docs\\DEPRECATED\\Root_Docs_Noise_2026-05-26\\TOKEN_USAGE_AUDIT_2026-05-27.json",
-  "fast_refresh_cutoff_utc": "2026-05-27T19:04:43.056000+00:00",
-  "fast_refresh_changed_jsonl_files_scanned": 80,
-  "fast_refresh_hourly_jsonl_files_scanned": 416,
-  "fast_refresh_increment_events_after_cutoff": 16265,
+  "fast_refresh_base_report": "C:\\hades\\Hecton8\\Docs\\DEPRECATED\\Root_Docs_Noise_2026-05-26\\TOKEN_USAGE_AUDIT_2026-05-28.json",
+  "fast_refresh_cutoff_utc": "2026-05-28T09:04:41.985000+00:00",
+  "fast_refresh_changed_jsonl_files_scanned": 22,
+  "fast_refresh_hourly_jsonl_files_scanned": 417,
+  "fast_refresh_increment_events_after_cutoff": 429,
   "fast_refresh_long_context_increment_events_after_cutoff": 0,
   "pricing_context_rules": {
     "base_rate_note": "GPT-5.5 base API-equivalent uses input $5.00, cached input $0.50, output $30.00 per 1M tokens.",
     "long_context_trigger_input_tokens": 272000,
     "long_context_surcharge_note": "Official pricing applies 2x input and 1.5x output when prompts exceed 272K input tokens. Local Codex JSONL does not expose provider-side per-request context classification, so this report adds an upper-bound sensitivity instead of pretending exact surcharge billing.",
     "regional_uplift_note": "Some regions can add about 10 percent. Local JSONL does not expose billing region, so this is a sensitivity row only.",
-    "gpt_5_5_long_context_upper_bound_usd": 166663.591988,
-    "gpt_5_5_long_context_upper_bound_delta_usd": 80450.090809,
-    "gpt_5_5_regional_10pct_usd": 94834.85129690001,
-    "gpt_5_5_regional_10pct_delta_usd": 8621.350117900016,
-    "gpt_5_5_long_context_regional_10pct_upper_bound_usd": 183329.95118680003,
+    "gpt_5_5_long_context_upper_bound_usd": 166769.23539599997,
+    "gpt_5_5_long_context_upper_bound_delta_usd": 80501.05438799998,
+    "gpt_5_5_regional_10pct_usd": 94894.99910880001,
+    "gpt_5_5_regional_10pct_delta_usd": 8626.81810080001,
+    "gpt_5_5_long_context_regional_10pct_upper_bound_usd": 183446.1589356,
     "post_cutoff_long_context_event_rule": "Exact for post-cutoff delta events whose input_tokens exceeds 272000. It is not all-time exact unless prior reports carried the same metric.",
     "post_cutoff_long_context_event_count": 0,
     "post_cutoff_long_context_event_usage": {
@@ -8530,7 +8531,7 @@
     },
     "post_cutoff_long_context_event_base_usd": 0.0,
     "post_cutoff_long_context_event_surcharge_delta_usd": 0.0,
-    "post_cutoff_base_delta_cost_usd": 2025.007389
+    "post_cutoff_base_delta_cost_usd": 54.679829000000005
   },
   "hourly": {
     "2026-05-23 13:00": {
@@ -9220,11 +9221,11 @@
       "total_tokens": 112182982
     },
     "2026-05-28 13:00": {
-      "input_tokens": 25050249,
-      "cached_input_tokens": 23890688,
-      "output_tokens": 81574,
-      "reasoning_output_tokens": 25162,
-      "total_tokens": 25131823
+      "input_tokens": 96141195,
+      "cached_input_tokens": 92223232,
+      "output_tokens": 330933,
+      "reasoning_output_tokens": 98990,
+      "total_tokens": 96472128
     }
   },
   "hourly_gpt_5_5_standard_costs_usd": {
@@ -9326,6 +9327,7 @@
     "2026-05-28 06:00": 158.86709,
     "2026-05-28 07:00": 3.957818,
     "2026-05-28 12:00": 103.973702,
-    "2026-05-28 13:00": 20.190369000000004
-  }
+    "2026-05-28 13:00": 75.629421
+  },
+  "fast_refresh_base_mode": "same_day_existing_report"
 }

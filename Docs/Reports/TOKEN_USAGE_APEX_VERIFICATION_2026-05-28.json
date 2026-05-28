@@ -1,7 +1,7 @@
 ﻿{
   "schema": "hecton8.token_usage_apex_verification.v1",
-  "generated_at_utc": "2026-05-28T09:10:26.935533+00:00",
-  "generated_at_samara": "2026-05-28T13:10:26.935550+04:00",
+  "generated_at_utc": "2026-05-28T09:23:51.945902+00:00",
+  "generated_at_samara": "2026-05-28T13:23:51.945932+04:00",
   "agent_id": "TOKEN_USAGE_AUDIT",
   "domain": "offline Codex token telemetry, pricing evidence, dashboards, and documentation artifacts",
   "evidence_class": "STATIC_SOURCE_AND_STATIC_DOC_PLUS_PYTHON_BYTECODE_COMPILE",
@@ -261,15 +261,15 @@
     },
     {
       "path": "Tools/CodexTokenUsageFastRefresh_20260528.py",
-      "sha256": "ab25b7406a38f27b454b585b0bc15b11f684cc57fd05e167db9a2151dddd790d",
-      "line_count": 494,
+      "sha256": "c8b1fc587fc1467c2cb2581015982ff454dfc64e72abe9732b282581b95b5c81",
+      "line_count": 500,
       "python_ast_counts": {
         "For": 9,
         "ListComp": 0,
         "DictComp": 10,
         "SetComp": 1,
         "GeneratorExp": 0,
-        "Call": 268,
+        "Call": 269,
         "Lambda": 0,
         "Await": 0,
         "Yield": 0
@@ -318,92 +318,92 @@
         {
           "name": "find_previous_report",
           "line": 78,
-          "end_line": 84
+          "end_line": 86
         },
         {
           "name": "read_previous",
-          "line": 87,
-          "end_line": 89
+          "line": 89,
+          "end_line": 91
         },
         {
           "name": "usage_cost",
-          "line": 92,
-          "end_line": 101
+          "line": 94,
+          "end_line": 103
         },
         {
           "name": "price_row",
-          "line": 104,
-          "end_line": 107
+          "line": 106,
+          "end_line": 109
         },
         {
           "name": "no_cache_cost",
-          "line": 110,
-          "end_line": 111
+          "line": 112,
+          "end_line": 113
         },
         {
           "name": "usage_map_costs",
-          "line": 114,
-          "end_line": 115
+          "line": 116,
+          "end_line": 117
         },
         {
           "name": "merge_period_map",
-          "line": 118,
-          "end_line": 122
+          "line": 120,
+          "end_line": 124
         },
         {
           "name": "week_key",
-          "line": 125,
-          "end_line": 127
+          "line": 127,
+          "end_line": 129
         },
         {
           "name": "update_scope_economics",
-          "line": 130,
-          "end_line": 153
+          "line": 132,
+          "end_line": 155
         },
         {
           "name": "per_hour",
-          "line": 156,
-          "end_line": 159
+          "line": 158,
+          "end_line": 161
         },
         {
           "name": "build_velocity",
-          "line": 162,
-          "end_line": 210
+          "line": 164,
+          "end_line": 212
         },
         {
           "name": "per_day",
-          "line": 165,
-          "end_line": 167
+          "line": 167,
+          "end_line": 169
         },
         {
           "name": "per_minute",
-          "line": 169,
-          "end_line": 171
+          "line": 171,
+          "end_line": 173
         },
         {
           "name": "per_second",
-          "line": 173,
-          "end_line": 175
+          "line": 175,
+          "end_line": 177
         },
         {
           "name": "per_unit",
-          "line": 177,
-          "end_line": 180
+          "line": 179,
+          "end_line": 182
         },
         {
           "name": "build_report",
-          "line": 213,
-          "end_line": 378
+          "line": 215,
+          "end_line": 383
         },
         {
           "name": "write_reports",
-          "line": 381,
-          "end_line": 473
+          "line": 386,
+          "end_line": 479
         },
         {
           "name": "main",
-          "line": 476,
-          "end_line": 490
+          "line": 482,
+          "end_line": 496
         }
       ],
       "hot_path_symbol_hits": [],
@@ -659,25 +659,25 @@
   "owned_artifacts": [
     {
       "path": "Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-28.json",
-      "sha256": "5d9ebf158a8d232aebc4bc170713f6511f83d8a2d438d34bea4c6f317822099d",
-      "bytes": 564332,
-      "line_count": 9331
+      "sha256": "a239c3d7e8fd2ffcdc3f8a62c296c9f2eae94fcfe45f0ddc7a2abd153ecceb2f",
+      "bytes": 564418,
+      "line_count": 9333
     },
     {
       "path": "Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-28.md",
-      "sha256": "92a9ca02f8f29daeb4170da1bc3556991dc1e17fb6939d766bf02aa1d0f801b0",
-      "bytes": 2213,
-      "line_count": 57
+      "sha256": "9a3ac695b4d2e81dabf7499eace39238f9352e0de8f764935c017a8212cb1fd2",
+      "bytes": 2242,
+      "line_count": 58
     },
     {
       "path": "Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-28.json",
-      "sha256": "cb569ca85d09b2cc6d15c1371d646f60850ee1ef52829fd7631e9c8f6d43ed17",
-      "bytes": 72060,
+      "sha256": "6f3266df1c926a938c0e86341a0d2abb621c012cdf36ead386e9596cb5211a8d",
+      "bytes": 72072,
       "line_count": 3254
     },
     {
       "path": "Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-28.md",
-      "sha256": "babf47b89dcdf9bdca7c534065cbe1b3c42834693045d1e71fab87d50cbb82eb",
+      "sha256": "f5a632c7b417967228add9fe4cafa0370184506f62c8de9a0bea4c2b002c8766",
       "bytes": 7067,
       "line_count": 190
     }
@@ -691,37 +691,37 @@
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/daily_cost.png",
-      "sha256": "a09971b0f45a41c650fb13a2fbfc02f2925c97d6fa027d75ee46a0413dd77015",
-      "bytes": 94752,
+      "sha256": "1de8cb9484366a0591c61b1758e2bab86d4e97756824cc0a63ddf7f74e654c95",
+      "bytes": 94820,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/daily_io_stack.png",
-      "sha256": "6bbf5a4f16cf1a2401bbf8b76e14c446ebde12e78a1416807325b91e4f339511",
-      "bytes": 85031,
+      "sha256": "87739cc3363faf29d07a5b44f19aa1b5d2316818a6446c9c679b0a4e72085ad4",
+      "bytes": 85101,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/daily_output_reasoning.png",
-      "sha256": "4c137fb9fe5314101317d2a66c163221292d2d4579ae194010e5c1e86376d858",
-      "bytes": 119677,
+      "sha256": "de9b9ea3eb44f87307edab4694cfa721edc7591614a3fce59b97ede01b3ac14b",
+      "bytes": 119659,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/daily_ratios.png",
-      "sha256": "ebb465af23ebe08e51ee7953c454b1c85151222ccd62e0f95dbb1f27212c8a1b",
-      "bytes": 109661,
+      "sha256": "756d99efe676afea40f35e6532d5f9c3277a6a2090e51de6b704698c4bfa3b78",
+      "bytes": 109648,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/daily_total_tokens.png",
-      "sha256": "e126a0f44de03dd5675707570bdca58fe52d31c699ae58c1206a1df15a2dfe42",
-      "bytes": 85515,
+      "sha256": "eb0786f19748542da046b0a4016879b003f4fe5a9f756544b3abcbcf4b213406",
+      "bytes": 85463,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/docs_artifact_counts.png",
-      "sha256": "77ff8681a60e3549edefee2030fb990f0ee262c4440a6a7ab9e6a90a319e5454",
+      "sha256": "01a8f541e8554f842dd6e901879d08f33ae9d4a12621242e32ec4006f2ebde40",
       "bytes": 81964,
       "png_signature_ok": true
     },
@@ -739,68 +739,68 @@
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/git_churn_by_day.png",
-      "sha256": "354cffb65eed111c777b1557396ce90bf1619c54ebea88ab82ba7437b5465376",
-      "bytes": 92955,
+      "sha256": "ed1e0bc0b9bbc9da4b5f0ed6db0a2581179855d534cbb6af59a332bca05a0fe3",
+      "bytes": 92962,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/git_churn_by_week.png",
-      "sha256": "d3be54578f01a6aa1605215acb55a77b5aec47a798020841fb8f0a4c8289aefa",
-      "bytes": 74270,
+      "sha256": "0980dfb3f59540d2304826efe1cf9512dc67380b8d195300edda2cc016ea2a49",
+      "bytes": 74355,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/git_commit_weekday_hour_heatmap.png",
-      "sha256": "bd162f0a6155e9f82a51dcc7b07bc2b7f8d96f746c3f4ac0d4fbe24c0a3fc99c",
-      "bytes": 54519,
+      "sha256": "5476f5ac87fbb8cd64ab6e8f92054e9995ce62edabd230d34698813748a26902",
+      "bytes": 54504,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/git_commits_by_day.png",
-      "sha256": "f1d989a54b98d1ccd610f5e48d4f2ef8c7c60574edcef272ca5fb9ac2d9c6f7b",
-      "bytes": 87585,
+      "sha256": "746d2e187026f2aa8f3c0362bd769f2186dd36d27127d37328ae3a5579b21a90",
+      "bytes": 87639,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/git_commits_by_week.png",
-      "sha256": "e1e29688c6c5eebd01b964ec89bd0f5ae99d736932ce1919a489e8a3df333f81",
-      "bytes": 81280,
+      "sha256": "503171c453e16859644b66689751f9c5407373289a3947b58f284373b15983e4",
+      "bytes": 81341,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/git_insertions_deletions_by_day.png",
-      "sha256": "c17bc6a34fe7028ee0087dabc103d77ddb291c1a8c69c2443083cd39c9ac8595",
-      "bytes": 98292,
+      "sha256": "2075597d8caa2c0a06c9120621cabf1283bf54a14488d1da8041ef617782e6fb",
+      "bytes": 98185,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/hourly_cost_last_96h.png",
-      "sha256": "f5857e4a669504ee32c19f5eddbac92514ee364e7e9b150eba64a92c32158732",
-      "bytes": 160035,
+      "sha256": "1c2c1480a6e1361a0af667b7f0ad3313e88e54d3631255e61c7b79d3a35fed34",
+      "bytes": 159608,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/hourly_io_stack_last_96h.png",
-      "sha256": "1b12f2941cdb0a1c71378ef1fb01e4d2d01935dd50da1af4ea9fe080e41b5f01",
-      "bytes": 145226,
+      "sha256": "ceb32cba39d6d2f8393ebe5cd207db58f2c921642f3caafd5b91cd7f0a9f7236",
+      "bytes": 144869,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/hourly_output_reasoning_last_96h.png",
-      "sha256": "bdaa3fe052e26ac19159172fbcda25d60465bc8520bbec22a37643d44aab5958",
-      "bytes": 199454,
+      "sha256": "5bfda555894b3411e487fd6f4cedd07886d71741b183bb5ee585c8a728fad0a9",
+      "bytes": 199057,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/hourly_ratios_last_96h.png",
-      "sha256": "d99dcb4fa843822a8eb59af06ebb1051e4aedf7af1c0878273f0722e46389251",
-      "bytes": 177631,
+      "sha256": "f2c0a7b1dc4a9baa2395309ce3a3e2ebad7d8f5ff8792577051acf3e102c6608",
+      "bytes": 177730,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/hourly_total_tokens_last_96h.png",
-      "sha256": "dc9b7b1c2590cf752ae7f15d693ed0469d236a2052e0786d890eaa86789e7d47",
-      "bytes": 159114,
+      "sha256": "70ed4917d954866cec57b66ca72bccd24353a089afa87021c73135812e925bbf",
+      "bytes": 158625,
       "png_signature_ok": true
     },
     {
@@ -817,14 +817,14 @@
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/project_lines_by_scope.png",
-      "sha256": "1037cfd52fef58a0277d74f8bf553b9ff0f2dc1d958d5da7691268964ffa61e9",
+      "sha256": "efb20d7102d11dfcb3aed778933a506a898ee357aa1d549411b3cd8586f51807",
       "bytes": 91727,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/token_density_by_scope.png",
-      "sha256": "21868e8f74f539886aa92ab41733db3dc4322276f41703af89f030e766529a7e",
-      "bytes": 94412,
+      "sha256": "d11978a6d6909a6067bf99366d23c5dd3ea8543f9aef5d1ce860f2bae809d42a",
+      "bytes": 94433,
       "png_signature_ok": true
     },
     {
@@ -841,20 +841,20 @@
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/weekly_cost.png",
-      "sha256": "d25ff1c6defe077a15dc158ca39ba89ae0391fa322983a83b4489646c951a850",
-      "bytes": 85004,
+      "sha256": "c7e77a0c084fa971e8a06e7c95468737dacb662924ad3c162f0bc0a541d861d3",
+      "bytes": 85072,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/weekly_io_stack.png",
-      "sha256": "fbecbd209c9d5c69600d6a917cc88d643f07d758c6a4b5343f353e06c3701e08",
-      "bytes": 79667,
+      "sha256": "594abbb931b9b730ded414f92d05442a170f82ab0c830ba365bffca9d0a41b83",
+      "bytes": 79654,
       "png_signature_ok": true
     },
     {
       "path": "Docs/Reports/MetricCharts/2026-05-28/weekly_total_tokens.png",
-      "sha256": "9879390e6dd90106c1427ef45b345a7e18399d7fe9763ba0518eff3c163722c4",
-      "bytes": 69921,
+      "sha256": "971a79555536a891336ab1bcc94e900b129ba993045089fed610cb6a9c2064ba",
+      "bytes": 69872,
       "png_signature_ok": true
     }
   ],
@@ -881,28 +881,28 @@
     "interpretation": "The work generated offline charts/reports. It did not add water/light/fog/physics/runtime visual systems, so fake-first and continuous GlobalQualityWeight scaling are not invoked."
   },
   "token_report_headline": {
-    "total_tokens": 110860414953,
-    "input_tokens": 110475153995,
-    "cached_input_tokens": 106153131008,
-    "output_tokens": 384227358,
-    "reasoning_output_tokens": 120535145,
-    "sessions_with_usage": 2873,
-    "gpt_5_5_standard_api_equivalent_usd": 86213.501179,
-    "delta_total_tokens": 2616027410,
-    "tokens_per_hour": 186601807.34837893,
-    "tokens_per_second": 51833.8353745497,
-    "gpt_5_5_standard_usd_per_hour": 144.44421997903413
+    "total_tokens": 110930291612,
+    "input_tokens": 110544782904,
+    "cached_input_tokens": 106219997056,
+    "output_tokens": 384475108,
+    "reasoning_output_tokens": 120609066,
+    "sessions_with_usage": 2874,
+    "gpt_5_5_standard_api_equivalent_usd": 86268.181008,
+    "delta_total_tokens": 69876659,
+    "tokens_per_hour": 286959768.73930275,
+    "tokens_per_second": 79711.04687202854,
+    "gpt_5_5_standard_usd_per_hour": 224.5515356500487
   },
   "pricing_context_rules": {
     "base_rate_note": "GPT-5.5 base API-equivalent uses input $5.00, cached input $0.50, output $30.00 per 1M tokens.",
     "long_context_trigger_input_tokens": 272000,
     "long_context_surcharge_note": "Official pricing applies 2x input and 1.5x output when prompts exceed 272K input tokens. Local Codex JSONL does not expose provider-side per-request context classification, so this report adds an upper-bound sensitivity instead of pretending exact surcharge billing.",
     "regional_uplift_note": "Some regions can add about 10 percent. Local JSONL does not expose billing region, so this is a sensitivity row only.",
-    "gpt_5_5_long_context_upper_bound_usd": 166663.591988,
-    "gpt_5_5_long_context_upper_bound_delta_usd": 80450.090809,
-    "gpt_5_5_regional_10pct_usd": 94834.85129690001,
-    "gpt_5_5_regional_10pct_delta_usd": 8621.350117900016,
-    "gpt_5_5_long_context_regional_10pct_upper_bound_usd": 183329.95118680003,
+    "gpt_5_5_long_context_upper_bound_usd": 166769.23539599997,
+    "gpt_5_5_long_context_upper_bound_delta_usd": 80501.05438799998,
+    "gpt_5_5_regional_10pct_usd": 94894.99910880001,
+    "gpt_5_5_regional_10pct_delta_usd": 8626.81810080001,
+    "gpt_5_5_long_context_regional_10pct_upper_bound_usd": 183446.1589356,
     "post_cutoff_long_context_event_rule": "Exact for post-cutoff delta events whose input_tokens exceeds 272000. It is not all-time exact unless prior reports carried the same metric.",
     "post_cutoff_long_context_event_count": 0,
     "post_cutoff_long_context_event_usage": {
@@ -914,7 +914,7 @@
     },
     "post_cutoff_long_context_event_base_usd": 0.0,
     "post_cutoff_long_context_event_surcharge_delta_usd": 0.0,
-    "post_cutoff_base_delta_cost_usd": 2025.007389
+    "post_cutoff_base_delta_cost_usd": 54.679829000000005
   },
   "official_pricing_sources_checked": [
     {
@@ -943,11 +943,11 @@
     "unity_build_invoked_by_token_usage_audit": false,
     "final_compile_check": "python -m py_compile Tools/CodexTokenUsageAudit_20260525.py Tools/CodexTokenUsageFastRefresh_20260528.py Tools/ProjectMetricsDashboard_20260528.py Tools/TokenUsageApexVerification_20260528.py",
     "cpu_sample_before_final_compile": {
-      "sampled_at_samara": "2026-05-28T13:10:11.3131574+04:00",
-      "cpu_total_percent": 28.26,
+      "sampled_at_samara": "2026-05-28T13:19:09.5014520+04:00",
+      "cpu_total_percent": 9.98,
       "dotnet_or_csc_process_count": 0,
       "dotnet_or_csc_processes": [],
-      "note": "Clean sample before TOKEN_USAGE_AUDIT long-context precision py_compile. No dotnet build invoked."
+      "note": "Sample before TOKEN_USAGE_AUDIT same-day delta integrity py_compile. No dotnet build invoked."
     },
     "throttling_interpretation": "Compilation throttling rule targets dotnet/csc/Unity. This pass used Python bytecode compile only after sampling CPU and dotnet/csc process state."
   },

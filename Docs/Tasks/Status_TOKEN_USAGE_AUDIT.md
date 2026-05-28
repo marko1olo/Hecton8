@@ -119,3 +119,8 @@
 - [x] Task 84 - Add long-context regional upper bound | Justification: added the combined long-context plus regional +10% sensitivity row so base/regional/long-context scenarios are not conflated. Alternative rejected: forcing readers to stack sensitivity math manually. Microseconds saved: 0 audit-only.
 - [x] Task 85 - Regenerate and validate precision artifacts | Justification: refreshed token report, ledger, dashboard, 29 charts, apex report, SHA files, and passed py_compile, static scans, doc-structure gate, and scoped diff check. Alternative rejected: reporting the patch without regenerating proof artifacts. Microseconds saved: 0 audit-only.
 - [x] Task 86 - Record clean compile-throttle sample | Justification: waited until CPU was 28.26% with zero dotnet/csc/VBCSCompiler/MSBuild processes before running Python bytecode compile; no dotnet build or Unity build was invoked. Alternative rejected: compile under CPU contention. Microseconds saved: 0 audit-only.
+
+## Same-Day Delta Integrity Polish 2026-05-28 13:20 Europe/Samara
+
+- [x] Task 87 - Recheck official pricing source | Justification: checked current official GPT-5.5 model/pricing docs again before changing cost logic. Alternative rejected: relying on yesterday's cached rate memory. Microseconds saved: 0 audit-only.
+- [x] Task 88 - Fix same-day previous snapshot selection | Justification: made fast refresh use the existing same-day report as the base snapshot when present, falling back to prior dated reports only on the first run of a day. Alternative rejected: continuing to label since-yesterday deltas as since previous snapshot. Microseconds saved: 0 audit-only.

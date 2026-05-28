@@ -408,3 +408,34 @@ Known faults:
 - All-time exact long-context invoice classification remains absent; only post-cutoff delta-event classification is exact from local JSONL.
 - Runtime 0 B/frame remains `PENDING_RUNTIME_VERIFICATION_FOR_ANY_RUNTIME_CLAIM`.
 - No `Docs/AgentLogs/Dump_TOKEN_USAGE_AUDIT.bin` was generated; no runtime crash/NaN fault occurred in this offline domain.
+
+## 2026-05-28 13:25 Europe/Samara - Same-day delta integrity patch
+
+What was wrong:
+- Fast refresh used the previous dated report as its base even when a current same-day report already existed.
+- Therefore repeated same-day "since previous snapshot" velocity could actually mean "since yesterday", which is misleading.
+
+What was done:
+- Changed `Tools/CodexTokenUsageFastRefresh_20260528.py` so `find_previous_report()` prefers the existing same-day report before falling back to older dated reports.
+- Added `fast_refresh_base_mode` and `previous_snapshot_mode` to the JSON/Markdown surfaces.
+- Regenerated token report, ledger, dashboard, 29 charts, apex report, and SHA files.
+
+Evidence:
+- Base mode: `same_day_existing_report`.
+- Token total: `110,930,291,612`.
+- Delta tokens since actual previous same-day snapshot: `69,876,659`.
+- Tokens/hour: `286,959,768.73930275`.
+- GPT-5.5 base API-equivalent: `$86,268.181008`.
+- Chart count: `29`.
+- Final JSON SHA-256: `05710ccf8398ec766a129d04a86e37cb28fc2a4f7f2bf586535c49f274b3012c`.
+
+Verification:
+- CPU sample before compile: `2026-05-28T13:19:09.5014520+04:00`, CPU `9.98%`, compiler processes `0`.
+- `python -m py_compile Tools\CodexTokenUsageAudit_20260525.py Tools\CodexTokenUsageFastRefresh_20260528.py Tools\ProjectMetricsDashboard_20260528.py Tools\TokenUsageApexVerification_20260528.py` passed.
+- Static hot-path and forbidden-text scans remain `0`.
+- `dotnet build`: not invoked.
+- Unity build/import/playmode: not invoked.
+
+Known faults:
+- Runtime 0 B/frame remains `PENDING_RUNTIME_VERIFICATION_FOR_ANY_RUNTIME_CLAIM`.
+- Local JSONL still cannot prove invoice SKU, region, enterprise discount, or all-time exact long-context classification.

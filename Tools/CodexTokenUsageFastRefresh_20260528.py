@@ -77,6 +77,8 @@ def fmt_money(value):
 
 def find_previous_report():
     current = datetime.date.fromisoformat(REPORT_DATE)
+    if REPORT_JSON.exists():
+        return REPORT_JSON
     for days_back in range(1, 14):
         candidate = TOKEN_REPORT_DIR / f"TOKEN_USAGE_AUDIT_{(current - datetime.timedelta(days=days_back)).isoformat()}.json"
         if candidate.exists():
@@ -212,6 +214,7 @@ def build_velocity(delta, elapsed_hours, primary_cost_delta, priority_cost_delta
 
 def build_report():
     previous_path, previous = read_previous()
+    previous_snapshot_mode = "same_day_existing_report" if previous_path == REPORT_JSON else "prior_dated_report"
     now_utc = datetime.datetime.now(UTC)
     now_local = now_utc.astimezone(SAMARA)
     previous_generated = parse_ts(previous.get("generated_at_samara"))
@@ -308,6 +311,7 @@ def build_report():
         "generated_at_samara": now_local.isoformat(),
         "evidence_class": "FAST_INCREMENTAL_LOCAL_CODEX_JSONL_AND_FILESYSTEM",
         "fast_refresh_base_report": str(previous_path),
+        "fast_refresh_base_mode": previous_snapshot_mode,
         "fast_refresh_cutoff_utc": cutoff.isoformat(),
         "fast_refresh_changed_jsonl_files_scanned": len(changed_files),
         "fast_refresh_hourly_jsonl_files_scanned": len(hourly_files),
@@ -362,6 +366,7 @@ def build_report():
         ],
         "previous_snapshot_delta": {
             "previous_report_path": str(previous_path),
+            "previous_snapshot_mode": previous_snapshot_mode,
             "previous_generated_at_samara": previous.get("generated_at_samara"),
             "elapsed_hours": elapsed_hours,
             "file_count_delta": file_delta,
@@ -412,6 +417,7 @@ def write_reports(report):
         "## Increment Since Previous Snapshot",
         "",
         f"Previous report: `{change['previous_report_path']}`",
+        f"Previous snapshot mode: `{change['previous_snapshot_mode']}`",
         f"Cutoff UTC: `{report['fast_refresh_cutoff_utc']}`",
         f"Changed JSONL files scanned: {fmt_int(report['fast_refresh_changed_jsonl_files_scanned'])}",
         f"Increment events after cutoff: {fmt_int(report['fast_refresh_increment_events_after_cutoff'])}",

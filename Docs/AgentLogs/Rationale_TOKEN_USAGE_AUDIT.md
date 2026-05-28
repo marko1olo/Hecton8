@@ -172,3 +172,11 @@ Solution: Add post-cutoff increment-event accounting for deltas whose `input_tok
 Rejected Alternatives: Treating the whole corpus as exact long-context spend was rejected because local JSONL lacks provider-side per-request classification. Ignoring long-context entirely was rejected because official GPT-5.5 pricing has a higher long-context row.
 Scalability potential: Future refreshes can carry an exact post-cutoff surcharge signal while keeping all-time billing proof downgraded until the telemetry contains provider invoice classification.
 Hardware Impact: 0 us runtime gain. Audit quality gain: separates base cost, full upper bound, and observed post-cutoff surcharge pressure.
+
+## Decision 30 - 2026-05-28 same-day delta integrity
+
+Problem: Fast refresh compared every same-day rerun against the previous dated report, so "since previous snapshot" metrics actually meant "since previous day" after the first same-day refresh.
+Solution: Prefer the existing same-day `TOKEN_USAGE_AUDIT_{date}.json` as the fast-refresh base when present, and record `fast_refresh_base_mode`/`previous_snapshot_mode` in JSON and Markdown.
+Rejected Alternatives: Keeping the old behavior was rejected because it made intra-day token velocity misleading. Creating many full duplicate reports was rejected because the existing dated report plus hash-backed apex proof already owns the current mutable snapshot.
+Scalability potential: Future same-day refreshes now measure actual incremental churn between agent runs without requiring a full replay.
+Hardware Impact: 0 us runtime gain. Audit quality gain: velocity labels now match the snapshot window.
