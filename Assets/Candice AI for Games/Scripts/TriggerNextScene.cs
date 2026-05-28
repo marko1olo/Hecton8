@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -14,6 +12,8 @@ public class TriggerNextScene : MonoBehaviour
     public float timeToNextScene = 5f;
     private bool timerOn = false;
     private float timer;
+    private bool loadScheduled;
+    private float loadAtTime;
 
     //if checked, next scene will load based on timer, as soon as current scene loads
     public bool isIntro = false;
@@ -38,7 +38,7 @@ public class TriggerNextScene : MonoBehaviour
             Loading.SetActive(false);
         }
         if (isIntro) {
-            StartCoroutine(myWaitCoroutine());
+            ScheduleLoadNextScene();
         };
         
     }
@@ -54,6 +54,12 @@ public class TriggerNextScene : MonoBehaviour
                 lastDisplayedSeconds = seconds;
                 TimeText.text = countdownLabels[seconds];
             }
+        }
+
+        if (loadScheduled && Time.time >= loadAtTime)
+        {
+            loadScheduled = false;
+            LoadNextScene();
         }
     }
 
@@ -74,9 +80,12 @@ public class TriggerNextScene : MonoBehaviour
         {
             if (!isIntro)
             {
-                StartCoroutine(myWaitCoroutine());
+                ScheduleLoadNextScene();
                 timerOn = true;
-                TimeObject.SetActive(true);
+                if (TimeObject != null)
+                {
+                    TimeObject.SetActive(true);
+                }
             };
         }
     }
@@ -85,9 +94,12 @@ public class TriggerNextScene : MonoBehaviour
         if (collision.gameObject.CompareTag("CandiceShockwaveCollider")) {
             if (!isIntro)
             {
-                StartCoroutine(myWaitCoroutine());
+                ScheduleLoadNextScene();
                 timerOn = true;
-                TimeObject.SetActive(true);
+                if (TimeObject != null)
+                {
+                    TimeObject.SetActive(true);
+                }
             };
         }
     }
@@ -100,10 +112,16 @@ public class TriggerNextScene : MonoBehaviour
         loadingOperation = SceneManager.LoadSceneAsync(SceneManager.GetActiveScene().buildIndex + 1,  LoadSceneMode.Single);
     }
 
-    IEnumerator myWaitCoroutine()
+    private void ScheduleLoadNextScene()
     {
-        yield return new WaitForSeconds(timeToNextScene);
-        LoadNextScene();
+        if (loadScheduled)
+        {
+            return;
+        }
+
+        timer = timeToNextScene;
+        loadAtTime = Time.time + Mathf.Max(0f, timeToNextScene);
+        loadScheduled = true;
     }
 
 }

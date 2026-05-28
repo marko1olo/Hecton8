@@ -911,11 +911,15 @@ namespace Hecton8.Core
             if (!math.all(math.isfinite(shiftFloat)) || math.lengthsq(shiftFloat) <= 0.0001f)
                 return dependency;
 
-            if (!TryAcquireWriteView(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<AupOriginShiftRuntimeState> runtimeState))
+            if (!vault.TryAcquireMutationGuard(RebaseScheduleMutationGuardMask))
                 return dependency;
 
+            bool scheduleGuardHeld = true;
             try
             {
+                if (!TryOpenVaultBuffer(vault, in _runtimeStateHandle, RuntimeStateBuffer, RuntimeStateCount, out NativeArray<AupOriginShiftRuntimeState> runtimeState))
+                    return dependency;
+
                 AupOriginShiftRuntimeState runtime = runtimeState[0];
                 float sectorSize = SanitizeSectorSize(runtime.SectorSizeMeters);
                 uint sectorHash = ResolveSectorHash(newTotalUniverseOffset, sectorSize);
@@ -948,10 +952,11 @@ namespace Hecton8.Core
                 JobHandle handle = dependency;
                 if (batchCount > 0)
                 {
-                    if (!TryLockScheduledBuffer(vault, MockStatesBuffer, ScheduleLockStatesFlag, ref info) ||
-                        !TryLockScheduledBuffer(vault, CounterBuffer, ScheduleLockCounterFlag, ref info))
+                    if (!TryMarkScheduledBuffer(ScheduleLockStatesFlag, ref info) ||
+                        !TryMarkScheduledBuffer(ScheduleLockCounterFlag, ref info))
                     {
                         ReleaseScheduledRebaseLocks(vault, in info);
+                        scheduleGuardHeld = false;
                         info = default;
                         return dependency;
                     }
@@ -960,6 +965,7 @@ namespace Hecton8.Core
                         !TryOpenVaultBuffer(vault, in _counterHandle, CounterBuffer, CounterCount, out counters))
                     {
                         ReleaseScheduledRebaseLocks(vault, in info);
+                        scheduleGuardHeld = false;
                         info = default;
                         return dependency;
                     }
@@ -1002,11 +1008,14 @@ namespace Hecton8.Core
                 }
 
                 runtimeState[0] = runtime;
+                if (info.Flags != 0)
+                    scheduleGuardHeld = false;
                 return handle;
             }
             finally
             {
-                vault.ReleaseWriteLock(in _runtimeStateHandle, OwnerSystemId);
+                if (scheduleGuardHeld)
+                    vault.ReleaseMutationGuard(RebaseScheduleMutationGuardMask);
             }
         }
 

@@ -1046,3 +1046,27 @@ Rejected Alternatives: Nested `powershell` validation was rejected because the s
 Scalability potential: Low tier CLI authors get deterministic success/failure. Middle tier Workbench receives clean process output. High/Ultra tier automation can parse JSON apply output without host text contamination.
 
 Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. This is no-Unity offline tooling; the gain is failed-handoff prevention, not frame time.
+
+## Decision 88 - Graph node snippets need the same bounded apply path as settings and locale
+
+Problem: Graph node snippet generation produced a valid `Generated/graph_node_snippet.json`, but authors still had to manually insert the object into `Graphs/main.h8graph.json`. That preserved the highest-risk step: malformed JSON, duplicate node IDs, bad opcode tokens, missing graph budget, or silent destruction of future graph fields.
+
+Solution: Add `Tools/apply_graph_node_snippet.ps1`, expose it through `h8mod.ps1 -Action apply-node-snippet`, the Workbench Apply Node Snippet button, and the SDK Hub generator. The helper accepts only starter-relative Generated snippets and the exact graph/manifest files, validates node IDs/opcodes/parameters, rejects duplicates unless `-Replace` is explicit, writes through temp files, validates the full starter kit, and restores previous files on failure.
+
+Rejected Alternatives: Manual copy/paste was rejected because it leaves the most fragile authoring step in place. Blind append was rejected because it can corrupt unknown graph shape and duplicate authority. A runtime graph compiler/editor was rejected because current public runtime ingress remains envelope-only and this pass is offline SDK authoring.
+
+Scalability potential: Low tier authors can create and apply graph nodes from PowerShell or pwsh without Unity. Middle tier authors use the Workbench over the same tool. High tier can layer a structured graph editor on the same file contract. Ultra tier can add graph simulation, visual diff, and package diagnostics without changing runtime truth ownership.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. This is offline authoring and validation; it prevents broken graph data before runtime loader, FutureCommandEnvelope validation, HectonEventBus isolation, SignalBus, GlobalDataVault, save, physics, rendering, Burst/job, telemetry, or GlobalQualityWeight routes are touched.
+
+## Decision 89 - Graph apply must repair the minimum envelope budget atomically
+
+Problem: The starter graph begins empty with `MaxEnvelopesPerFrame = 0` and authoring manifest budget `0`. Applying the first node without budget repair would produce an immediately invalid graph, forcing random authors into a second manual budget edit. Repairing only one file would create graph/manifest budget drift.
+
+Solution: When a valid graph node is applied and the graph budget is below `1`, raise graph `MaxEnvelopesPerFrame` to `1`; if manifest `Budgets.MaxEnvelopesPerFrame` is below that graph budget, raise it to match. Write graph and manifest through temp files, keep per-file backups, validate the whole starter kit after both replacements, and restore only files with real backups on failure.
+
+Rejected Alternatives: Leaving budgets unchanged was rejected because a generated/apply workflow must not produce an invalid starter. Raising only the graph budget was rejected because manifest parity is a validator contract. Raising budgets at runtime was rejected because package authoring must be explicit and reviewable before runtime.
+
+Scalability potential: Low tier authors get a one-command valid graph. Middle tier Workbench authors get the same result without hidden state. High/Ultra tiers can later expose budget sliders or graph capacity planning over the same manifest/graph contract.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. Runtime cost does not change; the value is preventing invalid command graph packages from reaching loader and review.

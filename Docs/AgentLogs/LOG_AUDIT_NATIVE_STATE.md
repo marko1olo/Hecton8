@@ -3727,7 +3727,7 @@ Exact microseconds saved:
 
 Evidence:
 - Artifact: `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_AI_ECOSYSTEM_SYMBIOSIS_BALANCER_EXACT_GATES_20260528.json`
-- SHA-256: `E02C96AC05E86B453C67286C02A80E8F35B2B3D5968F65370FE2E188B127FFD0`
+- SHA-256: `8AD238723E51F2E1874E5DF72601A6EAC0C4E0C131D0F9196F55C7C2A7572A57`
 - Symbiosis owned BufferIDs: `70415-70432`; ambient borrow/claim lanes `70400`, `70401`; external anomaly field `70700`.
 - Ecosystem owned BufferIDs: `70400-70414`, `70443-70459`, `70474-70476`; external macro sector front `70433`.
 - Bad-pattern scan: `0` hits.

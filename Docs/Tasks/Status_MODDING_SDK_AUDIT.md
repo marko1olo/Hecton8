@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Domain: Echelon 1 mod/API cold isolation, SDK package contracts, HectonEventBus boundary
-Status: STATIC_PASS_SCHEMA_98 / AUTHORING_SNIPPET_APPLY_ADDED / REVIEW_ZIP_PROVED / HYGIENE_PASS / DOTNET_BUILD_DEFERRED_CPU_GATE / UNITY_MCP_NOT_AVAILABLE
+Status: STATIC_PASS_SCHEMA_99 / GRAPH_NODE_APPLY_ADDED / REVIEW_ZIP_PROVED / HYGIENE_PASS / DOTNET_BUILD_PASS / UNITY_MCP_NOT_AVAILABLE
 
 ## Mandates Applied
 
@@ -1124,3 +1124,25 @@ Evidence:
 - PASS: touched-file trailing whitespace scan, editor C# ASCII scan, and stale schema-97 scan.
 - DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because build/resource gate found CPU `100.00`, then `63.70`; no active `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild` process and no `Temp/UnityLockfile` were present.
 - NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session; source/static/CLI proof only.
+
+## Pass 75 - Schema 99 Bounded Graph Node Apply UX
+
+- [x] Task 350: Audit graph-node authoring after schema 98. DOD practice: compared graph preview, snippet generator, root launcher, Workbench, SDK Hub generator, local validator, schema, runtime playbook, and starter docs; found graph node generation still required manual JSON insertion into `Graphs/main.h8graph.json`. Rejected alternative: leave random authors to splice graph JSON by hand after fixing settings/locale apply. Runtime us estimate: 0 us/frame, editor/offline only.
+- [x] Task 351: Add bounded no-Unity graph node apply helper. DOD practice: `Tools/apply_graph_node_snippet.ps1` accepts only Generated snippets and the exact graph/manifest targets, validates node id/opcode/parameters, rejects duplicates unless `-Replace` is explicit, caps graph nodes at 256, repairs minimum graph/manifest envelope budget to 1 when the first node is applied, validates after temp-write, and restores previous files on failure. Rejected alternative: blind append or direct runtime graph authority. Runtime us estimate: 0.
+- [x] Task 352: Integrate graph apply into Workbench, root launcher, generator, and starter validation. DOD practice: Workbench now has Apply Node Snippet and graph/apply-tool open routes; `h8mod.ps1` exposes `apply-node-snippet`; `ModdingSdkHubWindow` writes the same tool/launcher/docs/validator requirements into refreshed starter kits. Rejected alternative: checked-in starter-only patch that would drift from generated kits. Runtime us estimate: 0.
+- [x] Task 353: Extend schema/docs/static proof to schema 99. DOD practice: `Signal_Schema.json`, `Validate_Mod_API_Static.ps1`, Runtime Playbook, README, API spec, authoring plan, product blueprint, starter file contract, starter README/tool README/capability guide, graph schema, and local validator now record bounded graph apply support and the 256-node cap. Rejected alternative: UI/tool change without drift gates. Runtime us estimate: 0.
+- [x] Task 354: Verify starter/static/hygiene/build gates. DOD practice: PowerShell parser PASS, temp-copy graph apply probe PASS, duplicate rejection PASS, starter validate PASS, starter submission PASS, review manifest/zip inspection PASS, static validator PASS at schema 99, scoped diff check PASS, trailing whitespace PASS, editor C# ASCII PASS, stale schema-98 scan PASS, and `dotnet build` PASS after resource gate allowed it. Rejected alternative: launch build during first CPU sample of 86.74 percent. Runtime us estimate: 0.
+
+Evidence:
+- PASS: PowerShell parser scan for changed starter scripts and `Docs/Modding/Validate_Mod_API_Static.ps1`.
+- PASS: temp-copy graph apply probe generated `node.validation_spawn`, applied it through `Tools/apply_graph_node_snippet.ps1 -Json`, repaired graph and manifest budgets to `1`, rejected duplicate apply with exit code `1`, and revalidated the copied starter kit.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action validate` -> `PASS HECTON-8 external starter structure`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action submission` -> structure/review/prepare pass and `PASS HECTON-8 submission package: Generated/com.example.starter_submission.zip`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `99`, `ExternalStarterKitWorkbenchAppliesGraphNodeSnippet=True`, `ExternalStarterKitGraphNodeApplyToolPasses=True`, `ExternalStarterKitGraphNodeApplyToolRejectsDuplicateWithoutReplace=True`.
+- PASS: review manifest parsed with schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, `33` hashed files, `130643` total bytes, `Tools/apply_graph_node_snippet.ps1` included, and `Generated/`/`Reports/` excluded from source entries.
+- PASS: submission zip inspection found `34` entries, `mod.json`, `mod.h8manifest.json`, `Reports/review_manifest.json`, `Tools/apply_graph_node_snippet.ps1`, and no `Generated/*` entry.
+- PASS: scoped `git diff --check` for touched source/docs. No whitespace errors.
+- PASS: touched-file trailing whitespace scan, editor C# ASCII scan, and stale schema-98 scan. Only old status text referenced schema 98 before this update.
+- PASS: build gate first blocked `dotnet build` at CPU `86.74`; retry allowed at CPU `48.01`, no active `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild`, no `Temp/UnityLockfile`.
+- PASS: `dotnet build Assembly-CSharp.csproj -v:minimal` -> `0 Warning(s)`, `0 Error(s)`.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session; source/static/CLI/dotnet proof only.

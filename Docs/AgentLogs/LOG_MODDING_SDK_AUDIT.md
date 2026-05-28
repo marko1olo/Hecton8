@@ -2344,3 +2344,38 @@ Evidence:
 - Submission zip includes 33 entries, both apply tools, and Reports/review_manifest.json; Generated/ excluded.
 - Parser, JSON parse, scoped diff check, trailing whitespace, C# ASCII, stale schema-97 scans PASS.
 - Dotnet build deferred by CPU gate: samples 100.00 and 63.70 percent.
+
+## MODDING_SDK_AUDIT - Pass 75 - Schema 99 Bounded Graph Node Apply
+
+What was wrong:
+- Graph node snippets existed, but external authors still had to manually splice JSON into `Graphs/main.h8graph.json`.
+- Applying a first node also required manual graph/manifest budget repair from `0` to a valid envelope budget.
+- Without a bounded apply route, duplicate node IDs and bad graph edits were caught late by validation instead of prevented by the authoring tool.
+
+What was done:
+- Added/verified `Tools/apply_graph_node_snippet.ps1` as the no-Unity graph apply tool: safe Generated-only snippet input, exact graph/manifest targets, node id/opcode/parameter validation, duplicate rejection unless `-Replace`, 256-node cap, temp-write, post-write validation, and rollback.
+- Added `apply-node-snippet` to root `h8mod.ps1`.
+- Added Workbench Apply Node Snippet, Open Graph, and Open Graph Apply Tool routes.
+- Updated `ModdingSdkHubWindow` so refreshed starter kits emit the same graph apply tool, root action, validator requirements, graph schema cap, and docs.
+- Updated schema/docs/static proof to schema revision `99`.
+- Regenerated starter review manifest and submission zip.
+
+Cinematic Cheats used:
+- Offline SDK authoring and static validation instead of runtime graph mutation, managed DLL expansion, Harmony/BepInEx, or hot-lane gameplay authority.
+
+Exact Microseconds saved:
+- Runtime frame: `0 us/frame`. No gameplay, renderer, physics, SignalBus, GlobalDataVault, Burst/job, save, telemetry, or GlobalQualityWeight runtime route changed.
+- Low-end i3/MX350 impact: `0 us/frame`; prevents invalid graph packages before runtime load/review.
+
+Evidence:
+- PASS: PowerShell parser scan for changed starter scripts and `Validate_Mod_API_Static.ps1`.
+- PASS: temp-copy graph apply probe: generated `node.validation_spawn`, applied it with JSON output schema `hecton8.graph_node_apply.v1`, repaired graph and manifest budgets to `1`, rejected duplicate apply with exit code `1`, then validated the copied starter kit.
+- PASS: starter validate.
+- PASS: starter submission package build.
+- PASS: static validator schema revision `99`; graph apply Workbench/tool/root launcher flags true.
+- PASS: review manifest parse: `33` hashed files, `130643` total bytes, `Tools/apply_graph_node_snippet.ps1` included, no `Generated/` or `Reports/` source entries.
+- PASS: submission zip inspection: `34` entries, graph apply tool and review manifest present, no `Generated/*` entry.
+- PASS: scoped diff check, touched-file trailing whitespace scan, editor C# ASCII scan, stale schema-98 scan.
+- PASS: build gate initially blocked at CPU `86.74`; retry allowed at CPU `48.01`, no compiler processes, no Unity lockfile.
+- PASS: `dotnet build Assembly-CSharp.csproj -v:minimal`; result `0 Warning(s)`, `0 Error(s)`.
+- NOT RUN: Unity MCP/Editor console verification; Unity MCP tools are unavailable in this session.
