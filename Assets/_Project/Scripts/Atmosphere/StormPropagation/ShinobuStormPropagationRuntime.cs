@@ -1226,6 +1226,7 @@ namespace Hecton8.Atmosphere
             return parent != null ? parent.FullName : null;
         }
 
+#if UNITY_EDITOR
         private bool EnsureImpactCsvManagedScratchCold()
         {
             if (_impactCsvManagedScratch == null ||
@@ -1274,5 +1275,6 @@ namespace Hecton8.Atmosphere
                 return 0;
             }
         }
+#endif
     }
 }

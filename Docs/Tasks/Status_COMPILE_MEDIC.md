@@ -3,7 +3,7 @@
 Operational ID: COMPILE_MEDIC
 Domain: Echelon 9 / The Integrator (Compile Medic)
 Prompt source: User requested latest dotnet compile error/warning repair. No matching compile-medic `<AGENT_PROMPT>` exists in `Docs/Tasks/CURRENT_BATCH.md`.
-Status: COMPLETE - FINAL TARGETED DOTNET TARGETS GREEN; STRICT WARNING AUDIT DEBT RECORDED; CREST SHADER IMPORT NEEDS UNITY EDITOR
+Status: PENDING UNITY EDITOR RUNTIME VALIDATION - CONSOLIDATED TARGETED DOTNET PROOF GREEN; STRICT WARNING AUDIT DEBT RECORDED; CREST/MAPMAGIC IMPORT NEEDS UNITY EDITOR
 
 ## Mandates Read
 
@@ -84,3 +84,12 @@ Status: COMPLETE - FINAL TARGETED DOTNET TARGETS GREEN; STRICT WARNING AUDIT DEB
 - [x] Re-audit MapMagic, Crest, and scene boundary | DOD: `Assets/MapMagic` and `Assets/_Project/Scenes/02_HECTON_WORLD.unity` have no current diff; Crest has compute/C# safety diffs and its runtime/editor C# targets compile 0/0; shader/import validation remains Unity Editor-only | estimate: 35000 us
 - [x] Re-run strict Core audit | DOD: `BUILD_COMPILE_MEDIC_CORE_STRICT_AUDIT_AFTER_BUCKETER_20260528_1.log` has 0 errors and 904 unsuppressed warnings; warnings are dominated by Unity serialized-field/dead-event/obsolete API/source-DLL audit debt, not normal build warnings | estimate: 71840000 us
 - [x] Re-scan global-system violation patterns | DOD: edited/affected files add no hot `TryGetLatestCreated`, scene-search, or same-frame `.Complete()` route; observed repository hits remain editor/diagnostic/crash/owner-fence categories and require domain-owner cleanup if promoted to normal gate | estimate: 60000 us
+
+## Loop 9
+
+- [x] Repair late APEX compiler clusters from current logs | DOD: fixed only live current faults: Acoustic vault handle validation, battery snapshot definite assignment, retina dispose field drift, Candice 2D filter/ref contract, Tether smooth range helper, and SumpPump unused-locals warning; rejected stale PowerGrid/Kinetic/Bucketer errors already absent from current source | estimate: 920000 us
+- [x] Verify latest targeted compiler state from settled logs | DOD: `Docs/Reports/APEX_COMPILE_MEDIC_TARGETED_CONSOLIDATED_20260528_1.csv` records 9 targeted C# projects, exit=0, warnings=0, errors=0 by latest green log per target; rejected claiming the stale single matrix as final | estimate: 298350000 us
+- [x] Execute APEX Zero-GC text audit | DOD: `Docs/Reports/APEX_COMPILE_MEDIC_ZERO_GC_SCAN_20260528_3.json` records referenceNew=0, string.Format=0, ToString=0, LINQ=0, foreach=0 in verified hot ranges; Crest FFTCompute cache-miss constructor remains explicitly recorded | estimate: 48000 us
+- [x] Re-prove Data Sovereignty lock handling | DOD: `ModularEquipmentEngine.cs` write acquisitions at 1384/1536/1539 release in `finally` paths at 1355-1359, 1395-1398, and 1565-1570; rejected any lock route without deterministic release | estimate: 35000 us
+- [x] Generate final APEX report artifact and hash | DOD: `Docs/Reports/APEX_FINAL_VERIFICATION_COMPILE_MEDIC_20260528.json` SHA-256 `1F026FC0C50FEE82C2F494A55A8659CB58420FA2F30C37CD7376D511C335029D`; rejected chat-only proof | estimate: 22000 us
+- [x] Record remaining faults honestly | DOD: Unity Editor import/Console/PlayMode/profiler/player build not executed; strict Core audit still exposes 904 warnings when normal `NoWarn` is disabled; no `Docs/AgentLogs/Dump_COMPILE_MEDIC.bin` exists because no crash/NaN dump was produced | estimate: 14000 us

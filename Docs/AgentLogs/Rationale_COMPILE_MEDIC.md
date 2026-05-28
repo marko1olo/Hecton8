@@ -135,3 +135,19 @@ Solution: Recorded the strict log as `BUILD_COMPILE_MEDIC_CORE_STRICT_AUDIT_AFTE
 Rejected Alternatives: Suppressing the strict audit or mass-initializing hundreds of serialized fields was rejected because it would either hide real debt or risk prefab/scene serialization churn without owner review.
 Scalability potential: Runtime tier behavior is unchanged. This is a diagnostic debt ledger, not runtime path code.
 Hardware Impact: Runtime microseconds saved: 0 claimed. Normal build warnings remain 0; strict warning cleanup remains a separate policy task.
+
+## 2026-05-28 APEX Late Compiler Repair and Proof Consolidation
+
+Problem: APEX recheck exposed real current compiler faults after earlier green logs: `AcousticEchoLocationRuntime` referenced a removed handle helper, `PlatformBatteryWatchdog` tripped definite assignment, `HectonRetinaDistortionFeature` still wrote a removed keyword-state field, Candice vendor modules used invalid `ContactFilter2D`/`ref` contracts, `TetherInstance` called a missing smooth range helper, and SumpPump mock generation carried unused locals. The single latest matrix also contained a stale Core failure from parallel edits.
+Solution: Fixed only current-source faults, then consolidated proof from the latest green log for each target: Core after Tether/SumpPump, Assembly-CSharp after Candice, and latest matrix logs for Assembly-CSharp-Editor, Crest, and MapMagic targets. Final artifact: `Docs/Reports/APEX_COMPILE_MEDIC_TARGETED_CONSOLIDATED_20260528_1.csv`, 9 targets, warnings=0, errors=0.
+Rejected Alternatives: Re-editing PowerGrid/Kinetic/Bucketer from stale logs was rejected because current source no longer contained those symbols. Claiming the stale single matrix as final was rejected because it was contradicted by a later isolated green Core build.
+Scalability potential: Low/middle/high/ultra runtime behavior is unchanged for compile-only repairs. Ballistics/Tether quality math remains continuous instead of binary; no Crest/MapMagic feature was amputated.
+Hardware Impact: Runtime microseconds saved: 0 claimed. Verification wall time for the late isolated Core/Assembly checks was about 298,350,000 us; no hot-path work was added.
+
+## 2026-05-28 APEX Zero-GC and Data Sovereignty Verification
+
+Problem: The APEX mandate required proof, not prose: modified hot ranges had to be scanned for managed allocations/string/LINQ/foreach patterns, and DataVault write locks had to be paired with deterministic release.
+Solution: Generated `Docs/Reports/APEX_COMPILE_MEDIC_ZERO_GC_SCAN_20260528_3.json`. Counts: managed `referenceNew=0`, `string.Format=0`, `.ToString()=0`, LINQ=0, `foreachLoop=0`; value/stack constructions=16. `GenerateMockPipeNetworkJob` is verified as `struct : IJob` in `SumpPumpPipeGridJobs.cs:14`. `ModularEquipmentEngine` write locks at 1384/1536/1539 release through `finally` at 1355-1359, 1395-1398, and 1565-1570. Final APEX JSON report: `Docs/Reports/APEX_FINAL_VERIFICATION_COMPILE_MEDIC_20260528.json`, SHA-256 `1F026FC0C50FEE82C2F494A55A8659CB58420FA2F30C37CD7376D511C335029D`.
+Rejected Alternatives: Treating all `new StructName` regex hits as managed heap allocations was rejected because it would falsify the audit. Hiding Crest `FFTCompute.cs:280` was rejected; it remains recorded as a cache-miss managed constructor path, not proven 0 B/frame.
+Scalability potential: Ballistics uses `HomeostasisBrain.GlobalQualityWeight` to smoothly scale damage signal budget, primitive evaluation, and ricochet cost. Tether uses `SmoothRange01` continuous weighting. Low tier keeps minimal budgets; middle/high interpolate; ultra buys denser visual signaling without changing gameplay truth ownership.
+Hardware Impact: Runtime microseconds saved: 0 claimed. Expected runtime cost is neutral for compile fixes. Crest cache-miss allocation remains a runtime profiling target; no Unity Profiler/GCMonitor proof was produced in this dotnet-only pass.

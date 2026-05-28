@@ -9,15 +9,25 @@
     "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs"
   ],
   "changed_surface": {
-    "staged_diff_stat": "2 files changed, 396 insertions(+), 324 deletions(-)",
-    "working_tree_note": "The two scoped files are staged in git index in this workspace; verification used git diff --cached for diff-based scans."
+    "scoped_code_files_final_git_status": "clean against current HEAD after checkpoint commit d5dab9e76",
+    "artifact_file_commit_note": "The first version of this JSON artifact was committed by checkpoint 9987c087c; this final artifact revision supersedes it.",
+    "verification_note": "During the edit window the code diff was staged and scanned with git diff --cached; after automated checkpointing, final verification also used direct source greps over the scoped files."
   },
   "zero_gc_self_audit": {
     "scan_type": "text diff scan over staged additions",
     "command": "git diff --cached -U0 -- Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs | rg -n \"^\\+.*(new\\s+[A-Za-z_]|string\\.Format|\\.ToString\\(|\\.Where\\(|\\.Select\\(|\\.Any\\(|\\.FirstOrDefault\\(|\\.ToList\\(|foreach\\s*\\()\"",
     "exit_code": 1,
     "matches": 0,
-    "interpretation": "No added reference-type new, string.Format, .ToString(), LINQ query call, ToList, FirstOrDefault, Any, Select, Where, or foreach pattern was found in the staged diff."
+    "final_source_rescan": {
+      "string_linq_foreach_command": "rg -n \"string\\.Format|\\.ToString\\(|\\.Where\\(|\\.Select\\(|\\.Any\\(|\\.FirstOrDefault\\(|\\.ToList\\(|foreach\\s*\\(\" Assets\\_Project\\Scripts\\AI\\Ecosystem\\ShinobuFloraFaunaSymbiosisSolver.cs Assets\\_Project\\Scripts\\AI\\Ecosystem\\ShinobuEcosystemBalancer.cs",
+      "string_linq_foreach_exit_code": 1,
+      "string_linq_foreach_matches": 0,
+      "reference_new_targeted_command": "rg -n \"new\\s+(List|Dictionary|HashSet|Queue|Stack|StringBuilder|Action|Func|Thread|Task|object|byte\\[|int\\[|float\\[|double\\[|string\\[)\" Assets\\_Project\\Scripts\\AI\\Ecosystem\\ShinobuFloraFaunaSymbiosisSolver.cs Assets\\_Project\\Scripts\\AI\\Ecosystem\\ShinobuEcosystemBalancer.cs",
+      "reference_new_targeted_matches": [
+        "ShinobuEcosystemBalancer.cs:3442 new Thread(DumpWorkerLoop) in forensic dump worker setup; not introduced by this patch and not in the patched hot-path descriptor/lock code."
+      ]
+    },
+    "interpretation": "No added reference-type allocation, string.Format, .ToString(), LINQ query call, ToList, FirstOrDefault, Any, Select, Where, or foreach pattern was found in the staged patch diff. Final source rescan has no string/LINQ/foreach hits; one pre-existing cold forensic Thread allocation remains outside this patch."
   },
   "layout_self_audit": {
     "command": "git diff --cached -U0 -- Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs | rg -n \"^\\+.*(StructLayout|FieldOffset|UnsafeUtility\\.SizeOf|Marshal\\.OffsetOf|sizeof\\()\"",
