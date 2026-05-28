@@ -164,3 +164,11 @@ Solution: Make apex report paths derive from the current Samara date, add GPT-5.
 Rejected Alternatives: Keeping only the base GPT-5.5 row was rejected because official pricing has a >272K input surcharge risk. Running `dotnet build` was rejected because TOKEN_USAGE_AUDIT changed offline Python/docs only and active `dotnet`/`VBCSCompiler` processes made compile contention explicit.
 Scalability potential: Future daily refreshes can validate the current dated report without stale hard-coded paths and can separate base cost, surcharge risk, and no-cache theoretical ceiling.
 Hardware Impact: 0 us runtime gain. Audit precision gain: false certainty around billing context reduced by explicit sensitivity rows.
+
+## Decision 29 - 2026-05-28 post-cutoff long-context precision
+
+Problem: The long-context sensitivity row was a whole-corpus upper bound, which is mathematically safe but too blunt to explain current token burn.
+Solution: Add post-cutoff increment-event accounting for deltas whose `input_tokens` exceeds the official 272000 trigger, and add a combined long-context plus regional +10% upper-bound row.
+Rejected Alternatives: Treating the whole corpus as exact long-context spend was rejected because local JSONL lacks provider-side per-request classification. Ignoring long-context entirely was rejected because official GPT-5.5 pricing has a higher long-context row.
+Scalability potential: Future refreshes can carry an exact post-cutoff surcharge signal while keeping all-time billing proof downgraded until the telemetry contains provider invoice classification.
+Hardware Impact: 0 us runtime gain. Audit quality gain: separates base cost, full upper bound, and observed post-cutoff surcharge pressure.

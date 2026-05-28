@@ -336,8 +336,11 @@ def write_markdown(report):
                 f"| long_context_trigger_input_tokens | {pricing_context.get('long_context_trigger_input_tokens')} |",
                 f"| gpt_5_5_long_context_upper_bound_usd | {pricing_context.get('gpt_5_5_long_context_upper_bound_usd')} |",
                 f"| gpt_5_5_long_context_upper_bound_delta_usd | {pricing_context.get('gpt_5_5_long_context_upper_bound_delta_usd')} |",
+                f"| gpt_5_5_long_context_regional_10pct_upper_bound_usd | {pricing_context.get('gpt_5_5_long_context_regional_10pct_upper_bound_usd')} |",
                 f"| gpt_5_5_regional_10pct_usd | {pricing_context.get('gpt_5_5_regional_10pct_usd')} |",
                 f"| gpt_5_5_regional_10pct_delta_usd | {pricing_context.get('gpt_5_5_regional_10pct_delta_usd')} |",
+                f"| post_cutoff_long_context_event_count | {pricing_context.get('post_cutoff_long_context_event_count')} |",
+                f"| post_cutoff_long_context_event_surcharge_delta_usd | {pricing_context.get('post_cutoff_long_context_event_surcharge_delta_usd')} |",
             ]
         )
 

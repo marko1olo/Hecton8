@@ -231,6 +231,7 @@ def build_report():
             hourly_files.append((root, path, size, mtime))
 
     delta_total = zero_usage()
+    long_context_delta_usage = zero_usage()
     hourly = defaultdict(zero_usage)
     daily = merge_period_map(previous.get("daily") or {})
     weekly = merge_period_map(previous.get("weekly") or {})
@@ -239,6 +240,7 @@ def build_report():
     parse_errors = 0
     max_event_ts = cutoff
     increment_events_after_cutoff = 0
+    long_context_increment_events_after_cutoff = 0
 
     for _root, path, _size, _mtime in changed_files:
         record = audit.read_file_record(path)
@@ -251,6 +253,9 @@ def build_report():
             if ts <= cutoff:
                 continue
             increment_events_after_cutoff += 1
+            if int(delta.get("input_tokens", 0) or 0) > LONG_CONTEXT_INPUT_TOKEN_TRIGGER:
+                long_context_increment_events_after_cutoff += 1
+                add_usage(long_context_delta_usage, delta)
             max_event_ts = max(max_event_ts, ts)
             add_usage(delta_total, delta)
             local = ts.astimezone(SAMARA)
@@ -291,6 +296,10 @@ def build_report():
     regional_row = pricing[GPT55_REGIONAL_PRICE_KEY]
     long_context_delta = long_context_row["total_cost_usd"] - primary_row["total_cost_usd"]
     regional_delta = regional_row["total_cost_usd"] - primary_row["total_cost_usd"]
+    long_context_regional_upper = long_context_row["total_cost_usd"] * 1.1
+    base_delta_cost = price_row(delta_total, PRICING[PRIMARY_PRICE_KEY])["total_cost_usd"]
+    post_cutoff_long_context_base_cost = price_row(long_context_delta_usage, PRICING[PRIMARY_PRICE_KEY])["total_cost_usd"]
+    post_cutoff_long_context_surcharge_cost = price_row(long_context_delta_usage, PRICING[GPT55_LONG_CONTEXT_PRICE_KEY])["total_cost_usd"] - post_cutoff_long_context_base_cost
 
     report = {
         **previous,
@@ -303,6 +312,7 @@ def build_report():
         "fast_refresh_changed_jsonl_files_scanned": len(changed_files),
         "fast_refresh_hourly_jsonl_files_scanned": len(hourly_files),
         "fast_refresh_increment_events_after_cutoff": increment_events_after_cutoff,
+        "fast_refresh_long_context_increment_events_after_cutoff": long_context_increment_events_after_cutoff,
         "file_count": len(files),
         "sessions_with_usage": int(previous.get("sessions_with_usage", 0) or 0) + session_delta,
         "parse_errors_increment_pass": parse_errors,
@@ -325,6 +335,13 @@ def build_report():
             "gpt_5_5_long_context_upper_bound_delta_usd": long_context_delta,
             "gpt_5_5_regional_10pct_usd": regional_row["total_cost_usd"],
             "gpt_5_5_regional_10pct_delta_usd": regional_delta,
+            "gpt_5_5_long_context_regional_10pct_upper_bound_usd": long_context_regional_upper,
+            "post_cutoff_long_context_event_rule": "Exact for post-cutoff delta events whose input_tokens exceeds 272000. It is not all-time exact unless prior reports carried the same metric.",
+            "post_cutoff_long_context_event_count": long_context_increment_events_after_cutoff,
+            "post_cutoff_long_context_event_usage": long_context_delta_usage,
+            "post_cutoff_long_context_event_base_usd": post_cutoff_long_context_base_cost,
+            "post_cutoff_long_context_event_surcharge_delta_usd": post_cutoff_long_context_surcharge_cost,
+            "post_cutoff_base_delta_cost_usd": base_delta_cost,
         },
         "daily": {key: value for key, value in sorted(daily.items())},
         "hourly": {key: value for key, value in sorted(hourly.items())},
@@ -389,6 +406,7 @@ def write_reports(report):
         f"| total_tokens | {fmt_int(total['total_tokens'])} |",
         f"| GPT-5.5 standard under-272K API-equivalent | {fmt_money(primary['total_cost_usd'])} |",
         f"| GPT-5.5 long-context sensitivity upper bound | {fmt_money(pricing_context['gpt_5_5_long_context_upper_bound_usd'])} |",
+        f"| GPT-5.5 long-context + regional sensitivity upper bound | {fmt_money(pricing_context['gpt_5_5_long_context_regional_10pct_upper_bound_usd'])} |",
         f"| GPT-5.5 regional +10% sensitivity | {fmt_money(pricing_context['gpt_5_5_regional_10pct_usd'])} |",
         "",
         "## Increment Since Previous Snapshot",
@@ -397,6 +415,7 @@ def write_reports(report):
         f"Cutoff UTC: `{report['fast_refresh_cutoff_utc']}`",
         f"Changed JSONL files scanned: {fmt_int(report['fast_refresh_changed_jsonl_files_scanned'])}",
         f"Increment events after cutoff: {fmt_int(report['fast_refresh_increment_events_after_cutoff'])}",
+        f"Post-cutoff long-context-like increment events: {fmt_int(report['fast_refresh_long_context_increment_events_after_cutoff'])}",
         "",
         "| Metric | Delta |",
         "|---|---:|",
@@ -417,6 +436,7 @@ def write_reports(report):
         f"| GPT-5.5 standard $ / hour | {fmt_money(velocity['gpt_5_5_standard_usd_per_hour'])} |",
         f"| primary C# lines / hour | {velocity['primary_code_lines_per_hour']:,.2f} |",
         f"| tokens / net primary C# line | {velocity['tokens_per_net_primary_code_line']:,.2f} |" if velocity["tokens_per_net_primary_code_line"] is not None else "| tokens / net primary C# line | n/a |",
+        f"| post-cutoff long-context surcharge delta | {fmt_money(pricing_context['post_cutoff_long_context_event_surcharge_delta_usd'])} |",
         "",
         "## Residual Risk",
         "",
@@ -443,6 +463,7 @@ def write_reports(report):
         f"| reasoning_output_tokens | {fmt_int(total['reasoning_output_tokens'])} |",
         f"| GPT-5.5 standard under-272K API-equivalent | {fmt_money(primary['total_cost_usd'])} |",
         f"| GPT-5.5 long-context sensitivity upper bound | {fmt_money(pricing_context['gpt_5_5_long_context_upper_bound_usd'])} |",
+        f"| GPT-5.5 long-context + regional sensitivity upper bound | {fmt_money(pricing_context['gpt_5_5_long_context_regional_10pct_upper_bound_usd'])} |",
         f"| GPT-5.5 regional +10% sensitivity | {fmt_money(pricing_context['gpt_5_5_regional_10pct_usd'])} |",
         f"| total tokens / hour since previous snapshot | {velocity['total_tokens_per_hour']:,.2f} |",
         f"| GPT-5.5 standard $ / hour since previous snapshot | {fmt_money(velocity['gpt_5_5_standard_usd_per_hour'])} |",

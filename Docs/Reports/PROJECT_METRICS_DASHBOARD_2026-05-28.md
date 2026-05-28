@@ -1,24 +1,27 @@
 ﻿# Project Metrics Dashboard 2026-05-28
 
-Generated Samara: `2026-05-28T12:51:29.325864+04:00`
+Generated Samara: `2026-05-28T13:08:56.734551+04:00`
 Evidence class: static local Codex JSONL, git history, and filesystem scan. Token cost is API-equivalent, not invoice proof.
 
 ## Headline
 
 | Metric | Value |
 |---|---:|
-| Total tokens | 110,775,514,778 |
-| Input tokens | 110,390,552,320 |
-| Cached input tokens | 106,072,714,368 |
-| Output tokens | 383,928,858 |
-| Reasoning output tokens | 120,444,690 |
-| Sessions with usage | 2,871 |
-| GPT-5.5 standard API-equivalent total | $86,143.41 |
-| GPT-5.5 long-context sensitivity upper bound | $166,527.89 |
-| GPT-5.5 regional +10% sensitivity | $94,757.75 |
-| Tokens/hour since previous snapshot | 184,544,812 |
-| GPT-5.5 standard USD/hour since previous snapshot | $142.53 |
-| Primary C# LOC/hour since previous snapshot | 1,724.83 |
+| Total tokens | 110,860,414,953 |
+| Input tokens | 110,475,153,995 |
+| Cached input tokens | 106,153,131,008 |
+| Output tokens | 384,227,358 |
+| Reasoning output tokens | 120,535,145 |
+| Sessions with usage | 2,873 |
+| GPT-5.5 standard API-equivalent total | $86,213.50 |
+| GPT-5.5 long-context sensitivity upper bound | $166,663.59 |
+| GPT-5.5 long-context + regional upper bound | $183,329.95 |
+| GPT-5.5 regional +10% sensitivity | $94,834.85 |
+| Post-cutoff long-context-like events | 0 |
+| Post-cutoff long-context surcharge delta | $0.00 |
+| Tokens/hour since previous snapshot | 186,601,807 |
+| GPT-5.5 standard USD/hour since previous snapshot | $144.44 |
+| Primary C# LOC/hour since previous snapshot | 1,703.58 |
 | Chart count | 29 |
 
 ## Chart Index

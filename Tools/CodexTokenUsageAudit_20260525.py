@@ -741,6 +741,7 @@ def build_report():
         upper_no_cache[name] = total["input_tokens"] / 1_000_000 * rate["input"] + total["output_tokens"] / 1_000_000 * rate["output"]
     long_context_delta = price_rows[GPT55_LONG_CONTEXT_PRICE_KEY]["total_cost_usd"] - price_rows[PRIMARY_PRICE_KEY]["total_cost_usd"]
     regional_delta = price_rows[GPT55_REGIONAL_PRICE_KEY]["total_cost_usd"] - price_rows[PRIMARY_PRICE_KEY]["total_cost_usd"]
+    long_context_regional_upper = price_rows[GPT55_LONG_CONTEXT_PRICE_KEY]["total_cost_usd"] * 1.1
 
     session_totals = [int(record["final_usage"]["total_tokens"]) for record in selected_with_usage]
     first_ts = min((parse_ts(record.get("final_timestamp")) for record in selected_with_usage if record.get("final_timestamp")), default=None)
@@ -1027,6 +1028,8 @@ def build_report():
             "gpt_5_5_long_context_upper_bound_delta_usd": long_context_delta,
             "gpt_5_5_regional_10pct_usd": price_rows[GPT55_REGIONAL_PRICE_KEY]["total_cost_usd"],
             "gpt_5_5_regional_10pct_delta_usd": regional_delta,
+            "gpt_5_5_long_context_regional_10pct_upper_bound_usd": long_context_regional_upper,
+            "post_cutoff_long_context_event_rule": "Not available for full replay v1. Use fast-refresh reports for post-cutoff exact delta-event classification.",
         },
         "daily_gpt_5_5_standard_costs_usd": daily_primary_costs,
         "hourly_gpt_5_5_standard_costs_usd": hourly_primary_costs,
@@ -1381,7 +1384,7 @@ def write_reports(report):
         ledger.append(f"| {name} | {fmt_money(report['pricing'][name]['total_cost_usd'])} | {fmt_money(report['pricing_upper_bound_no_cache_usd'][name])} |")
     if pricing_context:
         ledger.append("")
-        ledger.append(f"Long-context trigger: `{pricing_context.get('long_context_trigger_input_tokens')}` input tokens. Long-context sensitivity delta: {fmt_money(pricing_context.get('gpt_5_5_long_context_upper_bound_delta_usd', 0))}. Regional +10% sensitivity delta: {fmt_money(pricing_context.get('gpt_5_5_regional_10pct_delta_usd', 0))}.")
+        ledger.append(f"Long-context trigger: `{pricing_context.get('long_context_trigger_input_tokens')}` input tokens. Long-context sensitivity delta: {fmt_money(pricing_context.get('gpt_5_5_long_context_upper_bound_delta_usd', 0))}. Regional +10% sensitivity delta: {fmt_money(pricing_context.get('gpt_5_5_regional_10pct_delta_usd', 0))}. Long-context + regional upper bound: {fmt_money(pricing_context.get('gpt_5_5_long_context_regional_10pct_upper_bound_usd', 0))}.")
     ledger += ["", "## Model Attribution", "", "Exact model labels are available only where JSONL contains structured `turn_context` model fields. Unknown sessions are not guessed in the main total.", "", "| Model | Sessions | Total tokens | Standard cost if rate known |", "|---|---:|---:|---:|"]
     for model, usage in sorted(report["model_final_session_usage"].items(), key=lambda item: item[1]["total_tokens"], reverse=True):
         cost = report["model_specific_standard_costs"].get(model)

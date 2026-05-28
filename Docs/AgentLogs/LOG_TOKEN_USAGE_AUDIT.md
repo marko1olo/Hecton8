@@ -362,3 +362,49 @@ Known faults:
 - Runtime 0 B/frame remains `PENDING_RUNTIME_VERIFICATION_FOR_ANY_RUNTIME_CLAIM`.
 - Local JSONL still lacks provider invoice id, billing region, exact per-request long-context classification, enterprise discount, and subscription route.
 - No `Docs/AgentLogs/Dump_TOKEN_USAGE_AUDIT.bin` was generated because TOKEN_USAGE_AUDIT hit no runtime crash/NaN fault.
+
+## 2026-05-28 13:12 Europe/Samara - Long-context precision polish
+
+What was wrong:
+- Whole-corpus long-context upper bound was safe but too blunt: it did not say whether fresh post-cutoff telemetry actually contained `input_tokens > 272000` events.
+- Regional +10% and long-context were separate sensitivities but the combined worst-case row was not explicit.
+
+What was done:
+- Added `post_cutoff_long_context_event_count`, `post_cutoff_long_context_event_usage`, and `post_cutoff_long_context_event_surcharge_delta_usd` to `pricing_context_rules`.
+- Added `gpt_5_5_long_context_regional_10pct_upper_bound_usd`.
+- Regenerated token report, ledger, dashboard, 29 charts, apex report, and SHA files.
+
+Evidence:
+- Token total: `110,860,414,953`.
+- Input tokens: `110,475,153,995`.
+- Cached input tokens: `106,153,131,008`.
+- Output tokens: `384,227,358`.
+- Reasoning output tokens: `120,535,145`.
+- GPT-5.5 base API-equivalent: `$86,213.501179`.
+- GPT-5.5 long-context cache-aware upper bound: `$166,663.591988`.
+- GPT-5.5 long-context + regional 10% upper bound: `$183,329.95118680003`.
+- GPT-5.5 regional +10% sensitivity: `$94,834.85129690001`.
+- Post-cutoff long-context-like event count: `0`.
+- Post-cutoff long-context surcharge delta: `$0.0`.
+- Tokens/hour: `186,601,807.34837893`.
+- Final JSON SHA-256: `e7bf9a1f58306005295a0d6e3797f763f53ae98c55032ae5d644be8516c7913f`.
+- Markdown SHA-256: `3c18ae6fe23262a73dafc73572b49a843a3be0343f6dc637cc95827fe9a43316`.
+
+Verification:
+- `python -m py_compile Tools\CodexTokenUsageAudit_20260525.py Tools\CodexTokenUsageFastRefresh_20260528.py Tools\ProjectMetricsDashboard_20260528.py Tools\TokenUsageApexVerification_20260528.py` passed.
+- Static hot-path method scan over owned tooling: `0`.
+- Static forbidden C# hot-path text scan over owned tooling: `0`.
+- `python Tools\VerifyDocStructure.py`: pass true.
+- Scoped `git diff --check`: no whitespace errors.
+
+Compilation/resource throttling:
+- CPU sample: `2026-05-28T13:10:11.3131574+04:00`.
+- CPU: `28.26%`.
+- Compiler processes: `0`.
+- `dotnet build`: not invoked.
+- Unity build/import/playmode: not invoked.
+
+Known faults:
+- All-time exact long-context invoice classification remains absent; only post-cutoff delta-event classification is exact from local JSONL.
+- Runtime 0 B/frame remains `PENDING_RUNTIME_VERIFICATION_FOR_ANY_RUNTIME_CLAIM`.
+- No `Docs/AgentLogs/Dump_TOKEN_USAGE_AUDIT.bin` was generated; no runtime crash/NaN fault occurred in this offline domain.
