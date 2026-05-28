@@ -283,6 +283,7 @@ namespace Hecton8.Construction
         private const ulong HabitatGraphMutationGuardMask = 0x0000000000000FF8UL;
         private const ulong HabitatFloodRoomMutationGuardMask = 0x0000000080000007UL;
         private const ulong HabitatModuleStressMutationGuardMask = 0x0000000078000000UL;
+        private const ulong HabitatFloodPropagationMutationGuardMask = 0x0000000082000FFFUL;
         private const uint FloodBlackBoxMagic = 0x48464C44u; // "HFLD"
         private const uint FloodBlackBoxVersion = 3u;
         private const uint FloodBlackBoxNonFiniteFlag = 1u << 0;
@@ -359,6 +360,8 @@ namespace Hecton8.Construction
         private IDataVault _floodPropagationRoomWriteLockVault;
         private bool _floodPropagationGraphWriteLockHeld;
         private IDataVault _floodPropagationGraphWriteLockVault;
+        private bool _floodPropagationGuardHeld;
+        private IDataVault _floodPropagationGuardVault;
         private bool _deconstructionGraphWriteLockHeld;
         private IDataVault _deconstructionGraphWriteLockVault;
         private int _pendingFloodPropagationModuleCount;

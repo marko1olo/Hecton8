@@ -927,15 +927,8 @@ namespace Hecton8.Core
 
         private static void SetMathLodLowScalarActive(bool enabled)
         {
-            if (_mathLodLowScalarActive != enabled)
-            {
-                _mathLodLowScalarActive = enabled;
-                RefreshMathLodLowScalar();
-                return;
-            }
-
-            if (!_mathLodLowScalarWritten)
-                RefreshMathLodLowScalar();
+            _mathLodLowScalarActive = enabled;
+            RefreshMathLodLowScalar();
         }
 
         private static float ResolveMathLodLowWeight()
