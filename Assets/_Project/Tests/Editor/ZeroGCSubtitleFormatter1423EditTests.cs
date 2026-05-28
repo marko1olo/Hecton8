@@ -313,6 +313,32 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void TerminalBootStatusText_UsesSpanStatusRoutesNotStringBridges()
+        {
+            string bootSource = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/AcousticEcholocationTranslator.cs"));
+            string osBootSource = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/HectonOSBootManager.cs"));
+
+            int sequenceStart = bootSource.IndexOf("public sealed class TerminalBootSequence", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(sequenceStart, 0);
+            string sequenceBody = bootSource.Substring(sequenceStart);
+
+            StringAssert.Contains("private static ReadOnlySpan<char> StatusOkChars", sequenceBody);
+            StringAssert.Contains("ReadOnlySpan<char> hullStatus = ResolveIntegrityStatusChars", sequenceBody);
+            StringAssert.Contains("private static int AppendSpan(char[] buffer, int cursor, ReadOnlySpan<char> value)", sequenceBody);
+            StringAssert.Contains("private static ReadOnlySpan<char> ResolveIntegrityStatusChars(float integrity01)", sequenceBody);
+            StringAssert.DoesNotContain("AppendString", sequenceBody);
+            StringAssert.DoesNotContain("private static string ResolveIntegrityStatus", sequenceBody);
+
+            StringAssert.Contains("ReadOnlySpan<char> bootVector = ResolveBootVector(reason);", osBootSource);
+            StringAssert.Contains("private static ReadOnlySpan<char> ResolveBootVector(BootReason reason)", osBootSource);
+            StringAssert.Contains("private static ReadOnlySpan<char> ResolveHullIntegrityStatus(float integrity)", osBootSource);
+            StringAssert.Contains("private static ReadOnlySpan<char> ResolvePressureBusStatus(float pressure)", osBootSource);
+            StringAssert.DoesNotContain("private static string ResolveBootVector", osBootSource);
+            StringAssert.DoesNotContain("private static string ResolveHullIntegrityStatus", osBootSource);
+            StringAssert.DoesNotContain("private static string ResolvePressureBusStatus", osBootSource);
+        }
+
+        [Test]
         public void AudioCaptionOverlay_WritesCaptionTextIntoExistingSlotBuffer()
         {
             string overlaySource = File.ReadAllText(Path.Combine(Application.dataPath, "_Project/Scripts/UI/AcousticEcholocationTranslator.cs"));

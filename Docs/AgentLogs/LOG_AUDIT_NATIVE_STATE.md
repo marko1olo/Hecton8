@@ -3735,3 +3735,35 @@ Evidence:
 - Final source scan: no string/LINQ/foreach hits; one pre-existing cold forensic `new Thread` remains outside patched hot paths.
 - `git diff --check`: exit `0`.
 - Build/import/profiler: not run. Compiler process samples were empty, but CPU sampled `99%` then `65%`, so `dotnet build` was blocked by resource throttle.
+
+## 2026-05-28 - ToolKinematics Exact Vault Gates
+
+What was wrong:
+- `ToolKinematicsRuntime` still used `currentService as IDataVault`.
+- Its Vault helper accepted any nonzero `BufferID` + generation and did not prove exact lane ownership for the 15 `SystemID.GameplayTools` buffers.
+- Release used the same ownerless helper, so a stale/wrong-lane handle could be released if descriptor identity drifted.
+
+What was done:
+- Hot-swap now pattern-matches `IDataVault`.
+- Resolve/reuse/release now requires exact `BufferID`, `SystemID.GameplayTools`, and generation.
+- Secured BufferIDs: `ToolKinematicsStates=605`, `FrameInputs=606`, `HitResults=607`, `IkOutputs=608`, `RecoilStates=609`, `Tuning=610`, `ScreenExports=611`, `TelemetryRing=612`, `MockTriggerSignals=613`, `MockCarveRequests=614`, `HeatSignals=615`, `SparkRequests=616`, `BeamVertices=617`, `BeamVertexCounts=618`, `PoseOutputs=619`.
+- Failed newly acquired exact handles are released if resolve/length validation fails.
+
+Cinematic cheats used:
+- No physical simulation added.
+- Existing mock SDF, beam mesh, heat/recoil, and ToolKinematics visual/data fakes preserved.
+- Existing continuous quality behavior preserved; no binary low-end switch introduced.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Expected steady-frame delta: `0 us`; this is correctness hardening around existing Vault operations.
+
+Evidence:
+- Artifact: `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_TOOL_KINEMATICS_EXACT_GATES_20260528.json`
+- SHA-256: `B28F77CDF94DE43E09F06CFD16F0520001ED31DF40A1FD0BCBF6EC7516898731`
+- Modified anchors: hot-swap line `870`, exact predicate line `887`, existing resolve line `910`, newly acquired validation line `925`, release calls lines `1484-1498`, release predicate line `1506`.
+- Bad-pattern scan: `0` hits.
+- Diff Zero-GC scan: `0` hits.
+- Diff layout scan: `0` hits.
+- `git diff --check`: exit `0`.
+- Build/import/profiler: not run. CPU sampled `100%` and `VBCSCompiler` PID `53464` was active.

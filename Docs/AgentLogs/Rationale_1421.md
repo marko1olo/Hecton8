@@ -149,3 +149,10 @@ Solution: Re-sampled CPU and compiler processes. CPU was 100%; `csc` PID 55420 a
 Rejected Alternatives: Running `dotnet build` at 100% CPU with active compiler processes violates the explicit throttling rule.
 Scalability potential: Process-level only.
 Hardware Impact: Avoided additional shared-host contention; runtime impact absent.
+
+## Decision 021 - Cadence Retry And Habitat Guard Flattening
+Problem: Shared DataVault guards can reject a sump solve schedule under contention; clearing `_solveAccumulator` before schedule success silently drops a drainage tick. Habitat graph, flood-room, and module-stress grouped paths also held 4-9 write locks simultaneously.
+Solution: Make `ScheduleDrainageSolve` return schedule success and clear `_solveAccumulator` only on success. Replace grouped Habitat write-lock chains with one low-lane mutation guard per group: graph `0x0000000000000FF8`, room `0x0000000080000007`, stress `0x0000000078000000`. Existing `finally` release paths now release the matching guard.
+Rejected Alternatives: Retrying with immediate same-frame completion was rejected because it would destroy async pacing. Keeping the Habitat multi-lock chains was rejected because strict lock flattening requires one write exclusion token per grouped view, not cascading locks.
+Scalability potential: Low devices retain cadence pressure under contention instead of losing solve windows; middle/high/ultra retain the same CSR/flood data path and use freed lock overhead for visual presentation, not extra gameplay authority.
+Hardware Impact: Sump low-end i3/MX350 avoids starvation from transient guard contention. Habitat grouped paths replace up to 9 write-lock acquisitions/releases with one guard acquisition/release. No profiler measurement exists.
