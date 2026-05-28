@@ -14,6 +14,8 @@ namespace GPUInstancer
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         // COLD ALLOC: List<GPUInstancerRuntimeData>[1] - debug OnGUI single-row scratch - owner: GPUInstancerGUIInfo
         private static readonly List<GPUInstancerRuntimeData> singlesList = new List<GPUInstancerRuntimeData>(1) { null };
+        // COLD ALLOC: int[8] - debug OnGUI rendered LOD count scratch - owner: GPUInstancerGUIInfo
+        private static readonly int[] lodCountScratch = new int[8];
 
         private void OnGUI()
         {
@@ -36,8 +38,9 @@ namespace GPUInstancer
                     startPos += 30;
                 }
 
-                foreach (GPUInstancerManager manager in GPUInstancerManager.activeManagerList)
+                for (int i = 0; i < GPUInstancerManager.activeManagerList.Count; i++)
                 {
+                    GPUInstancerManager manager = GPUInstancerManager.activeManagerList[i];
                     enabledCount = 0;
                     if (manager is GPUInstancerPrefabManager)
                     {
@@ -58,14 +61,15 @@ namespace GPUInstancer
                             continue;
                         name = "detail";
                     }
-                    if (showPrototypesSeparate)
+                if (showPrototypesSeparate)
+                {
+                    for (int rdIndex = 0; manager.runtimeDataList != null && rdIndex < manager.runtimeDataList.Count; rdIndex++)
                     {
-                        foreach (GPUInstancerRuntimeData rd in manager.runtimeDataList)
-                        {
-                            singlesList[0] = rd;
-                            DebugOnManagerGUI(rd.prototype.ToString(), singlesList, showRenderedAmount, startPos, enabledCount);
-                            startPos += GPUInstancerConstants.DEBUG_INFO_SIZE;
-                        }
+                        GPUInstancerRuntimeData rd = manager.runtimeDataList[rdIndex];
+                        singlesList[0] = rd;
+                        DebugOnManagerGUI(rd.prototype != null ? rd.prototype.name : "null", singlesList, showRenderedAmount, startPos, enabledCount);
+                        startPos += GPUInstancerConstants.DEBUG_INFO_SIZE;
+                    }
                     }
                     else
                     {
@@ -128,27 +132,32 @@ namespace GPUInstancer
                     maxLodCount = runtimeData[i].instanceLODs.Count;
             }
 
-            int[] lodCounts = new int[maxLodCount];
+            if (maxLodCount > lodCountScratch.Length)
+                maxLodCount = lodCountScratch.Length;
+
+            for (int lod = 0; lod < maxLodCount; lod++)
+                lodCountScratch[lod] = 0;
+
             for (int i = 0; i < runtimeData.Count; i++)
             {
                 if (isShadow)
                 {
                     if (runtimeData[i].shadowArgs != null && runtimeData[i].shadowArgs.Length > 0)
-                        for (int lod = 0; lod < runtimeData[i].instanceLODs.Count; lod++)
-                            lodCounts[lod] += (int)runtimeData[i].shadowArgs[runtimeData[i].instanceLODs[lod].argsBufferOffset + 1];
+                        for (int lod = 0; lod < runtimeData[i].instanceLODs.Count && lod < maxLodCount; lod++)
+                            lodCountScratch[lod] += (int)runtimeData[i].shadowArgs[runtimeData[i].instanceLODs[lod].argsBufferOffset + 1];
                 }
                 else
                 {
                     if (runtimeData[i].args != null && runtimeData[i].args.Length > 0)
-                        for (int lod = 0; lod < runtimeData[i].instanceLODs.Count; lod++)
-                            lodCounts[lod] += (int)runtimeData[i].args[runtimeData[i].instanceLODs[lod].argsBufferOffset + 1];
+                        for (int lod = 0; lod < runtimeData[i].instanceLODs.Count && lod < maxLodCount; lod++)
+                            lodCountScratch[lod] += (int)runtimeData[i].args[runtimeData[i].instanceLODs[lod].argsBufferOffset + 1];
                 }
             }
             string lodstr = "";
-            for (int lod = 0; lod < lodCounts.Length; lod++)
+            for (int lod = 0; lod < maxLodCount; lod++)
             {
-                totalRendered += lodCounts[lod];
-                lodstr += "LOD" + lod + ": " + lodCounts[lod] + (lod == lodCounts.Length - 1 ? "" : ", ");
+                totalRendered += lodCountScratch[lod];
+                lodstr += "LOD" + lod + ": " + lodCountScratch[lod] + (lod == maxLodCount - 1 ? "" : ", ");
             }
 
             return totalRendered + " (" + lodstr + ")";
