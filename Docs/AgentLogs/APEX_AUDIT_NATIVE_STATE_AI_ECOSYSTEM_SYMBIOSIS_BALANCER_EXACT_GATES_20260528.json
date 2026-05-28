@@ -91,7 +91,7 @@
       "owned_handle_predicate_line": "ShinobuEcosystemBalancer.cs:1251",
       "owned_resolve_predicate_line": "ShinobuEcosystemBalancer.cs:1260",
       "owned_release_anchor": "ShinobuEcosystemBalancer.cs:2264-2307",
-      "macro_external_exact_check": "ShinobuEcosystemBalancer.cs:1803 checks BufferID.ShinobuMacroEcosystemSectorFront",
+      "macro_external_exact_check": "ShinobuEcosystemBalancer.cs:1814 checks BufferID.ShinobuMacroEcosystemSectorFront",
       "secured_owned_buffer_ids": {
         "ShinobuAmbientEntities": 70400,
         "ShinobuAmbientAups": 70401,
