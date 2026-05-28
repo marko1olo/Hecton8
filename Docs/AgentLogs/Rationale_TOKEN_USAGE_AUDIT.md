@@ -180,3 +180,11 @@ Solution: Prefer the existing same-day `TOKEN_USAGE_AUDIT_{date}.json` as the fa
 Rejected Alternatives: Keeping the old behavior was rejected because it made intra-day token velocity misleading. Creating many full duplicate reports was rejected because the existing dated report plus hash-backed apex proof already owns the current mutable snapshot.
 Scalability potential: Future same-day refreshes now measure actual incremental churn between agent runs without requiring a full replay.
 Hardware Impact: 0 us runtime gain. Audit quality gain: velocity labels now match the snapshot window.
+
+## Decision 31 - 2026-05-28 evidence boundary polish
+
+Problem: The post-cutoff long-context wording was too strong for local Codex JSONL, and the apex chart proof only compared chart counts/signatures without proving that every dashboard-declared chart path existed on disk.
+Solution: Downgrade long-context detection to `LOCAL_JSONL_DELTA_LOWER_BOUND_NOT_PROVIDER_INVOICE_CLASSIFICATION`, add chart manifest path bijection checks, and expose final compile-throttle state directly in the Markdown proof.
+Rejected Alternatives: Claiming exact provider-side long-context billing was rejected because local JSONL lacks invoice classification. Count-only chart validation was rejected because 29 files on disk can still be the wrong 29 files. Running compile checks under active csc/dotnet contention was rejected by the compilation throttling rule.
+Scalability potential: Future report refreshes can detect stale/missing chart assets and keep pricing claims inside their evidence class without slowing Unity runtime.
+Hardware Impact: 0 us runtime gain. Audit quality gain: false certainty around pricing and chart integrity is reduced; compile contention is recorded instead of hidden.

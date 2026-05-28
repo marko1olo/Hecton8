@@ -124,3 +124,11 @@
 
 - [x] Task 87 - Recheck official pricing source | Justification: checked current official GPT-5.5 model/pricing docs again before changing cost logic. Alternative rejected: relying on yesterday's cached rate memory. Microseconds saved: 0 audit-only.
 - [x] Task 88 - Fix same-day previous snapshot selection | Justification: made fast refresh use the existing same-day report as the base snapshot when present, falling back to prior dated reports only on the first run of a day. Alternative rejected: continuing to label since-yesterday deltas as since previous snapshot. Microseconds saved: 0 audit-only.
+
+## Evidence Boundary Polish 2026-05-28 13:56 Europe/Samara
+
+- [x] Task 89 - Reopen authority and mandate context | Justification: reread AGENTS/domain/status/rationale and task-relevant evidence, Zero-GC, telemetry, cinematic-cheat, performance, and registry mandates before changing reports. Alternative rejected: treating the previous pushed proof as sufficient. Microseconds saved: 0 audit-only.
+- [x] Task 90 - Downgrade long-context delta claim | Justification: changed the post-cutoff long-context detector from exact-sounding wording to lower-bound JSONL delta-event evidence. Alternative rejected: implying provider-side billing classification exists in local Codex JSONL. Microseconds saved: 0 audit-only.
+- [x] Task 91 - Add chart manifest consistency proof | Justification: apex verifier now compares dashboard-declared chart paths against disk chart paths and reports missing/extra/duplicate paths. Alternative rejected: relying only on count equality and PNG signatures. Microseconds saved: 0 audit-only.
+- [x] Task 92 - Regenerate token/dashboard/apex surfaces | Justification: refreshed fast token report, dashboard JSON/Markdown, 29 chart PNGs, apex JSON/Markdown, and SHA files after live JSONL movement. Alternative rejected: committing source changes without regenerating proof artifacts. Microseconds saved: 0 audit-only.
+- [x] Task 93 - Enforce compile throttling under contention | Justification: final CPU/compiler sample showed 100% CPU with active csc/dotnet processes, so `py_compile`, `dotnet build`, and Unity build were skipped and recorded as blocked. Alternative rejected: adding another compile process and falsifying throttle compliance. Microseconds saved: 0 audit-only.

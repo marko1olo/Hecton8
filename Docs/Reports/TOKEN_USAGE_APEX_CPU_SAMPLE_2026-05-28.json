@@ -1,9 +1,18 @@
 ﻿{
-    "sampled_at_samara":  "2026-05-28T13:19:09.5014520+04:00",
-    "cpu_total_percent":  9.98,
-    "dotnet_or_csc_process_count":  0,
+    "sampled_at_samara":  "2026-05-28T13:55:55.4088555+04:00",
+    "cpu_total_percent":  100,
+    "dotnet_or_csc_process_count":  2,
     "dotnet_or_csc_processes":  [
-
+                                    {
+                                        "ProcessName":  "csc",
+                                        "Id":  46372,
+                                        "CPU":  124.484375
+                                    },
+                                    {
+                                        "ProcessName":  "dotnet",
+                                        "Id":  62124,
+                                        "CPU":  144.828125
+                                    }
                                 ],
-    "note":  "Sample before TOKEN_USAGE_AUDIT same-day delta integrity py_compile. No dotnet build invoked."
+    "note":  "Final TOKEN_USAGE_AUDIT evidence-boundary sample. py_compile skipped because CPU and compiler contention violate throttling rule. No dotnet build invoked."
 }

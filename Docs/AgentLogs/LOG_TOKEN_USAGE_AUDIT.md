@@ -439,3 +439,40 @@ Verification:
 Known faults:
 - Runtime 0 B/frame remains `PENDING_RUNTIME_VERIFICATION_FOR_ANY_RUNTIME_CLAIM`.
 - Local JSONL still cannot prove invoice SKU, region, enterprise discount, or all-time exact long-context classification.
+
+## 2026-05-28 13:56 Europe/Samara - Evidence boundary polish
+
+What was wrong:
+- The post-cutoff long-context counter used exact-sounding wording even though local Codex JSONL does not expose provider-side billing classification.
+- Apex chart proof compared count/signature only, not dashboard manifest path equality.
+
+What was done:
+- Changed long-context post-cutoff evidence to `LOCAL_JSONL_DELTA_LOWER_BOUND_NOT_PROVIDER_INVOICE_CLASSIFICATION`.
+- Added apex chart manifest bijection: missing paths, extra paths, duplicate path count, and exact-match flag.
+- Regenerated token report, dashboard JSON/Markdown, 29 charts, apex JSON/Markdown, and SHA files.
+
+Evidence:
+- Token total: `111,059,394,546`.
+- Delta tokens since actual same-day previous snapshot: `129,102,934`.
+- Tokens/hour: `282,851,878.21349716`.
+- GPT-5.5 base API-equivalent: `$86,369.031896`.
+- Chart manifest exact match: `true`.
+- Chart count: `29`.
+- Final JSON SHA-256: `21c49346c5a8a93b09fd3b05c8f4043a9c015c6e318ec580ff2f1bb74ae02224`.
+
+Verification:
+- JSON parser check passed for token report, dashboard, and apex report.
+- Static hot-path and forbidden-text scans over changed runtime files: no TOKEN_USAGE_AUDIT runtime/shader files changed.
+- `git diff --check` scoped to TOKEN_USAGE_AUDIT artifacts: no whitespace errors.
+- Compile check: `SKIPPED_BLOCKED_BY_COMPILER_CONTENTION`.
+
+Compilation/resource throttling:
+- CPU sample: `2026-05-28T13:55:55.4088555+04:00`.
+- CPU: `100%`.
+- Compiler processes: `csc` PID `46372`, `dotnet` PID `62124`.
+- `py_compile`: not invoked under contention.
+- `dotnet build`: not invoked by TOKEN_USAGE_AUDIT.
+- Unity build/import/playmode: not invoked.
+
+Cinematic Cheats used -> None; offline telemetry/reporting only. No runtime simulation or visual system touched.
+Exact Microseconds saved -> 0 us game runtime. Audit correctness only.

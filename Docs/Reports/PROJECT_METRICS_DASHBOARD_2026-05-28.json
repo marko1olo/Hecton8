@@ -1,6 +1,6 @@
 {
   "schema": "hecton8.project_metrics_dashboard.v1",
-  "generated_at_samara": "2026-05-28T13:23:50.636446+04:00",
+  "generated_at_samara": "2026-05-28T13:52:47.743310+04:00",
   "token_report": "Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-28.json",
   "dashboard_markdown": "Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-28.md",
   "chart_count": 29,
@@ -181,20 +181,21 @@
     }
   ],
   "token_headline": {
-    "total_tokens": 110930291612,
-    "sessions_with_usage": 2874,
-    "gpt_5_5_standard_cost_usd": 86268.181008,
+    "total_tokens": 111059394546,
+    "sessions_with_usage": 2878,
+    "gpt_5_5_standard_cost_usd": 86369.031896,
     "pricing_context_rules": {
       "base_rate_note": "GPT-5.5 base API-equivalent uses input $5.00, cached input $0.50, output $30.00 per 1M tokens.",
       "long_context_trigger_input_tokens": 272000,
       "long_context_surcharge_note": "Official pricing applies 2x input and 1.5x output when prompts exceed 272K input tokens. Local Codex JSONL does not expose provider-side per-request context classification, so this report adds an upper-bound sensitivity instead of pretending exact surcharge billing.",
       "regional_uplift_note": "Some regions can add about 10 percent. Local JSONL does not expose billing region, so this is a sensitivity row only.",
-      "gpt_5_5_long_context_upper_bound_usd": 166769.23539599997,
-      "gpt_5_5_long_context_upper_bound_delta_usd": 80501.05438799998,
-      "gpt_5_5_regional_10pct_usd": 94894.99910880001,
-      "gpt_5_5_regional_10pct_delta_usd": 8626.81810080001,
-      "gpt_5_5_long_context_regional_10pct_upper_bound_usd": 183446.1589356,
-      "post_cutoff_long_context_event_rule": "Exact for post-cutoff delta events whose input_tokens exceeds 272000. It is not all-time exact unless prior reports carried the same metric.",
+      "gpt_5_5_long_context_upper_bound_usd": 166963.978462,
+      "gpt_5_5_long_context_upper_bound_delta_usd": 80594.946566,
+      "gpt_5_5_regional_10pct_usd": 95005.93508560001,
+      "gpt_5_5_regional_10pct_delta_usd": 8636.903189600009,
+      "gpt_5_5_long_context_regional_10pct_upper_bound_usd": 183660.3763082,
+      "post_cutoff_long_context_event_rule": "Lower-bound detector for post-cutoff positive delta events whose delta input_tokens exceeds 272000. Provider-side exact long-context classification remains unavailable in local JSONL; zero detected events is not proof of zero all-time surcharge.",
+      "post_cutoff_long_context_event_evidence_class": "LOCAL_JSONL_DELTA_LOWER_BOUND_NOT_PROVIDER_INVOICE_CLASSIFICATION",
       "post_cutoff_long_context_event_count": 0,
       "post_cutoff_long_context_event_usage": {
         "input_tokens": 0,
@@ -205,36 +206,36 @@
       },
       "post_cutoff_long_context_event_base_usd": 0.0,
       "post_cutoff_long_context_event_surcharge_delta_usd": 0.0,
-      "post_cutoff_base_delta_cost_usd": 54.679829000000005
+      "post_cutoff_base_delta_cost_usd": 100.850888
     },
     "velocity": {
-      "total_tokens_per_hour": 286959768.73930275,
-      "total_tokens_per_day": 6887034449.743266,
-      "total_tokens_per_minute": 4782662.812321712,
-      "total_tokens_per_second": 79711.04687202854,
-      "input_tokens_per_hour": 285942343.4112664,
-      "cached_input_tokens_per_hour": 274596209.16608393,
-      "uncached_input_tokens_per_hour": 11346134.245182484,
-      "output_tokens_per_hour": 1017425.3280363943,
-      "reasoning_output_tokens_per_hour": 303568.5072604573,
-      "sessions_with_usage_per_hour": 4.106661263517232,
-      "jsonl_files_per_hour": 4.106661263517232,
-      "primary_code_lines_per_hour": 1999.944035332892,
-      "primary_code_lines_per_day": 47998.65684798941,
-      "primary_code_characters_per_hour": 82769.75776618981,
-      "primary_code_characters_per_day": 1986474.1863885554,
-      "tokens_per_net_primary_code_line": 143483.89938398357,
-      "input_tokens_per_net_primary_code_line": 142975.17248459958,
-      "output_tokens_per_net_primary_code_line": 508.72689938398355,
-      "reasoning_tokens_per_net_primary_code_line": 151.78850102669404,
-      "tokens_per_1k_net_primary_code_chars": 3466963.9791614986,
-      "output_tokens_per_1k_net_primary_code_chars": 12292.235177375342,
-      "gpt_5_5_standard_usd_per_hour": 224.5515356500487,
-      "gpt_5_5_standard_usd_per_day": 5389.236855601169,
-      "gpt_5_5_priority_usd_per_hour": 561.3788391251815,
-      "gpt_5_3_codex_standard_usd_per_hour": 82.15402612565315,
-      "gpt_5_5_standard_usd_per_net_primary_code_line": 0.11227890965092528,
-      "gpt_5_5_standard_usd_per_1k_net_primary_code_chars": 2.71296596378073
+      "total_tokens_per_hour": 282851878.21349716,
+      "total_tokens_per_day": 6788445077.123932,
+      "total_tokens_per_minute": 4714197.970224952,
+      "total_tokens_per_second": 78569.96617041588,
+      "input_tokens_per_hour": 281835488.0962165,
+      "cached_input_tokens_per_hour": 270825495.6197375,
+      "uncached_input_tokens_per_hour": 11009992.476478996,
+      "output_tokens_per_hour": 1016390.1172806523,
+      "reasoning_output_tokens_per_hour": 268584.86889283883,
+      "sessions_with_usage_per_hour": 8.76360805908554,
+      "jsonl_files_per_hour": 8.76360805908554,
+      "primary_code_lines_per_hour": 1792.1578480829928,
+      "primary_code_lines_per_day": 43011.788353991826,
+      "primary_code_characters_per_hour": 88744.67701032972,
+      "primary_code_characters_per_day": 2129872.248247913,
+      "tokens_per_net_primary_code_line": 157827.5476772616,
+      "input_tokens_per_net_primary_code_line": 157260.41564792176,
+      "output_tokens_per_net_primary_code_line": 567.1320293398533,
+      "reasoning_tokens_per_net_primary_code_line": 149.86674816625916,
+      "tokens_per_1k_net_primary_code_chars": 3187254.579568459,
+      "output_tokens_per_1k_net_primary_code_chars": 11452.969930380685,
+      "gpt_5_5_standard_usd_per_hour": 220.95441371068515,
+      "gpt_5_5_standard_usd_per_day": 5302.905929056444,
+      "gpt_5_5_priority_usd_per_hour": 552.3860342766969,
+      "gpt_5_3_codex_standard_usd_per_hour": 80.89141020921838,
+      "gpt_5_5_standard_usd_per_net_primary_code_line": 0.12328959413203038,
+      "gpt_5_5_standard_usd_per_1k_net_primary_code_chars": 2.4897765269343024
     }
   },
   "project_metrics": {
@@ -248,8 +249,8 @@
       {
         "extension": ".cs",
         "files": 6437,
-        "bytes": 132066252,
-        "lines": 3060878
+        "bytes": 132110975,
+        "lines": 3061756
       },
       {
         "extension": ".asset",
@@ -259,14 +260,14 @@
       },
       {
         "extension": ".json",
-        "files": 2216,
-        "bytes": 656184397,
-        "lines": 17164705
+        "files": 2220,
+        "bytes": 656301101,
+        "lines": 17166106
       },
       {
         "extension": ".png",
         "files": 1450,
-        "bytes": 1208492534,
+        "bytes": 1208491130,
         "lines": 0
       },
       {
@@ -284,8 +285,8 @@
       {
         "extension": ".md",
         "files": 935,
-        "bytes": 30264098,
-        "lines": 309213
+        "bytes": 30383084,
+        "lines": 310180
       },
       {
         "extension": ".mat",
@@ -313,8 +314,8 @@
       },
       {
         "extension": ".log",
-        "files": 638,
-        "bytes": 79399887,
+        "files": 642,
+        "bytes": 80308045,
         "lines": 0
       },
       {
@@ -338,8 +339,8 @@
       {
         "extension": ".py",
         "files": 234,
-        "bytes": 5175826,
-        "lines": 113498
+        "bytes": 5180085,
+        "lines": 113554
       },
       {
         "extension": ".asmdef",
@@ -456,6 +457,12 @@
         "lines": 0
       },
       {
+        "extension": ".sha256",
+        "files": 37,
+        "bytes": 3574,
+        "lines": 0
+      },
+      {
         "extension": ".pyc",
         "files": 37,
         "bytes": 1960967,
@@ -482,13 +489,7 @@
       {
         "extension": ".targets",
         "files": 33,
-        "bytes": 84493,
-        "lines": 0
-      },
-      {
-        "extension": ".sha256",
-        "files": 32,
-        "bytes": 3124,
+        "bytes": 84609,
         "lines": 0
       },
       {
@@ -499,9 +500,9 @@
       },
       {
         "extension": ".ps1",
-        "files": 29,
-        "bytes": 726508,
-        "lines": 13200
+        "files": 30,
+        "bytes": 739324,
+        "lines": 13399
       },
       {
         "extension": ".h8bin",
@@ -1078,7 +1079,7 @@
       {
         "extension": ".png",
         "files": 1450,
-        "bytes": 1208492534,
+        "bytes": 1208491130,
         "lines": 0
       },
       {
@@ -1095,9 +1096,9 @@
       },
       {
         "extension": ".json",
-        "files": 2216,
-        "bytes": 656184397,
-        "lines": 17164705
+        "files": 2220,
+        "bytes": 656301101,
+        "lines": 17166106
       },
       {
         "extension": ".wav",
@@ -1120,8 +1121,8 @@
       {
         "extension": ".cs",
         "files": 6437,
-        "bytes": 132066252,
-        "lines": 3060878
+        "bytes": 132110975,
+        "lines": 3061756
       },
       {
         "extension": ".jpg",
@@ -1149,8 +1150,8 @@
       },
       {
         "extension": ".log",
-        "files": 638,
-        "bytes": 79399887,
+        "files": 642,
+        "bytes": 80308045,
         "lines": 0
       },
       {
@@ -1204,8 +1205,8 @@
       {
         "extension": ".md",
         "files": 935,
-        "bytes": 30264098,
-        "lines": 309213
+        "bytes": 30383084,
+        "lines": 310180
       },
       {
         "extension": ".fbx",
@@ -1288,8 +1289,8 @@
       {
         "extension": ".py",
         "files": 234,
-        "bytes": 5175826,
-        "lines": 113498
+        "bytes": 5180085,
+        "lines": 113554
       },
       {
         "extension": ".ptx",
@@ -1431,9 +1432,9 @@
       },
       {
         "extension": ".ps1",
-        "files": 29,
-        "bytes": 726508,
-        "lines": 13200
+        "files": 30,
+        "bytes": 739324,
+        "lines": 13399
       },
       {
         "extension": ".backup",
@@ -1576,7 +1577,7 @@
       {
         "extension": ".targets",
         "files": 33,
-        "bytes": 84493,
+        "bytes": 84609,
         "lines": 0
       },
       {
@@ -1772,15 +1773,15 @@
         "lines": 0
       },
       {
-        "extension": ".slnx",
-        "files": 1,
-        "bytes": 3299,
+        "extension": ".sha256",
+        "files": 37,
+        "bytes": 3574,
         "lines": 0
       },
       {
-        "extension": ".sha256",
-        "files": 32,
-        "bytes": 3124,
+        "extension": ".slnx",
+        "files": 1,
+        "bytes": 3299,
         "lines": 0
       },
       {
@@ -1921,7 +1922,7 @@
       },
       {
         "label": "Docs",
-        "files": 3333
+        "files": 3346
       },
       {
         "label": "Packages",
@@ -1965,7 +1966,7 @@
       },
       {
         "label": "ModdingSDK",
-        "files": 27
+        "files": 28
       },
       {
         "label": ".agent",
@@ -2541,7 +2542,7 @@
     "doc_artifacts": [
       {
         "label": "Docs reports json",
-        "count": 1505
+        "count": 1508
       },
       {
         "label": "Docs reports md",
@@ -2553,7 +2554,7 @@
       },
       {
         "label": "Agent logs json",
-        "count": 125
+        "count": 126
       },
       {
         "label": "Task status md",
@@ -2985,11 +2986,11 @@
       },
       {
         "period": "2026-05-28",
-        "commits": 42,
-        "insertions": 1128649,
-        "deletions": 16386,
-        "files_changed": 1480,
-        "churn": 1145035
+        "commits": 43,
+        "insertions": 1129241,
+        "deletions": 16925,
+        "files_changed": 1516,
+        "churn": 1146166
       }
     ],
     "weekly": [
@@ -3059,11 +3060,11 @@
       },
       {
         "period": "2026-W22",
-        "commits": 140,
-        "insertions": 18338351,
-        "deletions": 568285,
-        "files_changed": 12483,
-        "churn": 18906636
+        "commits": 141,
+        "insertions": 18338943,
+        "deletions": 568824,
+        "files_changed": 12519,
+        "churn": 18907767
       }
     ],
     "weekday_hour_commit_heatmap": [
@@ -3159,7 +3160,7 @@
         0,
         1,
         4,
-        4,
+        5,
         8,
         3,
         1,

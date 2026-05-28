@@ -167,12 +167,37 @@ def chart_report():
         charts.append(
             {
                 "path": rel(path),
+                "dashboard_path": str(path.relative_to(REPORT_DIR)).replace("\\", "/"),
                 "sha256": hashlib.sha256(data).hexdigest(),
                 "bytes": len(data),
                 "png_signature_ok": data.startswith(b"\x89PNG\r\n\x1a\n"),
             }
         )
     return charts
+
+
+def chart_manifest_integrity(dashboard, charts):
+    reported_paths = [
+        str(item.get("path", "")).replace("\\", "/")
+        for item in dashboard.get("charts", [])
+        if item.get("path")
+    ]
+    disk_paths = [item["path"].replace("\\", "/") for item in charts]
+    disk_dashboard_paths = [item["dashboard_path"].replace("\\", "/") for item in charts]
+    reported_set = set(reported_paths)
+    disk_dashboard_set = set(disk_dashboard_paths)
+    missing = sorted(reported_set - disk_dashboard_set)
+    extra = sorted(disk_dashboard_set - reported_set)
+    duplicate_count = len(reported_paths) - len(reported_set)
+    return {
+        "reported_chart_paths": reported_paths,
+        "disk_chart_paths": disk_paths,
+        "disk_dashboard_relative_chart_paths": disk_dashboard_paths,
+        "missing_reported_chart_files": missing,
+        "unreported_disk_chart_files": extra,
+        "reported_chart_duplicate_path_count": duplicate_count,
+        "chart_manifest_exact_match": not missing and not extra and duplicate_count == 0,
+    }
 
 
 def artifact_report(path):
@@ -205,6 +230,7 @@ def build_report():
     token_report = load_json(TOKEN_REPORT_JSON)
     dashboard = load_json(DASHBOARD_JSON)
     charts = chart_report()
+    chart_manifest = chart_manifest_integrity(dashboard, charts)
     source_reports = [source_file_report(path) for path in OWNED_EXECUTABLE_FILES]
 
     hot_hits = sum(len(item["hot_path_symbol_hits"]) for item in source_reports)
@@ -280,10 +306,11 @@ def build_report():
         "dashboard_integrity": {
             "dashboard_json": rel(DASHBOARD_JSON),
             "dashboard_markdown": rel(DASHBOARD_MD),
-            "chart_count_reported": dashboard["chart_count"],
+            "chart_count_reported": dashboard.get("chart_count"),
             "chart_count_on_disk": len(charts),
             "all_png_signatures_ok": all(item["png_signature_ok"] for item in charts),
             "all_png_non_empty": all(item["bytes"] > 0 for item in charts),
+            **chart_manifest,
         },
         "compilation_resource_throttling": command_log_stub(),
         "known_faults": [
@@ -315,6 +342,7 @@ def write_markdown(report):
         f"| DataVault migration | `{report['data_sovereignty_self_audit']['migrated_to_global_data_vault']}` | route scan |",
         f"| Chart count | `{report['dashboard_integrity']['chart_count_on_disk']}` | PNG scan |",
         f"| PNG signatures ok | `{report['dashboard_integrity']['all_png_signatures_ok']}` | binary signature check |",
+        f"| Chart manifest exact match | `{report['dashboard_integrity']['chart_manifest_exact_match']}` | dashboard paths vs disk paths |",
         "",
         "## Token Headline",
         "",
@@ -341,8 +369,26 @@ def write_markdown(report):
                 f"| gpt_5_5_regional_10pct_delta_usd | {pricing_context.get('gpt_5_5_regional_10pct_delta_usd')} |",
                 f"| post_cutoff_long_context_event_count | {pricing_context.get('post_cutoff_long_context_event_count')} |",
                 f"| post_cutoff_long_context_event_surcharge_delta_usd | {pricing_context.get('post_cutoff_long_context_event_surcharge_delta_usd')} |",
+                f"| post_cutoff_long_context_event_evidence_class | {pricing_context.get('post_cutoff_long_context_event_evidence_class')} |",
             ]
         )
+
+    throttle = report.get("compilation_resource_throttling") or {}
+    cpu_sample = throttle.get("cpu_sample_before_final_compile") or {}
+    lines.extend(
+        [
+            "",
+            "## Compilation Resource Throttling",
+            "",
+            "| Metric | Value |",
+            "|---|---|",
+            f"| dotnet_build_invoked_by_token_usage_audit | `{throttle.get('dotnet_build_invoked_by_token_usage_audit')}` |",
+            f"| unity_build_invoked_by_token_usage_audit | `{throttle.get('unity_build_invoked_by_token_usage_audit')}` |",
+            f"| final_compile_check | `{throttle.get('final_compile_check')}` |",
+            f"| cpu_total_percent | `{cpu_sample.get('cpu_total_percent')}` |",
+            f"| dotnet_or_csc_process_count | `{cpu_sample.get('dotnet_or_csc_process_count')}` |",
+        ]
+    )
 
     lines.extend(
         [

@@ -1,27 +1,28 @@
 ﻿# Project Metrics Dashboard 2026-05-28
 
-Generated Samara: `2026-05-28T13:23:50.642695+04:00`
+Generated Samara: `2026-05-28T13:52:47.746319+04:00`
 Evidence class: static local Codex JSONL, git history, and filesystem scan. Token cost is API-equivalent, not invoice proof.
 
 ## Headline
 
 | Metric | Value |
 |---|---:|
-| Total tokens | 110,930,291,612 |
-| Input tokens | 110,544,782,904 |
-| Cached input tokens | 106,219,997,056 |
-| Output tokens | 384,475,108 |
-| Reasoning output tokens | 120,609,066 |
-| Sessions with usage | 2,874 |
-| GPT-5.5 standard API-equivalent total | $86,268.18 |
-| GPT-5.5 long-context sensitivity upper bound | $166,769.24 |
-| GPT-5.5 long-context + regional upper bound | $183,446.16 |
-| GPT-5.5 regional +10% sensitivity | $94,895.00 |
-| Post-cutoff long-context-like events | 0 |
-| Post-cutoff long-context surcharge delta | $0.00 |
-| Tokens/hour since previous snapshot | 286,959,768 |
-| GPT-5.5 standard USD/hour since previous snapshot | $224.55 |
-| Primary C# LOC/hour since previous snapshot | 1,999.94 |
+| Total tokens | 111,059,394,546 |
+| Input tokens | 110,673,421,924 |
+| Cached input tokens | 106,343,610,752 |
+| Output tokens | 384,939,022 |
+| Reasoning output tokens | 120,731,657 |
+| Sessions with usage | 2,878 |
+| GPT-5.5 standard API-equivalent total | $86,369.03 |
+| GPT-5.5 long-context sensitivity upper bound | $166,963.98 |
+| GPT-5.5 long-context + regional upper bound | $183,660.38 |
+| GPT-5.5 regional +10% sensitivity | $95,005.94 |
+| Post-cutoff detected long-context delta events (lower-bound) | 0 |
+| Post-cutoff detected long-context surcharge delta (lower-bound) | $0.00 |
+| Post-cutoff long-context evidence class | `LOCAL_JSONL_DELTA_LOWER_BOUND_NOT_PROVIDER_INVOICE_CLASSIFICATION` |
+| Tokens/hour since previous snapshot | 282,851,878 |
+| GPT-5.5 standard USD/hour since previous snapshot | $220.95 |
+| Primary C# LOC/hour since previous snapshot | 1,792.16 |
 | Chart count | 29 |
 
 ## Chart Index
@@ -186,5 +187,6 @@ Evidence class: static local Codex JSONL, git history, and filesystem scan. Toke
 ## Residual Risk
 
 - Local Codex JSONL is not billing-provider proof.
+- Long-context post-cutoff detection is a lower-bound delta-event heuristic; exact provider-side surcharge classification is absent.
 - Git churn charts use committed history; uncommitted live-agent work is visible only after commit.
 - Filesystem metrics exclude configured build/cache/archive directories.
