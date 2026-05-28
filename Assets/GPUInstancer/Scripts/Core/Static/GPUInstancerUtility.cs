@@ -730,7 +730,8 @@ namespace GPUInstancer
             for (int i = 0; i < runtimeDataCount; i++)
             {
                 T runtimeData = runtimeDataList[i];
-                if (runtimeData == null || runtimeData.args == null || runtimeData.transformationMatrixVisibilityBuffer == null || runtimeData.bufferSize == 0 || GetSafeRuntimeInstanceCount(runtimeData) == 0)
+                int safeInstanceCount = GetSafeRuntimeInstanceCount(runtimeData);
+                if (runtimeData == null || runtimeData.args == null || runtimeData.transformationMatrixVisibilityBuffer == null || runtimeData.bufferSize == 0 || safeInstanceCount == 0)
                     continue;
 
                 for (int lod = 0; lod < runtimeData.instanceLODs.Count; lod++)
@@ -741,9 +742,9 @@ namespace GPUInstancer
                     bufferToTextureComputeShader.SetBuffer(bufferToTextureComputeKernelID, GPUInstancerConstants.VisibilityKernelPoperties.ARGS_BUFFER, runtimeData.argsBuffer);
                     bufferToTextureComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.ARGS_BUFFER_INDEX, runtimeData.instanceLODs[lod].argsBufferOffset + 1);
                     bufferToTextureComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.MAX_TEXTURE_SIZE, GPUInstancerConstants.TEXTURE_MAX_SIZE);
-                    bufferToTextureComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_BUFFER_SIZE, runtimeData.bufferSize);
+                    bufferToTextureComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_BUFFER_SIZE, safeInstanceCount);
 
-                    bufferToTextureComputeShader.Dispatch(bufferToTextureComputeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(runtimeData.bufferSize), 1, 1);
+                    bufferToTextureComputeShader.Dispatch(bufferToTextureComputeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(safeInstanceCount), 1, 1);
 
                     if (runtimeData.hasShadowCasterBuffer)
                     {
@@ -753,9 +754,9 @@ namespace GPUInstancer
                         bufferToTextureComputeShader.SetBuffer(bufferToTextureComputeKernelID, GPUInstancerConstants.VisibilityKernelPoperties.ARGS_BUFFER, runtimeData.shadowArgsBuffer);
                         bufferToTextureComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.ARGS_BUFFER_INDEX, runtimeData.instanceLODs[lod].argsBufferOffset + 1);
                         bufferToTextureComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.MAX_TEXTURE_SIZE, GPUInstancerConstants.TEXTURE_MAX_SIZE);
-                        bufferToTextureComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_BUFFER_SIZE, runtimeData.bufferSize);
+                        bufferToTextureComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_BUFFER_SIZE, safeInstanceCount);
 
-                        bufferToTextureComputeShader.Dispatch(bufferToTextureComputeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(runtimeData.bufferSize), 1, 1);
+                        bufferToTextureComputeShader.Dispatch(bufferToTextureComputeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(safeInstanceCount), 1, 1);
                     }
 
                     if (runtimeData.prototype.isLODCrossFade)

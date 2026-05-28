@@ -117,6 +117,8 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("runtimeData.instanceLODDataBuffer.count < safeCount"));
             Assert.That(source, Does.Contain("GetComputeThreadGroupCount(safeInstanceCount)"));
             Assert.That(source, Does.Not.Contain("GetComputeThreadGroupCount(runtimeData.instanceCount)"));
+            Assert.That(source, Does.Not.Contain("GetComputeThreadGroupCount(runtimeData.bufferSize)"));
+            Assert.That(source, Does.Contain("BUFFER_PARAMETER_BUFFER_SIZE, safeInstanceCount"));
         }
 
         [Test]

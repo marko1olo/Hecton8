@@ -597,6 +597,183 @@ namespace Hecton8.World
                 buffer[i] = default;
         }
 
+        private static bool IsRadarPendingJobValid(in RadarPendingJob pending)
+        {
+            return pending.Hits.IsCreated &&
+                   pending.Hits.Length >= GroundRadarConstants.MaxPings &&
+                   pending.SignalStrength.IsCreated &&
+                   pending.SignalStrength.Length >= GroundRadarConstants.MaxPings &&
+                   pending.AgeSeconds.IsCreated &&
+                   pending.AgeSeconds.Length >= GroundRadarConstants.MaxPings &&
+                   pending.OreTypes.IsCreated &&
+                   pending.OreTypes.Length >= GroundRadarConstants.MaxPings &&
+                   pending.PingGpu.IsCreated &&
+                   pending.PingGpu.Length >= GroundRadarConstants.MaxPings &&
+                   pending.Counters.IsCreated &&
+                   pending.Counters.Length >= 4 &&
+                   pending.MaxSignalStrength.IsCreated &&
+                   pending.MaxSignalStrength.Length >= 1;
+        }
+
+        private static void ReleaseRadarPendingJob(ref RadarPendingJob pending)
+        {
+            H8Memory.Release(ref pending.Hits, SystemID.WorldStreaming);
+            H8Memory.Release(ref pending.SignalStrength, SystemID.WorldStreaming);
+            H8Memory.Release(ref pending.AgeSeconds, SystemID.WorldStreaming);
+            H8Memory.Release(ref pending.OreTypes, SystemID.WorldStreaming);
+            H8Memory.Release(ref pending.PingGpu, SystemID.WorldStreaming);
+            H8Memory.Release(ref pending.Counters, SystemID.WorldStreaming);
+            H8Memory.Release(ref pending.MaxSignalStrength, SystemID.WorldStreaming);
+            pending.Handle = default;
+        }
+
+        private static bool TryCreateRadarPendingJob(out RadarPendingJob pending)
+        {
+            pending = default;
+            pending.Hits = H8Memory.Allocate<float3>(
+                GroundRadarConstants.MaxPings,
+                SystemID.WorldStreaming,
+                Allocator.TempJob,
+                NativeArrayOptions.UninitializedMemory);
+            pending.SignalStrength = H8Memory.Allocate<float>(
+                GroundRadarConstants.MaxPings,
+                SystemID.WorldStreaming,
+                Allocator.TempJob,
+                NativeArrayOptions.UninitializedMemory);
+            pending.AgeSeconds = H8Memory.Allocate<float>(
+                GroundRadarConstants.MaxPings,
+                SystemID.WorldStreaming,
+                Allocator.TempJob,
+                NativeArrayOptions.UninitializedMemory);
+            pending.OreTypes = H8Memory.Allocate<int>(
+                GroundRadarConstants.MaxPings,
+                SystemID.WorldStreaming,
+                Allocator.TempJob,
+                NativeArrayOptions.UninitializedMemory);
+            pending.PingGpu = H8Memory.Allocate<float4>(
+                GroundRadarConstants.MaxPings,
+                SystemID.WorldStreaming,
+                Allocator.TempJob,
+                NativeArrayOptions.UninitializedMemory);
+            pending.Counters = H8Memory.Allocate<int>(
+                4,
+                SystemID.WorldStreaming,
+                Allocator.TempJob,
+                NativeArrayOptions.UninitializedMemory);
+            pending.MaxSignalStrength = H8Memory.Allocate<float>(
+                1,
+                SystemID.WorldStreaming,
+                Allocator.TempJob,
+                NativeArrayOptions.UninitializedMemory);
+
+            if (IsRadarPendingJobValid(in pending))
+                return true;
+
+            ReleaseRadarPendingJob(ref pending);
+            return false;
+        }
+
+        private bool TryCopyCurrentGprStateToPending(ref RadarPendingJob pending)
+        {
+            if (!IsRadarPendingJobValid(in pending) || !TryLockScanJobBuffers())
+                return false;
+
+            try
+            {
+                if (!TryOpenGprStateForOwnerWrite(
+                    out NativeArray<float3> hits,
+                    out NativeArray<float> signalStrength,
+                    out NativeArray<float> ageSeconds,
+                    out NativeArray<int> gprOreTypes,
+                    out NativeArray<float4> pingGpu,
+                    out NativeArray<int> counters,
+                    out _,
+                    out _))
+                {
+                    return false;
+                }
+
+                NativeArray<float3>.Copy(hits, pending.Hits, GroundRadarConstants.MaxPings);
+                NativeArray<float>.Copy(signalStrength, pending.SignalStrength, GroundRadarConstants.MaxPings);
+                NativeArray<float>.Copy(ageSeconds, pending.AgeSeconds, GroundRadarConstants.MaxPings);
+                NativeArray<int>.Copy(gprOreTypes, pending.OreTypes, GroundRadarConstants.MaxPings);
+                NativeArray<float4>.Copy(pingGpu, pending.PingGpu, GroundRadarConstants.MaxPings);
+                NativeArray<int>.Copy(counters, pending.Counters, 4);
+                pending.MaxSignalStrength[0] = 0f;
+                return true;
+            }
+            finally
+            {
+                ReleaseScanJobBufferLocks();
+            }
+        }
+
+        private bool TryPublishRadarPendingJob(ref RadarPendingJob pending)
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive || !IsRadarPendingJobValid(in pending))
+                return false;
+
+            bool hitsLocked = false;
+            bool signalLocked = false;
+            bool ageLocked = false;
+            bool oreTypesLocked = false;
+            bool pingGpuLocked = false;
+            bool countersLocked = false;
+            bool maxSignalLocked = false;
+
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _gprHitsHandle, SystemID.WorldStreaming, out NativeArray<float3> hits))
+                    return false;
+                hitsLocked = true;
+                if (!vault.TryAcquireWriteLock(in _gprSignalStrengthHandle, SystemID.WorldStreaming, out NativeArray<float> signalStrength))
+                    return false;
+                signalLocked = true;
+                if (!vault.TryAcquireWriteLock(in _gprAgeSecondsHandle, SystemID.WorldStreaming, out NativeArray<float> ageSeconds))
+                    return false;
+                ageLocked = true;
+                if (!vault.TryAcquireWriteLock(in _gprOreTypesHandle, SystemID.WorldStreaming, out NativeArray<int> gprOreTypes))
+                    return false;
+                oreTypesLocked = true;
+                if (!vault.TryAcquireWriteLock(in _gprPingGpuHandle, SystemID.WorldStreaming, out NativeArray<float4> pingGpu))
+                    return false;
+                pingGpuLocked = true;
+                if (!vault.TryAcquireWriteLock(in _gprCountersHandle, SystemID.WorldStreaming, out NativeArray<int> counters))
+                    return false;
+                countersLocked = true;
+                if (!vault.TryAcquireWriteLock(in _maxSignalStrengthHandle, SystemID.WorldStreaming, out NativeArray<float> maxSignalStrength))
+                    return false;
+                maxSignalLocked = true;
+
+                NativeArray<float3>.Copy(pending.Hits, hits, GroundRadarConstants.MaxPings);
+                NativeArray<float>.Copy(pending.SignalStrength, signalStrength, GroundRadarConstants.MaxPings);
+                NativeArray<float>.Copy(pending.AgeSeconds, ageSeconds, GroundRadarConstants.MaxPings);
+                NativeArray<int>.Copy(pending.OreTypes, gprOreTypes, GroundRadarConstants.MaxPings);
+                NativeArray<float4>.Copy(pending.PingGpu, pingGpu, GroundRadarConstants.MaxPings);
+                NativeArray<int>.Copy(pending.Counters, counters, 4);
+                maxSignalStrength[0] = pending.MaxSignalStrength[0];
+                return true;
+            }
+            finally
+            {
+                if (maxSignalLocked)
+                    vault.ReleaseWriteLock(in _maxSignalStrengthHandle, SystemID.WorldStreaming);
+                if (countersLocked)
+                    vault.ReleaseWriteLock(in _gprCountersHandle, SystemID.WorldStreaming);
+                if (pingGpuLocked)
+                    vault.ReleaseWriteLock(in _gprPingGpuHandle, SystemID.WorldStreaming);
+                if (oreTypesLocked)
+                    vault.ReleaseWriteLock(in _gprOreTypesHandle, SystemID.WorldStreaming);
+                if (ageLocked)
+                    vault.ReleaseWriteLock(in _gprAgeSecondsHandle, SystemID.WorldStreaming);
+                if (signalLocked)
+                    vault.ReleaseWriteLock(in _gprSignalStrengthHandle, SystemID.WorldStreaming);
+                if (hitsLocked)
+                    vault.ReleaseWriteLock(in _gprHitsHandle, SystemID.WorldStreaming);
+            }
+        }
+
         private void ScheduleRadarJob(float3 probeOrigin, float deltaTime, bool scanDue, bool hasShift, float3 aupShift)
         {
             if (_radarJobScheduled != 0)

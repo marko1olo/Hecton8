@@ -1501,11 +1501,13 @@ namespace Hecton8.Core.Memory.Editor
             public long GenerationRefreshes;
             public long GrowthResolveAttempts;
             public long GrowthResolveMisses;
+            public Task[] RunningTasks;
             public int TelemetrySequence;
             public int BlackBoxCursor;
             public int MaxLockedSkipCount;
             public int FailureFlags;
             public int TasksCompleted = 1;
+            public int DeferredCleanupQueued;
 
             public FuzzerState(
                 GlobalDataVault vault,

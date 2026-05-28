@@ -3,7 +3,7 @@
 Agent: 1407
 Role: UNIVERSAL_OPENXR_COMFORT_AND_TUNNELING_SHADER_INTEGRATOR
 Domain: Echelon 8 Presentation and UX / VR Somatic Comfort / Diegetic Terminals
-State: APEX_RENDER_ORDER_AND_QUALITY_DITHER_VERIFIED_BUILD_BLOCKED_BY_CPU
+State: APEX_QUEST_ORDER_REPAIRED_REPORT_REGENERATED_BUILD_BLOCKED_BY_CPU
 
 ## Initialization
 Problem: Universal VR comfort masking can desync when secondary cockpit or terminal render paths ignore the global brownout scalar.
@@ -159,3 +159,27 @@ Solution: Resampled the gate: CPU was 100 percent and active `csc` PID 3444 plus
 Rejected Alternatives: Build spam under CPU contention.
 Scalability potential: Concurrent agents keep host CPU; proof state is static until a legal build window exists.
 Hardware Impact: Prevented additional CPU pressure during active integration.
+
+Problem: Fresh APEX recheck and an independent read-only subagent found the Quest renderer proof had gone stale: `Quest_VR_Renderer.asset` had `HectonVRBrownoutFeature` at serialized index 7/13, before `HectonNoirDepthFogFeature`, `HectonFluidAdvectionRenderFeature`, `HectonHalfResParticlesFeature`, `HectonAtmosphereSootFeature`, `WristPdaScreenProjectorFeature`, and `HectonVisorUberPostFeature`. Those later same-event overlays could redraw bright pixels after the comfort seal on Quest VR.
+Solution: Moved the existing brownout fileID `-5156602577924574680` to final slot 13/13 in `Quest_VR_Renderer.asset`; regenerated the little-endian `m_RendererFeatureMap`; re-ran renderer proof for Mobile, Quest, PC, and PC_High. Current result: every target has brownout last, map length equals `featureCount * 16`, and `MapMatches=True`.
+Rejected Alternatives: Trusting stale report JSON, adding a duplicate Quest-only brownout pass, or patching late overlay shaders one by one. Stale proof is invalid; duplicate pass violates fill-rate budget; per-overlay patching misses future serialized features.
+Scalability potential: Low/Middle Quest keeps one final comfort pass. High/Ultra retains all late visor/PDA/particle presentation because final ordering, not extra passes, seals the frame.
+Hardware Impact: Fix restores correctness with 0 additional passes. It avoids an estimated 150-600 us duplicate fullscreen brownout cost on weak GPUs while preventing Quest-specific bright redraws.
+
+Problem: The source contradicted the namespace hygiene proof because `HectonVRBrownoutFeature.cs` had an unused `using UnityEngine.Experimental.Rendering;`.
+Solution: Removed the unused import. Current `using` set is limited to `System`, `Runtime.CompilerServices`, `Runtime.InteropServices`, `Hecton8.Core`, `Unity.Collections`, `Unity.Mathematics`, `UnityEngine`, `UnityEngine.Rendering`, `UnityEngine.Rendering.RenderGraphModule`, and `UnityEngine.Rendering.Universal`.
+Rejected Alternatives: Updating the report to excuse a dead dependency. The task explicitly required namespace hygiene, so the dead import had to be removed.
+Scalability potential: No runtime tier impact; keeps compile surface tighter across desktop and XR targets.
+Hardware Impact: No runtime cost; reduces C# dependency noise only.
+
+Problem: Final report hashes were invalid after the Quest repair and namespace cleanup.
+Solution: Regenerated `Docs/Reports/APEX_ZERO_GC_SCAN_1407.json`, `Docs/Reports/APEX_FINAL_VERIFICATION_1407.json`, and `Docs/Reports/UNIVERSAL_COMFORT_INTEGRATION_REPORT_1407.json`. Current hashes: APEX final `4D5B62C58F4DA54C10F340DD2890BCFEF8661D215D996BA3C2D8A1BCEB00ABD0`; universal mirror same; zero-GC scan `A6B714E4C8825C0EED7D26BF6D13EDD22C2BAF0B98DD79B4A95539AE6ADA31EB`.
+Rejected Alternatives: Leaving old JSON in place. It falsely claimed Quest order was correct before the fresh repair.
+Scalability potential: Cold proof artifact only.
+Hardware Impact: No runtime cost.
+
+Problem: Legal compilation gate remained closed after final report regeneration.
+Solution: Sampled CPU at 100 percent and found active `dotnet` PID 32028. `dotnet build` was not launched.
+Rejected Alternatives: Running `dotnet build` under CPU >50 percent or active compiler/process contention.
+Scalability potential: Keeps host available for parallel agents.
+Hardware Impact: Avoided additional CPU contention.

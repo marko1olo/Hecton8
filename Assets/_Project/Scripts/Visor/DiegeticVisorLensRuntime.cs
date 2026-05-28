@@ -723,13 +723,7 @@ namespace Hecton8.Visor
 
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                CompleteScheduledWorkForTeardown();
-                IDataVault previousVault = previousService as IDataVault;
-                if (previousVault == null)
-                    previousVault = _vault;
-
-                ReleaseNativeState(previousVault, clearVault: false);
-                _vault = currentService as IDataVault;
+                RebindDataVaultForLifecycle(currentService as IDataVault);
                 if (_vault != null)
                     EnsureNativeState();
             }
@@ -746,10 +740,21 @@ namespace Hecton8.Visor
         private void CacheRegistryServicesCold()
         {
             if (_vault == null)
-                _vault = GlobalRegistry.DataVault;
+                RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
 
             if (_playerContext == null)
                 _playerContext = GlobalRegistry.Player;
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_vault, nextVault))
+                return;
+
+            CompleteScheduledWorkForTeardown();
+            ReleaseNativeState(_vault, clearVault: false);
+            _vault = nextVault;
+            ResetNativeEpochState();
         }
 
         private void TryRegisterHotSwapListener()
@@ -783,13 +788,21 @@ namespace Hecton8.Visor
         private void ReleaseNativeState(IDataVault vault, bool clearVault)
         {
             ReleaseVisorVaultHandles(vault);
+            ResetNativeEpochState();
+            if (clearVault)
+                _vault = null;
+        }
+
+        private void ResetNativeEpochState()
+        {
             _nativeReady = false;
+            _hasScheduledWork = false;
             _hasGpuGlobals = false;
             _hasUploadedGpuGlobals = false;
             _lastGpuGlobals = default;
             _uploadedGpuGlobals = default;
-            if (clearVault)
-                _vault = null;
+            _blackBoxDumped = false;
+            _binaryProbePerformed = false;
         }
 
         private void ReleaseVisorVaultHandles(IDataVault vault)
