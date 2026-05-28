@@ -212,7 +212,7 @@ Hardware Impact: No measured runtime gain. Launch correctness proof still requir
 
 Problem: The previous report hash `c81065228d5e90bd0b080e88e8aa8b23368251ef4cff76b969d4308443f5bf28` no longer described the source after native dump, writer-release retry, and GameActivity manifest fixes.
 
-Solution: Regenerated `Docs/Reports/ANDROID_PAL_OPTIMIZATION_REPORT_1404.json`. Current SHA-256 is `5aaabd5ad674dd5ba5a02a9bfa76ec4555b88e1d85472900f87b7a29f445029e`. The report records zero Android guarded `new`, zero reference-type `new`, zero `string.Format`, zero `.ToString()`, zero LINQ tokens, zero `foreach`, zero Android `Path.Combine(Application.persistentDataPath)`, zero Android FileStream/BinaryWriter tokens, native heap token counts all zero, payload lock acquire/release/finally counts 4/4/4, and latest build gate CPU 64 with active `dotnet` PID 32028.
+Solution: Regenerated `Docs/Reports/ANDROID_PAL_OPTIMIZATION_REPORT_1404.json`. Current SHA-256 is `6ec50ef7ed5736a5e640c3da6cf498f9869714bf7b2cac8c2b00f4bb8c0a0f82`. The report records zero Android guarded `new`, zero reference-type `new`, zero `string.Format`, zero `.ToString()`, zero LINQ tokens, zero `foreach`, zero Android `Path.Combine(Application.persistentDataPath)`, zero Android FileStream/BinaryWriter tokens, native heap token counts all zero, payload lock acquire/release/finally counts 4/4/4, and latest build gate CPU 96 with active `dotnet` PID 32028.
 
 Rejected Alternatives: Running `dotnet build` was rejected because CPU remained above 50 and an active `dotnet` process existed. Claiming runtime dump existence was rejected; `Docs/AgentLogs/Dump_1404.bin` is still absent until the runtime dump path executes.
 

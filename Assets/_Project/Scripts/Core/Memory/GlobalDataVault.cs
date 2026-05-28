@@ -1356,7 +1356,7 @@ namespace Hecton8.Core.Memory
 
             if (!TryEnterBlockMutationGate())
             {
-                DumpPhiVodBlackBox();
+                RecordLockContentionFault(key);
                 return false;
             }
 

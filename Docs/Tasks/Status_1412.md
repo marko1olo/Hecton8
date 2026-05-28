@@ -23,7 +23,7 @@ Prompt: Docs/Tasks/CURRENT_BATCH.md id="1412"
 - [x] Task 12: DATA_INTEGRITY_ASSERTION_PHASE | DOD: cancellation joins workers, captures task faults, then re-resolves every active `VaultGenerationHandle<int>` and validates every deterministic int | Alternative rejected: checksum-only verification | Estimate: 7100 us
 - [x] Task 13: COMPILE_WALL_AND_NAMESPACE_HYGIENE | DOD: fuzzer isolated in child Editor asmdef with whole-file `#if UNITY_EDITOR`; static scan found no `GlobalRegistry`, `NUnit`, or `dotnet` references in the fuzzer | Alternative rejected: placing test in runtime memory assembly | Estimate: 5200 us
 - [x] Task 14: DRY_RUN_VERIFICATION_EXECUTION | DOD: manually traced writer-lock, buffer-pin, direct compaction, and arena-growth fence paths against `GlobalDataVault` source; no production code mutation required | Alternative rejected: assuming `FrostTickDefrag` telemetry was enough without reading private `TryRunLiveCompactionSlice` | Estimate: 9400 us
-- [ ] Task 15: BATCHED_COMPILATION_AND_EXECUTION_CHECK [BLOCKED_BY_CONTENTION] | DOD attempted: sampled CPU/csc/dotnet before build | Blocker: final gate CPU 100%, csc 1, dotnet 1; build forbidden by prompt and AGENTS policy | Estimate: 2200 us
+- [ ] Task 15: BATCHED_COMPILATION_AND_EXECUTION_CHECK [BLOCKED_BY_CONTENTION] | DOD attempted: sampled CPU/csc/dotnet before build | Blocker: final gate CPU 71%, csc 0, dotnet 1; build forbidden by prompt and AGENTS policy | Estimate: 2200 us
 - [x] Task 16: FALSE_POSITIVE_CORRUPTION_TEST [CODED_NOT_EXECUTED] | DOD: `RunFalsePositiveProbe()` injects deterministic corruption and passes only if verification catches a `PatternMismatchMemoryCorruptionException` | Alternative rejected: accepting any `FatalMemoryCorruptionException` as proof of hash-mismatch detection | Estimate: 5200 us
 - [x] Task 17: LOCK_CONTENTION_METRIC_EXTRACTION [CODED_NOT_OBSERVED] | DOD: reflected `_defragLockedSkipCount`, tracks max observed skip count, writes `locked_skip_count` to JSON | Alternative rejected: relying on chat logs or non-specific flags | Estimate: 3600 us
 - [x] Task 18: ZERO_COMPILATION_HOT_PATH_VERIFICATION | DOD: static scan confirmed whole-file `#if UNITY_EDITOR`, no production references except older separate editor fuzzer in another namespace | Alternative rejected: assuming folder placement alone isolates release builds | Estimate: 3300 us
@@ -33,7 +33,7 @@ Prompt: Docs/Tasks/CURRENT_BATCH.md id="1412"
 ## Build Policy
 - dotnet build: BLOCKED, NOT RUN
 - Reason: build gates repeatedly sampled CPU at 100%; AGENTS/user policy forbids launching another build under contention.
-- Latest gate sample: CPU 100%, csc 1, dotnet 1.
+- Latest gate sample: CPU 71%, csc 0, dotnet 1.
 
 ## APEX Final Verification
 - [x] Isolated vault latest pointer fix | DOD: replaced `GlobalDataVault.Create(...)` with `CreateIsolatedVault(...)`, restoring private `_latestCreated` immediately after initialization | Alternative rejected: leaving editor diagnostics pointed at a destructive fuzzer vault | Estimate: 3100 us

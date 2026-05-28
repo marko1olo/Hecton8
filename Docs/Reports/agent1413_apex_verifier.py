@@ -121,6 +121,7 @@ def main() -> None:
 
     hot_blocks = []
     for signature in (
+        "private bool TryOpenAliasBuffer<T>(BufferID bufferId, SystemID requester, out NativeArray<T> buffer) where T : struct",
         "private void RecordLockContentionFault(int key)",
         "private bool TryEnterBlockMutationGate()",
         "private bool TryEnterReleaseMutationGate()",

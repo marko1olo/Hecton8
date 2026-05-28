@@ -1,0 +1,150 @@
+﻿{
+    "agent_id":  "1423",
+    "generated_local":  "2026-05-28T05:45:45+04:00",
+    "audit_type":  "static_regex_ast_proxy",
+    "target_files":  [
+                         {
+                             "path":  "Assets/_Project/Scripts/Core/ZeroGCFormatter.cs",
+                             "sha256":  "DF0E50E0EDEA48D8CE2FADBEE1EB2842C1E27C78D78580D68EDBC52DC8A16CB0",
+                             "counts":  {
+                                            "string_format":  0,
+                                            "tmp_text_assignment":  0,
+                                            "to_string":  0,
+                                            "interpolation":  0,
+                                            "string_builder":  0,
+                                            "linq":  0,
+                                            "new_string":  0,
+                                            "array_resize":  0
+                                        }
+                         },
+                         {
+                             "path":  "Assets/_Project/Scripts/LocNumericBuffer.cs",
+                             "sha256":  "E29798E924AED1DAEB42912860B43547341F465D4CC2288FA78552BEED9134A4",
+                             "counts":  {
+                                            "string_format":  0,
+                                            "tmp_text_assignment":  0,
+                                            "to_string":  0,
+                                            "interpolation":  0,
+                                            "string_builder":  0,
+                                            "linq":  0,
+                                            "new_string":  0,
+                                            "array_resize":  0
+                                        }
+                         },
+                         {
+                             "path":  "Assets/_Project/Scripts/LocRegistry.cs",
+                             "sha256":  "0373500D2E9922E80FD36D48D7D287E19B1816609ECEFA4E429670BFDE6E055B",
+                             "counts":  {
+                                            "string_format":  0,
+                                            "tmp_text_assignment":  0,
+                                            "to_string":  0,
+                                            "interpolation":  0,
+                                            "string_builder":  0,
+                                            "linq":  0,
+                                            "new_string":  0,
+                                            "array_resize":  0
+                                        }
+                         },
+                         {
+                             "path":  "Assets/_Project/Scripts/LocalizationManager.cs",
+                             "sha256":  "9BD64EB488B606B4E759DC8455F6FC200390E47558A7671D2C4E8C8DA2A50CFB",
+                             "counts":  {
+                                            "string_format":  0,
+                                            "tmp_text_assignment":  0,
+                                            "to_string":  0,
+                                            "interpolation":  0,
+                                            "string_builder":  0,
+                                            "linq":  0,
+                                            "new_string":  0,
+                                            "array_resize":  0
+                                        }
+                         },
+                         {
+                             "path":  "Assets/_Project/Scripts/UI/TmpTextNoAlloc.cs",
+                             "sha256":  "AD4DF42A151E811A70FA51F87085E011BF170CBB9185D1E0E532ECD9CB0F7063",
+                             "counts":  {
+                                            "string_format":  0,
+                                            "tmp_text_assignment":  0,
+                                            "to_string":  0,
+                                            "interpolation":  0,
+                                            "string_builder":  0,
+                                            "linq":  0,
+                                            "new_string":  0,
+                                            "array_resize":  0
+                                        }
+                         },
+                         {
+                             "path":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+                             "sha256":  "307C447476BF3C02B8267D8DA643F6AB594AB812E092E3A4CB35A3693C0C6BD6",
+                             "counts":  {
+                                            "string_format":  0,
+                                            "tmp_text_assignment":  0,
+                                            "to_string":  0,
+                                            "interpolation":  0,
+                                            "string_builder":  0,
+                                            "linq":  0,
+                                            "new_string":  0,
+                                            "array_resize":  0
+                                        }
+                         },
+                         {
+                             "path":  "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+                             "sha256":  "E9D114ABB2022FD22EE81669CD095AD74AE41C447A51C4418E5274888217C633",
+                             "counts":  {
+                                            "string_format":  0,
+                                            "tmp_text_assignment":  0,
+                                            "to_string":  0,
+                                            "interpolation":  0,
+                                            "string_builder":  0,
+                                            "linq":  0,
+                                            "new_string":  0,
+                                            "array_resize":  0
+                                        }
+                         },
+                         {
+                             "path":  "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+                             "sha256":  "85EF4850D6FA0D4764FD928866A4AED2F774664DF2ACCF40AD5E1ADB9F2BBF16",
+                             "counts":  {
+                                            "string_format":  0,
+                                            "tmp_text_assignment":  0,
+                                            "to_string":  0,
+                                            "interpolation":  0,
+                                            "string_builder":  0,
+                                            "linq":  0,
+                                            "new_string":  0,
+                                            "array_resize":  0
+                                        }
+                         },
+                         {
+                             "path":  "Assets/_Project/Scripts/Core/Contracts/BabelLocalizationContract.cs",
+                             "sha256":  "08124D34399C8F54138C9F181114ABA9FF74B7FF9C5CF100E0E40BA7C2449E24",
+                             "counts":  {
+                                            "string_format":  0,
+                                            "tmp_text_assignment":  0,
+                                            "to_string":  0,
+                                            "interpolation":  0,
+                                            "string_builder":  0,
+                                            "linq":  0,
+                                            "new_string":  0,
+                                            "array_resize":  0
+                                        }
+                         }
+                     ],
+    "hot_methods_reviewed":  [
+                                 "ZeroGCFormatter.FastIntToChars",
+                                 "ZeroGCFormatter.TryFormatFloat",
+                                 "ZeroGCFormatter.AppendToSpanTruncated",
+                                 "LocNumericBuffer.TryWriteInternal",
+                                 "LocRegistry.DecodeUtf8VisualSpan",
+                                 "TmpTextNoAlloc.SetLocalized",
+                                 "BabelSubtitleSyncRuntime.RecordUIOptimizationFailure",
+                                 "SubtitleManager.ShowSubtitleCommand",
+                                 "VocalWarningSystem.PublishDispatchIfNeeded"
+                             ],
+    "result":  "PASS_STATIC_ASSIGNED_HOT_PATHS_NO_MANAGED_STRING_PATTERNS",
+    "caveats":  [
+                    "Regex/AST proxy, not Roslyn semantic allocation analysis",
+                    "Editor/test files excluded from hot path verdict",
+                    "Build failed on out-of-domain XRPass dependency"
+                ]
+}
