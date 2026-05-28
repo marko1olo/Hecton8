@@ -2,7 +2,7 @@
     "agent":  "1405",
     "role":  "MOBILE_GPU_COMPUTE_SHADER_THREAD_GROUP_SIZER",
     "status":  "PENDING VERIFICATION",
-    "generatedUtc":  "2026-05-28T10:16:15.7745126Z",
+    "generatedUtc":  "2026-05-28T10:31:05.4963545Z",
     "taskCount":  20,
     "targetDirectories":  [
                               "Assets/Crest/Crest/Shaders",
@@ -208,13 +208,22 @@
                            {
                                "file":  "Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs",
                                "keyLines":  [
-                                                637
+                                                631,
+                                                634,
+                                                635,
+                                                638,
+                                                639,
+                                                640,
+                                                641
                                             ],
-                               "change":  "XR indirect args double-count dispatch now rejects non-positive count and binds physical argsBuffer length before CSArgsBuffer.compute writes argsBuffer[id*5+1]."
+                               "change":  "XR indirect args double-count dispatch now rejects missing compute shader, null/non-positive args buffers, uses safeArgsEntryCount from physical argsBuffer.count / 5, binds argsBufferLength, and dispatches by safeArgsEntryCount instead of an ambiguous count variable."
                            },
                            {
                                "file":  "Assets/GPUInstancer/Scripts/GPUInstancerTreeManager.cs",
                                "keyLines":  [
+                                                222,
+                                                223,
+                                                234,
                                                 253,
                                                 254,
                                                 255,
@@ -222,7 +231,7 @@
                                                 268,
                                                 269
                                             ],
-                               "change":  "Tree instantiation dispatch uses integer helper and now binds treeDataLength plus per-prototype instanceCapacity before dispatch."
+                               "change":  "Tree instancing captures treeDataLength/treeScalesLength before nulling sources, rejects instanceCount \u003c= 0 before buffer allocation, and binds treeDataLength/treeScalesLength/instanceCapacity before dispatch."
                            },
                            {
                                "file":  "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs",
@@ -706,6 +715,27 @@
                                                                        },
                                                    "evidenceClass":  "STATIC_SOURCE",
                                                    "note":  "Cold setup ranges still contain pre-existing allocations such as ComputeBuffer, arrays, dictionaries, and args.ToArray; not claimed Zero-GC. APEX21 hot modified runtime dispatch/copy/remove/texture paths scan clean."
+                                               },
+                        "apex22HotRangeScan":  {
+                                                   "ranges":  [
+                                                                  "Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs:624-642",
+                                                                  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs:450-970",
+                                                                  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs:3550-3650",
+                                                                  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs:3768-3852",
+                                                                  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs:3998-4072",
+                                                                  "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs:227-448",
+                                                                  "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs:695-745"
+                                                              ],
+                                                   "totalLines":  1074,
+                                                   "forbiddenCounts":  {
+                                                                           "newReference":  0,
+                                                                           "stringFormat":  0,
+                                                                           "toString":  0,
+                                                                           "foreach":  0,
+                                                                           "linq":  0
+                                                                       },
+                                                   "evidenceClass":  "STATIC_SOURCE",
+                                                   "note":  "APEX22 adds Manager XR args hot range to APEX21 scan; TreeManager instanceCount \u003c= 0 guard is cold setup and not claimed hot Zero-GC."
                                                }
                     },
     "dataSovereignty":  {
@@ -1128,12 +1158,37 @@
                                        "artifact":  "Docs/AgentLogs/Build_1405_Apex21.summary.json",
                                        "artifactSha256":  "391606f76102995f5f31d257ca2e021bf3c602b7bd2af10524d070891e3d31b6",
                                        "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
+                                   },
+                        "apex22":  {
+                                       "status":  "BLOCKED_BY_CONTENTION",
+                                       "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                       "cpuLoadSamplesPercent":  [
+                                                                     77
+                                                                 ],
+                                       "compilerProcessCount":  2,
+                                       "compilerProcesses":  [
+                                                                 {
+                                                                     "Id":  11072,
+                                                                     "ProcessName":  "csc",
+                                                                     "CPU":  233.734375,
+                                                                     "StartTime":  "2026-05-28T14:27:57+04:00"
+                                                                 },
+                                                                 {
+                                                                     "Id":  43068,
+                                                                     "ProcessName":  "dotnet",
+                                                                     "CPU":  30.71875,
+                                                                     "StartTime":  "2026-05-28T14:27:33+04:00"
+                                                                 }
+                                                             ],
+                                       "launched":  false,
+                                       "artifact":  "Docs/AgentLogs/Build_1405_Apex22.summary.json",
+                                       "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
                                    }
                     },
     "tests":  {
                   "file":  "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs",
-                  "added":  "Crest512FftTwoElementsPerThread_MatchesSingleElementReference; TwoDimensionalFrameCountMultiplier_UsesLongDenominator; SetDataPartialKernel_UsesExplicitSourceAndDestinationCapacityGuards; BufferToTextureKernel_UsesCapacityAndIntegerIndexGuards; RuntimeCullingDispatch_ClampsLogicalInstanceCountToBufferCapacity; RuntimeSubmitPaths_ClampAppendTextureAndArgsCapacity with APEX14 cross-fade append full-capacity guard assertions; RenderedAmountGpuReadback_IsDebugBuildOnly; GrassInstantiationKernel_GuardsSourceBufferCapacities; ArgsBufferDoubleInstanceCount_GuardsPhysicalArgsBufferLength; InterlockedCapacityOverflow_RollsBackCounterBeforeReturn; DetailInstanceBake_AvoidsSynchronousGpuReadbackInReleaseRoute with no foreach in the modified route; CpuDetailFallback_UsesDeterministicShaderStyleRandomAndDensityGate with negative-count fail-closed proof; ReduceTextureDispatch_ClampsMipDimensionsBeforeDispatch; APEX19 DetailInstanceBake_AvoidsSynchronousGpuReadbackInReleaseRoute now asserts the editor/development helper rejects instanceCount \u003c= 0 before new Matrix4x4[instanceCount]; GrassInstantiationKernel_GuardsSourceBufferCapacities now asserts hasHealthyDryNoiseTexture optional sample gate and deterministic randomScale fallback; DetailComputeBake_UsesPhysicalDetailMapCapacity; CpuCopyHelpers_ClampSourceAndDestinationCapacityBeforeDispatch; DetailRuntimeModificationPaths_UseIndexedPrototypeSlotsAndFailClosedDispatch",
-                  "execution":  "PENDING VERIFICATION: Unity EditMode tests were not executed after APEX21 because build/test gate sampled CPU 63 with active dotnet pid 10444. APEX19 CLI C# compile succeeded before APEX20/APEX21 edits."
+                  "added":  "Crest512FftTwoElementsPerThread_MatchesSingleElementReference; TwoDimensionalFrameCountMultiplier_UsesLongDenominator; SetDataPartialKernel_UsesExplicitSourceAndDestinationCapacityGuards; BufferToTextureKernel_UsesCapacityAndIntegerIndexGuards; RuntimeCullingDispatch_ClampsLogicalInstanceCountToBufferCapacity; RuntimeSubmitPaths_ClampAppendTextureAndArgsCapacity with APEX14 cross-fade append full-capacity guard assertions; RenderedAmountGpuReadback_IsDebugBuildOnly; GrassInstantiationKernel_GuardsSourceBufferCapacities; ArgsBufferDoubleInstanceCount_GuardsPhysicalArgsBufferLength; InterlockedCapacityOverflow_RollsBackCounterBeforeReturn; DetailInstanceBake_AvoidsSynchronousGpuReadbackInReleaseRoute with no foreach in the modified route; CpuDetailFallback_UsesDeterministicShaderStyleRandomAndDensityGate with negative-count fail-closed proof; ReduceTextureDispatch_ClampsMipDimensionsBeforeDispatch; APEX19 DetailInstanceBake_AvoidsSynchronousGpuReadbackInReleaseRoute now asserts the editor/development helper rejects instanceCount \u003c= 0 before new Matrix4x4[instanceCount]; GrassInstantiationKernel_GuardsSourceBufferCapacities now asserts hasHealthyDryNoiseTexture optional sample gate and deterministic randomScale fallback; DetailComputeBake_UsesPhysicalDetailMapCapacity; CpuCopyHelpers_ClampSourceAndDestinationCapacityBeforeDispatch; DetailRuntimeModificationPaths_UseIndexedPrototypeSlotsAndFailClosedDispatch; APEX22 ArgsBufferDoubleInstanceCount_GuardsPhysicalArgsBufferLength now asserts safeArgsEntryCount and no stale GetComputeThreadGroupCount(count) dispatch; static unsafe-pattern scan asserts no stale count/==0 matches in Crest/GPUInstancer domain",
+                  "execution":  "PENDING VERIFICATION: Unity EditMode tests were not executed after APEX22 because build/test gate sampled CPU 77 with active csc pid 11072 and dotnet pid 43068. APEX19 CLI C# compile succeeded before APEX20/APEX21/APEX22 edits."
               },
     "verificationLimits":  [
                                "No Unity shader import run",
@@ -1156,17 +1211,17 @@
                              "Assets/GPUInstancer/Resources/Compute/Include/PlatformDefines.hlsl":  "18754e645a39c6f8493853a801560eba356501bccb5f664bf8adeffc00caae55",
                              "Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerConstants.cs":  "21985f65d9080bb5b562455d23eb86a398fe019fe6a1fc9163535a4588aaeb31",
                              "Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerSettings.cs":  "b3e1221cd96b89909bf9031b0b47697752a00f3e103bd99adf7ff02cacf92024",
-                             "Assets/GPUInstancer/Scripts/GPUInstancerTreeManager.cs":  "c4ae148901bce94a771bd6fef508716d4bffc003d78f1af833632daa48246956",
+                             "Assets/GPUInstancer/Scripts/GPUInstancerTreeManager.cs":  "d17af711837a182799bdb982daec9c910afcc52799a90c46a4912b711418f7cb",
                              "Assets/GPUInstancer/Resources/Compute/CSInstancedBufferToTexture.compute":  "fb720c995e8fc6fd3439eaf8e0f5e096792ca173f67cbad6ebc3cbe64d66a0a7",
                              "Assets/GPUInstancer/Resources/Compute/CSInstancedComputeBufferSetDataPartialKernel.compute":  "4757f59a4d37f1f32e31d20e5717c06a96be1649f9777bb86be498992439ec6a",
                              "Assets/GPUInstancer/Resources/Compute/CSArgsBuffer.compute":  "e992ebe60243fa4dea250bd5683d038f97909bae3979abfab624f784f06a2d43",
                              "Assets/GPUInstancer/Resources/Compute/CSTreeInstantiationKernel.compute":  "feb8527f66217c636954c3c11e92d6c1845701cb3eec1957ecd7c6f5d6d125c7",
                              "Assets/GPUInstancer/Resources/Compute/CSInstancedRenderingGrassInstantiationKernel.compute":  "77ac86b9d8f19a937b19132f671962128d6f4cde80e767d636a1ee80ceeb4315",
                              "Assets/GPUInstancer/Resources/Compute/CSTextureUtils.compute":  "1cefca125b91e7e513aa377162c551a6e1d41d9de7c43a4b9bfa8aa3df4d760d",
-                             "Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs":  "787a23c5a5b91c5c58bed9e68ab0c95b6311c6f7b2c271a8aa1ebcac9e60dad1",
+                             "Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs":  "a7ca67d4ba7e6c4f89b698a2f550afd56e9f86de33db96c2182ebdb14f2e634a",
                              "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs":  "eff409a10dd8998b4b1214e2ef7998f26ecaac3ce915dfa5938e28a63f0a7c5f",
                              "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs":  "6da746313c9478e203c8f90d77dcf6f726f9f0d97c40f01638da7adc731ee514",
-                             "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs":  "c30b360fa2d316d4b27e61cc713b0073bf8cd34fc6adbc15c3ca3d6bbb07aa21"
+                             "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs":  "2a3adfda70413fa9cc082866174fd1008ec6cc5e508257c2c53e20e91df4ed7d"
                          },
     "apex6PolishFindings":  {
                                 "grassHeightMapBounds":  "FIXED: CSInstancedRenderingGrassInstantiationKernel.compute no longer contains raw heightMapData[heightIndex + 1]; base/right/top/rightTop height-map reads are fail-closed via FixBounds after dimension casts.",
@@ -1287,7 +1342,12 @@
                                                           "pattern":  "[numthreads(512|1024), GPUI_THREADS/GPUI_THREADS_2D/TX/TY 512/1024",
                                                           "result":  "NO_MATCH",
                                                           "command":  "rg -n \"\\[numthreads\\((512|1024)|#define\\s+(GPUI_THREADS|GPUI_THREADS_2D|TX|TY)\\s+(512|1024)\" Assets/GPUInstancer Assets/Crest -g \"*.compute\" -g \"*.hlsl\" -S"
-                                                      }
+                                                      },
+                       "apex22UnsafePatternScan":  {
+                                                       "pattern":  "GetComputeThreadGroupCount(count), new ComputeBuffer(detailMapSize*detailMapSize), bufferSize == 0, instanceCount == 0, DataVault/quality switch tokens",
+                                                       "result":  "NO_MATCH",
+                                                       "command":  "rg -n \"GetComputeThreadGroupCount\\\\(count\\\\), 1, 1\\\\);|new ComputeBuffer\\\\(detailMapSize \\\\* detailMapSize|bufferSize == 0|instanceCount == 0|GlobalDataVault|BufferID|TryAcquireWriteLock|ReleaseWriteLock|HomeostasisBrain|GlobalQualityWeight|isLowEnd|LowEnd|HighEnd|Ultra\" Assets/GPUInstancer Assets/Crest -g \"*.cs\" -g \"*.compute\" -g \"*.hlsl\" -S"
+                                                   }
                    },
     "apex13PolishFindings":  {
                                  "appendBufferCapacity":  "FIXED: visibility dispatch count is clamped by every target LOD append buffer count before AppendStructuredBuffer writes are issued.",
@@ -1359,5 +1419,12 @@
                                  "build":  "BLOCKED_BY_CONTENTION: CPU sample 63 and active dotnet pid 10444 CPU 68.9375. No dotnet build launched after APEX21 edits.",
                                  "evidence":  "Lines: GPUInstancerUtility.cs:40/140/3563-3633/3772/3791/3817/3837/4000/4039/4070; GPUInstancerDetailManager.cs:235-282/312-388/407-442/491; ComputeDispatchSizingEditTests.cs:97-112/282-318.",
                                  "residualRisk":  "PENDING VERIFICATION: Unity shader import, EditMode tests, PlayMode/profiler/GCMonitor, RenderDoc/GPU capture, and current C# compile remain unexecuted after APEX21 due build throttle."
+                             },
+    "apex22PolishFindings":  {
+                                 "xrArgsDispatchNamingAndNullGuard":  "FIXED: Manager XR args double-count pass now rejects null compute shader and dispatches by safeArgsEntryCount.",
+                                 "nonPositiveColdGuards":  "FIXED: Tree instance allocation and UpdateTreeMPB buffer-size checks now use \u003c= 0.",
+                                 "unsafePatternScan":  "NO_MATCH for stale GetComputeThreadGroupCount(count), bufferSize == 0, instanceCount == 0, oversized detailMap ComputeBuffer allocation, DataVault/quality tokens across Crest/GPUInstancer code.",
+                                 "zeroGcEvidence":  "APEX22 hot-range scan: 1074 lines, newReference=0, string.Format=0, .ToString=0, foreach=0, LINQ=0.",
+                                 "build":  "BLOCKED_BY_CONTENTION: CPU 77 with active csc pid 11072 and dotnet pid 43068. No dotnet build launched."
                              }
 }

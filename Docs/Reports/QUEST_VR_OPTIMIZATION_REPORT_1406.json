@@ -230,9 +230,9 @@
     "playMode": "NOT_RUN",
     "questDeviceProfiler": "NOT_RUN",
     "dotnetBuild": "NOT_RUN_BLOCKED_BY_CPU",
-    "cpuTotalPercent": 64,
-    "cscCount": 0,
-    "dotnetCount": 0,
+    "cpuTotalPercent": 100,
+    "cscCount": 1,
+    "dotnetCount": 1,
     "vbcsCompilerCount": 0
   },
   "estimatedGpuSavingsMicroseconds": {

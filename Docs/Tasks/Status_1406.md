@@ -54,7 +54,7 @@ Relevant Mandates Read:
 - dotnet build: BLOCKED_BY_CONTENTION on post-APEX final gate; CPU_TOTAL_PERCENT=100.0, CSC_COUNT=0, DOTNET_COUNT=0.
 - dotnet build: BLOCKED_BY_CONTENTION on final route/cache gate; CPU_TOTAL_PERCENT=100.0, CSC_COUNT=1, DOTNET_COUNT=1.
 - dotnet build: BLOCKED_BY_CONTENTION on Shapes strip final gate; CPU_TOTAL_PERCENT=100.0, CSC_COUNT=0, DOTNET_COUNT=1.
-- dotnet build: BLOCKED_BY_CONTENTION on UberPost pending-state correction gate; CPU_TOTAL_PERCENT=64, CSC_COUNT=0, DOTNET_COUNT=0, VBCS_COUNT=0.
+- dotnet build: BLOCKED_BY_CONTENTION on UberPost pending-state correction gate; CPU_TOTAL_PERCENT=100, CSC_COUNT=1, DOTNET_COUNT=1, VBCS_COUNT=0.
 - Current prompt source hygiene: PASS for live `CURRENT_BATCH.md`; 1406 prompt is currently present at lines 545-629 with 19 tasks.
 - Current blocker: Unity import/build/device proof unavailable under contention.
 
@@ -103,4 +103,4 @@ Relevant Mandates Read:
 
 ## Loop 14 - UberPost Pending-State Correction
 - [x] REAUDIT 22: Self-audit correction of non-game camera state mutation | DOD: removed `ClearRawColorHistoryRequest()` and `ClearPendingReconstructionInput()` from the UberPost non-game camera guard; index proof says `RAW_BEFORE_UNIFIED=False` and `PENDING_BEFORE_UNIFIED=False` | Alternative rejected: clearing staged game-camera reconstruction state from Preview/Reflection/SceneView paths | Estimate: correctness fix; unknown us
-- [x] REAUDIT 23: Validator/report/hash synchronization | DOD: `QuestVrOptimizationValidator1406.cs:206-207` now uses `AssertTokenNotBetween`; report JSON parses; report SHA-256 `2cbf6ad4e28c8f3df4de36fe4a1a6c6b17b8be9ee8cce4120d54a80f5db1b547`; final build gate `CPU_TOTAL_PERCENT=64; CSC_COUNT=0; DOTNET_COUNT=0; VBCS_COUNT=0`, so `dotnet build` was not launched | Alternative rejected: running compilation while CPU >50% | Estimate: host CPU preserved
+- [x] REAUDIT 23: Validator/report/hash synchronization | DOD: `QuestVrOptimizationValidator1406.cs:206-207` now uses `AssertTokenNotBetween`; report JSON parses; report SHA-256 `2cbf6ad4e28c8f3df4de36fe4a1a6c6b17b8be9ee8cce4120d54a80f5db1b547`; final build gate `CPU_TOTAL_PERCENT=100; CSC_COUNT=1; DOTNET_COUNT=1; VBCS_COUNT=0`, so `dotnet build` was not launched | Alternative rejected: running compilation while CPU >50% or compiler/build processes are active | Estimate: host CPU preserved

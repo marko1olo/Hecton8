@@ -273,3 +273,11 @@ Solution: Emitted `Docs/Reports/UI_ZERO_GC_CONTINUATION5_AUDIT_1423.json` and re
 Rejected Alternatives: Launching `dotnet build` while CPU was above 50%; pretending editor source-regression tests executed; reporting old SHA-256 values.
 Scalability potential: Not runtime-facing. The code changes preserve continuous quality scaling and fixed-buffer text ownership.
 Hardware Impact: Report/check estimate 1600000 us. Runtime verification remains pending.
+
+## Decision 035 - Label Swap RichText Policy Sync
+
+Problem: `LabelSwapScheduler.ApplyEntry` decoded localized text into a Babel lease and pushed it through `TMP_Text.SetCharArray`, but it only synchronized `isRightToLeftText`. It did not set `TMP_Text.richText` from `BabelRichTextLodPolicy`, so a staged font/material swap could inherit stale rich-text parser state from a prior owner even while the decoded content used the continuous strip policy.
+Solution: Set `text.richText = BabelRichTextLodPolicy.ShouldEnableTmpRichTextParsing()` before RTL sync and before `SetCharArray`. Added an editor source-regression test that asserts this policy assignment exists before the char-array push.
+Rejected Alternatives: Forcing `richText = true` globally; disabling rich text on low tier with a binary branch; relying on whatever TMP state existed before the font swap; adding a layout/physics-style overflow system.
+Scalability potential: Low devices still receive deterministic tag-density reduction through `BabelRichTextLodPolicy.ShouldStrip(textHash)`, while the TMP parser state stays compatible with the continuous global quality scalar. Middle/high/ultra can retain more authored styling without changing text truth ownership, buffer layout, or signal DTOs.
+Hardware Impact: Static/source/report estimate 1150000 us. Runtime allocation delta is zero by construction; expected low-end gain is prevention of stale parser-state visual faults during staged font swaps. Profiler proof absent.

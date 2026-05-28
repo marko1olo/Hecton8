@@ -44,6 +44,7 @@ namespace Hecton8.Tests.Editor
             string lateFrame = ExtractMethod(source, "public void LateFrameTick");
             string complete = ExtractMethod(source, "private unsafe void CompleteActiveEquipmentJob");
             string releaseMask = ExtractMethod(source, "private uint ReleaseEquipmentWriteLockMask");
+            string contentionTelemetry = ExtractMethod(source, "private void TryRecordEquipmentWriteLockContention");
 
             Assert.AreEqual(28, Regex.Matches(acquireViews, @"TryAcquireEquipmentWriteBuffer\(").Count);
             StringAssert.DoesNotContain("CountAcquiredWriteLock", source);
@@ -62,6 +63,9 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("EnsureEquipmentViews(_equipmentIntegrationWriteLockVault, out views)", source);
             Assert.AreEqual(28, Regex.Matches(releaseMask, @"vault\.ReleaseWriteLock").Count);
             StringAssert.Contains("failedMask |=", releaseMask);
+            StringAssert.Contains("failedMask |= 1u << 13", contentionTelemetry);
+            StringAssert.Contains("failedMask |= 1u << 12", contentionTelemetry);
+            StringAssert.Contains("_equipmentPendingReleaseMask |= failedMask", contentionTelemetry);
         }
 
         [Test]
