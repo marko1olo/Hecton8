@@ -185,7 +185,7 @@ namespace Hecton8.Core
             NativeMemorySentinel.UnregisterNativeArray(array);
             if (dependency.IsCompleted)
             {
-                dependency.Complete();
+                DispatcherJobFence.TryFinalizeCompleted(ref dependency);
                 array.Dispose();
             }
             else

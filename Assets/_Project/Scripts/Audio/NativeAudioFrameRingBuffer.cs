@@ -473,7 +473,7 @@ namespace Hecton8.Audio
                 TryMirrorTelemetryToDataVault(ref views);
 
             ReleaseNativeBridgeBuffers();
-            ReleaseVaultBuffer(vault, ref _telemetryHandle);
+            ReleaseVaultBuffer(vault, ref _telemetryHandle, BufferID.AudioFrameRingTelemetry);
 
             _dataVault = null;
             _capacityFrames = 0;
@@ -586,11 +586,19 @@ namespace Hecton8.Audio
             _frameSampleCapacity = 0;
         }
 
-        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId)
             where T : struct
         {
-            if (vault != null && handle.BufferID != 0u)
+            if (vault != null &&
+                handle.BufferID == (uint)expectedBufferId &&
+                handle.SystemID == (uint)VaultOwner &&
+                handle.Generation != 0u)
+            {
                 vault.ReleaseBuffer(in handle);
+            }
 
             handle = default;
         }

@@ -128,6 +128,10 @@ namespace Hecton8.Prologue.Space
         private bool _pendingOrbitalShaderClear;
         private bool _pendingCapsuleAuthorityLock;
         private bool _pendingRuntimeAuthorityRelease;
+        private bool _pendingPlasmaAudioSignalDirty;
+        private AcousticPingSignal _pendingPlasmaAudioSignal;
+        private bool _pendingHapticSignalDirty;
+        private HapticRequest _pendingHapticSignal;
         private Quaternion _capsuleLockedRotation = Quaternion.identity;
         private float3 _capsuleLeadingEdgeLocalNormalized = new float3(0f, -1f, 0f);
         private IDataVault _dataVault;
@@ -283,6 +287,10 @@ namespace Hecton8.Prologue.Space
             _pendingOrbitalShaderClear = false;
             _pendingCapsuleAuthorityLock = false;
             _pendingRuntimeAuthorityRelease = false;
+            _pendingPlasmaAudioSignalDirty = false;
+            _pendingPlasmaAudioSignal = default;
+            _pendingHapticSignalDirty = false;
+            _pendingHapticSignal = default;
 
             TryUnregisterHotSwapListener();
 
@@ -377,6 +385,8 @@ namespace Hecton8.Prologue.Space
                 _pendingOrbitalPresentation = false;
                 ApplyPresentation();
             }
+
+            FlushQueuedFeedbackSignals();
 
             if (_pendingRuntimeAuthorityRelease)
             {
@@ -871,7 +881,8 @@ namespace Hecton8.Prologue.Space
             signal.SourceId = PlasmaRoarHash;
             signal.Channel = AcousticPingSignal.ChannelActiveSonar;
             signal.Flags = AcousticPingSignal.FlagActiveSonar;
-            SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
+            _pendingPlasmaAudioSignal = signal;
+            _pendingPlasmaAudioSignalDirty = true;
         }
 
         private void PublishHaptics()
@@ -884,7 +895,25 @@ namespace Hecton8.Prologue.Space
             signal.SourceHash = SourceHash;
             signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.Channel = HapticRequest.ChannelVehicleCritical;
-            SignalBus<HapticRequest>.TryPushTracked(in signal, ref _signalPushDropCount);
+            _pendingHapticSignal = signal;
+            _pendingHapticSignalDirty = true;
+        }
+
+        private void FlushQueuedFeedbackSignals()
+        {
+            if (_pendingPlasmaAudioSignalDirty)
+            {
+                _pendingPlasmaAudioSignalDirty = false;
+                SignalBus<AcousticPingSignal>.TryPushTracked(in _pendingPlasmaAudioSignal, ref _signalPushDropCount);
+                _pendingPlasmaAudioSignal = default;
+            }
+
+            if (_pendingHapticSignalDirty)
+            {
+                _pendingHapticSignalDirty = false;
+                SignalBus<HapticRequest>.TryPushTracked(in _pendingHapticSignal, ref _signalPushDropCount);
+                _pendingHapticSignal = default;
+            }
         }
 
         private void PublishPrologueComplete()

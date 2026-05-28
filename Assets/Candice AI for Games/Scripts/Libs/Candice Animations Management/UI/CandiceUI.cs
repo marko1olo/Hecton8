@@ -21,19 +21,24 @@ namespace CandiceAIforGames.AI
 
             //get health bar dependecy middleware
             //Type dependency = GetDependency(dependencyName);
+            if (HealthBar == null || thisAgent == null)
+            {
+                return;
+            }
 
-            if (HealthBar.GetComponent<CandiceHealthBar>() != null)
+            if (HealthBar.TryGetComponent(out CandiceHealthBar hlth))
             {
                 //get health indicator (progress bar) value
-                var hlth = HealthBar.GetComponent<CandiceHealthBar>();
-                if (hlth != null)
+                if (thisAgent.TryGetComponent(out CandiceAIController controller) && controller.hitPoints > 0f)
                 {
-                    hlth.m_FillAmount -= (hlth.m_FillAmount / thisAgent.GetComponent<CandiceAIController>().hitPoints * attackDamage);
+                    hlth.m_FillAmount -= (hlth.m_FillAmount / controller.hitPoints * attackDamage);
                 }
             }
             else {
 
-                Debug.Log("You're missing the " + dependencyName + " prefab. Check The UI folder under prefabs.");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.Log("Candice health bar prefab is missing.");
+#endif
             }
 
 

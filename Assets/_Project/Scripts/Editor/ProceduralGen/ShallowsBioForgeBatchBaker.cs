@@ -323,7 +323,6 @@ namespace Hecton8.Editor.ProceduralGen
             material.SetFloat("_BiolumPulseSharpness", 2.4f);
             material.SetFloat("_MatCapStrength", 0.42f);
             material.SetFloat("_Cull", 0f);
-            material.DisableKeyword("_QUALITY_HIGH");
             EditorUtility.SetDirty(material);
             return material;
         }
@@ -503,12 +502,6 @@ namespace Hecton8.Editor.ProceduralGen
             ValidateMaterialTextureTransform(material, "_ORMAtlas", ref failures);
             ValidateMaterialTextureTransform(material, "_MatCap", ref failures);
 
-            if (material.IsKeywordEnabled("_QUALITY_HIGH"))
-            {
-                failures++;
-                Debug.LogError("[ShallowsBioForgeBatchBaker] Shared material has forbidden high-quality keyword enabled.");
-            }
-
             ValidateMaterialColor(material, "_BaseColor", new Color(0.64f, 0.82f, 0.62f, 1f), ref failures);
             ValidateMaterialColor(material, "_RootTint", new Color(0.10f, 0.22f, 0.14f, 1f), ref failures);
             ValidateMaterialColor(material, "_TipTint", new Color(0.28f, 0.92f, 0.84f, 1f), ref failures);
@@ -680,14 +673,14 @@ namespace Hecton8.Editor.ProceduralGen
             ValidateShaderRequiredToken(shaderPath, source, "#pragma multi_compile_instancing", ref failures);
             ValidateShaderRequiredToken(shaderPath, source, "#pragma instancing_options assumeuniformscaling", ref failures);
             ValidateShaderRequiredToken(shaderPath, source, "#pragma multi_compile _ LOD_FADE_CROSSFADE", ref failures);
-            ValidateShaderRequiredToken(shaderPath, source, "#pragma multi_compile _ _MATH_LOD_LOW", ref failures);
-            ValidateShaderRequiredToken(shaderPath, source, "#pragma shader_feature_local _QUALITY_HIGH", ref failures);
             ValidateShaderRequiredToken(shaderPath, source, "CBUFFER_START(UnityPerMaterial)", ref failures);
             ValidateShaderRequiredToken(shaderPath, source, "LODFadeCrossFade(input.positionCS);", ref failures);
             ValidateShaderVertexInputContract(shaderPath, source, ref failures);
             ValidateShaderPassBudget(shaderPath, source, ref failures);
             ValidateShaderPragmaBudget(shaderPath, source, ref failures);
             ValidateShaderForbiddenToken(shaderPath, source, "ZWrite Off", ref failures);
+            ValidateShaderForbiddenToken(shaderPath, source, "_MATH_LOD_LOW", ref failures);
+            ValidateShaderForbiddenToken(shaderPath, source, "_QUALITY_HIGH", ref failures);
             ValidateShaderForbiddenToken(shaderPath, source, "Blend SrcAlpha", ref failures);
             ValidateShaderForbiddenToken(shaderPath, source, "Blend One One", ref failures);
         }
@@ -770,8 +763,8 @@ namespace Hecton8.Editor.ProceduralGen
                          CountShaderLineToken(source, "#pragma multi_compile_fog") == 1 &&
                          CountShaderLineToken(source, "#pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE") == 1 &&
                          CountShaderLineToken(source, "#pragma multi_compile _ LOD_FADE_CROSSFADE") == 2 &&
-                         CountShaderLineToken(source, "#pragma multi_compile _ _MATH_LOD_LOW") == 1 &&
-                         CountShaderLineToken(source, "#pragma shader_feature_local _QUALITY_HIGH") == 1 &&
+                         CountShaderLineToken(source, "#pragma multi_compile _ _MATH_LOD_LOW") == 0 &&
+                         CountShaderLineToken(source, "#pragma shader_feature_local _QUALITY_HIGH") == 0 &&
                          CountShaderLineToken(source, "#pragma skip_variants") == 1 &&
                          CountShaderLineToken(source, "#pragma multi_compile _ _ADDITIONAL_LIGHTS") == 0;
             if (valid)

@@ -1280,16 +1280,25 @@ namespace Hecton8.Rendering
                 return false;
             }
 
-            if (vault.IsCompactionFenceActive ||
-                !buffer.IsCreated ||
-                buffer.Length < requiredLength)
+            bool releaseOnExit = true;
+            try
             {
-                vault.ReleaseWriteLock(in handle, OwnerSystemId);
-                buffer = default;
-                return false;
-            }
+                if (vault.IsCompactionFenceActive ||
+                    !buffer.IsCreated ||
+                    buffer.Length < requiredLength)
+                {
+                    buffer = default;
+                    return false;
+                }
 
-            return true;
+                releaseOnExit = false;
+                return true;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                    vault.ReleaseWriteLock(in handle, OwnerSystemId);
+            }
         }
 
         private bool AcquireOrRefreshOwnedVaultBuffer<T>(

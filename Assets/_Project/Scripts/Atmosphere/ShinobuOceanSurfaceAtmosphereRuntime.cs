@@ -306,7 +306,7 @@ namespace Hecton8.Atmosphere
                     DisposeWaveGraphicsBuffers();
                     if (_registeredLate && !_registeredUpdate && !_registeredSlow)
                     {
-                        GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                        SystemDispatcher.UnregisterLateFrameTickableDirect(this, PriorityLayer.Environment);
                         _registeredLate = false;
                     }
                 }
@@ -604,81 +604,31 @@ namespace Hecton8.Atmosphere
             if (IsWaveParameterMutationLocked)
                 return false;
 
-            if (!TryResolveRegisteredVault(out IDataVault vault) ||
-                !TryAcquireTunerWriteView(vault, BufferID.ShinobuOceanWaveParameters, OceanSurfaceAtmosphereConstants.WaveCapacity, out VaultGenerationHandle<WaveParametersDTO> wavesHandle, out NativeArray<WaveParametersDTO> waves))
+            if (!TryResolveRegisteredVault(out IDataVault vault))
                 return false;
 
-            bool weatherLocked = false;
-            bool atmosphereLocked = false;
-            bool profilesLocked = false;
-            VaultGenerationHandle<WeatherStateDTO> weatherHandle = default;
-            VaultGenerationHandle<AtmosphereDTO> atmosphereHandle = default;
-            VaultGenerationHandle<BeaufortProfileDTO> profilesHandle = default;
-            try
+            if (!TryPrepareTunerHandle(vault, BufferID.ShinobuOceanWeatherState, 1, out VaultGenerationHandle<WeatherStateDTO> weatherHandle) ||
+                !TryPrepareTunerHandle(vault, BufferID.ShinobuOceanAtmosphere, 1, out VaultGenerationHandle<AtmosphereDTO> atmosphereHandle) ||
+                !TryPrepareTunerHandle(vault, BufferID.ShinobuOceanWaveParameters, OceanSurfaceAtmosphereConstants.WaveCapacity, out VaultGenerationHandle<WaveParametersDTO> wavesHandle))
             {
-                if (!TryAcquireTunerWriteView(vault, BufferID.ShinobuOceanWeatherState, 1, out weatherHandle, out NativeArray<WeatherStateDTO> weather))
-                    return false;
-                weatherLocked = true;
-
-                if (!TryAcquireTunerWriteView(vault, BufferID.ShinobuOceanAtmosphere, 1, out atmosphereHandle, out NativeArray<AtmosphereDTO> atmosphere))
-                    return false;
-                atmosphereLocked = true;
-
-                for (int i = 0; i < waves.Length; i++)
-                {
-                    WaveParametersDTO wave = waves[i];
-                    for (int laneIndex = 0; laneIndex < OceanSurfaceAtmosphereConstants.WavesPerParameters; laneIndex++)
-                    {
-                        float4 lane = HectonOceanSurfaceMath.GetWaveLane(wave, laneIndex);
-                        lane.y = math.saturate(waveSteepness);
-                        HectonOceanSurfaceMath.SetWaveLane(ref wave, laneIndex, lane);
-                    }
-
-                    waves[i] = HectonOceanSurfaceMath.SanitizeWave(wave);
-                }
-
-                WeatherStateDTO state = weather[0];
-                state.WindDirectionSpeedStorm.z = math.max(0f, windSpeed);
-                state.SurfaceScalars.z = math.saturate(foamThreshold);
-                weather[0] = state;
-
-                AtmosphereDTO dto = atmosphere[0];
-                dto.ScatteringParams.y = math.max(0f, gasGiantGlow);
-                atmosphere[0] = dto;
-
-                if (TryAcquireTunerWriteView(vault, BufferID.ShinobuOceanBeaufortProfiles, OceanSurfaceAtmosphereConstants.BeaufortProfileCapacity, out profilesHandle, out NativeArray<BeaufortProfileDTO> profiles))
-                {
-                    profilesLocked = true;
-                    if (profiles.Length > 0)
-                    {
-                        BeaufortProfileDTO tuning = profiles[0];
-                        tuning.StateHash = QualityStepTuningHash;
-                        tuning.BaseSteepness = math.saturate(qualityMin);
-                        tuning.StormIntensity = math.saturate(waveSteepness);
-                        tuning.FoamThreshold = math.saturate(foamThreshold);
-                        tuning.FrequencyScale = math.saturate(qualityMax);
-                        tuning.Flags = 1u;
-                        profiles[0] = tuning;
-                    }
-                }
-
-                unchecked
-                {
-                    s_wavePayloadMutationVersion++;
-                }
-
-                return true;
+                return false;
             }
-            finally
+
+            if (!TryApplyWeatherTunerValues(vault, in weatherHandle, windSpeed, foamThreshold) ||
+                !TryApplyAtmosphereTunerValues(vault, in atmosphereHandle, gasGiantGlow) ||
+                !TryApplyWaveTunerValues(vault, in wavesHandle, waveSteepness))
             {
-                if (profilesLocked)
-                    vault.ReleaseWriteLock(in profilesHandle, SystemID.CoreDiagnostics);
-                if (atmosphereLocked)
-                    vault.ReleaseWriteLock(in atmosphereHandle, SystemID.CoreDiagnostics);
-                if (weatherLocked)
-                    vault.ReleaseWriteLock(in weatherHandle, SystemID.CoreDiagnostics);
-                vault.ReleaseWriteLock(in wavesHandle, SystemID.CoreDiagnostics);
+                return false;
             }
+
+            TryApplyBeaufortTunerValues(vault, waveSteepness, foamThreshold, qualityMin, qualityMax);
+
+            unchecked
+            {
+                s_wavePayloadMutationVersion++;
+            }
+
+            return true;
         }
 
         private static bool TryResolveRegisteredVault(out IDataVault vault)
@@ -708,16 +658,14 @@ namespace Hecton8.Atmosphere
             return true;
         }
 
-        private static bool TryAcquireTunerWriteView<T>(
+        private static bool TryPrepareTunerHandle<T>(
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
-            out VaultGenerationHandle<T> handle,
-            out NativeArray<T> buffer)
+            out VaultGenerationHandle<T> handle)
             where T : struct
         {
             handle = default;
-            buffer = default;
             int required = math.max(1, requiredLength);
             if (vault == null)
                 return false;
@@ -728,21 +676,36 @@ namespace Hecton8.Atmosphere
                 existingBuffer.Length >= required)
             {
                 handle = existing;
-            }
-            else
-            {
-                if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
-                    return false;
-
-                handle = vault.EnsureGenerationHandle<T>(
-                    bufferId,
-                    required,
-                    SystemID.HabitatAtmosphere,
-                    NativeArrayOptions.UninitializedMemory);
+                return true;
             }
 
-            if (!vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer))
+            if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
                 return false;
+
+            handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                required,
+                SystemID.HabitatAtmosphere,
+                NativeArrayOptions.UninitializedMemory);
+
+            return handle.BufferID != 0u;
+        }
+
+        private static bool TryAcquireTunerWriteView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            int required = math.max(1, requiredLength);
+            if (vault == null ||
+                handle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.CoreDiagnostics, out buffer))
+            {
+                return false;
+            }
 
             if (buffer.IsCreated && buffer.Length >= required)
                 return true;
@@ -750,6 +713,114 @@ namespace Hecton8.Atmosphere
             vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
             buffer = default;
             return false;
+        }
+
+        private static bool TryApplyWeatherTunerValues(
+            IDataVault vault,
+            in VaultGenerationHandle<WeatherStateDTO> handle,
+            float windSpeed,
+            float foamThreshold)
+        {
+            if (!TryAcquireTunerWriteView(vault, in handle, 1, out NativeArray<WeatherStateDTO> weather))
+                return false;
+
+            try
+            {
+                WeatherStateDTO state = weather[0];
+                state.WindDirectionSpeedStorm.z = math.max(0f, windSpeed);
+                state.SurfaceScalars.z = math.saturate(foamThreshold);
+                weather[0] = state;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            }
+        }
+
+        private static bool TryApplyAtmosphereTunerValues(
+            IDataVault vault,
+            in VaultGenerationHandle<AtmosphereDTO> handle,
+            float gasGiantGlow)
+        {
+            if (!TryAcquireTunerWriteView(vault, in handle, 1, out NativeArray<AtmosphereDTO> atmosphere))
+                return false;
+
+            try
+            {
+                AtmosphereDTO dto = atmosphere[0];
+                dto.ScatteringParams.y = math.max(0f, gasGiantGlow);
+                atmosphere[0] = dto;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            }
+        }
+
+        private static bool TryApplyWaveTunerValues(
+            IDataVault vault,
+            in VaultGenerationHandle<WaveParametersDTO> handle,
+            float waveSteepness)
+        {
+            if (!TryAcquireTunerWriteView(vault, in handle, OceanSurfaceAtmosphereConstants.WaveCapacity, out NativeArray<WaveParametersDTO> waves))
+                return false;
+
+            try
+            {
+                for (int i = 0; i < waves.Length; i++)
+                {
+                    WaveParametersDTO wave = waves[i];
+                    for (int laneIndex = 0; laneIndex < OceanSurfaceAtmosphereConstants.WavesPerParameters; laneIndex++)
+                    {
+                        float4 lane = HectonOceanSurfaceMath.GetWaveLane(wave, laneIndex);
+                        lane.y = math.saturate(waveSteepness);
+                        HectonOceanSurfaceMath.SetWaveLane(ref wave, laneIndex, lane);
+                    }
+
+                    waves[i] = HectonOceanSurfaceMath.SanitizeWave(wave);
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            }
+        }
+
+        private static void TryApplyBeaufortTunerValues(
+            IDataVault vault,
+            float waveSteepness,
+            float foamThreshold,
+            float qualityMin,
+            float qualityMax)
+        {
+            if (!TryPrepareTunerHandle(vault, BufferID.ShinobuOceanBeaufortProfiles, OceanSurfaceAtmosphereConstants.BeaufortProfileCapacity, out VaultGenerationHandle<BeaufortProfileDTO> handle) ||
+                !TryAcquireTunerWriteView(vault, in handle, OceanSurfaceAtmosphereConstants.BeaufortProfileCapacity, out NativeArray<BeaufortProfileDTO> profiles))
+            {
+                return;
+            }
+
+            try
+            {
+                if (profiles.Length <= 0)
+                    return;
+
+                BeaufortProfileDTO tuning = profiles[0];
+                tuning.StateHash = QualityStepTuningHash;
+                tuning.BaseSteepness = math.saturate(qualityMin);
+                tuning.StormIntensity = math.saturate(waveSteepness);
+                tuning.FoamThreshold = math.saturate(foamThreshold);
+                tuning.FrequencyScale = math.saturate(qualityMax);
+                tuning.Flags = 1u;
+                profiles[0] = tuning;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.CoreDiagnostics);
+            }
         }
 
         private static void ConfigureSignalLanes()

@@ -1,0 +1,95 @@
+﻿{
+  "schema": "hecton8.apex_current_recheck.v1",
+  "agent_id": "UNKNOWN",
+  "domain": "Core / Input / SimulationBucketer",
+  "timestamp_local": "2026-05-28T19:23:46+04:00",
+  "status": "PENDING_RUNTIME_VERIFICATION",
+  "verdict": "STATIC_RECHECK_ONLY",
+  "source_hashes": [
+    {
+      "path": "Assets/_Project/Scripts/Core/InputDispatcher.cs",
+      "sha256": "E8196DA9E38B2AD893A03C5867596B0C09CF67879FA33A00F9AA14B402C61450"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs",
+      "sha256": "FBE414B7CD6036146EAA299447E6689E68A2C7CF5AC19082ED841DBC11F06B03"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Bucketing/ModuloSimulationBucketer.cs",
+      "sha256": "51F68EBFFA50165B4153E5C3DCC8E3151D418B494F4F9256CDDD6B1DE24AA1BD"
+    }
+  ],
+  "report_hash_sidecar_checks": [
+    {
+      "report": "APEX_FINAL_VERIFICATION_UNKNOWN_INPUT_ROUTE_NAMING_PASS_20260528",
+      "sha256": "A38DE05D5D31067D593E305C8CA081AC44B843EAFDF1DD2DD9667E93BC062528",
+      "sidecar_match": true
+    },
+    {
+      "report": "APEX_FINAL_VERIFICATION_UNKNOWN_SIMULATION_BUCKETER_LOCK_PIN_PASS_20260528",
+      "sha256": "CD394CF9AFBBA0E9A82E3CF6C8FCE17D5F32BC461F5C6E50DCCF3E3CC3CF555F",
+      "sidecar_match": true
+    }
+  ],
+  "combined_added_line_scan": {
+    "scope": [
+      "Assets/_Project/Scripts/Core/InputDispatcher.cs",
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs",
+      "Assets/_Project/Scripts/Core/Bucketing/ModuloSimulationBucketer.cs"
+    ],
+    "added_lines": 405,
+    "reference_type_new_suspects": 0,
+    "string_format": 0,
+    "dot_to_string_calls": 0,
+    "linq_call_tokens": 0,
+    "foreach_tokens": 0,
+    "job_complete_calls": 0,
+    "try_acquire_write_lock_tokens": 1,
+    "release_write_lock_tokens": 1,
+    "try_lock_buffer_tokens": 4,
+    "try_unlock_buffer_tokens": 4,
+    "finally_tokens": 13,
+    "global_registry_added_lines": 0,
+    "binary_low_end_tokens": 0
+  },
+  "route_contract_checks": [
+    {
+      "command": "rg -n \"TryResolveOrAcquireInputBuffer\" Assets/_Project/Scripts/Core/InputDispatcher.cs Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs",
+      "result": "NO_MATCH_EXIT_1"
+    }
+  ],
+  "static_integrity": {
+    "bucketer_brace_open": 150,
+    "bucketer_brace_close": 150,
+    "bucketer_braces_balanced": true,
+    "scoped_git_diff_check_exit_code": 0,
+    "scoped_git_diff_check_warnings": [
+      "LF will be replaced by CRLF the next time Git touches modified source/docs files"
+    ]
+  },
+  "compilation_resource_throttling": {
+    "cpu_sample_percent_before_final_compile_decision": 98.7,
+    "active_dotnet_processes": [
+      {
+        "pid": 68208,
+        "path": "C:/Program Files/dotnet/dotnet.exe"
+      }
+    ],
+    "active_csc_or_vbcscompiler_processes": [],
+    "dotnet_build_invocations": 0,
+    "reason_build_not_launched": "CPU sample was 98.7% and active dotnet process existed; AGENTS.md forbids build under this load. User also assigned global compile-wall repair to another agent."
+  },
+  "runtime_verification": {
+    "unity_import": false,
+    "unity_console_check": false,
+    "play_mode": false,
+    "profiler_or_gc_monitor": false,
+    "player_build": false,
+    "device_run": false
+  },
+  "known_residuals": [
+    "No Unity runtime verification was executed.",
+    "No project-wide compile verdict is claimed.",
+    "Other agents have many active dirty/untracked Docs/Reports artifacts; this recheck ignores unrelated work."
+  ]
+}

@@ -208,7 +208,7 @@ namespace Hecton8.Visor
                 int particlesWidth = math.max(1, (int)(sourceDesc.width * renderScale + 0.5f));
                 int particlesHeight = math.max(1, (int)(sourceDesc.height * renderScale + 0.5f));
 
-                TextureDesc particlesDesc = new TextureDesc(sourceDesc);
+                TextureDesc particlesDesc = sourceDesc;
                 particlesDesc.name = "_HectonHalfResParticles";
                 particlesDesc.width = particlesWidth;
                 particlesDesc.height = particlesHeight;
@@ -221,7 +221,7 @@ namespace Hecton8.Visor
                 particlesDesc.useMipMap = false;
                 particlesDesc.autoGenerateMips = false;
 
-                TextureDesc compositeDesc = new TextureDesc(sourceDesc);
+                TextureDesc compositeDesc = sourceDesc;
                 compositeDesc.name = "_HectonHalfResParticlesComposite";
                 compositeDesc.clearBuffer = false;
                 compositeDesc.depthBufferBits = DepthBits.None;

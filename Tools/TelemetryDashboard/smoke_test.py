@@ -50,8 +50,34 @@ def main() -> int:
     mutation += server.FAUNA_MUTATION_ENTRY.pack(23, 102, 7, 4, 3, 5, 0.25, 0.5, 0.75, 0, 0)
     (root / "Dump_ECOLOGY_MUTATION_DIRECTOR.bin").write_bytes(mutation)
 
-    live = server.LIVE_TELEMETRY_ENTRY.pack(server.LIVE_TELEMETRY_MAGIC, 1, 333, 12, 64, 17.25, 0.016, 2048.0)
+    live = server.LIVE_TELEMETRY_ENTRY.pack(
+        server.LIVE_TELEMETRY_MAGIC,
+        2,
+        server.LIVE_TELEMETRY_ENTRY.size,
+        333,
+        12,
+        64,
+        17.25,
+        0.016,
+        2048.0,
+        3.5,
+        6.25,
+        0x123,
+        0x40,
+        0x77,
+        9,
+        331,
+    )
     (root / "runtime_telemetry.bin").write_bytes(live)
+    live_parsed = server.parse_live_telemetry(root / "runtime_telemetry.bin", live)
+    assert live_parsed["entrySize"] == 64
+    assert live_parsed["latest"]["latencyMs"] == 3.5
+    assert live_parsed["latest"]["gpuFrameTimeMs"] == 6.25
+    assert live_parsed["latest"]["systemMask"] == 0x123
+    legacy_live = server.LIVE_TELEMETRY_ENTRY_V1.pack(server.LIVE_TELEMETRY_MAGIC, 1, 333, 12, 64, 17.25, 0.016, 2048.0)
+    legacy_parsed = server.parse_live_telemetry(root / "legacy_runtime_telemetry.bin", legacy_live)
+    assert legacy_parsed["entrySize"] == server.LIVE_TELEMETRY_ENTRY_V1.size
+    assert "legacy_v1_32_byte_record" in legacy_parsed["warnings"]
 
     headless = server.HEADLESS_HEADER.pack(server.HEADLESS_MAGIC, 1, server.HEADLESS_ENTRY.size, 1)
     headless += server.HEADLESS_ENTRY.pack(200, 4, 55, 1, 2, 3, 0.1, 0.2, 0.3, 6.0, 2.0, 128.0, 0)

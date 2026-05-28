@@ -61,8 +61,6 @@ Shader "Hecton8/Flora/ProceduralBio"
             #pragma multi_compile_fog
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile _ LOD_FADE_CROSSFADE
-            #pragma multi_compile _ _MATH_LOD_LOW
-            #pragma shader_feature_local _QUALITY_HIGH
             #pragma skip_variants _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -119,19 +117,13 @@ Shader "Hecton8/Flora/ProceduralBio"
             {
                 float4 positionCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
-                #if !defined(_MATH_LOD_LOW)
                 float3 projectWS : TEXCOORD1;
-                #endif
                 half3 normalWS : TEXCOORD2;
-                #if !defined(_MATH_LOD_LOW)
                 half3 viewDirWS : TEXCOORD3;
-                #endif
                 half4 color : COLOR;
                 half fogFactor : TEXCOORD4;
-                #if !defined(_MATH_LOD_LOW)
                 float seed : TEXCOORD5;
                 float3 biolumLocalAupCoord : TEXCOORD6;
-                #endif
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -188,12 +180,10 @@ Shader "Hecton8/Flora/ProceduralBio"
                 float3 blend = abs(worldNormal);
                 blend *= rcp(max(dot(blend, float3(1.0, 1.0, 1.0)), 0.0001));
 
-                #if defined(_QUALITY_HIGH)
                 float sharpen = saturate(((float)_TriplanarSharpness - 1.0) * 0.14285715);
                 sharpen *= HectonProceduralBioSmoothRange01(0.35h, 0.95h, HectonProceduralBioGlobalQualityWeight());
                 blend = lerp(blend, blend * blend, sharpen);
                 blend *= rcp(max(dot(blend, float3(1.0, 1.0, 1.0)), 0.0001));
-                #endif
 
                 return blend;
             }
@@ -366,12 +356,10 @@ Shader "Hecton8/Flora/ProceduralBio"
 
                 output.positionCS = positionInputs.positionCS;
                 output.positionWS = positionInputs.positionWS;
-                #if !defined(_MATH_LOD_LOW)
                 output.projectWS = ResolveProceduralBioProjectionPosition(positionInputs.positionWS);
                 output.seed = ResolveProceduralBioInstanceSeed();
                 output.biolumLocalAupCoord = positionInputs.positionWS - TransformObjectToWorld(float3(0.0, 0.0, 0.0));
                 output.viewDirWS = HectonProceduralBioNormalizeRsqrt(GetWorldSpaceViewDir(positionInputs.positionWS));
-                #endif
                 output.normalWS = HectonProceduralBioNormalizeRsqrt(normalInputs.normalWS);
                 output.color = all(isfinite(input.color)) ? input.color : half4(1.0h, 1.0h, 1.0h, 1.0h);
                 output.fogFactor = ComputeFogFactor(positionInputs.positionCS.z);
@@ -389,31 +377,30 @@ Shader "Hecton8/Flora/ProceduralBio"
                 half3 baseNormalWS = HectonProceduralBioNormalizeRsqrt(input.normalWS);
                 half height01 = saturate(input.color.r);
                 half3 rootTipTint = lerp(_RootTint.rgb, _TipTint.rgb, height01);
-                #if defined(_MATH_LOD_LOW)
-                Light mainLight = GetMainLight();
-                #else
+                half qualityWeight = HectonProceduralBioGlobalQualityWeight();
+                if (qualityWeight <= 0.08h)
+                {
+                    Light cheapMainLight = GetMainLight();
+                    half mainLightAttenuation = saturate((half)(cheapMainLight.distanceAttenuation * cheapMainLight.shadowAttenuation));
+                    float3 normalVS = mul((float3x3)UNITY_MATRIX_V, (float3)baseNormalWS);
+                    normalVS *= rsqrt(max(dot(normalVS, normalVS), 0.0001));
+                    float2 matcapUv = normalVS.xy * 0.5 + 0.5;
+                    half3 matcap = SAMPLE_TEXTURE2D(_MatCap, sampler_MatCap, matcapUv).rgb;
+                    half matcapWeight = _MatCapStrength * (1.0h - HectonProceduralBioSmoothRange01(0.18h, 0.68h, qualityWeight) * 0.45h);
+                    half wrapDiffuse = max(0.0h, dot(baseNormalWS, (half3)cheapMainLight.direction) + 0.5h) * 0.6666667h;
+                    half3 albedo = lerp(_BaseColor.rgb * rootTipTint, matcap * _TipTint.rgb, matcapWeight);
+                    albedo *= ResolveProceduralBioBiomeTint(_BiomeTintStrength);
+                    half3 ambient = H8CustomLightProbeResolveAmbient(input.positionWS, baseNormalWS, half3(0.015h, 0.025h, 0.035h)) * _AmbientStrength;
+                    half3 emission = ResolveProceduralBioEmissionLow(height01, lerp(0.42h, 0.65h, qualityWeight));
+                    half3 color = albedo * (ambient + cheapMainLight.color * (wrapDiffuse * mainLightAttenuation)) + emission;
+                    color = MixFog(color, input.fogFactor);
+                    return half4(color, 1.0h);
+                }
+
                 half3 viewDirWS = HectonProceduralBioNormalizeRsqrt(input.viewDirWS);
                 float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
                 Light mainLight = GetMainLight(shadowCoord);
-                #endif
                 half mainLightAttenuation = saturate((half)(mainLight.distanceAttenuation * mainLight.shadowAttenuation));
-
-                #if defined(_MATH_LOD_LOW)
-                float3 normalVS = mul((float3x3)UNITY_MATRIX_V, (float3)baseNormalWS);
-                normalVS *= rsqrt(max(dot(normalVS, normalVS), 0.0001));
-                float2 matcapUv = normalVS.xy * 0.5 + 0.5;
-                half3 matcap = SAMPLE_TEXTURE2D(_MatCap, sampler_MatCap, matcapUv).rgb;
-                half qualityWeight = HectonProceduralBioGlobalQualityWeight();
-                half matcapWeight = _MatCapStrength * (1.0h - HectonProceduralBioSmoothRange01(0.18h, 0.68h, qualityWeight) * 0.45h);
-                half wrapDiffuse = max(0.0h, dot(baseNormalWS, (half3)mainLight.direction) + 0.5h) * 0.6666667h;
-                half3 albedo = lerp(_BaseColor.rgb * rootTipTint, matcap * _TipTint.rgb, matcapWeight);
-                albedo *= ResolveProceduralBioBiomeTint(_BiomeTintStrength);
-                half3 ambient = H8CustomLightProbeResolveAmbient(input.positionWS, baseNormalWS, half3(0.015h, 0.025h, 0.035h)) * _AmbientStrength;
-                half3 emission = ResolveProceduralBioEmissionLow(height01, lerp(0.42h, 0.65h, qualityWeight));
-                half3 color = albedo * (ambient + mainLight.color * (wrapDiffuse * mainLightAttenuation)) + emission;
-                color = MixFog(color, input.fogFactor);
-                return half4(color, 1.0h);
-                #else
                 float3 blend = ResolveProceduralBioBlendWeights((float3)baseNormalWS);
                 half4 albedoSample = SampleProceduralBioAlbedo(input.projectWS, blend, input.seed);
                 half4 ormSample = SampleProceduralBioOrm(input.projectWS, blend, input.seed);
@@ -450,7 +437,6 @@ Shader "Hecton8/Flora/ProceduralBio"
                 half3 color = diffuse + specular + subsurface + _TipTint.rgb * rim + emission;
                 color = MixFog(color, input.fogFactor);
                 return half4(color, albedoSample.a);
-                #endif
             }
             ENDHLSL
         }

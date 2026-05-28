@@ -78,7 +78,6 @@ namespace Hecton8.EditorTools
                 .Append(", StripMixedLighting=").Append(Bool01(policy.StripMixedLighting))
                 .Append(", StripPointLights=").Append(Bool01(policy.StripPointLights))
                 .Append(", StripSpotLights=").Append(Bool01(policy.StripSpotLights))
-                .Append(", StripMathLodHigh=").Append(Bool01(policy.StripMathLodHigh))
                 .Append(", StripQuestAndroidTBDR=").Append(Bool01(policy.StripQuestAndroidTBDRVariants))
                 .Append(", StrippedSoFar=").Append(s_StrippedVariantCount)
                 .Append(", Evidence=").Append(policy.Evidence);
@@ -146,7 +145,6 @@ namespace Hecton8.EditorTools
                 stripMixedLighting: !supportsMixedLighting,
                 stripPointLights: stripMx350LightVariants,
                 stripSpotLights: stripMx350LightVariants,
-                stripMathLodHigh: stripMx350LightVariants,
                 stripQuestAndroidTBDRVariants: stripQuestAndroidTBDRVariants,
                 materialAssetCount: materialAssetCount,
                 usedMaterialKeywords: usedMaterialKeywords,
@@ -170,7 +168,6 @@ namespace Hecton8.EditorTools
                     || (policy.StripMixedLighting && IsMixedLightingKeyword(keywordName))
                     || (policy.StripPointLights && IsPointLightKeyword(keywordName))
                     || (policy.StripSpotLights && IsSpotLightKeyword(keywordName))
-                    || (policy.StripMathLodHigh && IsMathLodHighKeyword(keywordName))
                     || (policy.StripQuestAndroidTBDRVariants && IsQuestAndroidTBDRKeyword(keywordName)))
                 {
                     return true;
@@ -372,11 +369,6 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static bool IsMathLodHighKeyword(string keywordName)
-        {
-            return string.Equals(keywordName, "_MATH_LOD_HIGH", StringComparison.Ordinal);
-        }
-
         private static bool IsSoftShadowKeyword(string keywordName)
         {
             switch (keywordName)
@@ -459,7 +451,6 @@ namespace Hecton8.EditorTools
                 bool stripMixedLighting,
                 bool stripPointLights,
                 bool stripSpotLights,
-                bool stripMathLodHigh,
                 bool stripQuestAndroidTBDRVariants,
                 int materialAssetCount,
                 HashSet<string> usedMaterialKeywords,
@@ -473,7 +464,6 @@ namespace Hecton8.EditorTools
                 StripMixedLighting = stripMixedLighting;
                 StripPointLights = stripPointLights;
                 StripSpotLights = stripSpotLights;
-                StripMathLodHigh = stripMathLodHigh;
                 StripQuestAndroidTBDRVariants = stripQuestAndroidTBDRVariants;
                 MaterialAssetCount = materialAssetCount;
                 UsedMaterialKeywords = usedMaterialKeywords ?? new HashSet<string>(0, StringComparer.Ordinal);
@@ -489,7 +479,6 @@ namespace Hecton8.EditorTools
             internal bool StripMixedLighting { get; }
             internal bool StripPointLights { get; }
             internal bool StripSpotLights { get; }
-            internal bool StripMathLodHigh { get; }
             internal bool StripQuestAndroidTBDRVariants { get; }
             internal HashSet<string> UsedMaterialKeywords { get; }
             internal bool HasMaterialKeywordPolicy => UsedMaterialKeywords.Count > 0;
@@ -502,7 +491,6 @@ namespace Hecton8.EditorTools
                 || StripMixedLighting
                 || StripPointLights
                 || StripSpotLights
-                || StripMathLodHigh
                 || StripQuestAndroidTBDRVariants
                 || HasMaterialKeywordPolicy;
         }

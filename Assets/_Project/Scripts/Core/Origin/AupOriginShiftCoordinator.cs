@@ -60,6 +60,7 @@ namespace Hecton8.Core
         internal NativeArray<float3> Velocities;
         internal NativeArray<float3> HistoricalPoints;
         internal NativeArray<AupOriginShiftTelemetryEntry> TelemetryRing;
+        internal NativeArray<AupOriginShiftTelemetryDetailEntry> TelemetryDetailRing;
         internal NativeArray<AupOriginShiftRuntimeState> RuntimeState;
         internal int ActiveCount;
         internal int HistoricalCount;
@@ -128,29 +129,35 @@ namespace Hecton8.Core
         [FieldOffset(116)] private uint _pad0;
     }
 
-    /// <summary>Fixed 300-frame black-box row for origin-shift post-mortem dumps.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
+    /// <summary>Fixed 300-frame black-box header row for origin-shift post-mortem dumps.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct AupOriginShiftTelemetryEntry
     {
         [FieldOffset(0)] public double3 ShiftDelta;
-        [FieldOffset(24)] public double3 TotalUniverseOffset;
-        [FieldOffset(48)] public uint Frame;
-        [FieldOffset(52)] public uint RebaseCount;
-        [FieldOffset(56)] public uint ShiftSequence;
-        [FieldOffset(60)] public uint SectorHash;
-        [FieldOffset(64)] public int EntitiesShifted;
-        [FieldOffset(68)] public int HistoricalPointsShifted;
-        [FieldOffset(72)] public int BatchStartIndex;
-        [FieldOffset(76)] public int BatchCount;
-        [FieldOffset(80)] public int NonFiniteCount;
-        [FieldOffset(84)] public float RebaseComputeTimeMs;
-        [FieldOffset(88)] public float SystemHealthIndex01;
-        [FieldOffset(92)] public uint Flags;
-        [FieldOffset(96)] public float3 CameraLocalPosition;
-        [FieldOffset(108)] public uint CameraSectorHash;
-        [FieldOffset(112)] public uint PositionHash;
-        [FieldOffset(116)] public int HotEntitiesShifted;
-        [FieldOffset(120)] private ulong _pad1;
+        [FieldOffset(24)] public uint Frame;
+        [FieldOffset(28)] public uint RebaseCount;
+        [FieldOffset(32)] public uint ShiftSequence;
+        [FieldOffset(36)] public uint SectorHash;
+        [FieldOffset(40)] public int EntitiesShifted;
+        [FieldOffset(44)] public int HistoricalPointsShifted;
+        [FieldOffset(48)] public int BatchStartIndex;
+        [FieldOffset(52)] public int BatchCount;
+        [FieldOffset(56)] public int NonFiniteCount;
+        [FieldOffset(60)] public uint Flags;
+    }
+
+    /// <summary>Fixed 300-frame black-box detail row paired with <see cref="AupOriginShiftTelemetryEntry"/>.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct AupOriginShiftTelemetryDetailEntry
+    {
+        [FieldOffset(0)] public double3 TotalUniverseOffset;
+        [FieldOffset(24)] public float3 CameraLocalPosition;
+        [FieldOffset(36)] public float RebaseComputeTimeMs;
+        [FieldOffset(40)] public float SystemHealthIndex01;
+        [FieldOffset(44)] public uint CameraSectorHash;
+        [FieldOffset(48)] public uint PositionHash;
+        [FieldOffset(52)] public int HotEntitiesShifted;
+        [FieldOffset(56)] private ulong _pad0;
     }
 
     /// <summary>Single atomic counter isolated to one cache line for rebase worker contention.</summary>
@@ -182,9 +189,10 @@ namespace Hecton8.Core
         [FieldOffset(32)] public uint LatestFrame;
         [FieldOffset(36)] public uint EndianTag;
         [FieldOffset(40)] public uint Flags;
-        [FieldOffset(44)] private uint _pad0;
-        [FieldOffset(48)] private ulong _pad1;
-        [FieldOffset(56)] private ulong _pad2;
+        [FieldOffset(44)] public uint DetailStrideBytes;
+        [FieldOffset(48)] public uint CombinedRecordBytes;
+        [FieldOffset(52)] private uint _pad0;
+        [FieldOffset(56)] private ulong _pad1;
     }
 
     /// <summary>Double-precision helpers for AUP comparisons that must never demote to float.</summary>
@@ -225,9 +233,11 @@ namespace Hecton8.Core
         private const int CounterCount = 1;
         private const int DumpWriteBufferBytes = 4096;
         private const ulong DumpMagic = 0x504D445055413848ul; // H8AUPDMP, fixed little-endian bytes.
-        private const uint DumpVersion = 2u;
+        private const uint DumpVersion = 3u;
         private const uint DumpEndianLittleTag = 0x00454C48u; // HLE\0
         private const uint DumpEndianBigTag = 0x00454248u; // HBE\0
+        private const uint DumpFlagBigEndian = 1u;
+        private const uint DumpFlagHasDetailRows = 1u << 1;
         private const float EmergencyRebaseLimitMeters = 4000f;
         private const float DefaultSectorSizeMeters = 5000f;
         private const int DefaultBatchSize = 10000;
@@ -254,16 +264,26 @@ namespace Hecton8.Core
         private const BufferID MockVelocitiesBuffer = (BufferID)73031;
         private const BufferID MockHistoricalPointsBuffer = (BufferID)73032;
         private const BufferID TelemetryRingBuffer = (BufferID)73033;
+        private const BufferID TelemetryDetailRingBuffer = (BufferID)73056;
         private const BufferID RuntimeStateBuffer = (BufferID)73034;
         private const BufferID MockCameraBuffer = (BufferID)73035;
         private const BufferID CsvScratchBuffer = (BufferID)73036;
         private const BufferID CounterBuffer = (BufferID)73037;
+        private const byte ScheduleLockStatesFlag = 1 << 0;
+        private const byte ScheduleLockCounterFlag = 1 << 1;
+        private const byte ScheduleLockHistoricalFlag = 1 << 2;
+        private const byte ScheduleLockHotEntityFlag = 1 << 3;
+        private const byte ScheduleLockTetherCableFlag = 1 << 4;
+        private const byte ScheduleLockTetherCablePreviousFlag = 1 << 5;
+        private const byte ScheduleLockTetherVisualSegmentFlag = 1 << 6;
+        private const byte ScheduleLockTetherVisualAnchorFlag = 1 << 7;
 
         private static IDataVault _cachedVault;
         private static VaultGenerationHandle<AUP_StateDTO> _statesHandle;
         private static VaultGenerationHandle<float3> _velocitiesHandle;
         private static VaultGenerationHandle<float3> _historicalPointsHandle;
         private static VaultGenerationHandle<AupOriginShiftTelemetryEntry> _telemetryHandle;
+        private static VaultGenerationHandle<AupOriginShiftTelemetryDetailEntry> _telemetryDetailHandle;
         private static VaultGenerationHandle<AupOriginShiftRuntimeState> _runtimeStateHandle;
         private static VaultGenerationHandle<MockCameraAUP> _mockCameraHandle;
         private static VaultGenerationHandle<byte> _csvScratchHandle;
@@ -276,21 +296,31 @@ namespace Hecton8.Core
         /// <summary>Cold path fallback used when binary archaeology yields no threshold file.</summary>
         public static void GenerateEmergencyMockThresholds(IDataVault vault)
         {
-            if (!EnsureRuntimeState(vault, out MockEntityArrays arrays))
+            if (!OpenOrAcquireRuntimeStateForOwnerRoute(vault, out MockEntityArrays arrays))
                 return;
 
-            AupOriginShiftRuntimeState runtime = arrays.RuntimeState[0];
-            runtime.RebaseLimitMeters = EmergencyRebaseLimitMeters;
-            runtime.SectorSizeMeters = DefaultSectorSizeMeters;
-            runtime.BatchSize = DefaultBatchSize;
-            runtime.ActiveEntityCount = MockEntityCapacity;
-            runtime.ActiveHistoricalCount = MockHistoricalPointCapacity;
-            runtime.Flags |= RuntimeFlagEmergencyThresholds;
-            arrays.RuntimeState[0] = runtime;
+            if (!TryAcquireWriteView(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<AupOriginShiftRuntimeState> runtimeState))
+                return;
+
+            try
+            {
+                AupOriginShiftRuntimeState runtime = runtimeState[0];
+                runtime.RebaseLimitMeters = EmergencyRebaseLimitMeters;
+                runtime.SectorSizeMeters = DefaultSectorSizeMeters;
+                runtime.BatchSize = DefaultBatchSize;
+                runtime.ActiveEntityCount = MockEntityCapacity;
+                runtime.ActiveHistoricalCount = MockHistoricalPointCapacity;
+                runtime.Flags |= RuntimeFlagEmergencyThresholds;
+                runtimeState[0] = runtime;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _runtimeStateHandle, OwnerSystemId);
+            }
         }
 
-        /// <summary>Ensures all unmanaged origin-shift vault buffers exist and are initialized.</summary>
-        internal static bool EnsureRuntimeState(IDataVault vault, out MockEntityArrays arrays)
+        /// <summary>Owner/bootstrap route that opens or creates all unmanaged origin-shift vault buffers.</summary>
+        internal static bool OpenOrAcquireRuntimeStateForOwnerRoute(IDataVault vault, out MockEntityArrays arrays)
         {
             arrays = default;
             if (vault == null)
@@ -303,7 +333,7 @@ namespace Hecton8.Core
                 _cachedVault = vault;
             }
 
-            if (!TryResolveOrAcquire(
+            if (!OpenOrAcquireVaultBufferForOwnerRoute(
                     vault,
                     ref _statesHandle,
                     MockStatesBuffer,
@@ -311,7 +341,7 @@ namespace Hecton8.Core
                     NativeArrayOptions.UninitializedMemory,
                     out arrays.States,
                     out bool statesCreated) ||
-                !TryResolveOrAcquire(
+                !OpenOrAcquireVaultBufferForOwnerRoute(
                     vault,
                     ref _velocitiesHandle,
                     MockVelocitiesBuffer,
@@ -319,7 +349,7 @@ namespace Hecton8.Core
                     NativeArrayOptions.UninitializedMemory,
                     out arrays.Velocities,
                     out bool velocitiesCreated) ||
-                !TryResolveOrAcquire(
+                !OpenOrAcquireVaultBufferForOwnerRoute(
                     vault,
                     ref _historicalPointsHandle,
                     MockHistoricalPointsBuffer,
@@ -327,7 +357,7 @@ namespace Hecton8.Core
                     NativeArrayOptions.UninitializedMemory,
                     out arrays.HistoricalPoints,
                     out bool historicalCreated) ||
-                !TryResolveOrAcquire(
+                !OpenOrAcquireVaultBufferForOwnerRoute(
                     vault,
                     ref _telemetryHandle,
                     TelemetryRingBuffer,
@@ -335,7 +365,15 @@ namespace Hecton8.Core
                     NativeArrayOptions.ClearMemory,
                     out arrays.TelemetryRing,
                     out _) ||
-                !TryResolveOrAcquire(
+                !OpenOrAcquireVaultBufferForOwnerRoute(
+                    vault,
+                    ref _telemetryDetailHandle,
+                    TelemetryDetailRingBuffer,
+                    TelemetryCapacity,
+                    NativeArrayOptions.ClearMemory,
+                    out arrays.TelemetryDetailRing,
+                    out _) ||
+                !OpenOrAcquireVaultBufferForOwnerRoute(
                     vault,
                     ref _runtimeStateHandle,
                     RuntimeStateBuffer,
@@ -343,7 +381,7 @@ namespace Hecton8.Core
                     NativeArrayOptions.ClearMemory,
                     out arrays.RuntimeState,
                     out bool runtimeCreated) ||
-                !TryResolveOrAcquire(
+                !OpenOrAcquireVaultBufferForOwnerRoute(
                     vault,
                     ref _mockCameraHandle,
                     MockCameraBuffer,
@@ -351,7 +389,7 @@ namespace Hecton8.Core
                     NativeArrayOptions.ClearMemory,
                     out _,
                     out _) ||
-                !TryResolveOrAcquire(
+                !OpenOrAcquireVaultBufferForOwnerRoute(
                     vault,
                     ref _csvScratchHandle,
                     CsvScratchBuffer,
@@ -359,7 +397,7 @@ namespace Hecton8.Core
                     NativeArrayOptions.UninitializedMemory,
                     out _,
                     out _) ||
-                !TryResolveOrAcquire(
+                !OpenOrAcquireVaultBufferForOwnerRoute(
                     vault,
                     ref _counterHandle,
                     CounterBuffer,
@@ -381,17 +419,36 @@ namespace Hecton8.Core
                 runtime.ActiveEntityCount = MockEntityCapacity;
                 runtime.ActiveHistoricalCount = MockHistoricalPointCapacity;
                 runtime.Flags = RuntimeFlagEmergencyThresholds;
-                arrays.RuntimeState[0] = runtime;
 
-                AupMockInitializeJob mockInitializeJob = new AupMockInitializeJob
+                if (!WriteRuntimeState(vault, in runtime) ||
+                    !InitializeMockStates(vault) ||
+                    !InitializeMockVelocities(vault) ||
+                    !InitializeMockHistoricalPoints(vault))
                 {
-                    States = arrays.States,
-                    Velocities = arrays.Velocities,
-                    HistoricalPoints = arrays.HistoricalPoints,
-                    SectorSizeMeters = DefaultSectorSizeMeters
-                };
-                for (int i = 0; i < MockEntityCapacity; i++)
-                    mockInitializeJob.Execute(i);
+                    arrays = default;
+                    return false;
+                }
+            }
+
+            return TryResolveRuntimeState(vault, out arrays);
+        }
+
+        /// <summary>Resolve-only route for frame/shift phases; returns false if owner prewarm did not run.</summary>
+        internal static bool TryResolveRuntimeState(IDataVault vault, out MockEntityArrays arrays)
+        {
+            arrays = default;
+            if (vault == null || !ReferenceEquals(_cachedVault, vault))
+                return false;
+
+            if (!TryOpenVaultBuffer(vault, in _statesHandle, MockStatesBuffer, MockEntityCapacity, out arrays.States) ||
+                !TryOpenVaultBuffer(vault, in _velocitiesHandle, MockVelocitiesBuffer, MockEntityCapacity, out arrays.Velocities) ||
+                !TryOpenVaultBuffer(vault, in _historicalPointsHandle, MockHistoricalPointsBuffer, MockHistoricalPointCapacity, out arrays.HistoricalPoints) ||
+                !TryOpenVaultBuffer(vault, in _telemetryHandle, TelemetryRingBuffer, TelemetryCapacity, out arrays.TelemetryRing) ||
+                !TryOpenVaultBuffer(vault, in _telemetryDetailHandle, TelemetryDetailRingBuffer, TelemetryCapacity, out arrays.TelemetryDetailRing) ||
+                !TryOpenVaultBuffer(vault, in _runtimeStateHandle, RuntimeStateBuffer, RuntimeStateCount, out arrays.RuntimeState))
+            {
+                arrays = default;
+                return false;
             }
 
             arrays.ActiveCount = math.clamp(arrays.RuntimeState[0].ActiveEntityCount, 0, arrays.States.Length);
@@ -399,7 +456,7 @@ namespace Hecton8.Core
             return true;
         }
 
-        private static bool TryResolveOrAcquire<T>(
+        private static bool OpenOrAcquireVaultBufferForOwnerRoute<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -474,6 +531,214 @@ namespace Hecton8.Core
             return true;
         }
 
+        private static bool TryAcquireWriteView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                handle.BufferID == 0u ||
+                handle.Generation == 0u ||
+                !vault.TryAcquireWriteLock(in handle, OwnerSystemId, out buffer))
+            {
+                return false;
+            }
+
+            if (buffer.IsCreated && buffer.Length >= requiredLength)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, OwnerSystemId);
+            buffer = default;
+            return false;
+        }
+
+        private static bool WriteRuntimeState(IDataVault vault, in AupOriginShiftRuntimeState runtime)
+        {
+            if (!TryAcquireWriteView(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<AupOriginShiftRuntimeState> runtimeState))
+                return false;
+
+            try
+            {
+                runtimeState[0] = runtime;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _runtimeStateHandle, OwnerSystemId);
+            }
+        }
+
+        private static bool WriteMockCamera(IDataVault vault, in MockCameraAUP cameraState)
+        {
+            if (!TryAcquireWriteView(vault, in _mockCameraHandle, MockCameraCount, out NativeArray<MockCameraAUP> camera))
+                return false;
+
+            try
+            {
+                camera[0] = cameraState;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _mockCameraHandle, OwnerSystemId);
+            }
+        }
+
+        private static bool TryReadRuntimeState(IDataVault vault, out AupOriginShiftRuntimeState runtime)
+        {
+            runtime = default;
+            if (!TryOpenVaultBuffer(vault, in _runtimeStateHandle, RuntimeStateBuffer, RuntimeStateCount, out NativeArray<AupOriginShiftRuntimeState> runtimeState))
+                return false;
+
+            runtime = runtimeState[0];
+            return true;
+        }
+
+        private static bool TryReadMockCamera(IDataVault vault, out MockCameraAUP cameraState)
+        {
+            cameraState = default;
+            if (!TryOpenVaultBuffer(vault, in _mockCameraHandle, MockCameraBuffer, MockCameraCount, out NativeArray<MockCameraAUP> camera))
+                return false;
+
+            cameraState = camera[0];
+            return true;
+        }
+
+        private static bool InitializeMockStates(IDataVault vault)
+        {
+            if (!TryAcquireWriteView(vault, in _statesHandle, MockEntityCapacity, out NativeArray<AUP_StateDTO> states))
+                return false;
+
+            try
+            {
+                for (int i = 0; i < MockEntityCapacity; i++)
+                    states[i] = CreateInitialAupState(i);
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _statesHandle, OwnerSystemId);
+            }
+        }
+
+        private static bool InitializeMockVelocities(IDataVault vault)
+        {
+            if (!TryAcquireWriteView(vault, in _velocitiesHandle, MockEntityCapacity, out NativeArray<float3> velocities))
+                return false;
+
+            try
+            {
+                float3 velocity = default;
+                velocity.x = 0.25f;
+                velocity.y = 0.05f;
+                velocity.z = -0.1f;
+                for (int i = 0; i < MockEntityCapacity; i++)
+                    velocities[i] = velocity;
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _velocitiesHandle, OwnerSystemId);
+            }
+        }
+
+        private static bool InitializeMockHistoricalPoints(IDataVault vault)
+        {
+            if (!TryAcquireWriteView(vault, in _historicalPointsHandle, MockHistoricalPointCapacity, out NativeArray<float3> historicalPoints))
+                return false;
+
+            try
+            {
+                for (int i = 0; i < MockHistoricalPointCapacity; i++)
+                    historicalPoints[i] = CreateInitialLocalPosition(i);
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _historicalPointsHandle, OwnerSystemId);
+            }
+        }
+
+        private static AUP_StateDTO CreateInitialAupState(int index)
+        {
+            double x = (index % 1000) * 4.0d;
+            double y = ((index / 1000) % 50) * 2.0d;
+            double z = (index / 50000) * 8.0d;
+            double3 global = default;
+            global.x = x;
+            global.y = y;
+            global.z = z;
+            float3 local = default;
+            local.x = (float)x;
+            local.y = (float)y;
+            local.z = (float)z;
+            AUP_StateDTO state = default;
+            state.GlobalPosition = global;
+            state.LocalPosition = local;
+            state.SectorHash = ResolveSectorHash(global, DefaultSectorSizeMeters);
+            state.ShiftFrameId = 0u;
+            state.LocalMillimeters = QuantizeLocalMillimeters(local);
+            state.FiniteFlags = AupStateFlagFinite;
+            state.SourceSystemId = unchecked((uint)OwnerSystemId);
+            return state;
+        }
+
+        private static float3 CreateInitialLocalPosition(int index)
+        {
+            float3 local = default;
+            local.x = (index % 1000) * 4f;
+            local.y = ((index / 1000) % 50) * 2f;
+            local.z = (index / 50000) * 8f;
+            return local;
+        }
+
+        private static bool TryLockScheduledBuffer(
+            IDataVault vault,
+            BufferID bufferId,
+            byte flag,
+            ref AupOriginShiftScheduleInfo info)
+        {
+            if (vault == null)
+                return false;
+            if ((info.Flags & flag) != 0)
+                return true;
+            if (!vault.TryLockBuffer(bufferId, OwnerSystemId))
+                return false;
+
+            info.Flags |= flag;
+            return true;
+        }
+
+        internal static void ReleaseScheduledRebaseLocks(IDataVault vault, in AupOriginShiftScheduleInfo info)
+        {
+            if (vault == null || info.Flags == 0)
+                return;
+
+            if ((info.Flags & ScheduleLockTetherVisualAnchorFlag) != 0)
+                vault.TryUnlockBuffer(BufferID.TetherVisualAnchorPositions, OwnerSystemId);
+            if ((info.Flags & ScheduleLockTetherVisualSegmentFlag) != 0)
+                vault.TryUnlockBuffer(BufferID.TetherVisualSegmentPositions, OwnerSystemId);
+            if ((info.Flags & ScheduleLockTetherCablePreviousFlag) != 0)
+                vault.TryUnlockBuffer(BufferID.TetherCablePreviousPositions, OwnerSystemId);
+            if ((info.Flags & ScheduleLockTetherCableFlag) != 0)
+                vault.TryUnlockBuffer(BufferID.TetherCablePositions, OwnerSystemId);
+            if ((info.Flags & ScheduleLockHotEntityFlag) != 0)
+                vault.TryUnlockBuffer(BufferID.VaultHotEntityData, OwnerSystemId);
+            if ((info.Flags & ScheduleLockHistoricalFlag) != 0)
+                vault.TryUnlockBuffer(MockHistoricalPointsBuffer, OwnerSystemId);
+            if ((info.Flags & ScheduleLockCounterFlag) != 0)
+                vault.TryUnlockBuffer(CounterBuffer, OwnerSystemId);
+            if ((info.Flags & ScheduleLockStatesFlag) != 0)
+                vault.TryUnlockBuffer(MockStatesBuffer, OwnerSystemId);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsMatchingVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
             where T : struct
@@ -491,11 +756,6 @@ namespace Hecton8.Core
             return TryOpenVaultBuffer(vault, in _counterHandle, CounterBuffer, CounterCount, out counters);
         }
 
-        private static bool TryResolveCsvScratch(IDataVault vault, out NativeArray<byte> scratch)
-        {
-            return TryOpenVaultBuffer(vault, in _csvScratchHandle, CsvScratchBuffer, CsvScratchCapacity, out scratch);
-        }
-
         private static void ReleaseVaultHandles(IDataVault vault)
         {
             if (vault == null)
@@ -509,6 +769,8 @@ namespace Hecton8.Core
                 vault.ReleaseBuffer(in _historicalPointsHandle);
             if (_telemetryHandle.BufferID != 0u)
                 vault.ReleaseBuffer(in _telemetryHandle);
+            if (_telemetryDetailHandle.BufferID != 0u)
+                vault.ReleaseBuffer(in _telemetryDetailHandle);
             if (_runtimeStateHandle.BufferID != 0u)
                 vault.ReleaseBuffer(in _runtimeStateHandle);
             if (_mockCameraHandle.BufferID != 0u)
@@ -525,6 +787,7 @@ namespace Hecton8.Core
             _velocitiesHandle = default;
             _historicalPointsHandle = default;
             _telemetryHandle = default;
+            _telemetryDetailHandle = default;
             _runtimeStateHandle = default;
             _mockCameraHandle = default;
             _csvScratchHandle = default;
@@ -542,34 +805,43 @@ namespace Hecton8.Core
             out Vector3 requestedShift)
         {
             requestedShift = Vector3.zero;
-            if (!EnsureRuntimeState(vault, out MockEntityArrays arrays))
+            if (!TryResolveRuntimeState(vault, out MockEntityArrays arrays))
                 return false;
 
             ContinueTimeSlicedRebase(vault, arrays);
 
-            if (!TryResolveMockCamera(vault, out NativeArray<MockCameraAUP> camera))
+            if (!TryReadRuntimeState(vault, out AupOriginShiftRuntimeState runtime) ||
+                !TryReadMockCamera(vault, out MockCameraAUP cameraState))
                 return false;
 
             _ = deltaTime;
-            float3 anchorLocal = new float3(anchorLocalPosition.x, anchorLocalPosition.y, anchorLocalPosition.z);
-            double3 deterministicMockStep = hasRealAnchor
-                ? double3.zero
-                : new double3(MockCameraSimulationTickSeconds * MockCameraSpeedMetersPerSecond, 0d, 0d);
+            float3 anchorLocal = default;
+            anchorLocal.x = anchorLocalPosition.x;
+            anchorLocal.y = anchorLocalPosition.y;
+            anchorLocal.z = anchorLocalPosition.z;
+            double3 deterministicMockStep = default;
+            if (!hasRealAnchor)
+                deterministicMockStep.x = MockCameraSimulationTickSeconds * MockCameraSpeedMetersPerSecond;
+            double3 anchorUniverseLocal = default;
+            anchorUniverseLocal.x = anchorLocal.x;
+            anchorUniverseLocal.y = anchorLocal.y;
+            anchorUniverseLocal.z = anchorLocal.z;
             IncrementMockCameraAup(
-                camera,
-                arrays.RuntimeState,
+                ref cameraState,
+                ref runtime,
                 deterministicMockStep,
-                totalUniverseOffset + new double3(anchorLocal.x, anchorLocal.y, anchorLocal.z),
+                totalUniverseOffset + anchorUniverseLocal,
                 totalUniverseOffset,
                 hasRealAnchor ? 1 : 0);
 
-            MonitorAupThreshold(camera, arrays.RuntimeState, totalUniverseOffset);
-
-            AupOriginShiftRuntimeState runtime = arrays.RuntimeState[0];
-            MockCameraAUP cameraState = camera[0];
-            RecordFrameTelemetry(arrays.TelemetryRing, in runtime, in cameraState, totalUniverseOffset, 0u);
+            MonitorAupThreshold(ref cameraState, ref runtime, totalUniverseOffset);
+            RecordFrameTelemetry(vault, in runtime, in cameraState, totalUniverseOffset, 0u);
             if (runtime.IsOriginShiftPending == 0 && runtime.ManualRebaseRequested == 0)
+            {
+                WriteRuntimeState(vault, in runtime);
+                WriteMockCamera(vault, in cameraState);
                 return false;
+            }
 
             double3 localDouble = cameraState.GlobalPosition - totalUniverseOffset;
             double localLengthSq = H8DoubleMath.DistanceSq(cameraState.GlobalPosition, totalUniverseOffset);
@@ -578,36 +850,44 @@ namespace Hecton8.Core
                 runtime.IsOriginShiftPending = 0;
                 runtime.ManualRebaseRequested = 0;
                 runtime.LastNonFiniteCount++;
-                arrays.RuntimeState[0] = runtime;
-                RecordFrameTelemetry(arrays.TelemetryRing, in runtime, in cameraState, totalUniverseOffset, TelemetryFlagNaN);
-                DumpOriginShiftBlackBox(arrays.TelemetryRing);
+                WriteRuntimeState(vault, in runtime);
+                WriteMockCamera(vault, in cameraState);
+                RecordFrameTelemetry(vault, in runtime, in cameraState, totalUniverseOffset, TelemetryFlagNaN);
+                DumpOriginShiftBlackBox(vault);
                 return false;
             }
 
             if (localLengthSq <= 0.0001d && runtime.ManualRebaseRequested != 0)
             {
-                localDouble = new double3(math.max(1f, runtime.RebaseLimitMeters * 0.001f), 0d, 0d);
+                localDouble = default;
+                localDouble.x = math.max(1f, runtime.RebaseLimitMeters * 0.001f);
                 localLengthSq = math.lengthsq(localDouble);
             }
 
-            float3 local = new float3((float)localDouble.x, (float)localDouble.y, (float)localDouble.z);
+            float3 local = default;
+            local.x = (float)localDouble.x;
+            local.y = (float)localDouble.y;
+            local.z = (float)localDouble.z;
             if (!math.all(math.isfinite(local)))
             {
                 runtime.IsOriginShiftPending = 0;
                 runtime.ManualRebaseRequested = 0;
                 runtime.LastNonFiniteCount++;
-                arrays.RuntimeState[0] = runtime;
-                RecordFrameTelemetry(arrays.TelemetryRing, in runtime, in cameraState, totalUniverseOffset, TelemetryFlagNaN);
-                DumpOriginShiftBlackBox(arrays.TelemetryRing);
+                WriteRuntimeState(vault, in runtime);
+                WriteMockCamera(vault, in cameraState);
+                RecordFrameTelemetry(vault, in runtime, in cameraState, totalUniverseOffset, TelemetryFlagNaN);
+                DumpOriginShiftBlackBox(vault);
                 return false;
             }
 
             runtime.IsOriginShiftPending = 0;
             runtime.ManualRebaseRequested = 0;
-            arrays.RuntimeState[0] = runtime;
             cameraState.LocalPosition = local;
-            camera[0] = cameraState;
-            requestedShift = new Vector3(local.x, local.y, local.z);
+            WriteRuntimeState(vault, in runtime);
+            WriteMockCamera(vault, in cameraState);
+            requestedShift.x = local.x;
+            requestedShift.y = local.y;
+            requestedShift.z = local.z;
             return localLengthSq > 0.0001d;
         }
 
@@ -621,87 +901,128 @@ namespace Hecton8.Core
             JobHandle dependency = default)
         {
             info = default;
-            if (!EnsureRuntimeState(vault, out MockEntityArrays arrays))
+            if (!TryResolveRuntimeState(vault, out MockEntityArrays arrays))
                 return dependency;
 
             if (!TryResolveCounter(vault, out NativeArray<AupPaddedAtomicCounter> counters))
                 return dependency;
 
-            counters[0] = default;
-            float3 shiftFloat = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
+            if (!TryAcquireWriteView(vault, in _counterHandle, CounterCount, out NativeArray<AupPaddedAtomicCounter> counterWrite))
+                return dependency;
+
+            try
+            {
+                counterWrite[0] = default;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _counterHandle, OwnerSystemId);
+            }
+
+            float3 shiftFloat = default;
+            shiftFloat.x = shiftOffset.x;
+            shiftFloat.y = shiftOffset.y;
+            shiftFloat.z = shiftOffset.z;
             if (!math.all(math.isfinite(shiftFloat)) || math.lengthsq(shiftFloat) <= 0.0001f)
                 return dependency;
 
-            AupOriginShiftRuntimeState runtime = arrays.RuntimeState[0];
-            float sectorSize = SanitizeSectorSize(runtime.SectorSizeMeters);
-            uint sectorHash = ResolveSectorHash(newTotalUniverseOffset, sectorSize);
-            double3 shiftDelta = new double3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
-            int activeCount = math.clamp(runtime.ActiveEntityCount, 0, arrays.States.Length);
-            int historicalCount = math.clamp(runtime.ActiveHistoricalCount, 0, arrays.HistoricalPoints.Length);
-            float qualityWeight = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
-            int batchCount = ResolveQualityScaledBatchSize(runtime.BatchSize, activeCount, qualityWeight);
-            int supplementalHistoricalCount = ResolveSupplementalHistoricalMaxLength(vault);
-            int totalHistoricalCount = math.max(historicalCount, supplementalHistoricalCount);
-            int historicalBatchCount = ResolveQualityScaledBatchSize(runtime.BatchSize, totalHistoricalCount, qualityWeight);
-            bool timeSliced = batchCount < activeCount || historicalBatchCount < totalHistoricalCount;
+            if (!TryAcquireWriteView(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<AupOriginShiftRuntimeState> runtimeState))
+                return dependency;
 
-            info.Signal = new OriginShiftSignalDTO
+            try
             {
-                ShiftDelta = shiftDelta,
-                NewSectorHash = sectorHash,
-                _pad0 = 0u
-            };
-            info.EntitiesScheduled = batchCount;
-            info.HistoricalPointsScheduled = 0;
-            info.BatchStartIndex = 0;
-            info.BatchCount = batchCount;
-            info.TotalActiveEntities = activeCount;
-            info.ShiftSequence = shiftSequence;
-            info.TimeSliced = timeSliced ? (byte)1 : (byte)0;
+                AupOriginShiftRuntimeState runtime = runtimeState[0];
+                float sectorSize = SanitizeSectorSize(runtime.SectorSizeMeters);
+                uint sectorHash = ResolveSectorHash(newTotalUniverseOffset, sectorSize);
+                double3 shiftDelta = default;
+                shiftDelta.x = shiftOffset.x;
+                shiftDelta.y = shiftOffset.y;
+                shiftDelta.z = shiftOffset.z;
+                int activeCount = math.clamp(runtime.ActiveEntityCount, 0, arrays.States.Length);
+                int historicalCount = math.clamp(runtime.ActiveHistoricalCount, 0, arrays.HistoricalPoints.Length);
+                float qualityWeight = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
+                int batchCount = ResolveQualityScaledBatchSize(runtime.BatchSize, activeCount, qualityWeight);
+                int supplementalHistoricalCount = ResolveSupplementalHistoricalMaxLength(vault);
+                int totalHistoricalCount = math.max(historicalCount, supplementalHistoricalCount);
+                int historicalBatchCount = ResolveQualityScaledBatchSize(runtime.BatchSize, totalHistoricalCount, qualityWeight);
+                bool timeSliced = batchCount < activeCount || historicalBatchCount < totalHistoricalCount;
 
-            JobHandle handle = dependency;
-            if (batchCount > 0)
-            {
-                handle = new AupStateRebaseJob
+                OriginShiftSignalDTO signal = default;
+                signal.ShiftDelta = shiftDelta;
+                signal.NewSectorHash = sectorHash;
+                signal._pad0 = 0u;
+                info.Signal = signal;
+                info.EntitiesScheduled = batchCount;
+                info.HistoricalPointsScheduled = 0;
+                info.BatchStartIndex = 0;
+                info.BatchCount = batchCount;
+                info.TotalActiveEntities = activeCount;
+                info.ShiftSequence = shiftSequence;
+                info.TimeSliced = timeSliced ? (byte)1 : (byte)0;
+
+                JobHandle handle = dependency;
+                if (batchCount > 0)
                 {
-                    States = (AUP_StateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(arrays.States),
-                    NonFiniteCounter = (AupPaddedAtomicCounter*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(counters),
-                    ShiftDelta = shiftDelta,
-                    NewSectorHash = sectorHash,
-                    ShiftFrameId = shiftSequence,
-                    StartIndex = 0
-                }.Schedule(batchCount, 128, handle);
+                    if (!TryLockScheduledBuffer(vault, MockStatesBuffer, ScheduleLockStatesFlag, ref info) ||
+                        !TryLockScheduledBuffer(vault, CounterBuffer, ScheduleLockCounterFlag, ref info))
+                    {
+                        ReleaseScheduledRebaseLocks(vault, in info);
+                        info = default;
+                        return dependency;
+                    }
+
+                    if (!TryOpenVaultBuffer(vault, in _statesHandle, MockStatesBuffer, MockEntityCapacity, out NativeArray<AUP_StateDTO> stateJobView) ||
+                        !TryOpenVaultBuffer(vault, in _counterHandle, CounterBuffer, CounterCount, out counters))
+                    {
+                        ReleaseScheduledRebaseLocks(vault, in info);
+                        info = default;
+                        return dependency;
+                    }
+
+                    AupStateRebaseJob stateRebaseJob = default;
+                    stateRebaseJob.States = (AUP_StateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(stateJobView);
+                    stateRebaseJob.NonFiniteCounter = (AupPaddedAtomicCounter*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(counters);
+                    stateRebaseJob.ShiftDelta = shiftDelta;
+                    stateRebaseJob.NewSectorHash = sectorHash;
+                    stateRebaseJob.ShiftFrameId = shiftSequence;
+                    stateRebaseJob.StartIndex = 0;
+                    handle = stateRebaseJob.Schedule(batchCount, 128, handle);
+                }
+
+                handle = ScheduleHotEntityRebase(vault, 0, batchCount, activeCount, shiftFloat, shiftSequence, handle, ref info);
+                handle = ScheduleHistoricalRebaseBatch(vault, arrays, 0, historicalBatchCount, shiftFloat, handle, ref info);
+
+                runtime.LastSectorHash = sectorHash;
+                runtime.LastEntitiesShifted = info.EntitiesScheduled;
+                runtime.LastHotEntitiesShifted = info.HotEntitiesScheduled;
+                runtime.LastHistoricalPointsShifted = info.HistoricalPointsScheduled;
+                runtime.PendingTimeSliceSectorHash = sectorHash;
+                runtime.PendingTimeSliceShiftDelta = shiftDelta;
+                runtime.LastShiftSequence = shiftSequence;
+                runtime.PendingTimeSliceShiftSequence = timeSliced ? shiftSequence : 0u;
+                if (timeSliced)
+                {
+                    runtime.TimeSliceActive = 1;
+                    runtime.TimeSliceStartIndex = batchCount;
+                    runtime.HistoricalTimeSliceStartIndex = historicalBatchCount;
+                    runtime.Flags |= RuntimeFlagTimeSliced;
+                }
+                else
+                {
+                    runtime.TimeSliceActive = 0;
+                    runtime.TimeSliceStartIndex = 0;
+                    runtime.HistoricalTimeSliceStartIndex = 0;
+                    runtime.PendingTimeSliceShiftSequence = 0u;
+                    runtime.Flags &= ~RuntimeFlagTimeSliced;
+                }
+
+                runtimeState[0] = runtime;
+                return handle;
             }
-
-            handle = ScheduleHotEntityRebase(vault, 0, batchCount, activeCount, shiftFloat, shiftSequence, handle, ref info);
-            handle = ScheduleHistoricalRebaseBatch(vault, arrays, 0, historicalBatchCount, shiftFloat, handle, ref info);
-
-            runtime.LastSectorHash = sectorHash;
-            runtime.LastEntitiesShifted = info.EntitiesScheduled;
-            runtime.LastHotEntitiesShifted = info.HotEntitiesScheduled;
-            runtime.LastHistoricalPointsShifted = info.HistoricalPointsScheduled;
-            runtime.PendingTimeSliceSectorHash = sectorHash;
-            runtime.PendingTimeSliceShiftDelta = shiftDelta;
-            runtime.LastShiftSequence = shiftSequence;
-            runtime.PendingTimeSliceShiftSequence = timeSliced ? shiftSequence : 0u;
-            if (timeSliced)
+            finally
             {
-                runtime.TimeSliceActive = 1;
-                runtime.TimeSliceStartIndex = batchCount;
-                runtime.HistoricalTimeSliceStartIndex = historicalBatchCount;
-                runtime.Flags |= RuntimeFlagTimeSliced;
+                vault.ReleaseWriteLock(in _runtimeStateHandle, OwnerSystemId);
             }
-            else
-            {
-                runtime.TimeSliceActive = 0;
-                runtime.TimeSliceStartIndex = 0;
-                runtime.HistoricalTimeSliceStartIndex = 0;
-                runtime.PendingTimeSliceShiftSequence = 0u;
-                runtime.Flags &= ~RuntimeFlagTimeSliced;
-            }
-
-            arrays.RuntimeState[0] = runtime;
-            return handle;
         }
 
         /// <summary>Records rebase cost and dumps the black box on watchdog breach or NaN detection.</summary>
@@ -711,82 +1032,123 @@ namespace Hecton8.Core
             double elapsedMilliseconds,
             double3 totalUniverseOffset)
         {
-            if (!EnsureRuntimeState(vault, out MockEntityArrays arrays))
+            if (!TryResolveRuntimeState(vault, out _) ||
+                !TryAcquireWriteView(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<AupOriginShiftRuntimeState> runtimeState))
                 return;
 
-            int nonFiniteCount = TryResolveCounter(vault, out NativeArray<AupPaddedAtomicCounter> counters) ? counters[0].NonFiniteCount : 0;
-            AupOriginShiftRuntimeState runtime = arrays.RuntimeState[0];
-            runtime.RebaseCount++;
-            runtime.LastShiftSequence = info.ShiftSequence;
-            runtime.LastComputeTimeMs = math.isfinite((float)elapsedMilliseconds) ? (float)elapsedMilliseconds : float.MaxValue;
-            runtime.LastNonFiniteCount = nonFiniteCount;
-            arrays.RuntimeState[0] = runtime;
-
-            int cursor = SystemDispatcher.CurrentFrameIndex % TelemetryCapacity;
-            uint flags = TelemetryFlagShiftCommit | (info.TimeSliced != 0 ? TelemetryFlagTimeSliced : 0u);
-            if (nonFiniteCount > 0)
-                flags |= TelemetryFlagNaN;
-            if (elapsedMilliseconds > RebaseWatchdogMs)
-                flags |= TelemetryFlagWatchdog;
-            float3 shiftLocal = new float3(
-                (float)info.Signal.ShiftDelta.x,
-                (float)info.Signal.ShiftDelta.y,
-                (float)info.Signal.ShiftDelta.z);
-
-            arrays.TelemetryRing[cursor] = new AupOriginShiftTelemetryEntry
+            NativeArray<AupOriginShiftTelemetryEntry> telemetryRing = default;
+            NativeArray<AupOriginShiftTelemetryDetailEntry> telemetryDetailRing = default;
+            try
             {
-                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                RebaseCount = runtime.RebaseCount,
-                ShiftSequence = info.ShiftSequence,
-                SectorHash = info.Signal.NewSectorHash,
-                EntitiesShifted = info.EntitiesScheduled,
-                HotEntitiesShifted = info.HotEntitiesScheduled,
-                HistoricalPointsShifted = info.HistoricalPointsScheduled,
-                BatchStartIndex = info.BatchStartIndex,
-                BatchCount = info.BatchCount,
-                NonFiniteCount = nonFiniteCount,
-                RebaseComputeTimeMs = runtime.LastComputeTimeMs,
-                SystemHealthIndex01 = math.saturate(HomeostasisBrain.SystemHealthIndex01),
-                Flags = flags,
-                ShiftDelta = info.Signal.ShiftDelta,
-                TotalUniverseOffset = totalUniverseOffset,
-                CameraLocalPosition = shiftLocal,
-                CameraSectorHash = info.Signal.NewSectorHash,
-                PositionHash = math.hash(shiftLocal)
-            };
+                if (!TryAcquireWriteView(vault, in _telemetryHandle, TelemetryCapacity, out telemetryRing) ||
+                    !TryAcquireWriteView(vault, in _telemetryDetailHandle, TelemetryCapacity, out telemetryDetailRing))
+                    return;
 
-            if ((flags & (TelemetryFlagNaN | TelemetryFlagWatchdog)) != 0u)
-                DumpOriginShiftBlackBox(arrays.TelemetryRing);
+                int nonFiniteCount = TryResolveCounter(vault, out NativeArray<AupPaddedAtomicCounter> counters) ? counters[0].NonFiniteCount : 0;
+                AupOriginShiftRuntimeState runtime = runtimeState[0];
+                runtime.RebaseCount++;
+                runtime.LastShiftSequence = info.ShiftSequence;
+                runtime.LastComputeTimeMs = math.isfinite((float)elapsedMilliseconds) ? (float)elapsedMilliseconds : float.MaxValue;
+                runtime.LastNonFiniteCount = nonFiniteCount;
+                runtimeState[0] = runtime;
+
+                int cursor = SystemDispatcher.CurrentFrameIndex % TelemetryCapacity;
+                uint flags = TelemetryFlagShiftCommit | (info.TimeSliced != 0 ? TelemetryFlagTimeSliced : 0u);
+                if (nonFiniteCount > 0)
+                    flags |= TelemetryFlagNaN;
+                if (elapsedMilliseconds > RebaseWatchdogMs)
+                    flags |= TelemetryFlagWatchdog;
+                float3 shiftLocal = default;
+                shiftLocal.x = (float)info.Signal.ShiftDelta.x;
+                shiftLocal.y = (float)info.Signal.ShiftDelta.y;
+                shiftLocal.z = (float)info.Signal.ShiftDelta.z;
+
+                AupOriginShiftTelemetryEntry entry = default;
+                entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+                entry.RebaseCount = runtime.RebaseCount;
+                entry.ShiftSequence = info.ShiftSequence;
+                entry.SectorHash = info.Signal.NewSectorHash;
+                entry.EntitiesShifted = info.EntitiesScheduled;
+                entry.HistoricalPointsShifted = info.HistoricalPointsScheduled;
+                entry.BatchStartIndex = info.BatchStartIndex;
+                entry.BatchCount = info.BatchCount;
+                entry.NonFiniteCount = nonFiniteCount;
+                entry.Flags = flags;
+                entry.ShiftDelta = info.Signal.ShiftDelta;
+                telemetryRing[cursor] = entry;
+
+                AupOriginShiftTelemetryDetailEntry detail = default;
+                detail.TotalUniverseOffset = totalUniverseOffset;
+                detail.CameraLocalPosition = shiftLocal;
+                detail.RebaseComputeTimeMs = runtime.LastComputeTimeMs;
+                detail.SystemHealthIndex01 = math.saturate(HomeostasisBrain.SystemHealthIndex01);
+                detail.CameraSectorHash = info.Signal.NewSectorHash;
+                detail.PositionHash = math.hash(shiftLocal);
+                detail.HotEntitiesShifted = info.HotEntitiesScheduled;
+                telemetryDetailRing[cursor] = detail;
+
+                if ((flags & (TelemetryFlagNaN | TelemetryFlagWatchdog)) != 0u)
+                    DumpOriginShiftBlackBox(telemetryRing, telemetryDetailRing);
+            }
+            finally
+            {
+                if (telemetryDetailRing.IsCreated)
+                    vault.ReleaseWriteLock(in _telemetryDetailHandle, OwnerSystemId);
+                if (telemetryRing.IsCreated)
+                    vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
+                if (runtimeState.IsCreated)
+                    vault.ReleaseWriteLock(in _runtimeStateHandle, OwnerSystemId);
+            }
         }
 
         /// <summary>Requests a manual rebase from the editor facade.</summary>
         public static void RequestManualRebase(IDataVault vault)
         {
-            if (!EnsureRuntimeState(vault, out MockEntityArrays arrays))
+            if (!OpenOrAcquireRuntimeStateForOwnerRoute(vault, out _))
                 return;
 
-            AupOriginShiftRuntimeState runtime = arrays.RuntimeState[0];
-            runtime.ManualRebaseRequested = 1;
-            runtime.IsOriginShiftPending = 1;
-            arrays.RuntimeState[0] = runtime;
+            if (!TryAcquireWriteView(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<AupOriginShiftRuntimeState> runtimeState))
+                return;
+
+            try
+            {
+                AupOriginShiftRuntimeState runtime = runtimeState[0];
+                runtime.ManualRebaseRequested = 1;
+                runtime.IsOriginShiftPending = 1;
+                runtimeState[0] = runtime;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _runtimeStateHandle, OwnerSystemId);
+            }
         }
 
         /// <summary>Updates the threshold stored in unmanaged runtime state.</summary>
         public static void SetRebaseThreshold(IDataVault vault, float thresholdMeters)
         {
-            if (!EnsureRuntimeState(vault, out MockEntityArrays arrays))
+            if (!OpenOrAcquireRuntimeStateForOwnerRoute(vault, out _))
                 return;
 
-            AupOriginShiftRuntimeState runtime = arrays.RuntimeState[0];
-            runtime.RebaseLimitMeters = math.clamp(math.isfinite(thresholdMeters) ? thresholdMeters : EmergencyRebaseLimitMeters, 2000f, 8000f);
-            arrays.RuntimeState[0] = runtime;
+            if (!TryAcquireWriteView(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<AupOriginShiftRuntimeState> runtimeState))
+                return;
+
+            try
+            {
+                AupOriginShiftRuntimeState runtime = runtimeState[0];
+                runtime.RebaseLimitMeters = math.clamp(math.isfinite(thresholdMeters) ? thresholdMeters : EmergencyRebaseLimitMeters, 2000f, 8000f);
+                runtimeState[0] = runtime;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _runtimeStateHandle, OwnerSystemId);
+            }
         }
 
         /// <summary>Returns editor/debug readback without scene traversal.</summary>
         public static bool TryGetEditorSnapshot(IDataVault vault, uint shiftSequence, out AupUniverseTunerSnapshot snapshot)
         {
             snapshot = default;
-            if (!EnsureRuntimeState(vault, out MockEntityArrays arrays))
+            if (!TryResolveRuntimeState(vault, out MockEntityArrays arrays))
                 return false;
 
             if (!TryResolveMockCamera(vault, out NativeArray<MockCameraAUP> camera))
@@ -809,10 +1171,10 @@ namespace Hecton8.Core
         public static bool TryReloadCsvOverrideFromDisk(IDataVault vault)
         {
 #if UNITY_EDITOR
-            if (!EnsureRuntimeState(vault, out MockEntityArrays arrays))
+            if (!OpenOrAcquireRuntimeStateForOwnerRoute(vault, out _))
                 return false;
 
-            return TryPollCsvOverride(vault, arrays.RuntimeState);
+            return TryPollCsvOverride(vault);
 #else
             return false;
 #endif
@@ -833,20 +1195,28 @@ namespace Hecton8.Core
             int historicalCount = arrays.HistoricalCount;
             if (arrays.HistoricalPoints.IsCreated && historicalCount > 0)
             {
-                dependency = ScheduleNativeHistoricalFloat3Rebase(
-                    arrays.HistoricalPoints,
-                    historicalCount,
-                    startIndex,
-                    requestedCount,
-                    shiftDelta,
-                    dependency,
-                    ref info);
+                int ownBatchCount = ResolveHistoricalBatchCount(arrays.HistoricalPoints, historicalCount, startIndex, requestedCount, out _);
+                if (ownBatchCount > 0 &&
+                    TryLockScheduledBuffer(vault, MockHistoricalPointsBuffer, ScheduleLockHistoricalFlag, ref info))
+                {
+                    if (!TryOpenVaultBuffer(vault, in _historicalPointsHandle, MockHistoricalPointsBuffer, MockHistoricalPointCapacity, out NativeArray<float3> historicalJobPoints))
+                        return dependency;
+
+                    dependency = ScheduleNativeHistoricalFloat3Rebase(
+                        historicalJobPoints,
+                        historicalCount,
+                        startIndex,
+                        requestedCount,
+                        shiftDelta,
+                        dependency,
+                        ref info);
+                }
             }
 
-            dependency = ScheduleHistoricalFloat3Rebase(vault, BufferID.TetherCablePositions, startIndex, requestedCount, shiftDelta, dependency, ref info);
-            dependency = ScheduleHistoricalFloat3Rebase(vault, BufferID.TetherCablePreviousPositions, startIndex, requestedCount, shiftDelta, dependency, ref info);
-            dependency = ScheduleHistoricalFloat3Rebase(vault, BufferID.TetherVisualSegmentPositions, startIndex, requestedCount, shiftDelta, dependency, ref info);
-            dependency = ScheduleHistoricalFloat3Rebase(vault, BufferID.TetherVisualAnchorPositions, startIndex, requestedCount, shiftDelta, dependency, ref info);
+            dependency = ScheduleHistoricalFloat3Rebase(vault, BufferID.TetherCablePositions, ScheduleLockTetherCableFlag, startIndex, requestedCount, shiftDelta, dependency, ref info);
+            dependency = ScheduleHistoricalFloat3Rebase(vault, BufferID.TetherCablePreviousPositions, ScheduleLockTetherCablePreviousFlag, startIndex, requestedCount, shiftDelta, dependency, ref info);
+            dependency = ScheduleHistoricalFloat3Rebase(vault, BufferID.TetherVisualSegmentPositions, ScheduleLockTetherVisualSegmentFlag, startIndex, requestedCount, shiftDelta, dependency, ref info);
+            dependency = ScheduleHistoricalFloat3Rebase(vault, BufferID.TetherVisualAnchorPositions, ScheduleLockTetherVisualAnchorFlag, startIndex, requestedCount, shiftDelta, dependency, ref info);
             return dependency;
         }
 
@@ -864,17 +1234,17 @@ namespace Hecton8.Core
                 return dependency;
 
             info.HistoricalPointsScheduled += count;
-            return new Float3HistoricalRebaseJob
-            {
-                Points = points,
-                ShiftDelta = shiftDelta,
-                StartIndex = clampedStart
-            }.Schedule(count, 128, dependency);
+            Float3HistoricalRebaseJob historicalRebaseJob = default;
+            historicalRebaseJob.Points = points;
+            historicalRebaseJob.ShiftDelta = shiftDelta;
+            historicalRebaseJob.StartIndex = clampedStart;
+            return historicalRebaseJob.Schedule(count, 128, dependency);
         }
 
         private static JobHandle ScheduleHistoricalFloat3Rebase(
             IDataVault vault,
             BufferID bufferId,
+            byte scheduleLockFlag,
             int startIndex,
             int requestedCount,
             float3 shiftDelta,
@@ -891,113 +1261,148 @@ namespace Hecton8.Core
             if (count <= 0)
                 return dependency;
 
+            if (!TryLockScheduledBuffer(vault, bufferId, scheduleLockFlag, ref info))
+                return dependency;
+
+            if (!TryOpenExistingVaultBuffer(vault, bufferId, 1, out points))
+                return dependency;
+
+            count = ResolveHistoricalBatchCount(points, points.Length, startIndex, requestedCount, out clampedStart);
+            if (count <= 0)
+                return dependency;
+
             info.HistoricalPointsScheduled += count;
-            return new Float3HistoricalRebaseJob
-            {
-                Points = points,
-                ShiftDelta = shiftDelta,
-                StartIndex = clampedStart
-            }.Schedule(count, 128, dependency);
+            Float3HistoricalRebaseJob historicalRebaseJob = default;
+            historicalRebaseJob.Points = points;
+            historicalRebaseJob.ShiftDelta = shiftDelta;
+            historicalRebaseJob.StartIndex = clampedStart;
+            return historicalRebaseJob.Schedule(count, 128, dependency);
         }
 
         private static void ContinueTimeSlicedRebase(IDataVault vault, MockEntityArrays arrays)
         {
-            AupOriginShiftRuntimeState runtime = arrays.RuntimeState[0];
-            if (runtime.TimeSliceActive == 0)
+            if (!TryAcquireWriteView(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<AupOriginShiftRuntimeState> runtimeState))
                 return;
 
-            if (!TryResolveCounter(vault, out NativeArray<AupPaddedAtomicCounter> counters))
-                return;
-
-            int activeCount = math.clamp(runtime.ActiveEntityCount, 0, arrays.States.Length);
-            int startIndex = math.clamp(runtime.TimeSliceStartIndex, 0, activeCount);
-            int totalHistoricalCount = math.max(
-                math.clamp(runtime.ActiveHistoricalCount, 0, arrays.HistoricalPoints.Length),
-                ResolveSupplementalHistoricalMaxLength(vault));
-            int historicalStartIndex = math.clamp(runtime.HistoricalTimeSliceStartIndex, 0, totalHistoricalCount);
-            float qualityWeight = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
-            int batchCount = activeCount > startIndex
-                ? math.min(ResolveQualityScaledBatchSize(runtime.BatchSize, activeCount, qualityWeight), activeCount - startIndex)
-                : 0;
-            int historicalBatchCount = totalHistoricalCount > historicalStartIndex
-                ? math.min(ResolveQualityScaledBatchSize(runtime.BatchSize, totalHistoricalCount, qualityWeight), totalHistoricalCount - historicalStartIndex)
-                : 0;
-
-            if (batchCount <= 0 && historicalBatchCount <= 0)
+            try
             {
-                runtime.TimeSliceActive = 0;
-                runtime.TimeSliceStartIndex = 0;
-                runtime.HistoricalTimeSliceStartIndex = 0;
-                runtime.PendingTimeSliceShiftSequence = 0u;
-                runtime.Flags &= ~RuntimeFlagTimeSliced;
-                arrays.RuntimeState[0] = runtime;
-                return;
-            }
+                AupOriginShiftRuntimeState runtime = runtimeState[0];
+                if (runtime.TimeSliceActive == 0)
+                    return;
 
-            if (batchCount > 0)
-            {
-                AupStateRebaseJob stateRebaseJob = new AupStateRebaseJob
+                int activeCount = math.clamp(runtime.ActiveEntityCount, 0, arrays.States.Length);
+                int startIndex = math.clamp(runtime.TimeSliceStartIndex, 0, activeCount);
+                int totalHistoricalCount = math.max(
+                    math.clamp(runtime.ActiveHistoricalCount, 0, arrays.HistoricalPoints.Length),
+                    ResolveSupplementalHistoricalMaxLength(vault));
+                int historicalStartIndex = math.clamp(runtime.HistoricalTimeSliceStartIndex, 0, totalHistoricalCount);
+                float qualityWeight = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
+                int batchCount = activeCount > startIndex
+                    ? math.min(ResolveQualityScaledBatchSize(runtime.BatchSize, activeCount, qualityWeight), activeCount - startIndex)
+                    : 0;
+                int historicalBatchCount = totalHistoricalCount > historicalStartIndex
+                    ? math.min(ResolveQualityScaledBatchSize(runtime.BatchSize, totalHistoricalCount, qualityWeight), totalHistoricalCount - historicalStartIndex)
+                    : 0;
+
+                if (batchCount <= 0 && historicalBatchCount <= 0)
                 {
-                    States = (AUP_StateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(arrays.States),
-                    NonFiniteCounter = (AupPaddedAtomicCounter*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(counters),
-                    ShiftDelta = runtime.PendingTimeSliceShiftDelta,
-                    NewSectorHash = runtime.PendingTimeSliceSectorHash,
-                    ShiftFrameId = runtime.PendingTimeSliceShiftSequence != 0u
-                        ? runtime.PendingTimeSliceShiftSequence
-                        : (runtime.LastShiftSequence != 0u ? runtime.LastShiftSequence : 1u),
-                    StartIndex = startIndex
-                };
-                for (int i = 0; i < batchCount; i++)
-                    stateRebaseJob.Execute(i);
-            }
+                    runtime.TimeSliceActive = 0;
+                    runtime.TimeSliceStartIndex = 0;
+                    runtime.HistoricalTimeSliceStartIndex = 0;
+                    runtime.PendingTimeSliceShiftSequence = 0u;
+                    runtime.Flags &= ~RuntimeFlagTimeSliced;
+                    runtimeState[0] = runtime;
+                    return;
+                }
 
-            int hotShifted = RunHotEntityRebaseSlice(
-                vault,
-                startIndex,
-                batchCount,
-                activeCount,
-                new float3(
-                    (float)runtime.PendingTimeSliceShiftDelta.x,
-                    (float)runtime.PendingTimeSliceShiftDelta.y,
-                    (float)runtime.PendingTimeSliceShiftDelta.z),
-                runtime.PendingTimeSliceShiftSequence != 0u
+                if (batchCount > 0)
+                {
+                    NativeArray<AUP_StateDTO> stateWrite = default;
+                    NativeArray<AupPaddedAtomicCounter> counterWrite = default;
+                    try
+                    {
+                        if (!TryAcquireWriteView(vault, in _statesHandle, MockEntityCapacity, out stateWrite) ||
+                            !TryAcquireWriteView(vault, in _counterHandle, CounterCount, out counterWrite))
+                        {
+                            return;
+                        }
+
+                        AupStateRebaseJob stateRebaseJob = default;
+                        stateRebaseJob.States = (AUP_StateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(stateWrite);
+                        stateRebaseJob.NonFiniteCounter = (AupPaddedAtomicCounter*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(counterWrite);
+                        stateRebaseJob.ShiftDelta = runtime.PendingTimeSliceShiftDelta;
+                        stateRebaseJob.NewSectorHash = runtime.PendingTimeSliceSectorHash;
+                        stateRebaseJob.ShiftFrameId = runtime.PendingTimeSliceShiftSequence != 0u
+                            ? runtime.PendingTimeSliceShiftSequence
+                            : (runtime.LastShiftSequence != 0u ? runtime.LastShiftSequence : 1u);
+                        stateRebaseJob.StartIndex = startIndex;
+                        for (int i = 0; i < batchCount; i++)
+                            stateRebaseJob.Execute(i);
+                    }
+                    finally
+                    {
+                        if (counterWrite.IsCreated)
+                            vault.ReleaseWriteLock(in _counterHandle, OwnerSystemId);
+                        if (stateWrite.IsCreated)
+                            vault.ReleaseWriteLock(in _statesHandle, OwnerSystemId);
+                    }
+                }
+
+                float3 pendingShift = default;
+                pendingShift.x = (float)runtime.PendingTimeSliceShiftDelta.x;
+                pendingShift.y = (float)runtime.PendingTimeSliceShiftDelta.y;
+                pendingShift.z = (float)runtime.PendingTimeSliceShiftDelta.z;
+                uint shiftFrameId = runtime.PendingTimeSliceShiftSequence != 0u
                     ? runtime.PendingTimeSliceShiftSequence
-                    : (runtime.LastShiftSequence != 0u ? runtime.LastShiftSequence : 1u));
-            int historicalShifted = RunHistoricalRebaseBatch(
-                vault,
-                arrays,
-                historicalStartIndex,
-                historicalBatchCount,
-                new float3(
-                    (float)runtime.PendingTimeSliceShiftDelta.x,
-                    (float)runtime.PendingTimeSliceShiftDelta.y,
-                    (float)runtime.PendingTimeSliceShiftDelta.z));
+                    : (runtime.LastShiftSequence != 0u ? runtime.LastShiftSequence : 1u);
+                int hotShifted = RunHotEntityRebaseSlice(
+                    vault,
+                    startIndex,
+                    batchCount,
+                    activeCount,
+                    pendingShift,
+                    shiftFrameId);
+                int historicalShifted = RunHistoricalRebaseBatch(
+                    vault,
+                    arrays,
+                    historicalStartIndex,
+                    historicalBatchCount,
+                    pendingShift);
 
-            runtime.TimeSliceStartIndex = startIndex + batchCount;
-            runtime.HistoricalTimeSliceStartIndex = historicalStartIndex + historicalBatchCount;
-            runtime.LastEntitiesShifted += batchCount;
-            runtime.LastHotEntitiesShifted += hotShifted;
-            runtime.LastHistoricalPointsShifted += historicalShifted;
-            if (runtime.TimeSliceStartIndex >= activeCount && runtime.HistoricalTimeSliceStartIndex >= totalHistoricalCount)
-            {
-                runtime.TimeSliceActive = 0;
-                runtime.TimeSliceStartIndex = 0;
-                runtime.HistoricalTimeSliceStartIndex = 0;
-                runtime.PendingTimeSliceShiftSequence = 0u;
-                runtime.Flags &= ~RuntimeFlagTimeSliced;
+                runtime.TimeSliceStartIndex = startIndex + batchCount;
+                runtime.HistoricalTimeSliceStartIndex = historicalStartIndex + historicalBatchCount;
+                runtime.LastEntitiesShifted += batchCount;
+                runtime.LastHotEntitiesShifted += hotShifted;
+                runtime.LastHistoricalPointsShifted += historicalShifted;
+                if (runtime.TimeSliceStartIndex >= activeCount && runtime.HistoricalTimeSliceStartIndex >= totalHistoricalCount)
+                {
+                    runtime.TimeSliceActive = 0;
+                    runtime.TimeSliceStartIndex = 0;
+                    runtime.HistoricalTimeSliceStartIndex = 0;
+                    runtime.PendingTimeSliceShiftSequence = 0u;
+                    runtime.Flags &= ~RuntimeFlagTimeSliced;
+                }
+
+                runtimeState[0] = runtime;
             }
-
-            arrays.RuntimeState[0] = runtime;
+            finally
+            {
+                vault.ReleaseWriteLock(in _runtimeStateHandle, OwnerSystemId);
+            }
         }
 
         private static void RecordFrameTelemetry(
             NativeArray<AupOriginShiftTelemetryEntry> telemetryRing,
+            NativeArray<AupOriginShiftTelemetryDetailEntry> telemetryDetailRing,
             in AupOriginShiftRuntimeState runtime,
             in MockCameraAUP camera,
             double3 totalUniverseOffset,
             uint extraFlags)
         {
-            if (!telemetryRing.IsCreated || telemetryRing.Length < TelemetryCapacity)
+            if (!telemetryRing.IsCreated ||
+                !telemetryDetailRing.IsCreated ||
+                telemetryRing.Length < TelemetryCapacity ||
+                telemetryDetailRing.Length < TelemetryCapacity)
                 return;
 
             float3 cameraLocal = camera.LocalPosition;
@@ -1014,27 +1419,30 @@ namespace Hecton8.Core
             int telemetryActiveCount = math.clamp(runtime.ActiveEntityCount, 0, MockEntityCapacity);
             int telemetryBatchCount = ResolveQualityScaledBatchSize(runtime.BatchSize, telemetryActiveCount, qualityWeight);
 
-            telemetryRing[SystemDispatcher.CurrentFrameIndex % TelemetryCapacity] = new AupOriginShiftTelemetryEntry
-            {
-                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                RebaseCount = runtime.RebaseCount,
-                ShiftSequence = runtime.LastShiftSequence,
-                SectorHash = camera.SectorHash,
-                EntitiesShifted = runtime.LastEntitiesShifted,
-                HistoricalPointsShifted = runtime.LastHistoricalPointsShifted,
-                BatchStartIndex = runtime.TimeSliceStartIndex,
-                BatchCount = telemetryBatchCount,
-                NonFiniteCount = runtime.LastNonFiniteCount,
-                RebaseComputeTimeMs = runtime.LastComputeTimeMs,
-                SystemHealthIndex01 = math.saturate(HomeostasisBrain.SystemHealthIndex01),
-                Flags = flags,
-                ShiftDelta = double3.zero,
-                TotalUniverseOffset = totalUniverseOffset,
-                CameraLocalPosition = finite ? cameraLocal : float3.zero,
-                CameraSectorHash = camera.SectorHash,
-                PositionHash = finite ? math.hash(cameraLocal) : 0u,
-                HotEntitiesShifted = runtime.LastHotEntitiesShifted
-            };
+            AupOriginShiftTelemetryEntry entry = default;
+            entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+            entry.RebaseCount = runtime.RebaseCount;
+            entry.ShiftSequence = runtime.LastShiftSequence;
+            entry.SectorHash = camera.SectorHash;
+            entry.EntitiesShifted = runtime.LastEntitiesShifted;
+            entry.HistoricalPointsShifted = runtime.LastHistoricalPointsShifted;
+            entry.BatchStartIndex = runtime.TimeSliceStartIndex;
+            entry.BatchCount = telemetryBatchCount;
+            entry.NonFiniteCount = runtime.LastNonFiniteCount;
+            entry.Flags = flags;
+            entry.ShiftDelta = double3.zero;
+            int cursor = SystemDispatcher.CurrentFrameIndex % TelemetryCapacity;
+            telemetryRing[cursor] = entry;
+
+            AupOriginShiftTelemetryDetailEntry detail = default;
+            detail.TotalUniverseOffset = totalUniverseOffset;
+            detail.CameraLocalPosition = finite ? cameraLocal : float3.zero;
+            detail.RebaseComputeTimeMs = runtime.LastComputeTimeMs;
+            detail.SystemHealthIndex01 = math.saturate(HomeostasisBrain.SystemHealthIndex01);
+            detail.CameraSectorHash = camera.SectorHash;
+            detail.PositionHash = finite ? math.hash(cameraLocal) : 0u;
+            detail.HotEntitiesShifted = runtime.LastHotEntitiesShifted;
+            telemetryDetailRing[cursor] = detail;
         }
 
         private static JobHandle ScheduleHotEntityRebase(
@@ -1057,14 +1465,25 @@ namespace Hecton8.Core
             if (batchCount <= 0)
                 return dependency;
 
+            if (!TryLockScheduledBuffer(vault, BufferID.VaultHotEntityData, ScheduleLockHotEntityFlag, ref info))
+                return dependency;
+
+            if (!TryOpenExistingVaultBuffer(vault, BufferID.VaultHotEntityData, 1, out hotEntities))
+                return dependency;
+
+            hotCount = math.min(math.max(activeCount, 0), hotEntities.Length);
+            clampedStart = math.clamp(startIndex, 0, hotCount);
+            batchCount = math.min(requestedCount, hotCount - clampedStart);
+            if (batchCount <= 0)
+                return dependency;
+
             info.HotEntitiesScheduled += batchCount;
-            return new VaultHotEntityRebaseJob
-            {
-                HotEntities = hotEntities,
-                ShiftDelta = shiftDelta,
-                ShiftFrameId = shiftFrameId,
-                StartIndex = clampedStart
-            }.Schedule(batchCount, 128, dependency);
+            VaultHotEntityRebaseJob hotRebaseJob = default;
+            hotRebaseJob.HotEntities = hotEntities;
+            hotRebaseJob.ShiftDelta = shiftDelta;
+            hotRebaseJob.ShiftFrameId = shiftFrameId;
+            hotRebaseJob.StartIndex = clampedStart;
+            return hotRebaseJob.Schedule(batchCount, 128, dependency);
         }
 
         private static int RunHotEntityRebaseSlice(
@@ -1076,25 +1495,34 @@ namespace Hecton8.Core
             uint shiftFrameId)
         {
             if (requestedCount <= 0 ||
-                !TryOpenExistingVaultBuffer(vault, BufferID.VaultHotEntityData, 1, out NativeArray<VaultHotEntityData> hotEntities))
+                vault == null ||
+                !vault.TryLockBuffer(BufferID.VaultHotEntityData, OwnerSystemId))
                 return 0;
 
-            int hotCount = math.min(math.max(activeCount, 0), hotEntities.Length);
-            int clampedStart = math.clamp(startIndex, 0, hotCount);
-            int batchCount = math.min(requestedCount, hotCount - clampedStart);
-            if (batchCount <= 0)
-                return 0;
-
-            VaultHotEntityRebaseJob hotRebaseJob = new VaultHotEntityRebaseJob
+            try
             {
-                HotEntities = hotEntities,
-                ShiftDelta = shiftDelta,
-                ShiftFrameId = shiftFrameId,
-                StartIndex = clampedStart
-            };
-            for (int i = 0; i < batchCount; i++)
-                hotRebaseJob.Execute(i);
-            return batchCount;
+                if (!TryOpenExistingVaultBuffer(vault, BufferID.VaultHotEntityData, 1, out NativeArray<VaultHotEntityData> hotEntities))
+                    return 0;
+
+                int hotCount = math.min(math.max(activeCount, 0), hotEntities.Length);
+                int clampedStart = math.clamp(startIndex, 0, hotCount);
+                int batchCount = math.min(requestedCount, hotCount - clampedStart);
+                if (batchCount <= 0)
+                    return 0;
+
+                VaultHotEntityRebaseJob hotRebaseJob = default;
+                hotRebaseJob.HotEntities = hotEntities;
+                hotRebaseJob.ShiftDelta = shiftDelta;
+                hotRebaseJob.ShiftFrameId = shiftFrameId;
+                hotRebaseJob.StartIndex = clampedStart;
+                for (int i = 0; i < batchCount; i++)
+                    hotRebaseJob.Execute(i);
+                return batchCount;
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(BufferID.VaultHotEntityData, OwnerSystemId);
+            }
         }
 
         private static int RunHistoricalRebaseBatch(
@@ -1110,12 +1538,22 @@ namespace Hecton8.Core
             int shifted = 0;
             if (arrays.HistoricalPoints.IsCreated && arrays.HistoricalCount > 0)
             {
-                shifted += RunNativeHistoricalFloat3Rebase(
-                    arrays.HistoricalPoints,
-                    arrays.HistoricalCount,
-                    startIndex,
-                    requestedCount,
-                    shiftDelta);
+                if (TryAcquireWriteView(vault, in _historicalPointsHandle, MockHistoricalPointCapacity, out NativeArray<float3> historicalPoints))
+                {
+                    try
+                    {
+                        shifted += RunNativeHistoricalFloat3Rebase(
+                            historicalPoints,
+                            arrays.HistoricalCount,
+                            startIndex,
+                            requestedCount,
+                            shiftDelta);
+                    }
+                    finally
+                    {
+                        vault.ReleaseWriteLock(in _historicalPointsHandle, OwnerSystemId);
+                    }
+                }
             }
 
             shifted += RunHistoricalFloat3Rebase(vault, BufferID.TetherCablePositions, startIndex, requestedCount, shiftDelta);
@@ -1136,12 +1574,10 @@ namespace Hecton8.Core
             if (count <= 0)
                 return 0;
 
-            Float3HistoricalRebaseJob historicalRebaseJob = new Float3HistoricalRebaseJob
-            {
-                Points = points,
-                ShiftDelta = shiftDelta,
-                StartIndex = clampedStart
-            };
+            Float3HistoricalRebaseJob historicalRebaseJob = default;
+            historicalRebaseJob.Points = points;
+            historicalRebaseJob.ShiftDelta = shiftDelta;
+            historicalRebaseJob.StartIndex = clampedStart;
             for (int i = 0; i < count; i++)
                 historicalRebaseJob.Execute(i);
             return count;
@@ -1155,12 +1591,23 @@ namespace Hecton8.Core
             float3 shiftDelta)
         {
             if (requestedCount <= 0 ||
-                !TryOpenExistingVaultBuffer(vault, bufferId, 1, out NativeArray<float3> points))
+                vault == null ||
+                !vault.TryLockBuffer(bufferId, OwnerSystemId))
             {
                 return 0;
             }
 
-            return RunNativeHistoricalFloat3Rebase(points, points.Length, startIndex, requestedCount, shiftDelta);
+            try
+            {
+                if (!TryOpenExistingVaultBuffer(vault, bufferId, 1, out NativeArray<float3> points))
+                    return 0;
+
+                return RunNativeHistoricalFloat3Rebase(points, points.Length, startIndex, requestedCount, shiftDelta);
+            }
+            finally
+            {
+                vault.TryUnlockBuffer(bufferId, OwnerSystemId);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1194,26 +1641,42 @@ namespace Hecton8.Core
         }
 
 #if UNITY_EDITOR
-        private static bool TryPollCsvOverride(IDataVault vault, NativeArray<AupOriginShiftRuntimeState> runtimeState)
+        private static bool TryPollCsvOverride(IDataVault vault)
         {
             string path = ResolveCsvPath();
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            if (!TryResolveCsvScratch(vault, out NativeArray<byte> scratch))
+            if (!TryAcquireWriteView(vault, in _csvScratchHandle, CsvScratchCapacity, out NativeArray<byte> scratch))
                 return false;
 
-            int bytesRead;
-            long ticks;
             try
             {
-                ticks = File.GetLastWriteTimeUtc(path).Ticks;
+                long ticks = File.GetLastWriteTimeUtc(path).Ticks;
                 if (ticks == _lastCsvWriteTicks)
                     return false;
 
+                int bytesRead;
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, scratch.Length, FileOptions.SequentialScan))
                 {
                     bytesRead = stream.Read(new Span<byte>((byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch), scratch.Length));
+                }
+
+                if (bytesRead <= 0)
+                    return false;
+
+                if (!TryAcquireWriteView(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<AupOriginShiftRuntimeState> runtimeState))
+                    return false;
+
+                try
+                {
+                    ParseCsvOverrides(scratch, bytesRead, runtimeState);
+                    _lastCsvWriteTicks = ticks;
+                    return true;
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _runtimeStateHandle, OwnerSystemId);
                 }
             }
             catch (IOException)
@@ -1224,13 +1687,10 @@ namespace Hecton8.Core
             {
                 return false;
             }
-
-            if (bytesRead <= 0)
-                return false;
-
-            ParseCsvOverrides(scratch, bytesRead, runtimeState);
-            _lastCsvWriteTicks = ticks;
-            return true;
+            finally
+            {
+                vault.ReleaseWriteLock(in _csvScratchHandle, OwnerSystemId);
+            }
         }
 
         private static void ParseCsvOverrides(
@@ -1338,23 +1798,41 @@ namespace Hecton8.Core
         }
 #endif
 
-        private static void DumpOriginShiftBlackBox(NativeArray<AupOriginShiftTelemetryEntry> telemetryRing)
+        private static void DumpOriginShiftBlackBox(
+            NativeArray<AupOriginShiftTelemetryEntry> telemetryRing,
+            NativeArray<AupOriginShiftTelemetryDetailEntry> telemetryDetailRing)
         {
-            if (!telemetryRing.IsCreated)
+            if (!telemetryRing.IsCreated || !telemetryDetailRing.IsCreated)
                 return;
 
             byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(telemetryRing);
+            byte* detailBasePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(telemetryDetailRing);
             int entryStride = UnsafeUtility.SizeOf<AupOriginShiftTelemetryEntry>();
-            int entryCount = math.min(telemetryRing.Length, TelemetryCapacity);
+            int detailStride = UnsafeUtility.SizeOf<AupOriginShiftTelemetryDetailEntry>();
+            int entryCount = math.min(math.min(telemetryRing.Length, telemetryDetailRing.Length), TelemetryCapacity);
             int writeCursor = entryCount > 0 ? SystemDispatcher.CurrentFrameIndex % entryCount : 0;
-            WriteOriginShiftDump(ResolveDumpPath(), basePtr, entryCount, entryStride, writeCursor);
-            WriteOriginShiftDump(ResolveH8DumpPath(), basePtr, entryCount, entryStride, writeCursor);
+            WriteOriginShiftDump(ResolveDumpPath(), basePtr, detailBasePtr, entryCount, entryStride, detailStride, writeCursor);
+            WriteOriginShiftDump(ResolveH8DumpPath(), basePtr, detailBasePtr, entryCount, entryStride, detailStride, writeCursor);
         }
 
-        private static void WriteOriginShiftDump(string path, byte* basePtr, int entryCount, int entryStride, int writeCursor)
+        private static void WriteOriginShiftDump(
+            string path,
+            byte* basePtr,
+            byte* detailBasePtr,
+            int entryCount,
+            int entryStride,
+            int detailStride,
+            int writeCursor)
         {
-            if (string.IsNullOrEmpty(path) || basePtr == null || entryCount <= 0 || entryStride <= 0)
+            if (string.IsNullOrEmpty(path) ||
+                basePtr == null ||
+                detailBasePtr == null ||
+                entryCount <= 0 ||
+                entryStride <= 0 ||
+                detailStride <= 0)
+            {
                 return;
+            }
 
             try
             {
@@ -1365,13 +1843,14 @@ namespace Hecton8.Core
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, DumpWriteBufferBytes, FileOptions.WriteThrough))
                 {
                     int oldestRingIndex = (writeCursor + 1) % entryCount;
-                    AupOriginShiftDumpHeader header = CreateDumpHeader(entryCount, entryStride, oldestRingIndex);
+                    AupOriginShiftDumpHeader header = CreateDumpHeader(entryCount, entryStride, detailStride, oldestRingIndex);
                     stream.Write(new ReadOnlySpan<byte>(&header, UnsafeUtility.SizeOf<AupOriginShiftDumpHeader>()));
 
                     for (int rowIndex = 0; rowIndex < entryCount; rowIndex++)
                     {
                         int ringIndex = (oldestRingIndex + rowIndex) % entryCount;
                         stream.Write(new ReadOnlySpan<byte>(basePtr + (ringIndex * entryStride), entryStride));
+                        stream.Write(new ReadOnlySpan<byte>(detailBasePtr + (ringIndex * detailStride), detailStride));
                     }
                 }
             }
@@ -1383,22 +1862,29 @@ namespace Hecton8.Core
             }
         }
 
-        private static AupOriginShiftDumpHeader CreateDumpHeader(int entryCount, int entryStride, int oldestRingIndex)
+        private static AupOriginShiftDumpHeader CreateDumpHeader(
+            int entryCount,
+            int entryStride,
+            int detailStride,
+            int oldestRingIndex)
         {
-            uint payloadBytes = (uint)math.max(0, entryCount * entryStride);
-            return new AupOriginShiftDumpHeader
-            {
-                Magic = ToLittleEndian(DumpMagic),
-                Version = ToLittleEndian(DumpVersion),
-                HeaderBytes = ToLittleEndian((uint)UnsafeUtility.SizeOf<AupOriginShiftDumpHeader>()),
-                EntryCount = ToLittleEndian((uint)math.max(0, entryCount)),
-                EntryStrideBytes = ToLittleEndian((uint)math.max(0, entryStride)),
-                PayloadBytes = ToLittleEndian(payloadBytes),
-                OldestRingIndex = ToLittleEndian((uint)math.max(0, oldestRingIndex)),
-                LatestFrame = ToLittleEndian(Hecton8.Core.SystemDispatcher.CurrentFrameId),
-                EndianTag = ToLittleEndian(BitConverter.IsLittleEndian ? DumpEndianLittleTag : DumpEndianBigTag),
-                Flags = ToLittleEndian(BitConverter.IsLittleEndian ? 0u : 1u)
-            };
+            int combinedStride = math.max(0, entryStride) + math.max(0, detailStride);
+            uint payloadBytes = (uint)math.max(0, entryCount * combinedStride);
+            uint flags = DumpFlagHasDetailRows | (BitConverter.IsLittleEndian ? 0u : DumpFlagBigEndian);
+            AupOriginShiftDumpHeader header = default;
+            header.Magic = ToLittleEndian(DumpMagic);
+            header.Version = ToLittleEndian(DumpVersion);
+            header.HeaderBytes = ToLittleEndian((uint)UnsafeUtility.SizeOf<AupOriginShiftDumpHeader>());
+            header.EntryCount = ToLittleEndian((uint)math.max(0, entryCount));
+            header.EntryStrideBytes = ToLittleEndian((uint)math.max(0, entryStride));
+            header.PayloadBytes = ToLittleEndian(payloadBytes);
+            header.OldestRingIndex = ToLittleEndian((uint)math.max(0, oldestRingIndex));
+            header.LatestFrame = ToLittleEndian(Hecton8.Core.SystemDispatcher.CurrentFrameId);
+            header.EndianTag = ToLittleEndian(BitConverter.IsLittleEndian ? DumpEndianLittleTag : DumpEndianBigTag);
+            header.Flags = ToLittleEndian(flags);
+            header.DetailStrideBytes = ToLittleEndian((uint)math.max(0, detailStride));
+            header.CombinedRecordBytes = ToLittleEndian((uint)combinedStride);
+            return header;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1534,7 +2020,11 @@ namespace Hecton8.Core
                 runtime.LastNonFiniteCount++;
             }
 
-            camera.LocalPosition = new float3((float)localDouble.x, (float)localDouble.y, (float)localDouble.z);
+            float3 cameraLocal = default;
+            cameraLocal.x = (float)localDouble.x;
+            cameraLocal.y = (float)localDouble.y;
+            cameraLocal.z = (float)localDouble.z;
+            camera.LocalPosition = cameraLocal;
             if (!math.all(math.isfinite(camera.LocalPosition)))
             {
                 camera.LocalPosition = float3.zero;
@@ -1587,20 +2077,22 @@ namespace Hecton8.Core
             if (!math.all(math.isfinite(localPosition)))
                 return int3.zero;
 
-            return new int3(
-                ClampDoubleToInt(math.round((double)localPosition.x * 1000.0d)),
-                ClampDoubleToInt(math.round((double)localPosition.y * 1000.0d)),
-                ClampDoubleToInt(math.round((double)localPosition.z * 1000.0d)));
+            int3 quantized = default;
+            quantized.x = ClampDoubleToInt(math.round((double)localPosition.x * 1000.0d));
+            quantized.y = ClampDoubleToInt(math.round((double)localPosition.y * 1000.0d));
+            quantized.z = ClampDoubleToInt(math.round((double)localPosition.z * 1000.0d));
+            return quantized;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int3 ResolveSectorIndex(double3 absolutePosition, float sectorSize)
         {
             double invSector = 1.0d / math.max((double)sectorSize, 1.0d);
-            return new int3(
-                ClampDoubleToInt(math.floor(absolutePosition.x * invSector)),
-                ClampDoubleToInt(math.floor(absolutePosition.y * invSector)),
-                ClampDoubleToInt(math.floor(absolutePosition.z * invSector)));
+            int3 sector = default;
+            sector.x = ClampDoubleToInt(math.floor(absolutePosition.x * invSector));
+            sector.y = ClampDoubleToInt(math.floor(absolutePosition.y * invSector));
+            sector.z = ClampDoubleToInt(math.floor(absolutePosition.z * invSector));
+            return sector;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1628,20 +2120,29 @@ namespace Hecton8.Core
                 double x = (index % 1000) * 4.0d;
                 double y = ((index / 1000) % 50) * 2.0d;
                 double z = (index / 50000) * 8.0d;
-                double3 global = new double3(x, y, z);
-                float3 local = new float3((float)x, (float)y, (float)z);
-                States[index] = new AUP_StateDTO
-                {
-                    GlobalPosition = global,
-                    LocalPosition = local,
-                    SectorHash = ResolveSectorHash(global, SectorSizeMeters),
-                    ShiftFrameId = 0u,
-                    LocalMillimeters = QuantizeLocalMillimeters(local),
-                    FiniteFlags = AupStateFlagFinite,
-                    SourceSystemId = unchecked((uint)OwnerSystemId)
-                };
+                double3 global = default;
+                global.x = x;
+                global.y = y;
+                global.z = z;
+                float3 local = default;
+                local.x = (float)x;
+                local.y = (float)y;
+                local.z = (float)z;
+                AUP_StateDTO state = default;
+                state.GlobalPosition = global;
+                state.LocalPosition = local;
+                state.SectorHash = ResolveSectorHash(global, SectorSizeMeters);
+                state.ShiftFrameId = 0u;
+                state.LocalMillimeters = QuantizeLocalMillimeters(local);
+                state.FiniteFlags = AupStateFlagFinite;
+                state.SourceSystemId = unchecked((uint)OwnerSystemId);
+                States[index] = state;
 
-                Velocities[index] = new float3(0.25f, 0.05f, -0.1f);
+                float3 velocity = default;
+                velocity.x = 0.25f;
+                velocity.y = 0.05f;
+                velocity.z = -0.1f;
+                Velocities[index] = velocity;
                 if (index < HistoricalPoints.Length)
                     HistoricalPoints[index] = local;
             }
@@ -1667,7 +2168,10 @@ namespace Hecton8.Core
             {
                 int index = StartIndex + jobIndex;
                 ref AUP_StateDTO state = ref UnsafeUtility.AsRef<AUP_StateDTO>(States + index);
-                float3 shift = new float3((float)ShiftDelta.x, (float)ShiftDelta.y, (float)ShiftDelta.z);
+                float3 shift = default;
+                shift.x = (float)ShiftDelta.x;
+                shift.y = (float)ShiftDelta.y;
+                shift.z = (float)ShiftDelta.z;
                 float3 local = state.LocalPosition - shift;
                 uint finiteFlags = AupStateFlagFinite;
                 if (!math.all(math.isfinite(local)) || !math.all(math.isfinite(state.GlobalPosition)))

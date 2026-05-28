@@ -127,7 +127,7 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                TextureDesc destinationDesc = new TextureDesc(sourceDesc);
+                TextureDesc destinationDesc = sourceDesc;
                 destinationDesc.name = "_HectonScannerDepthProjection";
                 destinationDesc.clearBuffer = false;
                 destinationDesc.depthBufferBits = DepthBits.None;

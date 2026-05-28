@@ -291,10 +291,10 @@ namespace Hecton8.AI.Sensory
         {
             IDataVault vault = _dataVault;
             if (vault == null ||
-                !IsVaultHandleCreated(in _frameTapsHandle) ||
-                !IsVaultHandleCreated(in _pendingTapsHandle) ||
-                !IsVaultHandleCreated(in _jobResultHandle) ||
-                !IsVaultHandleCreated(in _blackBoxHandle))
+                !IsAcousticVaultHandle(in _frameTapsHandle, BufferID.AcousticEchoFrameTaps) ||
+                !IsAcousticVaultHandle(in _pendingTapsHandle, BufferID.AcousticEchoPendingTaps) ||
+                !IsAcousticVaultHandle(in _jobResultHandle, BufferID.AcousticEchoTrailState) ||
+                !IsAcousticVaultHandle(in _blackBoxHandle, BufferID.AcousticEchoBlackBox))
             {
                 EnsureBootstrapVault();
                 vault = _dataVault;
@@ -389,7 +389,7 @@ namespace Hecton8.AI.Sensory
                 object currentService)
             {
                 if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
-                    RebindDataVaultForLifecycle(currentService as IDataVault);
+                    RebindDataVaultForLifecycle(currentService is IDataVault currentVault ? currentVault : null);
             }
         }
 
@@ -410,20 +410,16 @@ namespace Hecton8.AI.Sensory
             _trackingScheduled = 0;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
-        {
-            return handle.BufferID != 0u && handle.Generation != 0u;
-        }
-
         private static bool TryResolveVaultBuffer<T>(
             in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
             int requiredLength,
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
             IDataVault vault = _dataVault;
             return vault != null &&
-                   IsVaultHandleCreated(in handle) &&
+                   IsAcousticVaultHandle(in handle, expectedBufferId) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
@@ -440,7 +436,7 @@ namespace Hecton8.AI.Sensory
             if (vault == null)
                 return false;
 
-            if (IsOwnedVaultHandle(in handle, bufferId) &&
+            if (IsAcousticVaultHandle(in handle, bufferId) &&
                 vault.TryResolveHandle(in handle, out buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)
@@ -448,16 +444,22 @@ namespace Hecton8.AI.Sensory
                 return true;
             }
 
+            if (IsAcousticVaultHandle(in handle, bufferId))
+                vault.ReleaseBuffer(in handle);
+            handle = default;
+
             VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.AISensory,
                 NativeArrayOptions.ClearMemory);
-            if (!IsVaultHandleCreated(in acquired) ||
+            if (!IsAcousticVaultHandle(in acquired, bufferId) ||
                 !vault.TryResolveHandle(in acquired, out buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
+                if (IsAcousticVaultHandle(in acquired, bufferId))
+                    vault.ReleaseBuffer(in acquired);
                 return false;
             }
 
@@ -470,30 +472,25 @@ namespace Hecton8.AI.Sensory
             if (vault == null)
                 return;
 
-            ReleaseVaultHandle(vault, ref _frameTapsHandle);
-            ReleaseVaultHandle(vault, ref _pendingTapsHandle);
-            ReleaseVaultHandle(vault, ref _jobResultHandle);
-            ReleaseVaultHandle(vault, ref _blackBoxHandle);
+            ReleaseVaultHandle(vault, BufferID.AcousticEchoFrameTaps, ref _frameTapsHandle);
+            ReleaseVaultHandle(vault, BufferID.AcousticEchoPendingTaps, ref _pendingTapsHandle);
+            ReleaseVaultHandle(vault, BufferID.AcousticEchoTrailState, ref _jobResultHandle);
+            ReleaseVaultHandle(vault, BufferID.AcousticEchoBlackBox, ref _blackBoxHandle);
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        private static void ReleaseVaultHandle<T>(IDataVault vault, BufferID expectedBufferId, ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (IsOwnedVaultHandle(in handle))
+            if (IsAcousticVaultHandle(in handle, expectedBufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
         }
 
-        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsAcousticVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
         {
-            return IsVaultHandleCreated(in handle) &&
-                   handle.SystemID == (uint)SystemID.AISensory;
-        }
-
-        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
-        {
-            return IsOwnedVaultHandle(in handle) &&
-                   handle.BufferID == (uint)expectedBufferId;
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)SystemID.AISensory &&
+                   handle.Generation != 0u;
         }
 
         private static bool EnsureFrameViews(
@@ -507,8 +504,8 @@ namespace Hecton8.AI.Sensory
                 return false;
 
             IDataVault vault = _dataVault;
-            if (TryResolveVaultBuffer(in _frameTapsHandle, MaxEchoTapsPerFrame, out frameTaps) &&
-                TryResolveVaultBuffer(in _jobResultHandle, 1, out jobResult))
+            if (TryResolveVaultBuffer(in _frameTapsHandle, BufferID.AcousticEchoFrameTaps, MaxEchoTapsPerFrame, out frameTaps) &&
+                TryResolveVaultBuffer(in _jobResultHandle, BufferID.AcousticEchoTrailState, 1, out jobResult))
             {
                 return true;
             }
@@ -519,8 +516,8 @@ namespace Hecton8.AI.Sensory
             if (!EnsureVaultBuffers())
                 return false;
 
-            return TryResolveVaultBuffer(in _frameTapsHandle, MaxEchoTapsPerFrame, out frameTaps) &&
-                   TryResolveVaultBuffer(in _jobResultHandle, 1, out jobResult);
+            return TryResolveVaultBuffer(in _frameTapsHandle, BufferID.AcousticEchoFrameTaps, MaxEchoTapsPerFrame, out frameTaps) &&
+                   TryResolveVaultBuffer(in _jobResultHandle, BufferID.AcousticEchoTrailState, 1, out jobResult);
         }
 
         private static bool EnsureBlackBox(out NativeArray<AcousticEchoBlackBoxEntry> blackBox)
@@ -529,7 +526,7 @@ namespace Hecton8.AI.Sensory
             if (!EnsureVaultBuffers())
                 return false;
 
-            if (TryResolveVaultBuffer(in _blackBoxHandle, BlackBoxFrameCount, out blackBox))
+            if (TryResolveVaultBuffer(in _blackBoxHandle, BufferID.AcousticEchoBlackBox, BlackBoxFrameCount, out blackBox))
                 return true;
 
             CompleteTrackingFenceForVaultRelease();
@@ -538,14 +535,14 @@ namespace Hecton8.AI.Sensory
             if (!EnsureVaultBuffers())
                 return false;
 
-            return TryResolveVaultBuffer(in _blackBoxHandle, BlackBoxFrameCount, out blackBox);
+            return TryResolveVaultBuffer(in _blackBoxHandle, BufferID.AcousticEchoBlackBox, BlackBoxFrameCount, out blackBox);
         }
 
         private static bool EnsurePendingTaps(out NativeArray<EchoTap> pendingTaps)
         {
             pendingTaps = default;
             return EnsureVaultBuffers() &&
-                   TryResolveVaultBuffer(in _pendingTapsHandle, MaxQueuedEchoTaps, out pendingTaps);
+                   TryResolveVaultBuffer(in _pendingTapsHandle, BufferID.AcousticEchoPendingTaps, MaxQueuedEchoTaps, out pendingTaps);
         }
 
         private static bool TryResolvePendingTapsNoAcquire(out NativeArray<EchoTap> pendingTaps)
@@ -553,8 +550,8 @@ namespace Hecton8.AI.Sensory
             pendingTaps = default;
             return _initialized != 0 &&
                    _dataVault != null &&
-                   IsVaultHandleCreated(in _pendingTapsHandle) &&
-                   TryResolveVaultBuffer(in _pendingTapsHandle, MaxQueuedEchoTaps, out pendingTaps);
+                   IsAcousticVaultHandle(in _pendingTapsHandle, BufferID.AcousticEchoPendingTaps) &&
+                   TryResolveVaultBuffer(in _pendingTapsHandle, BufferID.AcousticEchoPendingTaps, MaxQueuedEchoTaps, out pendingTaps);
         }
 
         public static bool TryEnqueuePortalEcho(

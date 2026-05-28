@@ -57,7 +57,7 @@ namespace Crest
         internal float LoopPeriod => _enableBakedCollision ? _timeLoopLength : -1f;
 
         protected override int MinimumResolution => 16;
-        protected override int MaximumResolution => int.MaxValue;
+        protected override int MaximumResolution => FFTCompute.MAX_SUPPORTED_RESOLUTION;
 
         float _windTurbulenceOld;
         float _windSpeedOld;

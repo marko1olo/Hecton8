@@ -1830,14 +1830,14 @@ namespace Hecton8.Core
         bool IsWarningActive { get; }
 
         /// <summary>
-        /// Attempts to enqueue one warning ID into the fixed-priority VWS path.
+        /// Attempts to enqueue one warning ID into the fixed-priority VWS signal lane.
         /// </summary>
         /// <param name="warningId">Byte ID from <see cref="VocalWarningId"/>.</param>
         /// <param name="severity01">Normalized warning severity.</param>
         /// <param name="cooldownSeconds">Per-warning cooldown override; non-positive uses the runtime fallback.</param>
         /// <param name="flags">Bitmask from <see cref="VocalWarningSignalFlags"/>.</param>
         /// <param name="sourceId">Optional source entity or event hash.</param>
-        /// <returns>True when the warning was accepted by cooldown and queue admission.</returns>
+        /// <returns>True when the warning signal was accepted by the unmanaged signal lane.</returns>
         bool TryQueueWarning(byte warningId, float severity01, float cooldownSeconds, byte flags, uint sourceId);
 
         /// <summary>Clears queued IDs and requests cancellation of the active renderer warning.</summary>

@@ -1,0 +1,255 @@
+﻿{
+    "generatedAt":  "2026-05-28T18:41:29.3567256+04:00",
+    "evidenceClass":  "STATIC_SOURCE_TEXT_SCAN",
+    "scope":  "Recheck9 modified dispatcher hot paths; overloaded methods counted as separate bodies",
+    "methodNamesRequested":  12,
+    "methodBodiesScanned":  13,
+    "referenceNewTotal":  0,
+    "valueTypeNewTotal":  1,
+    "stringFormatTotal":  0,
+    "toStringTotal":  0,
+    "linqTotal":  0,
+    "foreachTotal":  0,
+    "backendCallsInNonFlushMethods":  0,
+    "rows":  [
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "StartAction",
+                     "overloadIndex":  1,
+                     "found":  true,
+                     "startLine":  149,
+                     "endLine":  152,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0,
+                     "backendCalls":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "StartAction",
+                     "overloadIndex":  2,
+                     "found":  true,
+                     "startLine":  161,
+                     "endLine":  189,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0,
+                     "backendCalls":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "CompleteAction",
+                     "overloadIndex":  1,
+                     "found":  true,
+                     "startLine":  492,
+                     "endLine":  521,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0,
+                     "backendCalls":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "PlayCompletionSound",
+                     "overloadIndex":  1,
+                     "found":  true,
+                     "startLine":  540,
+                     "endLine":  571,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0,
+                     "backendCalls":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "PlayCancelSound",
+                     "overloadIndex":  1,
+                     "found":  true,
+                     "startLine":  573,
+                     "endLine":  579,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0,
+                     "backendCalls":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "QueueActionAudio",
+                     "overloadIndex":  1,
+                     "found":  true,
+                     "startLine":  581,
+                     "endLine":  591,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0,
+                     "backendCalls":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "FlushQueuedActionAudio",
+                     "overloadIndex":  1,
+                     "found":  true,
+                     "startLine":  593,
+                     "endLine":  616,
+                     "referenceNew":  0,
+                     "valueTypeNew":  1,
+                     "newTypes":  [
+                                      "CoreAudioEvent"
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0,
+                     "backendCalls":  2
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "ClearQueuedActionAudio",
+                     "overloadIndex":  1,
+                     "found":  true,
+                     "startLine":  618,
+                     "endLine":  621,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0,
+                     "backendCalls":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "ResolveActionAudioClip",
+                     "overloadIndex":  1,
+                     "found":  true,
+                     "startLine":  623,
+                     "endLine":  638,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0,
+                     "backendCalls":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "ResolveItemUseSound",
+                     "overloadIndex":  1,
+                     "found":  true,
+                     "startLine":  640,
+                     "endLine":  652,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0,
+                     "backendCalls":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "ResolveActionAudioPresentationVolume",
+                     "overloadIndex":  1,
+                     "found":  true,
+                     "startLine":  654,
+                     "endLine":  659,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0,
+                     "backendCalls":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "LateFrameTick",
+                     "overloadIndex":  1,
+                     "found":  true,
+                     "startLine":  314,
+                     "endLine":  317,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0,
+                     "backendCalls":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/ConsumableItem.cs",
+                     "method":  "TryConsumeWithoutAudio",
+                     "overloadIndex":  1,
+                     "found":  true,
+                     "startLine":  80,
+                     "endLine":  90,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0,
+                     "backendCalls":  0
+                 }
+             ],
+    "structLayoutProof":  {
+                              "ActionAudioRequest":  "Explicit layout, Size=32; Position offset 0 size 12; EventId offset 12 size 4; ItemHash offset 16 size 4; ClipKind offset 20 size 1; Dirty offset 21 size 1; Reserved0 offset 22 size 2; Reserved1 offset 24 size 4; Reserved2 offset 28 size 4; total 32 bytes = 4 * 8.",
+                              "CoreAudioEvent":  "Existing Hecton8.Core.AudioEvent explicit layout Size=32 from GlobalRegistryContracts.cs:1377-1398."
+                          },
+    "qualityScalingProof":  "ResolveActionAudioPresentationVolume reads HomeostasisBrain.GlobalQualityWeight, saturates finite fallback, and lerps volume continuously from 0.75 to 1.0."
+}

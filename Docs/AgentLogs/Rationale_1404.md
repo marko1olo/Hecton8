@@ -243,3 +243,87 @@ Rejected Alternatives: Keeping the report-only claim was rejected as evidence fr
 Scalability potential: Low/Middle/High/Ultra devices use the same writer-fence truth and Data Monolith bytes. `GlobalQualityWeight` remains absent because static data ownership and DTO identity must not scale.
 
 Hardware Impact: No frame-time improvement claimed. One final compile attempt was made only after CPU 35 and zero active compiler processes; it failed with exit code 1 and empty captured output. Forensic record: `Docs/AgentLogs/Dump_1404_build_failure_20260528T1306_SAMARA.log`.
+
+### APEX Contract Reversal / Deferred Queue Hardening 2026-05-28
+
+Problem: The previous 1404 conclusion was wrong. Agent 1414 owns the core allocator contract and its test/rationale explicitly define `ReleaseWriteLock` success as either synchronous release or accepted transfer into the deferred release queue. Replacing `return QueueDeferredWriterRelease(...)` with `return false` would break shared caller semantics and the 1414 test contract. A real defect remained: `QueueDeferredRelease` de-duped all kinds in the current source but did not serialize scan plus slot reservation, so two contending callers could publish duplicate pending release records.
+
+Solution: Preserve `return QueueDeferredWriterRelease(...)` in both writer-release contention branches. Add `_deferredReleaseEnqueueGate`, acquire it with `Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate, 1, 0)`, run pending scan and slot reservation under that gate, and release it with `Volatile.Write(ref _deferredReleaseEnqueueGate, 0)` in `finally`. Keep all-kind de-duplication via `pending->Kind == kind`. Update 1404 validators and JSON proof to require queue acceptance plus serialized all-kind de-duplication, not the false-return contract.
+
+Rejected Alternatives: Continuing to force `return false` was rejected because it contradicts `ArenaAllocatorSentinel1414EditTests` and can make callers treat a valid deferred release request as failed. Leaving scan/reserve unlocked was rejected because slot-level `CompareExchange` protects only slot ownership, not semantic duplicate release identity. Blocking until the release mutation gate opens was rejected because this path exists to stay non-blocking under allocator pressure.
+
+Scalability potential: Low-tier devices avoid retry-spin pressure under allocator contention. Middle/High/Ultra keep the same bounded native ring and deterministic drain; no DTO layout or authority route changes. `GlobalQualityWeight` remains out of this truth path.
+
+Hardware Impact: No frame microseconds claimed. The fix adds one atomic enqueue gate only on deferred release paths, removes duplicate pending-release corruption risk, and preserves non-blocking release behavior for weak CPUs.
+
+### APEX Concurrent Source Drift Blocker 2026-05-28
+
+Problem: The `_deferredReleaseEnqueueGate` patch was applied and verified more than once, but the shared `GlobalDataVault.cs` changed again during verification. Current source retains `return QueueDeferredWriterRelease(...)` and all-kind `pending->Kind == kind`, but no longer contains `_deferredReleaseEnqueueGate`, `Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate, 1, 0)`, or `Volatile.Write(ref _deferredReleaseEnqueueGate, 0)`. The current 1404 report must therefore fail the queue-contract proof.
+
+Solution: Stop claiming the hardening is present. Refresh `Docs/Reports/ANDROID_PAL_OPTIMIZATION_REPORT_1404.json` to `PENDING_CONCURRENT_SOURCE_DRIFT`, record `globalDataVaultDeferredWriterReleaseQueueContract=false`, `deferredReleaseEnqueueGateLine=0`, and SHA-256 `05e4e1cbe799585f06251c0f419f1f7eed601c5236876f135f98be6679e44377`. Keep 1404 validators requiring the gate so a future build/import gate catches the missing serialized enqueue contract.
+
+Rejected Alternatives: Reapplying the same `GlobalDataVault` patch indefinitely was rejected after repeated source drift. Shipping stale `queueContract=true` JSON was rejected as evidence fraud. Weakening the validator to accept unlocked scan/reserve was rejected because it leaves duplicate pending-release corruption under contention.
+
+Scalability potential: Low-tier devices remain most exposed to allocator contention. The intended fix is one atomic gate only on deferred release enqueue; no quality scalar is applicable because this is memory authority, not presentation.
+
+Hardware Impact: No runtime gain claimed because the gate is not present in current source. Build was not launched: latest CPU gate was 74 with zero compiler processes, which still violates the CPU > 50 rule.
+
+### APEX Writer-Only Deferred Queue Reconciliation 2026-05-28
+
+Problem: A deeper contract read showed two different truths had been conflated. 1414 loop 9 originally argued all-kind de-dup, but 1414 loop 11 later corrected that buffer-pin releases are counted and duplicate-looking pin releases can be legitimate. Therefore 1404's all-kind validator was wrong. The actual remaining defect was narrower: writer-release duplicate scan and slot reservation needed `_deferredReleaseEnqueueGate`.
+
+Solution: Preserve writer queue acceptance with `return QueueDeferredWriterRelease(...)`. Restore `_deferredReleaseEnqueueGate`, reset it during initialize/dispose, wrap writer duplicate scan and queue slot reservation with `while (Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate, 1, 0) != 0) Thread.SpinWait(8)`, and release via `Volatile.Write(ref _deferredReleaseEnqueueGate, 0)` in `finally`. Keep writer-only de-duplication with `pending->Kind == DeferredReleaseKindWriter`. Update 1404 validators to require writer-only queue semantics and reject stale generic `pending->Kind == kind`.
+
+Rejected Alternatives: All-kind de-duplication was rejected because it can collapse legitimate counted buffer-pin releases. Returning false while the enqueue gate is held was rejected because release callers treat false as unaccepted release. Leaving scan/reserve unlocked was rejected because two writer-release callers can publish duplicate pending writer records.
+
+Scalability potential: Low-tier CPUs get deterministic writer release acceptance under allocator contention without managed locks or blocking OS primitives. Middle/High/Ultra retain the same fixed-size native ring and do not change Data Monolith truth, DTO layout, or quality route.
+
+Hardware Impact: No profiler microseconds claimed. The added atomic spin gate is only on deferred release enqueue, not steady arena allocation or Android data loading. Build was not launched: latest report gate sample was CPU 88 with one active compiler process.
+
+### APEX Stale Proof Artifact Correction 2026-05-28
+
+Problem: `Docs/Reports/ANDROID_PAL_OPTIMIZATION_REPORT_1404.json` recorded `GlobalDataVault.cs` SHA-256 `5d3cfe4c916fa9547a313920aba8ce6d7ef4275ed3e26dfc00145a3b5fc2c4f1`, but the current source hash is `259674db0e7fd9216c65bc6c4cb49d64cc86e27cbaa616a76af3878ab31dcc96`. The source contract remained valid, but the proof artifact was stale and therefore not admissible as final evidence.
+
+Solution: Regenerated the JSON report and sidecar. Current report SHA-256 is `a06c414068e9bb5cf659a71da1872e6743f9127602d4445638ad8f97fa0a92d3`. The refreshed report records current queue-return lines `1949` and `1981`, enqueue gate line `2061`, `finally` gate release line `2114`, writer-only de-dup line `2080`, generic de-dup line `0`, CPU sample `97`, and active compiler processes `csc` PID `43496` plus `dotnet` PID `35512`.
+
+Rejected Alternatives: Leaving the stale JSON hash was rejected as evidence drift. Rewriting `GlobalDataVault` again was rejected because current source matches the 1414 writer-only queue contract and the 1404 validators. Running `dotnet build` was rejected because CPU was above 50 and active compiler processes existed.
+
+Scalability potential: No gameplay quality route changed. Low/Middle/High/Ultra devices keep identical Data Monolith bytes, DTO layout, BufferIDs, and authority path; `GlobalQualityWeight` remains outside this truth layer.
+
+Hardware Impact: No runtime microseconds claimed. This pass is proof hygiene plus build-throttle compliance only.
+
+### APEX Concurrent Drift Repair And Final Hash Refresh 2026-05-28
+
+Problem: A later report refresh caught a real regression: `GlobalDataVault.cs` changed to SHA-256 `8930026d041307e5c93c490ec4bafec6eb00bc995a05939e3626a9bc3e964cd2` and no longer contained `_deferredReleaseEnqueueGate`. The report correctly dropped `globalDataVaultDeferredWriterReleaseQueueContract` to false. That state would permit duplicate pending writer-release enqueue records under concurrent scan/reserve.
+
+Solution: Restored `_deferredReleaseEnqueueGate`, initialize/dispose resets, `Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate, 1, 0)` around writer duplicate scan and slot reservation, and `Volatile.Write(ref _deferredReleaseEnqueueGate, 0)` in `finally`. Kept writer-only `pending->Kind == DeferredReleaseKindWriter` to match 1414 tests. Refreshed report to SHA-256 `3fad2f15cbde499c6b4646877b3d6c6d22fcc59b075c0cf32eebbc53ffcdcca7`; a 10-second source stability check held `GlobalDataVault.cs` hash `259674db0e7fd9216c65bc6c4cb49d64cc86e27cbaa616a76af3878ab31dcc96`.
+
+Rejected Alternatives: Accepting the false queue contract was rejected because the 1414 test already defines the required writer-only serialized queue. All-kind de-duplication was still rejected because counted buffer-pin releases can be legitimate. Running `dotnet build` was rejected because the report gate sampled CPU `81`.
+
+Scalability potential: Low devices get deterministic writer-release queue behavior under allocator contention. Middle/High/Ultra keep the same DataVault truth route; `GlobalQualityWeight` does not apply to memory authority or static-data identity.
+
+Hardware Impact: No measured frame or boot microseconds. The change affects only deferred release contention, not steady frame logic.
+
+### APEX Final Source Drift Repair And Test Gate 2026-05-28
+
+Problem: A repeat audit found the same writer enqueue regression again: current `QueueDeferredRelease` used `bool enqueueGateAcquired = Interlocked.CompareExchange(...) == 0`. When the gate was not acquired, writer releases could still proceed to slot reservation without serialized duplicate scan. That violates the intended writer-only deferred release queue proof and made the previous JSON report inadmissible.
+
+Solution: Replaced the nonblocking boolean gate with a strict writer-only spin gate: `while (Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate, 1, 0) != 0) Thread.SpinWait(8);`. The gate is released in `finally` through `Volatile.Write(ref _deferredReleaseEnqueueGate, 0)`. Added `Assets/_Project/Tests/Editor/AndroidAssetBridge1404EditTests.cs` to assert the JNI fail-closed route, native exact-size guard, absence of managed JNI wrappers/native heap staging, and strict DataVault writer enqueue gate.
+
+Rejected Alternatives: Keeping `bool enqueueGateAcquired` was rejected because it preserves the duplicate writer-release enqueue race. All-kind de-duplication was still rejected because 1414 documents counted buffer-pin releases as legitimate. Returning false from `ReleaseWriteLock` was rejected because 1414 owns that contract and accepts queued writer release as successful transfer into the deferred queue.
+
+Scalability potential: Low devices gain deterministic memory-release behavior under allocator contention without OS locks. Middle, High, and Ultra keep the same fixed DataVault authority route; this is not a visual fidelity path. `HomeostasisBrain.GlobalQualityWeight` is intentionally not used because memory ownership, DTO layout, and static-data identity must not scale by quality.
+
+Hardware Impact: No measured microseconds. The cost is one writer-only atomic spin gate on deferred release contention. Final compile gate stayed closed: CPU 82 with zero active compiler processes, so `dotnet build` was not launched.
+
+### APEX Concurrent Source Drift Final Blocker 2026-05-28
+
+Problem: The strict writer-only enqueue gate was repaired four times, but current `GlobalDataVault.cs` reverted again to `bool enqueueGateAcquired`. Current SHA-256 is `56addb112a437a669c4e0b628ffad68a177d7e3f19c9e1dd6338c8ad647ea67b`; strict spin gate text is absent. This makes `Assets/_Project/Tests/Editor/AndroidAssetBridge1404EditTests.cs` a legitimate failing guard rather than a passed proof.
+
+Solution: Stop claiming the fix is present. Refresh `Docs/Reports/ANDROID_PAL_OPTIMIZATION_REPORT_1404.json` to `PENDING_CONCURRENT_SOURCE_DRIFT_AND_BUILD_BLOCKED_BY_CPU` with `globalDataVaultDeferredWriterReleaseQueueContract=false`. Preserve the editor test and validators so the regression is caught by the next stable integration pass.
+
+Rejected Alternatives: Reapplying the same patch indefinitely was rejected after repeated overwrite. Removing the test was rejected because it would hide the current allocator contract defect. Publishing a report with stale source hash was rejected as evidence fraud.
+
+Scalability potential: No quality path changed. The desired fix remains one contention-only atomic writer gate. `GlobalQualityWeight` remains deliberately irrelevant to DataVault memory authority.
+
+Hardware Impact: No measured microseconds. Build was not launched: immediate pre-build sample wrote CPU `93`, active compiler processes `0`, and gate skipped the command in `Docs/AgentLogs/Dump_1404_build_after_source_drift_20260528T213058_SAMARA.log`.

@@ -31,14 +31,24 @@ void UpdateFoam(uint3 id : SV_DispatchThreadID)
 {
 	// lod data 1 is current frame, compute world pos from quad uv
 	const float sliceIndex = id.z;
-	float width; float height; float depth;
+	uint width; uint height; uint depth;
 	{
 		_LD_TexArray_Foam_Source.GetDimensions(width, height, depth);
 	}
-	// Slice to sample previous frames data from. LOD change takes into account shifting of the cascades in scale.
-	const float sliceIndexSource = clamp(id.z + _LODChange, 0.0, depth - 1.0);
 
-	const float2 input_uv = IDtoUV(id.xy, width, height);
+	if (id.x >= width || id.y >= height || id.z >= depth)
+	{
+		return;
+	}
+
+	const float widthFloat = (float)width;
+	const float heightFloat = (float)height;
+	const float depthFloat = (float)depth;
+
+	// Slice to sample previous frames data from. LOD change takes into account shifting of the cascades in scale.
+	const float sliceIndexSource = clamp(id.z + _LODChange, 0.0, depthFloat - 1.0);
+
+	const float2 input_uv = IDtoUV(id.xy, widthFloat, heightFloat);
 	const CascadeParams cascadeData = _CrestCascadeData[sliceIndex];
 	const float2 worldPosXZ = UVToWorld(input_uv, sliceIndex, cascadeData);
 	const float3 uv_slice = float3(input_uv, id.z);
@@ -59,7 +69,7 @@ void UpdateFoam(uint3 id : SV_DispatchThreadID)
 		{
 			foam = _LD_TexArray_Foam_Source.SampleLevel(LODData_linear_clamp_sampler, uv_slice_source, 0.0).x;
 		}
-		else if (sliceIndexSource + 1.0 < depth)
+		else if (sliceIndexSource + 1.0 < depthFloat)
 		{
 			// Sample lies outside this cascade. Try to use the next cascade in the chain - better to get something rather lower res
 			// than nothing.

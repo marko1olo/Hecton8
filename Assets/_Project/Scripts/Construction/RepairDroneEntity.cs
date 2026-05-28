@@ -186,7 +186,7 @@ namespace Hecton8.Construction
         /// <summary>Flushes queued repair-drone torch acoustic payloads.</summary>
         public static void FlushPending()
         {
-            if (!IsHandleCreated(in _pendingEventsHandle))
+            if (!IsPayloadVaultHandle(in _pendingEventsHandle))
                 return;
 
             if (_listenerCount <= 0)
@@ -433,8 +433,8 @@ namespace Hecton8.Construction
 
         private static void PromoteNextFrameEventsIfFrontEmpty()
         {
-            if (!IsHandleCreated(in _pendingEventsHandle) ||
-                !IsHandleCreated(in _nextFrameEventsHandle) ||
+            if (!IsPayloadVaultHandle(in _pendingEventsHandle) ||
+                !IsPayloadVaultHandle(in _nextFrameEventsHandle) ||
                 _pendingEventCount > 0 ||
                 _nextFrameEventCount <= 0)
             {
@@ -464,7 +464,7 @@ namespace Hecton8.Construction
 
             IDataVault vault = _vault;
             if (vault == null ||
-                !IsHandleCreated(in _pendingEventsHandle) ||
+                !IsPayloadVaultHandle(in _pendingEventsHandle) ||
                 !vault.TryAcquireWriteLock(in _pendingEventsHandle, SystemID.Construction, out NativeArray<RepairDroneTorchAcousticPayload> buffer))
             {
                 return false;
@@ -484,7 +484,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                vault.ReleaseWriteLock(in _pendingEventsHandle, SystemID.Construction);
+                ReleasePayloadWrite(vault, in _pendingEventsHandle);
             }
         }
 
@@ -499,8 +499,9 @@ namespace Hecton8.Construction
             if (TryReadPayloadBuffer(vault, in handle, out _))
                 return true;
 
-            BufferID bufferId = handle.BufferID != 0u ? (BufferID)(int)handle.BufferID : defaultBufferId;
-            if (vault.TryGetGenerationHandle<RepairDroneTorchAcousticPayload>(bufferId, out VaultGenerationHandle<RepairDroneTorchAcousticPayload> existingHandle))
+            BufferID bufferId = ResolvePayloadBufferId(in handle, defaultBufferId);
+            if (vault.TryGetGenerationHandle<RepairDroneTorchAcousticPayload>(bufferId, out VaultGenerationHandle<RepairDroneTorchAcousticPayload> existingHandle) &&
+                IsPayloadVaultHandle(in existingHandle))
             {
                 handle = existingHandle;
                 if (TryReadPayloadBuffer(vault, in handle, out _))
@@ -523,7 +524,7 @@ namespace Hecton8.Construction
         {
             IDataVault vault = _vault;
             if (vault == null ||
-                !IsHandleCreated(in handle) ||
+                !IsPayloadVaultHandle(in handle) ||
                 index < 0 ||
                 !vault.TryAcquireWriteLock(in handle, SystemID.Construction, out NativeArray<RepairDroneTorchAcousticPayload> buffer))
             {
@@ -540,7 +541,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                vault.ReleaseWriteLock(in handle, SystemID.Construction);
+                ReleasePayloadWrite(vault, in handle);
             }
         }
 
@@ -558,7 +559,7 @@ namespace Hecton8.Construction
         {
             buffer = default;
             return vault != null &&
-                   IsHandleCreated(in handle) &&
+                   IsPayloadVaultHandle(in handle) &&
                    vault.TryReadOnlyHandle(in handle, out buffer) &&
                    buffer.Length >= PendingEventCapacity;
         }
@@ -566,15 +567,36 @@ namespace Hecton8.Construction
         private static void ReleaseVaultBuffer(ref VaultGenerationHandle<RepairDroneTorchAcousticPayload> handle)
         {
             IDataVault vault = _vault;
-            if (vault != null && IsHandleCreated(in handle))
+            if (vault != null && IsPayloadVaultHandle(in handle))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
         }
 
-        private static bool IsHandleCreated(in VaultGenerationHandle<RepairDroneTorchAcousticPayload> handle)
+        private static void ReleasePayloadWrite(
+            IDataVault vault,
+            in VaultGenerationHandle<RepairDroneTorchAcousticPayload> handle)
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            if (vault != null && IsPayloadVaultHandle(in handle))
+                vault.ReleaseWriteLock(in handle, SystemID.Construction);
+        }
+
+        private static BufferID ResolvePayloadBufferId(
+            in VaultGenerationHandle<RepairDroneTorchAcousticPayload> handle,
+            BufferID defaultBufferId)
+        {
+            if (IsPayloadVaultHandle(in handle))
+                return (BufferID)(int)handle.BufferID;
+
+            return defaultBufferId;
+        }
+
+        private static bool IsPayloadVaultHandle(in VaultGenerationHandle<RepairDroneTorchAcousticPayload> handle)
+        {
+            return (handle.BufferID == unchecked((uint)(int)PendingEventBufferId) ||
+                    handle.BufferID == unchecked((uint)(int)NextFrameEventBufferId)) &&
+                   handle.SystemID == (uint)SystemID.Construction &&
+                   handle.Generation != 0u;
         }
     }
 

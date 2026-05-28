@@ -1,0 +1,113 @@
+﻿{
+    "agent":  "UNKNOWN",
+    "domain":  "Core / Global Systems Architecture / AUP Origin Shift",
+    "status":  "PENDING_RUNTIME_VERIFICATION",
+    "created_at_local":  "2026-05-28 Europe/Samara",
+    "summary":  "AUP Origin route now has owner-buffer writer locks, scheduled rebase buffer pins, and FloatingOrigin release hooks. Runtime Unity proof is still absent. Full solution build attempt did not pass because unrelated active files fail compilation.",
+    "modified_files":  [
+                           {
+                               "path":  "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs",
+                               "sha256":  "5F11D259FF25C1469463034608EEFD2CC783A9B3F9D32A0E5C17FA3ED52EBF03"
+                           },
+                           {
+                               "path":  "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+                               "sha256":  "061B6D3820FF35AA0CC4F51068F97ACA7EAE555309D217354787D57E0AC67EC6"
+                           }
+                       ],
+    "buffer_ids":  [
+                       {
+                           "name":  "MockStatesBuffer",
+                           "value":  73030,
+                           "lock":  "scheduled pin via TryLockBuffer, release via ReleaseScheduledRebaseLocks"
+                       },
+                       {
+                           "name":  "MockVelocitiesBuffer",
+                           "value":  73031,
+                           "lock":  "owner initialization writer-lock via TryAcquireWriteView"
+                       },
+                       {
+                           "name":  "MockHistoricalPointsBuffer",
+                           "value":  73032,
+                           "lock":  "direct writer-lock for sync slice, scheduled pin for async job"
+                       },
+                       {
+                           "name":  "TelemetryRingBuffer",
+                           "value":  73033,
+                           "lock":  "writer-lock for frame and completion telemetry"
+                       },
+                       {
+                           "name":  "RuntimeStateBuffer",
+                           "value":  73034,
+                           "lock":  "writer-lock for runtime/tuner/CSV/time-slice state"
+                       },
+                       {
+                           "name":  "MockCameraBuffer",
+                           "value":  73035,
+                           "lock":  "writer-lock for pre-simulation camera AUP state"
+                       },
+                       {
+                           "name":  "CsvScratchBuffer",
+                           "value":  73036,
+                           "lock":  "writer-lock during editor CSV file read into scratch"
+                       },
+                       {
+                           "name":  "CounterBuffer",
+                           "value":  73037,
+                           "lock":  "writer-lock for reset/direct slice, scheduled pin for async job counter"
+                       }
+                   ],
+    "cross_domain_pins":  [
+                              "BufferID.VaultHotEntityData",
+                              "BufferID.TetherCablePositions",
+                              "BufferID.TetherCablePreviousPositions",
+                              "BufferID.TetherVisualSegmentPositions",
+                              "BufferID.TetherVisualAnchorPositions"
+                          ],
+    "line_evidence":  {
+                          "schedule_pin_helper":  "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:601-638 TryLockScheduledBuffer and ReleaseScheduledRebaseLocks.",
+                          "fov_release_success":  "Assets/_Project/Scripts/HectonFloatingOrigin.cs:892 releases scheduled pins after AwaitTransformShiftJobAsync completion.",
+                          "continuous_scaling":  "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:857-861, 1217-1222, and 1338-1340 use HomeostasisBrain.GlobalQualityWeight through ResolveQualityScaledBatchSize.",
+                          "fov_release_finally":  "Assets/_Project/Scripts/HectonFloatingOrigin.cs:963 releases scheduled pins again in finally before UnlockAllocationsAfterAupShift.",
+                          "no_binary_low_end":  "rg isLowEnd/lowEnd/LowEnd on touched files returned 0 hits.",
+                          "lock_helper":  "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:556-568 TryAcquireWriteView calls DataVault.TryAcquireWriteLock and releases invalid view."
+                      },
+    "zero_gc_added_line_scan":  {
+                                    "GlobalRegistry":  0,
+                                    "dot_Complete":  0,
+                                    "linq_tokens":  0,
+                                    "foreach_tokens":  0,
+                                    "value_type_new_tokens":  "AupMockInitializeJob,double3,OriginShiftSignalDTO,AupStateRebaseJob,float3,VaultHotEntityRebaseJob,ReadOnlySpan<byte>",
+                                    "added_lines":  820,
+                                    "reference_new_suspects":  0,
+                                    "EnsureGenerationHandle":  0,
+                                    "new_tokens":  8,
+                                    "string_Format":  0,
+                                    "dot_ToString":  0
+                                },
+    "compile_resource_throttle":  {
+                                      "build_command":  "dotnet build Hecton8.slnx /m:1 /nr:false /p:UseSharedCompilation=false",
+                                      "first_error_file":  "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+                                      "error_count":  60,
+                                      "result":  "FAILED_OR_TIMEOUT_UNRELATED_COMPILE_WALL",
+                                      "active_compilers_before_build":  "none detected by Get-Process dotnet,csc,VBCSCompiler",
+                                      "build_log_sha256":  "CC2A637194272D74A26D4BD294F30B28D15BAAF65774FDE4ADCFA630BBBE8289",
+                                      "warning_count":  0,
+                                      "timeout_seconds":  904,
+                                      "build_log":  "Docs/Reports/BUILD_UNKNOWN_AUP_LOCK_PIN_PASS_20260528.log",
+                                      "post_timeout_action":  "Stopped owned lingering dotnet.exe PID 31496; follow-up process check returned no dotnet/csc/VBCSCompiler.",
+                                      "pre_build_cpu_percent":  31.2,
+                                      "additional_error_file":  "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+                                      "scoped_aup_error_seen":  false,
+                                      "external_build_sample_after_report_write":  "sample at report-write time: CPU 80%, active external dotnet.exe PID 62104, command: dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1; not stopped because command line did not match this pass command and may belong to another agent."
+                                  },
+    "static_validation":  {
+                              "old_route_names":  "EnsureRuntimeState=0; TryResolveOrAcquire=0 in touched AUP/FloatingOrigin files",
+                              "brace_counts":  "AupOriginShiftCoordinator.cs 173/173; HectonFloatingOrigin.cs 230/230",
+                              "diff_check":  "git diff --check scoped to two touched files exit 0; LF/CRLF warnings only"
+                          },
+    "residuals":  [
+                      "No Unity Editor import/Console/Play Mode/profiler/player/device proof available in this session.",
+                      "Full solution build is not green; current blockers are outside this pass and were explicitly left to other agents.",
+                      "No runtime black-box Dump_UNKNOWN was produced because no crash/NaN runtime execution was run."
+                  ]
+}

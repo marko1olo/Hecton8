@@ -114,7 +114,7 @@ namespace Hecton8.AI.Ecosystem
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                RebindDataVaultForLifecycle(currentService as IDataVault);
+                RebindDataVaultForLifecycle(currentService is IDataVault currentVault ? currentVault : null);
 
                 if (_dataVault == null)
                 {
@@ -281,12 +281,12 @@ namespace Hecton8.AI.Ecosystem
             }
 
             bool ownedReady =
-                TryOpenVaultView(vault, in _coefficientHandle, CoefficientCapacity, out NativeArray<EcosystemPopulationCoefficient> _) &&
-                TryOpenVaultView(vault, in _sectorStateHandle, math.max(1, maxSectors), out NativeArray<EcosystemPopulationSectorState> _) &&
-                TryOpenVaultView(vault, in _cullEventHandle, math.clamp(cullEventCapacity, 1, EntityDeathSignalLaneCapacity), out NativeArray<EcosystemPopulationCullEvent> _) &&
-                TryOpenVaultView(vault, in _telemetryHandle, TelemetryCapacity, out NativeArray<EcosystemPopulationTelemetryEntry> _) &&
-                TryOpenVaultView(vault, in _freeRingHandle, math.max(1, freeRingCapacity), out NativeArray<EcosystemPopulationFreeSlot> _) &&
-                TryOpenVaultView(vault, in _counterHandle, CounterCapacity, out NativeArray<int> _);
+                TryOpenOwnedVaultView(vault, in _coefficientHandle, BufferID.EcosystemPopulationCoefficients, CoefficientCapacity, out NativeArray<EcosystemPopulationCoefficient> _) &&
+                TryOpenOwnedVaultView(vault, in _sectorStateHandle, BufferID.EcosystemPopulationSectorState, math.max(1, maxSectors), out NativeArray<EcosystemPopulationSectorState> _) &&
+                TryOpenOwnedVaultView(vault, in _cullEventHandle, BufferID.EcosystemPopulationCullEvents, math.clamp(cullEventCapacity, 1, EntityDeathSignalLaneCapacity), out NativeArray<EcosystemPopulationCullEvent> _) &&
+                TryOpenOwnedVaultView(vault, in _telemetryHandle, BufferID.EcosystemPopulationTelemetryRing, TelemetryCapacity, out NativeArray<EcosystemPopulationTelemetryEntry> _) &&
+                TryOpenOwnedVaultView(vault, in _freeRingHandle, BufferID.EcosystemPopulationFreeRing, math.max(1, freeRingCapacity), out NativeArray<EcosystemPopulationFreeSlot> _) &&
+                TryOpenOwnedVaultView(vault, in _counterHandle, BufferID.EcosystemPopulationCounters, CounterCapacity, out NativeArray<int> _);
 
             if (!ownedReady || !_coefficientsLoaded)
             {
@@ -297,8 +297,8 @@ namespace Hecton8.AI.Ecosystem
             _runtimeFlags &= ~TelemetryVaultMissingFlag;
 
             bool entityReady =
-                TryOpenVaultView(vault, in _entityAupHandle, 1, out NativeArray<AbsoluteUniversePosition> _) &&
-                TryOpenVaultView(vault, in _entityFlagHandle, 1, out NativeArray<uint> _);
+                TryOpenExternalVaultView(vault, in _entityAupHandle, BufferID.EntityAUPs, 1, out NativeArray<AbsoluteUniversePosition> _) &&
+                TryOpenExternalVaultView(vault, in _entityFlagHandle, BufferID.EntityFlags, 1, out NativeArray<uint> _);
 
             if (entityReady)
                 _runtimeFlags &= ~TelemetryEntityBuffersMissingFlag;
@@ -347,7 +347,7 @@ namespace Hecton8.AI.Ecosystem
 
         private void LoadCoefficientsIntoVault(IDataVault vault)
         {
-            if (!TryOpenVaultView(vault, in _coefficientHandle, 1, out NativeArray<EcosystemPopulationCoefficient> coefficients))
+            if (!TryOpenOwnedVaultView(vault, in _coefficientHandle, BufferID.EcosystemPopulationCoefficients, 1, out NativeArray<EcosystemPopulationCoefficient> coefficients))
                 return;
 
             EcosystemPopulationCoefficient coefficient = EcosystemPopulationCoefficient.CreateDefault();
@@ -436,12 +436,12 @@ namespace Hecton8.AI.Ecosystem
         {
             entityCount = 0;
             totalActiveEntities = 0;
-            if (!TryOpenVaultView(vault, in _entityAupHandle, 1, out NativeArray<AbsoluteUniversePosition> entityAups) ||
-                !TryOpenVaultView(vault, in _entityFlagHandle, 1, out NativeArray<uint> entityFlags) ||
-                !TryOpenVaultView(vault, in _sectorStateHandle, 1, out NativeArray<EcosystemPopulationSectorState> sectorStates) ||
-                !TryOpenVaultView(vault, in _coefficientHandle, 1, out NativeArray<EcosystemPopulationCoefficient> coefficients) ||
-                !TryOpenVaultView(vault, in _freeRingHandle, 1, out NativeArray<EcosystemPopulationFreeSlot> freeRing) ||
-                !TryOpenVaultView(vault, in _counterHandle, 1, out NativeArray<int> counters))
+            if (!TryOpenExternalVaultView(vault, in _entityAupHandle, BufferID.EntityAUPs, 1, out NativeArray<AbsoluteUniversePosition> entityAups) ||
+                !TryOpenExternalVaultView(vault, in _entityFlagHandle, BufferID.EntityFlags, 1, out NativeArray<uint> entityFlags) ||
+                !TryOpenOwnedVaultView(vault, in _sectorStateHandle, BufferID.EcosystemPopulationSectorState, 1, out NativeArray<EcosystemPopulationSectorState> sectorStates) ||
+                !TryOpenOwnedVaultView(vault, in _coefficientHandle, BufferID.EcosystemPopulationCoefficients, 1, out NativeArray<EcosystemPopulationCoefficient> coefficients) ||
+                !TryOpenOwnedVaultView(vault, in _freeRingHandle, BufferID.EcosystemPopulationFreeRing, 1, out NativeArray<EcosystemPopulationFreeSlot> freeRing) ||
+                !TryOpenOwnedVaultView(vault, in _counterHandle, BufferID.EcosystemPopulationCounters, 1, out NativeArray<int> counters))
             {
                 return false;
             }
@@ -566,14 +566,14 @@ namespace Hecton8.AI.Ecosystem
             if (!TryLockJobBuffers(vault))
                 return;
 
-            if (!TryOpenVaultView(vault, in _coefficientHandle, 1, out NativeArray<EcosystemPopulationCoefficient> coefficients) ||
-                !TryOpenVaultView(vault, in _sectorStateHandle, 1, out NativeArray<EcosystemPopulationSectorState> sectorStates) ||
-                !TryOpenVaultView(vault, in _cullEventHandle, 1, out NativeArray<EcosystemPopulationCullEvent> cullEvents) ||
-                !TryOpenVaultView(vault, in _telemetryHandle, 1, out NativeArray<EcosystemPopulationTelemetryEntry> telemetry) ||
-                !TryOpenVaultView(vault, in _freeRingHandle, 1, out NativeArray<EcosystemPopulationFreeSlot> freeRing) ||
-                !TryOpenVaultView(vault, in _counterHandle, 1, out NativeArray<int> counters) ||
-                !TryOpenVaultView(vault, in _entityAupHandle, 1, out NativeArray<AbsoluteUniversePosition> entityAups) ||
-                !TryOpenVaultView(vault, in _entityFlagHandle, 1, out NativeArray<uint> entityFlags))
+            if (!TryOpenOwnedVaultView(vault, in _coefficientHandle, BufferID.EcosystemPopulationCoefficients, 1, out NativeArray<EcosystemPopulationCoefficient> coefficients) ||
+                !TryOpenOwnedVaultView(vault, in _sectorStateHandle, BufferID.EcosystemPopulationSectorState, 1, out NativeArray<EcosystemPopulationSectorState> sectorStates) ||
+                !TryOpenOwnedVaultView(vault, in _cullEventHandle, BufferID.EcosystemPopulationCullEvents, 1, out NativeArray<EcosystemPopulationCullEvent> cullEvents) ||
+                !TryOpenOwnedVaultView(vault, in _telemetryHandle, BufferID.EcosystemPopulationTelemetryRing, 1, out NativeArray<EcosystemPopulationTelemetryEntry> telemetry) ||
+                !TryOpenOwnedVaultView(vault, in _freeRingHandle, BufferID.EcosystemPopulationFreeRing, 1, out NativeArray<EcosystemPopulationFreeSlot> freeRing) ||
+                !TryOpenOwnedVaultView(vault, in _counterHandle, BufferID.EcosystemPopulationCounters, 1, out NativeArray<int> counters) ||
+                !TryOpenExternalVaultView(vault, in _entityAupHandle, BufferID.EntityAUPs, 1, out NativeArray<AbsoluteUniversePosition> entityAups) ||
+                !TryOpenExternalVaultView(vault, in _entityFlagHandle, BufferID.EntityFlags, 1, out NativeArray<uint> entityFlags))
             {
                 UnlockJobBuffers();
                 return;
@@ -629,8 +629,8 @@ namespace Hecton8.AI.Ecosystem
 
         private void RecordEmptyTelemetry(IDataVault vault, uint frame, int totalActiveEntities)
         {
-            if (!TryOpenVaultView(vault, in _telemetryHandle, 1, out NativeArray<EcosystemPopulationTelemetryEntry> telemetry) ||
-                !TryOpenVaultView(vault, in _counterHandle, 1, out NativeArray<int> counters))
+            if (!TryOpenOwnedVaultView(vault, in _telemetryHandle, BufferID.EcosystemPopulationTelemetryRing, 1, out NativeArray<EcosystemPopulationTelemetryEntry> telemetry) ||
+                !TryOpenOwnedVaultView(vault, in _counterHandle, BufferID.EcosystemPopulationCounters, 1, out NativeArray<int> counters))
                 return;
 
             int telemetryIndex = ReserveTelemetryIndex(telemetry.Length);
@@ -690,11 +690,11 @@ namespace Hecton8.AI.Ecosystem
             if (vault == null)
                 return;
 
-            if (!TryOpenVaultView(vault, in _cullEventHandle, 1, out NativeArray<EcosystemPopulationCullEvent> cullEvents) ||
-                !TryOpenVaultView(vault, in _counterHandle, 1, out NativeArray<int> counters))
+            if (!TryOpenOwnedVaultView(vault, in _cullEventHandle, BufferID.EcosystemPopulationCullEvents, 1, out NativeArray<EcosystemPopulationCullEvent> cullEvents) ||
+                !TryOpenOwnedVaultView(vault, in _counterHandle, BufferID.EcosystemPopulationCounters, 1, out NativeArray<int> counters))
                 return;
 
-            TryOpenVaultView(vault, in _telemetryHandle, 1, out NativeArray<EcosystemPopulationTelemetryEntry> telemetry);
+            TryOpenOwnedVaultView(vault, in _telemetryHandle, BufferID.EcosystemPopulationTelemetryRing, 1, out NativeArray<EcosystemPopulationTelemetryEntry> telemetry);
 
             int eventCount = counters.Length > EcosystemPopulationCounters.CullEventCount
                 ? math.clamp(counters[EcosystemPopulationCounters.CullEventCount], 0, cullEvents.Length)
@@ -747,67 +747,52 @@ namespace Hecton8.AI.Ecosystem
             if (vault == null || _jobLocksHeld)
                 return false;
 
-            if (!vault.TryLockBuffer(BufferID.EcosystemPopulationCoefficients, SystemID.AIEcology))
-                return false;
-            if (!vault.TryLockBuffer(BufferID.EcosystemPopulationSectorState, SystemID.AIEcology))
-            {
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCoefficients, SystemID.AIEcology);
-                return false;
-            }
-            if (!vault.TryLockBuffer(BufferID.EcosystemPopulationCullEvents, SystemID.AIEcology))
-            {
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationSectorState, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCoefficients, SystemID.AIEcology);
-                return false;
-            }
-            if (!vault.TryLockBuffer(BufferID.EcosystemPopulationTelemetryRing, SystemID.AIEcology))
-            {
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCullEvents, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationSectorState, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCoefficients, SystemID.AIEcology);
-                return false;
-            }
-            if (!vault.TryLockBuffer(BufferID.EcosystemPopulationFreeRing, SystemID.AIEcology))
-            {
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationTelemetryRing, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCullEvents, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationSectorState, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCoefficients, SystemID.AIEcology);
-                return false;
-            }
-            if (!vault.TryLockBuffer(BufferID.EcosystemPopulationCounters, SystemID.AIEcology))
-            {
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationFreeRing, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationTelemetryRing, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCullEvents, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationSectorState, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCoefficients, SystemID.AIEcology);
-                return false;
-            }
-            if (!vault.TryLockBuffer(BufferID.EntityAUPs, SystemID.AIEcology))
-            {
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCounters, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationFreeRing, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationTelemetryRing, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCullEvents, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationSectorState, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCoefficients, SystemID.AIEcology);
-                return false;
-            }
-            if (!vault.TryLockBuffer(BufferID.EntityFlags, SystemID.AIEcology))
-            {
-                vault.TryUnlockBuffer(BufferID.EntityAUPs, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCounters, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationFreeRing, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationTelemetryRing, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCullEvents, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationSectorState, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCoefficients, SystemID.AIEcology);
-                return false;
-            }
+            bool lockedCoefficients = false;
+            bool lockedSectorState = false;
+            bool lockedCullEvents = false;
+            bool lockedTelemetry = false;
+            bool lockedFreeRing = false;
+            bool lockedCounters = false;
+            bool lockedEntityAups = false;
+            bool lockedEntityFlags = false;
+            bool ownershipTransferred = false;
 
-            _jobLocksHeld = true;
-            return true;
+            try
+            {
+                lockedCoefficients = vault.TryLockBuffer(BufferID.EcosystemPopulationCoefficients, SystemID.AIEcology);
+                if (!lockedCoefficients)
+                    return false;
+                lockedSectorState = vault.TryLockBuffer(BufferID.EcosystemPopulationSectorState, SystemID.AIEcology);
+                if (!lockedSectorState)
+                    return false;
+                lockedCullEvents = vault.TryLockBuffer(BufferID.EcosystemPopulationCullEvents, SystemID.AIEcology);
+                if (!lockedCullEvents)
+                    return false;
+                lockedTelemetry = vault.TryLockBuffer(BufferID.EcosystemPopulationTelemetryRing, SystemID.AIEcology);
+                if (!lockedTelemetry)
+                    return false;
+                lockedFreeRing = vault.TryLockBuffer(BufferID.EcosystemPopulationFreeRing, SystemID.AIEcology);
+                if (!lockedFreeRing)
+                    return false;
+                lockedCounters = vault.TryLockBuffer(BufferID.EcosystemPopulationCounters, SystemID.AIEcology);
+                if (!lockedCounters)
+                    return false;
+                lockedEntityAups = vault.TryLockBuffer(BufferID.EntityAUPs, SystemID.AIEcology);
+                if (!lockedEntityAups)
+                    return false;
+                lockedEntityFlags = vault.TryLockBuffer(BufferID.EntityFlags, SystemID.AIEcology);
+                if (!lockedEntityFlags)
+                    return false;
+
+                _jobLocksHeld = true;
+                ownershipTransferred = true;
+                return true;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                    UnlockJobBuffersNoState(vault, lockedEntityFlags, lockedEntityAups, lockedCounters, lockedFreeRing, lockedTelemetry, lockedCullEvents, lockedSectorState, lockedCoefficients);
+            }
         }
 
         private void UnlockJobBuffers()
@@ -816,19 +801,46 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             IDataVault vault = _dataVault;
-            if (vault != null)
+            try
             {
-                vault.TryUnlockBuffer(BufferID.EntityFlags, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EntityAUPs, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCounters, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationFreeRing, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationTelemetryRing, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCullEvents, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationSectorState, SystemID.AIEcology);
-                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCoefficients, SystemID.AIEcology);
+                UnlockJobBuffersNoState(vault, true, true, true, true, true, true, true, true);
             }
+            finally
+            {
+                _jobLocksHeld = false;
+            }
+        }
 
-            _jobLocksHeld = false;
+        private static void UnlockJobBuffersNoState(
+            IDataVault vault,
+            bool unlockEntityFlags,
+            bool unlockEntityAups,
+            bool unlockCounters,
+            bool unlockFreeRing,
+            bool unlockTelemetry,
+            bool unlockCullEvents,
+            bool unlockSectorState,
+            bool unlockCoefficients)
+        {
+            if (vault == null)
+                return;
+
+            if (unlockEntityFlags)
+                vault.TryUnlockBuffer(BufferID.EntityFlags, SystemID.AIEcology);
+            if (unlockEntityAups)
+                vault.TryUnlockBuffer(BufferID.EntityAUPs, SystemID.AIEcology);
+            if (unlockCounters)
+                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCounters, SystemID.AIEcology);
+            if (unlockFreeRing)
+                vault.TryUnlockBuffer(BufferID.EcosystemPopulationFreeRing, SystemID.AIEcology);
+            if (unlockTelemetry)
+                vault.TryUnlockBuffer(BufferID.EcosystemPopulationTelemetryRing, SystemID.AIEcology);
+            if (unlockCullEvents)
+                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCullEvents, SystemID.AIEcology);
+            if (unlockSectorState)
+                vault.TryUnlockBuffer(BufferID.EcosystemPopulationSectorState, SystemID.AIEcology);
+            if (unlockCoefficients)
+                vault.TryUnlockBuffer(BufferID.EcosystemPopulationCoefficients, SystemID.AIEcology);
         }
 
         private void TryRegisterTicks()
@@ -931,14 +943,14 @@ namespace Hecton8.AI.Ecosystem
                 return false;
 
             if (IsOwnedVaultHandle(in handle, bufferId) &&
-                TryOpenVaultView(vault, in handle, requiredLength, out buffer))
+                TryOpenOwnedVaultView(vault, in handle, bufferId, requiredLength, out buffer))
             {
                 return true;
             }
 
             if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existingHandle) &&
                 IsOwnedVaultHandle(in existingHandle, bufferId) &&
-                TryOpenVaultView(vault, in existingHandle, requiredLength, out buffer))
+                TryOpenOwnedVaultView(vault, in existingHandle, bufferId, requiredLength, out buffer))
             {
                 handle = existingHandle;
                 return true;
@@ -957,7 +969,12 @@ namespace Hecton8.AI.Ecosystem
                 SystemID.AIEcology,
                 options);
 
-            return TryOpenVaultView(vault, in handle, requiredLength, out buffer);
+            if (TryOpenOwnedVaultView(vault, in handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            ReleaseVaultHandle(vault, ref handle, bufferId);
+            buffer = default;
+            return false;
         }
 
         private static bool TryBorrowVaultView<T>(
@@ -972,7 +989,7 @@ namespace Hecton8.AI.Ecosystem
             if (vault == null || requiredLength <= 0)
                 return false;
 
-            if (TryOpenVaultView(vault, in handle, requiredLength, out buffer))
+            if (TryOpenExternalVaultView(vault, in handle, bufferId, requiredLength, out buffer))
                 return true;
 
             if (!vault.TryGetGenerationHandle<T>(bufferId, out handle))
@@ -981,12 +998,38 @@ namespace Hecton8.AI.Ecosystem
                 return false;
             }
 
-            if (TryOpenVaultView(vault, in handle, requiredLength, out buffer))
+            if (TryOpenExternalVaultView(vault, in handle, bufferId, requiredLength, out buffer))
                 return true;
 
             handle = default;
             buffer = default;
             return false;
+        }
+
+        private static bool TryOpenOwnedVaultView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return IsOwnedVaultHandle(in handle, expectedBufferId) &&
+                   TryOpenVaultView(vault, in handle, requiredLength, out buffer);
+        }
+
+        private static bool TryOpenExternalVaultView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            return IsVaultHandleForBuffer(in handle, expectedBufferId) &&
+                   TryOpenVaultView(vault, in handle, requiredLength, out buffer);
         }
 
         private static bool TryOpenVaultView<T>(
@@ -998,8 +1041,6 @@ namespace Hecton8.AI.Ecosystem
         {
             buffer = default;
             return vault != null &&
-                   handle.BufferID != 0u &&
-                   handle.Generation != 0u &&
                    requiredLength >= 0 &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
@@ -1011,18 +1052,18 @@ namespace Hecton8.AI.Ecosystem
             if (vault == null)
                 return;
 
-            ReleaseVaultHandle(vault, ref _coefficientHandle);
-            ReleaseVaultHandle(vault, ref _sectorStateHandle);
-            ReleaseVaultHandle(vault, ref _cullEventHandle);
-            ReleaseVaultHandle(vault, ref _telemetryHandle);
-            ReleaseVaultHandle(vault, ref _freeRingHandle);
-            ReleaseVaultHandle(vault, ref _counterHandle);
+            ReleaseVaultHandle(vault, ref _coefficientHandle, BufferID.EcosystemPopulationCoefficients);
+            ReleaseVaultHandle(vault, ref _sectorStateHandle, BufferID.EcosystemPopulationSectorState);
+            ReleaseVaultHandle(vault, ref _cullEventHandle, BufferID.EcosystemPopulationCullEvents);
+            ReleaseVaultHandle(vault, ref _telemetryHandle, BufferID.EcosystemPopulationTelemetryRing);
+            ReleaseVaultHandle(vault, ref _freeRingHandle, BufferID.EcosystemPopulationFreeRing);
+            ReleaseVaultHandle(vault, ref _counterHandle, BufferID.EcosystemPopulationCounters);
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle, BufferID expectedBufferId)
             where T : struct
         {
-            if (IsOwnedVaultHandle(in handle))
+            if (IsOwnedVaultHandle(in handle, expectedBufferId))
             {
                 vault.ReleaseBuffer(in handle);
             }
@@ -1030,19 +1071,18 @@ namespace Hecton8.AI.Ecosystem
             handle = default;
         }
 
-        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle)
+        private static bool IsVaultHandleForBuffer<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId)
             where T : struct
         {
-            return handle.BufferID != 0u &&
-                   handle.Generation != 0u &&
-                   handle.SystemID == (uint)SystemID.AIEcology;
+            return handle.BufferID == (uint)expectedBufferId &&
+                   handle.Generation != 0u;
         }
 
         private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId)
             where T : struct
         {
-            return IsOwnedVaultHandle(in handle) &&
-                   handle.BufferID == (uint)expectedBufferId;
+            return IsVaultHandleForBuffer(in handle, expectedBufferId) &&
+                   handle.SystemID == (uint)SystemID.AIEcology;
         }
 
         private static int EnsureSectorSlot(

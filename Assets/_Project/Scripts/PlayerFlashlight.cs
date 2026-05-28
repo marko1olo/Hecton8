@@ -296,7 +296,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Player/Player Flashlight")]
-    public sealed class PlayerFlashlight : MonoBehaviour, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed class PlayerFlashlight : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
 
@@ -484,6 +484,9 @@ namespace Hecton8.Gameplay
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IModularEquipmentService _modularEquipmentService;
         private IAudioService _audioService;
+        private AudioClip _pendingAudioClip;
+        private bool _pendingAudioDirty;
+        private bool _lateFrameRegistered;
         private ScreenSpaceLightShaftSource _lightShaftSource;
         private bool _hotSwapRegistered;
         private float _nextCameraResolveTime;
@@ -577,6 +580,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             TryUnregisterHotSwap();
+            TryUnregisterLateFrameTick();
             _externalInterferenceIntensity = 0f;
             _externalInterferenceHoldTimer = 0f;
         }
@@ -584,6 +588,7 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             TryUnregisterHotSwap();
+            TryUnregisterLateFrameTick();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -596,6 +601,13 @@ namespace Hecton8.Gameplay
                 return;
 
             Toggle();
+        }
+
+        public void LateFrameTick()
+        {
+            FlushPendingAudio();
+            if (!_pendingAudioDirty)
+                TryUnregisterLateFrameTick();
         }
 
         internal void StepFromEquipmentOwner(float deltaTime)
@@ -1071,6 +1083,25 @@ namespace Hecton8.Gameplay
             _hotSwapRegistered = false;
         }
 
+        private void TryRegisterLateFrameTick()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (!_lateFrameRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _lateFrameRegistered = false;
+            _pendingAudioClip = null;
+            _pendingAudioDirty = false;
+        }
+
         private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Player)
@@ -1238,6 +1269,21 @@ namespace Hecton8.Gameplay
         private void PlaySound(AudioClip clip)
         {
             if (clip == null) return;
+            _pendingAudioClip = clip;
+            _pendingAudioDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void FlushPendingAudio()
+        {
+            if (!_pendingAudioDirty)
+                return;
+
+            AudioClip clip = _pendingAudioClip;
+            _pendingAudioClip = null;
+            _pendingAudioDirty = false;
+            if (clip == null) return;
+
             IAudioService audioService = _audioService;
             if (audioService == null) return;
 

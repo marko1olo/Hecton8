@@ -423,12 +423,15 @@ namespace Hecton8.Tools
 
             try
             {
-                int moduleSlotCount = tool.CopyAuthoredModuleRules(_registrationRules, profile.ToolId);
+                int moduleSlotCount = math.clamp(
+                    Mathf.Min(tool.CopyAuthoredModuleRules(_registrationRules, profile.ToolId), (int)profile.ModuleSlotCount),
+                    0,
+                    ToolUpgradeSystem.MaxModuleSlots);
                 ulong upgradeMask64;
                 ToolRuntimeStats compiledStats = ToolUpgradeSystem.CompileRuntimeStatsFromRules64(
                     profile,
                     _registrationRules,
-                    Mathf.Min(moduleSlotCount, (int)profile.ModuleSlotCount),
+                    moduleSlotCount,
                     out upgradeMask64);
                 uint upgradeMask = (uint)(upgradeMask64 & 0xFFFFFFFFUL);
 
@@ -443,13 +446,15 @@ namespace Hecton8.Tools
                 nextState.ModuleSlotCount = (byte)math.clamp(moduleSlotCount, 0, ToolUpgradeSystem.MaxModuleSlots);
                 nextState.Reserved0 = 0;
 
+                if (!TryWriteUpgradeMatrixStaging(ref views, slotIndex, in profile, _registrationRules, moduleSlotCount, upgradeMask64))
+                    return 0u;
+
                 _toolOwners[slotIndex] = tool;
                 _slotUsed[slotIndex] = true;
                 views.ToolStates[slotIndex] = nextState;
                 views.ToolStats[slotIndex] = compiledStats;
                 WriteActiveEquipmentWearRate(ref views, slotIndex, tool, in compiledStats, requestedActive: false);
                 WriteModuleRuleMirror(slotIndex, _registrationRules, moduleSlotCount);
-                WriteUpgradeMatrixStaging(ref views, slotIndex, in profile, _registrationRules, moduleSlotCount, upgradeMask64);
                 SetBatteryAbsolute(ref views, slotIndex, nextState.CurrentBattery);
                 WriteActiveEquipmentSlot(ref views, slotIndex, in nextState, in compiledStats);
                 WriteSlotMirrors(ref views, slotIndex, in nextState);
@@ -538,8 +543,9 @@ namespace Hecton8.Tools
             if (!ToolUpgradeSystem.TryInsertModuleRule(_registrationRules, slotCount, moduleRule))
                 return false;
 
-            WriteModuleRuleMirror(slotIndex, _registrationRules, slotCount);
-            RebuildCompiledState(slotIndex, owner, toolId);
+            if (!RebuildCompiledState(slotIndex, owner, _registrationRules, slotCount))
+                return false;
+
             return true;
         }
 
@@ -557,8 +563,9 @@ namespace Hecton8.Tools
             if (!ToolUpgradeSystem.TryRemoveModuleRule(_registrationRules, slotCount, ToolUpgradeSystem.HashModuleId(moduleId)))
                 return false;
 
-            WriteModuleRuleMirror(slotIndex, _registrationRules, slotCount);
-            RebuildCompiledState(slotIndex, owner, toolId);
+            if (!RebuildCompiledState(slotIndex, owner, _registrationRules, slotCount))
+                return false;
+
             return true;
         }
 
@@ -1073,6 +1080,8 @@ namespace Hecton8.Tools
         private void OnDisable()
         {
             SceneManager.sceneUnloaded -= HandleSceneUnloaded;
+            if (!DrainEquipmentIntegrationLocksForLifecycle())
+                TryRecordEquipmentWriteLockContention(EquipmentFaultWriteLockReleaseFailure);
             TryUnregisterHotSwap();
             TryUnregisterService();
             TryUnregisterUpdatable();
@@ -1237,16 +1246,14 @@ namespace Hecton8.Tools
 
             view = default;
             if (vault == null || requiredLength <= 0)
-            {
-                if (createIfMissing)
-                    handle = default;
                 return false;
-            }
 
             if (!createIfMissing)
                 return false;
 
-            ReleaseEquipmentVaultHandle(vault, ref handle);
+            if (!ReleaseEquipmentVaultHandle(vault, ref handle))
+                return false;
+
             handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
@@ -1273,81 +1280,123 @@ namespace Hecton8.Tools
                 return false;
             }
 
-            if (createIfMissing && !EnsureEquipmentViews(out _, createIfMissing: true))
+            if (createIfMissing && !EnsureEquipmentViews(vault, out _, createIfMissing: true))
                 return false;
 
             int acquiredCount = 0;
-            if (TryAcquireEquipmentWriteBuffer(vault, in _toolStatesHandle, MaxTrackedTools, ref acquiredCount, out views.ToolStates) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _toolStatsHandle, MaxTrackedTools, ref acquiredCount, out views.ToolStats) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _toolTypesHandle, MaxTrackedTools, ref acquiredCount, out views.ToolTypes) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _currentHeatHandle, MaxTrackedTools, ref acquiredCount, out views.CurrentHeat) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _batteryChargeHandle, MaxTrackedTools, ref acquiredCount, out views.BatteryCharge) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _statusMasksHandle, MaxTrackedTools, ref acquiredCount, out views.StatusMasks) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _environmentHeat01Handle, MaxTrackedTools, ref acquiredCount, out views.EnvironmentHeat01) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _activeEquipmentStatesHandle, MaxTrackedTools, ref acquiredCount, out views.ActiveEquipmentStates) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _publishedActiveEquipmentStatesHandle, MaxTrackedTools, ref acquiredCount, out views.PublishedActiveEquipmentStates) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _activeEquipmentAupSamplesHandle, MaxTrackedTools, ref acquiredCount, out views.ActiveEquipmentAupSamples) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _activeEquipmentGridLoadRequestsHandle, MaxTrackedTools, ref acquiredCount, out views.ActiveEquipmentGridLoadRequests) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _activeEquipmentWearDrainRatesHandle, MaxTrackedTools, ref acquiredCount, out views.ActiveEquipmentWearDrainRates) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _equipmentTelemetryRingHandle, EquipmentTelemetryRingLength, ref acquiredCount, out views.EquipmentTelemetryRing) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _equipmentTelemetryCursorHandle, 1, ref acquiredCount, out views.EquipmentTelemetryCursor) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _flashlightTelemetryRingHandle, EquipmentTelemetryRingLength, ref acquiredCount, out views.FlashlightTelemetryRing) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _flashlightTelemetryCursorHandle, 1, ref acquiredCount, out views.FlashlightTelemetryCursor) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _equipmentIntegrationCountersHandle, MaxTrackedTools, ref acquiredCount, out views.EquipmentIntegrationCounters) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _equipmentTuningHandle, 1, ref acquiredCount, out views.EquipmentTuning) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _equipmentHardwareSpecsHandle, EquipmentHardwareSpecCapacity, ref acquiredCount, out views.EquipmentHardwareSpecs) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixMasksHandle, MaxTrackedTools, ref acquiredCount, out views.UpgradeMasks) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixBaseStatsHandle, MaxTrackedTools, ref acquiredCount, out views.UpgradeBaseStats) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixCompiledStatsHandle, MaxTrackedTools, ref acquiredCount, out views.UpgradeCompiledStats) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixToolLutHandle, MaxTrackedTools * UpgradeMatrixConstants.ToolModuleLutEntriesPerEquipment, ref acquiredCount, out views.UpgradeToolLut) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixToolRulesHandle, MaxTrackedTools * UpgradeMatrixConstants.ToolModuleSlotsPerEquipment, ref acquiredCount, out views.UpgradeToolModuleRules) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixToolProfilesHandle, MaxTrackedTools, ref acquiredCount, out views.UpgradeToolProfiles) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixTelemetryRingHandle, UpgradeMatrixConstants.TelemetryFrameCount, ref acquiredCount, out views.UpgradeTelemetryRing) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixTelemetryCursorHandle, 1, ref acquiredCount, out views.UpgradeTelemetryCursor) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixVisualStatesHandle, MaxTrackedTools, ref acquiredCount, out views.UpgradeVisualStates))
+            bool acquiredAll = false;
+            try
             {
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _toolStatesHandle, MaxTrackedTools, out views.ToolStates)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _toolStatsHandle, MaxTrackedTools, out views.ToolStats)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _toolTypesHandle, MaxTrackedTools, out views.ToolTypes)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _currentHeatHandle, MaxTrackedTools, out views.CurrentHeat)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _batteryChargeHandle, MaxTrackedTools, out views.BatteryCharge)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _statusMasksHandle, MaxTrackedTools, out views.StatusMasks)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _environmentHeat01Handle, MaxTrackedTools, out views.EnvironmentHeat01)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _activeEquipmentStatesHandle, MaxTrackedTools, out views.ActiveEquipmentStates)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _publishedActiveEquipmentStatesHandle, MaxTrackedTools, out views.PublishedActiveEquipmentStates)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _activeEquipmentAupSamplesHandle, MaxTrackedTools, out views.ActiveEquipmentAupSamples)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _activeEquipmentGridLoadRequestsHandle, MaxTrackedTools, out views.ActiveEquipmentGridLoadRequests)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _activeEquipmentWearDrainRatesHandle, MaxTrackedTools, out views.ActiveEquipmentWearDrainRates)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _equipmentTelemetryRingHandle, EquipmentTelemetryRingLength, out views.EquipmentTelemetryRing)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _equipmentTelemetryCursorHandle, 1, out views.EquipmentTelemetryCursor)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _flashlightTelemetryRingHandle, EquipmentTelemetryRingLength, out views.FlashlightTelemetryRing)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _flashlightTelemetryCursorHandle, 1, out views.FlashlightTelemetryCursor)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _equipmentIntegrationCountersHandle, MaxTrackedTools, out views.EquipmentIntegrationCounters)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _equipmentTuningHandle, 1, out views.EquipmentTuning)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _equipmentHardwareSpecsHandle, EquipmentHardwareSpecCapacity, out views.EquipmentHardwareSpecs)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixMasksHandle, MaxTrackedTools, out views.UpgradeMasks)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixBaseStatsHandle, MaxTrackedTools, out views.UpgradeBaseStats)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixCompiledStatsHandle, MaxTrackedTools, out views.UpgradeCompiledStats)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixToolLutHandle, MaxTrackedTools * UpgradeMatrixConstants.ToolModuleLutEntriesPerEquipment, out views.UpgradeToolLut)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixToolRulesHandle, MaxTrackedTools * UpgradeMatrixConstants.ToolModuleSlotsPerEquipment, out views.UpgradeToolModuleRules)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixToolProfilesHandle, MaxTrackedTools, out views.UpgradeToolProfiles)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixTelemetryRingHandle, UpgradeMatrixConstants.TelemetryFrameCount, out views.UpgradeTelemetryRing)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixTelemetryCursorHandle, 1, out views.UpgradeTelemetryCursor)) return false;
+                acquiredCount++;
+                if (!TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixVisualStatesHandle, MaxTrackedTools, out views.UpgradeVisualStates)) return false;
+                acquiredCount++;
+
                 if (acquiredCount != EquipmentWriteLockBufferCount)
+                    return false;
+
+                views.Vault = vault;
+                views.WriteLockCount = acquiredCount;
+                acquiredAll = true;
+                return true;
+            }
+            finally
+            {
+                if (!acquiredAll)
                 {
                     ReleaseEquipmentWriteLocks(vault, acquiredCount);
                     views = default;
                     TryRecordEquipmentWriteLockContention();
-                    return false;
                 }
-
-                views.Vault = vault;
-                views.WriteLockCount = acquiredCount;
-                return true;
             }
-
-            ReleaseEquipmentWriteLocks(vault, acquiredCount);
-            views = default;
-            TryRecordEquipmentWriteLockContention();
-            return false;
         }
 
         private static bool TryAcquireEquipmentWriteBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
             int requiredLength,
-            ref int acquiredCount,
             out EquipmentVaultView<T> view)
             where T : unmanaged
         {
             view = default;
             if (vault == null ||
                 requiredLength <= 0 ||
-                !IsVaultGenerationHandleCreated(in handle) ||
-                !vault.TryAcquireWriteLock(in handle, EquipmentVaultOwnerSystemId, out NativeArray<T> buffer))
+                !IsVaultGenerationHandleCreated(in handle))
             {
                 return false;
             }
 
-            acquiredCount++;
-            if (!buffer.IsCreated || buffer.Length < requiredLength)
-                return false;
+            bool acquired = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in handle, EquipmentVaultOwnerSystemId, out NativeArray<T> buffer))
+                    return false;
 
-            view = new EquipmentVaultView<T>(buffer);
-            return true;
+                acquired = true;
+                if (!buffer.IsCreated || buffer.Length < requiredLength)
+                    return false;
+
+                view = new EquipmentVaultView<T>(buffer);
+                acquired = false;
+                return true;
+            }
+            finally
+            {
+                if (acquired)
+                    vault.ReleaseWriteLock(in handle, EquipmentVaultOwnerSystemId);
+            }
         }
 
         private void ReleaseEquipmentWriteLocks(ref EquipmentVaultViews views)
@@ -1759,7 +1808,7 @@ namespace Hecton8.Tools
                 _moduleRuleSlots[baseIndex + i] = i < moduleSlotCount ? ToolUpgradeSystem.NormalizeRuleSlot(moduleRules[i], i) : default;
         }
 
-        private void WriteUpgradeMatrixStaging(
+        private bool TryWriteUpgradeMatrixStaging(
             ref EquipmentVaultViews views,
             int slotIndex,
             in ToolRuntimeProfile profile,
@@ -1776,9 +1825,13 @@ namespace Hecton8.Tools
                 (uint)slotIndex >= (uint)views.UpgradeBaseStats.Length ||
                 (uint)slotIndex >= (uint)views.UpgradeCompiledStats.Length ||
                 (uint)slotIndex >= (uint)views.UpgradeToolProfiles.Length)
-                return;
+                return false;
 
             int safeSlotCount = math.clamp(moduleSlotCount, 0, ToolUpgradeSystem.MaxModuleSlots);
+            int ruleBase = slotIndex * UpgradeMatrixConstants.ToolModuleSlotsPerEquipment;
+            if (ruleBase < 0 || ruleBase + UpgradeMatrixConstants.ToolModuleSlotsPerEquipment > views.UpgradeToolModuleRules.Length)
+                return false;
+
             ulong slotMask = ToolUpgradeSystem.CompileInstalledRuleMask64(moduleRules, safeSlotCount, out _);
             views.UpgradeMasks[slotIndex] = new UpgradeMaskDTO
             {
@@ -1791,12 +1844,10 @@ namespace Hecton8.Tools
             views.UpgradeCompiledStats[slotIndex] = default;
             views.UpgradeToolProfiles[slotIndex] = profile;
 
-            int ruleBase = slotIndex * UpgradeMatrixConstants.ToolModuleSlotsPerEquipment;
-            if (ruleBase < 0 || ruleBase + UpgradeMatrixConstants.ToolModuleSlotsPerEquipment > views.UpgradeToolModuleRules.Length)
-                return;
-
             for (int i = 0; i < UpgradeMatrixConstants.ToolModuleSlotsPerEquipment; i++)
                 views.UpgradeToolModuleRules[ruleBase + i] = i < safeSlotCount ? ToolUpgradeSystem.NormalizeRuleSlot(moduleRules[i], i) : default;
+
+            return true;
         }
 
         private void ClearUpgradeMatrixStaging(ref EquipmentVaultViews views, int slotIndex)
@@ -1871,25 +1922,33 @@ namespace Hecton8.Tools
             WriteSlotMirrors(ref views, slotIndex, in state);
         }
 
-        private void RebuildCompiledState(int slotIndex, PlayerTool owner, uint toolId)
+        private bool RebuildCompiledState(
+            int slotIndex,
+            PlayerTool owner,
+            ToolUpgradeModuleRuleDTO[] moduleRules,
+            int moduleSlotCount)
         {
-            if (owner == null)
-                return;
+            if (owner == null || moduleRules == null)
+                return false;
             if (!TryAcquireEquipmentViewsWriteLock(out EquipmentVaultViews views))
-                return;
+                return false;
 
             try
             {
                 ToolRuntimeProfile profile = owner.BuildModularRuntimeProfile();
-                int slotCount = Mathf.Min(GetConfiguredSlotCount(owner), (int)profile.ModuleSlotCount);
-                ReadModuleRuleMirror(slotIndex, slotCount, _registrationRules);
+                int slotCount = math.clamp(
+                    Mathf.Min(moduleSlotCount, Mathf.Min(GetConfiguredSlotCount(owner), (int)profile.ModuleSlotCount)),
+                    0,
+                    ToolUpgradeSystem.MaxModuleSlots);
 
-                float normalizedBattery = GetBatteryNormalized(toolId, owner.ResolveModularBatteryNormalized());
                 ToolState state = views.ToolStates[slotIndex];
-                state.CurrentBattery = math.saturate(normalizedBattery);
+                ToolRuntimeStats previousStats = views.ToolStats[slotIndex];
+                float previousCapacity = math.max(0.1f, math.isfinite(previousStats.BatteryCapacity) ? previousStats.BatteryCapacity : 0.1f);
+                float currentBattery = math.max(0f, math.isfinite(state.CurrentBattery) ? state.CurrentBattery : 0f);
+                state.CurrentBattery = math.saturate(currentBattery / previousCapacity);
 
                 ulong upgradeMask64;
-                ToolRuntimeStats compiledStats = ToolUpgradeSystem.CompileRuntimeStatsFromRules64(profile, _registrationRules, slotCount, out upgradeMask64);
+                ToolRuntimeStats compiledStats = ToolUpgradeSystem.CompileRuntimeStatsFromRules64(profile, moduleRules, slotCount, out upgradeMask64);
                 state.CurrentBattery *= math.max(0.1f, compiledStats.BatteryCapacity);
                 state.UpgradeBitmask = (uint)(upgradeMask64 & 0xFFFFFFFFUL);
                 state.UpgradeBitmask64 = upgradeMask64;
@@ -1901,9 +1960,11 @@ namespace Hecton8.Tools
                     in compiledStats,
                     ResolveDepthMeters(),
                     (state.StatusMask & ToolRuntimeStatusMasks.Active) != 0u);
+                if (!TryWriteUpgradeMatrixStaging(ref views, slotIndex, in profile, moduleRules, slotCount, upgradeMask64))
+                    return false;
+
                 views.ToolStats[slotIndex] = compiledStats;
                 views.ToolStates[slotIndex] = state;
-                WriteUpgradeMatrixStaging(ref views, slotIndex, in profile, _registrationRules, slotCount, upgradeMask64);
                 WriteActiveEquipmentWearRate(
                     ref views,
                     slotIndex,
@@ -1913,6 +1974,8 @@ namespace Hecton8.Tools
                 SetBatteryAbsolute(ref views, slotIndex, state.CurrentBattery);
                 WriteActiveEquipmentSlot(ref views, slotIndex, in state, in compiledStats);
                 WriteSlotMirrors(ref views, slotIndex, in state);
+                WriteModuleRuleMirror(slotIndex, moduleRules, slotCount);
+                return true;
             }
             finally
             {
@@ -3284,14 +3347,16 @@ namespace Hecton8.Tools
             if (ReferenceEquals(_dataVault, nextVault))
                 return;
 
-            if (_equipmentIntegrationScheduled)
-                CompleteActiveEquipmentJob(forceComplete: true);
-            else
-                ReleaseEquipmentIntegrationWriteLocks();
+            DrainEquipmentIntegrationLocksForLifecycle();
 
             FlushPendingFaultDumps();
-            ReleaseEquipmentVaultHandles(_dataVault);
-            ClearEquipmentVaultHandles();
+            if (!TryReleaseEquipmentVaultHandlesForLifecycle(_dataVault))
+            {
+                _isInitialized = false;
+                _equipmentSignalLanesReady = false;
+                return;
+            }
+
             _dataVault = nextVault;
             _isInitialized = false;
             _equipmentSignalLanesReady = false;
@@ -3514,10 +3579,7 @@ namespace Hecton8.Tools
 
         private void DisposeNativeState()
         {
-            if (_equipmentIntegrationScheduled)
-                CompleteActiveEquipmentJob(forceComplete: true);
-            else
-                ReleaseEquipmentIntegrationWriteLocks();
+            DrainEquipmentIntegrationLocksForLifecycle();
 
             FlushPendingFaultDumps();
             for (int i = 0; i < MaxTrackedTools; i++)
@@ -3529,13 +3591,16 @@ namespace Hecton8.Tools
             for (int i = 0; i < _moduleRuleSlots.Length; i++)
                 _moduleRuleSlots[i] = default;
 
-            ReleaseEquipmentVaultHandles(_dataVault);
-            ClearEquipmentVaultHandles();
+            bool vaultHandlesReleased = TryReleaseEquipmentVaultHandlesForLifecycle(_dataVault);
+            FlushPendingFaultDumps();
 
             _isInitialized = false;
             _equipmentSignalLanesReady = false;
-            _equipmentFaultDumpPending = false;
-            _upgradeTelemetryFaultDumpPending = false;
+            if (vaultHandlesReleased)
+            {
+                _equipmentFaultDumpPending = false;
+                _upgradeTelemetryFaultDumpPending = false;
+            }
             _lastPublishedEquippedMask = 0u;
             _lastPublishedToolStateChangedSignal = default;
             _lastPublishedToolStateChangedSlot = -1;
@@ -3551,39 +3616,66 @@ namespace Hecton8.Tools
             _toolDurabilityService = null;
         }
 
-        private void ReleaseEquipmentVaultHandles(IDataVault vault)
+        private bool DrainEquipmentIntegrationLocksForLifecycle()
+        {
+            if (_equipmentIntegrationScheduled)
+                CompleteActiveEquipmentJob(forceComplete: true);
+            else
+                ReleaseEquipmentIntegrationWriteLocks();
+
+            return TryFlushPendingEquipmentWriteLockReleases();
+        }
+
+        private bool TryReleaseEquipmentVaultHandlesForLifecycle(IDataVault vault)
+        {
+            bool pendingReleasesFlushed = TryFlushPendingEquipmentWriteLockReleases();
+            bool buffersReleased = ReleaseEquipmentVaultHandles(vault);
+            if (pendingReleasesFlushed && buffersReleased)
+            {
+                ClearEquipmentVaultHandles();
+                return true;
+            }
+
+            TryRecordEquipmentWriteLockContention(EquipmentFaultWriteLockReleaseFailure);
+            _equipmentFaultDumpPending = true;
+            return false;
+        }
+
+        private bool ReleaseEquipmentVaultHandles(IDataVault vault)
         {
             if (vault == null)
-                return;
+                return !HasEquipmentVaultHandles();
 
-            ReleaseEquipmentVaultHandle(vault, ref _toolStatesHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _toolStatsHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _toolTypesHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _currentHeatHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _batteryChargeHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _statusMasksHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _environmentHeat01Handle);
-            ReleaseEquipmentVaultHandle(vault, ref _activeEquipmentStatesHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _publishedActiveEquipmentStatesHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _activeEquipmentAupSamplesHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _activeEquipmentGridLoadRequestsHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _activeEquipmentWearDrainRatesHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _equipmentTelemetryRingHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _equipmentTelemetryCursorHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _flashlightTelemetryRingHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _flashlightTelemetryCursorHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _equipmentIntegrationCountersHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _equipmentTuningHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _equipmentHardwareSpecsHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _upgradeMatrixMasksHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _upgradeMatrixBaseStatsHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _upgradeMatrixCompiledStatsHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _upgradeMatrixToolLutHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _upgradeMatrixToolRulesHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _upgradeMatrixToolProfilesHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _upgradeMatrixTelemetryRingHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _upgradeMatrixTelemetryCursorHandle);
-            ReleaseEquipmentVaultHandle(vault, ref _upgradeMatrixVisualStatesHandle);
+            bool released = true;
+            released &= ReleaseEquipmentVaultHandle(vault, ref _toolStatesHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _toolStatsHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _toolTypesHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _currentHeatHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _batteryChargeHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _statusMasksHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _environmentHeat01Handle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _activeEquipmentStatesHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _publishedActiveEquipmentStatesHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _activeEquipmentAupSamplesHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _activeEquipmentGridLoadRequestsHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _activeEquipmentWearDrainRatesHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _equipmentTelemetryRingHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _equipmentTelemetryCursorHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _flashlightTelemetryRingHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _flashlightTelemetryCursorHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _equipmentIntegrationCountersHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _equipmentTuningHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _equipmentHardwareSpecsHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _upgradeMatrixMasksHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _upgradeMatrixBaseStatsHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _upgradeMatrixCompiledStatsHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _upgradeMatrixToolLutHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _upgradeMatrixToolRulesHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _upgradeMatrixToolProfilesHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _upgradeMatrixTelemetryRingHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _upgradeMatrixTelemetryCursorHandle);
+            released &= ReleaseEquipmentVaultHandle(vault, ref _upgradeMatrixVisualStatesHandle);
+            return released;
         }
 
         private void ClearEquipmentVaultHandles()
@@ -3618,14 +3710,49 @@ namespace Hecton8.Tools
             _upgradeMatrixVisualStatesHandle = default;
         }
 
-        private static void ReleaseEquipmentVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private bool HasEquipmentVaultHandles()
+        {
+            return IsVaultGenerationHandleCreated(in _toolStatesHandle) ||
+                   IsVaultGenerationHandleCreated(in _toolStatsHandle) ||
+                   IsVaultGenerationHandleCreated(in _toolTypesHandle) ||
+                   IsVaultGenerationHandleCreated(in _currentHeatHandle) ||
+                   IsVaultGenerationHandleCreated(in _batteryChargeHandle) ||
+                   IsVaultGenerationHandleCreated(in _statusMasksHandle) ||
+                   IsVaultGenerationHandleCreated(in _environmentHeat01Handle) ||
+                   IsVaultGenerationHandleCreated(in _activeEquipmentStatesHandle) ||
+                   IsVaultGenerationHandleCreated(in _publishedActiveEquipmentStatesHandle) ||
+                   IsVaultGenerationHandleCreated(in _activeEquipmentAupSamplesHandle) ||
+                   IsVaultGenerationHandleCreated(in _activeEquipmentGridLoadRequestsHandle) ||
+                   IsVaultGenerationHandleCreated(in _activeEquipmentWearDrainRatesHandle) ||
+                   IsVaultGenerationHandleCreated(in _equipmentTelemetryRingHandle) ||
+                   IsVaultGenerationHandleCreated(in _equipmentTelemetryCursorHandle) ||
+                   IsVaultGenerationHandleCreated(in _flashlightTelemetryRingHandle) ||
+                   IsVaultGenerationHandleCreated(in _flashlightTelemetryCursorHandle) ||
+                   IsVaultGenerationHandleCreated(in _equipmentIntegrationCountersHandle) ||
+                   IsVaultGenerationHandleCreated(in _equipmentTuningHandle) ||
+                   IsVaultGenerationHandleCreated(in _equipmentHardwareSpecsHandle) ||
+                   IsVaultGenerationHandleCreated(in _upgradeMatrixMasksHandle) ||
+                   IsVaultGenerationHandleCreated(in _upgradeMatrixBaseStatsHandle) ||
+                   IsVaultGenerationHandleCreated(in _upgradeMatrixCompiledStatsHandle) ||
+                   IsVaultGenerationHandleCreated(in _upgradeMatrixToolLutHandle) ||
+                   IsVaultGenerationHandleCreated(in _upgradeMatrixToolRulesHandle) ||
+                   IsVaultGenerationHandleCreated(in _upgradeMatrixToolProfilesHandle) ||
+                   IsVaultGenerationHandleCreated(in _upgradeMatrixTelemetryRingHandle) ||
+                   IsVaultGenerationHandleCreated(in _upgradeMatrixTelemetryCursorHandle) ||
+                   IsVaultGenerationHandleCreated(in _upgradeMatrixVisualStatesHandle);
+        }
+
+        private static bool ReleaseEquipmentVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
             where T : struct
         {
             if (!IsVaultGenerationHandleCreated(in handle))
-                return;
+                return true;
 
-            vault.ReleaseBuffer(in handle);
+            if (!vault.ReleaseBuffer(in handle))
+                return false;
+
             handle = default;
+            return true;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -4095,6 +4222,22 @@ namespace Hecton8.Tools
                 AssertSize<EquipmentTelemetryEntry>(64);
                 AssertSize<FlashlightTelemetryEntry>(64);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                AssertOffset<EquipmentTelemetryEntry>(nameof(EquipmentTelemetryEntry.Frame), 0);
+                AssertOffset<EquipmentTelemetryEntry>(nameof(EquipmentTelemetryEntry.TickIndex), 4);
+                AssertOffset<EquipmentTelemetryEntry>(nameof(EquipmentTelemetryEntry.BatteryDrainWattSeconds), 8);
+                AssertOffset<EquipmentTelemetryEntry>(nameof(EquipmentTelemetryEntry.GridDrawWattSeconds), 12);
+                AssertOffset<EquipmentTelemetryEntry>(nameof(EquipmentTelemetryEntry.PeakThermal01), 16);
+                AssertOffset<EquipmentTelemetryEntry>(nameof(EquipmentTelemetryEntry.ActiveToolMask), 20);
+                AssertOffset<EquipmentTelemetryEntry>(nameof(EquipmentTelemetryEntry.SignalCount), 24);
+                AssertOffset<EquipmentTelemetryEntry>(nameof(EquipmentTelemetryEntry.FaultFlags), 28);
+                AssertOffset<EquipmentTelemetryEntry>(nameof(EquipmentTelemetryEntry.LastFaultToolHashID), 32);
+                AssertOffset<EquipmentTelemetryEntry>(nameof(EquipmentTelemetryEntry.CpuMicroseconds), 36);
+                AssertOffset<EquipmentTelemetryEntry>(nameof(EquipmentTelemetryEntry.GlobalQualityWeight), 40);
+                AssertOffset<EquipmentTelemetryEntry>(nameof(EquipmentTelemetryEntry.TickIntervalSeconds), 44);
+                AssertOffset<EquipmentTelemetryEntry>(nameof(EquipmentTelemetryEntry.ThermalGridVersion), 48);
+                AssertOffset<EquipmentTelemetryEntry>(nameof(EquipmentTelemetryEntry.ThermalGridCellCount), 52);
+                AssertOffset<EquipmentTelemetryEntry>(nameof(EquipmentTelemetryEntry.SnapshotHash), 56);
+                AssertOffset<EquipmentTelemetryEntry>(nameof(EquipmentTelemetryEntry.WearDrainNormalized), 60);
                 AssertOffset<FlashlightTelemetryEntry>(nameof(FlashlightTelemetryEntry.Frame), 0);
                 AssertOffset<FlashlightTelemetryEntry>(nameof(FlashlightTelemetryEntry.ToolHashID), 4);
                 AssertOffset<FlashlightTelemetryEntry>(nameof(FlashlightTelemetryEntry.Battery01), 8);
@@ -4126,7 +4269,7 @@ namespace Hecton8.Tools
             {
                 int observed = UnsafeUtility.SizeOf<T>();
                 if (observed != expected)
-                    throw new InvalidOperationException($"[SHINOBU_327] Layout size mismatch for {typeof(T).Name}: {observed} != {expected}");
+                    throw new InvalidOperationException($"[1416] Layout size mismatch for {typeof(T).Name}: {observed} != {expected}");
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -4135,10 +4278,10 @@ namespace Hecton8.Tools
             {
                 var fieldInfo = typeof(T).GetField(fieldName);
                 if (fieldInfo == null)
-                    throw new InvalidOperationException($"[SHINOBU_327] Layout field missing for {typeof(T).Name}.{fieldName}");
+                    throw new InvalidOperationException($"[1416] Layout field missing for {typeof(T).Name}.{fieldName}");
                 int observed = (int)UnsafeUtility.GetFieldOffset(fieldInfo);
                 if (observed != expected)
-                    throw new InvalidOperationException($"[SHINOBU_327] Layout offset mismatch for {typeof(T).Name}.{fieldName}: {observed} != {expected}");
+                    throw new InvalidOperationException($"[1416] Layout offset mismatch for {typeof(T).Name}.{fieldName}: {observed} != {expected}");
             }
 #endif
         }

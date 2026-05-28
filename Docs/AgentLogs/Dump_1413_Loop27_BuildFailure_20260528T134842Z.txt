@@ -1,0 +1,22 @@
+Agent: 1413
+Context: Loop 27 VisualPressureAgingRuntime lock-span surgery
+Command: dotnet build "C:\hades\Hecton8\Assembly-CSharp.csproj" --no-restore -v:minimal /m:1
+Pre-build throttle sample UTC: 2026-05-28T13:48:42.8540927Z
+Pre-build CPU: 28
+Pre-build dotnet count: 0
+Pre-build csc count: 0
+Result: FAILED before source compilation
+Errors: 2
+Warnings: 0
+Elapsed seconds: 27.93
+
+Compiler/MSBuild failure:
+- MSB4006 circular dependency in target dependency graph involving target "ResolveProjectReferences" in Unity.RenderPipelines.Core.Editor.csproj.
+- MSB4006 circular dependency in target dependency graph involving target "ResolveProjectReferences" in Unity.ShaderGraph.Editor.csproj.
+
+Follow-up throttle samples:
+- 2026-05-28T13:49:43.2381380Z: CPU 87, dotnet 0, csc 0. Targeted retry with /p:BuildProjectReferences=false skipped by resource rule.
+- 2026-05-28T13:53:56.8306317Z: CPU 90, dotnet 1, csc 0. Targeted retry skipped by resource rule.
+- 2026-05-28T14:06:29Z: CPU 53.966963, dotnet 1, csc 0. Post-stackalloc retry skipped by resource rule.
+
+Status: CURRENT SOURCE COMPILE PENDING AFTER LOOP 27. Unity Test Runner and PlayMode were not launched.

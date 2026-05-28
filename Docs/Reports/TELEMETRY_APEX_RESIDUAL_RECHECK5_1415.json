@@ -1,0 +1,279 @@
+{
+    "agent":  "1415",
+    "generatedUtc":  "2026-05-28T11:42:20Z",
+    "purpose":  "APEX residual recheck 5: CrashTelemetryBuffer runtime_telemetry.bin live record was still a 32-byte v1 payload; migrated to 64-byte v2 ABI with v1 parser compatibility.",
+    "prompt":  {
+                   "source":  "Docs/Tasks/CURRENT_BATCH.md",
+                   "taskCount":  20,
+                   "sha256":  "b922c32c7f14ef7844c5f6bfa20bcdeb1e370a8c02d21641c43739f7c96780b0"
+               },
+    "mandatesRead":  [
+                         "DATA_Runtime_Struct_Layout_ARM64.txt",
+                         "DBG_Telemetry_Crash_Reporting_PostMortem.txt",
+                         "OPT_Zero_GC_Policy_AllocFree_Mandate.txt",
+                         "OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt"
+                     ],
+    "repairedFiles":  [
+                          {
+                              "file":  "Assets/_Project/Scripts/CrashTelemetryBuffer.cs",
+                              "sha256":  "c826dfbf44b40b258be0576bcbcf1cbb3c46e3b4f21449f184a5e58d70c18b4b",
+                              "lines":  "42,54,257-291,1276-1288,3220-3292,3314-3321",
+                              "issue":  "LiveTelemetryRecord was Size=32/version=1 while crash telemetry standardization requires a 64-byte evidence lane; optional writer cadence was a fixed 60-frame scalar-free policy.",
+                              "fix":  "Changed live record to Size=64/version=2, added RecordSizeBytes and crash-context fields, kept background writer scratch preallocated, and replaced fixed live telemetry cadence with continuous HomeostasisBrain.GlobalQualityWeight curve 120..30 frames."
+                          },
+                          {
+                              "file":  "Tools/TelemetryDashboard/server.py",
+                              "sha256":  "de5a87ab506b05e298d118d96d9bcb3c9a05e2e4de59b79b670415c17e494f7d",
+                              "lines":  "53-55,524-576,653",
+                              "issue":  "Dashboard parser accepted only 32-byte live telemetry records.",
+                              "fix":  "Added V1 and V2 struct definitions; v2 decodes 64-byte record, v1 remains readable with legacy_v1_32_byte_record warning."
+                          },
+                          {
+                              "file":  "Tools/TelemetryDashboard/smoke_test.py",
+                              "sha256":  "4b71bc0dbe57f280dfc0b26a67f608b373665a217e2d7278f5cb0b4a9c11c155",
+                              "lines":  "53-80",
+                              "issue":  "Smoke fixture packed only v1 live record.",
+                              "fix":  "Smoke now packs v2 64-byte record and asserts legacy v1 compatibility."
+                          },
+                          {
+                              "file":  "Tools/TelemetryDashboard/README.md",
+                              "sha256":  "54a29fc3b31ba35ec77382faeadc0bf4fbfaa594eaf23787b29c800fb55ce162",
+                              "lines":  "60",
+                              "issue":  "Parser contract documented only v1 fields.",
+                              "fix":  "Documented v2 64-byte payload and v1 compatibility warning."
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Editor/TelemetryLayoutValidator1415.cs",
+                              "sha256":  "4c9e0f2fcf1131769372df24cbad8420c04badf4b1d525e2bfa8d2fef9f6bf01",
+                              "lines":  "24",
+                              "issue":  "Central layout validator lacked LiveTelemetryRecord.",
+                              "fix":  "Added reflected 64-byte field-offset spec row for private nested LiveTelemetryRecord."
+                          }
+                      ],
+    "liveTelemetryRecord":  {
+                                "structLine":  258,
+                                "sizeAttributeLine":  257,
+                                "sizeBytes":  64,
+                                "version":  2,
+                                "magic":  "TELM / 0x4D4C4554",
+                                "writerCallLines":  "1276-1288",
+                                "writerMethodLines":  "3220-3279",
+                                "cadenceMethodLines":  "3281-3292",
+                                "fileWriteLines":  "3314-3321",
+                                "validatorSpecLine":  24,
+                                "layoutProof":  {
+                                                    "sizeBytes":  64,
+                                                    "holeCount":  0,
+                                                    "overlapOrAlignmentErrorCount":  0,
+                                                    "fields":  [
+                                                                   {
+                                                                       "name":  "Magic",
+                                                                       "start":  0,
+                                                                       "end":  3,
+                                                                       "size":  4,
+                                                                       "alignment":  4
+                                                                   },
+                                                                   {
+                                                                       "name":  "Version",
+                                                                       "start":  4,
+                                                                       "end":  7,
+                                                                       "size":  4,
+                                                                       "alignment":  4
+                                                                   },
+                                                                   {
+                                                                       "name":  "RecordSizeBytes",
+                                                                       "start":  8,
+                                                                       "end":  11,
+                                                                       "size":  4,
+                                                                       "alignment":  4
+                                                                   },
+                                                                   {
+                                                                       "name":  "FrameIndex",
+                                                                       "start":  12,
+                                                                       "end":  15,
+                                                                       "size":  4,
+                                                                       "alignment":  4
+                                                                   },
+                                                                   {
+                                                                       "name":  "ActiveChunkCount",
+                                                                       "start":  16,
+                                                                       "end":  19,
+                                                                       "size":  4,
+                                                                       "alignment":  4
+                                                                   },
+                                                                   {
+                                                                       "name":  "GcAllocBytes",
+                                                                       "start":  20,
+                                                                       "end":  23,
+                                                                       "size":  4,
+                                                                       "alignment":  4
+                                                                   },
+                                                                   {
+                                                                       "name":  "CpuFrameTimeMs",
+                                                                       "start":  24,
+                                                                       "end":  27,
+                                                                       "size":  4,
+                                                                       "alignment":  4
+                                                                   },
+                                                                   {
+                                                                       "name":  "DeltaTime",
+                                                                       "start":  28,
+                                                                       "end":  31,
+                                                                       "size":  4,
+                                                                       "alignment":  4
+                                                                   },
+                                                                   {
+                                                                       "name":  "ReservedMemoryMb",
+                                                                       "start":  32,
+                                                                       "end":  35,
+                                                                       "size":  4,
+                                                                       "alignment":  4
+                                                                   },
+                                                                   {
+                                                                       "name":  "LatencyMs",
+                                                                       "start":  36,
+                                                                       "end":  39,
+                                                                       "size":  4,
+                                                                       "alignment":  4
+                                                                   },
+                                                                   {
+                                                                       "name":  "GpuFrameTimeMs",
+                                                                       "start":  40,
+                                                                       "end":  43,
+                                                                       "size":  4,
+                                                                       "alignment":  4
+                                                                   },
+                                                                   {
+                                                                       "name":  "SystemMask",
+                                                                       "start":  44,
+                                                                       "end":  47,
+                                                                       "size":  4,
+                                                                       "alignment":  4
+                                                                   },
+                                                                   {
+                                                                       "name":  "ErrorFlags",
+                                                                       "start":  48,
+                                                                       "end":  51,
+                                                                       "size":  4,
+                                                                       "alignment":  4
+                                                                   },
+                                                                   {
+                                                                       "name":  "VelocityPacked",
+                                                                       "start":  52,
+                                                                       "end":  55,
+                                                                       "size":  4,
+                                                                       "alignment":  4
+                                                                   },
+                                                                   {
+                                                                       "name":  "AupShiftSequence",
+                                                                       "start":  56,
+                                                                       "end":  59,
+                                                                       "size":  4,
+                                                                       "alignment":  4
+                                                                   },
+                                                                   {
+                                                                       "name":  "LastOriginShiftFrame",
+                                                                       "start":  60,
+                                                                       "end":  63,
+                                                                       "size":  4,
+                                                                       "alignment":  4
+                                                                   }
+                                                               ]
+                                                }
+                            },
+    "dataSovereignty":  {
+                            "migratedToGlobalDataVault":  false,
+                            "bufferIdsAdded":  [
+
+                                               ],
+                            "bufferIdsModified":  [
+
+                                                  ],
+                            "tryAcquireWriteLockLocations":  [
+
+                                                             ],
+                            "releaseWriteLockFinallyLocations":  [
+
+                                                                 ],
+                            "justification":  "runtime_telemetry.bin is an existing CrashTelemetryBuffer-owned optional dashboard file, not a GlobalDataVault cross-domain native buffer. No BufferID ownership route was created or changed in this recheck."
+                        },
+    "continuousScalability":  {
+                                  "globalQualityWeightUse":  "ResolveLiveTelemetryWriteIntervalFrames reads HomeostasisBrain.GlobalQualityWeight once and maps 0..1 continuously with math.lerp from 120-frame low-fidelity cadence to 30-frame high-fidelity cadence.",
+                                  "lowTier":  "quality=0.0 -\u003e 120 frames between optional live file writes; every-frame crash ring is unchanged.",
+                                  "middleTier":  "quality=0.5 -\u003e 75 frames between optional live file writes.",
+                                  "highUltraTier":  "quality=1.0 -\u003e 30 frames between optional live file writes; richer dashboard freshness, same 64-byte ABI.",
+                                  "binarySwitchScan":  "isLowEnd/lowEnd/LowEnd matches in modified C# live telemetry blocks: 0.",
+                                  "cinematicCheat":  "No physical simulation was added. This is a cheap fixed-record telemetry/file freshness control, not a simulated visual system."
+                              },
+    "zeroGcAudit":  {
+                        "evidence":  "PowerShell block extraction regex counts over modified live telemetry blocks.",
+                        "modifiedHotPathResults":  [
+                                                       {
+                                                           "block":  "CrashTelemetryBuffer.TryWriteLiveTelemetry",
+                                                           "file":  "Assets/_Project/Scripts/CrashTelemetryBuffer.cs",
+                                                           "lineStart":  3220,
+                                                           "lineEnd":  3279,
+                                                           "newReferenceLike":  0,
+                                                           "stringFormat":  0,
+                                                           "toString":  0,
+                                                           "linq":  0,
+                                                           "foreach":  0,
+                                                           "lowEndSwitch":  0,
+                                                           "globalQualityWeightReferences":  0
+                                                       },
+                                                       {
+                                                           "block":  "CrashTelemetryBuffer.ResolveLiveTelemetryWriteIntervalFrames",
+                                                           "file":  "Assets/_Project/Scripts/CrashTelemetryBuffer.cs",
+                                                           "lineStart":  3281,
+                                                           "lineEnd":  3292,
+                                                           "newReferenceLike":  0,
+                                                           "stringFormat":  0,
+                                                           "toString":  0,
+                                                           "linq":  0,
+                                                           "foreach":  0,
+                                                           "lowEndSwitch":  0,
+                                                           "globalQualityWeightReferences":  1
+                                                       },
+                                                       {
+                                                           "block":  "CrashTelemetryBuffer.WritePendingLiveTelemetryToFile",
+                                                           "file":  "Assets/_Project/Scripts/CrashTelemetryBuffer.cs",
+                                                           "lineStart":  3300,
+                                                           "lineEnd":  3344,
+                                                           "newReferenceLike":  0,
+                                                           "stringFormat":  0,
+                                                           "toString":  0,
+                                                           "linq":  0,
+                                                           "foreach":  0,
+                                                           "note":  "background IO path reuses preallocated byte[] scratch and memclear/copy; no new allocations in method body"
+                                                       },
+                                                       {
+                                                           "block":  "TelemetryDashboard.parse_live_telemetry",
+                                                           "file":  "Tools/TelemetryDashboard/server.py",
+                                                           "lineStart":  524,
+                                                           "lineEnd":  576,
+                                                           "newReferenceLike":  0,
+                                                           "stringFormat":  0,
+                                                           "toString":  0,
+                                                           "linq":  0,
+                                                           "foreach":  0,
+                                                           "note":  "cold tooling parser, not Unity runtime hot path"
+                                                       }
+                                                   ],
+                        "result":  "PASS for modified Unity runtime live telemetry blocks: zero new reference-like allocations, string.Format, ToString, LINQ, and foreach."
+                    },
+    "parserSmoke":  {
+                        "command":  "python -B Tools\\TelemetryDashboard\\smoke_test.py",
+                        "result":  "telemetry dashboard smoke ok"
+                    },
+    "stalePatternScan":  {
+                             "command":  "rg stale v1 live telemetry literals",
+                             "matches":  0
+                         },
+    "compilationGate":  {
+                            "cpuLoadPercent":  99,
+                            "activeCompilerOrDotnet":  "dotnet PID 50672 CPU 123.53125 StartTime 2026-05-28 15:48:46",
+                            "dotnetBuildLaunched":  false,
+                            "reason":  "CPU \u003e 50 and active dotnet process visible; coordinator build throttle blocks final dotnet build."
+                        },
+    "residualRisk":  "STATIC_SOURCE + Python dashboard smoke only. Unity Editor reflected validator and C# compiler CS0636 proof remain pending until CPU/process gate permits build/editor execution."
+}

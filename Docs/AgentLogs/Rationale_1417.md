@@ -1,7 +1,7 @@
 # Rationale 1417 - Combat Damage / Armor Penetration Array Purge
 
 Date: 2026-05-28
-Status: LOOP 8 TARGET LOCK ORDER STATICALLY HARDENED - BUILD/STRESS PENDING
+Status: LOOP 18 ARMOR LOCK OWNERSHIP FIXED - BUILD FAILED OPAQUE; STRESS/PREOWNED-DUMP-WORKER PENDING
 
 ## Decision 00 - Mandate Set
 
@@ -135,8 +135,8 @@ Hardware Impact: Harness is editor-only and explicit. Runtime impact is 0 us unt
 
 Problem: Loop 5 audit found real remaining relocation hazards after the first migration. Target register/unregister/sync and helper refresh paths wrote DataVault-backed target arrays without a dedicated writer window. `TryQueueDamage` refreshed hit profile from managed receiver/Transform state before ingress locks. Armor target snapshots could be refreshed before armor buffers were pinned. Late dispatch wrote counters, status-active flags, and telemetry after job locks were released. Queue-reject anomalies published a signal but did not write the fixed black-box ring.
 Solution: Add `TryAcquireCombatTargetWriteLocks`/`ReleaseCombatTargetWriteLocks`, `TryAcquireCombatTelemetryWriteLocks`/`ReleaseCombatTelemetryWriteLocks`, and `TryAcquireArmorTargetWriteLocks`/`ReleaseArmorTargetWriteLocks`. Wrap every owner-phase target and armor mutation in `try/finally`. Move armor snapshot refresh inside locked/pinned windows. Remove hot ingress hit-profile refresh from `TryQueueDamage`; owner phase must publish `SyncTargetHitProfile`. Add late dispatch pending flags so result/status dispatch retries under `TryLockCombatDamageVaultBuffersForJobs` instead of writing after unlock. Record queue/storage rejects into the 300-entry telemetry ring under telemetry write locks.
-Rejected Alternatives: Keeping hot `Transform`/receiver reads in damage ingress violates the route doctrine and makes hit packets mutate target state from the wrong phase. Treating registration/sync as "cold enough" leaves compaction relocation windows unproven. Adding managed locks would duplicate DataVault ownership semantics. Using a full physical penetration simulation was rejected; the LUT plus continuous quality blend remains cheaper and more controllable.
-Scalability potential: Low tier gets bounded hit ingestion, fail-closed overflow, cheap base-armor approximation blended by quality, and reduced mutation cadence. Middle tier keeps the same truth route with higher status cadence/batch. High tier spends saved budget on richer hit normals, decals, and VFX. Ultra tier can push visual overkill through SignalBus presentation, but damage truth, DTO layout, buffer IDs, and save identity do not branch.
+Rejected Alternatives: Keeping hot `Transform`/receiver reads in damage ingress violates the route doctrine and makes hit packets mutate target state from the wrong phase. Treating registration/sync as "cold enough" leaves compaction relocation windows unproven. Adding managed locks would duplicate DataVault ownership semantics. Using a full physical penetration simulation was rejected; the armor LUT is the deterministic truth route and quality is spent on presentation/debug density.
+Scalability potential: Low tier gets bounded hit ingestion, fail-closed overflow, deterministic LUT armor truth, and reduced mutation cadence. Middle tier keeps the same truth route with higher status cadence/batch. High tier spends saved budget on richer hit normals, decals, and VFX. Ultra tier can push visual overkill through SignalBus presentation, but damage truth, DTO layout, buffer IDs, and save identity do not branch.
 Hardware Impact: No profiler microseconds are claimed. Static impact is stability: writer fences add small owner-phase overhead and prevent DataVault relocation corruption. On i3/MX350, the practical gain is avoiding exception/corruption during explosion spikes; runtime proof remains pending because CPU/build gate was blocked.
 
 ## Decision 17 - Atomic Target Side-State Fail-Closed Contract
@@ -170,3 +170,123 @@ Solution: Rework owner target mutation to acquire locks in one order: armor firs
 Rejected Alternatives: Keeping combat -> armor/status was rejected because it conflicts with scheduler order. Adding a managed global mutex was rejected because DataVault lock ownership already defines the concurrency contract. Removing side-state updates was rejected because armor/status target facts would diverge.
 Scalability potential: Low tier gets fewer avoidable fail-closed registration/unregistration failures during compaction. Middle/high/ultra keep identical combat truth and can spend quality budget only on visual fidelity.
 Hardware Impact: No measured microseconds. Owner-phase target mutation now holds combat locks for less time and performs side-state validation before combat mutation.
+
+## Decision 21 - Armor Quality Must Not Change Gameplay Truth
+
+Problem: A subagent/static audit found `HomeostasisBrain.GlobalQualityWeight` feeding armor damage authority: effective armor blended from `baseArmor * 0.65f` to LUT armor, and weak-point damage scalar was multiplied by quality. That violates the global rule that quality cannot change gameplay truth.
+Solution: Make `EvaluateArmorPenetrationCore` use LUT armor directly (`effectiveArmor = lutArmor`) and apply weak-point scalar from `weakWeight` only. Keep `GlobalQualityWeight` available for telemetry/presentation, not damage authority.
+Rejected Alternatives: Keeping the blend as a "low-end approximation" was rejected because weak devices would take different damage from high-end devices. A higher-fidelity physical solver was rejected because the LUT is cheaper, deterministic, and sufficient for cinematic impact.
+Scalability potential: Low tier uses the same armor truth as ultra. Middle/high/ultra spend quality budget on diagnostic hit density, impact VFX, decals, and status presentation rather than changing damage math.
+Hardware Impact: No measured microseconds. Static impact is authority correctness: one quality-dependent lerp and one quality multiplier were removed from the damage calculation.
+
+## Decision 22 - Debug Hit Density Is Presentation, Not Truth
+
+Problem: Armor debug hit recording wrote one row for every processed hit. That does not alter damage, but it consumes diagnostic buffer bandwidth during blast spikes and was not scaled by continuous quality.
+Solution: Add `ShouldCaptureArmorDebugHit(sequence, sourceId, VisualQualityWeight01)` using `SmoothStep01` and a stable hash threshold. Gate only `WriteArmorDebugHit`; damage amount, armor mitigation, health, status, and result DTOs remain unchanged.
+Rejected Alternatives: Binary `if (isLowEnd)` gating was rejected. Removing debug hits entirely was rejected because high-tier diagnostics and cinematic tooling need the data. Changing damage cadence was rejected because gameplay truth must stay fixed.
+Scalability potential: Low tier keeps sparse diagnostics under overload. Middle tier captures more samples. High tier captures dense debug traces. Ultra can approach full diagnostic density while the same combat truth remains authoritative.
+Hardware Impact: No measured microseconds. Expected i3/MX350 benefit is lower diagnostic write pressure in explosion spikes; gameplay cost is unchanged.
+
+## Decision 23 - Job Pin Partial Failure Finally Contract
+
+Problem: Several `TryLockBuffer` helper methods and multi-vault scheduling paths released partial locks through branch-local manual unlocks before returning false. The releases were present, but the proof surface did not satisfy the required single `finally` cleanup contract.
+Solution: Convert combat, status, armor, mock, evaluator torture, and CAS torture pin helpers to `success` flag plus `finally` cleanup. Wrap damage/status multi-vault scheduling acquisition so partial locks are released in `finally` unless ownership transfers to the scheduled job.
+Rejected Alternatives: Leaving manual branch unlocks was rejected because future edits can add a return between lock and unlock. A managed global mutex was rejected because DataVault lock/pin APIs are the ownership contract.
+Scalability potential: Low tier gets fail-closed cleanup under contention and compaction. Middle/high/ultra get identical authority behavior; quality scaling stays in presentation/cadence only.
+Hardware Impact: No measured microseconds. Static impact is lower relocation/deadlock risk; the added bool checks are outside the Burst per-hit loop.
+
+## Decision 24 - Build Gate Blocked By Active External Dotnet
+
+Problem: Final compilation is still required, but the host had CPU 87 percent and active dotnet PID 51336 already running `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1`. After 30 seconds, CPU was still 74 percent and PID 51336 was still active.
+Solution: Do not launch a second build. Record the gate failure and leave Task 15 pending.
+Rejected Alternatives: Launching another build would violate the explicit CPU >50 / active compiler ban and contaminate evidence. Claiming the external process as agent 1417 verification would be false.
+Scalability potential: No gameplay change. This preserves host stability for later controlled verification.
+Hardware Impact: 0 us runtime change and 0 build CPU consumed by agent 1417 in this continuation.
+
+## Decision 25 - Fault Dump Writer Allocation Surface Reduction
+
+Problem: Loop 10 audit found `new FileStream` and `BinaryWriter` in the three 1417 owner-specific black-box dump writers. These paths are fault-only, but they still expanded managed allocation surface exactly where forensic dumping is supposed to be predictable.
+Solution: Replace `BinaryWriter` entry serialization with stackalloc `Span<byte>` buffers and `BinaryPrimitives` little-endian writes in combat damage, status effects, and armor penetration dump writers. Replace textual `new FileStream` with `File.Open` while preserving the existing binary header and oldest-to-newest ring order.
+Rejected Alternatives: Claiming the dump path was hot-path clean was false. Switching to JSON was rejected because binary telemetry must stay fixed-size. Implementing a rushed background worker was rejected because a correct worker needs a pre-owned export snapshot or MMF route; passing live DataVault NativeArrays to an ad-hoc thread would create a worse lifetime hazard.
+Scalability potential: Low tier gets smaller managed fault-path pressure and the same fixed 300-frame forensic data. Middle/high/ultra retain the same dump truth; richer diagnostics must be added through presentation/debug lanes, not by changing combat authority.
+Hardware Impact: No measured microseconds. Static scan after the patch: `BinaryWriter = 0`, `new FileStream = 0`, fault dump writer reference-type `new = 0`. Residual remains: synchronous `File.Open` is still managed IO, not MMF/pre-owned worker export.
+
+## Decision 26 - Burst NativeArray Budget Lane NoAlias Repair
+
+Problem: The static job-field scan found two NativeArray<int> fields in `ProcessDamageQueueJob` without NoAlias: `DeflectSignalWriterBudget` and `ImpactSignalWriterBudget`. These arrays are SignalBus budget lanes passed into a Burst job and must not be left ambiguous for alias analysis.
+Solution: Add `NoAlias` beside the existing `NativeDisableParallelForRestriction` attributes on both budget fields.
+Rejected Alternatives: Ignoring the result because the fields are small was rejected; the contract is about aliasing, not size. Passing managed writer state into the job was already avoided and remains rejected.
+Scalability potential: Low tier keeps predictable Burst codegen and bounded signal writer budget checks. Middle/high/ultra get identical combat truth; visual overkill can consume SignalBus presentation lanes without weakening job alias contracts.
+Hardware Impact: No measured microseconds. Post-fix scan: 8 combat/armor/status job structs, 90 NativeArray fields, missing NoAlias = 0.
+
+## Decision 27 - Final Build Gate Honesty
+
+Problem: A final compilation proof is still required, but the resource-throttling rule forbids `dotnet build` when CPU load is above 50 percent, even if no compiler process is currently visible.
+Solution: Re-sample immediately before final build decision. Result: CPU average 74, compiler_processes=none, build_invoked=false. Keep Task 15 pending instead of turning a blocked gate into a fake pass.
+Rejected Alternatives: Running `dotnet build` at CPU 74 would violate the explicit rule and contaminate the verification artifact. Claiming an older external build as agent 1417 proof would be false.
+Scalability potential: No gameplay change. This is host stability discipline; the combat code remains quality-scaled through continuous presentation/cadence scalars only.
+Hardware Impact: 0 us runtime change and 0 build CPU consumed by agent 1417 at this final gate.
+
+## Decision 28 - Timed-Out Build Process Is Not Compile Proof
+
+Problem: A later conditional gate command started `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` as PID 6088, but the tool-call timed out after 124 seconds. The dotnet process later exited, yet stdout and exit code were not captured.
+Solution: Mark the build result as unproven. Do not launch a second build merely to recover lost output. Update status/report/log to distinguish "process executed" from "compilation verified".
+Rejected Alternatives: Claiming success from an exited process would be hallucination. Running another build immediately would be build spam and could hide the lost evidence problem.
+Scalability potential: No gameplay change. Verification discipline remains separate from combat quality scaling.
+Hardware Impact: Compile CPU was consumed by PID 6088, but no reliable build result artifact exists. Post-exit CPU sample was 85 with no compiler processes.
+
+## Decision 29 - Final External Compiler Contention
+
+Problem: A final process sample after the unproven PID 6088 build showed the machine under new external compiler load: CPU 93, dotnet PID 67008 running `dotnet build Hecton8.Core.csproj --nologo -clp:ErrorsOnly -maxcpucount:1`, and child csc PID 19420.
+Solution: Do not launch any additional build. Record this as the latest contention state and keep compile proof pending.
+Rejected Alternatives: Retrying the solution build while another build and csc are active would violate both the CPU > 50 rule and the active compiler rule.
+Scalability potential: No gameplay change. Verification remains blocked by host contention, not by a quality-scaling design choice.
+Hardware Impact: 0 additional compile CPU consumed by agent 1417 after PID 6088.
+
+## Decision 30 - Adjacent Ballistics Dump Allocation Surface
+
+Problem: Wider `Assets/_Project/Scripts/Gameplay/Combat` scan found the same forensic allocation smell in adjacent `BallisticsRuntime.cs`: `BinaryWriter` plus `new FileStream` in `Dump_BALLISTICS_SURGEON.bin`, and `new FileStream` in the cold CSV LUT import path.
+Solution: Replace those writers/readers with `File.Open`; serialize the ballistics telemetry dump through stackalloc `Span<byte>` and `BinaryPrimitives`, preserving the existing 8-byte header and 48-byte row payload. This is adjacent-domain hygiene, not a change to combat damage truth.
+Rejected Alternatives: Leaving the token hit would keep final combat-folder scans noisy. Expanding this into a full ballistics rewrite was rejected because agent 1417 owns damage router / armor LUT, not projectile architecture.
+Scalability potential: No gameplay truth change. High-tier visual overkill remains driven by presentation systems; ballistics dump serialization is fault/cold path only.
+Hardware Impact: No measured microseconds. Static proof: `rg (BinaryWriter|new FileStream) Assets/_Project/Scripts/Gameplay/Combat -g *.cs` now returns empty.
+
+## Decision 31 - Post-Ballistics Build Gate Blocked
+
+Problem: After the adjacent `BallisticsRuntime.cs` hygiene patch, compile proof was still needed, but the host gate failed.
+Solution: Sample CPU and compiler processes before any build. Result: CPU 53 and active external dotnet PID 35384 running `dotnet build Hecton8.Core.csproj --no-restore -nologo -v:minimal /m:1 /p:UseSharedCompilation=false /nr:false`; build_invoked=false.
+Rejected Alternatives: Launching a second build while CPU > 50 and another dotnet build is active would violate the explicit resource-throttling rule.
+Scalability potential: No gameplay change.
+Hardware Impact: 0 additional compile CPU consumed by agent 1417 after Loop 14.
+
+## Decision 32 - Armor Fault Dump Player Route Narrowing
+
+Problem: Subagent audit found the armor black-box dump writer was editor-only and used a broad `catch (Exception)`, so player/dev builds marked `_armorTelemetryDumped` without writing `Dump_1417_ArmorPenetration.bin`.
+Solution: Remove the `UNITY_EDITOR` gate from `DumpArmorTelemetryIfNeeded` and replace the broad catch with explicit I/O/path exception catches. The writer still uses the fixed 20-byte header, 64-byte entries, `stackalloc Span<byte>`, and `BinaryPrimitives`.
+Rejected Alternatives: Claiming Task 17 complete from an editor-only writer was false. Adding a rushed worker without a pre-owned snapshot was rejected because passing live Vault `NativeArray` views to a thread would create a worse lifetime violation.
+Scalability potential: No gameplay or visual quality change. Low/mid/high/ultra all receive the same forensic route; visual overkill remains outside combat authority.
+Hardware Impact: No measured microseconds. Residual remains: the writer still uses synchronous `File.Open`; full MMF/pre-owned worker is pending.
+
+## Decision 33 - Armor Lock Borrowing Rejected
+
+Problem: `TryLockArmorVaultBuffersForJobs` returned true when `_armorVaultBuffersLocked` was already true. Editor/dev mock and torture proof paths checked `_damageJobScheduled` but not `_statusJobScheduled`, so they could borrow armor locks owned by a status job and later unlock buffers they did not acquire.
+Solution: Make `TryLockArmorVaultBuffersForJobs` fail closed when armor buffers are already locked, block mock/torture proof while `_statusJobScheduled`, defer armor vault rebind while status jobs are scheduled, and apply pending armor rebind after status unlock in both normal and early completion paths.
+Rejected Alternatives: Reference-counting the lock in this patch was rejected because DataVault exposes buffer locks, not nested ownership tokens; a nested borrow would hide who owns the release. Waiting for Unity runtime proof before patching was rejected because the static race was concrete.
+Scalability potential: Low tier avoids rare relocation/unlock corruption under status-combat overlap. Middle/high/ultra keep identical combat truth; quality scaling remains presentation/debug density only.
+Hardware Impact: No profiler microseconds. Static impact is fail-closed editor/dev proof paths and safer hot-swap deferral. Build proof failed opaquely after this fix.
+
+## Decision 34 - Opaque Build Failure
+
+Problem: After Loop 18 patches, the build gate finally opened with CPU 33 and no active compiler processes. The single permitted `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` returned exit code 1 but captured no stdout/stderr.
+Solution: Mark compile proof as failing/opaque. Do not claim green. A diagnostic rerun was blocked by CPU 57, then CPU 100 with active dotnet PID 66612 running `dotnet build Assembly-CSharp.csproj --no-restore -nologo -v:minimal /m:1 /p:UseSharedCompilation=false /nr:false`.
+Rejected Alternatives: Declaring success from empty output is hallucination. Launching another build during CPU > 50 and active dotnet violates the resource-throttling rule.
+Scalability potential: No gameplay change.
+Hardware Impact: Compile CPU was consumed, but no admissible error list exists yet.
+
+## Decision 35 - Diagnostic Build Still Has No Error Line
+
+Problem: The Loop 18 build failure was opaque, so a diagnostic pass was needed, but only when the resource gate allowed it. A later gate opened with CPU 47 and no dotnet/csc/VBCSCompiler processes.
+Solution: Launch exactly one diagnostic solution build: `dotnet build Hecton8.slnx -nologo -maxcpucount:1 -v:minimal`. It ran 501.8 seconds and returned exit code 1. Captured output lists successful DLLs through `Hecton8.World.Contracts` and contains no `CS` compiler error or `MSB` build error line. Save the evidence to `Docs/AgentLogs/Dump_1417_BuildFailure_20260528T1919.txt` and keep Task 15 pending. Separate compile-medic logs after the latest 1417 source timestamps show `Assembly-CSharp`, `Assembly-CSharp-Editor`, `Hecton8.Core`, `MapMagic`, `MapMagic.Editor`, `MapMagic.MicroSplat`, and `MapMagic.MicroSplat.Editor` succeeded, but they are not a full solution pass.
+Rejected Alternatives: Claiming full build success from partial assembly logs was rejected. Launching a third solution build after post-build CPU sampled at 100 was rejected by the compilation throttling rule. Patching span-based `FileStream.Write(Span<byte>)` was rejected because the post-timestamp `Assembly-CSharp`/editor compile logs already show the Unity C# profile accepted those overloads.
+Scalability potential: No gameplay change. Verification remains separate from quality scaling; low/middle/high/ultra combat authority remains identical.
+Hardware Impact: One diagnostic build consumed 501.8 seconds wall time. No runtime microsecond change.

@@ -134,12 +134,17 @@ namespace Den.Tools.Tasks
 				if (active.actions != null  &&  active.actions.Count != 0  &&  active.actionNum < active.actions.Count)
 				{
 					try  { active.actions[active.actionNum](); }
-					catch(Exception e) { throw new Exception("Routine error: " + e); }  
-					finally
+					catch(Exception e)
 					{
-						active.actionNum ++;
-						move = true;
+						#if UNITY_EDITOR || DEVELOPMENT_BUILD
+						Debug.LogError("Routine error: " + e.Message);
+						#endif
+						active = null;
+						break;
 					}
+
+					active.actionNum ++;
+					move = true;
 				}
 
 				//moving active routine

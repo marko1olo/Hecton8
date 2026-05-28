@@ -829,24 +829,28 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             half mainShadow = HectonCoreLitResolveMx350ShadowDither((half)mainLight.shadowAttenuation, positionCS);
             color += (albedo * NdotL + specular) * mainLight.color * (mainLight.distanceAttenuation * mainShadow);
 
-            #if defined(_ADDITIONAL_LIGHTS) && !defined(_MATH_LOD_LOW)
-            uint lightCount = GetAdditionalLightsCount();
-            LIGHT_LOOP_BEGIN(lightCount)
-                Light light = GetAdditionalLight(lightIndex, positionWS);
-                half3 additionalDir = SafeNormalize3(light.direction);
-                half additionalNdotL = saturate(dot(normalWS, additionalDir));
-                half additionalSpecular = 0.0h;
-                if (additionalNdotL > 0.0001h && specularEnergy > 0.0001h)
-                {
-                    half3 additionalHalfDir = SafeNormalize3(additionalDir + viewDirWS);
-                    half additionalSpecularBase = saturate(dot(normalWS, additionalHalfDir));
-                    if (additionalSpecularBase > 0.0001h)
-                        additionalSpecular = HectonVoxelSpecularLobe(additionalSpecularBase, smoothness) * specularEnergy;
-                }
-                half causticLightMask = lerp(1.0h, localCausticMask, saturate(additionalNdotL * light.distanceAttenuation));
-                float additionalShadowAttenuation = HectonCoreLitResolveFlashlightAdditionalShadow(lightIndex, positionWS, normalWS, light.shadowAttenuation);
-                color += ((albedo * additionalNdotL + additionalSpecular) * causticLightMask) * light.color * (light.distanceAttenuation * additionalShadowAttenuation);
-            LIGHT_LOOP_END
+            #if defined(_ADDITIONAL_LIGHTS)
+            half additionalLightWeight = (half)smoothstep(0.2, 0.75, HectonCoreLitMathLodWeight());
+            if (additionalLightWeight > 0.0001h)
+            {
+                uint lightCount = GetAdditionalLightsCount();
+                LIGHT_LOOP_BEGIN(lightCount)
+                    Light light = GetAdditionalLight(lightIndex, positionWS);
+                    half3 additionalDir = SafeNormalize3(light.direction);
+                    half additionalNdotL = saturate(dot(normalWS, additionalDir));
+                    half additionalSpecular = 0.0h;
+                    if (additionalNdotL > 0.0001h && specularEnergy > 0.0001h)
+                    {
+                        half3 additionalHalfDir = SafeNormalize3(additionalDir + viewDirWS);
+                        half additionalSpecularBase = saturate(dot(normalWS, additionalHalfDir));
+                        if (additionalSpecularBase > 0.0001h)
+                            additionalSpecular = HectonVoxelSpecularLobe(additionalSpecularBase, smoothness) * specularEnergy;
+                    }
+                    half causticLightMask = lerp(1.0h, localCausticMask, saturate(additionalNdotL * light.distanceAttenuation));
+                    float additionalShadowAttenuation = HectonCoreLitResolveFlashlightAdditionalShadow(lightIndex, positionWS, normalWS, light.shadowAttenuation);
+                    color += ((albedo * additionalNdotL + additionalSpecular) * causticLightMask) * light.color * (light.distanceAttenuation * additionalShadowAttenuation * additionalLightWeight);
+                LIGHT_LOOP_END
+            }
             #endif
 
             color += HectonCoreLitEvaluateProjectedCausticsScattering(positionWS, normalWS) * albedo;
@@ -963,7 +967,6 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling
             #pragma multi_compile_fog
-            #pragma multi_compile _ _MATH_LOD_LOW _MATH_LOD_HIGH
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS

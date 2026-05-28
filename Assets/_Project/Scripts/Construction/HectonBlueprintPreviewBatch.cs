@@ -128,7 +128,7 @@ namespace Hecton8.Construction
             {
                 CompletePendingBuildForTeardown();
                 ClearVaultDescriptorState();
-                _vault = currentService as IDataVault;
+                _vault = currentService is IDataVault currentVault ? currentVault : null;
                 EnsureBuffersCold();
             }
         }
@@ -808,7 +808,11 @@ namespace Hecton8.Construction
                 return;
 
             _vault = vault;
-            if (vault.TryReadHandle(in _stateHandle, out NativeArray<BuilderGhostStateDTO> states) &&
+            if (IsBlueprintVaultHandle(in _stateHandle, ShinobuSocketConstructionRuntime.BuilderGhostStateBufferId) &&
+                IsBlueprintVaultHandle(in _visualHandle, ShinobuSocketConstructionRuntime.BuilderGhostVisualBufferId) &&
+                IsBlueprintVaultHandle(in _telemetryHandle, ShinobuSocketConstructionRuntime.BuilderGhostTelemetryBufferId) &&
+                IsBlueprintVaultHandle(in _argsHandle, ShinobuSocketConstructionRuntime.BuilderGhostIndirectArgsBufferId) &&
+                vault.TryReadHandle(in _stateHandle, out NativeArray<BuilderGhostStateDTO> states) &&
                 vault.TryReadHandle(in _visualHandle, out NativeArray<BuilderGhostVisualDTO> visuals) &&
                 vault.TryReadHandle(in _telemetryHandle, out NativeArray<HolographyTelemetryEntry> telemetry) &&
                 vault.TryReadHandle(in _argsHandle, out NativeArray<BuilderGhostIndirectArgsDTO> args) &&
@@ -844,6 +848,14 @@ namespace Hecton8.Construction
                 1,
                 SystemID.Construction,
                 NativeArrayOptions.UninitializedMemory);
+
+            if (!IsBlueprintVaultHandle(in _stateHandle, ShinobuSocketConstructionRuntime.BuilderGhostStateBufferId) ||
+                !IsBlueprintVaultHandle(in _visualHandle, ShinobuSocketConstructionRuntime.BuilderGhostVisualBufferId) ||
+                !IsBlueprintVaultHandle(in _telemetryHandle, ShinobuSocketConstructionRuntime.BuilderGhostTelemetryBufferId) ||
+                !IsBlueprintVaultHandle(in _argsHandle, ShinobuSocketConstructionRuntime.BuilderGhostIndirectArgsBufferId))
+            {
+                ClearVaultDescriptorState();
+            }
         }
 
         private bool TryReadCachedStateVisualBuffers(
@@ -858,7 +870,9 @@ namespace Hecton8.Construction
                 return false;
 
             int resolvedCapacity = ResolveCapacity();
-            return vault.TryReadOnlyHandle(in _stateHandle, out states) &&
+            return IsBlueprintVaultHandle(in _stateHandle, ShinobuSocketConstructionRuntime.BuilderGhostStateBufferId) &&
+                   IsBlueprintVaultHandle(in _visualHandle, ShinobuSocketConstructionRuntime.BuilderGhostVisualBufferId) &&
+                   vault.TryReadOnlyHandle(in _stateHandle, out states) &&
                    vault.TryReadOnlyHandle(in _visualHandle, out visuals) &&
                    states.Length >= resolvedCapacity &&
                    visuals.Length >= resolvedCapacity;
@@ -882,7 +896,8 @@ namespace Hecton8.Construction
 
             int resolvedCapacity = ResolveCapacity();
             int acquiredCount = 0;
-            if (!vault.TryAcquireWriteLock(in _stateHandle, SystemID.Construction, out states))
+            if (!IsBlueprintVaultHandle(in _stateHandle, ShinobuSocketConstructionRuntime.BuilderGhostStateBufferId) ||
+                !vault.TryAcquireWriteLock(in _stateHandle, SystemID.Construction, out states))
                 return false;
             acquiredCount = 1;
             if (!states.IsCreated || states.Length < resolvedCapacity)
@@ -891,7 +906,8 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            if (!vault.TryAcquireWriteLock(in _visualHandle, SystemID.Construction, out visuals))
+            if (!IsBlueprintVaultHandle(in _visualHandle, ShinobuSocketConstructionRuntime.BuilderGhostVisualBufferId) ||
+                !vault.TryAcquireWriteLock(in _visualHandle, SystemID.Construction, out visuals))
             {
                 ReleasePreviewBuildWriteLocks(vault, acquiredCount);
                 return false;
@@ -903,7 +919,8 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            if (!vault.TryAcquireWriteLock(in _argsHandle, SystemID.Construction, out args))
+            if (!IsBlueprintVaultHandle(in _argsHandle, ShinobuSocketConstructionRuntime.BuilderGhostIndirectArgsBufferId) ||
+                !vault.TryAcquireWriteLock(in _argsHandle, SystemID.Construction, out args))
             {
                 ReleasePreviewBuildWriteLocks(vault, acquiredCount);
                 return false;
@@ -931,6 +948,9 @@ namespace Hecton8.Construction
             int resolvedCapacity = ResolveCapacity();
             return vault != null &&
                    _pendingBuildWriteLockCount == 3 &&
+                   IsBlueprintVaultHandle(in _stateHandle, ShinobuSocketConstructionRuntime.BuilderGhostStateBufferId) &&
+                   IsBlueprintVaultHandle(in _visualHandle, ShinobuSocketConstructionRuntime.BuilderGhostVisualBufferId) &&
+                   IsBlueprintVaultHandle(in _argsHandle, ShinobuSocketConstructionRuntime.BuilderGhostIndirectArgsBufferId) &&
                    vault.TryResolveHandle(in _stateHandle, out states) &&
                    vault.TryResolveHandle(in _visualHandle, out visuals) &&
                    vault.TryResolveHandle(in _argsHandle, out args) &&
@@ -947,6 +967,7 @@ namespace Hecton8.Construction
             telemetry = default;
             vault = _vault;
             if (vault == null ||
+                !IsBlueprintVaultHandle(in _telemetryHandle, ShinobuSocketConstructionRuntime.BuilderGhostTelemetryBufferId) ||
                 !vault.TryAcquireWriteLock(in _telemetryHandle, SystemID.Construction, out telemetry))
             {
                 return false;
@@ -995,6 +1016,15 @@ namespace Hecton8.Construction
             vault = GlobalRegistry.DataVault;
             _vault = vault;
             return vault != null;
+        }
+
+        private static bool IsBlueprintVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)SystemID.Construction &&
+                   handle.Generation != 0u;
         }
 
         private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition aup)

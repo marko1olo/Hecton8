@@ -1,0 +1,351 @@
+{
+  "agent_id": "1422",
+  "role": "POWER_GRID_JACOBI_SOLVER_HARDENER",
+  "status": "implemented_static_verified_powergrid_scratch_migrated_build_blocked_by_cpu_contention_pending_unity_verification",
+  "domain": "Echelon 6 Habitat & Vehicles / Power Grid (Jacobi Solver)",
+  "prompt_source": {
+    "path": "Docs/Tasks/CURRENT_BATCH.md",
+    "regex": "<AGENT_PROMPT\\s+id=\"1422\"[^>]*>.*?</AGENT_PROMPT>",
+    "task_count": 20,
+    "prompt_bytes_utf8": 21054,
+    "prompt_sha256": "7AA6B71279A1977DFBA693D223C31318F647E497C4D0F186696FE41311A537A4"
+  },
+  "modified_csharp_files": [
+    {
+      "path": "Assets/_Project/Scripts/PowerGrid.cs",
+      "sha256": "FA2649E22A027F1033085EEB41B3A57B53267E51DCF7855BFD4EC0C96EC225EF"
+    },
+    {
+      "path": "Assets/_Project/Scripts/PowerGridManager.cs",
+      "sha256": "2C6511B9F664C33FFBCE953E30802F05F0723138BB1F02C27D24D9E6C3505ACB"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "sha256": "C09D633BDA2C04605CAEE0DBACEC9E500143EE4C31F73085DB5C7927F06A54AF"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "sha256": "9E895B4D99B56C3F5E900D88FC8B48EAA7268C2A3E2A5090740EF49C08D2D533"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/PowerGridJacobiStressFuzzerEditTests.cs",
+      "sha256": "02E03164ECB7B5E1CFCC287500EB799092E6E3D4C8BA4B3EB978CE25A0D65B1A"
+    }
+  ],
+  "zero_gc_hot_path_scan": {
+    "scan_type": "PowerShell regex over exact modified hot sections",
+    "sections": [
+      {
+        "file": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+        "section": "TwoPassPowerGridSolverJob",
+        "lines": "307-527",
+        "reference_new_candidate": 0,
+        "string_format": 0,
+        "to_string": 0,
+        "linq_query": 0,
+        "foreach_loop": 0,
+        "string_concat": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+        "section": "EvaluateGraphJob.ApplyTwoPassPowerDeltaPropagation",
+        "lines": "1061-1388",
+        "reference_new_candidate": 0,
+        "string_format": 0,
+        "to_string": 0,
+        "linq_query": 0,
+        "foreach_loop": 0,
+        "string_concat": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+        "section": "GraphMutationLocks",
+        "lines": "2256-2404",
+        "reference_new_candidate": 0,
+        "string_format": 0,
+        "to_string": 0,
+        "linq_query": 0,
+        "foreach_loop": 0,
+        "string_concat": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+        "section": "AdaptiveQualityBudget",
+        "lines": "3135-3151",
+        "reference_new_candidate": 0,
+        "string_format": 0,
+        "to_string": 0,
+        "linq_query": 0,
+        "foreach_loop": 0,
+        "string_concat": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+        "section": "PowerVoltageSolverJob",
+        "lines": "531-610",
+        "reference_new_candidate": 0,
+        "string_format": 0,
+        "to_string": 0,
+        "linq_query": 0,
+        "foreach_loop": 0,
+        "string_concat": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/PowerGrid.cs",
+        "section": "ThermalSharePassJob",
+        "lines": "113-160",
+        "reference_new_candidate": 0,
+        "new_nativearray": 0,
+        "allocator_persistent": 0,
+        "string_format": 0,
+        "to_string": 0,
+        "linq_query": 0,
+        "foreach_loop": 0,
+        "string_concat": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/PowerGrid.cs",
+        "section": "PowerGridVaultScratchHelpers",
+        "lines": "1925-2120",
+        "reference_new_candidate": 0,
+        "new_nativearray": 0,
+        "allocator_persistent": 0,
+        "string_format": 0,
+        "to_string": 0,
+        "linq_query": 0,
+        "foreach_loop": 0,
+        "string_concat": 0
+      }
+    ],
+    "remaining_non_hot_reference_allocation": {
+      "file": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "line": 3723,
+      "symbol": "BinaryWriter",
+      "scope": "cold black-box dump path only"
+    },
+    "powergrid_scratch_file_scan": "PowerGrid.cs + PowerGridManager.cs: new NativeArray< count 0, Allocator.Persistent count 0, NativeMemorySentinel count 0, TryGetLatestCreated count 0, math.isfinite ternary count 0, foreach count 0, string.Format count 0, .ToString count 0, case-sensitive LINQ Select/Where/Any/All/First/FirstOrDefault/ToList/ToArray count 0",
+    "runtime_profiler_gc_proof": "absent_build_and_playmode_blocked"
+  },
+  "continuous_quality_damping": {
+    "runtime_solver": {
+      "file": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "method": "EvaluateGraphJob.ApplyTwoPassPowerDeltaPropagation",
+      "quality_line": 1105,
+      "active_max_iterations_line": 1106,
+      "active_epsilon_line": 1107,
+      "quality_sanitization": "q = saturate(select(1.0, GlobalQualityWeight, isfinite(GlobalQualityWeight)))",
+      "active_max_iterations_formula": "round(lerp(2, 8, q))",
+      "active_epsilon_formula": "lerp(0.075, 0.003, q)",
+      "residual_break_line": 1128,
+      "cap_flag_line": 1132
+    },
+    "compatibility_job": {
+      "file": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "type": "TwoPassPowerGridSolverJob",
+      "quality_line": 357,
+      "active_max_iterations_formula": "round(lerp(2, 8, q))",
+      "active_epsilon_formula": "lerp(0.075, 0.003, q)"
+    },
+    "tier_curve": {
+      "low_q0": "2 iterations, epsilon 0.075",
+      "middle_q05": "5 iterations, epsilon 0.039",
+      "high_q075": "6-7 iterations, epsilon 0.021",
+      "ultra_q1": "8 iterations, epsilon 0.003"
+    },
+    "binary_quality_scan": "NO_BINARY_QUALITY_MATCHES for isLowEnd/LowEnd/GlobalQualityWeight comparisons in targeted Jacobi files",
+    "branchless_quality_sanitization_scan": "NO_QUALITY_TERNARY_MATCHES and NO_MATH_ISFINITE_TERNARY_MATCHES in targeted Jacobi files after replacing quality/finite fallbacks with math.select"
+  },
+  "branchless_inner_loop": {
+    "runtime_row_loop_lines": "1302-1320",
+    "runtime_live_conductance_line": 1316,
+    "compatibility_live_conductance_line": 489,
+    "masking_pattern": "valid/damaged/ruptured connection state becomes liveConductance = conductance * math.select(0f, 1f, connected)",
+    "rejected_pattern": "continue branches inside row accumulation"
+  },
+  "datavault_locking": {
+    "global_buffer_ids": [
+      {
+        "symbol": "PowerGridBufferIds.TelemetryRing",
+        "buffer_id": 70861,
+        "definition": "PowerGridJacobiContracts.cs:56",
+        "write_lock_line": 3466,
+        "release_line": 3674
+      },
+      {
+        "symbol": "PowerGridBufferIds.TelemetryCursor",
+        "buffer_id": 70862,
+        "definition": "PowerGridJacobiContracts.cs:57",
+        "write_lock_line": 3494,
+        "release_line": 3688
+      },
+      {
+        "symbol": "LogisticsGraphBufferBase + instanceId * LogisticsGraphBufferStride + SolverTelemetryBufferOffset",
+        "buffer_id_first_instance": 731409,
+        "base_line": 1726,
+        "stride_line": 1727,
+        "offset_symbol_line": 1728,
+        "offset_value": 45,
+        "ensure_line": 4597,
+        "write_lock_line": 2331,
+        "release_line": 2399
+      }
+    ],
+    "powergrid_scratch_buffer_ids": [
+      {
+        "symbol": "PowerGridScratchBufferBase + Id * PowerGridScratchBufferStride + BatteryDispatchRecordsBufferOffset",
+        "first_grid_buffer_id": 731700,
+        "base_line": "PowerGrid.cs:58",
+        "stride_line": "PowerGrid.cs:59",
+        "offset_line": "PowerGrid.cs:60",
+        "write_lock_line": "PowerGrid.cs:2036",
+        "release_line": "PowerGrid.cs:2051",
+        "finally_release": "PowerGrid.cs:1841-1843"
+      },
+      {
+        "symbol": "PowerGridScratchBufferBase + Id * PowerGridScratchBufferStride + BatteryDispatchResultsBufferOffset",
+        "first_grid_buffer_id": 731701,
+        "base_line": "PowerGrid.cs:58",
+        "stride_line": "PowerGrid.cs:59",
+        "offset_line": "PowerGrid.cs:61",
+        "write_lock_line": "PowerGrid.cs:2036",
+        "release_line": "PowerGrid.cs:2051",
+        "finally_release": "PowerGrid.cs:1841-1843"
+      },
+      {
+        "symbol": "PowerGridScratchBufferBase + Id * PowerGridScratchBufferStride + ThermalTemperatureFrontBufferOffset..ThermalEdgeConductanceBufferOffset",
+        "first_grid_buffer_id_range": "731702-731708",
+        "base_line": "PowerGrid.cs:58",
+        "stride_line": "PowerGrid.cs:59",
+        "offset_lines": "PowerGrid.cs:62-68",
+        "write_lock_line": "PowerGrid.cs:2036",
+        "release_line": "PowerGrid.cs:2051",
+        "schedule_finally_release": "PowerGrid.cs:1148-1150",
+        "snapshot_finally_release": "PowerGrid.cs:1310-1312"
+      }
+    ],
+    "try_finally_evidence": [
+      "ScheduleEvaluationSlice: TryLockGraphMutationBuffers at 3024, try at 3032, UnlockGraphMutationBuffers in finally at 3095",
+      "All graph mutation helper callsites found by rg pair TryLockGraphMutationBuffers with finally UnlockGraphMutationBuffers: 2010/2040, 2056/2080, 2474/2493, 2505/2529, 2541/2555, 2574/2595, 2610/2629, 2638/2738, 2757/2827, 2853/2874, 2946/2971, 3024/3095, 3155/3194, 3203/3241, 3846/3856, 4422/4476",
+      "Power black-box writer: TryAcquireWriteLock at 3466/3494 and ReleaseWriteLock in finally at 3674/3688",
+      "PowerGrid thermal snapshot: TryLockThermalDissipationBuffers at 1228, UnlockThermalDissipationBuffers in finally at 1312",
+      "PowerGrid thermal schedule: TryLockThermalDissipationBuffers at 1088, UnlockThermalDissipationBuffers in finally at 1150",
+      "PowerGrid battery dispatch: TryLockBatteryDispatchBuffers at 1727, UnlockBatteryDispatchBuffers in finally at 1843"
+    ],
+    "old_api_scan": "No vault.TryLockBuffer(...) or vault.TryUnlockBuffer(...) calls remain in LogisticsNetworkGraph.cs; PowerGrid.cs uses generation handles and TryAcquireWriteLock/ReleaseWriteLock for migrated scratch buffers"
+  },
+  "powergrid_scratch_migration": {
+    "files": [
+      "Assets/_Project/Scripts/PowerGrid.cs",
+      "Assets/_Project/Scripts/PowerGridManager.cs"
+    ],
+    "removed_direct_native_fields": [
+      "_batteryDispatchRecords",
+      "_batteryDispatchResults",
+      "_thermalTemperatureFront",
+      "_thermalTemperatureBack",
+      "_thermalHeatInjection",
+      "_thermalHullSinkConductance",
+      "_thermalEdgeOffsets",
+      "_thermalEdgeDestinations",
+      "_thermalEdgeConductance"
+    ],
+    "new_handle_fields_lines": "PowerGrid.cs:187-195",
+    "manager_injection_lines": "PowerGridManager.cs:317, PowerGridManager.cs:406, PowerGridManager.cs:471",
+    "branchless_thermal_job_lines": "PowerGrid.cs:143-159",
+    "alias_contract_lines": "PowerGrid.cs:122-129",
+    "fail_closed_behavior": "If DataVault allocation/compaction/write lock fails, thermal sharing or battery dispatch for that tick returns without exposing stale native views."
+  },
+  "telemetry": {
+    "ring_type": "PowerTelemetryEntry",
+    "ring_capacity": 300,
+    "row_size_bytes": 64,
+    "solver_counter_type": "PowerGridCounter64",
+    "encoded_reason_flags": {
+      "bit_6": "PowerBlackBoxJacobiCapFlag",
+      "bit_7": "PowerBlackBoxJacobiDivergentFlag",
+      "bits_16_23": "completed iteration count",
+      "bits_24_31": "active max iteration count"
+    },
+    "dump_path": "Docs/AgentLogs/Dump_1422_PowerGrid.bin",
+    "dump_trigger": "nonfinite/divergent solver flag or catastrophic black-box reason"
+  },
+  "arm64_layout_proof": {
+    "PowerNodeDTO": {
+      "size_bytes": 32,
+      "explicit_layout": true,
+      "multiple_of_8": true
+    },
+    "PowerGridEdgeDTO": {
+      "size_bytes": 32,
+      "explicit_layout": true,
+      "multiple_of_8": true
+    },
+    "PowerTelemetryEntry": {
+      "size_bytes": 64,
+      "explicit_layout": true,
+      "multiple_of_8": true,
+      "aliases": {
+        "BrownoutCount": 56,
+        "SolverIterationCount": 56,
+        "OverloadedCount": 60,
+        "SolverMicroseconds": 60,
+        "SolverMaxIterations": 60
+      },
+      "validator_lines": "248-261"
+    }
+  },
+  "stress_test": {
+    "editor_test_added": "PowerGridJacobiStressFuzzerEditTests.HostileCsrGraph_GlobalQualityWeightScalesIterationBudgetWithoutGc",
+    "test_lines": "89-124",
+    "node_count": 5000,
+    "loose_quality": 0.0,
+    "strict_quality": 1.0,
+    "managed_gc_assert_lines": "120-121",
+    "iteration_scale_assert_lines": "122-124",
+    "measured_execution_time_microseconds": {
+      "loose": null,
+      "strict": null
+    },
+    "managed_gc_bytes_runtime_measured": {
+      "loose": null,
+      "strict": null
+    },
+    "execution_status": "not_executed_due_to_build_cpu_gate"
+  },
+  "residual_findings": [
+    {
+      "severity": "RESOLVED_STATIC_PENDING_COMPILE",
+      "path": "Assets/_Project/Scripts/PowerGrid.cs",
+      "old_lines": "178-186, 1311-1342, 1815-1828",
+      "new_lines": "187-195, 1088-1150, 1228-1312, 1727-1843, 1925-2120",
+      "issue": "Legacy PowerGrid owned persistent NativeArray fields for thermal and battery dispatch outside DataVault.",
+      "resolution": "Migrated scratch storage to VaultGenerationHandle<T>, injected IDataVault through PowerGridManager, added TryAcquireWriteLock/ReleaseWriteLock with finally release, and removed direct new NativeArray/Allocator.Persistent/NativeMemorySentinel routes from PowerGrid.cs.",
+      "remaining_risk": "Compile and runtime profiler proof are still absent because CPU/build gate remains closed."
+    },
+    {
+      "severity": "LOW_STATIC_DEBT",
+      "path": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "line": 531,
+      "issue": "PowerVoltageSolverJob is a public one-pass compatibility job. rg found only its definition, no active schedule/use. It remains branchless/scalar-smoothed but does not own the runtime bounded Jacobi loop.",
+      "reason_not_changed": "Converting an IJobParallelFor single-node pass into an internal iterative solve would be mathematically misleading without a dispatcher-level wrapper."
+    },
+    {
+      "severity": "PENDING_RUNTIME_PROOF",
+      "path": "Unity Editor / Profiler",
+      "issue": "No Unity import, PlayMode, Burst Inspector, profiler GC, or device frame-time proof was produced.",
+      "reason_not_changed": "Build gate remains red under CPU > 50 percent."
+    }
+  ],
+  "verification": {
+    "git_diff_check": "passed_no_whitespace_errors_crlf_warnings_only",
+    "dotnet_build": {
+      "status": "BLOCKED_BY_CONTENTION",
+      "latest_cpu_load_percent": 97,
+      "latest_dotnet_process_count": 1,
+      "latest_csc_or_vbcscompiler_process_count": 0,
+      "threshold_cpu_percent": 50,
+      "command_launched": false
+    },
+    "dotnet_build_spam": "No dotnet build command launched by agent 1422 during this APEX pass."
+  }
+}

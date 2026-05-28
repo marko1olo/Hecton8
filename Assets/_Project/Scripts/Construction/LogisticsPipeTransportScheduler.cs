@@ -212,7 +212,7 @@ namespace Hecton8.Construction
                 _activeNodes[nodeIndex].SchedulerRefresh();
 
             if (_scheduledSortedCount == activeCount &&
-                TryReadBuffer(CacheDataVault(), in _sortedOrderHandle, activeCount, out NativeArray<int>.ReadOnly sortedOrder))
+                TryReadBuffer(CacheDataVault(), in _sortedOrderHandle, SortedOrderBufferId, activeCount, out NativeArray<int>.ReadOnly sortedOrder))
             {
                 for (int sortedIndex = 0; sortedIndex < _scheduledSortedCount; sortedIndex++)
                 {
@@ -435,12 +435,13 @@ namespace Hecton8.Construction
         private static bool TryReadBuffer(
             IDataVault vault,
             in VaultGenerationHandle<int> handle,
+            BufferID expectedBufferId,
             int requiredLength,
             out NativeArray<int>.ReadOnly buffer)
         {
             buffer = default;
             return vault != null &&
-                   handle.BufferID != 0u &&
+                   IsLogisticsVaultHandle(in handle, expectedBufferId) &&
                    vault.TryReadOnlyHandle(in handle, out buffer) &&
                    buffer.Length >= math.max(1, requiredLength);
         }
@@ -541,13 +542,13 @@ namespace Hecton8.Construction
             sortedCount = default;
 
             return vault != null &&
-                   TryReadLockedBuffer(vault, in _edgeOffsetsHandle, nodeCount + 1, out edgeOffsets) &&
-                   TryReadLockedBuffer(vault, in _edgeDestinationsHandle, 0, out edgeDestinations) &&
-                   TryReadLockedBuffer(vault, in _inputIndegreesHandle, nodeCount, out inputIndegrees) &&
-                   TryReadLockedBuffer(vault, in _workIndegreesHandle, nodeCount, out workIndegrees) &&
-                   TryReadLockedBuffer(vault, in _queueHandle, nodeCount, out queue) &&
-                   TryReadLockedBuffer(vault, in _sortedOrderHandle, nodeCount, out sortedOrder) &&
-                   TryReadLockedBuffer(vault, in _sortedCountHandle, 1, out sortedCount);
+                   TryReadLockedBuffer(vault, in _edgeOffsetsHandle, EdgeOffsetsBufferId, nodeCount + 1, out edgeOffsets) &&
+                   TryReadLockedBuffer(vault, in _edgeDestinationsHandle, EdgeDestinationsBufferId, 0, out edgeDestinations) &&
+                   TryReadLockedBuffer(vault, in _inputIndegreesHandle, InputIndegreesBufferId, nodeCount, out inputIndegrees) &&
+                   TryReadLockedBuffer(vault, in _workIndegreesHandle, WorkIndegreesBufferId, nodeCount, out workIndegrees) &&
+                   TryReadLockedBuffer(vault, in _queueHandle, QueueBufferId, nodeCount, out queue) &&
+                   TryReadLockedBuffer(vault, in _sortedOrderHandle, SortedOrderBufferId, nodeCount, out sortedOrder) &&
+                   TryReadLockedBuffer(vault, in _sortedCountHandle, SortedCountBufferId, 1, out sortedCount);
         }
 
         private static bool TryAcquireWriteBuffer(
@@ -562,7 +563,7 @@ namespace Hecton8.Construction
             if (vault == null)
                 return false;
 
-            if (handle.BufferID == 0u ||
+            if (!IsLogisticsVaultHandle(in handle, bufferId) ||
                 !vault.TryReadHandle(in handle, out NativeArray<int> existing) ||
                 !existing.IsCreated ||
                 existing.Length < safeLength)
@@ -570,7 +571,7 @@ namespace Hecton8.Construction
                 handle = vault.EnsureGenerationHandle<int>(bufferId, safeLength, OwnerSystemId, NativeArrayOptions.ClearMemory);
             }
 
-            if (handle.BufferID == 0u ||
+            if (!IsLogisticsVaultHandle(in handle, bufferId) ||
                 !vault.TryAcquireWriteLock(in handle, OwnerSystemId, out buffer))
             {
                 return false;
@@ -587,11 +588,12 @@ namespace Hecton8.Construction
         private static bool TryReadLockedBuffer(
             IDataVault vault,
             in VaultGenerationHandle<int> handle,
+            BufferID expectedBufferId,
             int requiredLength,
             out NativeArray<int> buffer)
         {
             buffer = default;
-            return handle.BufferID != 0u &&
+            return IsLogisticsVaultHandle(in handle, expectedBufferId) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= math.max(1, requiredLength);
@@ -620,32 +622,32 @@ namespace Hecton8.Construction
                 return;
 
             if (sortedCountLocked)
-                vault.ReleaseWriteLock(in _sortedCountHandle, OwnerSystemId);
+                ReleaseSortWriteLock(vault, in _sortedCountHandle, SortedCountBufferId);
             if (sortedOrderLocked)
-                vault.ReleaseWriteLock(in _sortedOrderHandle, OwnerSystemId);
+                ReleaseSortWriteLock(vault, in _sortedOrderHandle, SortedOrderBufferId);
             if (queueLocked)
-                vault.ReleaseWriteLock(in _queueHandle, OwnerSystemId);
+                ReleaseSortWriteLock(vault, in _queueHandle, QueueBufferId);
             if (workIndegreesLocked)
-                vault.ReleaseWriteLock(in _workIndegreesHandle, OwnerSystemId);
+                ReleaseSortWriteLock(vault, in _workIndegreesHandle, WorkIndegreesBufferId);
             if (inputIndegreesLocked)
-                vault.ReleaseWriteLock(in _inputIndegreesHandle, OwnerSystemId);
+                ReleaseSortWriteLock(vault, in _inputIndegreesHandle, InputIndegreesBufferId);
             if (edgeDestinationsLocked)
-                vault.ReleaseWriteLock(in _edgeDestinationsHandle, OwnerSystemId);
+                ReleaseSortWriteLock(vault, in _edgeDestinationsHandle, EdgeDestinationsBufferId);
             if (edgeOffsetsLocked)
-                vault.ReleaseWriteLock(in _edgeOffsetsHandle, OwnerSystemId);
+                ReleaseSortWriteLock(vault, in _edgeOffsetsHandle, EdgeOffsetsBufferId);
         }
 
         private static void ReleaseVaultHandles(IDataVault vault)
         {
             if (vault != null)
             {
-                ReleaseVaultHandle(vault, ref _sortedCountHandle);
-                ReleaseVaultHandle(vault, ref _sortedOrderHandle);
-                ReleaseVaultHandle(vault, ref _queueHandle);
-                ReleaseVaultHandle(vault, ref _workIndegreesHandle);
-                ReleaseVaultHandle(vault, ref _inputIndegreesHandle);
-                ReleaseVaultHandle(vault, ref _edgeDestinationsHandle);
-                ReleaseVaultHandle(vault, ref _edgeOffsetsHandle);
+                ReleaseVaultHandle(vault, ref _sortedCountHandle, SortedCountBufferId);
+                ReleaseVaultHandle(vault, ref _sortedOrderHandle, SortedOrderBufferId);
+                ReleaseVaultHandle(vault, ref _queueHandle, QueueBufferId);
+                ReleaseVaultHandle(vault, ref _workIndegreesHandle, WorkIndegreesBufferId);
+                ReleaseVaultHandle(vault, ref _inputIndegreesHandle, InputIndegreesBufferId);
+                ReleaseVaultHandle(vault, ref _edgeDestinationsHandle, EdgeDestinationsBufferId);
+                ReleaseVaultHandle(vault, ref _edgeOffsetsHandle, EdgeOffsetsBufferId);
             }
             else
             {
@@ -655,12 +657,25 @@ namespace Hecton8.Construction
             _dataVault = null;
         }
 
-        private static void ReleaseVaultHandle(IDataVault vault, ref VaultGenerationHandle<int> handle)
+        private static void ReleaseSortWriteLock(IDataVault vault, in VaultGenerationHandle<int> handle, BufferID expectedBufferId)
         {
-            if (handle.BufferID != 0u && handle.Generation != 0u)
+            if (IsLogisticsVaultHandle(in handle, expectedBufferId))
+                vault.ReleaseWriteLock(in handle, OwnerSystemId);
+        }
+
+        private static void ReleaseVaultHandle(IDataVault vault, ref VaultGenerationHandle<int> handle, BufferID expectedBufferId)
+        {
+            if (IsLogisticsVaultHandle(in handle, expectedBufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
+        }
+
+        private static bool IsLogisticsVaultHandle(in VaultGenerationHandle<int> handle, BufferID expectedBufferId)
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)OwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private static void ResetVaultHandles()

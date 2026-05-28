@@ -1,0 +1,624 @@
+﻿{
+    "agent_id":  "1423",
+    "role":  "ZERO_GC_SUBTITLES_AND_BABEL_LOCALIZATION_COMPILER",
+    "domain":  "ECHELON 8 PRESENTATION \u0026 UX / Zero-GC Subtitles (Babel), VWS",
+    "generated_local":  "2026-05-28T14:59:51.4836229+04:00",
+    "prompt":  {
+                   "source":  "Docs/Tasks/CURRENT_BATCH.md::\u003cAGENT_PROMPT id=\"1423\"\u003e",
+                   "task_count":  20,
+                   "chars":  20623,
+                   "sha256":  "B0CBBF4990D1B48DD03878D3E2B9D7B32EA36C93FAE228F1BDAC28C681952077"
+               },
+    "source_hashes":  [
+                          {
+                              "path":  "Assets/_Project/Scripts/Core/ZeroGCFormatter.cs",
+                              "exists":  true,
+                              "sha256":  "DF0E50E0EDEA48D8CE2FADBEE1EB2842C1E27C78D78580D68EDBC52DC8A16CB0",
+                              "counts":  {
+                                             "string_format":  0,
+                                             "to_string_call":  0,
+                                             "tmp_text_assignment":  0,
+                                             "set_text_call":  0,
+                                             "new_string":  0,
+                                             "string_builder":  0,
+                                             "array_resize":  0,
+                                             "foreach_loop":  0,
+                                             "using_linq":  0,
+                                             "linq_methods":  0,
+                                             "interpolation":  0,
+                                             "scene_search":  0
+                                         }
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/LocNumericBuffer.cs",
+                              "exists":  true,
+                              "sha256":  "E29798E924AED1DAEB42912860B43547341F465D4CC2288FA78552BEED9134A4",
+                              "counts":  {
+                                             "string_format":  0,
+                                             "to_string_call":  0,
+                                             "tmp_text_assignment":  0,
+                                             "set_text_call":  0,
+                                             "new_string":  0,
+                                             "string_builder":  0,
+                                             "array_resize":  0,
+                                             "foreach_loop":  0,
+                                             "using_linq":  0,
+                                             "linq_methods":  0,
+                                             "interpolation":  0,
+                                             "scene_search":  0
+                                         }
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/Core/Contracts/BabelLocalizationContract.cs",
+                              "exists":  true,
+                              "sha256":  "08124D34399C8F54138C9F181114ABA9FF74B7FF9C5CF100E0E40BA7C2449E24",
+                              "counts":  {
+                                             "string_format":  0,
+                                             "to_string_call":  0,
+                                             "tmp_text_assignment":  0,
+                                             "set_text_call":  0,
+                                             "new_string":  0,
+                                             "string_builder":  0,
+                                             "array_resize":  0,
+                                             "foreach_loop":  0,
+                                             "using_linq":  0,
+                                             "linq_methods":  0,
+                                             "interpolation":  0,
+                                             "scene_search":  0
+                                         }
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/LocRegistry.cs",
+                              "exists":  true,
+                              "sha256":  "A5BA183D8C8985D5D61DECB93224DCB9428AB51B10DFFEC8E5CAB616D1E46B73",
+                              "counts":  {
+                                             "string_format":  0,
+                                             "to_string_call":  0,
+                                             "tmp_text_assignment":  0,
+                                             "set_text_call":  0,
+                                             "new_string":  0,
+                                             "string_builder":  0,
+                                             "array_resize":  0,
+                                             "foreach_loop":  0,
+                                             "using_linq":  0,
+                                             "linq_methods":  0,
+                                             "interpolation":  0,
+                                             "scene_search":  0
+                                         }
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/LocalizationManager.cs",
+                              "exists":  true,
+                              "sha256":  "9BD64EB488B606B4E759DC8455F6FC200390E47558A7671D2C4E8C8DA2A50CFB",
+                              "counts":  {
+                                             "string_format":  0,
+                                             "to_string_call":  0,
+                                             "tmp_text_assignment":  0,
+                                             "set_text_call":  0,
+                                             "new_string":  0,
+                                             "string_builder":  0,
+                                             "array_resize":  0,
+                                             "foreach_loop":  0,
+                                             "using_linq":  0,
+                                             "linq_methods":  0,
+                                             "interpolation":  0,
+                                             "scene_search":  0
+                                         }
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/LocalizedWorldSign.cs",
+                              "exists":  true,
+                              "sha256":  "516C3DAF07AE0C744ECFDF3ED76DC9A690D146E9ECA3E20006A17507DFDE0CFB",
+                              "counts":  {
+                                             "string_format":  0,
+                                             "to_string_call":  0,
+                                             "tmp_text_assignment":  0,
+                                             "set_text_call":  0,
+                                             "new_string":  0,
+                                             "string_builder":  0,
+                                             "array_resize":  0,
+                                             "foreach_loop":  0,
+                                             "using_linq":  0,
+                                             "linq_methods":  0,
+                                             "interpolation":  0,
+                                             "scene_search":  0
+                                         }
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/BabelRichTextLodPolicy.cs",
+                              "exists":  true,
+                              "sha256":  "6EB320617B68509CC035E77437DB41A1E9DDF656C5BC4E4F552BF4FE0A5D62DC",
+                              "counts":  {
+                                             "string_format":  0,
+                                             "to_string_call":  0,
+                                             "tmp_text_assignment":  0,
+                                             "set_text_call":  0,
+                                             "new_string":  0,
+                                             "string_builder":  0,
+                                             "array_resize":  0,
+                                             "foreach_loop":  0,
+                                             "using_linq":  0,
+                                             "linq_methods":  0,
+                                             "interpolation":  0,
+                                             "scene_search":  0
+                                         }
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/TmpTextNoAlloc.cs",
+                              "exists":  true,
+                              "sha256":  "294DFCA23D14A8E5B304CEC53CC6376D1CC7190086B37D9FD9071FD999FE63E7",
+                              "counts":  {
+                                             "string_format":  0,
+                                             "to_string_call":  0,
+                                             "tmp_text_assignment":  0,
+                                             "set_text_call":  0,
+                                             "new_string":  0,
+                                             "string_builder":  0,
+                                             "array_resize":  0,
+                                             "foreach_loop":  0,
+                                             "using_linq":  0,
+                                             "linq_methods":  0,
+                                             "interpolation":  0,
+                                             "scene_search":  0
+                                         }
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+                              "exists":  true,
+                              "sha256":  "084243DAC5C5A74C3945FEA0F2F290AE13CDB544B6F228CC7F0653E998E4B71B",
+                              "counts":  {
+                                             "string_format":  0,
+                                             "to_string_call":  0,
+                                             "tmp_text_assignment":  0,
+                                             "set_text_call":  0,
+                                             "new_string":  0,
+                                             "string_builder":  0,
+                                             "array_resize":  0,
+                                             "foreach_loop":  0,
+                                             "using_linq":  0,
+                                             "linq_methods":  0,
+                                             "interpolation":  0,
+                                             "scene_search":  0
+                                         }
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/LabelSwapScheduler.cs",
+                              "exists":  true,
+                              "sha256":  "5A9254E45F2F32E638CEBAC24E6E4A58060022C17DBA83D1CD3A4F5B3BF25F1C",
+                              "counts":  {
+                                             "string_format":  0,
+                                             "to_string_call":  0,
+                                             "tmp_text_assignment":  0,
+                                             "set_text_call":  0,
+                                             "new_string":  0,
+                                             "string_builder":  0,
+                                             "array_resize":  0,
+                                             "foreach_loop":  0,
+                                             "using_linq":  0,
+                                             "linq_methods":  0,
+                                             "interpolation":  0,
+                                             "scene_search":  0
+                                         }
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+                              "exists":  true,
+                              "sha256":  "05E4F9C38B5D6BD460D9BB9C717C170BF751F4CAB5347FF1797163D3720711BD",
+                              "counts":  {
+                                             "string_format":  0,
+                                             "to_string_call":  0,
+                                             "tmp_text_assignment":  0,
+                                             "set_text_call":  0,
+                                             "new_string":  0,
+                                             "string_builder":  0,
+                                             "array_resize":  0,
+                                             "foreach_loop":  0,
+                                             "using_linq":  0,
+                                             "linq_methods":  0,
+                                             "interpolation":  0,
+                                             "scene_search":  0
+                                         }
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/PDADataArchaeologyDecryptLabel.cs",
+                              "exists":  true,
+                              "sha256":  "5FBE4CF0002E56B40D8004829FD63B2398D62779ABAB06F51DED129C4B20D93B",
+                              "counts":  {
+                                             "string_format":  0,
+                                             "to_string_call":  0,
+                                             "tmp_text_assignment":  0,
+                                             "set_text_call":  0,
+                                             "new_string":  0,
+                                             "string_builder":  0,
+                                             "array_resize":  0,
+                                             "foreach_loop":  0,
+                                             "using_linq":  0,
+                                             "linq_methods":  0,
+                                             "interpolation":  0,
+                                             "scene_search":  0
+                                         }
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+                              "exists":  true,
+                              "sha256":  "9B22C9D1D9E5D6A05CD303C5B795EA8D107C8C675E47BCBD09449D747AB5E85F",
+                              "counts":  {
+                                             "string_format":  0,
+                                             "to_string_call":  0,
+                                             "tmp_text_assignment":  0,
+                                             "set_text_call":  0,
+                                             "new_string":  0,
+                                             "string_builder":  0,
+                                             "array_resize":  0,
+                                             "foreach_loop":  0,
+                                             "using_linq":  0,
+                                             "linq_methods":  0,
+                                             "interpolation":  0,
+                                             "scene_search":  0
+                                         }
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+                              "exists":  true,
+                              "sha256":  "85EF4850D6FA0D4764FD928866A4AED2F774664DF2ACCF40AD5E1ADB9F2BBF16",
+                              "counts":  {
+                                             "string_format":  0,
+                                             "to_string_call":  0,
+                                             "tmp_text_assignment":  0,
+                                             "set_text_call":  0,
+                                             "new_string":  0,
+                                             "string_builder":  0,
+                                             "array_resize":  0,
+                                             "foreach_loop":  0,
+                                             "using_linq":  0,
+                                             "linq_methods":  0,
+                                             "interpolation":  0,
+                                             "scene_search":  0
+                                         }
+                          },
+                          {
+                              "path":  "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs",
+                              "exists":  true,
+                              "sha256":  "ED9FCDB50B652BC3E180CA4810A27E4CCCA7FD59F4B3656C282E5DFB2E0F7292",
+                              "counts":  {
+                                             "string_format":  0,
+                                             "to_string_call":  0,
+                                             "tmp_text_assignment":  0,
+                                             "set_text_call":  0,
+                                             "new_string":  0,
+                                             "string_builder":  0,
+                                             "array_resize":  0,
+                                             "foreach_loop":  0,
+                                             "using_linq":  0,
+                                             "linq_methods":  0,
+                                             "interpolation":  0,
+                                             "scene_search":  0
+                                         }
+                          }
+                      ],
+    "defects_found_and_fixed":  [
+                                    {
+                                        "id":  "CONT7-001",
+                                        "defect":  "SuitHUD localized HUD labels synchronized RTL but could inherit stale TMP richText parsing state before SetCharArray.",
+                                        "fix":  "Set richText from BabelRichTextLodPolicy.ShouldEnableTmpRichTextParsing before RTL and SetCharArray.",
+                                        "proof_lines":  [
+                                                            "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:6490-6492",
+                                                            "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs:6504"
+                                                        ]
+                                    },
+                                    {
+                                        "id":  "CONT7-002",
+                                        "defect":  "LocalizedWorldSign pushed fixed-buffer localized char arrays without explicitly syncing TMP richText policy.",
+                                        "fix":  "Set targetText.richText from BabelRichTextLodPolicy immediately before RTL and SetCharArray.",
+                                        "proof_lines":  [
+                                                            "Assets/_Project/Scripts/LocalizedWorldSign.cs:127",
+                                                            "Assets/_Project/Scripts/LocalizedWorldSign.cs:129"
+                                                        ]
+                                    },
+                                    {
+                                        "id":  "CONT7-003",
+                                        "defect":  "PDA archaeology decrypt labels render scrambled text where TMP rich-text parsing is functionally unsafe if decrypted glyphs include tag-shaped symbols.",
+                                        "fix":  "Force targetText.richText=false in Awake, RenderHash, and Clear before char-array push.",
+                                        "proof_lines":  [
+                                                            "Assets/_Project/Scripts/UI/PDADataArchaeologyDecryptLabel.cs:61",
+                                                            "Assets/_Project/Scripts/UI/PDADataArchaeologyDecryptLabel.cs:129-133",
+                                                            "Assets/_Project/Scripts/UI/PDADataArchaeologyDecryptLabel.cs:233-234"
+                                                        ]
+                                    },
+                                    {
+                                        "id":  "CONT7-004",
+                                        "defect":  "LocRegistry.TryCommitStagedBabelDictionary had multiple post-validation return paths that manually aborted the staged locale lock instead of one final release proof.",
+                                        "fix":  "Wrapped validated commit body in try/finally and call AbortBabelDictionaryStage from finally.",
+                                        "proof_lines":  [
+                                                            "Assets/_Project/Scripts/LocRegistry.cs:705",
+                                                            "Assets/_Project/Scripts/LocRegistry.cs:799-801"
+                                                        ]
+                                    },
+                                    {
+                                        "id":  "CONT7-005",
+                                        "defect":  "No editor source-regression covered the additional TMP richText sinks or staged dictionary final release.",
+                                        "fix":  "Added HudWorldSignAndPdaDecrypt_SyncTmpRichTextPolicyBeforeCharArrayPush and BabelDictionaryStageCommit_ReleasesStageInFinally.",
+                                        "proof_lines":  [
+                                                            "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs:149-188"
+                                                        ]
+                                    }
+                                ],
+    "changed_runtime_zero_gc_scan":  [
+                                         {
+                                             "path":  "Assets/_Project/Scripts/LocRegistry.cs",
+                                             "exists":  true,
+                                             "sha256":  "A5BA183D8C8985D5D61DECB93224DCB9428AB51B10DFFEC8E5CAB616D1E46B73",
+                                             "counts":  {
+                                                            "string_format":  0,
+                                                            "to_string_call":  0,
+                                                            "tmp_text_assignment":  0,
+                                                            "set_text_call":  0,
+                                                            "new_string":  0,
+                                                            "string_builder":  0,
+                                                            "array_resize":  0,
+                                                            "foreach_loop":  0,
+                                                            "using_linq":  0,
+                                                            "linq_methods":  0,
+                                                            "interpolation":  0,
+                                                            "scene_search":  0
+                                                        }
+                                         },
+                                         {
+                                             "path":  "Assets/_Project/Scripts/LocalizedWorldSign.cs",
+                                             "exists":  true,
+                                             "sha256":  "516C3DAF07AE0C744ECFDF3ED76DC9A690D146E9ECA3E20006A17507DFDE0CFB",
+                                             "counts":  {
+                                                            "string_format":  0,
+                                                            "to_string_call":  0,
+                                                            "tmp_text_assignment":  0,
+                                                            "set_text_call":  0,
+                                                            "new_string":  0,
+                                                            "string_builder":  0,
+                                                            "array_resize":  0,
+                                                            "foreach_loop":  0,
+                                                            "using_linq":  0,
+                                                            "linq_methods":  0,
+                                                            "interpolation":  0,
+                                                            "scene_search":  0
+                                                        }
+                                         },
+                                         {
+                                             "path":  "Assets/_Project/Scripts/UI/PDADataArchaeologyDecryptLabel.cs",
+                                             "exists":  true,
+                                             "sha256":  "5FBE4CF0002E56B40D8004829FD63B2398D62779ABAB06F51DED129C4B20D93B",
+                                             "counts":  {
+                                                            "string_format":  0,
+                                                            "to_string_call":  0,
+                                                            "tmp_text_assignment":  0,
+                                                            "set_text_call":  0,
+                                                            "new_string":  0,
+                                                            "string_builder":  0,
+                                                            "array_resize":  0,
+                                                            "foreach_loop":  0,
+                                                            "using_linq":  0,
+                                                            "linq_methods":  0,
+                                                            "interpolation":  0,
+                                                            "scene_search":  0
+                                                        }
+                                         },
+                                         {
+                                             "path":  "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+                                             "exists":  true,
+                                             "sha256":  "9B22C9D1D9E5D6A05CD303C5B795EA8D107C8C675E47BCBD09449D747AB5E85F",
+                                             "counts":  {
+                                                            "string_format":  0,
+                                                            "to_string_call":  0,
+                                                            "tmp_text_assignment":  0,
+                                                            "set_text_call":  0,
+                                                            "new_string":  0,
+                                                            "string_builder":  0,
+                                                            "array_resize":  0,
+                                                            "foreach_loop":  0,
+                                                            "using_linq":  0,
+                                                            "linq_methods":  0,
+                                                            "interpolation":  0,
+                                                            "scene_search":  0
+                                                        }
+                                         }
+                                     ],
+    "hot_method_static_scan":  [
+                                   {
+                                       "method":  "SuitHUDV4CanvasOverlay.SetLocalizedRtlState",
+                                       "path":  "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+                                       "line_start":  6486,
+                                       "line_end":  6496,
+                                       "string_format":  0,
+                                       "to_string":  0,
+                                       "linq":  0,
+                                       "foreach":  0,
+                                       "tmp_text_assignment":  0,
+                                       "interpolation":  0,
+                                       "new_reference_suspects":  0,
+                                       "new_value_type_or_struct":  0,
+                                       "proof":  "Only bool local, policy call, property comparisons/assignments."
+                                   },
+                                   {
+                                       "method":  "SuitHUDV4CanvasOverlay.ApplyHudCharArray",
+                                       "path":  "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+                                       "line_start":  6498,
+                                       "line_end":  6505,
+                                       "string_format":  0,
+                                       "to_string":  0,
+                                       "linq":  0,
+                                       "foreach":  0,
+                                       "tmp_text_assignment":  0,
+                                       "interpolation":  0,
+                                       "new_reference_suspects":  0,
+                                       "new_value_type_or_struct":  0,
+                                       "proof":  "Clamp length then TMP SetCharArray."
+                                   },
+                                   {
+                                       "method":  "LocalizedWorldSign.RefreshLocalizedText",
+                                       "path":  "Assets/_Project/Scripts/LocalizedWorldSign.cs",
+                                       "line_start":  110,
+                                       "line_end":  133,
+                                       "string_format":  0,
+                                       "to_string":  0,
+                                       "linq":  0,
+                                       "foreach":  0,
+                                       "tmp_text_assignment":  0,
+                                       "interpolation":  0,
+                                       "new_reference_suspects":  0,
+                                       "new_value_type_or_struct":  0,
+                                       "proof":  "Uses existing fixed buffers and SetCharArray after richText/RTL sync."
+                                   },
+                                   {
+                                       "method":  "PDADataArchaeologyDecryptLabel.RenderHash",
+                                       "path":  "Assets/_Project/Scripts/UI/PDADataArchaeologyDecryptLabel.cs",
+                                       "line_start":  101,
+                                       "line_end":  140,
+                                       "string_format":  0,
+                                       "to_string":  0,
+                                       "linq":  0,
+                                       "foreach":  0,
+                                       "tmp_text_assignment":  0,
+                                       "interpolation":  0,
+                                       "new_reference_suspects":  0,
+                                       "new_value_type_or_struct":  0,
+                                       "proof":  "One CharBufferPool lease, Span slices, SetCharArray, release in finally."
+                                   },
+                                   {
+                                       "method":  "PDADataArchaeologyDecryptLabel.Clear",
+                                       "path":  "Assets/_Project/Scripts/UI/PDADataArchaeologyDecryptLabel.cs",
+                                       "line_start":  221,
+                                       "line_end":  236,
+                                       "string_format":  0,
+                                       "to_string":  0,
+                                       "linq":  0,
+                                       "foreach":  0,
+                                       "tmp_text_assignment":  0,
+                                       "interpolation":  0,
+                                       "new_reference_suspects":  0,
+                                       "new_value_type_or_struct":  0,
+                                       "proof":  "Empty static char array pushed with richText=false."
+                                   },
+                                   {
+                                       "method":  "LocRegistry.TryCommitStagedBabelDictionary",
+                                       "path":  "Assets/_Project/Scripts/LocRegistry.cs",
+                                       "line_start":  705,
+                                       "line_end":  803,
+                                       "string_format":  0,
+                                       "to_string":  0,
+                                       "linq":  0,
+                                       "foreach":  0,
+                                       "tmp_text_assignment":  0,
+                                       "interpolation":  0,
+                                       "new_reference_suspects":  0,
+                                       "new_value_type_or_struct":  2,
+                                       "proof":  "Two new int2 value-type corruption ranges only; staged lock/handle release in finally."
+                                   }
+                               ],
+    "data_sovereignty":  {
+                             "global_data_vault_buffers":  [
+                                                               {
+                                                                   "constant":  "SubtitleCueStateBufferId",
+                                                                   "value":  15070550,
+                                                                   "owner":  "BabelSubtitleSyncRuntime",
+                                                                   "proof":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:192"
+                                                               },
+                                                               {
+                                                                   "constant":  "SubtitleCueTelemetryBufferId",
+                                                                   "value":  15070551,
+                                                                   "owner":  "BabelSubtitleSyncRuntime",
+                                                                   "proof":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:193"
+                                                               },
+                                                               {
+                                                                   "constant":  "UIOptimizationTelemetryBufferId",
+                                                                   "value":  15070552,
+                                                                   "owner":  "BabelSubtitleSyncRuntime",
+                                                                   "proof":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:194"
+                                                               },
+                                                               {
+                                                                   "constant":  "BabelStagedLocaleBufferId",
+                                                                   "value":  "BufferID.BabelStagedLocale",
+                                                                   "owner":  "LocRegistry",
+                                                                   "proof":  "Assets/_Project/Scripts/LocRegistry.cs:489"
+                                                               },
+                                                               {
+                                                                   "constant":  "BabelTelemetryBufferId",
+                                                                   "value":  "BufferID.BabelTelemetryRing",
+                                                                   "owner":  "LocRegistry",
+                                                                   "proof":  "Assets/_Project/Scripts/LocRegistry.cs:488"
+                                                               }
+                                                           ],
+                             "write_lock_checks":  [
+                                                       "BabelSubtitleSyncRuntime.cs:676 TryAcquireWriteLock(in handle, SystemID.UI, out buffer)",
+                                                       "LocRegistry.cs:657 TryLockBuffer(BabelStagedLocaleBufferId, SystemID.UI)"
+                                                   ],
+                             "release_proofs":  [
+                                                    "BabelSubtitleSyncRuntime.cs:695 finally releases failed post-acquire validation",
+                                                    "BabelSubtitleSyncRuntime.cs:517/904/1018/1122 caller-owned write locks release in finally",
+                                                    "LocRegistry.cs:799-801 TryCommitStagedBabelDictionary finally AbortBabelDictionaryStage",
+                                                    "LocRegistry.cs:2094 AbortBabelDictionaryStage unlocks BabelStagedLocaleBufferId when staged lock is held"
+                                                ]
+                         },
+    "scalability":  {
+                        "global_quality_weight_routes":  [
+                                                             "BabelRichTextLodPolicy.ResolveRetention01: smoothstep GlobalQualityWeight and stable hash threshold retain 0.16..1.0 style density.",
+                                                             "BabelRichTextLodPolicy.ShouldEnableTmpRichTextParsing returns true; continuous quality controls authored tag density, not a binary TMP parser cliff.",
+                                                             "PDADataArchaeologyDecryptLabel.RefreshCachedQualityWeight uses smoothstep scaled GlobalQualityWeight for scramble intensity.",
+                                                             "BabelSubtitleSyncRuntime/SuitHUD prior reports keep canvas/dirty budgets on continuous scalar."
+                                                         ],
+                        "binary_switch_scan":  "No isLowEnd/LowEnd/richTextWeight hits in repaired files from prior continuation scans; current edited paths add no binary device class switches.",
+                        "cinematic_cheat_protocol":  "No physical simulation added. PDA decrypt remains cheap glyph scramble; world sign/HUD fixes only synchronize TMP parser state."
+                    },
+    "residual_faults":  [
+                            {
+                                "id":  "RESIDUAL-001",
+                                "fault":  "Legacy read-style LocRegistry APIs still decode into compatibility rings and can mutate decode cursor/telemetry when called hot: ResolveRaw/GetLength/TryGetRawBuffer/TryGetVisualBuffer/TryGetVisualBufferFromUtf8/TryWriteVisualSpanFromUtf8.",
+                                "proof_lines":  [
+                                                    "Assets/_Project/Scripts/LocRegistry.cs:818",
+                                                    "Assets/_Project/Scripts/LocRegistry.cs:837",
+                                                    "Assets/_Project/Scripts/LocRegistry.cs:853",
+                                                    "Assets/_Project/Scripts/LocRegistry.cs:862",
+                                                    "Assets/_Project/Scripts/LocRegistry.cs:998",
+                                                    "Assets/_Project/Scripts/LocRegistry.cs:1060"
+                                                ],
+                                "status":  "PENDING_ROUTE_MIGRATION"
+                            },
+                            {
+                                "id":  "RESIDUAL-002",
+                                "fault":  "SubtitleCueSignal is declared in namespace Hecton8.Core.Contracts.Signals but physically located inside UI/BabelSubtitleSyncRuntime.cs, violating clean contract ownership.",
+                                "proof_lines":  [
+                                                    "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:15-21"
+                                                ],
+                                "status":  "PENDING_CROSS_DOMAIN_ROUTE_CARD"
+                            },
+                            {
+                                "id":  "RESIDUAL-003",
+                                "fault":  "SubtitleManager still exposes managed string subtitle compatibility APIs and a managed OnCueChanged event. VWS route does not use managed text payloads, but public runtime API remains unsafe if called as hot path.",
+                                "proof_lines":  [
+                                                    "Assets/_Project/Scripts/UI/SubtitleManager.cs:267",
+                                                    "Assets/_Project/Scripts/UI/SubtitleManager.cs:428-437",
+                                                    "Assets/_Project/Scripts/UI/SubtitleManager.cs:719-724",
+                                                    "Assets/_Project/Scripts/UI/SubtitleManager.cs:1382"
+                                                ],
+                                "status":  "PENDING_COMPATIBILITY_DEPRECATION"
+                            }
+                        ],
+    "build_throttle":  {
+                           "sampled_cpu_percent":  100,
+                           "active_processes":  [
+                                                    "csc.exe PID 16180 CPU 24.28125 Start 2026-05-28 14:56:12",
+                                                    "dotnet.exe PID 31636 CPU 38.875 Start 2026-05-28 14:55:39"
+                                                ],
+                           "dotnet_build_launched":  false,
+                           "reason":  "Compilation Resource Throttling: CPU \u003e 50 and compiler/build process active.",
+                           "previous_build_blocker":  "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs XRPass missing at lines 437/476, out of 1423 domain."
+                       },
+    "verification_limits":  [
+                                "No Unity runtime profiler run",
+                                "No GCMonitor allocation sample",
+                                "Editor tests not executed",
+                                "Project build not relaunched in CONT7 because CPU/compiler throttle was active"
+                            ],
+    "diff_check":  {
+                       "exit_code":  0,
+                       "warnings":  "CRLF normalization warnings only"
+                   }
+}

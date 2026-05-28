@@ -374,6 +374,184 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void CrestLegacyClearToBlack_UsesPhysicalTextureDimensionsAndTailGuard()
+        {
+            string shader = System.IO.File.ReadAllText("Assets/Crest/Crest/Shaders/Resources/ClearToBlack.compute");
+            string source = System.IO.File.ReadAllText("Assets/Crest/Crest/Scripts/Helpers/TextureArrayHelpers.cs");
+            int methodStart = source.IndexOf("public static void ClearToBlack(RenderTexture dst)", System.StringComparison.Ordinal);
+            Assert.GreaterOrEqual(methodStart, 0);
+            int methodEnd = source.IndexOf("public static Texture2D CreateTexture2D", methodStart, System.StringComparison.Ordinal);
+            Assert.Greater(methodEnd, methodStart);
+            string method = source.Substring(methodStart, methodEnd - methodStart);
+
+            Assert.That(shader, Does.Contain("uint _CrestClearWidth;"));
+            Assert.That(shader, Does.Contain("uint _CrestClearHeight;"));
+            Assert.That(shader, Does.Contain("uint _CrestClearDepth;"));
+            Assert.That(shader, Does.Contain("id.x >= _CrestClearWidth || id.y >= _CrestClearHeight || id.z >= _CrestClearDepth"));
+            Assert.That(method, Does.Contain("if (dst == null)"));
+            Assert.That(method, Does.Contain("int width = dst.width;"));
+            Assert.That(method, Does.Contain("int height = dst.height;"));
+            Assert.That(method, Does.Contain("int depth = dst.volumeDepth;"));
+            Assert.That(method, Does.Contain("krnl_ClearToBlack < 0 || width <= 0 || height <= 0 || depth <= 0"));
+            Assert.That(method, Does.Contain("int groupsX = (width + LodDataMgr.THREAD_GROUP_SIZE_X - 1) / LodDataMgr.THREAD_GROUP_SIZE_X;"));
+            Assert.That(method, Does.Contain("int groupsY = (height + LodDataMgr.THREAD_GROUP_SIZE_Y - 1) / LodDataMgr.THREAD_GROUP_SIZE_Y;"));
+            Assert.That(method, Does.Not.Contain("OceanRenderer.Instance.LodDataResolution / LodDataMgr.THREAD_GROUP_SIZE_X"));
+            Assert.That(method, Does.Not.Contain("OceanRenderer.Instance.LodDataResolution / LodDataMgr.THREAD_GROUP_SIZE_Y"));
+        }
+
+        [Test]
+        public void CrestRuntimeDispatches_UsePhysicalDimensionsAndShaderTailGuards()
+        {
+            string gerstnerSource = System.IO.File.ReadAllText("Assets/Crest/Crest/Scripts/Shapes/ShapeGerstner.cs");
+            string animSource = System.IO.File.ReadAllText("Assets/Crest/Crest/Scripts/LodData/LodDataMgrAnimWaves.cs");
+            string persistentSource = System.IO.File.ReadAllText("Assets/Crest/Crest/Scripts/LodData/LodDataMgrPersistent.cs");
+            string shapeCombineShader = System.IO.File.ReadAllText("Assets/Crest/Crest/Shaders/Resources/ShapeCombine.compute");
+            string dynWavesShader = System.IO.File.ReadAllText("Assets/Crest/Crest/Shaders/Resources/UpdateDynWaves.compute");
+            string foamShader = System.IO.File.ReadAllText("Assets/Crest/Crest/Shaders/Resources/UpdateFoam.compute");
+            string gerstnerShader = System.IO.File.ReadAllText("Assets/Crest/Crest/Shaders/Resources/Gerstner.compute");
+
+            int gerstnerStart = gerstnerSource.IndexOf("void UpdateGenerateWaves(CommandBuffer buf)", System.StringComparison.Ordinal);
+            Assert.GreaterOrEqual(gerstnerStart, 0);
+            int gerstnerEnd = gerstnerSource.IndexOf("public void UpdateWaveData", gerstnerStart, System.StringComparison.Ordinal);
+            Assert.Greater(gerstnerEnd, gerstnerStart);
+            string gerstnerMethod = gerstnerSource.Substring(gerstnerStart, gerstnerEnd - gerstnerStart);
+
+            int animStart = animSource.IndexOf("void CombinePassCompute(CommandBuffer buf)", System.StringComparison.Ordinal);
+            Assert.GreaterOrEqual(animStart, 0);
+            int animEnd = animSource.IndexOf("public void BindWaveBuffer", animStart, System.StringComparison.Ordinal);
+            Assert.Greater(animEnd, animStart);
+            string animMethod = animSource.Substring(animStart, animEnd - animStart);
+
+            int persistentStart = persistentSource.IndexOf("buf.DispatchCompute(_shader, krnl_ShaderSim", System.StringComparison.Ordinal);
+            Assert.GreaterOrEqual(persistentStart, 0);
+            int persistentWindowStart = persistentSource.LastIndexOf("_renderSimProperties.SetTexture(sp_LD_TexArray_Target, current);", persistentStart, System.StringComparison.Ordinal);
+            Assert.GreaterOrEqual(persistentWindowStart, 0);
+            int persistentEnd = persistentSource.IndexOf("// Only add forces if we did a step", persistentStart, System.StringComparison.Ordinal);
+            Assert.Greater(persistentEnd, persistentWindowStart);
+            string persistentDispatchWindow = persistentSource.Substring(persistentWindowStart, persistentEnd - persistentWindowStart);
+
+            Assert.That(gerstnerMethod, Does.Contain("int width = _waveBuffers.width;"));
+            Assert.That(gerstnerMethod, Does.Contain("int height = _waveBuffers.height;"));
+            Assert.That(gerstnerMethod, Does.Contain("int depth = _waveBuffers.volumeDepth;"));
+            Assert.That(gerstnerMethod, Does.Contain("int groupsX = (width + LodDataMgr.THREAD_GROUP_SIZE_X - 1) / LodDataMgr.THREAD_GROUP_SIZE_X;"));
+            Assert.That(gerstnerMethod, Does.Contain("int groupsY = (height + LodDataMgr.THREAD_GROUP_SIZE_Y - 1) / LodDataMgr.THREAD_GROUP_SIZE_Y;"));
+            Assert.That(gerstnerMethod, Does.Not.Contain("_waveBuffers.width / LodDataMgr.THREAD_GROUP_SIZE_X"));
+            Assert.That(gerstnerMethod, Does.Not.Contain("_waveBuffers.height / LodDataMgr.THREAD_GROUP_SIZE_Y"));
+
+            Assert.That(animMethod, Does.Contain("var dataTexture = DataTexture;"));
+            Assert.That(animMethod, Does.Contain("int width = dataTexture.width;"));
+            Assert.That(animMethod, Does.Contain("int height = dataTexture.height;"));
+            Assert.That(animMethod, Does.Contain("int groupsX = (width + THREAD_GROUP_SIZE_X - 1) / THREAD_GROUP_SIZE_X;"));
+            Assert.That(animMethod, Does.Contain("int groupsY = (height + THREAD_GROUP_SIZE_Y - 1) / THREAD_GROUP_SIZE_Y;"));
+            Assert.That(animMethod, Does.Not.Contain("OceanRenderer.Instance.LodDataResolution / THREAD_GROUP_SIZE_X"));
+            Assert.That(animMethod, Does.Not.Contain("OceanRenderer.Instance.LodDataResolution / THREAD_GROUP_SIZE_Y"));
+
+            Assert.That(persistentDispatchWindow, Does.Contain("int width = current != null ? current.width : 0;"));
+            Assert.That(persistentDispatchWindow, Does.Contain("int height = current != null ? current.height : 0;"));
+            Assert.That(persistentDispatchWindow, Does.Contain("int depth = current != null ? current.volumeDepth : 0;"));
+            Assert.That(persistentDispatchWindow, Does.Contain("int lodDispatchCount = OceanRenderer.Instance.CurrentLodCount;"));
+            Assert.That(persistentDispatchWindow, Does.Contain("int groupsX = (width + THREAD_GROUP_SIZE_X - 1) / THREAD_GROUP_SIZE_X;"));
+            Assert.That(persistentDispatchWindow, Does.Contain("int groupsY = (height + THREAD_GROUP_SIZE_Y - 1) / THREAD_GROUP_SIZE_Y;"));
+            Assert.That(persistentDispatchWindow, Does.Not.Contain("OceanRenderer.Instance.LodDataResolution / THREAD_GROUP_SIZE_X"));
+            Assert.That(persistentDispatchWindow, Does.Not.Contain("OceanRenderer.Instance.LodDataResolution / THREAD_GROUP_SIZE_Y"));
+
+            Assert.That(shapeCombineShader, Does.Contain("id.x >= width || id.y >= height || _LD_SliceIndex >= depth"));
+            Assert.That(shapeCombineShader, Does.Contain("const uint2 pixelCoordMax = uint2((uint)i_width - 1u, (uint)i_height - 1u);"));
+            Assert.That(shapeCombineShader, Does.Contain("const uint2 pixelCoordCentersTopRight = min(pixelCoordCentersBotLeft + uint2(1u, 1u), pixelCoordMax);"));
+            Assert.That(shapeCombineShader, Does.Contain("const uint2 pixelCoordBotRight = uint2(pixelCoordCentersTopRight.x, pixelCoordCentersBotLeft.y);"));
+            Assert.That(shapeCombineShader, Does.Contain("const uint2 pixelCoordTopLeft = uint2(pixelCoordCentersBotLeft.x, pixelCoordCentersTopRight.y);"));
+            Assert.That(dynWavesShader, Does.Contain("id.x >= width || id.y >= height || id.z >= depth"));
+            Assert.That(dynWavesShader, Does.Contain("const bool insideTarget = sliceIndexSource < depthFloat && sliceIndexSource >= 0.0;"));
+            Assert.That(foamShader, Does.Contain("id.x >= width || id.y >= height || id.z >= depth"));
+            Assert.That(foamShader, Does.Contain("const float sliceIndexSource = clamp(id.z + _LODChange, 0.0, depthFloat - 1.0);"));
+            Assert.That(gerstnerShader, Does.Contain("id.x >= width || id.y >= height || cascadeIndex >= depth || _TextureRes <= 0.0"));
+        }
+
+        [Test]
+        public void CrestFftBaker_UsesCeilDispatchAndShaderTailGuard()
+        {
+            string source = System.IO.File.ReadAllText("Assets/Crest/Crest/Scripts/Shapes/FFT/FFTBaker.cs");
+            string shader = System.IO.File.ReadAllText("Assets/Crest/Crest/Shaders/Resources/FFT/FFTBake.compute");
+            int methodStart = source.IndexOf("static FFTBakedData BakeFFT", System.StringComparison.Ordinal);
+            Assert.GreaterOrEqual(methodStart, 0);
+            int methodEnd = source.IndexOf("private static bool SaveBakedDataAsset", methodStart, System.StringComparison.Ordinal);
+            Assert.Greater(methodEnd, methodStart);
+            string method = source.Substring(methodStart, methodEnd - methodStart);
+
+            Assert.That(method, Does.Contain("var frameCount = (int)(resolutionTime * loopPeriod);"));
+            Assert.That(method, Does.Contain("fftWaves == null || fftWaves._resolution <= 0 || lodCount <= 0 || frameCount <= 0"));
+            Assert.That(method, Does.Contain("if (waveCombineShader == null)"));
+            Assert.That(method, Does.Contain("var groupsX = (bakedWaves.width + 7) / 8;"));
+            Assert.That(method, Does.Contain("var groupsY = (bakedWaves.height + 7) / 8;"));
+            Assert.That(method, Does.Contain("buf.DispatchCompute(waveCombineShader, kernel, groupsX, groupsY, 1);"));
+            Assert.That(method, Does.Contain("finally"));
+            Assert.That(method, Does.Contain("buf.Release();"));
+            Assert.That(method, Does.Contain("bakedWaves.Release();"));
+            Assert.That(method, Does.Contain("Helpers.Destroy(stagingTexture);"));
+            Assert.That(method, Does.Not.Contain("bakedWaves.width / 8"));
+            Assert.That(method, Does.Not.Contain("bakedWaves.height / 8"));
+
+            Assert.That(shader, Does.Contain("uint fftWidth;"));
+            Assert.That(shader, Does.Contain("uint fftHeight;"));
+            Assert.That(shader, Does.Contain("uint fftDepth;"));
+            Assert.That(shader, Does.Contain("id.x >= outWidth || id.y >= outHeight || id.x >= fftWidth"));
+            Assert.That(shader, Does.Contain("_MinSlice < 0"));
+            Assert.That(shader, Does.Contain("slice >= fftDepth"));
+            Assert.That(shader, Does.Contain("id.y % fftHeight"));
+        }
+
+        [Test]
+        public void CrestFftSpectrum_UsesCeilDispatchAndShaderTailGuard()
+        {
+            string source = System.IO.File.ReadAllText("Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs");
+            string shapeFftSource = System.IO.File.ReadAllText("Assets/Crest/Crest/Scripts/Shapes/FFT/ShapeFFT.cs");
+            string shader = System.IO.File.ReadAllText("Assets/Crest/Crest/Shaders/Resources/FFT/FFTSpectrum.compute");
+            int initStart = source.IndexOf("void InitializeSpectrum(CommandBuffer buf)", System.StringComparison.Ordinal);
+            Assert.GreaterOrEqual(initStart, 0);
+            int updateStart = source.IndexOf("void UpdateSpectrum(CommandBuffer buf, float time)", initStart, System.StringComparison.Ordinal);
+            Assert.Greater(updateStart, initStart);
+            int fftStart = source.IndexOf("void DispatchFFT(CommandBuffer buf)", updateStart, System.StringComparison.Ordinal);
+            Assert.Greater(fftStart, updateStart);
+            string initMethod = source.Substring(initStart, updateStart - initStart);
+            string updateMethod = source.Substring(updateStart, fftStart - updateStart);
+
+            Assert.That(initMethod, Does.Contain("if (_resolution <= 0)"));
+            Assert.That(initMethod, Does.Contain("int groups = (int)(((long)_resolution + 7L) / 8L);"));
+            Assert.That(initMethod, Does.Contain("buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumInit, groups, groups, CASCADE_COUNT);"));
+            Assert.That(initMethod, Does.Not.Contain("_resolution / 8"));
+            Assert.That(updateMethod, Does.Contain("if (_resolution <= 0)"));
+            Assert.That(updateMethod, Does.Contain("int groups = (int)(((long)_resolution + 7L) / 8L);"));
+            Assert.That(updateMethod, Does.Contain("buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumUpdate, groups, groups, CASCADE_COUNT);"));
+            Assert.That(updateMethod, Does.Not.Contain("_resolution / 8"));
+
+            Assert.That(source, Does.Contain("public const int MIN_SUPPORTED_RESOLUTION = 16;"));
+            Assert.That(source, Does.Contain("public const int MAX_SUPPORTED_RESOLUTION = 512;"));
+            Assert.That(source, Does.Contain("static bool IsSupportedResolution(int resolution)"));
+            Assert.That(source, Does.Contain("return Mathf.Clamp(powerOfTwoResolution, MIN_SUPPORTED_RESOLUTION, MAX_SUPPORTED_RESOLUTION);"));
+            Assert.That(source, Does.Contain("resolution = ClampSupportedResolution(resolution);"));
+            Assert.That(source, Does.Contain("if (_shaderSpectrum == null || _shaderFFT == null)"));
+            Assert.That(source, Does.Contain("if (!_isInitialised)"));
+            Assert.That(source, Does.Contain("if (!IsSupportedResolution(_resolution))"));
+            Assert.That(shapeFftSource, Does.Contain("protected override int MaximumResolution => FFTCompute.MAX_SUPPORTED_RESOLUTION;"));
+            Assert.AreEqual(16, Crest.FFTCompute.ClampSupportedResolution(0));
+            Assert.AreEqual(16, Crest.FFTCompute.ClampSupportedResolution(16));
+            Assert.AreEqual(512, Crest.FFTCompute.ClampSupportedResolution(512));
+            Assert.AreEqual(512, Crest.FFTCompute.ClampSupportedResolution(1024));
+
+            Assert.That(shader, Does.Contain("_ResultInit.GetDimensions( width, height, depth );"));
+            Assert.That(shader, Does.Contain("id.x >= width || id.y >= height || id.z >= depth || _Size <= 0"));
+            Assert.That(shader, Does.Contain("const int2 coord = (int2)id.xy - center;"));
+            Assert.That(shader, Does.Contain("id.z < (depth - 1u)"));
+            Assert.That(shader, Does.Contain("(maxCoord < WAVE_SAMPLE_FACTOR / 2u ||"));
+            Assert.That(shader, Does.Contain("maxCoord >= WAVE_SAMPLE_FACTOR)"));
+            Assert.That(shader, Does.Contain("_Init0.GetDimensions( initWidth, initHeight, initDepth );"));
+            Assert.That(shader, Does.Contain("_ResultHeight.GetDimensions( heightWidth, heightHeight, heightDepth );"));
+            Assert.That(shader, Does.Contain("_ResultDisplaceX.GetDimensions( displaceXWidth, displaceXHeight, displaceXDepth );"));
+            Assert.That(shader, Does.Contain("_ResultDisplaceZ.GetDimensions( displaceZWidth, displaceZHeight, displaceZDepth );"));
+            Assert.That(shader, Does.Contain("id.x >= initWidth || id.y >= initHeight || id.z >= initDepth"));
+        }
+
+        [Test]
         public void Crest512FftTwoElementsPerThread_MatchesSingleElementReference()
         {
             const int size = 512;

@@ -196,7 +196,7 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                TextureDesc compositeDesc = new TextureDesc(sourceDesc);
+                TextureDesc compositeDesc = sourceDesc;
                 compositeDesc.name = "_HectonVisorTraumaComposite";
                 compositeDesc.clearBuffer = false;
                 compositeDesc.depthBufferBits = DepthBits.None;

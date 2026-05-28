@@ -3,27 +3,197 @@
   "compilationResourceThrottling": {
     "dotnetBuildLaunchedByAgent1413": true,
     "optimizationReportSample": {
-      "dotnetBuild": "PASSED",
-      "dotnetBuildCommand": "dotnet build \"C:\\hades\\Hecton8\\Assembly-CSharp.csproj\" --no-restore -v:minimal /m:1",
+      "currentSourceCompileStatus": "BLOCKED_CURRENT_BYTES_NOT_ACCEPTABLE_AFTER_CONCURRENT_OVERWRITE_NO_FINAL_COMPILE",
       "dotnetBuildLaunchedByAgent1413": true,
-      "elapsedSeconds": 48.8,
-      "errors": 0,
-      "maxCpuWorkers": 1,
-      "noRestore": true,
-      "preBuildCpuLoadPercent": 27.641788,
-      "preBuildCscCount": 0,
-      "preBuildDotnetCount": 0,
-      "sampleCommand": "Get-Counter \"\\Processor(_Total)\\% Processor Time\" plus Get-Process dotnet/csc",
-      "sampleUtc": "2026-05-28T09:30:01Z",
-      "target": "Assembly-CSharp.csproj",
-      "unityTestRunnerLaunchedByAgent1413": false,
-      "warnings": 0
+      "latestBuildAttempt": {
+        "buildProjectReferences": false,
+        "dotnetBuild": "PASSED_BUILDPROJECTREFERENCES_FALSE_SOURCE_COMPILE",
+        "dotnetBuildCommand": "dotnet build \"C:\\hades\\Hecton8\\Assembly-CSharp.csproj\" --no-restore -v:minimal /m:1 /p:BuildProjectReferences=false",
+        "dotnetBuildLaunchedByAgent1413": true,
+        "elapsed": "00:00:41.24",
+        "errors": 0,
+        "maxCpuWorkers": 1,
+        "noRestore": true,
+        "outputAssembly": "Temp/CodexBuild/Assembly-CSharp/Assembly-CSharp.dll",
+        "preBuildCpuLoadPercent": 38,
+        "preBuildCscCount": 0,
+        "preBuildDotnetCount": 0,
+        "preBuildVbcsCompilerCount": 0,
+        "sampleLocal": "2026-05-28T20:02:31.0417510+04:00",
+        "warnings": 0
+      },
+      "loop28FinalBuildGateSample": {
+        "command": "dotnet build \"C:\\hades\\Hecton8\\Assembly-CSharp.csproj\" --no-restore -v:minimal /m:1",
+        "cpuLoadPercent": 95.801902,
+        "cscCount": 1,
+        "dotnetBuildLaunchedByAgent1413": false,
+        "dotnetCount": 2,
+        "reason": "Compilation Resource Throttling forbids build when CPU > 50% or dotnet/csc is active.",
+        "sampleUtc": "2026-05-28T14:54:00.3231219Z",
+        "status": "SKIPPED_BY_CPU_GT_50_OR_DOTNET_ACTIVE_OR_CSC_ACTIVE"
+      },
+      "loop29PreBuildGateSample": {
+        "cpuLoadPercent": 39.251238,
+        "cscCount": 0,
+        "dotnetCount": 0,
+        "sampleUtc": "2026-05-28T15:11:18.6033201Z",
+        "status": "BUILD_PERMITTED_BY_RULE"
+      },
+      "loop30PreBuildGateSample": {
+        "cpuLoadPercent": 38,
+        "cscCount": 0,
+        "dotnetCount": 0,
+        "sampleLocal": "2026-05-28T20:02:31.0417510+04:00",
+        "status": "BUILD_PERMITTED_BY_RULE",
+        "vbcsCompilerCount": 0
+      },
+      "loop31BuildGateSample": {
+        "cpuLoadPercent": 48,
+        "cscCount": 0,
+        "dotnetCount": 0,
+        "sampleLocal": "2026-05-28T20:49:40+04:00",
+        "status": "BUILD_PERMITTED_BY_RULE",
+        "vbcsCompilerCount": 0
+      },
+      "loop31BuildProjectReferencesFalse": {
+        "buildProjectReferences": false,
+        "command": "dotnet build \"C:\\hades\\Hecton8\\Assembly-CSharp.csproj\" --no-restore -v:minimal /m:1 /p:BuildProjectReferences=false",
+        "elapsed": "00:00:26.45",
+        "errors": 0,
+        "maxCpuWorkers": 1,
+        "noRestore": true,
+        "outputAssembly": "Temp/CodexBuild/Assembly-CSharp/Assembly-CSharp.dll",
+        "result": "PASSED",
+        "warnings": 0
+      },
+      "loop31RetryBuildGateSample": {
+        "activeDotnetProcessId": 65636,
+        "cpuLoadPercent": 93,
+        "cscCount": 0,
+        "dotnetCount": 1,
+        "sampleLocal": "2026-05-28T20:44:00+04:00",
+        "status": "SKIPPED_BY_CPU_GT_50_OR_DOTNET_ACTIVE",
+        "vbcsCompilerCount": 0
+      },
+      "previousFailedProjectReferenceBuild": {
+        "dotnetBuild": "FAILED_PROJECT_REFERENCE_CYCLE_BEFORE_SOURCE_COMPILE",
+        "dotnetBuildCommand": "dotnet build \"C:\\hades\\Hecton8\\Assembly-CSharp.csproj\" --no-restore -v:minimal /m:1",
+        "dotnetBuildLaunchedByAgent1413": true,
+        "elapsedSeconds": 27.93,
+        "errors": 2,
+        "failure": "MSB4006 circular dependency in ResolveProjectReferences for Unity.RenderPipelines.Core.Editor.csproj and Unity.ShaderGraph.Editor.csproj",
+        "forensicDump": "Docs/AgentLogs/Dump_1413_Loop27_BuildFailure_20260528T134842Z.txt",
+        "maxCpuWorkers": 1,
+        "noRestore": true,
+        "preBuildCpuLoadPercent": 28,
+        "preBuildCscCount": 0,
+        "preBuildDotnetCount": 0,
+        "retrySamples": [
+          {
+            "command": "dotnet build Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /p:BuildProjectReferences=false",
+            "cpuLoadPercent": 87,
+            "cscCount": 0,
+            "dotnetCount": 0,
+            "sampleUtc": "2026-05-28T13:49:43.2381380Z",
+            "status": "SKIPPED_BY_CPU_GT_50"
+          },
+          {
+            "command": "dotnet build Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /p:BuildProjectReferences=false",
+            "cpuLoadPercent": 90,
+            "cscCount": 0,
+            "dotnetCount": 1,
+            "sampleUtc": "2026-05-28T13:53:56.8306317Z",
+            "status": "SKIPPED_BY_CPU_GT_50_OR_DOTNET_ACTIVE"
+          },
+          {
+            "command": "dotnet build Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /p:BuildProjectReferences=false",
+            "cpuLoadPercent": 53.966963,
+            "cscCount": 0,
+            "dotnetCount": 1,
+            "sampleUtc": "2026-05-28T14:06:29Z",
+            "status": "SKIPPED_BY_CPU_GT_50_OR_DOTNET_ACTIVE"
+          },
+          {
+            "command": "dotnet build Assembly-CSharp.csproj --no-restore -v:minimal /m:1 /p:BuildProjectReferences=false",
+            "cpuLoadPercent": 63.522295,
+            "cscCount": 0,
+            "dotnetCount": 1,
+            "sampleUtc": "2026-05-28T14:16:32Z",
+            "status": "SKIPPED_BY_CPU_GT_50_OR_DOTNET_ACTIVE"
+          },
+          {
+            "command": "dotnet build \"C:\\hades\\Hecton8\\Assembly-CSharp.csproj\" --no-restore -v:minimal /m:1",
+            "cpuLoadPercent": 42.038221,
+            "cscCount": 0,
+            "dotnetCount": 1,
+            "sampleUtc": "2026-05-28T14:36:01.9156305Z",
+            "status": "SKIPPED_BY_DOTNET_ACTIVE"
+          },
+          {
+            "command": "dotnet build \"C:\\hades\\Hecton8\\Assembly-CSharp.csproj\" --no-restore -v:minimal /m:1",
+            "cpuLoadPercent": 76.085649,
+            "cscCount": 1,
+            "dotnetBuildLaunchedByAgent1413": false,
+            "dotnetCount": 1,
+            "reason": "Compilation Resource Throttling forbids build when CPU > 50% or dotnet/csc is active.",
+            "sampleUtc": "2026-05-28T14:47:59.2932905Z",
+            "status": "SKIPPED_BY_CPU_GT_50_OR_DOTNET_ACTIVE_OR_CSC_ACTIVE"
+          },
+          {
+            "command": "dotnet build \"C:\\hades\\Hecton8\\Assembly-CSharp.csproj\" --no-restore -v:minimal /m:1",
+            "cpuLoadPercent": 95.801902,
+            "cscCount": 1,
+            "dotnetBuildLaunchedByAgent1413": false,
+            "dotnetCount": 2,
+            "reason": "Compilation Resource Throttling forbids build when CPU > 50% or dotnet/csc is active.",
+            "sampleUtc": "2026-05-28T14:54:00.3231219Z",
+            "status": "SKIPPED_BY_CPU_GT_50_OR_DOTNET_ACTIVE_OR_CSC_ACTIVE"
+          }
+        ],
+        "sampleUtc": "2026-05-28T13:48:42.8540927Z",
+        "warnings": 0
+      },
+      "previousSuccessfulBuildBeforeLoop23": {
+        "dotnetBuild": "PASSED",
+        "dotnetBuildCommand": "dotnet build \"C:\\hades\\Hecton8\\Assembly-CSharp.csproj\" --no-restore -v:minimal /m:1",
+        "dotnetBuildLaunchedByAgent1413": true,
+        "elapsedSeconds": 32.14,
+        "errors": 0,
+        "maxCpuWorkers": 1,
+        "noRestore": true,
+        "preBuildCpuLoadPercent": 45.100791,
+        "preBuildCscCount": 0,
+        "preBuildDotnetCount": 0,
+        "sampleCommand": "Get-Counter \"\\Processor(_Total)\\% Processor Time\" plus Get-Process dotnet/csc",
+        "sampleUtc": "2026-05-28T11:29:11Z",
+        "target": "Assembly-CSharp.csproj",
+        "unityTestRunnerLaunchedByAgent1413": false,
+        "warnings": 0
+      },
+      "previousSuccessfulBuildBeforeLoop27": {
+        "blockedCommand": null,
+        "dotnetBuild": "PASSED",
+        "dotnetBuildCommand": "dotnet build \"C:\\hades\\Hecton8\\Assembly-CSharp.csproj\" --no-restore -v:minimal /m:1",
+        "dotnetBuildLaunchedByAgent1413": true,
+        "elapsedSeconds": 21.52,
+        "errors": 0,
+        "maxCpuWorkers": 1,
+        "noRestore": true,
+        "preBuildCpuLoadPercent": 46.330838,
+        "preBuildCscCount": 0,
+        "preBuildDotnetCount": 0,
+        "sampleCommand": "Get-Counter \"\\\\Processor(_Total)\\\\% Processor Time\" plus Get-Process dotnet/csc",
+        "sampleUtc": "2026-05-28T12:13:55Z",
+        "target": "Assembly-CSharp.csproj",
+        "warnings": 0
+      },
+      "unityTestRunnerLaunchedByAgent1413": false
     },
     "sample": {
-      "cpuLoadPercent": 48.971125,
+      "cpuLoadPercent": 48.999453,
       "cscCount": 0,
-      "dotnetBuild": "BLOCKED_BY_CONTENTION",
-      "dotnetCount": 1,
+      "dotnetBuild": "PERMITTED_NOT_RUN",
+      "dotnetCount": 0,
       "sampleCommand": "Get-Counter '\\Processor(_Total)\\% Processor Time' plus Get-Process dotnet/csc"
     },
     "source": "agent1413_apex_verifier.py runtime sample; optimization report throttle copied separately",
@@ -41,6 +211,131 @@
         "lockLine": 5054,
         "name": "OrganicLootEntriesBufferId",
         "value": 73019
+      },
+      {
+        "lockLine": 834,
+        "name": "VisualPressureAgingParams",
+        "value": 71240
+      },
+      {
+        "lockLine": 894,
+        "name": "VisualPressureAgingRuntime",
+        "value": 71241
+      },
+      {
+        "lockLine": 1936,
+        "name": "VisualPressureAgingTelemetryRing",
+        "value": 71242
+      },
+      {
+        "lockLine": 1903,
+        "name": "VisualPressureAgingTelemetryCursor",
+        "value": 71243
+      },
+      {
+        "lockLine": 838,
+        "name": "UberNoirInstanceDegradation",
+        "value": 71247
+      },
+      {
+        "lockLine": 1936,
+        "name": "UberNoirDegradationTelemetryRing",
+        "value": 71248
+      },
+      {
+        "lockLine": 1903,
+        "name": "UberNoirDegradationTelemetryCursor",
+        "value": 71249
+      },
+      {
+        "lockLine": 1062,
+        "name": "ShinobuStormPropagationTelemetryRing",
+        "value": 71715
+      },
+      {
+        "lockLine": 1068,
+        "name": "ShinobuStormPropagationTelemetryCursor",
+        "value": 71716
+      },
+      {
+        "lockLine": 1437,
+        "name": "WorldRegistryDeltaRecordIndexStatesBuffer",
+        "value": 74459
+      },
+      {
+        "lockLine": 1444,
+        "name": "WorldRegistryDeltaRecordIndexCountBuffer",
+        "value": 74460
+      },
+      {
+        "lockLine": 1437,
+        "name": "WorldRegistryDeltaChunkIndexStatesBuffer",
+        "value": 74475
+      },
+      {
+        "lockLine": 1444,
+        "name": "WorldRegistryDeltaChunkIndexCountBuffer",
+        "value": 74476
+      },
+      {
+        "lockLine": 1437,
+        "name": "WorldRegistryDeltaItemIndexStatesBuffer",
+        "value": 74481
+      },
+      {
+        "lockLine": 1444,
+        "name": "WorldRegistryDeltaItemIndexCountBuffer",
+        "value": 74482
+      },
+      {
+        "lockLine": 1437,
+        "name": "WorldRegistryGuidToPoolIndexStatesBuffer",
+        "value": 74495
+      },
+      {
+        "lockLine": 1444,
+        "name": "WorldRegistryGuidToPoolIndexCountBuffer",
+        "value": 74496
+      },
+      {
+        "lockLine": 1437,
+        "name": "WorldRegistryEntityStateStatesBuffer",
+        "value": 74499
+      },
+      {
+        "lockLine": 1444,
+        "name": "WorldRegistryEntityStateCountBuffer",
+        "value": 74500
+      },
+      {
+        "lockLine": 1437,
+        "name": "WorldRegistryFloraSpawnStateStatesBuffer",
+        "value": 74503
+      },
+      {
+        "lockLine": 1444,
+        "name": "WorldRegistryFloraSpawnStateCountBuffer",
+        "value": 74504
+      },
+      {
+        "lockLine": 1437,
+        "name": "WorldRegistrySpawnImpulseStatesBuffer",
+        "value": 74507
+      },
+      {
+        "lockLine": 1444,
+        "name": "WorldRegistrySpawnImpulseCountBuffer",
+        "value": 74508
+      },
+      {
+        "lockLine": 1437,
+        "name": "WorldRegistrySpawnVelocityStatesBuffer",
+        "value": 74511
+      },
+      {
+        "lockLine": 1444,
+        "name": "WorldRegistrySpawnVelocityCountBuffer",
+        "value": 74512
       }
     ],
     "tryFinallyProof": {
@@ -48,8 +343,53 @@
       "descriptorUnlockLine": 5096,
       "finallyLine": 5090,
       "lootLockLine": 5054,
+      "persistentWorldRegistryHashMapClear": {
+        "countGuardBeforeStateClear": true,
+        "countGuardLine": 1445,
+        "countLockLine": 1444,
+        "countResetAfterStateClear": true,
+        "countResetLine": 1452,
+        "countUnlockLine": 1458,
+        "finallyLine": 1455,
+        "partialClearOnCountLockFailureRemoved": true,
+        "releaseInsideFinally": true,
+        "stateClearLoopLine": 1449,
+        "statesLockLine": 1437,
+        "statesUnlockLine": 1459
+      },
       "releaseInsideFinally": true,
-      "tryLineAfterDescriptorLock": 5052
+      "shinobuStormPropagation": {
+        "copyFinallyLine": 1115,
+        "diskWriteAfterVaultUnlock": true,
+        "diskWriteCallLine": 1054,
+        "diskWriterContainsVaultLock": false,
+        "diskWriterStartLine": 1122,
+        "dumpScratchVaultHandleRemoved": true,
+        "lockWindowUsesManagedScratchOnly": true,
+        "managedScratchColdAllocLine": 539,
+        "snapshotCopyCallLine": 1051,
+        "snapshotCopyEndLine": 1120,
+        "snapshotCopyStartLine": 1057,
+        "telemetryCursorLockLine": 1068,
+        "telemetryRingLockLine": 1062,
+        "telemetryRingUnlockLine": 1118
+      },
+      "tryLineAfterDescriptorLock": 5052,
+      "visualPressureAging": {
+        "degradationLockLine": 838,
+        "dumpUsesStackallocNotPersistentNativeArray": true,
+        "dumpWriteCallLine": 939,
+        "fileWriteOutsideVaultLocksByCallSite": true,
+        "paramsLockLine": 834,
+        "runtimeFinallyLine": 919,
+        "runtimeLockLine": 894,
+        "runtimeLockReleasedBeforeShaderWrites": true,
+        "shaderGlobalWriteLine": 926,
+        "stackallocDumpLine": 934,
+        "streamWriteImplementationLine": 1981,
+        "uploadFinallyLine": 870,
+        "uploadLocksReleasedBeforeShaderWrites": true
+      }
     },
     "unmanagedStructOffsets": {
       "DeferredVaultReleaseRequest": {
@@ -70,25 +410,48 @@
     }
   },
   "deferredReleaseContract": {
-    "dedupePolicy": "QueueDeferredRelease de-duplicates writer releases only; buffer-pin releases preserve one queued record per accepted release call.",
+    "dedupePolicy": "QueueDeferredRelease performs a best-effort writer duplicate scan only; buffer-pin releases preserve one queued record per accepted release call. Stale writer duplicates must drain idempotently without releasing a newer writer.",
     "dedupePolicyEvidence": {
-      "hasSerializedScanGate": true,
+      "hasAtomicSlotClaim": true,
+      "hasNoEnqueueGateBusyFailPath": false,
+      "hasStaleWriterOwnerDiscard": true,
       "hasWriterOnlyFilter": true,
-      "matchesArenaAllocator1414EditorContract": true
+      "ignoredDeferredWriterReleaseLines": [],
+      "internalWriterReleaseReturnsAcceptedDeferredWriterRelease": true,
+      "matchesArenaAllocator1414EditorContract": true,
+      "releaseWriteLockReturnsAcceptedDeferredWriterRelease": true
     },
-    "residualLimit": "A caller that retries TryUnlockBuffer after QueueDeferredRelease already returned true can still enqueue multiple buffer-pin releases. The API has no per-acquire token; compliant callers must treat true as accepted ownership transfer."
+    "residualLimit": "A caller that retries TryUnlockBuffer after QueueDeferredRelease already returned true can still enqueue multiple buffer-pin releases. The API has no per-acquire token; compliant callers must treat true as accepted ownership transfer.",
+    "waitPrimitiveScan": {
+      "globalDataVaultTaskDelayLines": [],
+      "globalDataVaultThreadSleepLines": [
+        3660
+      ],
+      "globalDataVaultThreadSpinWaitLines": [
+        2048
+      ],
+      "queueDeferredReleaseTaskDelayLines": [],
+      "queueDeferredReleaseThreadSleepLines": [],
+      "queueDeferredReleaseThreadSpinWaitLines": [
+        2042
+      ],
+      "queueDeferredReleaseWaitCallLines": []
+    }
   },
-  "generatedUtc": "2026-05-28T10:12:41Z",
+  "generatedUtc": "2026-05-28T16:52:00Z",
   "knownResidualRisk": [
     "GlobalDataVault release APIs now queue a fixed-size unmanaged deferred-release request if the block mutation gate is busy. Runtime drain is static-only verified; compiler and Unity runtime proof are still pending.",
-    "Deferred release de-duplication is intentionally writer-only to preserve count semantics for multiple same-owner buffer pins. The residual risk is retry after accepted true on tokenless TryUnlockBuffer.",
+    "Deferred release duplicate suppression is best-effort and writer-only to preserve count semantics for multiple same-owner buffer pins. Stale writer duplicates are discarded in drain without releasing a newer writer. The residual risk is retry after accepted true on tokenless TryUnlockBuffer.",
     "Project-wide scanner still reports loop-shaped and nested-lock candidates outside the edited window; they are report-ranked but not all fixed in this pass."
   ],
   "modifiedFileHashes": {
-    "arenaAllocatorSentinel1414EditTest": "f92bebfd212a46cb09a023c7a349b934c1431b3b651c80161f3757b1d7857309",
+    "arenaAllocatorSentinel1414EditTest": "b4a9c9bb3021f76f865f4ab6d3728d3fd28c80db738f15d7bb3c71fd52addfcd",
     "destructibleOrganic": "3b5ece0ee93d4d29404396a104a9d784bc587e30b37f61b470151370ee3765ad",
     "failClosedEditTest": "9c3d246955985c340790c69d307dac781e1174c5f39a0cf7c4fc619ab48981d1",
-    "globalDataVault": "b35073e0f7ad2e833767c0b3f6b3139a05942bd9b416bc77c8f373b9a3d74aac"
+    "globalDataVault": "5d3cfe4c916fa9547a313920aba8ce6d7ef4275ed3e26dfc00145a3b5fc2c4f1",
+    "persistentWorldRegistry": "46177e908133046d00bbc32319be4f1db8f5e1c87661bd04df2dfc942bfcfdaa",
+    "stormPropagation": "65982f6e79066e4be24f7c66d1b10bcc7cf23659a8ff451297de17173046f90d",
+    "visualPressureAging": "0e8e25874f610053bb8d3345ede68f88069ce232cd6a6af1c676fc47e4c941b0"
   },
   "nestedLockAuditModifiedWindows": {
     "destructibleLockedCopyWindowNestedTryLockCalls": 0,
@@ -100,153 +463,225 @@
     "taskCount": 20
   },
   "reportHashesBeforeApexWrite": {
-    "lockSpanLedgerSha256": "23ed043fe774fa28d8c6aed1dd4bf25a70495a5ec6d255ea6a0861b1b3e70220",
-    "optimizationReportSha256": "a4f45e1c3625774b9e917bdb6848b2f1c5dae7844dd016edb7c5e6342aa4b537"
+    "lockSpanLedgerSha256": "9e9afdf0f6e9eb24ae051a2de2ebcc2a4fbe10125c0946ca4a0f2113281fcff7",
+    "optimizationReportSha256": "a243cad370cb546bce1f3923d948c0cc532d13f0450cb427de97a8531cf04f54"
   },
   "role": "ATOMIC_LOCK_CONTENTION_AND_FAIL_CLOSED_COORDINATOR",
   "zeroGcTextScan": {
     "blocks": [
       {
-        "endLine": 1268,
+        "endLine": 1290,
         "forbiddenHitCount": 0,
         "foreachHits": [],
         "lineCount": 180,
         "linqHits": [],
         "name": "private bool TryEnsureVaultBuffer<T>(",
         "referenceNewTextHits": [],
-        "startLine": 1089,
+        "startLine": 1111,
         "stringFormatHits": [],
         "toStringHits": []
       },
       {
-        "endLine": 1375,
+        "endLine": 1397,
         "forbiddenHitCount": 0,
         "foreachHits": [],
         "lineCount": 106,
         "linqHits": [],
         "name": "private bool TryAllocatePublishedBuffer<T>(",
         "referenceNewTextHits": [],
-        "startLine": 1270,
+        "startLine": 1292,
         "stringFormatHits": [],
         "toStringHits": []
       },
       {
-        "endLine": 1517,
+        "endLine": 1539,
         "forbiddenHitCount": 0,
         "foreachHits": [],
         "lineCount": 141,
         "linqHits": [],
         "name": "private bool TryOpenAliasBuffer<T>(BufferID bufferId, SystemID requester, out NativeArray<T> buffer) where T : struct",
         "referenceNewTextHits": [],
-        "startLine": 1377,
+        "startLine": 1399,
         "stringFormatHits": [],
         "toStringHits": []
       },
       {
-        "endLine": 4821,
+        "endLine": 1904,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 158,
+        "linqHits": [],
+        "name": "public bool TryAcquireWriteLock<T>(in VaultGenerationHandle<T> handle, SystemID systemID, out NativeArray<T> buffer) where T : struct",
+        "referenceNewTextHits": [],
+        "startLine": 1747,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 1960,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 54,
+        "linqHits": [],
+        "name": "public bool ReleaseWriteLock<T>(in VaultGenerationHandle<T> handle, SystemID systemID) where T : struct",
+        "referenceNewTextHits": [],
+        "startLine": 1907,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 2608,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 105,
+        "linqHits": [],
+        "name": "public bool TryLockBuffer(BufferID bufferId, SystemID lockOwner)",
+        "referenceNewTextHits": [],
+        "startLine": 2504,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 4897,
         "forbiddenHitCount": 0,
         "foreachHits": [],
         "lineCount": 11,
         "linqHits": [],
         "name": "private void RecordLockContentionFault(int key)",
         "referenceNewTextHits": [],
-        "startLine": 4811,
+        "startLine": 4887,
         "stringFormatHits": [],
         "toStringHits": []
       },
       {
-        "endLine": 2738,
+        "endLine": 2789,
         "forbiddenHitCount": 0,
         "foreachHits": [],
         "lineCount": 23,
         "linqHits": [],
         "name": "private bool TryEnterBlockMutationGate()",
         "referenceNewTextHits": [],
-        "startLine": 2716,
+        "startLine": 2767,
         "stringFormatHits": [],
         "toStringHits": []
       },
       {
-        "endLine": 2755,
+        "endLine": 2806,
         "forbiddenHitCount": 0,
         "foreachHits": [],
         "lineCount": 16,
         "linqHits": [],
         "name": "private bool TryEnterReleaseMutationGate()",
         "referenceNewTextHits": [],
-        "startLine": 2740,
+        "startLine": 2791,
         "stringFormatHits": [],
         "toStringHits": []
       },
       {
-        "endLine": 2794,
+        "endLine": 2845,
         "forbiddenHitCount": 0,
         "foreachHits": [],
         "lineCount": 18,
         "linqHits": [],
         "name": "private void ClearActiveLockBitIfUnused(int bit)",
         "referenceNewTextHits": [],
-        "startLine": 2777,
+        "startLine": 2828,
         "stringFormatHits": [],
         "toStringHits": []
       },
       {
-        "endLine": 2096,
+        "endLine": 2138,
         "forbiddenHitCount": 0,
         "foreachHits": [],
-        "lineCount": 33,
+        "lineCount": 35,
         "linqHits": [],
         "name": "private void DrainDeferredReleaseRequestsLocked()",
         "referenceNewTextHits": [],
-        "startLine": 2064,
+        "startLine": 2104,
         "stringFormatHits": [],
         "toStringHits": []
       },
       {
-        "endLine": 2117,
+        "endLine": 2159,
         "forbiddenHitCount": 0,
         "foreachHits": [],
         "lineCount": 20,
         "linqHits": [],
         "name": "private bool TryDrainDeferredReleaseRequests()",
         "referenceNewTextHits": [],
-        "startLine": 2098,
+        "startLine": 2140,
         "stringFormatHits": [],
         "toStringHits": []
       },
       {
-        "endLine": 2165,
+        "endLine": 2202,
         "forbiddenHitCount": 0,
         "foreachHits": [],
-        "lineCount": 47,
+        "lineCount": 42,
         "linqHits": [],
         "name": "private bool DrainDeferredWriterReleaseLocked(in DeferredVaultReleaseRequest request)",
         "referenceNewTextHits": [],
-        "startLine": 2119,
+        "startLine": 2161,
         "stringFormatHits": [],
         "toStringHits": []
       },
       {
-        "endLine": 2223,
+        "endLine": 2260,
         "forbiddenHitCount": 0,
         "foreachHits": [],
         "lineCount": 57,
         "linqHits": [],
         "name": "private bool DrainDeferredBufferPinReleaseLocked(in DeferredVaultReleaseRequest request)",
         "referenceNewTextHits": [],
-        "startLine": 2167,
+        "startLine": 2204,
         "stringFormatHits": [],
         "toStringHits": []
       },
       {
-        "endLine": 2062,
+        "endLine": 4330,
         "forbiddenHitCount": 0,
         "foreachHits": [],
-        "lineCount": 70,
+        "lineCount": 115,
+        "linqHits": [],
+        "name": "private bool TryRunLiveCompactionSlice(uint activeBurstLockMask)",
+        "referenceNewTextHits": [],
+        "startLine": 4216,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 3933,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 55,
+        "linqHits": [],
+        "name": "private int ReleaseBuffersByOwner(SystemID owner, bool sceneOwnedOnly, out long releasedBytes)",
+        "referenceNewTextHits": [],
+        "startLine": 3879,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 3972,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 38,
+        "linqHits": [],
+        "name": "private bool TryReleaseOrphanedBuffer(int key, in VaultBufferMeta meta, out long releasedBytes)",
+        "referenceNewTextHits": [],
+        "startLine": 3935,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 2102,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 71,
         "linqHits": [],
         "name": "private bool QueueDeferredRelease(",
         "referenceNewTextHits": [],
-        "startLine": 1993,
+        "startLine": 2032,
         "stringFormatHits": [],
         "toStringHits": []
       },
@@ -259,6 +694,90 @@
         "name": "DestructibleOrganicManager.BuildTemplateCaches locked copy window",
         "referenceNewTextHits": [],
         "startLine": 5044,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 947,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 143,
+        "linqHits": [],
+        "name": "VisualPressureAgingRuntime.VisualSyncTick",
+        "referenceNewTextHits": [],
+        "startLine": 805,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 1891,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 58,
+        "linqHits": [],
+        "name": "VisualPressureAgingRuntime.private int CopyTelemetryDumpSnapshot(IDataVault vault, Span<byte> destinationBytes)",
+        "referenceNewTextHits": [],
+        "startLine": 1834,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 1919,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 27,
+        "linqHits": [],
+        "name": "VisualPressureAgingRuntime.private bool TryReadTelemetryCursor(",
+        "referenceNewTextHits": [],
+        "startLine": 1893,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 1966,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 46,
+        "linqHits": [],
+        "name": "VisualPressureAgingRuntime.private bool TryCopyTelemetryEntries<T>(",
+        "referenceNewTextHits": [],
+        "startLine": 1921,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 2003,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 36,
+        "linqHits": [],
+        "name": "VisualPressureAgingRuntime.private bool TryWriteTelemetryDumpSnapshot(ReadOnlySpan<byte> snapshot, int byteCount, FileStream stream, ref bool failureLogged)",
+        "referenceNewTextHits": [],
+        "startLine": 1968,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 1120,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 64,
+        "linqHits": [],
+        "name": "ShinobuStormPropagationRuntime.TryCopyTelemetryDumpSnapshot",
+        "referenceNewTextHits": [],
+        "startLine": 1057,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 1461,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 30,
+        "linqHits": [],
+        "name": "PersistentWorldRegistry.VaultBackedHashMap.Clear",
+        "referenceNewTextHits": [],
+        "startLine": 1432,
         "stringFormatHits": [],
         "toStringHits": []
       }

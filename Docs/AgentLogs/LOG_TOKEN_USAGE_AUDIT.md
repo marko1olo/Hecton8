@@ -555,3 +555,24 @@ Compilation/resource throttling:
 
 Cinematic Cheats used -> None; offline telemetry/reporting only.
 Exact Microseconds saved -> 0 us game runtime. Audit freshness and proof boundary improved.
+
+## 2026-05-28 22:13 Europe/Samara - Full workspace checkpoint
+
+What was wrong:
+- Token artifacts were refreshed and pushed, but the remaining workspace still contained a broad cross-agent staged set.
+- Initial broad `git diff --cached --check` failed on trailing whitespace/extra EOF blank lines in new `.meta`, report, and prompt files.
+
+What was done:
+- Committed token refresh artifacts separately before the broad checkpoint.
+- Staged the remaining workspace and scanned staged paths for `1334`: zero matches.
+- Mechanically removed whitespace gate failures only; no semantic runtime edits were made by TOKEN_USAGE_AUDIT in those files.
+- Reran `git diff --cached --check`: clean.
+
+Evidence:
+- Broad staged file count before final commit: `634`.
+- Broad staged shortstat before final commit: `634 files changed, 131508 insertions(+), 67454 deletions(-)`.
+- Protected-path scan: no staged path containing `1334`.
+- Compiler/resource state: active `dotnet` process observed; `dotnet build` not invoked.
+
+Cinematic Cheats used -> None; checkpoint/accounting only.
+Exact Microseconds saved -> 0 us game runtime.

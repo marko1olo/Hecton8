@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -272,7 +273,7 @@ namespace Hecton8.Gameplay
         {
             RegisterArmorRegistryHotSwapBridge();
             TryApplyPendingArmorVaultRebind();
-            TryResolveArmorPenetrationVaultViews(out _, ensure: true);
+            TryOpenOrEnsureArmorPenetrationVaultViews(out _, ensure: true);
         }
 
         private static void DisposeArmorPenetrationNativeState()
@@ -320,6 +321,13 @@ namespace Hecton8.Gameplay
 
         private static void RequestArmorVaultRebind(IDataVault previousVault, IDataVault currentVault)
         {
+            if (_statusJobScheduled)
+            {
+                _armorPendingDataVault = currentVault;
+                _armorVaultRebindPending = true;
+                return;
+            }
+
             if (_damageJobScheduled)
             {
                 if (!_damageJobHandle.IsCompleted)
@@ -339,8 +347,12 @@ namespace Hecton8.Gameplay
 
         private static void TryApplyPendingArmorVaultRebind()
         {
-            if (!_armorVaultRebindPending || (_damageJobScheduled && !_damageJobHandle.IsCompleted))
+            if (!_armorVaultRebindPending ||
+                _statusJobScheduled ||
+                (_damageJobScheduled && !_damageJobHandle.IsCompleted))
+            {
                 return;
+            }
 
             if (_damageJobScheduled)
             {
@@ -387,7 +399,7 @@ namespace Hecton8.Gameplay
             _armorDataVault = currentVault;
 
             if (currentVault != null && !currentVault.IsAllocationLocked && !currentVault.IsCompactionFenceActive)
-                TryResolveArmorPenetrationVaultViews(out _, ensure: true);
+                TryOpenOrEnsureArmorPenetrationVaultViews(out _, ensure: true);
         }
 
         private sealed class ArmorRegistryHotSwapBridge : IGlobalRegistryHotSwapListener
@@ -404,7 +416,7 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static bool TryResolveArmorPenetrationVaultViews(
+        private static bool TryOpenOrEnsureArmorPenetrationVaultViews(
             out ArmorPenetrationVaultViews views,
             bool ensure,
             bool includeMock = false,
@@ -423,7 +435,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             bool ok =
-                TryResolveArmorVaultBuffer(
+                TryOpenOrEnsureArmorVaultBuffer(
                     vault,
                     ref _signalImpactAupsHandle,
                     ArmorPenetrationVaultBufferIds.SignalImpactAups,
@@ -431,7 +443,7 @@ namespace Hecton8.Gameplay
                     NativeArrayOptions.UninitializedMemory,
                     ensure,
                     out views.SignalImpactAups) &&
-                TryResolveArmorVaultBuffer(
+                TryOpenOrEnsureArmorVaultBuffer(
                     vault,
                     ref _targetRootAupsHandle,
                     ArmorPenetrationVaultBufferIds.TargetRootAups,
@@ -439,7 +451,7 @@ namespace Hecton8.Gameplay
                     NativeArrayOptions.UninitializedMemory,
                     ensure,
                     out views.TargetRootAups) &&
-                TryResolveArmorVaultBuffer(
+                TryOpenOrEnsureArmorVaultBuffer(
                     vault,
                     ref _targetRotationsHandle,
                     ArmorPenetrationVaultBufferIds.TargetRotations,
@@ -447,7 +459,7 @@ namespace Hecton8.Gameplay
                     NativeArrayOptions.UninitializedMemory,
                     ensure,
                     out views.TargetRotations) &&
-                TryResolveArmorVaultBuffer(
+                TryOpenOrEnsureArmorVaultBuffer(
                     vault,
                     ref _targetHalfExtentsHandle,
                     ArmorPenetrationVaultBufferIds.TargetHalfExtents,
@@ -455,7 +467,7 @@ namespace Hecton8.Gameplay
                     NativeArrayOptions.UninitializedMemory,
                     ensure,
                     out views.TargetHalfExtents) &&
-                TryResolveArmorVaultBuffer(
+                TryOpenOrEnsureArmorVaultBuffer(
                     vault,
                     ref _targetArmorProfilesHandle,
                     ArmorPenetrationVaultBufferIds.TargetArmorProfiles,
@@ -463,7 +475,7 @@ namespace Hecton8.Gameplay
                     NativeArrayOptions.UninitializedMemory,
                     ensure,
                     out views.TargetArmorProfiles) &&
-                TryResolveArmorVaultBuffer(
+                TryOpenOrEnsureArmorVaultBuffer(
                     vault,
                     ref _armorTelemetryRingHandle,
                     ArmorPenetrationVaultBufferIds.TelemetryRing,
@@ -471,7 +483,7 @@ namespace Hecton8.Gameplay
                     NativeArrayOptions.ClearMemory,
                     ensure,
                     out views.TelemetryRing) &&
-                TryResolveArmorVaultBuffer(
+                TryOpenOrEnsureArmorVaultBuffer(
                     vault,
                     ref _armorDebugHitsHandle,
                     ArmorPenetrationVaultBufferIds.DebugHits,
@@ -479,7 +491,7 @@ namespace Hecton8.Gameplay
                     NativeArrayOptions.UninitializedMemory,
                     ensure,
                     out views.DebugHits) &&
-                TryResolveArmorVaultBuffer(
+                TryOpenOrEnsureArmorVaultBuffer(
                     vault,
                     ref _armorTuningHandle,
                     ArmorPenetrationVaultBufferIds.Tuning,
@@ -492,7 +504,7 @@ namespace Hecton8.Gameplay
             {
                 ok =
                     ok &&
-                    TryResolveArmorVaultBuffer(
+                    TryOpenOrEnsureArmorVaultBuffer(
                         vault,
                         ref _armorMockRequestsHandle,
                         ArmorPenetrationVaultBufferIds.MockRequests,
@@ -500,7 +512,7 @@ namespace Hecton8.Gameplay
                         NativeArrayOptions.UninitializedMemory,
                         ensure,
                         out views.MockRequests) &&
-                    TryResolveArmorVaultBuffer(
+                    TryOpenOrEnsureArmorVaultBuffer(
                         vault,
                         ref _armorMockDetailsHandle,
                         ArmorPenetrationVaultBufferIds.MockDetails,
@@ -508,7 +520,7 @@ namespace Hecton8.Gameplay
                         NativeArrayOptions.UninitializedMemory,
                         ensure,
                         out views.MockDetails) &&
-                    TryResolveArmorVaultBuffer(
+                    TryOpenOrEnsureArmorVaultBuffer(
                         vault,
                         ref _armorMockAupsHandle,
                         ArmorPenetrationVaultBufferIds.MockAups,
@@ -516,7 +528,7 @@ namespace Hecton8.Gameplay
                         NativeArrayOptions.UninitializedMemory,
                         ensure,
                         out views.MockAups) &&
-                    TryResolveArmorVaultBuffer(
+                    TryOpenOrEnsureArmorVaultBuffer(
                         vault,
                         ref _armorMockTargetSlotsHandle,
                         ArmorPenetrationVaultBufferIds.MockTargetSlots,
@@ -530,7 +542,7 @@ namespace Hecton8.Gameplay
             {
                 ok =
                     ok &&
-                    TryResolveArmorVaultBuffer(
+                    TryOpenOrEnsureArmorVaultBuffer(
                         vault,
                         ref _armorTortureRequestsHandle,
                         ArmorPenetrationVaultBufferIds.TortureRequests,
@@ -538,7 +550,7 @@ namespace Hecton8.Gameplay
                         NativeArrayOptions.UninitializedMemory,
                         ensure,
                         out views.TortureRequests) &&
-                    TryResolveArmorVaultBuffer(
+                    TryOpenOrEnsureArmorVaultBuffer(
                         vault,
                         ref _armorTortureDetailsHandle,
                         ArmorPenetrationVaultBufferIds.TortureDetails,
@@ -546,7 +558,7 @@ namespace Hecton8.Gameplay
                         NativeArrayOptions.UninitializedMemory,
                         ensure,
                         out views.TortureDetails) &&
-                    TryResolveArmorVaultBuffer(
+                    TryOpenOrEnsureArmorVaultBuffer(
                         vault,
                         ref _armorTortureAupsHandle,
                         ArmorPenetrationVaultBufferIds.TortureAups,
@@ -554,7 +566,7 @@ namespace Hecton8.Gameplay
                         NativeArrayOptions.UninitializedMemory,
                         ensure,
                         out views.TortureAups) &&
-                    TryResolveArmorVaultBuffer(
+                    TryOpenOrEnsureArmorVaultBuffer(
                         vault,
                         ref _armorTortureTargetSlotsHandle,
                         ArmorPenetrationVaultBufferIds.TortureTargetSlots,
@@ -562,7 +574,7 @@ namespace Hecton8.Gameplay
                         NativeArrayOptions.UninitializedMemory,
                         ensure,
                         out views.TortureTargetSlots) &&
-                    TryResolveArmorVaultBuffer(
+                    TryOpenOrEnsureArmorVaultBuffer(
                         vault,
                         ref _armorTortureResolvedHitsHandle,
                         ArmorPenetrationVaultBufferIds.TortureResolvedHits,
@@ -576,7 +588,7 @@ namespace Hecton8.Gameplay
             {
                 ok =
                     ok &&
-                    TryResolveArmorVaultBuffer(
+                    TryOpenOrEnsureArmorVaultBuffer(
                         vault,
                         ref _armorCasTortureHealthHandle,
                         ArmorPenetrationVaultBufferIds.CasTortureHealth,
@@ -584,7 +596,7 @@ namespace Hecton8.Gameplay
                         NativeArrayOptions.UninitializedMemory,
                         ensure,
                         out views.CasTortureHealth) &&
-                    TryResolveArmorVaultBuffer(
+                    TryOpenOrEnsureArmorVaultBuffer(
                         vault,
                         ref _armorCasTortureSuccessesHandle,
                         ArmorPenetrationVaultBufferIds.CasTortureSuccesses,
@@ -672,7 +684,7 @@ namespace Hecton8.Gameplay
             return valid;
         }
 
-        private static bool TryResolveArmorVaultBuffer<T>(
+        private static bool TryOpenOrEnsureArmorVaultBuffer<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -788,7 +800,7 @@ namespace Hecton8.Gameplay
         private static bool TryLockArmorVaultBuffersForJobs()
         {
             if (_armorVaultBuffersLocked)
-                return true;
+                return false;
 
             IDataVault vault = _armorDataVault;
             if (vault == null)
@@ -813,6 +825,7 @@ namespace Hecton8.Gameplay
                 if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.DebugHits, ArmorMemoryOwner)) return false;
                 locked++;
                 if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.Tuning, ArmorMemoryOwner)) return false;
+                locked++;
 
                 _armorVaultBuffersLocked = true;
                 success = true;
@@ -1053,7 +1066,7 @@ namespace Hecton8.Gameplay
 
         private static int BeginArmorPenetrationSchedule()
         {
-            int telemetryLength = TryResolveArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: false) && views.TelemetryRing.IsCreated
+            int telemetryLength = TryOpenOrEnsureArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: false) && views.TelemetryRing.IsCreated
                 ? views.TelemetryRing.Length
                 : 0;
             _armorActiveTelemetryIndex = telemetryLength > 0
@@ -1066,7 +1079,7 @@ namespace Hecton8.Gameplay
 
         private static void FinishArmorPenetrationScheduledCompletion()
         {
-            if (!TryResolveArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: false) ||
+            if (!TryOpenOrEnsureArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: false) ||
                 !views.TelemetryRing.IsCreated ||
                 views.TelemetryRing.Length == 0)
             {
@@ -1103,7 +1116,6 @@ namespace Hecton8.Gameplay
                 return;
 
             _armorTelemetryDumpRequested = true;
-#if UNITY_EDITOR
             try
             {
                 string root = Application.dataPath;
@@ -1111,14 +1123,17 @@ namespace Hecton8.Gameplay
                 string logDir = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(logDir);
                 string path = Path.Combine(logDir, "Dump_1417_ArmorPenetration.bin");
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
-                    writer.Write(ArmorTelemetryMagic);
-                    writer.Write((uint)UnsafeUtility.SizeOf<ArmorPenetrationTelemetryEntry>());
-                    writer.Write((uint)telemetryRing.Length);
-                    writer.Write(cause.Frame);
-                    writer.Write(cause.Flags | ArmorTelemetryFlagsDumped);
+                    Span<byte> header = stackalloc byte[20];
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), ArmorTelemetryMagic);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(4, 4), (uint)UnsafeUtility.SizeOf<ArmorPenetrationTelemetryEntry>());
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(8, 4), (uint)telemetryRing.Length);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(12, 4), cause.Frame);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(16, 4), cause.Flags | ArmorTelemetryFlagsDumped);
+                    stream.Write(header);
+
+                    Span<byte> entryBytes = stackalloc byte[64];
                     int count = math.min(telemetryRing.Length, ArmorTelemetryCapacity);
                     uint cursor = _armorTelemetryCursor;
                     int start = cursor >= (uint)count && count > 0
@@ -1127,36 +1142,44 @@ namespace Hecton8.Gameplay
                     for (int i = 0; i < count; i++)
                     {
                         int index = (start + i) % count;
-                        WriteArmorTelemetryEntry(writer, telemetryRing[index]);
+                        WriteArmorTelemetryEntry(entryBytes, telemetryRing[index]);
+                        stream.Write(entryBytes);
                     }
                 }
 
                 _armorTelemetryDumped = true;
             }
-            catch (Exception)
+            catch (IOException)
             {
             }
-#else
-            _armorTelemetryDumped = true;
-#endif
+            catch (UnauthorizedAccessException)
+            {
+            }
+            catch (ArgumentException)
+            {
+            }
+            catch (NotSupportedException)
+            {
+            }
         }
 
-        private static void WriteArmorTelemetryEntry(BinaryWriter writer, in ArmorPenetrationTelemetryEntry entry)
+        private static void WriteArmorTelemetryEntry(Span<byte> entryBytes, in ArmorPenetrationTelemetryEntry entry)
         {
-            writer.Write(entry.Frame);
-            writer.Write(entry.ImpactCount);
-            writer.Write(entry.WeakPointHits);
-            writer.Write(entry.DeflectCount);
-            writer.Write(entry.Flags);
-            writer.Write(entry.AvgMitigatedDamage);
-            writer.Write(entry.SolveMicroseconds);
-            writer.Write(entry.GlobalQualityWeight);
-            writer.Write(entry.StateHash);
-            writer.Write(entry.LastMaterialHash);
-            writer.Write(entry.LastTargetHash);
-            writer.Write(entry.Reserved);
-            writer.Write(entry._pad0);
-            writer.Write(entry._pad1);
+            entryBytes.Clear();
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(0, 4), entry.Frame);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(4, 4), entry.ImpactCount);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(8, 4), entry.WeakPointHits);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(12, 4), entry.DeflectCount);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(16, 4), entry.Flags);
+            WriteFloatLittleEndian(entryBytes.Slice(20, 4), entry.AvgMitigatedDamage);
+            WriteFloatLittleEndian(entryBytes.Slice(24, 4), entry.SolveMicroseconds);
+            WriteFloatLittleEndian(entryBytes.Slice(28, 4), entry.GlobalQualityWeight);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(32, 4), entry.StateHash);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(36, 4), entry.LastMaterialHash);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(40, 4), entry.LastTargetHash);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(44, 4), entry.Reserved);
+            BinaryPrimitives.WriteUInt64LittleEndian(entryBytes.Slice(48, 8), entry._pad0);
+            BinaryPrimitives.WriteUInt64LittleEndian(entryBytes.Slice(56, 8), entry._pad1);
         }
 
         private static bool SeedTargetArmorProfile(
@@ -1168,7 +1191,7 @@ namespace Hecton8.Gameplay
             float armorValue,
             float targetHeight)
         {
-            if (!TryResolveArmorPenetrationVaultViews(out _, ensure: true) ||
+            if (!TryOpenOrEnsureArmorPenetrationVaultViews(out _, ensure: true) ||
                 !TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews views, out int targetLockCount))
                 return false;
 
@@ -1304,7 +1327,7 @@ namespace Hecton8.Gameplay
 
         private static void RefreshArmorTargetSnapshots()
         {
-            if (!TryResolveArmorPenetrationVaultViews(out _, ensure: true) ||
+            if (!TryOpenOrEnsureArmorPenetrationVaultViews(out _, ensure: true) ||
                 !TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews views, out int targetLockCount))
                 return;
 
@@ -1324,7 +1347,7 @@ namespace Hecton8.Gameplay
                 !views.TargetRotations.IsCreated ||
                 !views.TargetHalfExtents.IsCreated ||
                 _receiverTransforms == null ||
-                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews damageViews, ensure: false) ||
+                !TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews damageViews, ensure: false) ||
                 !damageViews.TargetHeights.IsCreated)
             {
                 return;
@@ -1809,7 +1832,7 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             EnsureInitialized();
             if (_damageJobScheduled ||
-                !TryResolveArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: true, includeCasTorture: true) ||
+                !TryOpenOrEnsureArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: true, includeCasTorture: true) ||
                 !views.CasTortureHealth.IsCreated ||
                 !views.CasTortureSuccesses.IsCreated)
             {
@@ -1947,7 +1970,7 @@ namespace Hecton8.Gameplay
 
         public static bool WriteArmorTuning(in ArmorPenetrationTuningDTO tuning)
         {
-            if (!TryResolveArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: true) ||
+            if (!TryOpenOrEnsureArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: true) ||
                 !views.Tuning.IsCreated ||
                 views.Tuning.Length == 0 ||
                 _damageJobScheduled)
@@ -2029,7 +2052,7 @@ namespace Hecton8.Gameplay
         {
             if (bytes.Length == 0 ||
                 _damageJobScheduled ||
-                !TryResolveArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: true))
+                !TryOpenOrEnsureArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: true))
             {
                 return false;
             }
@@ -2099,7 +2122,7 @@ namespace Hecton8.Gameplay
         private static unsafe bool ApplyCsvProfileToTargets(ref ArmorPenetrationVaultViews views, in ArmorProfileDTO profile)
         {
             if (!views.TargetArmorProfiles.IsCreated ||
-                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews damageViews, ensure: false))
+                !TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews damageViews, ensure: false))
                 return false;
 
             bool applied = false;
@@ -2127,9 +2150,10 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             EnsureInitialized();
             if (_damageJobScheduled ||
+                _statusJobScheduled ||
                 _targetCount <= 0 ||
-                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews damageViews, ensure: false) ||
-                !TryResolveArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: true, includeMock: true) ||
+                !TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews damageViews, ensure: false) ||
+                !TryOpenOrEnsureArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: true, includeMock: true) ||
                 !views.MockRequests.IsCreated)
             {
                 return false;
@@ -2202,10 +2226,11 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             EnsureInitialized();
             if (_damageJobScheduled ||
+                _statusJobScheduled ||
                 _targetCount <= 0 ||
-                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews damageViews, ensure: false) ||
+                !TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews damageViews, ensure: false) ||
                 !damageViews.DamageArmorLut.IsCreated ||
-                !TryResolveArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: true, includeEvaluatorTorture: true) ||
+                !TryOpenOrEnsureArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: true, includeEvaluatorTorture: true) ||
                 !views.TargetArmorProfiles.IsCreated ||
                 !views.TortureRequests.IsCreated ||
                 !views.TortureDetails.IsCreated ||

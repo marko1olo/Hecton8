@@ -45,9 +45,9 @@ namespace Hecton8.UI
         private const float BeaconTelemetryPollInterval = 0.1f;
         private const string StrengthPercentTemplate = "{0}%";
         private const string PulseTimerTemplate = "{0:D2}:{1:D2}";
-        private static readonly char[] StrengthPercentTemplateChars = StrengthPercentTemplate.ToCharArray();
-        private static readonly char[] PulseTimerTemplateChars = PulseTimerTemplate.ToCharArray();
-        private static readonly char[] PulseTimerEmptyChars = "—:—".ToCharArray();
+        private static ReadOnlySpan<char> StrengthPercentTemplateChars => StrengthPercentTemplate.AsSpan();
+        private static ReadOnlySpan<char> PulseTimerTemplateChars => PulseTimerTemplate.AsSpan();
+        private static ReadOnlySpan<char> PulseTimerEmptyChars => "\u2014:\u2014".AsSpan();
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -756,7 +756,8 @@ namespace Hecton8.UI
                     return;
 
                 _lastCountdownSeconds = -1;
-                _pulseTimerLabel.SetCharArray(PulseTimerEmptyChars, 0, PulseTimerEmptyChars.Length);
+                int emptyLength = CopySpanToBuffer(PulseTimerEmptyChars, _pulseTimerBuffer);
+                SetBufferText(_pulseTimerLabel, _pulseTimerBuffer, emptyLength);
                 return;
             }
 
@@ -938,23 +939,23 @@ namespace Hecton8.UI
             SetBufferText(label, _labelTextBuffer, length);
         }
 
-        private static void SetNumericText(TextMeshProUGUI label, char[] destination, char[] template, LocNumericArg value0)
+        private static void SetNumericText(TextMeshProUGUI label, char[] destination, ReadOnlySpan<char> template, LocNumericArg value0)
         {
-            if (label == null || destination == null || template == null)
+            if (label == null || destination == null || template.Length <= 0)
                 return;
 
-            if (!LocNumericBuffer.TryWrite(template.AsSpan(), destination.AsSpan(), value0, out int length))
+            if (!LocNumericBuffer.TryWrite(template, destination.AsSpan(), value0, out int length))
                 length = 0;
 
             SetBufferText(label, destination, length);
         }
 
-        private static void SetNumericText(TextMeshProUGUI label, char[] destination, char[] template, LocNumericArg value0, LocNumericArg value1)
+        private static void SetNumericText(TextMeshProUGUI label, char[] destination, ReadOnlySpan<char> template, LocNumericArg value0, LocNumericArg value1)
         {
-            if (label == null || destination == null || template == null)
+            if (label == null || destination == null || template.Length <= 0)
                 return;
 
-            if (!LocNumericBuffer.TryWrite(template.AsSpan(), destination.AsSpan(), value0, value1, out int length))
+            if (!LocNumericBuffer.TryWrite(template, destination.AsSpan(), value0, value1, out int length))
                 length = 0;
 
             SetBufferText(label, destination, length);
@@ -989,6 +990,16 @@ namespace Hecton8.UI
 
             int length = math.min(value.Length, buffer.Length);
             value.AsSpan(0, length).CopyTo(buffer.AsSpan());
+            return length;
+        }
+
+        private static int CopySpanToBuffer(ReadOnlySpan<char> value, char[] buffer)
+        {
+            if (buffer == null || value.Length <= 0)
+                return 0;
+
+            int length = math.min(value.Length, buffer.Length);
+            value.Slice(0, length).CopyTo(buffer.AsSpan());
             return length;
         }
 

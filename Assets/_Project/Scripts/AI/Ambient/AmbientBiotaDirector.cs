@@ -174,9 +174,9 @@ namespace Hecton8.AI.Ambient
         private bool _hotSwapListenerRegistered;
 
         public bool IsInitialized => _capacity > 0 &&
-                                     IsHandleCreated(in _biotaAupHandle) &&
-                                     IsHandleCreated(in _biotaVelocityHandle) &&
-                                     IsHandleCreated(in _biotaStateHandle);
+                                     IsOwnedVaultHandle(in _biotaAupHandle, BufferID.BiotaAUPs) &&
+                                     IsOwnedVaultHandle(in _biotaVelocityHandle, BufferID.BiotaVelocities) &&
+                                     IsOwnedVaultHandle(in _biotaStateHandle, BufferID.BiotaStates);
 
         public int TickCount => _tickCount;
 
@@ -583,7 +583,7 @@ namespace Hecton8.AI.Ambient
                     return;
 
                 case GlobalRegistryServiceSlot.DataVault:
-                    RebindDataVaultForLifecycle(currentService as IDataVault);
+                    RebindDataVaultForLifecycle(currentService is IDataVault currentVault ? currentVault : null);
                     EnsureVaultBuffers();
                     _gpuPayloadDirty = true;
                     return;
@@ -631,7 +631,7 @@ namespace Hecton8.AI.Ambient
 
             int desiredCapacity = ResolveCapacity();
             bool capacityChanged = _capacity != desiredCapacity;
-            if (!IsHandleCreated(in _biotaAupHandle) || capacityChanged)
+            if (!IsOwnedVaultHandle(in _biotaAupHandle, BufferID.BiotaAUPs) || capacityChanged)
             {
                 _biotaAupHandle = ClaimVaultBuffer<AbsoluteUniversePosition>(
                     vault,
@@ -640,7 +640,7 @@ namespace Hecton8.AI.Ambient
                     NativeArrayOptions.ClearMemory);
             }
 
-            if (!IsHandleCreated(in _biotaVelocityHandle) || capacityChanged)
+            if (!IsOwnedVaultHandle(in _biotaVelocityHandle, BufferID.BiotaVelocities) || capacityChanged)
             {
                 _biotaVelocityHandle = ClaimVaultBuffer<float4>(
                     vault,
@@ -649,7 +649,7 @@ namespace Hecton8.AI.Ambient
                     NativeArrayOptions.ClearMemory);
             }
 
-            if (!IsHandleCreated(in _biotaStateHandle) || capacityChanged)
+            if (!IsOwnedVaultHandle(in _biotaStateHandle, BufferID.BiotaStates) || capacityChanged)
             {
                 _biotaStateHandle = ClaimVaultBuffer<AmbientBiotaState>(
                     vault,
@@ -658,7 +658,7 @@ namespace Hecton8.AI.Ambient
                     NativeArrayOptions.ClearMemory);
             }
 
-            if (!IsHandleCreated(in _macroHydrationCounterHandle))
+            if (!IsOwnedVaultHandle(in _macroHydrationCounterHandle, BufferID.BiotaMacroHydrationCounters))
             {
                 _macroHydrationCounterHandle = ClaimVaultBuffer<int>(
                     vault,
@@ -667,7 +667,7 @@ namespace Hecton8.AI.Ambient
                     NativeArrayOptions.ClearMemory);
             }
 
-            if (!IsHandleCreated(in _telemetryRingHandle))
+            if (!IsOwnedVaultHandle(in _telemetryRingHandle, BufferID.BiotaTelemetryRing))
             {
                 _telemetryRingHandle = ClaimVaultBuffer<AmbientBiotaTelemetryEntry>(
                     vault,
@@ -676,7 +676,7 @@ namespace Hecton8.AI.Ambient
                     NativeArrayOptions.ClearMemory);
             }
 
-            if (!IsHandleCreated(in _telemetryCursorHandle))
+            if (!IsOwnedVaultHandle(in _telemetryCursorHandle, BufferID.BiotaTelemetryCursor))
             {
                 _telemetryCursorHandle = ClaimVaultBuffer<int>(
                     vault,
@@ -685,12 +685,12 @@ namespace Hecton8.AI.Ambient
                     NativeArrayOptions.ClearMemory);
             }
 
-            bool ready = IsHandleCreated(in _biotaAupHandle) &&
-                         IsHandleCreated(in _biotaVelocityHandle) &&
-                         IsHandleCreated(in _biotaStateHandle) &&
-                         IsHandleCreated(in _macroHydrationCounterHandle) &&
-                         IsHandleCreated(in _telemetryRingHandle) &&
-                         IsHandleCreated(in _telemetryCursorHandle) &&
+            bool ready = IsOwnedVaultHandle(in _biotaAupHandle, BufferID.BiotaAUPs) &&
+                         IsOwnedVaultHandle(in _biotaVelocityHandle, BufferID.BiotaVelocities) &&
+                         IsOwnedVaultHandle(in _biotaStateHandle, BufferID.BiotaStates) &&
+                         IsOwnedVaultHandle(in _macroHydrationCounterHandle, BufferID.BiotaMacroHydrationCounters) &&
+                         IsOwnedVaultHandle(in _telemetryRingHandle, BufferID.BiotaTelemetryRing) &&
+                         IsOwnedVaultHandle(in _telemetryCursorHandle, BufferID.BiotaTelemetryCursor) &&
                          TryResolveBiotaBuffers(desiredCapacity, out _, out _, out _) &&
                          TryResolveMacroCounters(out _) &&
                          TryResolveTelemetryBuffers(out _, out _);
@@ -725,20 +725,15 @@ namespace Hecton8.AI.Ambient
         {
             return _vault != null &&
                    _capacity > 0 &&
-                   IsHandleCreated(in _biotaAupHandle) &&
-                   IsHandleCreated(in _biotaVelocityHandle) &&
-                   IsHandleCreated(in _biotaStateHandle) &&
-                   IsHandleCreated(in _macroHydrationCounterHandle) &&
-                   IsHandleCreated(in _telemetryRingHandle) &&
-                   IsHandleCreated(in _telemetryCursorHandle) &&
+                   IsOwnedVaultHandle(in _biotaAupHandle, BufferID.BiotaAUPs) &&
+                   IsOwnedVaultHandle(in _biotaVelocityHandle, BufferID.BiotaVelocities) &&
+                   IsOwnedVaultHandle(in _biotaStateHandle, BufferID.BiotaStates) &&
+                   IsOwnedVaultHandle(in _macroHydrationCounterHandle, BufferID.BiotaMacroHydrationCounters) &&
+                   IsOwnedVaultHandle(in _telemetryRingHandle, BufferID.BiotaTelemetryRing) &&
+                   IsOwnedVaultHandle(in _telemetryCursorHandle, BufferID.BiotaTelemetryCursor) &&
                    TryResolveBiotaBuffers(_capacity, out _, out _, out _) &&
                    TryResolveMacroCounters(out _) &&
                    TryResolveTelemetryBuffers(out _, out _);
-        }
-
-        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
-        {
-            return handle.BufferID != 0u;
         }
 
         private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
@@ -772,13 +767,14 @@ namespace Hecton8.AI.Ambient
 
         private bool TryOpenVaultView<T>(
             in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
             int requiredLength,
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
             IDataVault vault = _vault;
             return vault != null &&
-                   handle.BufferID != 0u &&
+                   IsOwnedVaultHandle(in handle, expectedBufferId) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
@@ -829,7 +825,7 @@ namespace Hecton8.AI.Ambient
 
         private bool TryResolveBiotaAupBuffer(int requiredCapacity, out NativeArray<AbsoluteUniversePosition> aups)
         {
-            return TryOpenVaultView(in _biotaAupHandle, requiredCapacity, out aups);
+            return TryOpenVaultView(in _biotaAupHandle, BufferID.BiotaAUPs, requiredCapacity, out aups);
         }
 
         private bool TryResolveBiotaVelocityBuffer(out NativeArray<float4> velocities)
@@ -839,7 +835,7 @@ namespace Hecton8.AI.Ambient
 
         private bool TryResolveBiotaVelocityBuffer(int requiredCapacity, out NativeArray<float4> velocities)
         {
-            return TryOpenVaultView(in _biotaVelocityHandle, requiredCapacity, out velocities);
+            return TryOpenVaultView(in _biotaVelocityHandle, BufferID.BiotaVelocities, requiredCapacity, out velocities);
         }
 
         private bool TryResolveBiotaStateBuffer(out NativeArray<AmbientBiotaState> states)
@@ -849,12 +845,12 @@ namespace Hecton8.AI.Ambient
 
         private bool TryResolveBiotaStateBuffer(int requiredCapacity, out NativeArray<AmbientBiotaState> states)
         {
-            return TryOpenVaultView(in _biotaStateHandle, requiredCapacity, out states);
+            return TryOpenVaultView(in _biotaStateHandle, BufferID.BiotaStates, requiredCapacity, out states);
         }
 
         private bool TryResolveMacroCounters(out NativeArray<int> counters)
         {
-            return TryOpenVaultView(in _macroHydrationCounterHandle, MacroHydrationCounterCount, out counters);
+            return TryOpenVaultView(in _macroHydrationCounterHandle, BufferID.BiotaMacroHydrationCounters, MacroHydrationCounterCount, out counters);
         }
 
         private bool TryResolveTelemetryBuffers(
@@ -863,8 +859,8 @@ namespace Hecton8.AI.Ambient
         {
             telemetryRing = default;
             telemetryCursor = default;
-            return TryOpenVaultView(in _telemetryRingHandle, BlackBoxFrameCount, out telemetryRing) &&
-                   TryOpenVaultView(in _telemetryCursorHandle, 1, out telemetryCursor);
+            return TryOpenVaultView(in _telemetryRingHandle, BufferID.BiotaTelemetryRing, BlackBoxFrameCount, out telemetryRing) &&
+                   TryOpenVaultView(in _telemetryCursorHandle, BufferID.BiotaTelemetryCursor, 1, out telemetryCursor);
         }
 
         private void ClearVaultHandles()
@@ -879,21 +875,22 @@ namespace Hecton8.AI.Ambient
 
         private void ReleaseVaultHandles(IDataVault vault)
         {
-            ReleaseVaultHandle(vault, ref _biotaAupHandle);
-            ReleaseVaultHandle(vault, ref _biotaVelocityHandle);
-            ReleaseVaultHandle(vault, ref _biotaStateHandle);
-            ReleaseVaultHandle(vault, ref _macroHydrationCounterHandle);
-            ReleaseVaultHandle(vault, ref _telemetryRingHandle);
-            ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
+            ReleaseVaultHandle(vault, ref _biotaAupHandle, BufferID.BiotaAUPs);
+            ReleaseVaultHandle(vault, ref _biotaVelocityHandle, BufferID.BiotaVelocities);
+            ReleaseVaultHandle(vault, ref _biotaStateHandle, BufferID.BiotaStates);
+            ReleaseVaultHandle(vault, ref _macroHydrationCounterHandle, BufferID.BiotaMacroHydrationCounters);
+            ReleaseVaultHandle(vault, ref _telemetryRingHandle, BufferID.BiotaTelemetryRing);
+            ReleaseVaultHandle(vault, ref _telemetryCursorHandle, BufferID.BiotaTelemetryCursor);
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId)
             where T : struct
         {
             if (vault != null &&
-                handle.BufferID != 0u &&
-                handle.Generation != 0u &&
-                handle.SystemID == (uint)SystemID.AmbientBiota)
+                IsOwnedVaultHandle(in handle, expectedBufferId))
             {
                 vault.ReleaseBuffer(in handle);
             }

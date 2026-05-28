@@ -162,7 +162,7 @@ namespace Hecton8.Construction
             {
                 CompletePendingBuildForTeardown();
                 ClearVaultDescriptorState();
-                _vault = currentService as IDataVault;
+                _vault = currentService is IDataVault currentVault ? currentVault : null;
                 EnsureBuffersCold();
             }
         }
@@ -573,7 +573,10 @@ namespace Hecton8.Construction
                 return;
 
             _vault = vault;
-            if (vault.TryReadHandle(in _stateHandle, out NativeArray<BuilderGhostStateDTO> states) &&
+            if (IsPipeVaultHandle(in _stateHandle, PipeStateBufferId) &&
+                IsPipeVaultHandle(in _visualHandle, PipeVisualBufferId) &&
+                IsPipeVaultHandle(in _argsHandle, PipeIndirectArgsBufferId) &&
+                vault.TryReadHandle(in _stateHandle, out NativeArray<BuilderGhostStateDTO> states) &&
                 vault.TryReadHandle(in _visualHandle, out NativeArray<BuilderGhostVisualDTO> visuals) &&
                 vault.TryReadHandle(in _argsHandle, out NativeArray<BuilderGhostIndirectArgsDTO> args) &&
                 states.IsCreated &&
@@ -601,6 +604,13 @@ namespace Hecton8.Construction
                 1,
                 SystemID.Construction,
                 NativeArrayOptions.UninitializedMemory);
+
+            if (!IsPipeVaultHandle(in _stateHandle, PipeStateBufferId) ||
+                !IsPipeVaultHandle(in _visualHandle, PipeVisualBufferId) ||
+                !IsPipeVaultHandle(in _argsHandle, PipeIndirectArgsBufferId))
+            {
+                ClearVaultDescriptorState();
+            }
         }
 
         private bool TryAcquirePreviewWriteBuffers(
@@ -620,7 +630,8 @@ namespace Hecton8.Construction
                 return false;
 
             int acquiredCount = 0;
-            if (!vault.TryAcquireWriteLock(in _stateHandle, SystemID.Construction, out states))
+            if (!IsPipeVaultHandle(in _stateHandle, PipeStateBufferId) ||
+                !vault.TryAcquireWriteLock(in _stateHandle, SystemID.Construction, out states))
                 return false;
             acquiredCount = 1;
             if (!states.IsCreated || states.Length < MaxPreviewInstances)
@@ -629,7 +640,8 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            if (!vault.TryAcquireWriteLock(in _visualHandle, SystemID.Construction, out visuals))
+            if (!IsPipeVaultHandle(in _visualHandle, PipeVisualBufferId) ||
+                !vault.TryAcquireWriteLock(in _visualHandle, SystemID.Construction, out visuals))
             {
                 ReleasePreviewWriteLocks(vault, acquiredCount);
                 return false;
@@ -641,7 +653,8 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            if (!vault.TryAcquireWriteLock(in _argsHandle, SystemID.Construction, out args))
+            if (!IsPipeVaultHandle(in _argsHandle, PipeIndirectArgsBufferId) ||
+                !vault.TryAcquireWriteLock(in _argsHandle, SystemID.Construction, out args))
             {
                 ReleasePreviewWriteLocks(vault, acquiredCount);
                 return false;
@@ -668,6 +681,9 @@ namespace Hecton8.Construction
             IDataVault vault = _pendingBuildWriteLockVault;
             return vault != null &&
                    _pendingBuildWriteLockCount == 3 &&
+                   IsPipeVaultHandle(in _stateHandle, PipeStateBufferId) &&
+                   IsPipeVaultHandle(in _visualHandle, PipeVisualBufferId) &&
+                   IsPipeVaultHandle(in _argsHandle, PipeIndirectArgsBufferId) &&
                    vault.TryResolveHandle(in _stateHandle, out states) &&
                    vault.TryResolveHandle(in _visualHandle, out visuals) &&
                    vault.TryResolveHandle(in _argsHandle, out args) &&
@@ -710,6 +726,15 @@ namespace Hecton8.Construction
             vault = GlobalRegistry.DataVault;
             _vault = vault;
             return vault != null;
+        }
+
+        private static bool IsPipeVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)SystemID.Construction &&
+                   handle.Generation != 0u;
         }
 
         private void EnsureGraphicsBuffers()

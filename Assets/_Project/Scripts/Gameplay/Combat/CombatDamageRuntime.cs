@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -454,7 +455,7 @@ namespace Hecton8.Gameplay
             float3 targetForward = ResolveReceiverForward(receiver);
             float targetHeight = ResolveReceiverHeight(receiver);
 
-            if (!TryResolveArmorPenetrationVaultViews(out _, ensure: true) ||
+            if (!TryOpenOrEnsureArmorPenetrationVaultViews(out _, ensure: true) ||
                 !TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews armorViews, out int armorLockCount))
                 return false;
 
@@ -640,28 +641,23 @@ namespace Hecton8.Gameplay
             if (!CanMutateTargets())
                 return false;
 
-            if (!TryAcquireCombatTargetWriteLocks(out CombatDamageVaultViews views, out int targetLockCount))
+            if (!TryResolveCombatTargetSlotReadOnly(targetId, out int slot) ||
+                !TryResolveCombatTargetHealthOwnerViews(
+                    out NativeArray<float> health,
+                    out NativeArray<float> maxHealth,
+                    out NativeArray<float> invMaxHealth) ||
+                (uint)slot >= (uint)health.Length ||
+                (uint)slot >= (uint)maxHealth.Length ||
+                (uint)slot >= (uint)invMaxHealth.Length)
+            {
                 return false;
-
-            try
-            {
-                int slot;
-                if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out slot))
-                    return false;
-
-                if (!CanUseExistingTargetSlot(slot, ref views))
-                    return false;
-
-                float safeMaxHealth = math.max(0.0001f, maximumHealth);
-                views.Health[slot] = math.clamp(currentHealth, 0f, safeMaxHealth);
-                views.MaxHealth[slot] = safeMaxHealth;
-                views.InvMaxHealth[slot] = math.rcp(safeMaxHealth);
-                return true;
             }
-            finally
-            {
-                ReleaseCombatTargetWriteLocks(targetLockCount);
-            }
+
+            float safeMaxHealth = math.max(0.0001f, maximumHealth);
+            maxHealth[slot] = safeMaxHealth;
+            invMaxHealth[slot] = math.rcp(safeMaxHealth);
+            health[slot] = math.clamp(currentHealth, 0f, safeMaxHealth);
+            return true;
         }
 
         public static bool SyncTargetProtection(int targetId, float armorValue, float shieldValue)
@@ -669,36 +665,32 @@ namespace Hecton8.Gameplay
             if (!CanMutateTargets())
                 return false;
 
+            if (!TryResolveCombatTargetSlotReadOnly(targetId, out int slot) ||
+                !TryResolveCombatTargetProtectionOwnerViews(
+                    out NativeArray<int> armorValues,
+                    out NativeArray<float> shieldValues) ||
+                (uint)slot >= (uint)armorValues.Length ||
+                (uint)slot >= (uint)shieldValues.Length)
+            {
+                return false;
+            }
+
             if (!TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews armorViews, out int armorLockCount))
                 return false;
 
-            bool targetLocked = false;
-            int targetLockCount = 0;
             try
             {
-                if (!TryAcquireCombatTargetWriteLocks(out CombatDamageVaultViews views, out targetLockCount))
-                    return false;
-
-                targetLocked = true;
-                if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out int slot))
-                    return false;
-
-                if (!CanUseExistingTargetSlot(slot, ref views))
-                    return false;
-
                 if (!RefreshTargetArmorBaseLocked(ref armorViews, slot, armorValue))
                     return false;
-
-                views.ArmorValues[slot] = QuantizeArmorValue(armorValue);
-                views.ShieldValues[slot] = math.max(0f, shieldValue);
-                return true;
             }
             finally
             {
-                if (targetLocked)
-                    ReleaseCombatTargetWriteLocks(targetLockCount);
                 ReleaseArmorTargetWriteLocks(armorLockCount);
             }
+
+            armorValues[slot] = QuantizeArmorValue(armorValue);
+            shieldValues[slot] = math.max(0f, shieldValue);
+            return true;
         }
 
         public static bool SyncTargetHitProfile(int targetId, Vector3 targetForward, float targetHeight)
@@ -706,27 +698,21 @@ namespace Hecton8.Gameplay
             if (!CanMutateTargets())
                 return false;
 
-            if (!TryAcquireCombatTargetWriteLocks(out CombatDamageVaultViews views, out int targetLockCount))
+            if (!TryResolveCombatTargetSlotReadOnly(targetId, out int slot) ||
+                !TryResolveCombatTargetHitProfileOwnerViews(
+                    out NativeArray<float3> targetForwardVectors,
+                    out NativeArray<float> targetHeights) ||
+                (uint)slot >= (uint)targetForwardVectors.Length ||
+                (uint)slot >= (uint)targetHeights.Length)
+            {
                 return false;
-
-            try
-            {
-                if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out int slot))
-                    return false;
-
-                if (!CanUseExistingTargetSlot(slot, ref views))
-                    return false;
-
-                views.TargetForwardVectors[slot] = NormalizeOrDefault(
-                    new float3(targetForward.x, targetForward.y, targetForward.z),
-                    new float3(0f, 0f, 1f));
-                views.TargetHeights[slot] = math.max(0.0001f, targetHeight);
-                return true;
             }
-            finally
-            {
-                ReleaseCombatTargetWriteLocks(targetLockCount);
-            }
+
+            targetForwardVectors[slot] = NormalizeOrDefault(
+                new float3(targetForward.x, targetForward.y, targetForward.z),
+                new float3(0f, 0f, 1f));
+            targetHeights[slot] = math.max(0.0001f, targetHeight);
+            return true;
         }
 
         public static bool TryGetTargetHealthFraction(int targetId, out float health01)
@@ -766,7 +752,7 @@ namespace Hecton8.Gameplay
             if (signal.TargetId == 0)
                 return false;
 
-            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
+            if (!TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
                 !views.DamageSignals.IsCreated)
                 return false;
 
@@ -852,7 +838,7 @@ namespace Hecton8.Gameplay
             signalImpactAups = default;
             lockedCount = 0;
 
-            IDataVault damageVault = ResolveCombatDataVault(allowColdBootstrap: false);
+            IDataVault damageVault = OpenCombatDataVault(allowColdBootstrap: false);
             IDataVault armorVault = _armorDataVault;
             if (damageVault == null ||
                 armorVault == null ||
@@ -892,7 +878,7 @@ namespace Hecton8.Gameplay
 
         private static void ReleaseDamageIngressWriteLocks(int lockedCount)
         {
-            IDataVault damageVault = ResolveCombatDataVault(allowColdBootstrap: false);
+            IDataVault damageVault = OpenCombatDataVault(allowColdBootstrap: false);
             if (lockedCount >= 3 && damageVault != null)
                 damageVault.ReleaseWriteLock(in _signalDetailsHandle, CombatDamageMemoryOwner);
             if (lockedCount >= 2 && damageVault != null)
@@ -905,7 +891,7 @@ namespace Hecton8.Gameplay
 
         private static bool CanUseDamageIngressSlot(int detailIndex)
         {
-            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+            if (!TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
                 return false;
 
             return CanUseDamageIngressSlot(detailIndex, ref views);
@@ -922,7 +908,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            return TryResolveArmorPenetrationVaultViews(out ArmorPenetrationVaultViews armorViews, ensure: false) &&
+            return TryOpenOrEnsureArmorPenetrationVaultViews(out ArmorPenetrationVaultViews armorViews, ensure: false) &&
                    armorViews.SignalImpactAups.IsCreated &&
                    (uint)detailIndex < (uint)armorViews.SignalImpactAups.Length;
         }
@@ -951,12 +937,12 @@ namespace Hecton8.Gameplay
 
             using (_scheduleMarker.Auto())
             {
-                if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews damageViews, ensure: false))
+                if (!TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews damageViews, ensure: false))
                     return;
                 if (!EnsureStatusEffectStorage() ||
-                    !TryResolveStatusEffectVaultViews(out CombatStatusEffectVaultViews statusViews, ensure: false))
+                    !TryOpenOrEnsureStatusEffectVaultViews(out CombatStatusEffectVaultViews statusViews, ensure: false))
                     return;
-                if (!TryResolveArmorPenetrationVaultViews(out ArmorPenetrationVaultViews armorViews, ensure: false))
+                if (!TryOpenOrEnsureArmorPenetrationVaultViews(out ArmorPenetrationVaultViews armorViews, ensure: false))
                     return;
                 if (!CanUseDamageJobBuffers(ref damageViews, ref statusViews, in armorViews))
                     return;
@@ -973,9 +959,9 @@ namespace Hecton8.Gameplay
                         return;
                     armorVaultBuffersLocked = true;
 
-                    if (!TryResolveCombatDamageVaultViews(out damageViews, ensure: false) ||
-                        !TryResolveStatusEffectVaultViews(out statusViews, ensure: false) ||
-                        !TryResolveArmorPenetrationVaultViews(out armorViews, ensure: false))
+                    if (!TryOpenOrEnsureCombatDamageVaultViews(out damageViews, ensure: false) ||
+                        !TryOpenOrEnsureStatusEffectVaultViews(out statusViews, ensure: false) ||
+                        !TryOpenOrEnsureArmorPenetrationVaultViews(out armorViews, ensure: false))
                     {
                         return;
                     }
@@ -1229,7 +1215,7 @@ namespace Hecton8.Gameplay
             if (_targetCount <= 0 ||
                 _damageJobScheduled ||
                 _statusJobScheduled ||
-                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
+                !TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
                 !views.Health.IsCreated)
             {
                 return;
@@ -1425,22 +1411,13 @@ namespace Hecton8.Gameplay
             if (IsCombatDamageVaultInitialized() && _receivers != null)
                 return;
 
-            if (!TryResolveCombatDamageVaultViews(out _, ensure: true))
+            if (!TryOpenOrEnsureCombatDamageVaultViews(out _, ensure: true))
                 return;
 
             if (_targetCount <= 0)
             {
-                if (!TryAcquireCombatTargetWriteLocks(out CombatDamageVaultViews initViews, out int targetLockCount))
+                if (!TryClearCombatTargetLookupOwnerView())
                     return;
-
-                try
-                {
-                    ClearTargetLookup(initViews.TargetLookupKeys, initViews.TargetLookupSlots);
-                }
-                finally
-                {
-                    ReleaseCombatTargetWriteLocks(targetLockCount);
-                }
             }
 
             if (!TryInitializeDamageArmorLutLocked())
@@ -1459,7 +1436,7 @@ namespace Hecton8.Gameplay
 
         private static bool TryInitializeDamageArmorLutLocked()
         {
-            IDataVault vault = ResolveCombatDataVault(allowColdBootstrap: false);
+            IDataVault vault = OpenCombatDataVault(allowColdBootstrap: false);
             if (vault == null ||
                 !IsCombatDamageVaultHandleCreated(in _damageArmorLutHandle, CombatDamageArmorLutBufferId) ||
                 !vault.TryAcquireWriteLock(in _damageArmorLutHandle, CombatDamageMemoryOwner, out NativeArray<float> lut))
@@ -1506,7 +1483,7 @@ namespace Hecton8.Gameplay
 
         private static bool CanUseExistingTargetSlot(int slot)
         {
-            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+            if (!TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
                 return false;
 
             return CanUseExistingTargetSlot(slot, ref views);
@@ -1521,7 +1498,7 @@ namespace Hecton8.Gameplay
 
         private static bool CanUseRegistrationTargetSlot(int slot)
         {
-            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+            if (!TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
                 return false;
 
             return CanUseRegistrationTargetSlot(slot, ref views);
@@ -1535,7 +1512,7 @@ namespace Hecton8.Gameplay
 
         private static bool CanUseTargetStorageSlot(int slot)
         {
-            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+            if (!TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
                 return false;
 
             return CanUseTargetStorageSlot(slot, ref views);
@@ -1543,7 +1520,7 @@ namespace Hecton8.Gameplay
 
         private static bool CanUseTargetStorageSlot(int slot, ref CombatDamageVaultViews views)
         {
-            return TryResolveStatusEffectVaultViews(out CombatStatusEffectVaultViews statusViews, ensure: false) &&
+            return TryOpenOrEnsureStatusEffectVaultViews(out CombatStatusEffectVaultViews statusViews, ensure: false) &&
                    views.TargetLookupKeys.IsCreated &&
                    views.TargetLookupSlots.IsCreated &&
                    views.InstanceIds.IsCreated &&
@@ -1585,7 +1562,7 @@ namespace Hecton8.Gameplay
 
         private static void DispatchResults()
         {
-            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
+            if (!TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
                 !views.Counters.IsCreated ||
                 (uint)CounterResultCount >= (uint)views.Counters.Length ||
                 !views.Results.IsCreated)
@@ -1640,7 +1617,7 @@ namespace Hecton8.Gameplay
 
         private static void DispatchStatusResults()
         {
-            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+            if (!TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
                 return;
 
             int targetCount = math.min(
@@ -1659,7 +1636,7 @@ namespace Hecton8.Gameplay
 
         private static void RecordTelemetry(in CombatDamageResult result, int sequence, uint phaseHash)
         {
-            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
+            if (!TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
                 !views.TelemetryRing.IsCreated ||
                 !views.TelemetryState.IsCreated ||
                 views.TelemetryRing.Length <= 0 ||
@@ -1763,63 +1740,55 @@ namespace Hecton8.Gameplay
         private static void RecordQueueRejectTelemetry(uint anomalyHash, float amount)
         {
             if (anomalyHash == 0u ||
-                !TryAcquireCombatTelemetryWriteLocks(
+                !TryResolveCombatTelemetryOwnerViews(
                     out NativeArray<CombatTelemetryEntry> telemetryRing,
-                    out NativeArray<uint> telemetryState,
-                    out int telemetryLockCount))
+                    out NativeArray<uint> telemetryState))
             {
                 return;
             }
 
-            try
+            if (!telemetryRing.IsCreated ||
+                !telemetryState.IsCreated ||
+                telemetryRing.Length <= 0 ||
+                telemetryState.Length < TelemetryStateLength)
             {
-                if (!telemetryRing.IsCreated ||
-                    !telemetryState.IsCreated ||
-                    telemetryRing.Length <= 0 ||
-                    telemetryState.Length < TelemetryStateLength)
-                {
-                    return;
-                }
-
-                int ringLength = math.min(TelemetryFrameCapacity, telemetryRing.Length);
-                if (ringLength <= 0)
-                    return;
-
-                uint writeCursor = telemetryState[TelemetryWriteCursorIndex];
-                int writeIndex = (int)(writeCursor % (uint)ringLength);
-                uint safeAmountBits = math.asuint(math.select(0f, amount, math.isfinite(amount)));
-                telemetryRing[writeIndex] = new CombatTelemetryEntry
-                {
-                    FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                    Sequence = writeCursor,
-                    PhaseHash = CombatTelemetryPhaseDamage,
-                    TargetHash = 0u,
-                    SourceHash = 0u,
-                    StatusBits = 0u,
-                    StateHash = math.hash(new uint4(anomalyHash, safeAmountBits, writeCursor, TelemetryFlagQueueRejected)),
-                    AnomalyHash = anomalyHash,
-                    PreviousHealth = 0f,
-                    NextHealth = 0f,
-                    AppliedDamage = math.select(0f, amount, math.isfinite(amount)),
-                    LocalPoint = float3.zero,
-                    Flags = TelemetryFlagQueueRejected,
-                    TraumaLevel = 0,
-                    DirectionOctant = 0,
-                    Reserved = 0u
-                };
-                telemetryState[TelemetryWriteCursorIndex] = writeCursor + 1u;
-                telemetryState[TelemetryLastAnomalyIndex] = anomalyHash;
+                return;
             }
-            finally
+
+            int ringLength = math.min(TelemetryFrameCapacity, telemetryRing.Length);
+            if (ringLength <= 0)
+                return;
+
+            uint writeCursor = telemetryState[TelemetryWriteCursorIndex];
+            int writeIndex = (int)(writeCursor % (uint)ringLength);
+            uint safeAmountBits = math.asuint(math.select(0f, amount, math.isfinite(amount)));
+            telemetryRing[writeIndex] = new CombatTelemetryEntry
             {
-                ReleaseCombatTelemetryWriteLocks(telemetryLockCount);
-            }
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
+                Sequence = writeCursor,
+                PhaseHash = CombatTelemetryPhaseDamage,
+                TargetHash = 0u,
+                SourceHash = 0u,
+                StatusBits = 0u,
+                StateHash = math.hash(new uint4(anomalyHash, safeAmountBits, writeCursor, TelemetryFlagQueueRejected)),
+                AnomalyHash = anomalyHash,
+                PreviousHealth = 0f,
+                NextHealth = 0f,
+                AppliedDamage = math.select(0f, amount, math.isfinite(amount)),
+                LocalPoint = float3.zero,
+                Flags = TelemetryFlagQueueRejected,
+                TraumaLevel = 0,
+                DirectionOctant = 0,
+                Reserved = 0u
+            };
+            telemetryState[TelemetryWriteCursorIndex] = writeCursor + 1u;
+            telemetryState[TelemetryLastAnomalyIndex] = anomalyHash;
         }
 
         private static void TryDumpCombatTelemetry(uint anomalyHash)
         {
             if (_telemetryDumpedThisSession ||
-                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
+                !TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
                 !views.TelemetryRing.IsCreated ||
                 views.TelemetryRing.Length <= 0)
             {
@@ -1846,15 +1815,18 @@ namespace Hecton8.Gameplay
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                using (FileStream stream = File.Open(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
-                    writer.Write(CombatTelemetryMagicLow);
-                    writer.Write(CombatTelemetryMagicHigh);
-                    writer.Write((uint)count);
-                    writer.Write((uint)CombatTelemetryEntrySizeBytes);
-                    writer.Write(cursor);
-                    writer.Write(anomalyHash);
+                    Span<byte> header = stackalloc byte[24];
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), CombatTelemetryMagicLow);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(4, 4), CombatTelemetryMagicHigh);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(8, 4), (uint)count);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(12, 4), (uint)CombatTelemetryEntrySizeBytes);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(16, 4), cursor);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(20, 4), anomalyHash);
+                    stream.Write(header);
+
+                    Span<byte> entryBytes = stackalloc byte[CombatTelemetryEntrySizeBytes];
                     int start = cursor >= (uint)count && count > 0
                         ? (int)(cursor % (uint)count)
                         : 0;
@@ -1862,7 +1834,8 @@ namespace Hecton8.Gameplay
                     for (int i = 0; i < count; i++)
                     {
                         int index = (start + i) % count;
-                        WriteTelemetryEntry(writer, views.TelemetryRing[index]);
+                        WriteTelemetryEntry(entryBytes, views.TelemetryRing[index]);
+                        stream.Write(entryBytes);
                     }
                 }
 
@@ -1876,26 +1849,37 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static void WriteTelemetryEntry(BinaryWriter writer, in CombatTelemetryEntry entry)
+        private static void WriteTelemetryEntry(Span<byte> entryBytes, in CombatTelemetryEntry entry)
         {
-            writer.Write(entry.FrameIndex);
-            writer.Write(entry.Sequence);
-            writer.Write(entry.PhaseHash);
-            writer.Write(entry.TargetHash);
-            writer.Write(entry.SourceHash);
-            writer.Write(entry.StatusBits);
-            writer.Write(entry.StateHash);
-            writer.Write(entry.AnomalyHash);
-            writer.Write(entry.PreviousHealth);
-            writer.Write(entry.NextHealth);
-            writer.Write(entry.AppliedDamage);
-            writer.Write(entry.LocalPoint.x);
-            writer.Write(entry.LocalPoint.y);
-            writer.Write(entry.LocalPoint.z);
-            writer.Write(entry.Flags);
-            writer.Write(entry.TraumaLevel);
-            writer.Write(entry.DirectionOctant);
-            writer.Write(entry.Reserved);
+            entryBytes.Clear();
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(0, 4), entry.FrameIndex);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(4, 4), entry.Sequence);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(8, 4), entry.PhaseHash);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(12, 4), entry.TargetHash);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(16, 4), entry.SourceHash);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(20, 4), entry.StatusBits);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(24, 4), entry.StateHash);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(28, 4), entry.AnomalyHash);
+            WriteFloatLittleEndian(entryBytes.Slice(32, 4), entry.PreviousHealth);
+            WriteFloatLittleEndian(entryBytes.Slice(36, 4), entry.NextHealth);
+            WriteFloatLittleEndian(entryBytes.Slice(40, 4), entry.AppliedDamage);
+            WriteFloat3LittleEndian(entryBytes.Slice(44, 12), entry.LocalPoint);
+            BinaryPrimitives.WriteUInt16LittleEndian(entryBytes.Slice(56, 2), entry.Flags);
+            entryBytes[58] = entry.TraumaLevel;
+            entryBytes[59] = entry.DirectionOctant;
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(60, 4), entry.Reserved);
+        }
+
+        private static void WriteFloat3LittleEndian(Span<byte> destination, float3 value)
+        {
+            WriteFloatLittleEndian(destination.Slice(0, 4), value.x);
+            WriteFloatLittleEndian(destination.Slice(4, 4), value.y);
+            WriteFloatLittleEndian(destination.Slice(8, 4), value.z);
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(destination, math.asuint(value));
         }
 
         private static void DispatchManagedSideEffects(in CombatDamageResult result, IDamageReceiver receiver, int slot)
@@ -2156,7 +2140,7 @@ namespace Hecton8.Gameplay
 
             try
             {
-                if (TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+                if (TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
                     ClearCounters(ref views);
             }
             finally
@@ -2259,7 +2243,7 @@ namespace Hecton8.Gameplay
         {
             if (_targetCount <= 0 ||
                 _receiverTransforms == null ||
-                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
+                !TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
                 !views.InstanceIds.IsCreated ||
                 !views.TargetFlags.IsCreated ||
                 !views.TargetHeights.IsCreated)
@@ -2344,28 +2328,16 @@ namespace Hecton8.Gameplay
 
         private static void RefreshTargetHitProfile(int slot)
         {
-            if (!CanMutateTargets() ||
-                !TryAcquireCombatTargetWriteLocks(out CombatDamageVaultViews views, out int targetLockCount))
+            if (!CanMutateTargets())
                 return;
 
-            try
-            {
-                RefreshTargetHitProfileLocked(slot, ref views);
-            }
-            finally
-            {
-                ReleaseCombatTargetWriteLocks(targetLockCount);
-            }
-        }
-
-        private static void RefreshTargetHitProfileLocked(int slot, ref CombatDamageVaultViews views)
-        {
             if (_receivers == null ||
                 (uint)slot >= (uint)_receivers.Length ||
-                !views.TargetForwardVectors.IsCreated ||
-                (uint)slot >= (uint)views.TargetForwardVectors.Length ||
-                !views.TargetHeights.IsCreated ||
-                (uint)slot >= (uint)views.TargetHeights.Length)
+                !TryResolveCombatTargetHitProfileOwnerViews(
+                    out NativeArray<float3> targetForwardVectors,
+                    out NativeArray<float> targetHeights) ||
+                (uint)slot >= (uint)targetForwardVectors.Length ||
+                (uint)slot >= (uint)targetHeights.Length)
             {
                 return;
             }
@@ -2374,8 +2346,8 @@ namespace Hecton8.Gameplay
             if (receiver == null)
                 return;
 
-            views.TargetForwardVectors[slot] = ResolveReceiverForward(receiver);
-            views.TargetHeights[slot] = ResolveReceiverHeight(receiver);
+            targetForwardVectors[slot] = ResolveReceiverForward(receiver);
+            targetHeights[slot] = ResolveReceiverHeight(receiver);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2485,9 +2457,9 @@ namespace Hecton8.Gameplay
             [NoAlias]
             public NativeArray<int> Counters;
             public global::Hecton8.Core.MpscSignalRingBuffer<DeflectSignal>.ParallelWriter DeflectSignalWriter;
-            [NativeDisableParallelForRestriction] public NativeArray<int> DeflectSignalWriterBudget;
+            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> DeflectSignalWriterBudget;
             public global::Hecton8.Core.MpscSignalRingBuffer<ImpactSignal>.ParallelWriter ImpactSignalWriter;
-            [NativeDisableParallelForRestriction] public NativeArray<int> ImpactSignalWriterBudget;
+            [NativeDisableParallelForRestriction, NoAlias] public NativeArray<int> ImpactSignalWriterBudget;
             public int SignalBudget;
             public float VisualQualityWeight01;
             public ArmorPenetrationTuningDTO ArmorTuning;

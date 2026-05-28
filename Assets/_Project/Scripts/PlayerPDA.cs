@@ -1982,8 +1982,7 @@ namespace Hecton8.UI
     public sealed class PDADiagnosticTerminal : MonoBehaviour, ISlowTickable, ILateFrameTickable, IPDAEventListener, IGlobalRegistryHotSwapListener
     {
         private const int DiagnosticsTabIndex = 7;
-        private const string TitleText = "DIAGNOSTIC TERMINAL // PERF / HULL / OFFSET";
-        private static readonly char[] TitleTextBuffer = TitleText.ToCharArray();
+        private static ReadOnlySpan<char> TitleTextChars => "DIAGNOSTIC TERMINAL // PERF / HULL / OFFSET".AsSpan();
 
         private static readonly Color BackgroundColor = new Color(0.03f, 0.08f, 0.10f, 0.86f);
         private static readonly Color RuleColor = new Color(0.46f, 0.98f, 0.94f, 0.16f);
@@ -1997,6 +1996,8 @@ namespace Hecton8.UI
 
         // COLD ALLOC: char[192] - PDA diagnostics terminal TMP staging buffer - owner: PDADiagnosticTerminal
         private readonly char[] _diagnosticTextBuffer = new char[192];
+        // COLD ALLOC: char[64] - PDA diagnostics title TMP staging buffer - owner: PDADiagnosticTerminal
+        private readonly char[] _titleTextBuffer = new char[64];
 
         private bool _built;
         private bool _registered;
@@ -2135,7 +2136,10 @@ namespace Hecton8.UI
 
             _titleLabel = CreateText(root, "Title", labelFont, 12f, FontStyles.Bold, TextAlignmentOptions.TopLeft, TitleColor);
             Anchor(_titleLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(16f, -14f), new Vector2(-16f, -42f));
-            _titleLabel.SetCharArray(TitleTextBuffer, 0, TitleTextBuffer.Length);
+            ReadOnlySpan<char> titleText = TitleTextChars;
+            int titleLength = math.min(titleText.Length, _titleTextBuffer.Length);
+            titleText.Slice(0, titleLength).CopyTo(_titleTextBuffer.AsSpan());
+            _titleLabel.SetCharArray(_titleTextBuffer, 0, titleLength);
 
             _bodyLabel = CreateText(root, "Body", numericFont != null ? numericFont : labelFont, 15f, FontStyles.Normal, TextAlignmentOptions.TopLeft, BodyColor);
             _bodyLabel.textWrappingMode = TextWrappingModes.NoWrap;

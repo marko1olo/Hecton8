@@ -40,14 +40,32 @@ namespace Hecton8.Tests.Editor
         {
             string source = ReadProjectFile(EquipmentSourcePath);
             string acquireViews = ExtractMethod(source, "private bool TryAcquireEquipmentViewsWriteLock");
+            string ensureBuffer = ExtractMethod(source, "private static bool EnsureEquipmentBuffer");
             string acquireBuffer = ExtractMethod(source, "private static bool TryAcquireEquipmentWriteBuffer");
             string lateFrame = ExtractMethod(source, "public void LateFrameTick");
             string complete = ExtractMethod(source, "private unsafe void CompleteActiveEquipmentJob");
             string releaseMask = ExtractMethod(source, "private uint ReleaseEquipmentWriteLockMask");
             string contentionTelemetry = ExtractMethod(source, "private void TryRecordEquipmentWriteLockContention");
+            string onDisable = ExtractMethod(source, "private void OnDisable");
+            string applyRebind = ExtractMethod(source, "private void ApplyDataVaultRebind");
+            string disposeNative = ExtractMethod(source, "private void DisposeNativeState");
+            string lifecycleDrain = ExtractMethod(source, "private bool DrainEquipmentIntegrationLocksForLifecycle");
+            string lifecycleRelease = ExtractMethod(source, "private bool TryReleaseEquipmentVaultHandlesForLifecycle");
+            string releaseHandles = ExtractMethod(source, "private bool ReleaseEquipmentVaultHandles");
+            string releaseHandle = ExtractMethod(source, "private static bool ReleaseEquipmentVaultHandle");
+            string registerTool = ExtractMethod(source, "public uint RegisterTool");
+            string installModule = ExtractMethod(source, "public bool TryInstallModule");
+            string removeModule = ExtractMethod(source, "public bool TryRemoveModule");
+            string rebuildState = ExtractMethod(source, "private bool RebuildCompiledState");
+            string upgradeStaging = ExtractMethod(source, "private bool TryWriteUpgradeMatrixStaging");
 
             Assert.AreEqual(28, Regex.Matches(acquireViews, @"TryAcquireEquipmentWriteBuffer\(").Count);
+            StringAssert.Contains("finally", acquireViews);
+            StringAssert.Contains("ReleaseEquipmentWriteLocks(vault, acquiredCount)", acquireViews);
+            StringAssert.Contains("EnsureEquipmentViews(vault, out _, createIfMissing: true)", acquireViews);
             StringAssert.DoesNotContain("CountAcquiredWriteLock", source);
+            StringAssert.Contains("if (!ReleaseEquipmentVaultHandle(vault, ref handle))", ensureBuffer);
+            StringAssert.DoesNotContain("handle = default;", ensureBuffer);
             StringAssert.Contains("ref int acquiredCount", acquireBuffer);
             StringAssert.Contains("acquiredCount++;", acquireBuffer);
             StringAssert.DoesNotContain("ReleaseWriteLock(in handle", acquireBuffer);
@@ -66,6 +84,40 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("failedMask |= 1u << 13", contentionTelemetry);
             StringAssert.Contains("failedMask |= 1u << 12", contentionTelemetry);
             StringAssert.Contains("_equipmentPendingReleaseMask |= failedMask", contentionTelemetry);
+            StringAssert.Contains("if (!DrainEquipmentIntegrationLocksForLifecycle())", onDisable);
+            StringAssert.Contains("TryRecordEquipmentWriteLockContention(EquipmentFaultWriteLockReleaseFailure)", onDisable);
+            StringAssert.Contains("CompleteActiveEquipmentJob(forceComplete: true)", lifecycleDrain);
+            StringAssert.Contains("ReleaseEquipmentIntegrationWriteLocks", lifecycleDrain);
+            StringAssert.Contains("return TryFlushPendingEquipmentWriteLockReleases();", lifecycleDrain);
+            StringAssert.Contains("if (!TryReleaseEquipmentVaultHandlesForLifecycle(_dataVault))", applyRebind);
+            StringAssert.Contains("bool vaultHandlesReleased = TryReleaseEquipmentVaultHandlesForLifecycle(_dataVault);", disposeNative);
+            StringAssert.Contains("if (vaultHandlesReleased)", disposeNative);
+            StringAssert.Contains("TryFlushPendingEquipmentWriteLockReleases()", lifecycleRelease);
+            StringAssert.Contains("ClearEquipmentVaultHandles();", lifecycleRelease);
+            StringAssert.Contains("_equipmentFaultDumpPending = true;", lifecycleRelease);
+            StringAssert.Contains("return false;", lifecycleRelease);
+            StringAssert.Contains("return !HasEquipmentVaultHandles();", releaseHandles);
+            StringAssert.Contains("released &= ReleaseEquipmentVaultHandle", releaseHandles);
+            StringAssert.Contains("if (!vault.ReleaseBuffer(in handle))", releaseHandle);
+            StringAssert.Contains("return false;", releaseHandle);
+            StringAssert.Contains("handle = default;", releaseHandle);
+            StringAssert.DoesNotContain("private void RebuildCompiledState", source);
+            StringAssert.DoesNotContain("private void WriteUpgradeMatrixStaging", source);
+            StringAssert.Contains("Mathf.Min(tool.CopyAuthoredModuleRules", registerTool);
+            StringAssert.Contains("ToolUpgradeSystem.MaxModuleSlots", registerTool);
+            StringAssert.Contains("if (!TryWriteUpgradeMatrixStaging", registerTool);
+            AssertBefore(registerTool, "if (!TryWriteUpgradeMatrixStaging", "_toolOwners[slotIndex] = tool;");
+            StringAssert.Contains("if (!RebuildCompiledState(slotIndex, owner, _registrationRules, slotCount))", installModule);
+            StringAssert.Contains("if (!RebuildCompiledState(slotIndex, owner, _registrationRules, slotCount))", removeModule);
+            StringAssert.DoesNotContain("WriteModuleRuleMirror(slotIndex, _registrationRules, slotCount);", installModule);
+            StringAssert.DoesNotContain("WriteModuleRuleMirror(slotIndex, _registrationRules, slotCount);", removeModule);
+            AssertBefore(rebuildState, "if (!TryWriteUpgradeMatrixStaging", "views.ToolStats[slotIndex] = compiledStats;");
+            StringAssert.DoesNotContain("GetBatteryNormalized", rebuildState);
+            AssertBefore(rebuildState, "ToolRuntimeStats previousStats = views.ToolStats[slotIndex];", "state.CurrentBattery *= math.max(0.1f, compiledStats.BatteryCapacity);");
+            StringAssert.Contains("WriteModuleRuleMirror(slotIndex, moduleRules, slotCount);", rebuildState);
+            AssertBefore(rebuildState, "views.ToolStats[slotIndex] = compiledStats;", "WriteModuleRuleMirror(slotIndex, moduleRules, slotCount);");
+            AssertBefore(upgradeStaging, "if (ruleBase < 0", "views.UpgradeMasks[slotIndex]");
+            StringAssert.Contains("return true;", upgradeStaging);
         }
 
         [Test]
@@ -136,6 +188,15 @@ namespace Hecton8.Tests.Editor
 
             Assert.Fail(signature);
             return string.Empty;
+        }
+
+        private static void AssertBefore(string source, string first, string second)
+        {
+            int firstIndex = source.IndexOf(first, StringComparison.Ordinal);
+            int secondIndex = source.IndexOf(second, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(firstIndex, 0, first);
+            Assert.GreaterOrEqual(secondIndex, 0, second);
+            Assert.Less(firstIndex, secondIndex);
         }
     }
 }

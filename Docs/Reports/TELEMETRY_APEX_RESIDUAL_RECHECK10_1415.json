@@ -1,0 +1,1056 @@
+{
+  "agent": "1415",
+  "protocol": "APEX_RESIDUAL_RECHECK10",
+  "domain": "Echelon 1 Core Infrastructure / Crash Telemetry Layout",
+  "promptHash": "b922c32c7f14ef7844c5f6bfa20bcdeb1e370a8c02d21641c43739f7c96780b0",
+  "changedStructs": [
+    "SignalLaneTelemetry",
+    "CoreFluidCompartmentTelemetryDTO",
+    "BlackboxEditorFrame",
+    "BlackboxSourceSlot",
+    "TelemetryLoggingMaskDTO",
+    "MemoryDefragTelemetryDetailEntry",
+    "MemoryDefragTelemetryEntry",
+    "CrashTelemetrySignal",
+    "TelemetryAnomalySignal"
+  ],
+  "layoutProof": {
+    "targetCount": 9,
+    "failureCount": 0,
+    "results": [
+      {
+        "path": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+        "name": "SignalLaneTelemetry",
+        "size": 64,
+        "fieldCount": 13,
+        "failureCount": 0,
+        "failures": [],
+        "fields": [
+          {
+            "field": "Reserved2",
+            "offset": 0,
+            "size": 8,
+            "byteRange": "0..7"
+          },
+          {
+            "field": "LaneHash",
+            "offset": 8,
+            "size": 4,
+            "byteRange": "8..11"
+          },
+          {
+            "field": "QueuedBeforeFlush",
+            "offset": 12,
+            "size": 4,
+            "byteRange": "12..15"
+          },
+          {
+            "field": "SnapshotCount",
+            "offset": 16,
+            "size": 4,
+            "byteRange": "16..19"
+          },
+          {
+            "field": "DroppedCount",
+            "offset": 20,
+            "size": 4,
+            "byteRange": "20..23"
+          },
+          {
+            "field": "CoalescedCount",
+            "offset": 24,
+            "size": 4,
+            "byteRange": "24..27"
+          },
+          {
+            "field": "Reserved1",
+            "offset": 28,
+            "size": 2,
+            "byteRange": "28..29"
+          },
+          {
+            "field": "Flags",
+            "offset": 30,
+            "size": 1,
+            "byteRange": "30..30"
+          },
+          {
+            "field": "Reserved0",
+            "offset": 31,
+            "size": 1,
+            "byteRange": "31..31"
+          },
+          {
+            "field": "_pad0",
+            "offset": 32,
+            "size": 8,
+            "byteRange": "32..39"
+          },
+          {
+            "field": "_pad1",
+            "offset": 40,
+            "size": 8,
+            "byteRange": "40..47"
+          },
+          {
+            "field": "_pad2",
+            "offset": 48,
+            "size": 8,
+            "byteRange": "48..55"
+          },
+          {
+            "field": "_pad3",
+            "offset": 56,
+            "size": 8,
+            "byteRange": "56..63"
+          }
+        ]
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Contracts/Physics/HabitatFluidIncursionContracts.cs",
+        "name": "CoreFluidCompartmentTelemetryDTO",
+        "size": 64,
+        "fieldCount": 13,
+        "failureCount": 0,
+        "failures": [],
+        "fields": [
+          {
+            "field": "NodeHash",
+            "offset": 0,
+            "size": 4,
+            "byteRange": "0..3"
+          },
+          {
+            "field": "CurrentWaterM3",
+            "offset": 4,
+            "size": 4,
+            "byteRange": "4..7"
+          },
+          {
+            "field": "MaxVolumeM3",
+            "offset": 8,
+            "size": 4,
+            "byteRange": "8..11"
+          },
+          {
+            "field": "Fill01",
+            "offset": 12,
+            "size": 4,
+            "byteRange": "12..15"
+          },
+          {
+            "field": "IngressRateM3PerSecond",
+            "offset": 16,
+            "size": 4,
+            "byteRange": "16..19"
+          },
+          {
+            "field": "Flags",
+            "offset": 20,
+            "size": 4,
+            "byteRange": "20..23"
+          },
+          {
+            "field": "Frame",
+            "offset": 24,
+            "size": 4,
+            "byteRange": "24..27"
+          },
+          {
+            "field": "CompartmentIndex",
+            "offset": 28,
+            "size": 2,
+            "byteRange": "28..29"
+          },
+          {
+            "field": "Reserved0",
+            "offset": 30,
+            "size": 2,
+            "byteRange": "30..31"
+          },
+          {
+            "field": "_pad0",
+            "offset": 32,
+            "size": 8,
+            "byteRange": "32..39"
+          },
+          {
+            "field": "_pad1",
+            "offset": 40,
+            "size": 8,
+            "byteRange": "40..47"
+          },
+          {
+            "field": "_pad2",
+            "offset": 48,
+            "size": 8,
+            "byteRange": "48..55"
+          },
+          {
+            "field": "_pad3",
+            "offset": 56,
+            "size": 8,
+            "byteRange": "56..63"
+          }
+        ]
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/GlobalTelemetryBus.Blackbox.cs",
+        "name": "BlackboxEditorFrame",
+        "size": 64,
+        "fieldCount": 10,
+        "failureCount": 0,
+        "failures": [],
+        "fields": [
+          {
+            "field": "FrameNumber",
+            "offset": 0,
+            "size": 4,
+            "byteRange": "0..3"
+          },
+          {
+            "field": "FatalHash",
+            "offset": 4,
+            "size": 4,
+            "byteRange": "4..7"
+          },
+          {
+            "field": "LastEventHash",
+            "offset": 8,
+            "size": 4,
+            "byteRange": "8..11"
+          },
+          {
+            "field": "ImpactPosition",
+            "offset": 12,
+            "size": 12,
+            "byteRange": "12..23"
+          },
+          {
+            "field": "Slot",
+            "offset": 24,
+            "size": 4,
+            "byteRange": "24..27"
+          },
+          {
+            "field": "_pad0",
+            "offset": 28,
+            "size": 4,
+            "byteRange": "28..31"
+          },
+          {
+            "field": "_pad1",
+            "offset": 32,
+            "size": 8,
+            "byteRange": "32..39"
+          },
+          {
+            "field": "_pad2",
+            "offset": 40,
+            "size": 8,
+            "byteRange": "40..47"
+          },
+          {
+            "field": "_pad3",
+            "offset": 48,
+            "size": 8,
+            "byteRange": "48..55"
+          },
+          {
+            "field": "_pad4",
+            "offset": 56,
+            "size": 8,
+            "byteRange": "56..63"
+          }
+        ]
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/GlobalTelemetryBus.Blackbox.cs",
+        "name": "BlackboxSourceSlot",
+        "size": 64,
+        "fieldCount": 10,
+        "failureCount": 0,
+        "failures": [],
+        "fields": [
+          {
+            "field": "SourcePtr",
+            "offset": 0,
+            "size": 8,
+            "byteRange": "0..7"
+          },
+          {
+            "field": "SourceHash",
+            "offset": 8,
+            "size": 4,
+            "byteRange": "8..11"
+          },
+          {
+            "field": "Flags",
+            "offset": 12,
+            "size": 4,
+            "byteRange": "12..15"
+          },
+          {
+            "field": "PayloadBytes",
+            "offset": 16,
+            "size": 4,
+            "byteRange": "16..19"
+          },
+          {
+            "field": "_pad0",
+            "offset": 20,
+            "size": 4,
+            "byteRange": "20..23"
+          },
+          {
+            "field": "_pad1",
+            "offset": 24,
+            "size": 8,
+            "byteRange": "24..31"
+          },
+          {
+            "field": "_pad2",
+            "offset": 32,
+            "size": 8,
+            "byteRange": "32..39"
+          },
+          {
+            "field": "_pad3",
+            "offset": 40,
+            "size": 8,
+            "byteRange": "40..47"
+          },
+          {
+            "field": "_pad4",
+            "offset": 48,
+            "size": 8,
+            "byteRange": "48..55"
+          },
+          {
+            "field": "_pad5",
+            "offset": 56,
+            "size": 8,
+            "byteRange": "56..63"
+          }
+        ]
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/GlobalTelemetryBus.Blackbox.cs",
+        "name": "TelemetryLoggingMaskDTO",
+        "size": 64,
+        "fieldCount": 10,
+        "failureCount": 0,
+        "failures": [],
+        "fields": [
+          {
+            "field": "SystemHash",
+            "offset": 0,
+            "size": 4,
+            "byteRange": "0..3"
+          },
+          {
+            "field": "Mask",
+            "offset": 4,
+            "size": 4,
+            "byteRange": "4..7"
+          },
+          {
+            "field": "Version",
+            "offset": 8,
+            "size": 4,
+            "byteRange": "8..11"
+          },
+          {
+            "field": "_pad0",
+            "offset": 12,
+            "size": 4,
+            "byteRange": "12..15"
+          },
+          {
+            "field": "_pad1",
+            "offset": 16,
+            "size": 8,
+            "byteRange": "16..23"
+          },
+          {
+            "field": "_pad2",
+            "offset": 24,
+            "size": 8,
+            "byteRange": "24..31"
+          },
+          {
+            "field": "_pad3",
+            "offset": 32,
+            "size": 8,
+            "byteRange": "32..39"
+          },
+          {
+            "field": "_pad4",
+            "offset": 40,
+            "size": 8,
+            "byteRange": "40..47"
+          },
+          {
+            "field": "_pad5",
+            "offset": 48,
+            "size": 8,
+            "byteRange": "48..55"
+          },
+          {
+            "field": "_pad6",
+            "offset": 56,
+            "size": 8,
+            "byteRange": "56..63"
+          }
+        ]
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "name": "MemoryDefragTelemetryDetailEntry",
+        "size": 64,
+        "fieldCount": 18,
+        "failureCount": 0,
+        "failures": [],
+        "fields": [
+          {
+            "field": "BlockCount",
+            "offset": 0,
+            "size": 4,
+            "byteRange": "0..3"
+          },
+          {
+            "field": "ActiveBufferCount",
+            "offset": 4,
+            "size": 4,
+            "byteRange": "4..7"
+          },
+          {
+            "field": "WatchdogBreaches",
+            "offset": 8,
+            "size": 4,
+            "byteRange": "8..11"
+          },
+          {
+            "field": "LockedSkipCount",
+            "offset": 12,
+            "size": 4,
+            "byteRange": "12..15"
+          },
+          {
+            "field": "HeapFragmentationRatio",
+            "offset": 16,
+            "size": 4,
+            "byteRange": "16..19"
+          },
+          {
+            "field": "GenerationMismatchCount",
+            "offset": 20,
+            "size": 4,
+            "byteRange": "20..23"
+          },
+          {
+            "field": "ResolutionTicks",
+            "offset": 24,
+            "size": 8,
+            "byteRange": "24..31"
+          },
+          {
+            "field": "ResolvedHandleCount",
+            "offset": 32,
+            "size": 8,
+            "byteRange": "32..39"
+          },
+          {
+            "field": "LastFaultBufferID",
+            "offset": 40,
+            "size": 4,
+            "byteRange": "40..43"
+          },
+          {
+            "field": "LastFaultHandleGeneration",
+            "offset": 44,
+            "size": 4,
+            "byteRange": "44..47"
+          },
+          {
+            "field": "LastFaultMetaGeneration",
+            "offset": 48,
+            "size": 4,
+            "byteRange": "48..51"
+          },
+          {
+            "field": "Reserved32",
+            "offset": 52,
+            "size": 4,
+            "byteRange": "52..55"
+          },
+          {
+            "field": "LastRelocatedSystemId",
+            "offset": 56,
+            "size": 2,
+            "byteRange": "56..57"
+          },
+          {
+            "field": "Reserved16",
+            "offset": 58,
+            "size": 2,
+            "byteRange": "58..59"
+          },
+          {
+            "field": "Flags",
+            "offset": 60,
+            "size": 1,
+            "byteRange": "60..60"
+          },
+          {
+            "field": "IsFragmented",
+            "offset": 61,
+            "size": 1,
+            "byteRange": "61..61"
+          },
+          {
+            "field": "WatchdogExceeded",
+            "offset": 62,
+            "size": 1,
+            "byteRange": "62..62"
+          },
+          {
+            "field": "MemoryStarvationWarnings",
+            "offset": 63,
+            "size": 1,
+            "byteRange": "63..63"
+          }
+        ]
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "name": "MemoryDefragTelemetryEntry",
+        "size": 64,
+        "fieldCount": 10,
+        "failureCount": 0,
+        "failures": [],
+        "fields": [
+          {
+            "field": "TotalFreeSpaceBytes",
+            "offset": 0,
+            "size": 8,
+            "byteRange": "0..7"
+          },
+          {
+            "field": "LargestContiguousBlockBytes",
+            "offset": 8,
+            "size": 8,
+            "byteRange": "8..15"
+          },
+          {
+            "field": "LastMovedBytes",
+            "offset": 16,
+            "size": 8,
+            "byteRange": "16..23"
+          },
+          {
+            "field": "TotalMovedBytes",
+            "offset": 24,
+            "size": 8,
+            "byteRange": "24..31"
+          },
+          {
+            "field": "PendingMassiveMoveBytes",
+            "offset": 32,
+            "size": 8,
+            "byteRange": "32..39"
+          },
+          {
+            "field": "ActiveMutationGuardMask",
+            "offset": 40,
+            "size": 8,
+            "byteRange": "40..47"
+          },
+          {
+            "field": "Sequence",
+            "offset": 48,
+            "size": 4,
+            "byteRange": "48..51"
+          },
+          {
+            "field": "Frame",
+            "offset": 52,
+            "size": 4,
+            "byteRange": "52..55"
+          },
+          {
+            "field": "VaultGenerationID",
+            "offset": 56,
+            "size": 4,
+            "byteRange": "56..59"
+          },
+          {
+            "field": "ActiveBurstLockMask",
+            "offset": 60,
+            "size": 4,
+            "byteRange": "60..63"
+          }
+        ]
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "name": "CrashTelemetrySignal",
+        "size": 64,
+        "fieldCount": 14,
+        "failureCount": 0,
+        "failures": [],
+        "fields": [
+          {
+            "field": "SystemHash",
+            "offset": 0,
+            "size": 4,
+            "byteRange": "0..3"
+          },
+          {
+            "field": "ReasonHash",
+            "offset": 4,
+            "size": 4,
+            "byteRange": "4..7"
+          },
+          {
+            "field": "Frame",
+            "offset": 8,
+            "size": 4,
+            "byteRange": "8..11"
+          },
+          {
+            "field": "ExitCode",
+            "offset": 12,
+            "size": 4,
+            "byteRange": "12..15"
+          },
+          {
+            "field": "NativeAllocationCount",
+            "offset": 16,
+            "size": 4,
+            "byteRange": "16..19"
+          },
+          {
+            "field": "NativeTrackedBytesMb",
+            "offset": 20,
+            "size": 4,
+            "byteRange": "20..23"
+          },
+          {
+            "field": "Severity",
+            "offset": 24,
+            "size": 1,
+            "byteRange": "24..24"
+          },
+          {
+            "field": "Flags",
+            "offset": 25,
+            "size": 1,
+            "byteRange": "25..25"
+          },
+          {
+            "field": "_padTail0",
+            "offset": 26,
+            "size": 2,
+            "byteRange": "26..27"
+          },
+          {
+            "field": "_padTail1",
+            "offset": 28,
+            "size": 4,
+            "byteRange": "28..31"
+          },
+          {
+            "field": "_padTail2",
+            "offset": 32,
+            "size": 8,
+            "byteRange": "32..39"
+          },
+          {
+            "field": "_padTail3",
+            "offset": 40,
+            "size": 8,
+            "byteRange": "40..47"
+          },
+          {
+            "field": "_padTail4",
+            "offset": 48,
+            "size": 8,
+            "byteRange": "48..55"
+          },
+          {
+            "field": "_padTail5",
+            "offset": 56,
+            "size": 8,
+            "byteRange": "56..63"
+          }
+        ]
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "name": "TelemetryAnomalySignal",
+        "size": 64,
+        "fieldCount": 13,
+        "failureCount": 0,
+        "failures": [],
+        "fields": [
+          {
+            "field": "SystemHash",
+            "offset": 0,
+            "size": 4,
+            "byteRange": "0..3"
+          },
+          {
+            "field": "AnomalyHash",
+            "offset": 4,
+            "size": 4,
+            "byteRange": "4..7"
+          },
+          {
+            "field": "Scalar",
+            "offset": 8,
+            "size": 4,
+            "byteRange": "8..11"
+          },
+          {
+            "field": "Frame",
+            "offset": 12,
+            "size": 4,
+            "byteRange": "12..15"
+          },
+          {
+            "field": "Severity",
+            "offset": 16,
+            "size": 1,
+            "byteRange": "16..16"
+          },
+          {
+            "field": "Flags",
+            "offset": 17,
+            "size": 1,
+            "byteRange": "17..17"
+          },
+          {
+            "field": "_padTail0",
+            "offset": 18,
+            "size": 2,
+            "byteRange": "18..19"
+          },
+          {
+            "field": "_padTail1",
+            "offset": 20,
+            "size": 4,
+            "byteRange": "20..23"
+          },
+          {
+            "field": "_padTail2",
+            "offset": 24,
+            "size": 8,
+            "byteRange": "24..31"
+          },
+          {
+            "field": "_padTail3",
+            "offset": 32,
+            "size": 8,
+            "byteRange": "32..39"
+          },
+          {
+            "field": "_padTail4",
+            "offset": 40,
+            "size": 8,
+            "byteRange": "40..47"
+          },
+          {
+            "field": "_padTail5",
+            "offset": 48,
+            "size": 8,
+            "byteRange": "48..55"
+          },
+          {
+            "field": "_padTail6",
+            "offset": 56,
+            "size": 8,
+            "byteRange": "56..63"
+          }
+        ]
+      }
+    ]
+  },
+  "strictTelemetryScan": {
+    "strictTelemetryOrBlackboxEntryCount": 220,
+    "non64": 27,
+    "under64": 0,
+    "over64": 27,
+    "coreNon64": [],
+    "non64First20": [
+      {
+        "path": "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+        "name": "CinematicFocusTelemetryEntry",
+        "size": 96
+      },
+      {
+        "path": "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+        "name": "HydroBlackBoxEntry",
+        "size": 128
+      },
+      {
+        "path": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+        "name": "VoxelCarveTelemetryEntry",
+        "size": 80
+      },
+      {
+        "path": "Assets/_Project/Scripts/Animation/LeviathanTerrainIkJobs.cs",
+        "name": "LeviathanTerrainIkTelemetryEntry",
+        "size": 96
+      },
+      {
+        "path": "Assets/_Project/Scripts/Animation/VRPhysicalHandPresenceIkJobs.cs",
+        "name": "VRHandIkTelemetryEntry",
+        "size": 128
+      },
+      {
+        "path": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+        "name": "DroneFleetBlackBoxEntry",
+        "size": 80
+      },
+      {
+        "path": "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+        "name": "DockTelemetryEntry",
+        "size": 128
+      },
+      {
+        "path": "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+        "name": "DirectorTelemetryEntry",
+        "size": 192
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+        "name": "ContextualPhysicalIkTelemetryEntry",
+        "size": 96
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs",
+        "name": "PlayerKinematicsRuntimeTelemetryEntry",
+        "size": 80
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime_HandIK.cs",
+        "name": "IkHandTelemetryEntry",
+        "size": 128
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs",
+        "name": "SomaticKinematicBlackBoxEntry",
+        "size": 96
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+        "name": "SubmarinePidTelemetryEntry",
+        "size": 128
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+        "name": "SomaticTelemetryEntry",
+        "size": 96
+      },
+      {
+        "path": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+        "name": "VRSomaticBlackBoxEntry",
+        "size": 128
+      },
+      {
+        "path": "Assets/_Project/Scripts/Interaction/VRInteractionKinematicBridge.cs",
+        "name": "VRInteractionTelemetryEntry",
+        "size": 128
+      },
+      {
+        "path": "Assets/_Project/Scripts/QA/QAEnduranceWatchdogBot.cs",
+        "name": "QAEnduranceBlackBoxEntry",
+        "size": 128
+      },
+      {
+        "path": "Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridContracts.cs",
+        "name": "ReactorThermalTelemetryEntry",
+        "size": 128
+      },
+      {
+        "path": "Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridContracts.cs",
+        "name": "NuclearReactorTelemetryEntry",
+        "size": 128
+      },
+      {
+        "path": "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+        "name": "LaserCutTelemetryEntry",
+        "size": 128
+      }
+    ]
+  },
+  "coreNamedTelemetryScan": {
+    "coreTelemetryNamedCount": 38,
+    "coreNon64Count": 2,
+    "coreNon64": [
+      {
+        "path": "Assets/_Project/Scripts/Core/GlobalTelemetryBus.Blackbox.cs",
+        "name": "TelemetryHeaderDTO",
+        "size": 16
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/GlobalTelemetryBus.Blackbox.cs",
+        "name": "TelemetryEventDTO",
+        "size": 16
+      }
+    ]
+  },
+  "intentionalCoreFragments": [
+    {
+      "path": "Assets/_Project/Scripts/Core/GlobalTelemetryBus.Blackbox.cs",
+      "name": "TelemetryHeaderDTO",
+      "size": 16,
+      "reason": "16-byte prefix copied into bytes 0..15 of a larger SHINOBU blackbox frame; expanding it would alter the frame header contract and metadata offset policy."
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/GlobalTelemetryBus.Blackbox.cs",
+      "name": "TelemetryEventDTO",
+      "size": 16,
+      "reason": "compact event marker/callstack surrogate; blackbox frame stores only EventHash history, and widening this hot event marker would multiply event-ring write bandwidth without improving the 64-byte frame rows."
+    }
+  ],
+  "zeroGcHotPathScan": [
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+      "name": "RecordHeartbeat",
+      "start": 2986,
+      "end": 2999,
+      "counts": {
+        "new": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0,
+        "isLowEnd": 0
+      }
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+      "name": "TryGetVaultTelemetrySnapshot",
+      "start": 3041,
+      "end": 3067,
+      "counts": {
+        "new": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0,
+        "isLowEnd": 0
+      }
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+      "name": "RecordDefragBlackBox",
+      "start": 4555,
+      "end": 4617,
+      "counts": {
+        "new": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0,
+        "isLowEnd": 0
+      }
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "name": "CopyTelemetryStatic",
+      "start": 1352,
+      "end": 1377,
+      "counts": {
+        "new": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0,
+        "isLowEnd": 0
+      }
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.RuntimeLifecycle.cs",
+      "name": "ReportSignalLaneTelemetry",
+      "start": 391,
+      "end": 470,
+      "counts": {
+        "new": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0,
+        "isLowEnd": 0
+      }
+    }
+  ],
+  "dataSovereignty": {
+    "newGlobalDataVaultBufferIds": [],
+    "migratedFieldsToGlobalDataVault": false,
+    "defragStorageRoute": "GlobalDataVault owner-internal H8Memory NativeArrays; no new BufferID was introduced.",
+    "writeLockRequirement": "No cross-domain GlobalDataVault buffer migration in Recheck10; existing SignalBus/DataVault routes are unchanged.",
+    "releaseProof": "No new TryAcquireWriteLock route was added. Defrag detail array lifetime follows existing GlobalDataVault owner dispose path after memory-sentry dump flush."
+  },
+  "dumpContract": {
+    "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+    "version": 3,
+    "headerBytes": 32,
+    "primaryEntryBytes": 64,
+    "detailEntryBytes": 64,
+    "combinedRecordBytes": 128,
+    "serializationOrder": "for each recorded index: 64-byte MemoryDefragTelemetryEntry then paired 64-byte MemoryDefragTelemetryDetailEntry",
+    "writeMethods": [
+      "WriteDefragBlackBoxFile lines 4733..4771",
+      "WriteDefragBlackBoxFileRaw lines 4774..4816"
+    ]
+  },
+  "continuousScalabilityAndCinematicCheat": {
+    "layoutDependsOnGlobalQualityWeight": false,
+    "reason": "DTO ABI must remain invariant; quality scalar may scale cadence/capacity elsewhere, not forensic layout.",
+    "binaryLowEndSwitchIntroduced": false,
+    "physicalSimulationIntroduced": false
+  },
+  "validatorRows": {
+    "file": "Assets/_Project/Scripts/Editor/TelemetryLayoutValidator1415.cs",
+    "lines": "27..35"
+  },
+  "sourceHashes": {
+    "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs": "e4706333547adfd13562f4972d3b938a6e2ff01c5295375deb1cc7abbc58672b",
+    "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs": "dd51d734785f9a8f91fe39805fafd626204e87f75b4d4283332453d1f90abb9b",
+    "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs": "b285d995a94ec2525035a3b10386c3be5831c459c1366d44570e589c609bd755",
+    "Assets/_Project/Scripts/Core/Signals/GlobalSignals.RuntimeLifecycle.cs": "577d6037f9e465fb4371b7523c90986f553bc665a9b8ed01e028697e0590438d",
+    "Assets/_Project/Scripts/Core/Contracts/Physics/HabitatFluidIncursionContracts.cs": "28485c0c82241ae2659e3f2020e503cfb32316fa8dd05f0424823739ef4edf92",
+    "Assets/_Project/Scripts/Core/GlobalTelemetryBus.Blackbox.cs": "dc6bb783c9a9e9e94651d47e9040536c62f9c9834873fd2b385b406f1714b162",
+    "Assets/_Project/Scripts/Editor/TelemetryLayoutValidator1415.cs": "d78d22e2df803fe98f1e9b997c589d6679cc907dcdd9f22cd6a65c4e393c8d59"
+  },
+  "verification": {
+    "dashboardSmoke": "python -B Tools/TelemetryDashboard/smoke_test.py -> telemetry dashboard smoke ok",
+    "gitDiffCheck": "code files passed; prompt extraction file intentionally preserves original trailing whitespace and was excluded from code whitespace gate",
+    "compile": {
+      "status": "targeted_core_build_passed",
+      "command": "dotnet build .\\Hecton8.Core.csproj --no-restore -m:1 -p:UseSharedCompilation=false -clp:ErrorsOnly",
+      "cpuLoadPercentBeforeLaunch": 24,
+      "activeCompilerProcessesBeforeLaunch": [],
+      "completed": true,
+      "elapsedMs": 75273,
+      "exitCode": 0,
+      "cs0636Count": 0,
+      "agent1415FileDiagnosticHitCount": 0,
+      "modularEquipmentDiagnosticHitCount": 0,
+      "dumpPath": "Docs/AgentLogs/Dump_1415_Recheck10_TargetedCoreBuild_20260528T_valid.txt",
+      "dumpSha256": "97ef09cfb98c6650e2c968c84647b2e89f56dfb867d79816e5349a1a84e0d045",
+      "invalidWrapperAttempt": {
+        "status": "not_a_compile_gate",
+        "cpuLoadPercentBeforeLaunch": 11,
+        "activeCompilerProcessesBeforeLaunch": [],
+        "reason": "PowerShell ProcessStartInfo.ArgumentList was null in this runtime; dotnet received no build arguments, so the attempt produced no CS0636 evidence and is not counted as successful compilation proof.",
+        "dumpPath": "Docs/AgentLogs/Dump_1415_Recheck10_TargetedCoreBuild_20260528T_compile.txt",
+        "dumpSha256": "3531bf4e52b3b7666637668cf730242ddcaa74800a079778c8d21201a5381091"
+      }
+    }
+  },
+  "generatedUtc": "2026-05-28T15:54:42Z"
+}

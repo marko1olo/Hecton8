@@ -21,6 +21,9 @@ namespace Crest
         // Must match 'SIZE' param of first kernel in FFTCompute.compute
         const int FFT_KERNEL_0_RESOLUTION = 8;
 
+        public const int MIN_SUPPORTED_RESOLUTION = 16;
+        public const int MAX_SUPPORTED_RESOLUTION = 512;
+
         // Must match CASCADE_COUNT in FFTCompute.compute
         public const int CASCADE_COUNT = 16;
 
@@ -89,9 +92,9 @@ namespace Crest
 
         public FFTCompute(int resolution, float loopPeriod, float windSpeed, float windTurbulence, float windDirRad, OceanWaveSpectrum spectrum)
         {
-            Debug.Assert(Mathf.NextPowerOfTwo(resolution) == resolution, "Crest: FFTCompute resolution must be power of 2");
+            Debug.Assert(IsSupportedResolution(resolution), "Crest: FFTCompute resolution must be a supported power of 2");
 
-            _resolution = resolution;
+            _resolution = ClampSupportedResolution(resolution);
             _loopPeriod = loopPeriod;
             _windSpeed = windSpeed;
             _windTurbulence = windTurbulence;
@@ -125,9 +128,15 @@ namespace Crest
             Release();
 
             _shaderSpectrum = Resources.Load<ComputeShader>("FFT/FFTSpectrum");
+            _shaderFFT = Resources.Load<ComputeShader>("FFT/FFTCompute");
+            if (_shaderSpectrum == null || _shaderFFT == null)
+            {
+                _isInitialised = false;
+                return;
+            }
+
             _kernelSpectrumInit = _shaderSpectrum.FindKernel("SpectrumInitalize");
             _kernelSpectrumUpdate = _shaderSpectrum.FindKernel("SpectrumUpdate");
-            _shaderFFT = Resources.Load<ComputeShader>("FFT/FFTCompute");
 
             _texButterfly = new Texture2D(_resolution, Mathf.RoundToInt(Mathf.Log(_resolution, 2)), TextureFormat.RGBAFloat, false, true);
 
@@ -238,11 +247,31 @@ namespace Crest
             return conditionsHash;
         }
 
+        static bool IsSupportedResolution(int resolution)
+        {
+            return resolution >= MIN_SUPPORTED_RESOLUTION
+                && resolution <= MAX_SUPPORTED_RESOLUTION
+                && (resolution & (resolution - 1)) == 0;
+        }
+
+        public static int ClampSupportedResolution(int resolution)
+        {
+            if (resolution <= MIN_SUPPORTED_RESOLUTION)
+            {
+                return MIN_SUPPORTED_RESOLUTION;
+            }
+
+            int powerOfTwoResolution = Mathf.ClosestPowerOfTwo(resolution);
+            return Mathf.Clamp(powerOfTwoResolution, MIN_SUPPORTED_RESOLUTION, MAX_SUPPORTED_RESOLUTION);
+        }
+
         /// <summary>
         /// Computes water surface displacement, with wave components split across slices of the output texture array
         /// </summary>
         public static RenderTexture GenerateDisplacements(CommandBuffer buf, int resolution, float loopPeriod, float windTurbulence, float windDirRad, float windSpeed, float time, OceanWaveSpectrum spectrum, bool updateSpectrum)
         {
+            resolution = ClampSupportedResolution(resolution);
+
             // All static data arguments should be hashed here and passed to the generator constructor
             var conditionsHash = CalculateWaveConditionsHash(resolution, loopPeriod, windTurbulence, windDirRad, windSpeed, spectrum);
             if (!_generators.TryGetValue(conditionsHash, out var generator))
@@ -267,6 +296,10 @@ namespace Crest
             if (!_isInitialised || _spectrumHeight == null)
             {
                 InitializeTextures();
+                if (!_isInitialised)
+                {
+                    return _waveBuffers;
+                }
             }
 
             if (!_spectrumInitialised || updateSpectrum)
@@ -294,6 +327,8 @@ namespace Crest
             float windTurbulenceOld, float windDirRadOld, float windSpeedOld, OceanWaveSpectrum spectrumOld,
             float windTurbulenceNew, float windDirRadNew, float windSpeedNew, OceanWaveSpectrum spectrumNew)
         {
+            resolution = ClampSupportedResolution(resolution);
+
             // If multiple wave components share one FFT, then one of them changes its settings, it will
             // actually steal the generator from the rest. Then the first from the rest which request the
             // old settings will trigger creation of a new generator, and the remaining ones will use this
@@ -397,6 +432,11 @@ namespace Crest
         /// </summary>
         void InitializeSpectrum(CommandBuffer buf)
         {
+            if (_resolution <= 0)
+            {
+                return;
+            }
+
             buf.SetComputeIntParam(_shaderSpectrum, ShaderIDs.s_Size, _resolution);
             buf.SetComputeFloatParam(_shaderSpectrum, ShaderIDs.s_WindSpeed, _windSpeed);
             buf.SetComputeFloatParam(_shaderSpectrum, ShaderIDs.s_Turbulence, _windTurbulence);
@@ -405,7 +445,8 @@ namespace Crest
             buf.SetComputeVectorParam(_shaderSpectrum, ShaderIDs.s_WindDir, new Vector2(Mathf.Cos(_windDirRad), Mathf.Sin(_windDirRad)));
             buf.SetComputeTextureParam(_shaderSpectrum, _kernelSpectrumInit, ShaderIDs.s_SpectrumControls, _texSpectrumControls);
             buf.SetComputeTextureParam(_shaderSpectrum, _kernelSpectrumInit, ShaderIDs.s_ResultInit, _spectrumInit);
-            buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumInit, _resolution / 8, _resolution / 8, CASCADE_COUNT);
+            int groups = (int)(((long)_resolution + 7L) / 8L);
+            buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumInit, groups, groups, CASCADE_COUNT);
         }
 
         /// <summary>
@@ -413,6 +454,11 @@ namespace Crest
         /// </summary>
         void UpdateSpectrum(CommandBuffer buf, float time)
         {
+            if (_resolution <= 0)
+            {
+                return;
+            }
+
             // Always set _Size as the compute shader returned from Resource.Load is the same asset every time and more
             // than one ShapeFFT will overwrite this value.
             buf.SetComputeIntParam(_shaderSpectrum, ShaderIDs.s_Size, _resolution);
@@ -423,7 +469,8 @@ namespace Crest
             buf.SetComputeTextureParam(_shaderSpectrum, _kernelSpectrumUpdate, ShaderIDs.s_ResultHeight, _spectrumHeight);
             buf.SetComputeTextureParam(_shaderSpectrum, _kernelSpectrumUpdate, ShaderIDs.s_ResultDisplaceX, _spectrumDisplaceX);
             buf.SetComputeTextureParam(_shaderSpectrum, _kernelSpectrumUpdate, ShaderIDs.s_ResultDisplaceZ, _spectrumDisplaceZ);
-            buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumUpdate, _resolution / 8, _resolution / 8, CASCADE_COUNT);
+            int groups = (int)(((long)_resolution + 7L) / 8L);
+            buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumUpdate, groups, groups, CASCADE_COUNT);
         }
 
         /// <summary>
@@ -431,6 +478,11 @@ namespace Crest
         /// </summary>
         void DispatchFFT(CommandBuffer buf)
         {
+            if (!IsSupportedResolution(_resolution))
+            {
+                return;
+            }
+
             var kernelOffset = 2 * Mathf.RoundToInt(Mathf.Log(_resolution / FFT_KERNEL_0_RESOLUTION, 2f));
 
             buf.SetComputeTextureParam(_shaderFFT, kernelOffset, ShaderIDs.s_InputH, _spectrumHeight);

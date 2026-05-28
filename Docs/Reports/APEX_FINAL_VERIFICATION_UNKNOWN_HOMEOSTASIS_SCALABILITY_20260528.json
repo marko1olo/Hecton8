@@ -1,0 +1,271 @@
+﻿{
+  "agentId": "UNKNOWN",
+  "domain": "Core runtime / HomeostasisBrain ScalabilityDictator",
+  "timestampLocal": "2026-05-28T16:29:14.7284820+04:00",
+  "verdict": "PENDING_RUNTIME_VERIFICATION",
+  "source": {
+    "path": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+    "sha256": "54BADEA0B9DE7ACB05DC6126456DE224729AD9F51448110AF9AC25D893AB8042",
+    "diffShortstat": "1 file changed, 306 insertions(+), 141 deletions(-)",
+    "braceCounts": {
+      "open": 235,
+      "close": 235
+    }
+  },
+  "problemFixed": [
+    {
+      "route": "TryReadMockHeavyLoad",
+      "before": "Read-like helper could call EnsureMockHeavyLoadHandle and open/acquire DataVault storage from frame pressure sampling.",
+      "after": "Lines 1227-1236 resolve only an existing mock-heavy-load view."
+    },
+    {
+      "route": "TryResolveMockTerrainSamplerStatus",
+      "before": "Resolve helper could call EnsureMockTerrainSamplerStatusHandle before scheduling the sampler job.",
+      "after": "Lines 1426-1430 resolve only an existing terrain status view."
+    },
+    {
+      "route": "TryResolveCsvScratch",
+      "before": "Editor CSV poll could open/acquire scratch memory from a TryResolve route.",
+      "after": "Lines 1432-1449 resolve only an existing scratch buffer; owner open route is OpenOrAcquireCsvScratchForOwnerRoute at lines 1451-1478."
+    },
+    {
+      "route": "TryResolveScalabilityTelemetry",
+      "before": "Oscilloscope read and dump routes could open/acquire the telemetry ring from TryResolve.",
+      "after": "Lines 1504-1516 resolve only an existing telemetry ring; owner open route is OpenOrAcquireScalabilityTelemetryForOwnerRoute at lines 1518-1526."
+    },
+    {
+      "route": "public TryGet* facades",
+      "before": "TryGetHardwareDictatorTuning, TryGetHardwareDictatorSnapshot, and TryGetMockTerrainSamplerStatus could ensure buffers and write sanitized data back into DataVault while named as reads.",
+      "after": "Lines 2397-2540 return sanitized copies only and write zero native elements."
+    },
+    {
+      "route": "MockTerrainSamplerStatusJob",
+      "before": "The scheduled job wrote to a DataVault-backed NativeArray without a relocation pin.",
+      "after": "Player scheduling uses TryLockBuffer at line 1709 and releases with TryUnlockBuffer at line 1722; editor immediate execution uses TryAcquireWriteLock via TryAcquireWriteView and releases in finally at lines 1656-1658."
+    }
+  ],
+  "zeroGcStaticScan": {
+    "addedReferenceNew": 0,
+    "addedStringFormat": 0,
+    "addedToString": 0,
+    "addedLinqQueryCalls": 0,
+    "addedForeach": 0,
+    "readLikeMethods": [
+      {
+        "method": "TryReadMockHeavyLoad",
+        "lines": "1227-1236",
+        "ensureCalls": 0,
+        "tryResolveOrAcquireCalls": 0,
+        "nativeWrites": 0
+      },
+      {
+        "method": "TryResolveMockTerrainSamplerStatus",
+        "lines": "1426-1430",
+        "ensureCalls": 0,
+        "tryResolveOrAcquireCalls": 0,
+        "nativeWrites": 0
+      },
+      {
+        "method": "TryResolveCsvScratch",
+        "lines": "1432-1449",
+        "ensureCalls": 0,
+        "tryResolveOrAcquireCalls": 0,
+        "nativeWrites": 0
+      },
+      {
+        "method": "TryResolveScalabilityTelemetry",
+        "lines": "1504-1516",
+        "ensureCalls": 0,
+        "tryResolveOrAcquireCalls": 0,
+        "nativeWrites": 0
+      },
+      {
+        "method": "TryGetHardwareDictatorTuning",
+        "lines": "2397-2412",
+        "ensureCalls": 0,
+        "tryResolveOrAcquireCalls": 0,
+        "nativeWrites": 0
+      },
+      {
+        "method": "TryGetHardwareDictatorSnapshot",
+        "lines": "2495-2519",
+        "ensureCalls": 0,
+        "tryResolveOrAcquireCalls": 0,
+        "nativeWrites": 0
+      },
+      {
+        "method": "TryGetMockTerrainSamplerStatus",
+        "lines": "2524-2540",
+        "ensureCalls": 0,
+        "tryResolveOrAcquireCalls": 0,
+        "nativeWrites": 0
+      }
+    ],
+    "callerOutputArrayException": {
+      "method": "CopyHardwareDictatorOscilloscope",
+      "lines": "2545-2611",
+      "nativeWrites": 0,
+      "managedCallerArrayWrites": 4
+    }
+  },
+  "dataSovereignty": {
+    "ownerSystemId": "SystemID.HardwareHomeostasis",
+    "bufferIds": [
+      {
+        "name": "ShinobuScalabilitySystemHealth",
+        "value": 70480,
+        "definition": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:1217",
+        "writeLockRoute": "WriteDictatorState -> TryAcquireScalabilityStateWriteViews -> TryAcquireWriteView"
+      },
+      {
+        "name": "ShinobuScalabilityState",
+        "value": 70481,
+        "definition": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:1218",
+        "writeLockRoute": "WriteDictatorState -> TryAcquireScalabilityStateWriteViews -> TryAcquireWriteView"
+      },
+      {
+        "name": "ShinobuScalabilityMockHeavyLoad",
+        "value": 70482,
+        "definition": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:1219",
+        "writeLockRoute": "SetMockHeavyLoadForTuner -> TryAcquireWriteView"
+      },
+      {
+        "name": "ShinobuScalabilityMockScatterDensity",
+        "value": 70483,
+        "definition": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:1220",
+        "writeLockRoute": "Editor immediate job path uses TryAcquireWriteView; player scheduled job path uses TryLockBuffer/TryUnlockBuffer relocation pin."
+      },
+      {
+        "name": "ShinobuScalabilityCsvScratch",
+        "value": 70484,
+        "definition": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:1221",
+        "writeLockRoute": "Not a gameplay truth writer in this patch; owner open route only."
+      },
+      {
+        "name": "ShinobuScalabilityTunerState",
+        "value": 70485,
+        "definition": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:1222",
+        "writeLockRoute": "Existing editor/tuner write route unchanged; public read route no longer writes sanitized values."
+      },
+      {
+        "name": "ShinobuScalabilityOscilloscope",
+        "value": 70487,
+        "definition": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:1224",
+        "writeLockRoute": "RecordScalabilityTelemetry -> TryAcquireWriteView"
+      }
+    ],
+    "lockEvidence": {
+      "tryAcquireWriteLockLine": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs:1576",
+      "tryLockBufferLine": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs:1709",
+      "tryUnlockBufferLine": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs:1722",
+      "finallyLines": [
+        1156,
+        1532,
+        1656,
+        1682,
+        2448
+      ],
+      "releaseLines": [
+        1534,
+        1551,
+        1561,
+        1562,
+        1584,
+        1658,
+        2450
+      ]
+    }
+  },
+  "structLayoutProof": [
+    {
+      "struct": "SystemHealthDTO",
+      "size": 16,
+      "fields": "FrameTimeMs@0:4,VramPressure@4:4,ThermalIndex@8:4,ActiveThrottlesMask@12:4",
+      "maxEnd": 16,
+      "multipleOf8": true,
+      "sourceLines": "21-27"
+    },
+    {
+      "struct": "ScalabilityStateDTO",
+      "size": 16,
+      "fields": "GlobalQualityWeight@0:4,FractionalTimeSlice@4:4,VramPressure@8:4,ThermalIndex@12:4",
+      "maxEnd": 16,
+      "multipleOf8": true,
+      "sourceLines": "33-39"
+    },
+    {
+      "struct": "MockHeavyLoadSignal",
+      "size": 16,
+      "fields": "FrameSpikeMs@0:4,VramPressure01@4:4,Flags@8:4,_pad0@12:4",
+      "maxEnd": 16,
+      "multipleOf8": true,
+      "sourceLines": "45-53"
+    },
+    {
+      "struct": "MockTerrainSamplerStatus",
+      "size": 16,
+      "fields": "GlobalQualityWeight@0:4,TrilinearSampleProbability01@4:4,SkippedTrilinearPercent01@8:4,Frame@12:4",
+      "maxEnd": 16,
+      "multipleOf8": true,
+      "sourceLines": "59-65"
+    },
+    {
+      "struct": "ScalabilityTelemetryEntry",
+      "size": 64,
+      "fields": "Timestamp@0:8,RawFrameMs@8:4,SmoothedFrameMs@12:4,GlobalQualityWeight@16:4,VramPressure@20:4,Flags@24:4,_pad0@28:4,_pad1.._pad32@32..63",
+      "maxEnd": 64,
+      "multipleOf8": true,
+      "sourceLines": "72-154"
+    }
+  ],
+  "continuousScalability": {
+    "binaryLowEndTokens": 0,
+    "globalQualityWeightReferences": 97,
+    "fractionalTimeSliceReferences": 6,
+    "renderScaleWeightReferences": 4,
+    "evidence": [
+      "GlobalQualityWeight property at line 289",
+      "ShouldExecuteStochasticUpdate consumes a continuous weight at lines 303-314",
+      "ResolveFractionalTimeSliceFromWeight at lines 584-588",
+      "ResolveRenderScaleFromWeight at lines 590-594",
+      "Shader globals receive _GlobalQualityWeight and _H8GlobalQualityWeight at lines 1073-1075 and 1096-1098"
+    ]
+  },
+  "cinematicCheatProtocol": {
+    "physicalSimulationAdded": false,
+    "visualSystemAdded": false,
+    "verdict": "Not applicable to this source patch. Existing mock terrain sampler remains a one-row proof signal driven by continuous GlobalQualityWeight, not a terrain simulation."
+  },
+  "compilationThrottle": {
+    "cpuSamplePercent": 100.0,
+    "compilerProcessCount": 2,
+    "activeCompilerProcesses": [
+      {
+        "processName": "dotnet",
+        "pid": 59388
+      },
+      {
+        "processName": "VBCSCompiler",
+        "pid": 14544
+      }
+    ],
+    "buildInvocations": 0,
+    "reason": "CPU > 50 and active compiler processes; user assigned global compile repair to another agent."
+  },
+  "staticValidation": {
+    "gitDiffCheckExitCode": 0,
+    "gitDiffCheckNotes": "LF will be replaced by CRLF warning only.",
+    "jsonParsePassed": true,
+    "unityImport": "not_run",
+    "playMode": "not_run",
+    "profiler": "not_run",
+    "playerBuild": "not_run",
+    "dataVaultHotSwapRuntimeTest": "not_run"
+  },
+  "faults": [
+    "No Unity Editor import, Play Mode, profiler, GCMonitor, player build, or device run was performed.",
+    "No runtime DataVault hot-swap test was performed for this patch.",
+    "Docs/AgentLogs/Dump_HARDWARE_THROTTLING_DIRECTOR.bin does not exist in this workspace.",
+    "The project has broad dirty state from other agents; this report proves only the scoped source patch above."
+  ]
+}

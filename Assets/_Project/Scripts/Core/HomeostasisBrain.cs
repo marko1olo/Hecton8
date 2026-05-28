@@ -1002,7 +1002,7 @@ namespace Hecton8.Core
             if (vault == null)
                 return false;
 
-            if (!TryResolveOrAcquire(
+            if (!OpenOrAcquireVaultBufferForOwnerRoute(
                     vault,
                     ref _globalHardwareMetricsHandle,
                     BufferID.HardwareMetrics,
@@ -1010,7 +1010,7 @@ namespace Hecton8.Core
                     NativeArrayOptions.UninitializedMemory,
                     out hardwareMetrics,
                     out bool metricsCreated) ||
-                !TryResolveOrAcquire(
+                !OpenOrAcquireVaultBufferForOwnerRoute(
                     vault,
                     ref _frameTimeMsHandle,
                     BufferID.HardwareFrameTimes,
@@ -1018,7 +1018,7 @@ namespace Hecton8.Core
                     NativeArrayOptions.UninitializedMemory,
                     out frameTimes,
                     out bool frameTimesCreated) ||
-                !TryResolveOrAcquire(
+                !OpenOrAcquireVaultBufferForOwnerRoute(
                     vault,
                     ref _blackBoxHandle,
                     BufferID.HomeostasisBlackBox,
@@ -1087,7 +1087,7 @@ namespace Hecton8.Core
                    metrics.Length >= (int)HardwareMetricSlot.Count;
         }
 
-        private static bool TryResolveOrAcquire<T>(
+        private static bool OpenOrAcquireVaultBufferForOwnerRoute<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,

@@ -1,0 +1,244 @@
+﻿{
+  "schema": "hecton8.apex_verification.v1",
+  "agent": "UNKNOWN",
+  "date": "2026-05-28",
+  "status": "PENDING_VERIFICATION",
+  "evidenceClass": "STATIC_SOURCE_ONLY",
+  "subject": "Foveated native ownership and DataVault write-lock verification",
+  "sourceFile": "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
+  "sourceSha256": "1B0EE455A705CC22B82DD0391E50451AE2420644569D5717B5C4879304426338",
+  "sourceStats": {
+    "lines": 1789,
+    "openBraceCount": 167,
+    "closeBraceCount": 167,
+    "privateNativeArrayFields": 0,
+    "tryAcquireWriteLock": 2,
+    "releaseWriteLock": 2,
+    "tryLockBuffer": 1,
+    "tryUnlockBuffer": 7,
+    "binaryLowEndTokens": 0,
+    "tryResolveTickReferences": 0,
+    "tryAdvanceTickReferences": 3
+  },
+  "verificationVerdict": {
+    "zeroGcTextScan": "PASS_STATIC",
+    "persistentNativeAliasRemoval": "PASS_STATIC",
+    "dataSovereigntyWriteLocks": "PASS_STATIC",
+    "jobPointerRelocationPins": "PASS_STATIC",
+    "continuousScalability": "PASS_STATIC",
+    "compilationThrottle": "PASS_NO_BUILD_LAUNCHED",
+    "runtimeProof": "MISSING"
+  },
+  "zeroGcHotRangeScan": [
+    {
+      "method": "TryAdvanceTick",
+      "range": "514-547",
+      "referenceNew": 0,
+      "valueStructNew": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "linq": 0,
+      "foreach": 0
+    },
+    {
+      "method": "TryCompleteFrameJobsInternal",
+      "range": "652-688",
+      "referenceNew": 0,
+      "valueStructNew": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "linq": 0,
+      "foreach": 0,
+      "finally": 1
+    },
+    {
+      "method": "ScheduleImportanceScoringJob",
+      "range": "829-879",
+      "referenceNew": 0,
+      "valueStructNew": 1,
+      "valueStructNewExplanation": "new ImportanceScoringJob is a value-type IJobParallelFor struct declared at line 75.",
+      "stringFormat": 0,
+      "toString": 0,
+      "linq": 0,
+      "foreach": 0,
+      "finally": 1
+    },
+    {
+      "method": "WriteTelemetryFrame",
+      "range": "1120-1158",
+      "referenceNew": 0,
+      "valueStructNew": 1,
+      "valueStructNewExplanation": "new FoveatedSimulationTelemetryEntry is an explicit-layout value-type struct stored into an existing NativeArray.",
+      "stringFormat": 0,
+      "toString": 0,
+      "linq": 0,
+      "foreach": 0,
+      "tryAcquireWriteLock": 1,
+      "releaseWriteLock": 1,
+      "finally": 1
+    },
+    {
+      "method": "TryWriteScorePositionsForImportanceJob",
+      "range": "1382-1410",
+      "referenceNew": 0,
+      "valueStructNew": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "linq": 0,
+      "foreach": 0,
+      "tryAcquireWriteLock": 1,
+      "releaseWriteLock": 1,
+      "finally": 1
+    },
+    {
+      "method": "TryLockImportanceJobBuffers",
+      "range": "1412-1445",
+      "referenceNew": 0,
+      "valueStructNew": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "linq": 0,
+      "foreach": 0,
+      "tryLockBuffer": 0,
+      "finally": 1
+    },
+    {
+      "method": "TryLockImportanceJobBuffer",
+      "range": "1447-1454",
+      "referenceNew": 0,
+      "valueStructNew": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "linq": 0,
+      "foreach": 0,
+      "tryLockBuffer": 1
+    },
+    {
+      "method": "ReleaseImportanceJobBufferLocks",
+      "range": "1456-1484",
+      "referenceNew": 0,
+      "valueStructNew": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "linq": 0,
+      "foreach": 0,
+      "tryUnlockBuffer": 7
+    }
+  ],
+  "dataSovereignty": {
+    "persistentNativeAliases": 0,
+    "writerLocks": [
+      {
+        "bufferId": 73234,
+        "name": "FoveatedTelemetryRing",
+        "acquireLines": "1125-1127",
+        "releaseFinallyLines": "1154-1157"
+      },
+      {
+        "bufferId": 73220,
+        "name": "FoveatedScorePositions",
+        "acquireLines": "1384-1386",
+        "releaseFinallyLines": "1406-1409"
+      }
+    ],
+    "jobRelocationPins": {
+      "lockRequestLines": "1425-1431",
+      "lockCallLine": 1449,
+      "partialReleaseFinallyLines": "1440-1443",
+      "unlockLines": "1470-1483",
+      "releaseOnCompletionFinally": "672-682",
+      "releaseOnScheduleFailureFinally": "868-878",
+      "disposeFallbackReleaseLine": 1527,
+      "bufferIds": [73220, 73221, 73222, 73223, 73224, 73225, 73226]
+    }
+  },
+  "bufferIds": {
+    "FoveatedScorePositions": 73220,
+    "FoveatedEntityAups": 73221,
+    "FoveatedImportanceScores": 73222,
+    "FoveatedTickRateCodes": 73223,
+    "FoveatedInsideFrustumFlags": 73224,
+    "FoveatedEntitySimTiers": 73225,
+    "FoveatedDistancesMeters": 73226,
+    "FoveatedFromPositions": 73227,
+    "FoveatedToPositions": 73228,
+    "FoveatedAlphas": 73229,
+    "FoveatedTelemetryRing": 73234
+  },
+  "telemetryStructLayout": {
+    "declaredSize": 64,
+    "maxFieldEnd": 64,
+    "multipleOf8": true,
+    "overlapCount": 0,
+    "fields": [
+      { "name": "Frame", "offset": 0, "size": 4 },
+      { "name": "TargetCount", "offset": 4, "size": 4 },
+      { "name": "FrozenEntityCount", "offset": 8, "size": 4 },
+      { "name": "Tier0Count", "offset": 12, "size": 4 },
+      { "name": "Tier1Count", "offset": 16, "size": 4 },
+      { "name": "Tier2Count", "offset": 20, "size": 4 },
+      { "name": "CameraPosition", "offset": 24, "size": 12 },
+      { "name": "CameraForward", "offset": 36, "size": 12 },
+      { "name": "Flags", "offset": 48, "size": 4 },
+      { "name": "StateHash", "offset": 52, "size": 4 },
+      { "name": "Reserved0", "offset": 56, "size": 4 },
+      { "name": "Reserved1", "offset": 60, "size": 4 }
+    ]
+  },
+  "scalability": {
+    "continuousScalar": "HomeostasisBrain.GlobalQualityWeight",
+    "lines": "1059-1083",
+    "binaryIfIsLowEndSwitchesAdded": 0,
+    "physicalSimulationAdded": false,
+    "cinematicCheatRequired": false,
+    "reason": "No physical simulation or presentation effect was introduced."
+  },
+  "routeContractCorrection": {
+    "oldName": "TryResolveTick",
+    "oldNameActiveReferences": 0,
+    "newName": "TryAdvanceTick",
+    "newNameActiveReferences": 3,
+    "interfaceLine": 29,
+    "implementationLines": "514-547",
+    "dispatcherCallLine": "SystemDispatcher.cs:5186",
+    "dispatcherSha256": "DDAA490B5C808EC3C7BBA98DA2DF0C4D69B4C7E5AC0D2E4509F5AB4FA6BD262D"
+  },
+  "compilationThrottle": {
+    "cpuLoadPercent": 100.0,
+    "compilerProcessCount": 2,
+    "activeProcesses": [
+      {
+        "processName": "csc",
+        "pid": 16180,
+        "cpu": 145.640625
+      },
+      {
+        "processName": "dotnet",
+        "pid": 31636,
+        "cpu": 38.90625
+      }
+    ],
+    "finalGuardBeforeBuild": {
+      "cpuLoadPercent": 61.5,
+      "compilerProcessCount": 1,
+      "activeProcesses": [
+        {
+          "processName": "dotnet",
+          "pid": 6088,
+          "cpu": 617.984375
+        }
+      ]
+    },
+    "dotnetBuildInvocations": 0
+  },
+  "artifacts": {
+    "sourceReport": "Docs/Reports/UNITY_FOVEATED_NATIVE_OWNERSHIP_PASS_UNKNOWN_20260528.json",
+    "expectedDump": "Docs/AgentLogs/Dump_FOVEATED_SIMULATION_DIRECTOR.bin",
+    "dumpExists": false,
+    "polishFileExists": false
+  },
+  "residuals": [
+    "No Unity import, Console, Play Mode, profiler, GCMonitor, player build, device run, or DataVault hot-swap runtime test was executed.",
+    "Dump_FOVEATED_SIMULATION_DIRECTOR.bin is absent because no crash/NaN dump path was exercised."
+  ]
+}

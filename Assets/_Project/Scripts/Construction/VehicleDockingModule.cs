@@ -425,7 +425,7 @@ namespace Hecton8.Construction
                 return;
 
             ClearDockTelemetryDescriptor();
-            _dataVault = currentService as IDataVault;
+            _dataVault = currentService is IDataVault currentVault ? currentVault : null;
             EnsureDockTelemetry();
         }
 
@@ -1340,8 +1340,8 @@ namespace Hecton8.Construction
             EnsureDockTelemetry();
             vault = _dataVault;
             if (vault == null ||
-                !IsVaultHandleCreated(in _dockTelemetryHandle) ||
-                !IsVaultHandleCreated(in _dockTelemetryCursorHandle))
+                !IsDockTelemetryHandle(in _dockTelemetryHandle, BufferID.VehicleDockingTelemetryRing) ||
+                !IsDockTelemetryHandle(in _dockTelemetryCursorHandle, BufferID.VehicleDockingTelemetryCursor))
             {
                 ClearDockTelemetryDescriptor();
                 return false;
@@ -1349,10 +1349,12 @@ namespace Hecton8.Construction
 
             bool ringLocked = false;
             bool cursorLocked = false;
-            if (!vault.TryAcquireWriteLock(in _dockTelemetryHandle, SystemID.VehiclesPhysics, out telemetry))
+            if (!IsDockTelemetryHandle(in _dockTelemetryHandle, BufferID.VehicleDockingTelemetryRing) ||
+                !vault.TryAcquireWriteLock(in _dockTelemetryHandle, SystemID.VehiclesPhysics, out telemetry))
                 return false;
             ringLocked = true;
-            if (!vault.TryAcquireWriteLock(in _dockTelemetryCursorHandle, SystemID.VehiclesPhysics, out cursor))
+            if (!IsDockTelemetryHandle(in _dockTelemetryCursorHandle, BufferID.VehicleDockingTelemetryCursor) ||
+                !vault.TryAcquireWriteLock(in _dockTelemetryCursorHandle, SystemID.VehiclesPhysics, out cursor))
             {
                 ReleaseDockTelemetryWriteLocks(vault, cursorLocked, ringLocked);
                 telemetry = default;
@@ -1389,9 +1391,9 @@ namespace Hecton8.Construction
             if (vault == null)
                 return;
 
-            if (cursorLocked)
+            if (cursorLocked && IsDockTelemetryHandle(in _dockTelemetryCursorHandle, BufferID.VehicleDockingTelemetryCursor))
                 vault.ReleaseWriteLock(in _dockTelemetryCursorHandle, SystemID.VehiclesPhysics);
-            if (ringLocked)
+            if (ringLocked && IsDockTelemetryHandle(in _dockTelemetryHandle, BufferID.VehicleDockingTelemetryRing))
                 vault.ReleaseWriteLock(in _dockTelemetryHandle, SystemID.VehiclesPhysics);
         }
 
@@ -1405,8 +1407,8 @@ namespace Hecton8.Construction
             telemetry = default;
             cursor = default;
             return vault != null &&
-                   IsVaultHandleCreated(in ringHandle) &&
-                   IsVaultHandleCreated(in cursorHandle) &&
+                   IsDockTelemetryHandle(in ringHandle, BufferID.VehicleDockingTelemetryRing) &&
+                   IsDockTelemetryHandle(in cursorHandle, BufferID.VehicleDockingTelemetryCursor) &&
                    vault.TryReadHandle(in ringHandle, out telemetry) &&
                    telemetry.IsCreated &&
                    telemetry.Length >= DockTelemetryCapacity &&
@@ -1421,9 +1423,13 @@ namespace Hecton8.Construction
             _dockTelemetryCursorHandle = default;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsDockTelemetryHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)SystemID.VehiclesPhysics &&
+                   handle.Generation != 0u;
         }
 
         private static int SanitizeDockTelemetryCursor(int cursor, int telemetryLength)

@@ -2,17 +2,14 @@
     "agentId":  "1404",
     "domain":  "Platform Abstraction Layer / Data Monolith Static DB",
     "role":  "ANDROID_NDK_AND_AASSETMANAGER_PORTABILITY_ARCHITECT",
-    "status":  "PENDING_COMPILE_FAILED_NO_DIAGNOSTIC_OUTPUT",
+    "status":  "PENDING_CONCURRENT_SOURCE_DRIFT_AND_BUILD_BLOCKED_BY_CPU",
     "evidenceClass":  "STATIC_SOURCE_AND_TEXT_SCAN",
-    "generatedAtLocal":  "2026-05-28T13:13:20+04:00",
+    "generatedAtLocal":  "2026-05-28T21:31:22.5310956+04:00",
     "taskCount":  20,
     "promptExtraction":  {
                              "source":  "Docs/Tasks/CURRENT_BATCH.md",
-                             "startLine":  365,
-                             "endLine":  450,
-                             "extractedLineCount":  86,
-                             "taskCount":  20,
-                             "roleTag":  "ANDROID_NDK_AND_AASSETMANAGER_PORTABILITY_ARCHITECT"
+                             "foundInCurrentBatchThisPass":  true,
+                             "taskCountFromCurrentBatch":  20
                          },
     "files":  {
                   "csharpArena":  "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
@@ -26,37 +23,37 @@
                   "projectSettings":  "ProjectSettings/ProjectSettings.asset",
                   "matrixValidator":  "Assets/_Project/Scripts/Editor/Build/NativePluginMatrixValidator.cs",
                   "editorAudit":  "Assets/_Project/Scripts/Editor/DataMonolith/H8AndroidAssetBridgeStaticAudit.cs",
+                  "editorTest":  "Assets/_Project/Tests/Editor/AndroidAssetBridge1404EditTests.cs",
                   "staticDataBlob":  "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin"
               },
     "sourceHashes":  {
                          "csharpArenaSha256":  "a891a33a91094c368088263803efdf30fd7bc908595a3bbd10b78fe399f2a7aa",
                          "csharpTypesSha256":  "cce3e07d563cc7039e993c5c7b03357b017cb7b72fdb9c6c21e5096411b71374",
-                         "memorySha256":  "16e4da2e5148bbad8f4abc9b524e97151f1b5080a15eda7c6ab544ba81618be4",
-                         "globalDataVaultSha256":  "ec82b4c38d67b087446d17f61e9de5da44dbd171ad7872d5a18e55b2545ab0cb",
+                         "memorySha256":  "4e46da1fb3b8ae41d74540f9585f7571c28452659cbaf78237409eda23c71eed",
+                         "globalDataVaultSha256":  "56addb112a437a669c4e0b628ffad68a177d7e3f19c9e1dd6338c8ad647ea67b",
                          "nativeBridgeSha256":  "4b4b02d41e673783786df2f821f39a79521e99b82efb507b507a3df63ba304cc",
                          "cmakeSha256":  "b6765a5c93a0fedb3a145018468133ad0c54eaf8220884155575df790e9cea52",
                          "gradleSha256":  "420452337697779ae188c43e7958c43e50d8245fe451b14dc43b50a86d61c996",
                          "androidManifestSha256":  "84d571e87a87eeaf9686c6fe48783cbee043fb0de9ca0286ca5fa43e2401ef8e",
                          "projectSettingsSha256":  "330c17417f273cc2dcf92f9ee2725bccdd2ff01fabb52f2d2da4b7d3e7059f89",
-                         "matrixValidatorSha256":  "54170085761eb635ca29a240e806606b62396894833552770c207e61d941d746",
-                         "editorAuditSha256":  "b973c2d852f4f2ddd9e40aed70ad0db46dd5e4f1e9dbc5c7c2e0773e00657f91",
+                         "matrixValidatorSha256":  "7f80ad1f765b3d7dcb9cbbf5e02d7238d53b0cc87697669f95896c58a4e09dee",
+                         "editorAuditSha256":  "23cb6e4c72f4426a516266044f762fa6f08c91cdff413e728f95433391d5cac5",
+                         "editorTestSha256":  "af12451d1facdf1412c956f363aed73a6a6719852ff30c274cfcc08994f6a16d",
                          "staticDataBlobSha256":  "d38ec4234ddac7ff43b8861ad3464bd82f1cb67a96032388c79460de39a4c53f"
                      },
     "staticDataBlob":  {
                            "exists":  true,
                            "lengthBytes":  1064384,
-                           "lastWriteTime":  "2026-05-25T21:51:14+04:00"
+                           "lastWriteTimeLocal":  "2026-05-25T21:51:14.2377095+04:00"
                        },
     "zeroGcTextScan":  {
-                           "androidGuardedBranchLineCount":  389,
-                           "androidGuardedBranchNewTokenCount":  1,
-                           "androidGuardedBranchNewTokenLines":  [
-                                                                     "239:return new H8DataBlobLoadResult(loaded, status);"
-                                                                 ],
-                           "androidGuardedBranchReferenceTypeNewCount":  0,
-                           "androidGuardedBranchReferenceTypeNewLines":  [
+                           "scope":  "All UNITY_ANDROID \u0026\u0026 !UNITY_EDITOR guarded H8StaticDataArena blocks plus native bridge heap-token scan",
+                           "androidGuardedBranchLineCount":  381,
+                           "androidGuardedBranchNewTokenCount":  0,
+                           "androidGuardedBranchNewTokenValues":  [
 
-                                                                         ],
+                                                                  ],
+                           "androidGuardedBranchReferenceTypeNewCount":  0,
                            "androidGuardedBranchStringFormatCount":  0,
                            "androidGuardedBranchToStringCount":  0,
                            "androidGuardedBranchLinqTokenCount":  0,
@@ -78,21 +75,49 @@
                                               "BufferID.DataMonolithTelemetryRing=71104",
                                               "BufferID.DataMonolithTelemetryCursor=71105"
                                           ],
-                            "payloadAcquireCount":  4,
-                            "payloadReleaseCount":  4,
-                            "payloadReleaseFinallyCount":  4,
-                            "releaseRetryHelperCount":  7,
-                            "writerReleaseRetryCrossPlatformPresent":  true,
-                            "globalDataVaultDeferredWriterReleaseReturnsFalse":  true,
-                            "releaseVaultHandlePreservesFailedRelease":  true,
+                            "bufferIdLines":  {
+                                                  "DataMonolithPayload":  769,
+                                                  "DataMonolithTelemetryRing":  770,
+                                                  "DataMonolithTelemetryCursor":  771
+                                              },
+                            "payloadAcquireCallLines":  [
+                                                            714,
+                                                            1856,
+                                                            2219,
+                                                            2538
+                                                        ],
+                            "payloadReleaseFinallyCallLines":  [
+                                                                   735,
+                                                                   1915,
+                                                                   2240,
+                                                                   2596
+                                                               ],
+                            "payloadTryAcquireWriteLockLine":  2896,
+                            "payloadReleaseRetryHelperLine":  2918,
+                            "telemetryRingTryAcquireWriteLockLine":  3008,
+                            "telemetryCursorTryAcquireWriteLockLine":  3016,
+                            "telemetryAcquireCleanupFinallyLine":  3027,
+                            "telemetryReleaseFinallyLine":  3084,
                             "tryResolveHandleReferenceCount":  0,
-                            "telemetryAcquireCount":  2,
-                            "telemetryReleaseRetryCount":  4,
-                            "telemetryReleaseFinallyCount":  1
+                            "globalDataVaultReturnQueueDeferredWriterReleaseCount":  2,
+                            "globalDataVaultAssignQueueDeferredWriterReleaseCount":  0,
+                            "globalDataVaultDeferredWriterReleaseQueueContract":  false,
+                            "globalDataVaultQueueReturnLines":  [
+                                                                    1949,
+                                                                    1981
+                                                                ],
+                            "deferredReleaseStrictSpinGateLine":  0,
+                            "deferredReleaseSpinWaitLine":  0,
+                            "deferredReleaseEnqueueGateFinallyLine":  2117,
+                            "deferredReleaseWriterOnlyDedupLine":  2081,
+                            "deferredReleaseGenericDedupLine":  0,
+                            "releaseSemantics":  "ReleaseWriteLock returns true for synchronous release or accepted deferred writer-release request; writer duplicate scan and slot reservation are serialized by _deferredReleaseEnqueueGate and released in finally.",
+                            "concurrentSourceDrift":  "STRICT_WRITER_GATE_REPAIRED_MULTIPLE_TIMES_BUT_CURRENT_SOURCE_REVERTED_TO_BOOL_ENQUEUE_GATE"
                         },
     "nativeBridge":  {
                          "aAssetManagerFromJava":  true,
                          "aAssetOpen":  true,
+                         "aAssetGetLength64":  true,
                          "aAssetRead":  true,
                          "aAssetCloseCount":  4,
                          "exactLengthGuard":  true,
@@ -100,12 +125,17 @@
                          "noJniOnLoadDependency":  true,
                          "nativeTelemetryDump":  true,
                          "directoryEexistIsDirectoryGuard":  true,
-                         "telemetryDumpRotatesFromCursor":  true
+                         "telemetryDumpRotatesFromCursor":  true,
+                         "symbolLineNumbers":  {
+                                                   "H8_GetAssetSize":  158,
+                                                   "H8_LoadAssetToPointer":  188,
+                                                   "H8_WriteTelemetryDump":  254
+                                               }
                      },
     "dumpProof":  {
                       "sourceRoute":  "persistentDataPath/Docs/AgentLogs/Dump_1404.bin on Android release; Docs/AgentLogs/Dump_1404.bin in editor/dev and Win32",
                       "runtimeWorkspaceDumpExists":  false,
-                      "dumpTelemetryReadOnlyOnly":  false,
+                      "dumpTelemetryReadOnlyOnly":  true,
                       "chronologicalRingWrite":  true
                   },
     "androidPackaging":  {
@@ -118,6 +148,14 @@
                              "projectGameActivityEntry":  true,
                              "manifestGameActivity":  true
                          },
+    "editorTests":  {
+                        "androidAssetBridge1404EditTestPath":  "Assets/_Project/Tests/Editor/AndroidAssetBridge1404EditTests.cs",
+                        "androidAssetBridge1404EditTestSha256":  "af12451d1facdf1412c956f363aed73a6a6719852ff30c274cfcc08994f6a16d",
+                        "assertsStrictWriterGate":  true,
+                        "assertsNoManagedJniWrappers":  true,
+                        "assertsNativeExactLengthGuard":  true,
+                        "executionStatus":  "NOT_RUN_UNITY_EDITOR_TEST_RUNNER_UNAVAILABLE_IN_THIS_SESSION"
+                    },
     "layoutProof":  {
                         "explicitStructLayoutDeclarationCount":  32,
                         "fieldOffsetDeclarationCount":  279,
@@ -136,29 +174,26 @@
                             "cinematicCheatScope":  "No physical simulation added; bridge is cold boot I/O and diagnostic dump only."
                         },
     "buildThrottle":  {
-                          "cpuLoadPercentBeforeFinalBuildGate":  35,
+                          "cpuLoadPercentBeforeFinalBuildGate":  93,
                           "activeCompilerProcessCount":  0,
                           "activeCompilerProcesses":  [
 
                                                       ],
-                          "dotnetBuildInvokedInThisApexPass":  true,
-                          "reason":  "One final build was invoked after CPU 35 / active compiler count 0. It failed with exit code 1 and empty captured output. Rerun blocked after failure because CPU sampled at 99."
+                          "dotnetBuildInvokedInThisContinuation":  false,
+                          "buildAllowedByRule":  false,
+                          "reason":  "Build skipped by immediate pre-build gate sample: CPU 93 \u003e 50."
                       },
-    "residualRisks":  [
-                          "No Android IL2CPP export/build/player launch proof; __Internal symbol linkage still requires generated binary inspection with nm/readelf.",
-                          "No runtime Docs/AgentLogs/Dump_1404.bin exists yet; source route exists but runtime dump has not executed.",
-                          "Global Android native matrix still reports missing non-domain arm64 LZ4/audio binaries; this can block Android builds before Data Monolith runtime proof.",
-                          "Current worktree contains many unrelated modified files from other agents; only 1404 domain files were intentionally touched here.",
-                          "dotnet build not run in this APEX pass because CPU/compiler gate failed."
-                      ],
     "buildCheck":  {
                        "command":  "dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
-                       "exitCode":  1,
-                       "capturedOutputLineCount":  0,
-                       "freshBinlogFound":  false,
-                       "forensicDumpPath":  "Docs/AgentLogs/Dump_1404_build_failure_20260528T1306_SAMARA.log",
-                       "postFailureCpuPercent":  99,
-                       "postFailureActiveCompilerProcessCount":  0,
-                       "rerunLaunched":  false
-                   }
+                       "status":  "NOT_RUN_BLOCKED_BY_CPU",
+                       "previousForensicDumpPath":  "Docs\\AgentLogs\\Dump_1404_build_after_source_drift_20260528T213058_SAMARA.log",
+                       "previousFailureExitCode":  3
+                   },
+    "residualRisks":  [
+                          "CURRENT FAULT: GlobalDataVault.cs reverted to bool enqueueGateAcquired; strict writer-release enqueue gate is absent in current source.",
+                          "No Android IL2CPP export/build/player launch proof; __Internal symbol linkage still requires generated binary inspection with nm/readelf.",
+                          "No runtime Docs/AgentLogs/Dump_1404.bin exists yet; source route exists but runtime dump has not executed.",
+                          "Unity Editor Test Runner was not available from this session; AndroidAssetBridge1404EditTests.cs is source-added but not executed and would catch the current GlobalDataVault defect.",
+                          "Build not launched because immediate pre-build CPU gate sampled CPU 93 \u003e 50."
+                      ]
 }

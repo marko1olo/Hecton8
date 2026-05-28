@@ -32,7 +32,7 @@ namespace Hecton8.UI
         private SubtitleManager _subtitleManager;
         private SubtitleManager _cachedSubtitleManager;
         private bool _tickRegistered;
-        private bool _subscribed;
+        private bool _hasSubtitleManager;
         private bool _hotSwapRegistered;
         private float _cueTimer;
         private float _cueDuration;
@@ -41,6 +41,7 @@ namespace Hecton8.UI
         private float _speakerIntensity = 1f;
         private float _pollTimer;
         private int _cueSeed;
+        private int _lastCueChangeVersion;
         private int _optionalCueTextLength = -1;
         private RectTransform _selfRect;
         private int _waveformBarCount;
@@ -91,7 +92,7 @@ namespace Hecton8.UI
             EnsureWaveformTargets();
             CacheSubtitleManagerCold();
             TryRegisterHotSwapListener();
-            TrySubscribeToSubtitleManager();
+            TryBindSubtitleManager();
             ApplyIdlePose();
             RefreshTickRegistration();
         }
@@ -99,7 +100,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             TryUnregisterHotSwapListener();
-            UnsubscribeFromSubtitleManager();
+            ClearSubtitleManagerBinding();
             UnregisterFromTickManager();
             _cueTimer = 0f;
             _cueDuration = 0f;
@@ -118,12 +119,12 @@ namespace Hecton8.UI
             _cachedSubtitleManager = currentService as SubtitleManager;
             if (_cachedSubtitleManager == null)
             {
-                UnsubscribeFromSubtitleManager();
+                ClearSubtitleManagerBinding();
                 RefreshTickRegistration();
                 return;
             }
 
-            TrySubscribeToSubtitleManager();
+            TryBindSubtitleManager();
             RefreshTickRegistration();
         }
 
@@ -131,15 +132,17 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
-            if (!_subscribed)
+            if (!_hasSubtitleManager)
             {
                 _pollTimer -= deltaTime;
                 if (_pollTimer <= 0f)
                 {
                     _pollTimer = subtitleManagerPollInterval;
-                    TrySubscribeToSubtitleManager();
+                    TryBindSubtitleManager();
                 }
             }
+
+            ConsumeCueSnapshot();
 
             if (_cueTimer <= 0f)
             {
@@ -182,6 +185,28 @@ namespace Hecton8.UI
 
             ApplyOptionalCueText(textBuffer, textStart, textLength);
             RefreshTickRegistration();
+        }
+
+        private void ConsumeCueSnapshot()
+        {
+            SubtitleManager manager = _subtitleManager;
+            if (manager == null)
+                return;
+
+            if (!manager.TryGetAudioLogCueSnapshot(
+                    _lastCueChangeVersion,
+                    out int version,
+                    out float duration,
+                    out char[] textBuffer,
+                    out int textStart,
+                    out int textLength,
+                    out float speakerIntensity))
+            {
+                return;
+            }
+
+            _lastCueChangeVersion = version;
+            HandleCueChanged(duration, textBuffer, textStart, textLength, speakerIntensity);
         }
 
         private static float FastDecayBlend(float sharpness, float deltaTime)
@@ -323,19 +348,19 @@ namespace Hecton8.UI
             return math.frac(52.9829189f * math.frac(math.dot(new float2(x, seed), new float2(0.06711056f, 0.00583715f))));
         }
 
-        private void TrySubscribeToSubtitleManager()
+        private void TryBindSubtitleManager()
         {
             SubtitleManager manager = _cachedSubtitleManager;
             if (manager == null)
                 return;
 
-            if (ReferenceEquals(_subtitleManager, manager) && _subscribed)
+            if (ReferenceEquals(_subtitleManager, manager) && _hasSubtitleManager)
                 return;
 
-            UnsubscribeFromSubtitleManager();
+            ClearSubtitleManagerBinding();
             _subtitleManager = manager;
-            _subtitleManager.OnCueChanged += HandleCueChanged;
-            _subscribed = true;
+            _hasSubtitleManager = true;
+            _lastCueChangeVersion = 0;
         }
 
         private void CacheSubtitleManagerCold()
@@ -360,13 +385,11 @@ namespace Hecton8.UI
             _hotSwapRegistered = false;
         }
 
-        private void UnsubscribeFromSubtitleManager()
+        private void ClearSubtitleManagerBinding()
         {
-            if (_subtitleManager != null && _subscribed)
-                _subtitleManager.OnCueChanged -= HandleCueChanged;
-
             _subtitleManager = null;
-            _subscribed = false;
+            _hasSubtitleManager = false;
+            _lastCueChangeVersion = 0;
         }
 
         private void RefreshTickRegistration()
@@ -377,13 +400,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (!_subscribed || _cueTimer > 0f || _amplitude > AmplitudeIdleEpsilon)
-            {
-                RegisterToTickManager();
-                return;
-            }
-
-            UnregisterFromTickManager();
+            RegisterToTickManager();
         }
 
         private void ApplyOptionalCueText(char[] textBuffer, int textStart, int textLength)
@@ -406,8 +423,8 @@ namespace Hecton8.UI
 
             _optionalCueTextLength = safeLength;
             optionalCueText.SetCharArray(
-                textBuffer ?? System.Array.Empty<char>(),
-                safeStart,
+                _optionalCueTextCache,
+                0,
                 safeLength);
         }
 

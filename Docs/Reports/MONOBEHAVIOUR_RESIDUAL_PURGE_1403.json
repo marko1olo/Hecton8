@@ -2,14 +2,16 @@
   "agentId": "1403",
   "role": "MONOBEHAVIOUR_RESIDUAL_NATIVE_FIELD_PURGER",
   "domain": "ECHELON 1 CORE MEMORY AND LIFECYCLE",
-  "generatedAt": "2026-05-28T14:28:00+04:00",
+  "generatedAt": "2026-05-28T14:42:00+04:00",
   "status": "PENDING_VERIFICATION",
   "reasonStatusIsPending": "No successful full project build, Unity Test Runner pass, or profiler capture exists. One gated full solution build exited 1 after 99.9 seconds with no diagnostic lines and left a child dotnet process that was stopped. A gated targeted Hecton8.Core.csproj build failed on out-of-domain XRPass errors in HectonVRBrownoutFeature.cs lines 441 and 480.",
   "promptExtraction": {
     "source": "Docs/Tasks/CURRENT_BATCH.md",
     "promptId": "1403",
     "promptSha256": "4B2E9072381134CF294040140084CDF64D1B30857AC79FE08CD52A6FDA7BE092",
-    "taskCount": 20
+    "taskCount": 20,
+    "currentBatchPrompt1403PresentAtFinalRecheck": false,
+    "currentBatchPrompt1403FinalRecheckResult": "PROMPT_1403_NOT_FOUND; status/rationale/report artifacts are the preserved assignment memory for this continuation."
   },
   "targetFiles": [
     "Assets/_Project/Scripts/SaveManager.cs",
@@ -22,7 +24,7 @@
   "sourceSha256": [
     {
       "path": "Assets/_Project/Scripts/SaveManager.cs",
-      "hash": "9F09ACCA8C0D000E16304F4FE230A0FA11D55DB112840E579F6BA728464CBA92"
+      "hash": "7FF1ECB26F65F7EF9BC171229896F232586772DAA4D8128F3236618B96134184"
     },
     {
       "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
@@ -88,6 +90,11 @@
     },
     {
       "file": "Assets/_Project/Scripts/SaveManager.cs",
+      "lines": "1474, 2265-2268",
+      "change": "WFC GlobalDataVault handle readiness validation now uses TryReadOnlyHandle and a NativeArray<byte>.ReadOnly grid validator instead of mutable TryResolveHandle"
+    },
+    {
+      "file": "Assets/_Project/Scripts/SaveManager.cs",
       "lines": "2901-3064",
       "change": "WFC and async persistence dump writers stage NativeArray<byte> with BinaryPrimitives instead of BinaryWriter/FileStream callsites"
     },
@@ -123,7 +130,7 @@
     ],
     "braceBalance": [
       "Assets/_Project/Scripts/SaveBinaryStorage.cs open=1117 close=1117 balanced=True",
-      "Assets/_Project/Scripts/SaveManager.cs open=630 close=630 balanced=True",
+      "Assets/_Project/Scripts/SaveManager.cs open=631 close=631 balanced=True",
       "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs open=387 close=387 balanced=True",
       "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs open=225 close=225 balanced=True",
       "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs open=267 close=267 balanced=True"
@@ -137,6 +144,9 @@
     },
     "storageDependencyMethodScan": {
       "methods": [
+        "TryEnsureWfcOutpostGridHandle",
+        "TryAcquireWfcOutpostGridWrite",
+        "ReleaseWfcOutpostGridWrite",
         "TryCopyFromCachedReadWindow",
         "TryUploadCachedReadWindowToGraphicsBuffer",
         "TryCreateCachedReadWindow",
@@ -200,6 +210,7 @@
       "classification": "Not in modified Tick/FastTick/LateFrameTick hot-path scan. They remain cold/string-return persistence helpers and are not claimed as zero-GC routes."
     },
     "hotPathResult": "TOTAL_HOT_PATH_FORBIDDEN_PATTERN_HITS=0 for Tick/FastTick/LateFrameTick/FixedUpdate/Update in modified target files",
+    "wfcVaultValidationScan": "TryEnsureWfcOutpostGridHandle/TryAcquireWfcOutpostGridWrite/ReleaseWfcOutpostGridWrite allNew=0 newRefCandidate=0 stringFormat=0 toString=0 linq=0 foreach=0 interpolated=0",
     "notClaimed": "This is a source scan, not a runtime GC allocation profiler capture."
   },
   "dataSovereignty": {
@@ -220,6 +231,12 @@
     "tryAcquireWriteLockLines": [
       "Assets/_Project/Scripts/SaveManager.cs:1501",
       "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs:1153"
+    ],
+    "readOnlyValidationLines": [
+      "Assets/_Project/Scripts/SaveManager.cs:1474",
+      "Assets/_Project/Scripts/SaveManager.cs:2265-2268",
+      "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs:1134-1136",
+      "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs:3032"
     ],
     "releaseInvalidBufferLine": "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs:1164 and Assets/_Project/Scripts/SaveManager.cs:1509",
     "releaseHelperLines": "Assets/_Project/Scripts/SaveManager.cs:1514-1523 and Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs:1168-1175",
@@ -342,6 +359,14 @@
       "vbcsCompilerProcesses": 1,
       "buildLaunched": false,
       "reason": "CPU exceeded 50% and dotnet/VBCSCompiler processes were active."
+    },
+    "finalGateAfterWfcReadOnlyValidationPatch": {
+      "cpuLoadPercent": 100,
+      "dotnetProcesses": 1,
+      "cscProcesses": 1,
+      "vbcsCompilerProcesses": 0,
+      "buildLaunched": false,
+      "reason": "CPU exceeded 50% and dotnet/csc processes were active."
     },
     "dotnetBuildSpam": false
   },

@@ -1,0 +1,529 @@
+{
+  "agent": 1415,
+  "role": "CIRCULAR_TELEMETRY_RING_HARDENER",
+  "domain": "Echelon 1 Core Infrastructure / Crash Telemetry Layout",
+  "generatedUtc": "2026-05-28T14:55:52Z",
+  "issue": "Recheck8 left AupOriginShiftTelemetryEntry as a real 128-byte Echelon 1 telemetry row. A field-preserving correction required a paired 64-byte detail row, a second DataVault BufferID, and a v3 dump header that describes header/detail rows explicitly.",
+  "fix": "Split AupOriginShiftTelemetryEntry into a 64-byte primary row and AupOriginShiftTelemetryDetailEntry into a paired 64-byte detail row. Added TelemetryDetailRingBuffer=(BufferID)73056, detail generation handle/open/resolve/release paths, paired writer locks, paired dump serialization, and validator rows for both structs. Removed value-type new/object-initializer syntax from modified AUP hot paths.",
+  "modifiedFiles": [
+    "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs",
+    "Assets/_Project/Scripts/Editor/TelemetryLayoutValidator1415.cs"
+  ],
+  "lineProof": {
+    "entryStruct": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:134-146",
+    "detailStruct": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:151-160",
+    "dumpHeaderDetailFields": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:192-193",
+    "dumpVersion": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:236",
+    "telemetryRingBuffer": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:266",
+    "telemetryDetailRingBuffer": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:267",
+    "ownerOpenHeaderRing": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:363",
+    "ownerOpenDetailRing": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:371",
+    "resolveHeaderRing": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:466",
+    "resolveDetailRing": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:467",
+    "tickAcquireHeaderDetail": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:720-721",
+    "tickReleaseHeaderDetailFinally": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:802-804",
+    "completionAcquireHeaderDetail": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:961-962",
+    "completionReleaseHeaderDetailFinally": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:1014-1016",
+    "validatorRows": "Assets/_Project/Scripts/Editor/TelemetryLayoutValidator1415.cs:25-26",
+    "dumpHeaderWritesDetailMetadata": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:1803-1804"
+  },
+  "mathematicalOffsetProof": {
+    "AupOriginShiftTelemetryEntry": {
+      "size": 64,
+      "fields": [
+        {
+          "field": "ShiftDelta",
+          "type": "double3",
+          "offset": 0,
+          "width": 24,
+          "endInclusive": 23
+        },
+        {
+          "field": "Frame",
+          "type": "uint",
+          "offset": 24,
+          "width": 4,
+          "endInclusive": 27
+        },
+        {
+          "field": "RebaseCount",
+          "type": "uint",
+          "offset": 28,
+          "width": 4,
+          "endInclusive": 31
+        },
+        {
+          "field": "ShiftSequence",
+          "type": "uint",
+          "offset": 32,
+          "width": 4,
+          "endInclusive": 35
+        },
+        {
+          "field": "SectorHash",
+          "type": "uint",
+          "offset": 36,
+          "width": 4,
+          "endInclusive": 39
+        },
+        {
+          "field": "EntitiesShifted",
+          "type": "int",
+          "offset": 40,
+          "width": 4,
+          "endInclusive": 43
+        },
+        {
+          "field": "HistoricalPointsShifted",
+          "type": "int",
+          "offset": 44,
+          "width": 4,
+          "endInclusive": 47
+        },
+        {
+          "field": "BatchStartIndex",
+          "type": "int",
+          "offset": 48,
+          "width": 4,
+          "endInclusive": 51
+        },
+        {
+          "field": "BatchCount",
+          "type": "int",
+          "offset": 52,
+          "width": 4,
+          "endInclusive": 55
+        },
+        {
+          "field": "NonFiniteCount",
+          "type": "int",
+          "offset": 56,
+          "width": 4,
+          "endInclusive": 59
+        },
+        {
+          "field": "Flags",
+          "type": "uint",
+          "offset": 60,
+          "width": 4,
+          "endInclusive": 63
+        }
+      ],
+      "holeCount": 0,
+      "holes": [],
+      "failureCount": 0,
+      "failures": []
+    },
+    "AupOriginShiftTelemetryDetailEntry": {
+      "size": 64,
+      "fields": [
+        {
+          "field": "TotalUniverseOffset",
+          "type": "double3",
+          "offset": 0,
+          "width": 24,
+          "endInclusive": 23
+        },
+        {
+          "field": "CameraLocalPosition",
+          "type": "float3",
+          "offset": 24,
+          "width": 12,
+          "endInclusive": 35
+        },
+        {
+          "field": "RebaseComputeTimeMs",
+          "type": "float",
+          "offset": 36,
+          "width": 4,
+          "endInclusive": 39
+        },
+        {
+          "field": "SystemHealthIndex01",
+          "type": "float",
+          "offset": 40,
+          "width": 4,
+          "endInclusive": 43
+        },
+        {
+          "field": "CameraSectorHash",
+          "type": "uint",
+          "offset": 44,
+          "width": 4,
+          "endInclusive": 47
+        },
+        {
+          "field": "PositionHash",
+          "type": "uint",
+          "offset": 48,
+          "width": 4,
+          "endInclusive": 51
+        },
+        {
+          "field": "HotEntitiesShifted",
+          "type": "int",
+          "offset": 52,
+          "width": 4,
+          "endInclusive": 55
+        },
+        {
+          "field": "_pad0",
+          "type": "ulong",
+          "offset": 56,
+          "width": 8,
+          "endInclusive": 63
+        }
+      ],
+      "holeCount": 0,
+      "holes": [],
+      "failureCount": 0,
+      "failures": []
+    },
+    "AupOriginShiftDumpHeader": {
+      "size": 64,
+      "fields": [
+        {
+          "field": "Magic",
+          "type": "ulong",
+          "offset": 0,
+          "width": 8,
+          "endInclusive": 7
+        },
+        {
+          "field": "Version",
+          "type": "uint",
+          "offset": 8,
+          "width": 4,
+          "endInclusive": 11
+        },
+        {
+          "field": "HeaderBytes",
+          "type": "uint",
+          "offset": 12,
+          "width": 4,
+          "endInclusive": 15
+        },
+        {
+          "field": "EntryCount",
+          "type": "uint",
+          "offset": 16,
+          "width": 4,
+          "endInclusive": 19
+        },
+        {
+          "field": "EntryStrideBytes",
+          "type": "uint",
+          "offset": 20,
+          "width": 4,
+          "endInclusive": 23
+        },
+        {
+          "field": "PayloadBytes",
+          "type": "uint",
+          "offset": 24,
+          "width": 4,
+          "endInclusive": 27
+        },
+        {
+          "field": "OldestRingIndex",
+          "type": "uint",
+          "offset": 28,
+          "width": 4,
+          "endInclusive": 31
+        },
+        {
+          "field": "LatestFrame",
+          "type": "uint",
+          "offset": 32,
+          "width": 4,
+          "endInclusive": 35
+        },
+        {
+          "field": "EndianTag",
+          "type": "uint",
+          "offset": 36,
+          "width": 4,
+          "endInclusive": 39
+        },
+        {
+          "field": "Flags",
+          "type": "uint",
+          "offset": 40,
+          "width": 4,
+          "endInclusive": 43
+        },
+        {
+          "field": "DetailStrideBytes",
+          "type": "uint",
+          "offset": 44,
+          "width": 4,
+          "endInclusive": 47
+        },
+        {
+          "field": "CombinedRecordBytes",
+          "type": "uint",
+          "offset": 48,
+          "width": 4,
+          "endInclusive": 51
+        },
+        {
+          "field": "_pad0",
+          "type": "uint",
+          "offset": 52,
+          "width": 4,
+          "endInclusive": 55
+        },
+        {
+          "field": "_pad1",
+          "type": "ulong",
+          "offset": 56,
+          "width": 8,
+          "endInclusive": 63
+        }
+      ],
+      "holeCount": 0,
+      "holes": [],
+      "failureCount": 0,
+      "failures": []
+    }
+  },
+  "zeroGcHotPathScan": {
+    "OpenOrAcquireRuntimeStateForOwnerRoute": {
+      "lines": "320-450",
+      "new": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "linqLike": 0,
+      "foreach": 0,
+      "isLowEnd": 0,
+      "globalQualityWeight": 0,
+      "tryAcquireWriteView": 4,
+      "releaseWriteLock": 0,
+      "finally": 1
+    },
+    "TickPreSimulation": {
+      "lines": "700-812",
+      "new": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "linqLike": 0,
+      "foreach": 0,
+      "isLowEnd": 0,
+      "globalQualityWeight": 0,
+      "tryAcquireWriteView": 4,
+      "releaseWriteLock": 4,
+      "finally": 1
+    },
+    "ScheduleVaultOriginRebase": {
+      "lines": "820-930",
+      "new": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "linqLike": 0,
+      "foreach": 0,
+      "isLowEnd": 0,
+      "globalQualityWeight": 2,
+      "tryAcquireWriteView": 2,
+      "releaseWriteLock": 1,
+      "finally": 1
+    },
+    "RecordRebaseCompletion": {
+      "lines": "940-1020",
+      "new": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "linqLike": 0,
+      "foreach": 0,
+      "isLowEnd": 0,
+      "globalQualityWeight": 0,
+      "tryAcquireWriteView": 3,
+      "releaseWriteLock": 4,
+      "finally": 2
+    },
+    "ContinueTimeSlicedRebase": {
+      "lines": "1240-1305",
+      "new": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "linqLike": 0,
+      "foreach": 0,
+      "isLowEnd": 0,
+      "globalQualityWeight": 0,
+      "tryAcquireWriteView": 2,
+      "releaseWriteLock": 2,
+      "finally": 1
+    },
+    "RecordFrameTelemetry": {
+      "lines": "1310-1375",
+      "new": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "linqLike": 0,
+      "foreach": 0,
+      "isLowEnd": 0,
+      "globalQualityWeight": 2,
+      "tryAcquireWriteView": 0,
+      "releaseWriteLock": 0,
+      "finally": 0
+    },
+    "AupMockInitializeJob_Execute": {
+      "lines": "2035-2080",
+      "new": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "linqLike": 0,
+      "foreach": 0,
+      "isLowEnd": 0,
+      "globalQualityWeight": 0,
+      "tryAcquireWriteView": 0,
+      "releaseWriteLock": 0,
+      "finally": 0
+    },
+    "AupStateRebaseJob_Execute": {
+      "lines": "2080-2120",
+      "new": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "linqLike": 0,
+      "foreach": 0,
+      "isLowEnd": 0,
+      "globalQualityWeight": 0,
+      "tryAcquireWriteView": 0,
+      "releaseWriteLock": 0,
+      "finally": 0
+    },
+    "coldOnlyNewMatchesInFile": [
+      {
+        "line": 1578,
+        "text": "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, scratch.Length, FileOptions.SequentialScan))"
+      },
+      {
+        "line": 1580,
+        "text": "bytesRead = stream.Read(new Span<byte>((byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch), scratch.Length));"
+      },
+      {
+        "line": 1761,
+        "text": "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, DumpWriteBufferBytes, FileOptions.WriteThrough))"
+      },
+      {
+        "line": 1765,
+        "text": "stream.Write(new ReadOnlySpan<byte>(&header, UnsafeUtility.SizeOf<AupOriginShiftDumpHeader>()));"
+      },
+      {
+        "line": 1770,
+        "text": "stream.Write(new ReadOnlySpan<byte>(basePtr + (ringIndex * entryStride), entryStride));"
+      },
+      {
+        "line": 1771,
+        "text": "stream.Write(new ReadOnlySpan<byte>(detailBasePtr + (ringIndex * detailStride), detailStride));"
+      }
+    ]
+  },
+  "dataSovereignty": {
+    "migratedNewGlobalDataVaultFields": true,
+    "bufferIds": [
+      {
+        "name": "TelemetryRingBuffer",
+        "bufferId": 73033,
+        "owner": "SystemID.CoreDeterminism"
+      },
+      {
+        "name": "TelemetryDetailRingBuffer",
+        "bufferId": 73056,
+        "owner": "SystemID.CoreDeterminism"
+      }
+    ],
+    "bufferId73056PreUseScan": "rg \"\\(BufferID\\)73056|73056\" before patch returned no source/report/log matches.",
+    "tryAcquireWriteChecks": [
+      "TickPreSimulation acquires header/detail write views at lines 720-721",
+      "RecordRebaseCompletion acquires header/detail write views at lines 961-962"
+    ],
+    "finallyReleaseProof": [
+      "TickPreSimulation releases detail/header write locks inside finally at lines 802-804",
+      "RecordRebaseCompletion releases detail/header write locks inside finally at lines 1014-1016"
+    ]
+  },
+  "dumpContract": {
+    "version": 3,
+    "entryStrideBytes": 64,
+    "detailStrideBytes": 64,
+    "combinedRecordBytes": 128,
+    "payloadBytesFormula": "entryCount * (entryStrideBytes + detailStrideBytes)",
+    "flags": "DumpFlagHasDetailRows plus DumpFlagBigEndian when applicable",
+    "serializationOrder": "for each ring index: write 64-byte AupOriginShiftTelemetryEntry, then paired 64-byte AupOriginShiftTelemetryDetailEntry"
+  },
+  "continuousScalability": "AUP work scaling still uses HomeostasisBrain.GlobalQualityWeight through ResolveQualityScaledBatchSize in ScheduleVaultOriginRebase and RecordFrameTelemetry. The split does not add isLowEnd/lowEnd binary switches and does not change gameplay truth, save identity, or authority route.",
+  "cinematicCheat": "No physical simulation was added. This is a forensic telemetry ABI split; runtime visual work remains governed by existing cheap math LOD/cadence choices.",
+  "currentTelemetryStructScan": {
+    "strictTelemetryOrBlackboxEntryCount": 221,
+    "non64": 28,
+    "under64": 0,
+    "over64": 28,
+    "aup": [
+      [
+        "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs",
+        "AupOriginShiftTelemetryEntry",
+        64
+      ],
+      [
+        "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs",
+        "AupOriginShiftTelemetryDetailEntry",
+        64
+      ]
+    ]
+  },
+  "sourceHashes": {
+    "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs": "4ae37d4b03a7a82eae3f83b9190ba65dffcce4fe80d0be9c2c4c0b7d96d5c735",
+    "Assets/_Project/Scripts/Editor/TelemetryLayoutValidator1415.cs": "faba2a2eb706505928170dcde9bddbbd438aab852c323d0105af503c7be8e068",
+    "Assets/_Project/Scripts/CrashTelemetryBuffer.cs": "b952748d54e2e9aae0463a4d42ec60027ba3eaf03722f966eff554d4b0568ee9"
+  },
+  "compilation": {
+    "dotnetBuildLaunchedInRecheck9": false,
+    "initialCpuLoadPercentSample": 8,
+    "initialActiveCompilerProcesses": [],
+    "preBuildProcessGate": [
+      {
+        "id": 3560,
+        "processName": "dotnet",
+        "cpu": 14.96875,
+        "path": "C:/Program Files/dotnet/dotnet.exe"
+      }
+    ],
+    "finalCpuLoadPercentSample": 100,
+    "finalActiveCompilerProcesses": [
+      {
+        "id": 3560,
+        "processName": "dotnet",
+        "cpu": 37.53125,
+        "path": "C:/Program Files/dotnet/dotnet.exe"
+      }
+    ],
+    "reason": "Compilation Resource Throttling forbids build when CPU > 50% or active dotnet/csc/VBCSCompiler exists. Initial sample was 8% with no compiler, but immediate process gate found active dotnet PID 3560; post-artifact gate sampled CPU 100% with csc PID 21732 and dotnet PIDs 24600/25932. No build was launched in Recheck9.",
+    "latestPostArtifactCpuLoadPercentSample": 100,
+    "latestPostArtifactActiveCompilerProcesses": [
+      {
+        "id": 21732,
+        "processName": "csc",
+        "cpu": 0.03125,
+        "path": "C:/Program Files/dotnet/sdk/10.0.202/Roslyn/bincore/csc.exe"
+      },
+      {
+        "id": 24600,
+        "processName": "dotnet",
+        "cpu": 60.109375,
+        "path": "C:/Program Files/dotnet/dotnet.exe"
+      },
+      {
+        "id": 25932,
+        "processName": "dotnet",
+        "cpu": 39.46875,
+        "path": "C:/Program Files/dotnet/dotnet.exe"
+      }
+    ]
+  },
+  "residualRisk": {
+    "compile": "No new compiler proof after Recheck9 because the final gate was throttled. Existing last compiler evidence remains external ModularEquipmentEngine.cs CS8168/CS8350 from Recheck6; no CS0636 was emitted then.",
+    "remainingOversizeStrictTelemetryOrBlackboxEntries": 28,
+    "note": "Remaining >64 rows are outside the local AUP split and require owner-domain header/detail decisions. No fields were deleted to fake compliance."
+  }
+}

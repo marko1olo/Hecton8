@@ -366,7 +366,7 @@ namespace Hecton8.Visor
                 int shaftWidth = math.max(1, (int)math.round(sourceWidth * resolvedRenderScale));
                 int shaftHeight = math.max(1, (int)math.round(sourceHeight * resolvedRenderScale));
 
-                TextureDesc shaftDesc = new TextureDesc(sourceDesc);
+                TextureDesc shaftDesc = sourceDesc;
                 shaftDesc.name = "_HectonScooterVolumetricShafts";
                 shaftDesc.width = shaftWidth;
                 shaftDesc.height = shaftHeight;
@@ -379,16 +379,16 @@ namespace Hecton8.Visor
                 shaftDesc.useMipMap = false;
                 shaftDesc.autoGenerateMips = false;
 
-                TextureDesc blurDesc = new TextureDesc(shaftDesc);
+                TextureDesc blurDesc = shaftDesc;
                 blurDesc.name = "_HectonScooterVolumetricShaftsBlur";
 
-                TextureDesc halfResDepthDesc = new TextureDesc(shaftDesc);
+                TextureDesc halfResDepthDesc = shaftDesc;
                 halfResDepthDesc.name = "_HectonHalfResContactDepth";
                 halfResDepthDesc.colorFormat = GraphicsFormat.R32_SFloat;
                 halfResDepthDesc.clearColor = Color.white;
                 halfResDepthDesc.filterMode = FilterMode.Point;
 
-                TextureDesc compositeDesc = new TextureDesc(sourceDesc);
+                TextureDesc compositeDesc = sourceDesc;
                 compositeDesc.name = "_HectonScooterVolumetricShaftsComposite";
                 compositeDesc.clearBuffer = false;
                 compositeDesc.depthBufferBits = DepthBits.None;

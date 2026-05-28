@@ -2191,7 +2191,8 @@ namespace Hecton8.Core.Memory
     public enum H8BlockState : byte
     {
         Free = 0,
-        Occupied = 1
+        Occupied = 1,
+        Reserved = 2
     }
 
     [Flags]
@@ -2413,6 +2414,7 @@ namespace Hecton8.Core.Memory
         private static uint _blackBoxSequence;
         private static uint _eventBlackBoxSequence;
         private static uint _telemetryFrameId;
+        private static int _blockDescriptorMutationGate;
         private static int _allocationGeneration = 1;
         private static int _transitionCutoffGeneration = NoTransitionCutoffGeneration;
         private static int _transitionSequence;
@@ -2563,6 +2565,7 @@ namespace Hecton8.Core.Memory
             _blackBoxSequence = 0u;
             _eventBlackBoxSequence = 0u;
             _telemetryFrameId = 0u;
+            _blockDescriptorMutationGate = 0;
             _allocationGeneration = 1;
             _transitionCutoffGeneration = NoTransitionCutoffGeneration;
             _transitionSequence = 0;
@@ -3178,7 +3181,7 @@ namespace Hecton8.Core.Memory
             if (!_initialized)
                 Initialize();
 
-            return RegisterBlockDescriptorNoInit(in descriptor);
+            return RegisterBlockDescriptorThreadSafe(in descriptor);
         }
 
         /// <summary>
@@ -3186,11 +3189,21 @@ namespace Hecton8.Core.Memory
         /// </summary>
         internal static bool TryUpdateBlockDescriptor(int index, in BlockDescriptor descriptor)
         {
-            if (!_initialized || !_blockDescriptors.IsCreated || (uint)index >= (uint)_blockDescriptors.Length)
+            if (!TryEnterBlockDescriptorMutationGate())
                 return false;
 
-            _blockDescriptors[index] = descriptor;
-            return true;
+            try
+            {
+                if (!_initialized || !_blockDescriptors.IsCreated || (uint)index >= (uint)_blockDescriptors.Length)
+                    return false;
+
+                _blockDescriptors[index] = descriptor;
+                return true;
+            }
+            finally
+            {
+                ReleaseBlockDescriptorMutationGate();
+            }
         }
 
         /// <summary>
@@ -3204,6 +3217,112 @@ namespace Hecton8.Core.Memory
 
             descriptor = _blockDescriptors[index];
             return true;
+        }
+
+        internal static bool TryReserveBlockDescriptorSlot(out int index)
+        {
+            index = -1;
+            if (!TryEnterBlockDescriptorMutationGate())
+                return false;
+
+            try
+            {
+                return TryReserveBlockDescriptorSlotNoLock(out index);
+            }
+            finally
+            {
+                ReleaseBlockDescriptorMutationGate();
+            }
+        }
+
+        private static bool TryReserveBlockDescriptorSlotNoLock(out int index)
+        {
+            index = -1;
+            if (!_initialized || !_blockDescriptors.IsCreated)
+                return false;
+
+            BlockDescriptor reservation = default;
+            reservation.Bytes = -1L;
+            reservation.Owner = SystemID.CoreDataVault;
+            reservation.Flags = (ushort)H8AllocationFlags.Vault;
+            reservation.State = (byte)H8BlockState.Reserved;
+            if (TryReserveReusableBlockDescriptorSlot(in reservation, out index))
+                return true;
+            if (_blockDescriptors.Length < _blockDescriptors.Capacity)
+            {
+                index = _blockDescriptors.Length;
+                _blockDescriptors.AddNoResize(reservation);
+                return true;
+            }
+
+            int oldCapacity = _blockDescriptors.Capacity;
+            if (oldCapacity >= MaxTrackingCapacity)
+                return false;
+
+            int newCapacity = oldCapacity > 0 ? oldCapacity << 1 : DefaultCapacity;
+            if (newCapacity < oldCapacity || newCapacity > MaxTrackingCapacity)
+                newCapacity = MaxTrackingCapacity;
+
+            EnsureBlockDescriptorCapacity(newCapacity);
+            if (_blockDescriptors.Length >= _blockDescriptors.Capacity)
+                return false;
+
+            index = _blockDescriptors.Length;
+            _blockDescriptors.AddNoResize(reservation);
+            return true;
+        }
+
+        internal static void ReleaseReservedBlockDescriptor(int index)
+        {
+            if (!TryEnterBlockDescriptorMutationGate())
+                return;
+
+            try
+            {
+                if (!_initialized || !_blockDescriptors.IsCreated || (uint)index >= (uint)_blockDescriptors.Length)
+                    return;
+
+                BlockDescriptor descriptor = _blockDescriptors[index];
+                if (descriptor.Bytes >= 0L || descriptor.State != (byte)H8BlockState.Reserved)
+                    return;
+
+                int nextGeneration = AdvanceDescriptorGeneration(descriptor.Generation);
+                descriptor = default;
+                descriptor.Generation = nextGeneration;
+                descriptor.State = (byte)H8BlockState.Free;
+                _blockDescriptors[index] = descriptor;
+            }
+            finally
+            {
+                ReleaseBlockDescriptorMutationGate();
+            }
+        }
+
+        internal static bool TryCommitReservedBlockDescriptor(int index, in BlockDescriptor descriptor)
+        {
+            if (!TryEnterBlockDescriptorMutationGate())
+                return false;
+
+            try
+            {
+                if (!_initialized || !_blockDescriptors.IsCreated || (uint)index >= (uint)_blockDescriptors.Length)
+                    return false;
+
+                BlockDescriptor current = _blockDescriptors[index];
+                if (current.Bytes >= 0L || current.State != (byte)H8BlockState.Reserved)
+                    return false;
+
+                BlockDescriptor committed = descriptor;
+                int nextGeneration = AdvanceDescriptorGeneration(current.Generation);
+                if (committed.Generation < nextGeneration)
+                    committed.Generation = nextGeneration;
+                _blockDescriptors[index] = committed;
+                return true;
+            }
+            finally
+            {
+                ReleaseBlockDescriptorMutationGate();
+            }
         }
 
         /// <summary>
@@ -3273,6 +3392,7 @@ namespace Hecton8.Core.Memory
             _blackBoxSequence = 0u;
             _eventBlackBoxSequence = 0u;
             _telemetryFrameId = 0u;
+            _blockDescriptorMutationGate = 0;
             _initialized = false;
         }
 
@@ -4100,7 +4220,17 @@ namespace Hecton8.Core.Memory
             _records = newRecords;
             _allocationOwners = newOwners;
             _allocationRecordIndices = newIndices;
-            EnsureBlockDescriptorCapacity(newCapacity);
+            if (!TryEnterBlockDescriptorMutationGate())
+                return false;
+
+            try
+            {
+                EnsureBlockDescriptorCapacity(newCapacity);
+            }
+            finally
+            {
+                ReleaseBlockDescriptorMutationGate();
+            }
             return true;
         }
 
@@ -4136,19 +4266,17 @@ namespace Hecton8.Core.Memory
                 return false;
             }
 
-            H8AllocationRecord record = new H8AllocationRecord
-            {
-                Pointer = pointerValue,
-                Bytes = bytes,
-                Length = length,
-                Stride = stride,
-                Alignment = alignment,
-                AllocationIndex = recordIndex,
-                Generation = _allocationGeneration,
-                Owner = owner,
-                Allocator = allocator,
-                Flags = (ushort)flags
-            };
+            H8AllocationRecord record = default;
+            record.Pointer = pointerValue;
+            record.Bytes = bytes;
+            record.Length = length;
+            record.Stride = stride;
+            record.Alignment = alignment;
+            record.AllocationIndex = recordIndex;
+            record.Generation = _allocationGeneration;
+            record.Owner = owner;
+            record.Allocator = allocator;
+            record.Flags = (ushort)flags;
 
             _records[_recordCount++] = record;
             _totalBytes += bytes;
@@ -4162,17 +4290,17 @@ namespace Hecton8.Core.Memory
                 return true;
             }
 
-            int descriptorIndex = RegisterBlockDescriptorNoInit(new BlockDescriptor
-            {
-                BasePointer = pointerValue,
-                OffsetBytes = 0L,
-                Bytes = bytes,
-                OwnerKey = record.AllocationIndex,
-                Generation = 1,
-                Owner = owner,
-                Flags = (ushort)flags,
-                State = (byte)H8BlockState.Occupied
-            });
+            BlockDescriptor blockDescriptor = default;
+            blockDescriptor.BasePointer = pointerValue;
+            blockDescriptor.OffsetBytes = 0L;
+            blockDescriptor.Bytes = bytes;
+            blockDescriptor.OwnerKey = record.AllocationIndex;
+            blockDescriptor.Generation = 1;
+            blockDescriptor.Owner = owner;
+            blockDescriptor.Flags = (ushort)flags;
+            blockDescriptor.State = (byte)H8BlockState.Occupied;
+
+            int descriptorIndex = RegisterBlockDescriptorThreadSafe(in blockDescriptor);
 
             if (descriptorIndex >= 0)
             {
@@ -4297,6 +4425,24 @@ namespace Hecton8.Core.Memory
             return resolved < alignment ? MaximumRawAlignment : resolved;
         }
 
+        private static bool TryEnterBlockDescriptorMutationGate()
+        {
+            if (System.Threading.Interlocked.CompareExchange(ref _blockDescriptorMutationGate, 1, 0) != 0)
+            {
+                RecordBlackBox(SystemID.H8Memory, H8MemoryTelemetryFlags.Fault);
+                return false;
+            }
+
+            System.Threading.Thread.MemoryBarrier();
+            return true;
+        }
+
+        private static void ReleaseBlockDescriptorMutationGate()
+        {
+            System.Threading.Thread.MemoryBarrier();
+            System.Threading.Volatile.Write(ref _blockDescriptorMutationGate, 0);
+        }
+
         private static void RemoveRecordAt(int index)
         {
             RemoveRecordAt(index, removeOwnerPointer: true, H8MemoryTelemetryFlags.Released);
@@ -4335,6 +4481,21 @@ namespace Hecton8.Core.Memory
 
             _records[_recordCount] = default;
             RecordBlackBox(record.Owner, telemetryFlags);
+        }
+
+        private static int RegisterBlockDescriptorThreadSafe(in BlockDescriptor descriptor)
+        {
+            if (!TryEnterBlockDescriptorMutationGate())
+                return -1;
+
+            try
+            {
+                return RegisterBlockDescriptorNoInit(in descriptor);
+            }
+            finally
+            {
+                ReleaseBlockDescriptorMutationGate();
+            }
         }
 
         private static int RegisterBlockDescriptorNoInit(in BlockDescriptor descriptor)
@@ -4376,6 +4537,28 @@ namespace Hecton8.Core.Memory
             return index;
         }
 
+        private static bool TryReserveReusableBlockDescriptorSlot(in BlockDescriptor reservation, out int index)
+        {
+            index = -1;
+            if (!_blockDescriptors.IsCreated)
+                return false;
+
+            for (int i = 0; i < _blockDescriptors.Length; i++)
+            {
+                BlockDescriptor existing = _blockDescriptors[i];
+                if (existing.Bytes != 0L)
+                    continue;
+
+                BlockDescriptor replacement = reservation;
+                replacement.Generation = AdvanceDescriptorGeneration(existing.Generation);
+                _blockDescriptors[i] = replacement;
+                index = i;
+                return true;
+            }
+
+            return false;
+        }
+
         private static void EnsureBlockDescriptorCapacity(int requiredCapacity)
         {
             if (!_blockDescriptors.IsCreated || requiredCapacity <= _blockDescriptors.Capacity)
@@ -4385,6 +4568,21 @@ namespace Hecton8.Core.Memory
         }
 
         private static void MarkBlockDescriptorFree(IntPtr basePointer, long offsetBytes)
+        {
+            if (!TryEnterBlockDescriptorMutationGate())
+                return;
+
+            try
+            {
+                MarkBlockDescriptorFreeNoLock(basePointer, offsetBytes);
+            }
+            finally
+            {
+                ReleaseBlockDescriptorMutationGate();
+            }
+        }
+
+        private static void MarkBlockDescriptorFreeNoLock(IntPtr basePointer, long offsetBytes)
         {
             if (!_blockDescriptors.IsCreated || basePointer == IntPtr.Zero)
                 return;
@@ -4410,6 +4608,21 @@ namespace Hecton8.Core.Memory
         }
 
         private static void UpdateBlockDescriptorOwnerKey(IntPtr basePointer, long offsetBytes, int ownerKey)
+        {
+            if (!TryEnterBlockDescriptorMutationGate())
+                return;
+
+            try
+            {
+                UpdateBlockDescriptorOwnerKeyNoLock(basePointer, offsetBytes, ownerKey);
+            }
+            finally
+            {
+                ReleaseBlockDescriptorMutationGate();
+            }
+        }
+
+        private static void UpdateBlockDescriptorOwnerKeyNoLock(IntPtr basePointer, long offsetBytes, int ownerKey)
         {
             if (!_blockDescriptors.IsCreated || basePointer == IntPtr.Zero)
                 return;

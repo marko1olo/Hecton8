@@ -1471,7 +1471,7 @@ namespace Hecton8.SaveSystem
                 SystemID.CoreDataVault,
                 NativeArrayOptions.ClearMemory);
             if (wfcGridHandle.BufferID != unchecked((uint)(int)BufferID.WfcOutpostGrid) ||
-                !dataVault.TryResolveHandle(in wfcGridHandle, out NativeArray<byte> wfcGrid))
+                !dataVault.TryReadOnlyHandle(in wfcGridHandle, out NativeArray<byte>.ReadOnly wfcGrid))
             {
                 _wfcOutpostGridHandle = default;
                 _wfcOutpostDependenciesReady = false;
@@ -2258,6 +2258,11 @@ namespace Hecton8.SaveSystem
         }
 
         private static bool IsValidWfcOutpostGrid(NativeArray<byte> wfcGrid)
+        {
+            return wfcGrid.IsCreated && wfcGrid.Length >= WfcOutpostPersistenceConstants.CellCount;
+        }
+
+        private static bool IsValidWfcOutpostGrid(NativeArray<byte>.ReadOnly wfcGrid)
         {
             return wfcGrid.IsCreated && wfcGrid.Length >= WfcOutpostPersistenceConstants.CellCount;
         }

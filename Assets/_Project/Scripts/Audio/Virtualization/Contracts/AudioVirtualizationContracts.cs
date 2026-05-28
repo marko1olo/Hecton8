@@ -23,7 +23,7 @@ namespace Hecton8.Audio.Virtualization
         int DroppedVoiceCount { get; }
         bool EnqueueVirtualVoice(in VirtualVoiceRequest request);
         void SetVirtualListener(in AcousticAup listenerAup);
-        void SetLowTierVirtualization(bool lowTier);
+        void SetVirtualizationQualityWeight(float qualityWeight01);
         void ApplyVirtualVoiceAupShift(long gridDeltaX, long gridDeltaY, long gridDeltaZ);
         bool TryGetVirtualizationStats(out VirtualVoiceStatistics statistics);
     }

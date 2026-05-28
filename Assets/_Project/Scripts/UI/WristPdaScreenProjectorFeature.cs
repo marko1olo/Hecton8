@@ -31,7 +31,7 @@ namespace Hecton8.UI.Rendering
                 internal TextureHandle Source;
                 internal TextureHandle Depth;
                 internal Material Material;
-                internal Texture AtlasTexture;
+                internal TextureHandle AtlasTexture;
                 internal BufferHandle StateBuffer;
                 internal BufferHandle GlobalsBuffer;
             }
@@ -63,7 +63,7 @@ namespace Hecton8.UI.Rendering
                 if (!WristHologramHudRuntime.TryGetActivePdaProjectionResources(
                         out GraphicsBuffer stateBuffer,
                         out GraphicsBuffer globalsBuffer,
-                        out Texture atlasTexture) ||
+                        out RTHandle atlasTexture) ||
                     stateBuffer == null ||
                     globalsBuffer == null ||
                     atlasTexture == null ||
@@ -82,23 +82,27 @@ namespace Hecton8.UI.Rendering
                 if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)
                     return;
 
+                if (cameraData.renderType != CameraRenderType.Base)
+                    return;
+
                 TextureHandle sourceTexture = resourceData.activeColorTexture;
                 TextureHandle depthTexture = resourceData.cameraDepthTexture;
                 if (!sourceTexture.IsValid() || !depthTexture.IsValid())
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                TextureDesc destinationDesc = new TextureDesc(sourceDesc)
-                {
-                    name = "_HectonPdaScreenProjector",
-                    clearBuffer = false,
-                    depthBufferBits = DepthBits.None,
-                    msaaSamples = MSAASamples.None,
-                    colorFormat = sourceDesc.colorFormat
-                };
+                TextureDesc destinationDesc = sourceDesc;
+                destinationDesc.name = "_HectonPdaScreenProjector";
+                destinationDesc.clearBuffer = false;
+                destinationDesc.depthBufferBits = DepthBits.None;
+                destinationDesc.msaaSamples = MSAASamples.None;
+                destinationDesc.colorFormat = sourceDesc.colorFormat;
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
                 BufferHandle stateBufferHandle = renderGraph.ImportBuffer(stateBuffer);
                 BufferHandle globalsBufferHandle = renderGraph.ImportBuffer(globalsBuffer);
+                TextureHandle atlasTextureHandle = renderGraph.ImportTexture(atlasTexture);
+                if (!atlasTextureHandle.IsValid())
+                    return;
 
                 using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<PassData>(
                            "Hecton PDA Screen Projector",
@@ -108,12 +112,13 @@ namespace Hecton8.UI.Rendering
                     passData.Source = sourceTexture;
                     passData.Depth = depthTexture;
                     passData.Material = _material;
-                    passData.AtlasTexture = atlasTexture;
+                    passData.AtlasTexture = atlasTextureHandle;
                     passData.StateBuffer = stateBufferHandle;
                     passData.GlobalsBuffer = globalsBufferHandle;
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
+                    builder.UseTexture(atlasTextureHandle, AccessFlags.Read);
                     builder.UseBuffer(stateBufferHandle, AccessFlags.Read);
                     builder.UseBuffer(globalsBufferHandle, AccessFlags.Read);
                     builder.SetRenderAttachment(destinationTexture, 0, AccessFlags.Write);
@@ -127,7 +132,7 @@ namespace Hecton8.UI.Rendering
 
                         context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
                         context.cmd.SetGlobalTexture(ShaderConstants.CameraDepthTextureId, data.Depth);
-                        data.Material.SetTexture(ShaderConstants.AtlasTextureId, data.AtlasTexture);
+                        context.cmd.SetGlobalTexture(ShaderConstants.AtlasTextureId, data.AtlasTexture);
                         context.cmd.SetGlobalBuffer(ShaderConstants.PdaStateBufferId, stateGraphicsBuffer);
                         context.cmd.SetGlobalConstantBuffer(
                             globalsGraphicsBuffer,
@@ -186,6 +191,9 @@ namespace Hecton8.UI.Rendering
 
             CameraType cameraType = renderingData.cameraData.cameraType;
             if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)
+                return;
+
+            if (renderingData.cameraData.renderType != CameraRenderType.Base)
                 return;
 
             _pass.Setup(settings, _material);

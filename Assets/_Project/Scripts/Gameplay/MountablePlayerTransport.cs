@@ -56,6 +56,8 @@ namespace Hecton8.Gameplay
         private const byte SubmarineImpactHapticPriority = 3;
         private const byte SubmarineImpactHapticMotorMask = 0b0011;
         private const byte SubmarineImpactHapticBlendMode = 2;
+        private const byte TransportOneShotAudioMount = 1;
+        private const byte TransportOneShotAudioDismount = 2;
         private const float CavitationShockwaveMinRadiusMeters = 15f;
         private const float HighSpeedKelpSnapThresholdMetersPerSecond = 10f;
         private const float Pi = 3.14159265359f;
@@ -222,6 +224,15 @@ namespace Hecton8.Gameplay
         private Vector3 _pendingTransformPosePosition;
         private Quaternion _pendingTransformPoseRotation = Quaternion.identity;
         private bool _pendingTransformPoseDirty;
+        private bool _pendingEntanglementStressHapticDirty;
+        private bool _pendingEntanglementCriticalHapticDirty;
+        private bool _pendingEntanglementCriticalNotification;
+        private bool _pendingEntanglementStructuralStressDirty;
+        private bool _pendingTransportOneShotAudioDirty;
+        private TransportHapticRequest _pendingEntanglementStressHaptic;
+        private TransportHapticRequest _pendingEntanglementCriticalHaptic;
+        private EntanglementStructuralStressRequest _pendingEntanglementStructuralStress;
+        private TransportAudioOneShotRequest _pendingTransportOneShotAudio;
 
         private bool _mounted;
         private bool _transportActive;
@@ -265,6 +276,31 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: Vector3[4] - tracked kelp or sargassum anchor positions paired with entanglement instance ids - owner: MountablePlayerTransport
         private readonly Vector3[] _entanglementInstancePositions = new Vector3[MaxEntanglingFloraCount];
         private int _entanglementTrackedCount;
+
+        private struct TransportHapticRequest
+        {
+            public float LowFrequencyIntensity;
+            public float HighFrequencyIntensity;
+            public float DurationSeconds;
+            public float DecayRate;
+            public byte Priority;
+            public byte MotorMask;
+            public byte BlendMode;
+        }
+
+        private struct EntanglementStructuralStressRequest
+        {
+            public Vector3 Source;
+            public float Stress01;
+            public float Pitch;
+        }
+
+        private struct TransportAudioOneShotRequest
+        {
+            public Vector3 Position;
+            public float Volume;
+            public byte ClipKind;
+        }
 
         /// <summary>True while this external transport is actively mounted by the rider.</summary>
         public bool IsMounted => _mounted;
@@ -789,7 +825,7 @@ namespace Hecton8.Gameplay
             AlignTransportToRider(0f);
             ResetPlatformMotionCache();
             SyncMountedRiderVelocity();
-            PlayTransportOneShot(mountSound);
+            QueueTransportOneShotAudio(TransportOneShotAudioMount);
         }
 
         private void DismountRider(bool placeRiderAtExit)
@@ -838,6 +874,8 @@ namespace Hecton8.Gameplay
         public void LateFrameTick()
         {
             FlushQueuedTransformPose();
+            FlushQueuedTransportAudio();
+            FlushQueuedEntanglementFeedback();
         }
 
         void ILateFrameTickable.LateFrameTick()
@@ -1259,16 +1297,16 @@ namespace Hecton8.Gameplay
             return _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
         }
 
-        private static void NotifyEntanglementStressHaptic()
+        private void NotifyEntanglementStressHaptic()
         {
-            ToolHapticsRuntime.TryEnqueueCommand(
-                EntanglementStressHapticLowMotor,
-                EntanglementStressHapticHighMotor,
-                EntanglementStressHapticDurationSeconds,
-                EntanglementStressHapticDecayRate,
-                EntanglementStressHapticPriority,
-                EntanglementStressHapticMotorMask,
-                EntanglementStressHapticBlendMode);
+            _pendingEntanglementStressHaptic.LowFrequencyIntensity = EntanglementStressHapticLowMotor;
+            _pendingEntanglementStressHaptic.HighFrequencyIntensity = EntanglementStressHapticHighMotor;
+            _pendingEntanglementStressHaptic.DurationSeconds = EntanglementStressHapticDurationSeconds;
+            _pendingEntanglementStressHaptic.DecayRate = EntanglementStressHapticDecayRate;
+            _pendingEntanglementStressHaptic.Priority = EntanglementStressHapticPriority;
+            _pendingEntanglementStressHaptic.MotorMask = EntanglementStressHapticMotorMask;
+            _pendingEntanglementStressHaptic.BlendMode = EntanglementStressHapticBlendMode;
+            _pendingEntanglementStressHapticDirty = true;
         }
 
         private void PublishEntanglementStructuralStress(float overload01, float tetherTension)
@@ -1278,20 +1316,23 @@ namespace Hecton8.Gameplay
             float stress01 = math.saturate(math.max(overload01, tension01));
             float pitch = math.lerp(0.78f, 0.48f, stress01);
             Vector3 source = _transportBody != null ? _transportBody.worldCenterOfMass : ResolveTransportRuntimePosition();
-            ProceduralAudioEvents.TryRaiseStructuralStressTriggered(source, stress01, pitch);
+            _pendingEntanglementStructuralStress.Source = source;
+            _pendingEntanglementStructuralStress.Stress01 = stress01;
+            _pendingEntanglementStructuralStress.Pitch = pitch;
+            _pendingEntanglementStructuralStressDirty = true;
         }
 
-        private static void NotifyEntanglementCritical()
+        private void NotifyEntanglementCritical()
         {
-            NotificationEvents.TryPushCritical(EntanglementCriticalNotification.AsSpan());
-            ToolHapticsRuntime.TryEnqueueCommand(
-                EntanglementStallHapticLowMotor,
-                EntanglementStallHapticHighMotor,
-                EntanglementStallHapticDurationSeconds,
-                EntanglementStallHapticDecayRate,
-                EntanglementStallHapticPriority,
-                EntanglementStallHapticMotorMask,
-                EntanglementStallHapticBlendMode);
+            _pendingEntanglementCriticalNotification = true;
+            _pendingEntanglementCriticalHaptic.LowFrequencyIntensity = EntanglementStallHapticLowMotor;
+            _pendingEntanglementCriticalHaptic.HighFrequencyIntensity = EntanglementStallHapticHighMotor;
+            _pendingEntanglementCriticalHaptic.DurationSeconds = EntanglementStallHapticDurationSeconds;
+            _pendingEntanglementCriticalHaptic.DecayRate = EntanglementStallHapticDecayRate;
+            _pendingEntanglementCriticalHaptic.Priority = EntanglementStallHapticPriority;
+            _pendingEntanglementCriticalHaptic.MotorMask = EntanglementStallHapticMotorMask;
+            _pendingEntanglementCriticalHaptic.BlendMode = EntanglementStallHapticBlendMode;
+            _pendingEntanglementCriticalHapticDirty = true;
         }
 
         private Quaternion ResolveDesiredRiderRotation()
@@ -1967,7 +2008,7 @@ namespace Hecton8.Gameplay
             if (transferTowToTransport)
                 TryTransferTowHandoffToTransport(_riderMovement);
 
-            PlayTransportOneShot(dismountSound);
+            QueueTransportOneShotAudio(TransportOneShotAudioDismount);
             ClearRiderReferences();
             TryRestoreBodyFromMountedDrive();
 
@@ -2236,6 +2277,9 @@ namespace Hecton8.Gameplay
 
         private void TryUnregister()
         {
+            ClearQueuedTransportAudio();
+            ClearQueuedEntanglementFeedback();
+
             if (!_registered)
                 return;
 
@@ -2258,6 +2302,67 @@ namespace Hecton8.Gameplay
             }
 
             _registered = false;
+        }
+
+        private void FlushQueuedEntanglementFeedback()
+        {
+            if (_pendingEntanglementCriticalNotification)
+            {
+                _pendingEntanglementCriticalNotification = false;
+                NotificationEvents.TryPushCritical(EntanglementCriticalNotification.AsSpan());
+            }
+
+            if (_pendingEntanglementStressHapticDirty)
+            {
+                _pendingEntanglementStressHapticDirty = false;
+                TransportHapticRequest request = _pendingEntanglementStressHaptic;
+                _pendingEntanglementStressHaptic = default;
+                ToolHapticsRuntime.TryEnqueueCommand(
+                    request.LowFrequencyIntensity,
+                    request.HighFrequencyIntensity,
+                    request.DurationSeconds,
+                    request.DecayRate,
+                    request.Priority,
+                    request.MotorMask,
+                    request.BlendMode);
+            }
+
+            if (_pendingEntanglementCriticalHapticDirty)
+            {
+                _pendingEntanglementCriticalHapticDirty = false;
+                TransportHapticRequest request = _pendingEntanglementCriticalHaptic;
+                _pendingEntanglementCriticalHaptic = default;
+                ToolHapticsRuntime.TryEnqueueCommand(
+                    request.LowFrequencyIntensity,
+                    request.HighFrequencyIntensity,
+                    request.DurationSeconds,
+                    request.DecayRate,
+                    request.Priority,
+                    request.MotorMask,
+                    request.BlendMode);
+            }
+
+            if (_pendingEntanglementStructuralStressDirty)
+            {
+                _pendingEntanglementStructuralStressDirty = false;
+                EntanglementStructuralStressRequest request = _pendingEntanglementStructuralStress;
+                _pendingEntanglementStructuralStress = default;
+                ProceduralAudioEvents.TryRaiseStructuralStressTriggered(
+                    request.Source,
+                    request.Stress01,
+                    request.Pitch);
+            }
+        }
+
+        private void ClearQueuedEntanglementFeedback()
+        {
+            _pendingEntanglementStressHapticDirty = false;
+            _pendingEntanglementCriticalHapticDirty = false;
+            _pendingEntanglementCriticalNotification = false;
+            _pendingEntanglementStructuralStressDirty = false;
+            _pendingEntanglementStressHaptic = default;
+            _pendingEntanglementCriticalHaptic = default;
+            _pendingEntanglementStructuralStress = default;
         }
 
         private void TryRegisterOriginShiftListener()
@@ -2332,13 +2437,45 @@ namespace Hecton8.Gameplay
             _interactionColliderWasEnabled = false;
         }
 
-        private void PlayTransportOneShot(AudioClip clip)
+        private void QueueTransportOneShotAudio(byte clipKind)
         {
+            AudioClip clip = ResolveTransportOneShotClip(clipKind);
             if (clip == null)
                 return;
 
-            if (_cachedAudioService != null)
-                _cachedAudioService.PlayAtPoint(clip, ResolveTransportRuntimePosition(), transportAudioVolume);
+            _pendingTransportOneShotAudio.Position = ResolveTransportRuntimePosition();
+            _pendingTransportOneShotAudio.Volume = transportAudioVolume;
+            _pendingTransportOneShotAudio.ClipKind = clipKind;
+            _pendingTransportOneShotAudioDirty = true;
+        }
+
+        private void FlushQueuedTransportAudio()
+        {
+            if (!_pendingTransportOneShotAudioDirty)
+                return;
+
+            _pendingTransportOneShotAudioDirty = false;
+            TransportAudioOneShotRequest request = _pendingTransportOneShotAudio;
+            _pendingTransportOneShotAudio = default;
+            AudioClip clip = ResolveTransportOneShotClip(request.ClipKind);
+            if (clip != null && _cachedAudioService != null)
+                _cachedAudioService.PlayAtPoint(clip, request.Position, request.Volume);
+        }
+
+        private void ClearQueuedTransportAudio()
+        {
+            _pendingTransportOneShotAudioDirty = false;
+            _pendingTransportOneShotAudio = default;
+        }
+
+        private AudioClip ResolveTransportOneShotClip(byte clipKind)
+        {
+            if (clipKind == TransportOneShotAudioMount)
+                return mountSound;
+            if (clipKind == TransportOneShotAudioDismount)
+                return dismountSound;
+
+            return null;
         }
 
         private void UpdatePresentationTransportBoost(float fixedDeltaTime)

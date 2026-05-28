@@ -34,6 +34,9 @@ namespace Hecton8.Physics.Vehicles
         private const uint HashAddedMassMultiplier = 0x0EA616D0u;
         private const uint HashFloodVolumeScalar = 0xE0BF9C4Fu;
         private const uint HashTargetDepthM = 0xA4492116u;
+        private const byte SimulationReadPinHullProfiles = 1 << 0;
+        private const byte SimulationReadPinTuning = 1 << 1;
+        private const byte SimulationReadPinDragLut = 1 << 2;
         private const uint HashMaxThrustN = 0x6DDC6935u;
         private const uint HashBallastLiftN = 0xDBC90E8Du;
         private const uint HashSloshSpring = 0x3466D6C8u;
@@ -90,6 +93,8 @@ namespace Hecton8.Physics.Vehicles
         private JobHandle _integratorHandle;
         private bool _integratorPending;
         private bool _buffersLocked;
+        private bool _configWriteLockHeld;
+        private byte _simulationReadPinMask;
         private bool _buffersReady;
         private bool _registeredFixed;
         private bool _registeredPostFixed;
@@ -240,7 +245,16 @@ namespace Hecton8.Physics.Vehicles
             }
 
             VehicleCommandSignalBus.FlushPending();
+            if (configs.Length == 0)
+            {
+                _buffersReady = false;
+                UnlockSimulationBuffers();
+                return;
+            }
+
             ConsumeSignals(controls, masses, forces, configs);
+            SubmarineKinematicConfig frameConfig = configs[0];
+            ReleaseSimulationConfigWriteLock();
 
             uint frame = ++_frameCounter;
             float quality = ResolveMathLodQualityWeight();
@@ -252,7 +266,7 @@ namespace Hecton8.Physics.Vehicles
             {
                 States = states,
                 MassProperties = masses,
-                Configs = configs,
+                Config = frameConfig,
                 HullProfiles = hullProfiles,
                 Tuning = addedMassTuning,
                 AddedMassProfiles = addedMassProfiles,
@@ -282,7 +296,7 @@ namespace Hecton8.Physics.Vehicles
                 Telemetry = telemetry,
                 AddedMassProfiles = addedMassProfiles,
                 Tuning = addedMassTuning,
-                Configs = configs,
+                Config = frameConfig,
                 DragLut = dragLut,
                 CavitationWriter = SignalBus<CavitationAcousticSignal>.ParallelWriter,
                 CavitationWriterBudget = SignalBus<CavitationAcousticSignal>.ParallelWriterBudget,
@@ -338,7 +352,7 @@ namespace Hecton8.Physics.Vehicles
             if (_integratorPending || !_buffersReady || _dataVault == null)
                 return;
 
-            if (!TryReadVaultHandle(in _stateHandle, out NativeArray<SubmarineKinematicState> states) || states.Length == 0)
+            if (!TryReadOnlyVaultHandle(in _stateHandle, out NativeArray<SubmarineKinematicState>.ReadOnly states) || states.Length == 0)
                 return;
 
             SubmarineKinematicState state = states[0];
@@ -379,7 +393,7 @@ namespace Hecton8.Physics.Vehicles
             if (!_buffersReady || _integratorPending || _buffersLocked || _dataVault == null)
                 return false;
 
-            if (!TryReadVaultHandle(in _stateHandle, out NativeArray<SubmarineKinematicState> states) || states.Length == 0)
+            if (!TryReadOnlyVaultHandle(in _stateHandle, out NativeArray<SubmarineKinematicState>.ReadOnly states) || states.Length == 0)
                 return false;
 
             SubmarineKinematicState state = states[0];
@@ -402,7 +416,7 @@ namespace Hecton8.Physics.Vehicles
                 return new float3(fallbackRadius, fallbackRadius, fallbackLength * 0.5f);
             }
 
-            if (!TryReadVaultHandle(in _addedMassHandle, out NativeArray<AddedMassProfileDTO> profiles) || profiles.Length == 0)
+            if (!TryReadOnlyVaultHandle(in _addedMassHandle, out NativeArray<AddedMassProfileDTO>.ReadOnly profiles) || profiles.Length == 0)
             {
                 SubmarineAddedMassMath.ResolveHullAxes(math.max(1f, hullVolumeM3), out fallbackLength, out fallbackRadius);
                 return new float3(fallbackRadius, fallbackRadius, fallbackLength * 0.5f);
@@ -589,30 +603,82 @@ namespace Hecton8.Physics.Vehicles
             return _dataVault != null && IsGenerationHandleCreated(in handle) && _dataVault.TryResolveHandle(in handle, out buffer);
         }
 
-        private bool TryReadVaultHandle<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
+        private bool TryReadOnlyVaultHandle<T>(in VaultGenerationHandle<T> handle, out NativeArray<T>.ReadOnly buffer)
             where T : struct
         {
             buffer = default;
-            return _dataVault != null && IsGenerationHandleCreated(in handle) && _dataVault.TryReadHandle(in handle, out buffer);
+            return _dataVault != null && IsGenerationHandleCreated(in handle) && _dataVault.TryReadOnlyHandle(in handle, out buffer);
         }
 
         private bool TryAcquireVaultWriteLock<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
             where T : struct
         {
             buffer = default;
+            bool lockAcquired = false;
+            try
+            {
+                if (_dataVault == null ||
+                    !IsGenerationHandleCreated(in handle) ||
+                    !_dataVault.TryAcquireWriteLock(in handle, SystemID.VehiclesPhysics, out buffer))
+                {
+                    return false;
+                }
+
+                lockAcquired = true;
+                return buffer.IsCreated;
+            }
+            finally
+            {
+                if (lockAcquired && !buffer.IsCreated)
+                {
+                    _dataVault.ReleaseWriteLock(in handle, SystemID.VehiclesPhysics);
+                    buffer = default;
+                }
+            }
+        }
+
+        private bool TryAcquireVaultReadPin<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
             if (_dataVault == null ||
-                !IsGenerationHandleCreated(in handle) ||
-                !_dataVault.TryAcquireWriteLock(in handle, SystemID.VehiclesPhysics, out buffer))
+                _dataVault.IsCompactionFenceActive ||
+                requiredLength <= 0 ||
+                !IsVehiclesPhysicsHandle(in handle, bufferId))
             {
                 return false;
             }
 
-            if (buffer.IsCreated)
-                return true;
+            bool pinAcquired = false;
+            try
+            {
+                if (!_dataVault.TryLockBuffer(bufferId, SystemID.VehiclesPhysics))
+                    return false;
 
-            _dataVault.ReleaseWriteLock(in handle, SystemID.VehiclesPhysics);
-            buffer = default;
-            return false;
+                pinAcquired = true;
+                if (!_dataVault.TryResolveHandle(in handle, out buffer) ||
+                    !buffer.IsCreated ||
+                    buffer.Length < requiredLength ||
+                    _dataVault.IsCompactionFenceActive)
+                {
+                    return false;
+                }
+
+                pinAcquired = false;
+                return true;
+            }
+            finally
+            {
+                if (pinAcquired)
+                {
+                    _dataVault.TryUnlockBuffer(bufferId, SystemID.VehiclesPhysics);
+                    buffer = default;
+                }
+            }
         }
 
         private void ReleaseVaultWriteLock<T>(in VaultGenerationHandle<T> handle)
@@ -622,10 +688,24 @@ namespace Hecton8.Physics.Vehicles
                 _dataVault.ReleaseWriteLock(in handle, SystemID.VehiclesPhysics);
         }
 
+        private void ReleaseVaultReadPin(BufferID bufferId)
+        {
+            if (_dataVault != null)
+                _dataVault.TryUnlockBuffer(bufferId, SystemID.VehiclesPhysics);
+        }
+
         private static bool IsGenerationHandleCreated<T>(in VaultGenerationHandle<T> handle)
             where T : struct
         {
             return handle.BufferID != 0u && handle.Generation != 0u;
+        }
+
+        private static bool IsVehiclesPhysicsHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)SystemID.VehiclesPhysics &&
+                   handle.Generation != 0u;
         }
 
         private bool EnsureVaultBuffers()
@@ -662,8 +742,8 @@ namespace Hecton8.Physics.Vehicles
                 return false;
             }
 
-            if (!TryReadVaultHandle(in _configHandle, out NativeArray<SubmarineKinematicConfig> configRead) ||
-                !TryReadVaultHandle(in _addedMassTuningHandle, out NativeArray<SubmarineAddedMassTuningDTO> tuningRead) ||
+            if (!TryReadOnlyVaultHandle(in _configHandle, out NativeArray<SubmarineKinematicConfig>.ReadOnly configRead) ||
+                !TryReadOnlyVaultHandle(in _addedMassTuningHandle, out NativeArray<SubmarineAddedMassTuningDTO>.ReadOnly tuningRead) ||
                 configRead.Length == 0 ||
                 tuningRead.Length == 0)
             {
@@ -819,7 +899,7 @@ namespace Hecton8.Physics.Vehicles
             if (!_buffersReady || _buffersLocked || _integratorPending || _dataVault == null)
                 return false;
 
-            if (!TryReadVaultHandle(in _addedMassTuningHandle, out NativeArray<SubmarineAddedMassTuningDTO> tuningRows) ||
+            if (!TryReadOnlyVaultHandle(in _addedMassTuningHandle, out NativeArray<SubmarineAddedMassTuningDTO>.ReadOnly tuningRows) ||
                 tuningRows.Length == 0)
             {
                 return false;
@@ -860,7 +940,7 @@ namespace Hecton8.Physics.Vehicles
                 return false;
 
             int capacity = math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles);
-            if (!TryReadVaultHandle(in _hydrodynamicsTelemetryHandle, out NativeArray<SubmarineHydrodynamicsTelemetry> telemetryRows) ||
+            if (!TryReadOnlyVaultHandle(in _hydrodynamicsTelemetryHandle, out NativeArray<SubmarineHydrodynamicsTelemetry>.ReadOnly telemetryRows) ||
                 telemetryRows.Length < capacity * SubmarineDynamicsConstants.BlackBoxFrames)
             {
                 return false;
@@ -1000,7 +1080,7 @@ namespace Hecton8.Physics.Vehicles
                 return;
             }
 
-            if (!TryReadVaultHandle(in _vehicleDamageStateReadHandle, out NativeArray<VehicleDamageStateDTO> damageStates) ||
+            if (!TryReadOnlyVaultHandle(in _vehicleDamageStateReadHandle, out NativeArray<VehicleDamageStateDTO>.ReadOnly damageStates) ||
                 damageStates.Length <= 0)
             {
                 return;
@@ -1070,26 +1150,55 @@ namespace Hecton8.Physics.Vehicles
             if (_buffersLocked || _dataVault == null)
                 return _buffersLocked;
 
-            if (!TryAcquireVaultWriteLock(in _stateHandle, out _) ||
-                !TryAcquireVaultWriteLock(in _controlHandle, out _) ||
-                !TryAcquireVaultWriteLock(in _pidHandle, out _) ||
-                !TryAcquireVaultWriteLock(in _massHandle, out _) ||
-                !TryAcquireVaultWriteLock(in _forceHandle, out _) ||
-                !TryAcquireVaultWriteLock(in _telemetryHandle, out _) ||
-                !TryAcquireVaultWriteLock(in _addedMassHandle, out _) ||
-                !TryAcquireVaultWriteLock(in _hydrodynamicsTelemetryHandle, out _) ||
-                !TryAcquireVaultWriteLock(in _hullProfileHandle, out _) ||
-                !TryAcquireVaultWriteLock(in _addedMassTuningHandle, out _) ||
-                !TryAcquireVaultWriteLock(in _configHandle, out _) ||
-                !TryAcquireVaultWriteLock(in _dragLutHandle, out _) ||
-                !TryLockGyroBuffers())
+            bool locked = false;
+            try
             {
-                _buffersLocked = true;
-                UnlockSimulationBuffers();
-                return false;
-            }
+                _simulationReadPinMask = 0;
+                _configWriteLockHeld = false;
+                if (!TryAcquireVaultWriteLock(in _stateHandle, out _) ||
+                    !TryAcquireVaultWriteLock(in _controlHandle, out _) ||
+                    !TryAcquireVaultWriteLock(in _pidHandle, out _) ||
+                    !TryAcquireVaultWriteLock(in _massHandle, out _) ||
+                    !TryAcquireVaultWriteLock(in _forceHandle, out _) ||
+                    !TryAcquireVaultWriteLock(in _telemetryHandle, out _) ||
+                    !TryAcquireVaultWriteLock(in _addedMassHandle, out _) ||
+                    !TryAcquireVaultWriteLock(in _hydrodynamicsTelemetryHandle, out _) ||
+                    !TryAcquireVaultWriteLock(in _configHandle, out _) ||
+                    !TryMarkSimulationConfigWriteLock() ||
+                    !TryAcquireVaultReadPin(in _hullProfileHandle, BufferID.Shinobu251HullProfiles, math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles), out _) ||
+                    !TryMarkSimulationReadPin(SimulationReadPinHullProfiles) ||
+                    !TryAcquireVaultReadPin(in _addedMassTuningHandle, BufferID.Shinobu251AddedMassTuning, 1, out _) ||
+                    !TryMarkSimulationReadPin(SimulationReadPinTuning) ||
+                    !TryAcquireVaultReadPin(in _dragLutHandle, BufferID.SubmarineKinematicDragLut, SubmarineDynamicsConstants.DragLutSamples, out _) ||
+                    !TryMarkSimulationReadPin(SimulationReadPinDragLut) ||
+                    !TryLockGyroBuffers())
+                {
+                    return false;
+                }
 
-            _buffersLocked = true;
+                _buffersLocked = true;
+                locked = true;
+                return true;
+            }
+            finally
+            {
+                if (!locked)
+                {
+                    _buffersLocked = true;
+                    UnlockSimulationBuffers();
+                }
+            }
+        }
+
+        private bool TryMarkSimulationReadPin(byte pinBit)
+        {
+            _simulationReadPinMask |= pinBit;
+            return true;
+        }
+
+        private bool TryMarkSimulationConfigWriteLock()
+        {
+            _configWriteLockHeld = true;
             return true;
         }
 
@@ -1106,12 +1215,26 @@ namespace Hecton8.Physics.Vehicles
             ReleaseVaultWriteLock(in _telemetryHandle);
             ReleaseVaultWriteLock(in _addedMassHandle);
             ReleaseVaultWriteLock(in _hydrodynamicsTelemetryHandle);
-            ReleaseVaultWriteLock(in _hullProfileHandle);
-            ReleaseVaultWriteLock(in _addedMassTuningHandle);
-            ReleaseVaultWriteLock(in _configHandle);
-            ReleaseVaultWriteLock(in _dragLutHandle);
+            ReleaseSimulationConfigWriteLock();
+            byte readPinMask = _simulationReadPinMask;
+            if ((readPinMask & SimulationReadPinDragLut) != 0)
+                ReleaseVaultReadPin(BufferID.SubmarineKinematicDragLut);
+            if ((readPinMask & SimulationReadPinTuning) != 0)
+                ReleaseVaultReadPin(BufferID.Shinobu251AddedMassTuning);
+            if ((readPinMask & SimulationReadPinHullProfiles) != 0)
+                ReleaseVaultReadPin(BufferID.Shinobu251HullProfiles);
+            _simulationReadPinMask = 0;
             UnlockGyroBuffers();
             _buffersLocked = false;
+        }
+
+        private void ReleaseSimulationConfigWriteLock()
+        {
+            if (!_configWriteLockHeld)
+                return;
+
+            ReleaseVaultWriteLock(in _configHandle);
+            _configWriteLockHeld = false;
         }
 
 #if UNITY_EDITOR
@@ -1865,7 +1988,7 @@ namespace Hecton8.Physics.Vehicles
             if (_dumpWritten || _dataVault == null || !IsGenerationHandleCreated(in _stateHandle))
                 return false;
 
-            if (!TryReadVaultHandle(in _stateHandle, out NativeArray<SubmarineKinematicState> states) || states.Length == 0)
+            if (!TryReadOnlyVaultHandle(in _stateHandle, out NativeArray<SubmarineKinematicState>.ReadOnly states) || states.Length == 0)
                 return false;
 
             bool fatal = false;
@@ -2051,7 +2174,7 @@ namespace Hecton8.Physics.Vehicles
             config = default;
             if (_dataVault == null ||
                 !_buffersReady ||
-                !TryReadVaultHandle(in _configHandle, out NativeArray<SubmarineKinematicConfig> configs) ||
+                !TryReadOnlyVaultHandle(in _configHandle, out NativeArray<SubmarineKinematicConfig>.ReadOnly configs) ||
                 configs.Length <= 0)
             {
                 return false;

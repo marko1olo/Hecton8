@@ -35,7 +35,7 @@ Evidence class: STATIC_SOURCE / PACKAGE_LOCK / FILESYSTEM. No Unity import, play
 - XR Management OpenXR settings: `Assets/XR/Settings/OpenXR Package Settings.asset`, present: `yes`, registered: `yes`
 - XR Management OpenXR loader: `Assets/XR/Loaders/OpenXRLoader.asset`, present: `yes`, serialized references: `0`
 - XR Management Single Pass Instanced serialized: `yes`
-- XR Management Quest feature present/enabled: `yes` / `no`
+- XR Management Quest feature present/enabled: `yes` / `yes`
 - XR readiness validator present: `yes`
 - XR provider route validator present: `yes`
 - XR provider route fixer present: `yes`
@@ -64,12 +64,12 @@ Evidence class: STATIC_SOURCE / PACKAGE_LOCK / FILESYSTEM. No Unity import, play
 - Bootstrap `WarmUpProgressively()` calls: `1`
 - Bootstrap `isWarmedUp` reads: `3`
 - `Shader.WarmupAllShaders()` call sites in bootstrap: `0`
-- Shader source files: `614`
-- `shader_feature`/`multi_compile` pragmas: `886`
-- `#pragma target >= 4.5`: `102`
+- Shader source files: `615`
+- `shader_feature`/`multi_compile` pragmas: `880`
+- `#pragma target >= 4.5`: `96`
 - `#pragma target >= 5.0`: `5`
 - Compute files: `71`
-- Compute reference files scanned: `9558`
+- Compute reference files scanned: `9602`
 - Compute reference files skipped over `2000000` bytes: `39` / bytes `346161212`
 - `numthreads` declarations: `156`
 - Risky numeric thread groups > `64`: `4`
@@ -80,18 +80,18 @@ Evidence class: STATIC_SOURCE / PACKAGE_LOCK / FILESYSTEM. No Unity import, play
 - Editor/test-only runtime asset risky numeric thread groups > `64`: `2`
 - Runtime-referenced risky numeric thread groups > `64`: `0`
 - Compute target 5.0 files: `5`
-- C# compute dispatch calls: `129`; runtime: `125`
-- C# compute dispatch caller files: `50`; runtime: `48`
-- Dispatch calls without file-level `GetKernelThreadGroupSizes`: `40`; runtime: `38`
+- C# compute dispatch calls: `134`; runtime: `126`
+- C# compute dispatch caller files: `51`; runtime: `48`
+- Dispatch calls without file-level `GetKernelThreadGroupSizes`: `44`; runtime: `38`
 - First-party runtime dispatch calls without local query and without payload-sized dispatch proof: `0`
 - First-party runtime payload-sized dispatch bridge calls without local query: `4`
 - Vendor/external runtime dispatch calls without local query: `34`
-- Dispatch caller files without file-level `GetKernelThreadGroupSizes`: `14`; runtime: `13`
+- Dispatch caller files without file-level `GetKernelThreadGroupSizes`: `15`; runtime: `13`
 - First-party runtime dispatch caller files without local query and without payload-sized dispatch proof: `0`
 - First-party runtime payload-sized dispatch bridge files without local query: `2`
 - Vendor/external runtime dispatch caller files without local query: `11`
-- Dispatch calls without thread-group query by execution surface: `{'Editor': 2, 'Runtime': 38}`
-- Dispatch calls without thread-group query by owner: `{'FirstParty': 4, 'Vendor': 36}`
+- Dispatch calls without thread-group query by execution surface: `{'Editor': 6, 'Runtime': 38}`
+- Dispatch calls without thread-group query by owner: `{'FirstParty': 8, 'Vendor': 36}`
 
 ## Payload / Build Artifacts
 
@@ -145,28 +145,28 @@ First-party runtime payload-sized dispatch bridges without local query:
 - `Assets/_Project/Scripts/VFX/JacobianFoam/HectonJacobianFoamRenderFeature.cs:125` (`Runtime`) `context.cmd.DispatchCompute(payloadData.Compute, payloadData.ClearKernel, payloadData.ClearDispatchGroupsX, payloadData.ClearDispatchGroupsY, 1);`
 - `Assets/_Project/Scripts/VFX/JacobianFoam/HectonJacobianFoamRenderFeature.cs:129` (`Runtime`) `context.cmd.DispatchCompute(payloadData.Compute, payloadData.CalculateKernel, payloadData.CalculateDispatchGroupsX, payloadData.CalculateDispatchGroupsY, 1);`
 - `Assets/_Project/Scripts/VFX/JacobianFoam/HectonJacobianFoamRenderFeature.cs:153` (`Runtime`) `context.cmd.DispatchCompute(payloadData.Compute, payloadData.AdvectKernel, payloadData.AdvectDispatchGroupsX, payloadData.AdvectDispatchGroupsY, 1);`
-- `Assets/_Project/Scripts/Visor/HectonFluidAdvectionRenderFeature.cs:91` (`Runtime`) `context.cmd.DispatchCompute( data.Payload.Compute, data.Payload.Kernel, data.Payload.DispatchGroups, 1, 1);`
+- `Assets/_Project/Scripts/Visor/HectonFluidAdvectionRenderFeature.cs:98` (`Runtime`) `context.cmd.DispatchCompute( data.Payload.Compute, data.Payload.Kernel, data.Payload.DispatchGroups, 1, 1);`
 
 - `Assets/_Project/Scripts/VFX/JacobianFoam/HectonJacobianFoamRenderFeature.cs:125` (`Runtime`) `context.cmd.DispatchCompute(payloadData.Compute, payloadData.ClearKernel, payloadData.ClearDispatchGroupsX, payloadData.ClearDispatchGroupsY, 1);`
 - `Assets/_Project/Scripts/VFX/JacobianFoam/HectonJacobianFoamRenderFeature.cs:129` (`Runtime`) `context.cmd.DispatchCompute(payloadData.Compute, payloadData.CalculateKernel, payloadData.CalculateDispatchGroupsX, payloadData.CalculateDispatchGroupsY, 1);`
 - `Assets/_Project/Scripts/VFX/JacobianFoam/HectonJacobianFoamRenderFeature.cs:153` (`Runtime`) `context.cmd.DispatchCompute(payloadData.Compute, payloadData.AdvectKernel, payloadData.AdvectDispatchGroupsX, payloadData.AdvectDispatchGroupsY, 1);`
-- `Assets/_Project/Scripts/Visor/HectonFluidAdvectionRenderFeature.cs:91` (`Runtime`) `context.cmd.DispatchCompute( data.Payload.Compute, data.Payload.Kernel, data.Payload.DispatchGroups, 1, 1);`
-- `Assets/Crest/Crest/Scripts/Collision/QueryBase.cs:495` (`Runtime`) `_shaderProcessQueries.Dispatch(_kernelHandle, numGroups, 1, 1);`
-- `Assets/Crest/Crest/Scripts/Helpers/TextureArrayHelpers.cs:57` (`Runtime`) `s_clearToBlackShader.Dispatch( krnl_ClearToBlack, OceanRenderer.Instance.LodDataResolution / LodDataMgr.THREAD_GROUP_SIZE_X, OceanRenderer.Instance.LodDataResol`
-- `Assets/Crest/Crest/Scripts/LodData/LodDataMgrAnimWaves.cs:411` (`Runtime`) `buf.DispatchCompute(_combineShader, selectedShaderKernel, OceanRenderer.Instance.LodDataResolution / THREAD_GROUP_SIZE_X, OceanRenderer.Instance.LodDataResoluti`
-- `Assets/Crest/Crest/Scripts/LodData/LodDataMgrPersistent.cs:175` (`Runtime`) `buf.DispatchCompute(_shader, krnl_ShaderSim, OceanRenderer.Instance.LodDataResolution / THREAD_GROUP_SIZE_X, OceanRenderer.Instance.LodDataResolution / THREAD_G`
-- `Assets/Crest/Crest/Scripts/Shapes/FFT/FFTBaker.cs:109` (`Runtime`) `buf.DispatchCompute(waveCombineShader, kernel, bakedWaves.width / 8, bakedWaves.height / 8, 1);`
-- `Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs:408` (`Runtime`) `buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumInit, _resolution / 8, _resolution / 8, CASCADE_COUNT);`
-- `Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs:426` (`Runtime`) `buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumUpdate, _resolution / 8, _resolution / 8, CASCADE_COUNT);`
-- `Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs:443` (`Runtime`) `buf.DispatchCompute(_shaderFFT, kernelOffset, 1, _resolution, CASCADE_COUNT);`
-- `Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs:450` (`Runtime`) `buf.DispatchCompute(_shaderFFT, kernelOffset + 1, _resolution, 1, CASCADE_COUNT);`
-- `Assets/Crest/Crest/Scripts/Shapes/ShapeGerstner.cs:364` (`Runtime`) `buf.DispatchCompute(_shaderGerstner, _krnlGerstner, _waveBuffers.width / LodDataMgr.THREAD_GROUP_SIZE_X, _waveBuffers.height / LodDataMgr.THREAD_GROUP_SIZE_Y, _`
+- `Assets/_Project/Scripts/Visor/HectonFluidAdvectionRenderFeature.cs:98` (`Runtime`) `context.cmd.DispatchCompute( data.Payload.Compute, data.Payload.Kernel, data.Payload.DispatchGroups, 1, 1);`
+- `Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs:425` (`Editor`) `int persistentStart = persistentSource.IndexOf("buf.DispatchCompute(_shader, krnl_ShaderSim", System.StringComparison.Ordinal); Assert.GreaterOrEqual(persistent`
+- `Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs:486` (`Editor`) `Assert.That(method, Does.Contain("buf.DispatchCompute(waveCombineShader, kernel, groupsX, groupsY, 1);"));`
+- `Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs:520` (`Editor`) `Assert.That(initMethod, Does.Contain("buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumInit, groups, groups, CASCADE_COUNT);"));`
+- `Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs:524` (`Editor`) `Assert.That(updateMethod, Does.Contain("buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumUpdate, groups, groups, CASCADE_COUNT);"));`
+- `Assets/Crest/Crest/Scripts/Collision/QueryBase.cs:496` (`Runtime`) `_shaderProcessQueries.Dispatch(_kernelHandle, numGroups, 1, 1);`
+- `Assets/Crest/Crest/Scripts/Helpers/TextureArrayHelpers.cs:79` (`Runtime`) `s_clearToBlackShader.Dispatch( krnl_ClearToBlack, groupsX, groupsY, depth );`
+- `Assets/Crest/Crest/Scripts/LodData/LodDataMgrAnimWaves.cs:426` (`Runtime`) `buf.DispatchCompute(_combineShader, selectedShaderKernel, groupsX, groupsY, 1);`
+- `Assets/Crest/Crest/Scripts/LodData/LodDataMgrPersistent.cs:192` (`Runtime`) `buf.DispatchCompute(_shader, krnl_ShaderSim, groupsX, groupsY, lodDispatchCount);`
+- `Assets/Crest/Crest/Scripts/Shapes/FFT/FFTBaker.cs:136` (`Runtime`) `buf.DispatchCompute(waveCombineShader, kernel, groupsX, groupsY, 1);`
+- `Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs:449` (`Runtime`) `buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumInit, groups, groups, CASCADE_COUNT);`
+- `Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs:473` (`Runtime`) `buf.DispatchCompute(_shaderSpectrum, _kernelSpectrumUpdate, groups, groups, CASCADE_COUNT);`
+- `Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs:495` (`Runtime`) `buf.DispatchCompute(_shaderFFT, kernelOffset, 1, _resolution, CASCADE_COUNT);`
+- `Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs:502` (`Runtime`) `buf.DispatchCompute(_shaderFFT, kernelOffset + 1, _resolution, 1, CASCADE_COUNT);`
+- `Assets/Crest/Crest/Scripts/Shapes/ShapeGerstner.cs:381` (`Runtime`) `buf.DispatchCompute(_shaderGerstner, _krnlGerstner, groupsX, groupsY, cascadeCount);`
 - `Assets/Editor/x64/Bakery/scripts/ftBuildGraphics.cs:3003` (`Editor`) `farSphereCSTransform.Dispatch(0, dispatchWidth, dispatchWidth, 1);`
 - `Assets/Editor/x64/Bakery/scripts/ftBuildGraphics.cs:3017` (`Editor`) `farSphereCSCull.Dispatch(0, dispatchIndexGroups, 1, 1);`
-- `Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs:637` (`Runtime`) `_argsBufferComputeShader.Dispatch(_argsBufferDoubleInstanceCountComputeKernelID, Mathf.CeilToInt(count / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, `
-- `Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs:573` (`Runtime`) `cameraComputeShader.Dispatch(instanceVisibilityComputeKernelId, Mathf.CeilToInt(runtimeData.instanceCount / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), `
-- `Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs:611` (`Runtime`) `visibilityComputeShader.Dispatch(instanceVisibilityComputeKernelId, Mathf.CeilToInt(runtimeData.instanceCount / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUN`
-- `Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs:706` (`Runtime`) `bufferToTextureComputeShader.Dispatch(bufferToTextureComputeKernelID, Mathf.CeilToInt(runtimeData.bufferSize / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT`
 
 ## Readiness Flags
 

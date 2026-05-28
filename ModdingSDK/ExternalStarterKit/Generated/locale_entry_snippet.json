@@ -1,0 +1,5 @@
+{
+    "Key":  "text.example_line",
+    "Value":  "Your localized text",
+    "Notes":  "Copy Key and Value into Locales/en.h8loc.json Strings, then run h8mod.ps1 -Action validate."
+}

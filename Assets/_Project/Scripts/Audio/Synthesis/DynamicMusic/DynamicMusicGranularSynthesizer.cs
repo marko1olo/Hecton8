@@ -402,6 +402,7 @@ namespace Hecton8.Audio.Synthesis
             IDataVault vault = _dataVault;
             if (Volatile.Read(ref _nativeAllocated) == 0 ||
                 vault == null ||
+                !IsDynamicMusicVaultHandle(in _tuningHandle, BufferID.AudioDynamicSynthTuning) ||
                 !vault.TryReadOnlyHandle(in _tuningHandle, out NativeArray<DynamicMusicSynthTuningDTO>.ReadOnly tuningView) ||
                 tuningView.Length <= 0)
             {
@@ -417,6 +418,7 @@ namespace Hecton8.Audio.Synthesis
             IDataVault lockedVault = _dataVault;
             if (Volatile.Read(ref _nativeAllocated) == 0 ||
                 lockedVault == null ||
+                !AreDynamicMusicVaultHandlesExact() ||
                 Volatile.Read(ref _synthJobPending) != 0)
                 return false;
 
@@ -442,6 +444,8 @@ namespace Hecton8.Audio.Synthesis
             IDataVault vault = _dataVault;
             if (Volatile.Read(ref _nativeAllocated) == 0 ||
                 vault == null ||
+                !IsDynamicMusicVaultHandle(in _telemetryRingHandle, BufferID.AudioDynamicSynthTelemetry) ||
+                !IsDynamicMusicVaultHandle(in _telemetryCursorHandle, BufferID.AudioDynamicSynthTelemetryCursor) ||
                 !vault.TryReadOnlyHandle(in _telemetryRingHandle, out NativeArray<AudioDSPTelemetryEntry>.ReadOnly telemetryRing) ||
                 !vault.TryReadOnlyHandle(in _telemetryCursorHandle, out NativeArray<int>.ReadOnly telemetryCursor) ||
                 telemetryRing.Length <= 0 ||
@@ -473,6 +477,7 @@ namespace Hecton8.Audio.Synthesis
                 return false;
 
             if (readyIndex == 0 &&
+                IsDynamicMusicVaultHandle(in _outputAHandle, BufferID.AudioDynamicSynthOutputA) &&
                 vault.TryReadOnlyHandle(in _outputAHandle, out NativeArray<float>.ReadOnly outputA) &&
                 safeIndex < outputA.Length)
             {
@@ -481,6 +486,7 @@ namespace Hecton8.Audio.Synthesis
             }
 
             if (readyIndex == 1 &&
+                IsDynamicMusicVaultHandle(in _outputBHandle, BufferID.AudioDynamicSynthOutputB) &&
                 vault.TryReadOnlyHandle(in _outputBHandle, out NativeArray<float>.ReadOnly outputB) &&
                 safeIndex < outputB.Length)
             {
@@ -504,7 +510,7 @@ namespace Hecton8.Audio.Synthesis
             DynamicMusicVaultViews views = default;
             int lockMask = 0;
             IDataVault lockedVault = _dataVault;
-            if (lockedVault == null)
+            if (lockedVault == null || !AreDynamicMusicVaultHandlesExact())
                 return false;
 
             try
@@ -670,7 +676,8 @@ namespace Hecton8.Audio.Synthesis
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            RebindDataVaultCold(currentService as IDataVault);
+            IDataVault nextVault = currentService is IDataVault vault ? vault : null;
+            RebindDataVaultCold(nextVault);
             EnsureVaultStorage();
             TryRefreshScalabilityStateHandleCold();
             RefreshGlobalQualitySnapshotCold();
@@ -830,7 +837,8 @@ namespace Hecton8.Audio.Synthesis
 
         private bool AreVaultViewsResolvable()
         {
-            return IsReadOnlyHandleResolvable(in _voicesHandle, VoiceCapacity) &&
+            return AreDynamicMusicVaultHandlesExact() &&
+                   IsReadOnlyHandleResolvable(in _voicesHandle, VoiceCapacity) &&
                    IsReadOnlyHandleResolvable(in _scalarHandle, 1) &&
                    IsReadOnlyHandleResolvable(in _tuningHandle, 1) &&
                    IsReadOnlyHandleResolvable(in _outputAHandle, OutputSampleCapacity) &&
@@ -849,20 +857,20 @@ namespace Hecton8.Audio.Synthesis
         private void DisposeVaultStorage()
         {
             IDataVault vault = _dataVault;
-            ReleaseVaultBuffer(vault, ref _voicesHandle);
-            ReleaseVaultBuffer(vault, ref _scalarHandle);
-            ReleaseVaultBuffer(vault, ref _tuningHandle);
-            ReleaseVaultBuffer(vault, ref _outputAHandle);
-            ReleaseVaultBuffer(vault, ref _outputBHandle);
-            ReleaseVaultBuffer(vault, ref _biquadHandle);
-            ReleaseVaultBuffer(vault, ref _telemetryRingHandle);
-            ReleaseVaultBuffer(vault, ref _telemetryCursorHandle);
+            ReleaseVaultBuffer(vault, ref _voicesHandle, BufferID.AudioDynamicSynthVoices);
+            ReleaseVaultBuffer(vault, ref _scalarHandle, BufferID.AudioDynamicSynthScalar);
+            ReleaseVaultBuffer(vault, ref _tuningHandle, BufferID.AudioDynamicSynthTuning);
+            ReleaseVaultBuffer(vault, ref _outputAHandle, BufferID.AudioDynamicSynthOutputA);
+            ReleaseVaultBuffer(vault, ref _outputBHandle, BufferID.AudioDynamicSynthOutputB);
+            ReleaseVaultBuffer(vault, ref _biquadHandle, BufferID.AudioDynamicSynthBiquad);
+            ReleaseVaultBuffer(vault, ref _telemetryRingHandle, BufferID.AudioDynamicSynthTelemetry);
+            ReleaseVaultBuffer(vault, ref _telemetryCursorHandle, BufferID.AudioDynamicSynthTelemetryCursor);
 #if UNITY_EDITOR
-            ReleaseVaultBuffer(vault, ref _csvScratchHandle);
+            ReleaseVaultBuffer(vault, ref _csvScratchHandle, BufferID.AudioDynamicSynthCsvScratch);
 #endif
-            ReleaseVaultBuffer(vault, ref _presetRulesHandle);
-            ReleaseVaultBuffer(vault, ref _grainBankHandle);
-            ReleaseVaultBuffer(vault, ref _sharedStateHandle);
+            ReleaseVaultBuffer(vault, ref _presetRulesHandle, BufferID.AudioDynamicSynthPresetRules);
+            ReleaseVaultBuffer(vault, ref _grainBankHandle, BufferID.AudioDynamicSynthGrainBank);
+            ReleaseVaultBuffer(vault, ref _sharedStateHandle, BufferID.AudioDynamicSynthSharedState);
             _scalabilityStateHandle = default;
             _dataVault = null;
 #if UNITY_EDITOR
@@ -872,13 +880,45 @@ namespace Hecton8.Audio.Synthesis
             Volatile.Write(ref _nativeAllocated, 0);
         }
 
-        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId)
             where T : struct
         {
-            if (vault != null && handle.BufferID != 0u)
+            if (vault != null && IsDynamicMusicVaultHandle(in handle, expectedBufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
+        }
+
+        private static bool IsDynamicMusicVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId)
+            where T : struct
+        {
+            return handle.BufferID == (uint)expectedBufferId &&
+                   handle.SystemID == (uint)VaultOwner &&
+                   handle.Generation != 0u;
+        }
+
+        private bool AreDynamicMusicVaultHandlesExact()
+        {
+            return IsDynamicMusicVaultHandle(in _voicesHandle, BufferID.AudioDynamicSynthVoices) &&
+                   IsDynamicMusicVaultHandle(in _scalarHandle, BufferID.AudioDynamicSynthScalar) &&
+                   IsDynamicMusicVaultHandle(in _tuningHandle, BufferID.AudioDynamicSynthTuning) &&
+                   IsDynamicMusicVaultHandle(in _outputAHandle, BufferID.AudioDynamicSynthOutputA) &&
+                   IsDynamicMusicVaultHandle(in _outputBHandle, BufferID.AudioDynamicSynthOutputB) &&
+                   IsDynamicMusicVaultHandle(in _biquadHandle, BufferID.AudioDynamicSynthBiquad) &&
+                   IsDynamicMusicVaultHandle(in _telemetryRingHandle, BufferID.AudioDynamicSynthTelemetry) &&
+                   IsDynamicMusicVaultHandle(in _telemetryCursorHandle, BufferID.AudioDynamicSynthTelemetryCursor) &&
+                   IsDynamicMusicVaultHandle(in _presetRulesHandle, BufferID.AudioDynamicSynthPresetRules) &&
+                   IsDynamicMusicVaultHandle(in _grainBankHandle, BufferID.AudioDynamicSynthGrainBank) &&
+                   IsDynamicMusicVaultHandle(in _sharedStateHandle, BufferID.AudioDynamicSynthSharedState)
+#if UNITY_EDITOR
+                   && IsDynamicMusicVaultHandle(in _csvScratchHandle, BufferID.AudioDynamicSynthCsvScratch)
+#endif
+                   ;
         }
 
         private bool IsReadOnlyHandleResolvable<T>(in VaultGenerationHandle<T> handle, int minimumLength)
@@ -886,7 +926,7 @@ namespace Hecton8.Audio.Synthesis
         {
             IDataVault vault = _dataVault;
             return vault != null &&
-                   handle.BufferID != 0u &&
+                   handle.Generation != 0u &&
                    vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly view) &&
                    view.Length >= minimumLength;
         }
@@ -896,7 +936,7 @@ namespace Hecton8.Audio.Synthesis
             views = default;
             lockMask = 0;
             lockedVault = _dataVault;
-            if (lockedVault == null)
+            if (lockedVault == null || !AreDynamicMusicVaultHandlesExact())
                 return false;
 
             if (!TryAcquireLockedView(lockedVault, in _voicesHandle, LockVoices, ref lockMask, out views.Voices) ||
@@ -925,7 +965,7 @@ namespace Hecton8.Audio.Synthesis
             views = default;
             lockMask = 0;
             lockedVault = _dataVault;
-            if (lockedVault == null)
+            if (lockedVault == null || !AreDynamicMusicVaultHandlesExact())
                 return false;
 
             if (!TryAcquireLockedView(lockedVault, in _voicesHandle, LockVoices, ref lockMask, out views.Voices) ||
@@ -956,7 +996,7 @@ namespace Hecton8.Audio.Synthesis
         private bool TryResolveSynthPublishViews(IDataVault lockedVault, int publishedBuffer, out DynamicMusicVaultViews views)
         {
             views = default;
-            if (lockedVault == null)
+            if (lockedVault == null || !AreDynamicMusicVaultHandlesExact())
                 return false;
 
             bool outputResolved = publishedBuffer == 0
@@ -1000,7 +1040,7 @@ namespace Hecton8.Audio.Synthesis
             buffer = default;
             lockMask = 0;
             lockedVault = _dataVault;
-            if (lockedVault == null)
+            if (lockedVault == null || !AreDynamicMusicVaultHandlesExact())
                 return false;
 
             if (readyIndex == 0)
@@ -1023,7 +1063,7 @@ namespace Hecton8.Audio.Synthesis
         {
             buffer = default;
             if (vault == null ||
-                handle.BufferID == 0u ||
+                handle.Generation == 0u ||
                 !vault.TryAcquireWriteLock(in handle, VaultOwner, out buffer))
                 return false;
 
@@ -1139,7 +1179,7 @@ namespace Hecton8.Audio.Synthesis
             DynamicMusicVaultViews views = default;
             int lockMask = 0;
             IDataVault lockedVault = _dataVault;
-            if (lockedVault == null)
+            if (lockedVault == null || !AreDynamicMusicVaultHandlesExact())
                 return;
 
             try
@@ -1208,7 +1248,7 @@ namespace Hecton8.Audio.Synthesis
             DynamicMusicVaultViews views = default;
             int lockMask = 0;
             IDataVault lockedVault = _dataVault;
-            if (lockedVault == null)
+            if (lockedVault == null || !AreDynamicMusicVaultHandlesExact())
                 return;
 
             try

@@ -254,17 +254,18 @@ namespace Hecton8.UI
         private uint _tmpTypewriterStartAudioFrame;
         private uint _audioLogPlaybackStartAudioFrame;
         private uint _timedAudioLogCueRevealStartFrame;
+        private int _audioLogCueChangeVersion;
+        private float _audioLogCueSnapshotDuration;
+        private char[] _audioLogCueSnapshotBuffer;
+        private int _audioLogCueSnapshotStart;
+        private int _audioLogCueSnapshotLength;
+        private float _audioLogCueSnapshotSpeakerIntensity;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             s_activeInstance = null;
         }
-
-        /// <summary>
-        /// Raised when an audio-log cue changes. Args: cue duration, cue source buffer, cue start, cue length, speaker intensity [0..1].
-        /// </summary>
-        public event Action<float, char[], int, int, float> OnCueChanged;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeInstance()
@@ -653,6 +654,39 @@ namespace Hecton8.UI
                 return;
 
             FlushPendingSubtitleSwap();
+        }
+
+        /// <summary>
+        /// Reads the latest audio-log cue snapshot without subscribing a managed callback.
+        /// </summary>
+        public bool TryGetAudioLogCueSnapshot(
+            int lastSeenVersion,
+            out int version,
+            out float duration,
+            out char[] textBuffer,
+            out int textStart,
+            out int textLength,
+            out float speakerIntensity)
+        {
+            version = _audioLogCueChangeVersion;
+            if (version == lastSeenVersion)
+            {
+                duration = 0f;
+                textBuffer = EmptyCueBuffer;
+                textStart = 0;
+                textLength = 0;
+                speakerIntensity = 0f;
+                return false;
+            }
+
+            duration = _audioLogCueSnapshotDuration;
+            textBuffer = _audioLogCueSnapshotBuffer ?? EmptyCueBuffer;
+            int safeStart = Mathf.Clamp(_audioLogCueSnapshotStart, 0, textBuffer.Length);
+            int safeLength = Mathf.Clamp(_audioLogCueSnapshotLength, 0, textBuffer.Length - safeStart);
+            textStart = safeStart;
+            textLength = safeLength;
+            speakerIntensity = math.saturate(_audioLogCueSnapshotSpeakerIntensity);
+            return true;
         }
 
         public void OnNotificationEvent(in NotificationEventPayload payload)
@@ -1379,7 +1413,16 @@ namespace Hecton8.UI
 
         private void NotifyCueChanged(float duration, char[] textBuffer, int textStart, int textLength, float speakerIntensity)
         {
-            OnCueChanged?.Invoke(duration, textBuffer, textStart, textLength, speakerIntensity);
+            _audioLogCueChangeVersion++;
+            if (_audioLogCueChangeVersion == 0)
+                _audioLogCueChangeVersion = 1;
+
+            _audioLogCueSnapshotDuration = math.max(0f, duration);
+            _audioLogCueSnapshotBuffer = textBuffer ?? EmptyCueBuffer;
+            int safeStart = Mathf.Clamp(textStart, 0, _audioLogCueSnapshotBuffer.Length);
+            _audioLogCueSnapshotStart = safeStart;
+            _audioLogCueSnapshotLength = Mathf.Clamp(textLength, 0, _audioLogCueSnapshotBuffer.Length - safeStart);
+            _audioLogCueSnapshotSpeakerIntensity = math.saturate(speakerIntensity);
             EmitAudioLogCueSensoryPulse(duration, speakerIntensity);
         }
 

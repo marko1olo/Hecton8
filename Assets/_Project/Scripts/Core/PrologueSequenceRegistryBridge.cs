@@ -132,7 +132,7 @@ namespace Hecton8.Core
         {
             _standaloneOrbitSceneActive = IsStandaloneOrbitSceneName(gameObject.scene.name);
             ResetTransientSequenceState();
-            ResolveService();
+            OpenOrDiscoverServiceForOwnerRoute();
 
             if (_service == null)
             {
@@ -529,7 +529,7 @@ namespace Hecton8.Core
             }
         }
 
-        private void ResolveService()
+        private void OpenOrDiscoverServiceForOwnerRoute()
         {
             _service = null;
 

@@ -194,36 +194,37 @@ namespace Hecton8.UI
         private static readonly Color s_gizmoProjectionPlaneColor = new Color(1f, 0.5f, 0f, 0.5f);
         private static GUIStyle s_gizmoLabelStyle;
 #endif
-        private static readonly char[] s_atmLabelChars = DefaultAtmLabel.ToCharArray();
-        private static readonly char[] s_depthLabelChars = "DEPTH".ToCharArray();
-        private static readonly char[] s_temperatureLabelChars = DefaultTemperatureLabel.ToCharArray();
-        private static readonly char[] s_pressureLabelChars = DefaultPressureLabel.ToCharArray();
-        private static readonly char[] s_metersLabelChars = DefaultMetersLabel.ToCharArray();
-        private static readonly char[] s_feetLabelChars = DefaultFeetLabel.ToCharArray();
-        private static readonly char[] s_celsiusLabelChars = DefaultCelsiusLabel.ToCharArray();
-        private static readonly char[] s_fahrenheitLabelChars = DefaultFahrenheitLabel.ToCharArray();
-        private static readonly char[] s_gaugeO2LabelChars = DefaultGaugeO2Label.ToCharArray();
-        private static readonly char[] s_gaugePowerLabelChars = DefaultGaugePowerLabel.ToCharArray();
-        private static readonly char[] s_gaugeHullLabelChars = DefaultGaugeHullLabel.ToCharArray();
-        private static readonly char[] s_quickbarSlotOneChars = "1".ToCharArray();
-        private static readonly char[] s_quickbarSlotTwoChars = "2".ToCharArray();
-        private static readonly char[] s_quickbarSlotThreeChars = "3".ToCharArray();
-        private static readonly char[] s_quickbarSlotFourChars = "4".ToCharArray();
-        private static readonly char[] s_statusPressureLimitExceededChars = DefaultStatusPressureLimitExceeded.ToCharArray();
-        private static readonly char[] s_statusApproachingSafeDepthChars = DefaultStatusApproachingSafeDepth.ToCharArray();
-        private static readonly char[] s_statusSuitDamageCriticalChars = DefaultStatusSuitDamageCritical.ToCharArray();
-        private static readonly char[] s_statusOxygenReserveLowChars = DefaultStatusOxygenReserveLow.ToCharArray();
-        private static readonly char[] s_statusPowerCellsLowChars = DefaultStatusPowerCellsLow.ToCharArray();
-        private static readonly char[] s_statusLampThermalLimitChars = DefaultStatusLampThermalLimit.ToCharArray();
-        private static readonly char[] s_statusSuitLinkRoutingPdaChars = DefaultStatusSuitLinkRoutingPda.ToCharArray();
-        private static readonly char[] s_statusLifeSupportNominalStableChars = DefaultStatusLifeSupportNominalStable.ToCharArray();
-        private static readonly char[] s_statusLifeSupportNominalAscendingChars = DefaultStatusLifeSupportNominalAscending.ToCharArray();
-        private static readonly char[] s_statusLifeSupportNominalDescendingChars = DefaultStatusLifeSupportNominalDescending.ToCharArray();
-        private static readonly char[] s_statusOptimizingCoreSystemsChars = DefaultStatusOptimizingCoreSystems.ToCharArray();
-        private static readonly char[] s_loadPrefixChars = "MASS: ".ToCharArray();
-        private static readonly char[] s_loadKgSuffixChars = " KG".ToCharArray();
-        private static readonly char[] s_emptyHudChars = Array.Empty<char>();
-        private static readonly char[] s_memorySubsystemBreachBuffer = "MEMORY SUBSYSTEM BREACH 0x00000000".ToCharArray();
+        private const int MemorySubsystemBreachTextLength = 34;
+        private static ReadOnlySpan<char> AtmLabelChars => DefaultAtmLabel.AsSpan();
+        private static ReadOnlySpan<char> DepthLabelChars => "DEPTH".AsSpan();
+        private static ReadOnlySpan<char> TemperatureLabelChars => DefaultTemperatureLabel.AsSpan();
+        private static ReadOnlySpan<char> PressureLabelChars => DefaultPressureLabel.AsSpan();
+        private static ReadOnlySpan<char> MetersLabelChars => DefaultMetersLabel.AsSpan();
+        private static ReadOnlySpan<char> FeetLabelChars => DefaultFeetLabel.AsSpan();
+        private static ReadOnlySpan<char> CelsiusLabelChars => DefaultCelsiusLabel.AsSpan();
+        private static ReadOnlySpan<char> FahrenheitLabelChars => DefaultFahrenheitLabel.AsSpan();
+        private static ReadOnlySpan<char> GaugeO2LabelChars => DefaultGaugeO2Label.AsSpan();
+        private static ReadOnlySpan<char> GaugePowerLabelChars => DefaultGaugePowerLabel.AsSpan();
+        private static ReadOnlySpan<char> GaugeHullLabelChars => DefaultGaugeHullLabel.AsSpan();
+        private static ReadOnlySpan<char> QuickbarSlotOneChars => "1".AsSpan();
+        private static ReadOnlySpan<char> QuickbarSlotTwoChars => "2".AsSpan();
+        private static ReadOnlySpan<char> QuickbarSlotThreeChars => "3".AsSpan();
+        private static ReadOnlySpan<char> QuickbarSlotFourChars => "4".AsSpan();
+        private static ReadOnlySpan<char> StatusPressureLimitExceededChars => DefaultStatusPressureLimitExceeded.AsSpan();
+        private static ReadOnlySpan<char> StatusApproachingSafeDepthChars => DefaultStatusApproachingSafeDepth.AsSpan();
+        private static ReadOnlySpan<char> StatusSuitDamageCriticalChars => DefaultStatusSuitDamageCritical.AsSpan();
+        private static ReadOnlySpan<char> StatusOxygenReserveLowChars => DefaultStatusOxygenReserveLow.AsSpan();
+        private static ReadOnlySpan<char> StatusPowerCellsLowChars => DefaultStatusPowerCellsLow.AsSpan();
+        private static ReadOnlySpan<char> StatusLampThermalLimitChars => DefaultStatusLampThermalLimit.AsSpan();
+        private static ReadOnlySpan<char> StatusSuitLinkRoutingPdaChars => DefaultStatusSuitLinkRoutingPda.AsSpan();
+        private static ReadOnlySpan<char> StatusLifeSupportNominalStableChars => DefaultStatusLifeSupportNominalStable.AsSpan();
+        private static ReadOnlySpan<char> StatusLifeSupportNominalAscendingChars => DefaultStatusLifeSupportNominalAscending.AsSpan();
+        private static ReadOnlySpan<char> StatusLifeSupportNominalDescendingChars => DefaultStatusLifeSupportNominalDescending.AsSpan();
+        private static ReadOnlySpan<char> StatusOptimizingCoreSystemsChars => DefaultStatusOptimizingCoreSystems.AsSpan();
+        private static ReadOnlySpan<char> LoadPrefixChars => "MASS: ".AsSpan();
+        private static ReadOnlySpan<char> LoadKgSuffixChars => " KG".AsSpan();
+        private static ReadOnlySpan<char> MemorySubsystemBreachTemplateChars => "MEMORY SUBSYSTEM BREACH 0x00000000".AsSpan();
+        private static readonly char[] s_memorySubsystemBreachBuffer = new char[MemorySubsystemBreachTextLength]; // COLD ALLOC: char[34] - mutable memory breach warning buffer - owner: SuitHUDV4CanvasOverlay
         private static double s_memorySubsystemBreachUntilTime;
         private static uint s_memorySubsystemBreachCode;
         private static int s_memorySubsystemBreachVersion;
@@ -302,6 +303,7 @@ namespace Hecton8.UI
         private static void WriteMemorySubsystemBreachHex(uint value)
         {
             const string HexDigits = "0123456789ABCDEF";
+            CopySpanToBuffer(MemorySubsystemBreachTemplateChars, s_memorySubsystemBreachBuffer);
             int cursor = s_memorySubsystemBreachBuffer.Length - 8;
             for (int digit = 0; digit < 8; digit++)
             {
@@ -4770,11 +4772,11 @@ namespace Hecton8.UI
             int massTenthKg = RoundNonNegativeToInt(math.max(0f, totalMassKg) * 10f);
             float displayMassKg = massTenthKg * 0.1f;
             int cursor = 0;
-            cursor = AppendChars(s_loadPrefixChars, buffer, cursor);
+            cursor = AppendChars(LoadPrefixChars, buffer, cursor);
             if (!displayMassKg.TryFormat(buffer.AsSpan(cursor), out int written, "F1"))
                 return false;
             cursor += written;
-            cursor = AppendChars(s_loadKgSuffixChars, buffer, cursor);
+            cursor = AppendChars(LoadKgSuffixChars, buffer, cursor);
             length = math.clamp(cursor, 0, buffer.Length);
             version = massTenthKg;
             return cursor <= buffer.Length;
@@ -5435,7 +5437,7 @@ namespace Hecton8.UI
 
                 refs.Key = CreateText("Key", refs.Root, 10f, FontStyles.Bold, TextAlignmentOptions.TopLeft, 0.45f, ResolveLabelFontAsset());
                 Anchor(refs.Key.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(9f, -7f), new Vector2(14f, 12f));
-                ApplyHudCharArray(refs.Key, ResolveQuickbarKeyBuffer(slotIndex), 1);
+                ApplyHudCharArray(refs.Key, ResolveQuickbarKeyBuffer(slotIndex));
 
                 _quickbarSlots[slotIndex] = refs;
             }
@@ -5518,20 +5520,20 @@ namespace Hecton8.UI
             _scannerFlatHologramCanvasGroup.alpha = 0f;
         }
 
-        private static char[] ResolveQuickbarKeyBuffer(int slotIndex)
+        private static ReadOnlySpan<char> ResolveQuickbarKeyBuffer(int slotIndex)
         {
             switch (slotIndex)
             {
                 case 0:
-                    return s_quickbarSlotOneChars;
+                    return QuickbarSlotOneChars;
                 case 1:
-                    return s_quickbarSlotTwoChars;
+                    return QuickbarSlotTwoChars;
                 case 2:
-                    return s_quickbarSlotThreeChars;
+                    return QuickbarSlotThreeChars;
                 case 3:
-                    return s_quickbarSlotFourChars;
+                    return QuickbarSlotFourChars;
                 default:
-                    return s_emptyHudChars;
+                    return ReadOnlySpan<char>.Empty;
             }
         }
 
@@ -5760,7 +5762,7 @@ namespace Hecton8.UI
             label.color = Alpha(Color.white, alpha);
             label.fontSharedMaterial = label.font != null ? label.font.material : null;
             label.maskable = false;
-            ApplyHudCharArray(label, s_emptyHudChars, 0);
+            ApplyHudCharArray(label, ReadOnlySpan<char>.Empty);
             TMP_TextRegistry.EnsureRegistered(label);
             return label;
         }
@@ -5997,18 +5999,19 @@ namespace Hecton8.UI
             if (!hasCachedKeyHash || cachedKeyHash != keyHash)
             {
                 SetLocalizedRtlState(label, rtl);
-                char[] buffer;
-                int length;
                 if (!hasLocalizationRuntime)
                 {
-                    TryGetFallbackBuffer(keyHash, out buffer, out length);
+                    TryGetFallbackSpan(keyHash, out ReadOnlySpan<char> fallback);
+                    ApplyHudCharArray(label, fallback);
                 }
                 else
                 {
+                    char[] buffer;
+                    int length;
                     LocRegistry.TryGetRawBuffer(keyHash, out buffer, out length);
+                    ApplyHudCharArray(label, buffer, length);
                 }
 
-                ApplyHudCharArray(label, buffer, length);
                 cachedKeyHash = keyHash;
                 hasCachedKeyHash = true;
             }
@@ -6157,10 +6160,11 @@ namespace Hecton8.UI
                 ((uint)_systemHealthPressureLevel << 8) |
                 (uint)((Hecton8.Core.SystemDispatcher.CurrentFrameIndex >> 2) & 0xFF)));
 
+            int optimizingCoreLength = CopySpanToBuffer(StatusOptimizingCoreSystemsChars, s_sharedOversizedHudTextBuffer);
             SetDisplayBufferIfChanged(
                 _statusLabel,
-                s_statusOptimizingCoreSystemsChars,
-                s_statusOptimizingCoreSystemsChars.Length,
+                s_sharedOversizedHudTextBuffer,
+                optimizingCoreLength,
                 false,
                 color,
                 version,
@@ -6354,13 +6358,13 @@ namespace Hecton8.UI
             return cursor + writable;
         }
 
-        private static int AppendChars(char[] value, Span<char> buffer, int cursor)
+        private static int AppendChars(ReadOnlySpan<char> value, Span<char> buffer, int cursor)
         {
-            if (value == null || value.Length == 0 || cursor >= buffer.Length)
+            if (value.Length == 0 || cursor >= buffer.Length)
                 return cursor;
 
             int writable = math.min(value.Length, buffer.Length - cursor);
-            value.AsSpan(0, writable).CopyTo(buffer.Slice(cursor, writable));
+            value.Slice(0, writable).CopyTo(buffer.Slice(cursor, writable));
             return cursor + writable;
         }
 
@@ -6475,7 +6479,9 @@ namespace Hecton8.UI
         {
             if (!hasLocalizationRuntime)
             {
-                TryGetFallbackBuffer(keyHash, out buffer, out length);
+                TryGetFallbackSpan(keyHash, out ReadOnlySpan<char> fallback);
+                buffer = s_sharedOversizedHudTextBuffer;
+                length = CopySpanToBuffer(fallback, buffer);
                 return;
             }
 
@@ -6484,7 +6490,14 @@ namespace Hecton8.UI
 
         private static void SetLocalizedRtlState(TMP_Text label, bool rtl)
         {
-            if (label != null && label.isRightToLeftText != rtl)
+            if (label == null)
+                return;
+
+            bool richText = BabelRichTextLodPolicy.ShouldEnableTmpRichTextParsing();
+            if (label.richText != richText)
+                label.richText = richText;
+
+            if (label.isRightToLeftText != rtl)
                 label.isRightToLeftText = rtl;
         }
 
@@ -6495,6 +6508,15 @@ namespace Hecton8.UI
 
             int safeLength = math.clamp(length, 0, buffer.Length);
             label.SetCharArray(buffer, 0, safeLength);
+        }
+
+        private static void ApplyHudCharArray(TMP_Text label, ReadOnlySpan<char> source)
+        {
+            if (label == null)
+                return;
+
+            int safeLength = CopySpanToBuffer(source, s_sharedOversizedHudTextBuffer);
+            label.SetCharArray(s_sharedOversizedHudTextBuffer, 0, safeLength);
         }
 
         private static int ResolveDistanceUnitKeyHash(GameLanguage language)
@@ -6511,118 +6533,96 @@ namespace Hecton8.UI
                 : _HudCelsiusKeyHash;
         }
 
-        private static bool TryGetFallbackBuffer(int keyHash, out char[] buffer, out int length)
+        private static bool TryGetFallbackSpan(int keyHash, out ReadOnlySpan<char> buffer)
         {
             switch (keyHash)
             {
                 case var _ when keyHash == _HudDepthKeyHash:
-                    buffer = s_depthLabelChars;
-                    length = s_depthLabelChars.Length;
+                    buffer = DepthLabelChars;
                     return true;
 
                 case var _ when keyHash == _HudTemperatureKeyHash:
-                    buffer = s_temperatureLabelChars;
-                    length = s_temperatureLabelChars.Length;
+                    buffer = TemperatureLabelChars;
                     return true;
 
                 case var _ when keyHash == _HudPressureKeyHash:
-                    buffer = s_pressureLabelChars;
-                    length = s_pressureLabelChars.Length;
+                    buffer = PressureLabelChars;
                     return true;
 
                 case var _ when keyHash == _HudAtmKeyHash:
-                    buffer = s_atmLabelChars;
-                    length = s_atmLabelChars.Length;
+                    buffer = AtmLabelChars;
                     return true;
 
                 case var _ when keyHash == _HudOxygenKeyHash:
-                    buffer = s_gaugeO2LabelChars;
-                    length = s_gaugeO2LabelChars.Length;
+                    buffer = GaugeO2LabelChars;
                     return true;
 
                 case var _ when keyHash == _HudPowerKeyHash:
-                    buffer = s_gaugePowerLabelChars;
-                    length = s_gaugePowerLabelChars.Length;
+                    buffer = GaugePowerLabelChars;
                     return true;
 
                 case var _ when keyHash == _HudHullKeyHash:
-                    buffer = s_gaugeHullLabelChars;
-                    length = s_gaugeHullLabelChars.Length;
+                    buffer = GaugeHullLabelChars;
                     return true;
 
                 case var _ when keyHash == _HudMetersKeyHash:
-                    buffer = s_metersLabelChars;
-                    length = s_metersLabelChars.Length;
+                    buffer = MetersLabelChars;
                     return true;
 
                 case var _ when keyHash == _HudFeetKeyHash:
-                    buffer = s_feetLabelChars;
-                    length = s_feetLabelChars.Length;
+                    buffer = FeetLabelChars;
                     return true;
 
                 case var _ when keyHash == _HudCelsiusKeyHash:
-                    buffer = s_celsiusLabelChars;
-                    length = s_celsiusLabelChars.Length;
+                    buffer = CelsiusLabelChars;
                     return true;
 
                 case var _ when keyHash == _HudFahrenheitKeyHash:
-                    buffer = s_fahrenheitLabelChars;
-                    length = s_fahrenheitLabelChars.Length;
+                    buffer = FahrenheitLabelChars;
                     return true;
 
                 case var _ when keyHash == _StatusPressureLimitExceededKeyHash:
-                    buffer = s_statusPressureLimitExceededChars;
-                    length = s_statusPressureLimitExceededChars.Length;
+                    buffer = StatusPressureLimitExceededChars;
                     return true;
 
                 case var _ when keyHash == _StatusApproachingSafeDepthKeyHash:
-                    buffer = s_statusApproachingSafeDepthChars;
-                    length = s_statusApproachingSafeDepthChars.Length;
+                    buffer = StatusApproachingSafeDepthChars;
                     return true;
 
                 case var _ when keyHash == _StatusSuitDamageCriticalKeyHash:
-                    buffer = s_statusSuitDamageCriticalChars;
-                    length = s_statusSuitDamageCriticalChars.Length;
+                    buffer = StatusSuitDamageCriticalChars;
                     return true;
 
                 case var _ when keyHash == _StatusOxygenReserveLowKeyHash:
-                    buffer = s_statusOxygenReserveLowChars;
-                    length = s_statusOxygenReserveLowChars.Length;
+                    buffer = StatusOxygenReserveLowChars;
                     return true;
 
                 case var _ when keyHash == _StatusPowerCellsLowKeyHash:
-                    buffer = s_statusPowerCellsLowChars;
-                    length = s_statusPowerCellsLowChars.Length;
+                    buffer = StatusPowerCellsLowChars;
                     return true;
 
                 case var _ when keyHash == _StatusLampThermalLimitKeyHash:
-                    buffer = s_statusLampThermalLimitChars;
-                    length = s_statusLampThermalLimitChars.Length;
+                    buffer = StatusLampThermalLimitChars;
                     return true;
 
                 case var _ when keyHash == _StatusSuitLinkRoutingPdaKeyHash:
-                    buffer = s_statusSuitLinkRoutingPdaChars;
-                    length = s_statusSuitLinkRoutingPdaChars.Length;
+                    buffer = StatusSuitLinkRoutingPdaChars;
                     return true;
 
                 case var _ when keyHash == _StatusLifeSupportNominalStableKeyHash:
-                    buffer = s_statusLifeSupportNominalStableChars;
-                    length = s_statusLifeSupportNominalStableChars.Length;
+                    buffer = StatusLifeSupportNominalStableChars;
                     return true;
 
                 case var _ when keyHash == _StatusLifeSupportNominalAscendingKeyHash:
-                    buffer = s_statusLifeSupportNominalAscendingChars;
-                    length = s_statusLifeSupportNominalAscendingChars.Length;
+                    buffer = StatusLifeSupportNominalAscendingChars;
                     return true;
 
                 case var _ when keyHash == _StatusLifeSupportNominalDescendingKeyHash:
-                    buffer = s_statusLifeSupportNominalDescendingChars;
-                    length = s_statusLifeSupportNominalDescendingChars.Length;
+                    buffer = StatusLifeSupportNominalDescendingChars;
                     return true;
             }
 
-            buffer = Array.Empty<char>();
-            length = 0;
+            buffer = ReadOnlySpan<char>.Empty;
             return false;
         }
 
@@ -6635,23 +6635,27 @@ namespace Hecton8.UI
             bool prependNegativeSign,
             bool hasLocalizationRuntime)
         {
-            char[] labelBuffer;
-            int labelLength;
-            char[] unitBuffer;
-            int unitLength;
+            ReadOnlySpan<char> labelSpan;
+            ReadOnlySpan<char> unitSpan;
 
             if (!hasLocalizationRuntime)
             {
-                TryGetFallbackBuffer(labelKeyHash, out labelBuffer, out labelLength);
-                TryGetFallbackBuffer(unitKeyHash, out unitBuffer, out unitLength);
+                TryGetFallbackSpan(labelKeyHash, out labelSpan);
+                TryGetFallbackSpan(unitKeyHash, out unitSpan);
             }
             else
             {
+                char[] labelBuffer;
+                int labelLength;
+                char[] unitBuffer;
+                int unitLength;
                 LocRegistry.TryGetRawBuffer(labelKeyHash, out labelBuffer, out labelLength);
                 LocRegistry.TryGetRawBuffer(unitKeyHash, out unitBuffer, out unitLength);
+                labelSpan = labelBuffer != null ? labelBuffer.AsSpan(0, math.clamp(labelLength, 0, labelBuffer.Length)) : ReadOnlySpan<char>.Empty;
+                unitSpan = unitBuffer != null ? unitBuffer.AsSpan(0, math.clamp(unitLength, 0, unitBuffer.Length)) : ReadOnlySpan<char>.Empty;
             }
 
-            int totalLength = labelLength + 2 + (prependNegativeSign ? 1 : 0) + numberToken.Length + 1 + unitLength;
+            int totalLength = labelSpan.Length + 2 + (prependNegativeSign ? 1 : 0) + numberToken.Length + 1 + unitSpan.Length;
             EnsureCharCapacity(ref buffer, totalLength);
             if (buffer == null || buffer.Length == 0)
             {
@@ -6660,7 +6664,7 @@ namespace Hecton8.UI
             }
 
             int writeIndex = 0;
-            CopyChars(labelBuffer, labelLength, buffer, ref writeIndex);
+            CopySpan(labelSpan, buffer, ref writeIndex);
             if (writeIndex < buffer.Length)
                 buffer[writeIndex++] = ':';
             if (writeIndex < buffer.Length)
@@ -6673,7 +6677,7 @@ namespace Hecton8.UI
 
             if (writeIndex < buffer.Length)
                 buffer[writeIndex++] = ' ';
-            CopyChars(unitBuffer, unitLength, buffer, ref writeIndex);
+            CopySpan(unitSpan, buffer, ref writeIndex);
             length = writeIndex;
         }
 
@@ -6701,6 +6705,18 @@ namespace Hecton8.UI
                 buffer[i] = source[i];
 
             length = copyLength;
+        }
+
+        private static int CopySpanToBuffer(ReadOnlySpan<char> source, char[] destination)
+        {
+            if (destination == null || destination.Length == 0)
+                return 0;
+
+            int copyLength = math.min(source.Length, destination.Length);
+            for (int i = 0; i < copyLength; i++)
+                destination[i] = source[i];
+
+            return copyLength;
         }
 
         private static void WriteUppercaseTextToBuffer(ReadOnlySpan<char> source, bool replaceUnderscores, ref char[] buffer, out int length, out int version)
@@ -6752,12 +6768,12 @@ namespace Hecton8.UI
             buffer = s_sharedOversizedHudTextBuffer;
         }
 
-        private static void CopyChars(char[] source, int sourceLength, char[] destination, ref int destinationIndex)
+        private static void CopySpan(ReadOnlySpan<char> source, char[] destination, ref int destinationIndex)
         {
-            if (source == null || destination == null || destinationIndex >= destination.Length)
+            if (source.Length == 0 || destination == null || destinationIndex >= destination.Length)
                 return;
 
-            int count = math.min(sourceLength, destination.Length - destinationIndex);
+            int count = math.min(source.Length, destination.Length - destinationIndex);
             for (int i = 0; i < count; i++)
                 destination[destinationIndex++] = source[i];
         }

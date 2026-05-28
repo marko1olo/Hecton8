@@ -1,0 +1,6 @@
+{
+    "Id":  "setting.example_toggle",
+    "Kind":  "bool",
+    "Default":  false,
+    "Notes":  "Copy this object into Tables/settings.h8table.json Rows[], then run h8mod.ps1 -Action validate."
+}

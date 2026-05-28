@@ -21,7 +21,19 @@ $targets = @(
     "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
     "Assets/_Project/Scripts/HectonBoidController.cs",
     "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
-    "Assets/_Project/Scripts/World/AbyssalThermalManager.cs"
+    "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+    "Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute",
+    "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+    "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+    "Assets/_Project/Art/Shaders/Hecton_VegetationWakeTrailSim.compute",
+    "Assets/_Project/Scripts/World/SargassumCutManager.cs",
+    "Assets/_Project/Art/Shaders/Hecton_SargassumCutMask.compute",
+    "Assets/_Project/Art/Shaders/Hecton_TerrainDamageVolume.compute",
+    "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralGpuUploadDispatcher.cs",
+    "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageGpuUploadDispatcher.cs",
+    "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+    "Assets/_Project/Art/Shaders/Hecton_AbyssalSwarmCull.compute",
+    "Assets/_Project/Art/Shaders/Hecton_MarineSnow.compute"
 )
 
 function Read-Target([string]$relativePath) {
@@ -49,7 +61,19 @@ $asyncBuoyancyReadback = Read-Target $targets[12]
 $droneFleet = Read-Target $targets[13]
 $boidController = Read-Target $targets[14]
 $gpuScatterDirector = Read-Target $targets[15]
-$abyssalThermal = Read-Target $targets[16]
+$sargassumBoids = Read-Target $targets[16]
+$sargassumBoidsCompute = Read-Target $targets[17]
+$abyssalThermal = Read-Target $targets[18]
+$floraInteraction = Read-Target $targets[19]
+$wakeTrailCompute = Read-Target $targets[20]
+$sargassumCut = Read-Target $targets[21]
+$sargassumCutCompute = Read-Target $targets[22]
+$terrainDamageVolumeCompute = Read-Target $targets[23]
+$proceduralCoralDispatcher = Read-Target $targets[24]
+$proceduralWreckageDispatcher = Read-Target $targets[25]
+$shinobuEcosystem = Read-Target $targets[26]
+$shinobuCullCompute = Read-Target $targets[27]
+$marineSnowCompute = Read-Target $targets[28]
 
 $checks = [ordered]@{
     UploadRangeMethodPresent = $systemDispatcher.Contains("private static void UploadNativeArrayRange<T>")
@@ -109,10 +133,22 @@ $checks = [ordered]@{
     BoidSpawnResetStagingUpload = $boidController.Contains("UploadArrayAndCopyWholeBuffer(_boidUploadStagingBuffer, _boidsBufferA, _spawnUploadBuffer, safeCount)") -and $boidController.Contains("UploadArrayAndCopyWholeBuffer(_boidUploadStagingBuffer, _boidsBufferB, _spawnUploadBuffer, safeCount)")
     GpuScatterDirectorVisibilityCacheStagingClear = $gpuScatterDirector.Contains("CreateStructuredCopyDestinationBuffer<uint>(requiredCapacity)") -and $gpuScatterDirector.Contains("_visibilityCacheUploadBuffer") -and $gpuScatterDirector.Contains("UploadArrayAndCopyWholeBuffer(")
     GpuScatterDirectorArgsNotLockCapable = $gpuScatterDirector.Contains("GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw | GraphicsBuffer.Target.CopyDestination") -and $gpuScatterDirector.Contains("_argsUploadBuffer")
+    SargassumComputeWritesBoidBuffer = $sargassumBoidsCompute.Contains("RWStructuredBuffer<BoidData> _BoidsBufferWrite") -and $sargassumBoids.Contains("SetBuffer(_kernelIndex, _BoidsBufferWriteId, writeBuffer)") -and $sargassumBoids.Contains("SetBuffer(_applyOriginShiftKernelIndex, _BoidsBufferWriteId, _boidsBufferA)")
+    SargassumBoidGpuWriteBuffersNotLockCapable = $sargassumBoids.Contains("EnsureGpuWriteBuffer(ref _boidsBufferA, boidCount, BoidStride)") -and $sargassumBoids.Contains("EnsureGpuWriteBuffer(ref _boidsBufferB, boidCount, BoidStride)") -and -not $sargassumBoids.Contains("LockBufferForWrite<BoidData>")
+    SargassumBoidCpuUploadUsesGpuWriteSetDataFallback = $sargassumBoids.Contains("UploadNativeArraySetData(_boidsBufferA, boidState, safeUploadCount)") -and $sargassumBoids.Contains("UploadNativeArraySetData(_boidsBufferB, boidState, safeUploadCount)") -and $sargassumBoids.Contains("UploadNativeArraySetDataRange(buffer, source, boidId, boidId, 1)")
+    SargassumBoidCpuUploadNoMappedWrite = -not $sargassumBoids.Contains("UploadNativeArray(_boidsBufferA, boidState") -and -not $sargassumBoids.Contains("UploadNativeArray(_boidsBufferB, boidState") -and -not $sargassumBoids.Contains("LockBufferForWrite<BoidData>")
     VegetationCullTelemetryStagingClear = $renderer.Contains("CreateStructuredCopyDestinationBuffer<uint>(ScatterCullTelemetryCounterCount)") -and $renderer.Contains("_cullTelemetryCountersUploadBuffer") -and $renderer.Contains("UploadArrayAndCopyWholeBuffer(")
     AbyssalThermalSmokeBuffersNotLockCapable = $abyssalThermal.Contains("CreateStructuredCopyDestinationBuffer<T>(safeCount)") -and $abyssalThermal.Contains("EnsureGpuWriteBuffer<AshParticleData>")
     AbyssalThermalParticleResetStagingUpload = $abyssalThermal.Contains("UploadArrayAndCopyWholeBuffer(_particleUploadStagingBuffer, _particleBufferA, _initialParticles, smokeParticleCount)") -and $abyssalThermal.Contains("UploadArrayAndCopyWholeBuffer(_particleUploadStagingBuffer, _particleBufferB, _initialParticles, smokeParticleCount)")
     AbyssalThermalExplicitGpuLayouts = $abyssalThermal.Contains("[StructLayout(LayoutKind.Explicit, Size = 40)]") -and $abyssalThermal.Contains("[FieldOffset(32)] public Vector2 Padding") -and $abyssalThermal.Contains("[StructLayout(LayoutKind.Explicit, Size = 48)]") -and $abyssalThermal.Contains("[FieldOffset(44)] public float VentIndex")
+    FloraWakeTrailStampBuffersCpuInputOnly = $floraInteraction.Contains("CreateStructuredLockBuffer<WakeTrailStampCommand>(WakeTrailStampCommandCapacity)") -and $floraInteraction.Contains("UploadNativeArray(stampWriteBuffer, stampCommands, _queuedWakeTrailStampCount)") -and $wakeTrailCompute.Contains("StructuredBuffer<WakeTrailStampCommand> _HectonWakeTrailStampCommands") -and -not $wakeTrailCompute.Contains("RWStructuredBuffer<WakeTrailStampCommand>")
+    FloraFlowFieldUploadIsCpuReadOnlyBuffer = $floraInteraction.Contains("CreateStructuredLockBuffer<float2>(requiredCount)") -and $floraInteraction.Contains("TryUploadEcosystemFlowFieldPayload(writeBuffer, requiredCount)") -and $marineSnowCompute.Contains("StructuredBuffer<float2> _MarineSnowFlowField") -and -not $marineSnowCompute.Contains("RWStructuredBuffer<float2> _MarineSnowFlowField")
+    SargassumCutStampBuffersCpuInputOnly = $sargassumCut.Contains("CreateStructuredLockBuffer<StampCommand>(StampCommandCapacity)") -and $sargassumCut.Contains("UploadNativeArray(stampWriteBuffer, queuedStampCommands, safeQueuedStampCount)") -and $sargassumCutCompute.Contains("StructuredBuffer<StampCommand> _StampCommands") -and -not $sargassumCutCompute.Contains("RWStructuredBuffer<StampCommand>")
+    SargassumDamageVolumeStampBuffersCpuInputOnly = $sargassumCut.Contains("CreateStructuredLockBuffer<DamageVolumeStampCommand>(DamageVolumeStampCapacity)") -and $sargassumCut.Contains("UploadNativeArray(`r`n                        damageWriteBuffer") -and $terrainDamageVolumeCompute.Contains("StructuredBuffer<DamageVolumeStampCommand> _HectonDamageVolumeStampCommands") -and -not $terrainDamageVolumeCompute.Contains("RWStructuredBuffer<DamageVolumeStampCommand>")
+    ProceduralCoralDispatcherUsesCpuOnlyMappedDrawBuffers = $proceduralCoralDispatcher.Contains("CreateStructuredLockBuffer<float4x4>(_capacity)") -and $proceduralCoralDispatcher.Contains("LockBufferForWrite<float4x4>(0, writeCount)") -and $proceduralCoralDispatcher.Contains("UnityEngine.Graphics.DrawProceduralIndirect(") -and -not $proceduralCoralDispatcher.Contains("ComputeShader")
+    ProceduralWreckageDispatcherUsesCpuOnlyMappedDrawBuffers = $proceduralWreckageDispatcher.Contains("CreateStructuredLockBuffer<float4x4>(_capacity)") -and $proceduralWreckageDispatcher.Contains("LockBufferForWrite<float4x4>(0, writeCount)") -and $proceduralWreckageDispatcher.Contains("UnityEngine.Graphics.DrawProceduralIndirect(") -and -not $proceduralWreckageDispatcher.Contains("ComputeShader")
+    ShinobuGpuCullingWriteTargetsNotLockCapable = $shinobuEcosystem.Contains("_visibleIndexBufferA = CreateStructuredGpuBuffer<uint>(_capacity)") -and $shinobuEcosystem.Contains("_culledArgsBufferA = CreateGpuWrittenIndirectArgsBuffer()") -and $shinobuCullCompute.Contains("RWStructuredBuffer<uint> _H8ShinobuBoidVisibleIndices") -and $shinobuCullCompute.Contains("RWByteAddressBuffer _H8ShinobuBoidCulledIndirectArgs") -and -not $shinobuEcosystem.Contains("_visibleIndexBufferA = CreateStructuredLockBuffer<uint>")
+    ShinobuCpuMatrixUploadBuffersAreInputOnly = $shinobuEcosystem.Contains("_matrixBufferA = CreateStructuredLockBuffer<BoidMatrixDTO>(_capacity)") -and $shinobuEcosystem.Contains("LockBufferForWrite<BoidMatrixDTO>(0, writeCount)") -and $shinobuCullCompute.Contains("StructuredBuffer<BoidMatrixDTO> _H8ShinobuBoidMatrices") -and -not $shinobuCullCompute.Contains("RWStructuredBuffer<BoidMatrixDTO> _H8ShinobuBoidMatrices")
 }
 
 $fatal = @()

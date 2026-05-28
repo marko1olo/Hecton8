@@ -21,8 +21,10 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Inventory;
 using Hecton8.Items;
+using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using UnityEngine;
+using CoreAudioEvent = Hecton8.Core.AudioEvent;
 
 namespace Hecton8.Gameplay
 {
@@ -31,11 +33,43 @@ namespace Hecton8.Gameplay
     /// Ð£Ð¿Ñ€Ð°Ð²Ð»ÑÐµÑ‚ Ñ‚Ð°Ð¹Ð¼ÐµÑ€Ð¾Ð¼, Ð¿Ñ€ÐµÑ€Ñ‹Ð²Ð°Ð½Ð¸ÑÐ¼Ð¸ Ð¸ Ð·Ð°Ð²ÐµÑ€ÑˆÐµÐ½Ð¸ÐµÐ¼ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ñ.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerActionController : MonoBehaviour, ITickable, IUpdatable, IPlayerActionInterruptSink, IGlobalRegistryHotSwapListener
+    public sealed class PlayerActionController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IPlayerActionInterruptSink, IGlobalRegistryHotSwapListener
     {
         private static int s_x001PlayerActionControllerSignalPushDropCount;
         private const float TwoPi = 6.28318530718f;
         private const uint KccVelocityInterruptMaxAgeFrames = 12u;
+        private const byte ActionAudioClipNone = 0;
+        private const byte ActionAudioClipEating = 1;
+        private const byte ActionAudioClipHealing = 2;
+        private const byte ActionAudioClipCancel = 3;
+        private const byte ActionAudioClipItemUseSound = 4;
+        private const byte ActionCameraBobCommandNone = 0;
+        private const byte ActionCameraBobCommandApply = 1;
+        private const byte ActionCameraBobCommandClear = 2;
+
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
+        private struct ActionAudioRequest
+        {
+            [FieldOffset(0)] public Vector3 Position;
+            [FieldOffset(12)] public uint EventId;
+            [FieldOffset(16)] public uint ItemHash;
+            [FieldOffset(20)] public byte ClipKind;
+            [FieldOffset(21)] public byte Dirty;
+            [FieldOffset(22)] public ushort Reserved0;
+            [FieldOffset(24)] public uint Reserved1;
+            [FieldOffset(28)] public uint Reserved2;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        private struct ActionCameraBobRequest
+        {
+            [FieldOffset(0)] public float Intensity;
+            [FieldOffset(4)] public float Frequency;
+            [FieldOffset(8)] public byte Command;
+            [FieldOffset(9)] public byte Reserved0;
+            [FieldOffset(10)] public ushort Reserved1;
+            [FieldOffset(12)] public uint Reserved2;
+        }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  SINGLETON
@@ -91,9 +125,12 @@ namespace Hecton8.Gameplay
         private float _actionDuration;
         private int _lastToolSlotIndex = -1;
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
         private float _cameraBobPhase;
+        private ActionAudioRequest _pendingActionAudio;
+        private ActionCameraBobRequest _pendingActionCameraBob;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  CACHED REFERENCES
@@ -147,7 +184,7 @@ namespace Hecton8.Gameplay
                 {
                     RemoveItemFromInventory(anchorX, anchorY);
                 }
-                ConsumableItem.TryConsume(item, _audioService);
+                ConsumableItem.TryConsumeWithoutAudio(item);
                 PlayCompletionSound(item);
                 return true;
             }
@@ -185,8 +222,7 @@ namespace Hecton8.Gameplay
             _actionDuration = 0f;
 
             // ÐžÑ‡Ð¸Ñ‰Ð°ÐµÐ¼ ÐºÐ°Ð¼ÐµÑ€Ð½Ñ‹Ð¹ Ñ„Ð¸Ð´Ð±ÐµÐº
-            if (cameraJuiceProcessor != null)
-                cameraJuiceProcessor.ClearActionBob();
+            QueueActionCameraBobClear();
 
             PlayCancelSound();
             PublishActionCancelled(cancelledItem, cancelledProgress, PlayerActionCancelledSignal.ReasonGeneric);
@@ -289,6 +325,12 @@ namespace Hecton8.Gameplay
             }
         }
 
+        public void LateFrameTick()
+        {
+            FlushQueuedActionCameraBob();
+            FlushQueuedActionAudio();
+        }
+
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PRIVATE â€” CAMERA JUICE
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -299,8 +341,6 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void ApplyCameraJuice(float deltaTime)
         {
-            if (cameraJuiceProcessor == null) return;
-
             // Ð¡Ð¸Ð½ÑƒÑÐ¾Ð¸Ð´Ð°Ð»ÑŒÐ½Ð¾Ðµ Ð¿Ð¾ÐºÐ°Ñ‡Ð¸Ð²Ð°Ð½Ð¸Ðµ Ñ Ð·Ð°Ñ‚ÑƒÑ…Ð°Ð½Ð¸ÐµÐ¼ Ðº ÐºÐ¾Ð½Ñ†Ñƒ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ñ
             _cameraBobPhase += deltaTime * actionCameraBobFrequency * TwoPi;
 
@@ -309,7 +349,7 @@ namespace Hecton8.Gameplay
 
             // Ð ÐµÐ³Ð¸ÑÑ‚Ñ€Ð¸Ñ€ÑƒÐµÐ¼ Ð¼Ð¸ÐºÑ€Ð¾-bob ÐºÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€ Ñ Ð·Ð°Ñ‚ÑƒÑ…Ð°ÑŽÑ‰ÐµÐ¹ Ð¸Ð½Ñ‚ÐµÐ½ÑÐ¸Ð²Ð½Ð¾ÑÑ‚ÑŒÑŽ
             float intensity = actionCameraBobIntensity * fadeOut;
-            cameraJuiceProcessor.RegisterActionBob(intensity, actionCameraBobFrequency);
+            QueueActionCameraBob(intensity, actionCameraBobFrequency);
         }
 
         private float ResolveProgress01()
@@ -476,8 +516,7 @@ namespace Hecton8.Gameplay
             _actionDuration = 0f;
 
             // ÐžÑ‡Ð¸Ñ‰Ð°ÐµÐ¼ ÐºÐ°Ð¼ÐµÑ€Ð½Ñ‹Ð¹ Ñ„Ð¸Ð´Ð±ÐµÐº
-            if (cameraJuiceProcessor != null)
-                cameraJuiceProcessor.ClearActionBob();
+            QueueActionCameraBobClear();
 
             // â”€â”€ ATOMIC: Remove item from inventory ONLY on completion â”€â”€
             if (completedItem != null)
@@ -486,7 +525,7 @@ namespace Hecton8.Gameplay
                 {
                     RemoveItemFromInventory(anchorX, anchorY);
                 }
-                ConsumableItem.TryConsume(completedItem, _audioService);
+                ConsumableItem.TryConsumeWithoutAudio(completedItem);
                 PlayCompletionSound(completedItem);
             }
 
@@ -515,39 +554,169 @@ namespace Hecton8.Gameplay
             if (item == null) return;
 
             AudioClip clip = null;
+            byte clipKind = ActionAudioClipNone;
+            uint eventId = item.UseAudioEventId;
+            uint itemHash = ResolveItemHash(item);
 
             // ÐžÐ¿Ñ€ÐµÐ´ÐµÐ»ÑÐµÐ¼ Ñ‚Ð¸Ð¿ Ð·Ð²ÑƒÐºÐ° Ð¿Ð¾ ÑÑ„Ñ„ÐµÐºÑ‚Ð°Ð¼ Ð¿Ñ€ÐµÐ´Ð¼ÐµÑ‚Ð°
             if (item.integrityRestore > 0f)
             {
                 clip = healingSound;
+                clipKind = ActionAudioClipHealing;
             }
             else if (item.hungerRestore > 0f || item.thirstRestore > 0f)
             {
                 clip = eatingSound;
+                clipKind = ActionAudioClipEating;
             }
             else if (item.useSound != null)
             {
                 clip = item.useSound;
+                clipKind = ActionAudioClipItemUseSound;
             }
 
-            if (clip == null) return;
+            if (clip == null && eventId == 0u) return;
 
             IAudioService audioService = _audioService;
             if (audioService != null && _cachedTransform != null)
-            {
-                audioService.PlayAtPoint(clip, _cachedTransform.position);
-            }
+                QueueActionAudio(clipKind, eventId, itemHash, _cachedTransform.position);
+        }
+
+        private void QueueActionCameraBob(float intensity, float frequency)
+        {
+            if (intensity <= 0f)
+                return;
+
+            _pendingActionCameraBob.Intensity = intensity;
+            _pendingActionCameraBob.Frequency = frequency;
+            _pendingActionCameraBob.Command = ActionCameraBobCommandApply;
+            _pendingActionCameraBob.Reserved0 = 0;
+            _pendingActionCameraBob.Reserved1 = 0;
+            _pendingActionCameraBob.Reserved2 = 0u;
+        }
+
+        private void QueueActionCameraBobClear()
+        {
+            _pendingActionCameraBob.Intensity = 0f;
+            _pendingActionCameraBob.Frequency = 0f;
+            _pendingActionCameraBob.Command = ActionCameraBobCommandClear;
+            _pendingActionCameraBob.Reserved0 = 0;
+            _pendingActionCameraBob.Reserved1 = 0;
+            _pendingActionCameraBob.Reserved2 = 0u;
+        }
+
+        private void FlushQueuedActionCameraBob()
+        {
+            if (_pendingActionCameraBob.Command == ActionCameraBobCommandNone)
+                return;
+
+            ActionCameraBobRequest request = _pendingActionCameraBob;
+            _pendingActionCameraBob = default;
+
+            CameraJuiceProcessor processor = cameraJuiceProcessor;
+            if (processor == null)
+                return;
+
+            if (request.Command == ActionCameraBobCommandApply)
+                processor.RegisterActionBob(ResolveActionCameraBobPresentationIntensity(request.Intensity), request.Frequency);
+            else if (request.Command == ActionCameraBobCommandClear)
+                processor.ClearActionBob();
+        }
+
+        private static float ResolveActionCameraBobPresentationIntensity(float intensity)
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            quality = math.saturate(math.isfinite(quality) ? quality : 1f);
+            return intensity * math.lerp(0.65f, 1.15f, quality);
         }
 
         private void PlayCancelSound()
         {
             if (cancelSound == null) return;
 
+            if (_audioService != null && _cachedTransform != null)
+                QueueActionAudio(ActionAudioClipCancel, 0u, 0u, _cachedTransform.position);
+        }
+
+        private void QueueActionAudio(byte clipKind, uint eventId, uint itemHash, Vector3 position)
+        {
+            _pendingActionAudio.Position = position;
+            _pendingActionAudio.EventId = eventId;
+            _pendingActionAudio.ItemHash = itemHash;
+            _pendingActionAudio.ClipKind = clipKind;
+            _pendingActionAudio.Dirty = 1;
+            _pendingActionAudio.Reserved0 = 0;
+            _pendingActionAudio.Reserved1 = 0u;
+            _pendingActionAudio.Reserved2 = 0u;
+        }
+
+        private void FlushQueuedActionAudio()
+        {
+            if (_pendingActionAudio.Dirty == 0)
+                return;
+
+            ActionAudioRequest request = _pendingActionAudio;
+            _pendingActionAudio = default;
+
             IAudioService audioService = _audioService;
-            if (audioService != null && _cachedTransform != null)
+            if (audioService == null)
+                return;
+
+            float volume = ResolveActionAudioPresentationVolume();
+            if (request.EventId != 0u && audioService.IsInitialized)
             {
-                audioService.PlayAtPoint(cancelSound, _cachedTransform.position);
+                CoreAudioEvent audioEvent = new CoreAudioEvent(request.EventId, request.Position, volume, 1f);
+                if (audioService.QueueAudioEvent(in audioEvent))
+                    return;
             }
+
+            AudioClip clip = ResolveActionAudioClip(in request);
+            if (clip != null)
+                audioService.PlayAtPoint(clip, request.Position, volume, 1f);
+        }
+
+        private void ClearQueuedActionAudio()
+        {
+            _pendingActionAudio = default;
+            _pendingActionCameraBob = default;
+        }
+
+        private AudioClip ResolveActionAudioClip(in ActionAudioRequest request)
+        {
+            switch (request.ClipKind)
+            {
+                case ActionAudioClipEating:
+                    return eatingSound;
+                case ActionAudioClipHealing:
+                    return healingSound;
+                case ActionAudioClipCancel:
+                    return cancelSound;
+                case ActionAudioClipItemUseSound:
+                    return ResolveItemUseSound(request.ItemHash);
+                default:
+                    return null;
+            }
+        }
+
+        private AudioClip ResolveItemUseSound(uint itemHash)
+        {
+            if (itemHash == 0u)
+                return null;
+
+            IPlayerInventoryService inventoryService = _playerInventoryService;
+            PlayerInventory inventory = inventoryService != null ? inventoryService.Inventory : null;
+            if (inventory == null || inventory.ItemCatalog == null || inventory.ItemCatalog.HasLookupAmbiguity)
+                return null;
+
+            ItemData item = inventory.ItemCatalog.FindByHash(unchecked((int)itemHash));
+            return item != null ? item.useSound : null;
+        }
+
+        private static float ResolveActionAudioPresentationVolume()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            quality = math.saturate(math.isfinite(quality) ? quality : 1f);
+            return math.lerp(0.75f, 1f, quality);
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -556,21 +725,34 @@ namespace Hecton8.Gameplay
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
         private void TryUnregister()
         {
-            if (!_registered) return;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+                _registered = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-            _registered = false;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredLateFrame = false;
+            }
+
+            ClearQueuedActionAudio();
         }
 
         private void TryRegisterService()

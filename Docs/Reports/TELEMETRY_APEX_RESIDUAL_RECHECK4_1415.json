@@ -1,0 +1,523 @@
+{
+    "agent":  "1415",
+    "generatedUtc":  "2026-05-28T11:13:06Z",
+    "purpose":  "APEX residual recheck 4 after packing ChunkResidencyTelemetryEntry into one 64-byte ring row.",
+    "prompt":  {
+                   "source":  "Docs/Tasks/CURRENT_BATCH.md",
+                   "taskCount":  20,
+                   "sha256":  "b922c32c7f14ef7844c5f6bfa20bcdeb1e370a8c02d21641c43739f7c96780b0",
+                   "lineStart":  1346,
+                   "lineEnd":  1434
+               },
+    "mandatesRead":  [
+                         "DATA_Runtime_Struct_Layout_ARM64.txt",
+                         "DBG_Telemetry_Crash_Reporting_PostMortem.txt",
+                         "OPT_Zero_GC_Policy_AllocFree_Mandate.txt",
+                         "OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt"
+                     ],
+    "repairedFiles":  [
+                          {
+                              "file":  "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+                              "sha256":  "2ae0c5bd49c63b3b57e9eb0d2a24fcf8612954d9e6f77f6c9b2983a5672a9b50",
+                              "lines":  "140-181,595,5757-5805,5840-5875",
+                              "issue":  "ChunkResidencyTelemetryEntry was 72 bytes with ActiveImpostorCount at bytes 64..65 and telemetry writer bypassed DataVault write lock.",
+                              "fix":  "Packed Flags into low 16 bits and ActiveImpostorCount into high 16 bits of _packedFlags; changed struct Size to 64; added TryAcquireWriteLock/finally ReleaseWriteLock; wrote 64-byte dump rows in actual offset order."
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Editor/TelemetryLayoutValidator1415.cs",
+                              "sha256":  "15d16bc44210e785fef0016848d438f614bc66ab08ae959ba87ffca532d0baf2",
+                              "lines":  "23",
+                              "issue":  "Central validator lacked ChunkResidencyTelemetryEntry row.",
+                              "fix":  "Added private-field-aware spec row for _packedFlags at offset 48."
+                          }
+                      ],
+    "chunkResidency":  {
+                           "file":  "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+                           "structLine":  141,
+                           "sizeAttributeLine":  140,
+                           "sizeBytes":  64,
+                           "capacity":  300,
+                           "bufferIdConstant":  "ResidencyTelemetryVaultBufferId = (BufferID)70568",
+                           "bufferIdLine":  688,
+                           "vaultOwnerSystem":  "SystemID.WorldStreaming",
+                           "vaultOwnerLine":  684,
+                           "tryAcquireWriteLockLine":  5763,
+                           "releaseWriteLockFinallyLine":  5803,
+                           "dumpWriterLine":  5858,
+                           "rowSizeConstantLine":  595,
+                           "validatorSpecLine":  23,
+                           "layoutProof":  {
+                                               "sizeBytes":  64,
+                                               "holeCount":  0,
+                                               "overlapOrAlignmentErrorCount":  0,
+                                               "holes":  [
+
+                                                         ],
+                                               "errors":  [
+
+                                                          ],
+                                               "fields":  [
+                                                              {
+                                                                  "name":  "FocusChunkId",
+                                                                  "start":  0,
+                                                                  "end":  7,
+                                                                  "size":  8,
+                                                                  "alignment":  8
+                                                              },
+                                                              {
+                                                                  "name":  "PlayerGridX",
+                                                                  "start":  8,
+                                                                  "end":  15,
+                                                                  "size":  8,
+                                                                  "alignment":  8
+                                                              },
+                                                              {
+                                                                  "name":  "PlayerGridY",
+                                                                  "start":  16,
+                                                                  "end":  23,
+                                                                  "size":  8,
+                                                                  "alignment":  8
+                                                              },
+                                                              {
+                                                                  "name":  "PlayerGridZ",
+                                                                  "start":  24,
+                                                                  "end":  31,
+                                                                  "size":  8,
+                                                                  "alignment":  8
+                                                              },
+                                                              {
+                                                                  "name":  "PlayerLocal(float3)",
+                                                                  "start":  32,
+                                                                  "end":  43,
+                                                                  "size":  12,
+                                                                  "alignment":  4
+                                                              },
+                                                              {
+                                                                  "name":  "Frame",
+                                                                  "start":  44,
+                                                                  "end":  47,
+                                                                  "size":  4,
+                                                                  "alignment":  4
+                                                              },
+                                                              {
+                                                                  "name":  "_packedFlags",
+                                                                  "start":  48,
+                                                                  "end":  51,
+                                                                  "size":  4,
+                                                                  "alignment":  4,
+                                                                  "logical":  "Flags low 16 bits; ActiveImpostorCount high 16 bits"
+                                                              },
+                                                              {
+                                                                  "name":  "StateHash",
+                                                                  "start":  52,
+                                                                  "end":  55,
+                                                                  "size":  4,
+                                                                  "alignment":  4
+                                                              },
+                                                              {
+                                                                  "name":  "PendingLoads",
+                                                                  "start":  56,
+                                                                  "end":  57,
+                                                                  "size":  2,
+                                                                  "alignment":  2
+                                                              },
+                                                              {
+                                                                  "name":  "ResidentCount",
+                                                                  "start":  58,
+                                                                  "end":  59,
+                                                                  "size":  2,
+                                                                  "alignment":  2
+                                                              },
+                                                              {
+                                                                  "name":  "LoadingCount",
+                                                                  "start":  60,
+                                                                  "end":  61,
+                                                                  "size":  2,
+                                                                  "alignment":  2
+                                                              },
+                                                              {
+                                                                  "name":  "EvictingCount",
+                                                                  "start":  62,
+                                                                  "end":  63,
+                                                                  "size":  2,
+                                                                  "alignment":  2
+                                                              }
+                                                          ]
+                                           },
+                           "packingProof":  {
+                                                "packedField":  "_packedFlags",
+                                                "flagsMask":  "0x0000FFFF",
+                                                "activeImpostorCountShift":  16,
+                                                "highestDefinedTelemetryFlagBit":  12,
+                                                "flagDefinitionLines":  "662-674",
+                                                "preservedLogicalProperties":  [
+                                                                                   "Flags",
+                                                                                   "ActiveImpostorCount"
+                                                                               ]
+                                            },
+                           "dumpByteOrder":  [
+                                                 "FocusChunkId:0..7",
+                                                 "PlayerGridX:8..15",
+                                                 "PlayerGridY:16..23",
+                                                 "PlayerGridZ:24..31",
+                                                 "PlayerLocal.x:32..35",
+                                                 "PlayerLocal.y:36..39",
+                                                 "PlayerLocal.z:40..43",
+                                                 "Frame:44..47",
+                                                 "Flags|ActiveImpostorCount:48..51",
+                                                 "StateHash:52..55",
+                                                 "PendingLoads:56..57",
+                                                 "ResidentCount:58..59",
+                                                 "LoadingCount:60..61",
+                                                 "EvictingCount:62..63"
+                                             ]
+                       },
+    "zeroGcAudit":  {
+                        "scope":  "Modified hot blocks only; cold file export is separately disclosed.",
+                        "hotBlocks":  [
+                                          {
+                                              "block":  "WriteTelemetrySample",
+                                              "startLine":  5757,
+                                              "endLine":  5805,
+                                              "newReferenceLike":  0,
+                                              "stringFormat":  0,
+                                              "toString":  0,
+                                              "linqCalls":  0,
+                                              "foreachLoops":  0
+                                          },
+                                          {
+                                              "block":  "WriteChunkResidencyTelemetryEntry",
+                                              "startLine":  5858,
+                                              "endLine":  5875,
+                                              "newReferenceLike":  0,
+                                              "stringFormat":  0,
+                                              "toString":  0,
+                                              "linqCalls":  0,
+                                              "foreachLoops":  0
+                                          }
+                                      ],
+                        "hotForbiddenTotal":  0,
+                        "coldDumpDisclosure":  {
+                                                   "block":  "DumpTelemetryToPathColdIO",
+                                                   "startLine":  5840,
+                                                   "endLine":  5856,
+                                                   "newReferenceLike":  1,
+                                                   "stringFormat":  0,
+                                                   "toString":  0,
+                                                   "linqCalls":  0,
+                                                   "foreachLoops":  0
+                                               },
+                        "coldDumpNote":  "DumpTelemetryToPathColdIO allocates FileStream for fault/export IO; not part of per-frame hot telemetry writer. BinaryWriter was removed."
+                    },
+    "dataSovereignty":  {
+                            "migratedFieldsToGlobalDataVault":  false,
+                            "existingBufferIdsSecured":  [
+                                                             {
+                                                                 "name":  "ResidencyTelemetryVaultBufferId",
+                                                                 "value":  "(BufferID)70568",
+                                                                 "line":  688,
+                                                                 "owner":  "SystemID.WorldStreaming",
+                                                                 "capacity":  300
+                                                             }
+                                                         ],
+                            "writeLockChecks":  [
+                                                    {
+                                                        "file":  "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+                                                        "line":  5763,
+                                                        "expression":  "vault.TryAcquireWriteLock(in _residencyTelemetryHandle, VaultOwnerSystem, out NativeArray\u003cChunkResidencyTelemetryEntry\u003e telemetryRing)"
+                                                    }
+                                                ],
+                            "releases":  [
+                                             {
+                                                 "file":  "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+                                                 "finallyLine":  5801,
+                                                 "releaseLine":  5803,
+                                                 "expression":  "vault.ReleaseWriteLock(in _residencyTelemetryHandle, VaultOwnerSystem)"
+                                             }
+                                         ]
+                        },
+    "scalabilityAndCinematic":  {
+                                    "noBinaryIsLowEndSwitchesInModifiedFiles":  true,
+                                    "isLowEndScanHits":  0,
+                                    "globalQualityWeightEvidence":  [
+                                                                        "WorldChunkResidencyManager.cs:5112 reads HomeostasisBrain.GlobalQualityWeight",
+                                                                        "WorldChunkResidencyManager.cs:3068 load dispatch budget lerps LowTierLoadDispatchBudget..VisualOverkillLoadDispatchBudget",
+                                                                        "WorldChunkResidencyManager.cs:5095 load radius lerps by ResolveSmoothGlobalQualityWeight01",
+                                                                        "WorldChunkResidencyManager.cs:5102-5105 unload radius lerps low..ultra by ResolveSmoothGlobalQualityWeight01"
+                                                                    ],
+                                    "cinematicCheatEvidence":  "Layout pass added no physical simulation; existing chunk impostor path remains visual fake/LOD data, and DTO size is invariant across quality.",
+                                    "dtoSizeDependsOnQuality":  false
+                                },
+    "residualLiteralStructScan":  {
+                                      "total":  220,
+                                      "equal64":  191,
+                                      "under64TelemetryOrBlackBoxCount":  0,
+                                      "size72TelemetryOrBlackBoxCount":  0,
+                                      "oversizeTelemetryOrBlackBoxCount":  29,
+                                      "under64TelemetryOrBlackBoxHits":  [
+
+                                                                         ],
+                                      "size72TelemetryOrBlackBoxHits":  [
+
+                                                                        ],
+                                      "oversizeTelemetryOrBlackBoxHits":  [
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs",
+                                                                                  "line":  69,
+                                                                                  "name":  "AcousticEchoBlackBoxEntry",
+                                                                                  "sizeBytes":  80
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Animation/LeviathanTerrainIkJobs.cs",
+                                                                                  "line":  123,
+                                                                                  "name":  "LeviathanTerrainIkTelemetryEntry",
+                                                                                  "sizeBytes":  96
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Animation/Locomotion/LadderClimbIkJobs.cs",
+                                                                                  "line":  78,
+                                                                                  "name":  "LadderClimbTelemetryEntry",
+                                                                                  "sizeBytes":  128
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Animation/VRPhysicalHandPresenceIkJobs.cs",
+                                                                                  "line":  197,
+                                                                                  "name":  "VRHandIkTelemetryEntry",
+                                                                                  "sizeBytes":  128
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+                                                                                  "line":  777,
+                                                                                  "name":  "DroneFleetBlackBoxEntry",
+                                                                                  "sizeBytes":  80
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+                                                                                  "line":  47,
+                                                                                  "name":  "DockTelemetryEntry",
+                                                                                  "sizeBytes":  128
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                                                  "line":  390,
+                                                                                  "name":  "MemoryDefragTelemetryEntry",
+                                                                                  "sizeBytes":  128
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs",
+                                                                                  "line":  132,
+                                                                                  "name":  "AupOriginShiftTelemetryEntry",
+                                                                                  "sizeBytes":  128
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+                                                                                  "line":  198,
+                                                                                  "name":  "DirectorTelemetryEntry",
+                                                                                  "sizeBytes":  192
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+                                                                                  "line":  159,
+                                                                                  "name":  "ContextualPhysicalIkTelemetryEntry",
+                                                                                  "sizeBytes":  96
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Gameplay/Loot/Contracts/LootMagnetContracts.cs",
+                                                                                  "line":  124,
+                                                                                  "name":  "LootMagnetTelemetryEntry",
+                                                                                  "sizeBytes":  128
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime.cs",
+                                                                                  "line":  26,
+                                                                                  "name":  "PlayerKinematicsRuntimeTelemetryEntry",
+                                                                                  "sizeBytes":  80
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime_HandIK.cs",
+                                                                                  "line":  107,
+                                                                                  "name":  "IkHandTelemetryEntry",
+                                                                                  "sizeBytes":  128
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Gameplay/SomaticKinematicsRuntime.cs",
+                                                                                  "line":  215,
+                                                                                  "name":  "SomaticKinematicBlackBoxEntry",
+                                                                                  "sizeBytes":  96
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+                                                                                  "line":  56,
+                                                                                  "name":  "SubmarinePidTelemetryEntry",
+                                                                                  "sizeBytes":  128
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+                                                                                  "line":  35,
+                                                                                  "name":  "SomaticTelemetryEntry",
+                                                                                  "sizeBytes":  96
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+                                                                                  "line":  3592,
+                                                                                  "name":  "VRSomaticBlackBoxEntry",
+                                                                                  "sizeBytes":  128
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                                                                  "line":  60,
+                                                                                  "name":  "CinematicFocusTelemetryEntry",
+                                                                                  "sizeBytes":  96
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Interaction/VRInteractionKinematicBridge.cs",
+                                                                                  "line":  103,
+                                                                                  "name":  "VRInteractionTelemetryEntry",
+                                                                                  "sizeBytes":  128
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationContracts.cs",
+                                                                                  "line":  236,
+                                                                                  "name":  "ShockwaveTelemetryEntry",
+                                                                                  "sizeBytes":  80
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageContracts.cs",
+                                                                                  "line":  177,
+                                                                                  "name":  "VehicleDamageTelemetryEntry",
+                                                                                  "sizeBytes":  128
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/QA/QAEnduranceWatchdogBot.cs",
+                                                                                  "line":  1067,
+                                                                                  "name":  "QAEnduranceBlackBoxEntry",
+                                                                                  "sizeBytes":  128
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+                                                                                  "line":  865,
+                                                                                  "name":  "HydroBlackBoxEntry",
+                                                                                  "sizeBytes":  128
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridContracts.cs",
+                                                                                  "line":  172,
+                                                                                  "name":  "ReactorThermalTelemetryEntry",
+                                                                                  "sizeBytes":  128
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridContracts.cs",
+                                                                                  "line":  266,
+                                                                                  "name":  "NuclearReactorTelemetryEntry",
+                                                                                  "sizeBytes":  128
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Tools/LaserCutterDodContracts.cs",
+                                                                                  "line":  170,
+                                                                                  "name":  "LaserCutTelemetryEntry",
+                                                                                  "sizeBytes":  128
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs",
+                                                                                  "line":  665,
+                                                                                  "name":  "WfcLaserCutTelemetryEntry",
+                                                                                  "sizeBytes":  96
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/UI/TopographicalSonar/TopographicalSonarSynthesizer.cs",
+                                                                                  "line":  30,
+                                                                                  "name":  "TopographicalSonarTelemetryEntry",
+                                                                                  "sizeBytes":  128
+                                                                              },
+                                                                              {
+                                                                                  "file":  "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+                                                                                  "line":  6716,
+                                                                                  "name":  "VoxelCarveTelemetryEntry",
+                                                                                  "sizeBytes":  80
+                                                                              }
+                                                                          ]
+                                  },
+    "remainingNon64SizeConstants":  [
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                            "line":  474,
+                                            "name":  "MemoryDefragTelemetryEntrySizeBytes",
+                                            "sizeBytes":  128
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/CrashTelemetryBuffer.cs",
+                                            "line":  41,
+                                            "name":  "LiveTelemetryRecordSizeBytes",
+                                            "sizeBytes":  32
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+                                            "line":  1327,
+                                            "name":  "TelemetryEntrySizeBytes",
+                                            "sizeBytes":  96
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Gameplay/Loot/Contracts/LootMagnetContracts.cs",
+                                            "line":  15,
+                                            "name":  "TelemetryEntrySizeBytes",
+                                            "sizeBytes":  128
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+                                            "line":  174,
+                                            "name":  "BlackBoxDumpEntrySizeBytes",
+                                            "sizeBytes":  128
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Power/PowerGridSolarContracts.cs",
+                                            "line":  26,
+                                            "name":  "SolarBlackBoxDumpHeaderSizeBytes",
+                                            "sizeBytes":  32
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs",
+                                            "line":  30,
+                                            "name":  "TelemetryEntrySizeBytes",
+                                            "sizeBytes":  128
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Tools/LaserCutterDodRuntime.cs",
+                                            "line":  23,
+                                            "name":  "LaserCutTelemetryEntrySizeBytes",
+                                            "sizeBytes":  128
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs",
+                                            "line":  26,
+                                            "name":  "WfcTelemetryEntrySizeBytes",
+                                            "sizeBytes":  96
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs",
+                                            "line":  148,
+                                            "name":  "CameraJuiceTelemetryDumpHeaderSizeBytes",
+                                            "sizeBytes":  32
+                                        }
+                                    ],
+    "nonRingContractDisclosure":  {
+                                      "file":  "Assets/_Project/Scripts/CrashTelemetryBuffer.cs",
+                                      "line":  256,
+                                      "name":  "LiveTelemetryRecord",
+                                      "sizeBytes":  32,
+                                      "reason":  "Single latest runtime_telemetry.bin record, not a 300-frame circular telemetry ring; Tools/TelemetryDashboard/server.py currently parses \u003cIIIIIfff\u003e 32-byte TELM records. Changing it requires versioned parser migration, not silent padding."
+                                  },
+    "compilation":  {
+                        "dotnetBuildInvoked":  false,
+                        "reason":  "Blocked by Compilation Resource Throttling: CPU sample 100 and active dotnet process sampled.",
+                        "cpuLoadPercentSample":  100,
+                        "activeCompilerProcesses":  [
+                                                        {
+                                                            "id":  5428,
+                                                            "processName":  "dotnet",
+                                                            "cpu":  52.703125,
+                                                            "startTime":  "2026-05-28T15:06:00+04:00"
+                                                        }
+                                                    ]
+                    },
+    "status":  "PENDING_COMPILER_AND_UNITY_VALIDATION"
+}

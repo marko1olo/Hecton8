@@ -140,12 +140,18 @@ Shader "HECTON/Terrain/TerrainMaster"
         float4 _HectonDamageVolumeWorldMin;
         float4 _HectonDamageVolumeInvSize;
         float _HectonDamageVolumeActive;
+        float _HectonMathLodWeight;
 
         half3 HectonDominantAxisDirection(float3 value)
         {
             half3 v = (half3)value;
             half dominant = max(max(abs(v.x), abs(v.y)), abs(v.z));
             return v * rcp(max(dominant, 0.0001h));
+        }
+
+        half HectonTerrainMathLodWeight()
+        {
+            return (half)saturate(isfinite(_HectonMathLodWeight) ? _HectonMathLodWeight : 1.0);
         }
 
         half EvaluateSargassumCanopyShadow(float3 positionWS)
@@ -371,8 +377,6 @@ Shader "HECTON/Terrain/TerrainMaster"
             #pragma skip_variants _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
             // Fog
             #pragma multi_compile_fog
-            // Project math LOD, pushed by FrameTimeWatchdog/DistanceMath.
-            #pragma multi_compile _ _MATH_LOD_LOW
             // GPU instancing
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling
@@ -510,19 +514,22 @@ Shader "HECTON/Terrain/TerrainMaster"
                 siltWeight *= rcp(postVoxelTotal);
 
                 half taaMicroBump = (screenIgn - 0.5h) * steepMask * 0.035h;
-                #if defined(_MATH_LOD_LOW)
-                    half2 materialRgOffset = half2(taaMicroBump, -taaMicroBump);
-                #else
-                half sandLuma = dot(sandSample.rgb, half3(0.25h, 0.5h, 0.25h));
-                half rockLuma = dot(rockSample.rgb, half3(0.25h, 0.5h, 0.25h));
-                half siltLuma = dot(siltSample.rgb, half3(0.25h, 0.5h, 0.25h));
-                half weightedLuma = (sandLuma * sandWeight) + (rockLuma * rockWeight) + (siltLuma * siltWeight);
-                half materialLuma = useBiomeArray > 0.0h ? dot(biomeArraySample.rgb, half3(0.25h, 0.5h, 0.25h)) : weightedLuma;
-                half weightedDetail = (half)_SandNormalStr * sandWeight + (half)_RockNormalStr * rockWeight + (half)_SiltNormalStr * siltWeight;
-                half materialDetailStrength = (useBiomeArray > 0.0h ? (half)_SandNormalStr : weightedDetail) * 0.16h;
-                half2 materialRgOffset = half2(ddx(materialLuma), ddy(materialLuma)) * materialDetailStrength;
-                materialRgOffset += half2(taaMicroBump, -taaMicroBump);
-                #endif
+                half terrainMathLodWeight = HectonTerrainMathLodWeight();
+                half2 cheapMaterialRgOffset = half2(taaMicroBump, -taaMicroBump);
+                half2 materialRgOffset = cheapMaterialRgOffset;
+                if (terrainMathLodWeight > 0.0001h)
+                {
+                    half sandLuma = dot(sandSample.rgb, half3(0.25h, 0.5h, 0.25h));
+                    half rockLuma = dot(rockSample.rgb, half3(0.25h, 0.5h, 0.25h));
+                    half siltLuma = dot(siltSample.rgb, half3(0.25h, 0.5h, 0.25h));
+                    half weightedLuma = (sandLuma * sandWeight) + (rockLuma * rockWeight) + (siltLuma * siltWeight);
+                    half materialLuma = useBiomeArray > 0.0h ? dot(biomeArraySample.rgb, half3(0.25h, 0.5h, 0.25h)) : weightedLuma;
+                    half weightedDetail = (half)_SandNormalStr * sandWeight + (half)_RockNormalStr * rockWeight + (half)_SiltNormalStr * siltWeight;
+                    half materialDetailStrength = (useBiomeArray > 0.0h ? (half)_SandNormalStr : weightedDetail) * 0.16h;
+                    half2 detailMaterialRgOffset = half2(ddx(materialLuma), ddy(materialLuma)) * materialDetailStrength;
+                    detailMaterialRgOffset += cheapMaterialRgOffset;
+                    materialRgOffset = lerp(cheapMaterialRgOffset, detailMaterialRgOffset, terrainMathLodWeight);
+                }
                 half3 blendedNormalOffset = half3(materialRgOffset.x, 0.0h, materialRgOffset.y);
                 half3 sandAlbedo = useBiomeArray > 0.0h ? biomeArraySample.rgb : sandSample.rgb * _SandColor.rgb;
                 half3 rockAlbedo = useBiomeArray > 0.0h ? biomeArraySample.rgb : rockSample.rgb * _RockColor.rgb;
@@ -549,20 +556,21 @@ Shader "HECTON/Terrain/TerrainMaster"
                 half distantHeightShadow = EvaluateDistantTerrainHeightShadow(IN.positionWS);
                 albedo = lerp(albedo, albedo * 0.20h, distantHeightShadow);
                 emission *= 1.0h - distantHeightShadow * 0.9h;
-
                 // ---- Final world normal ----
-                #if defined(_MATH_LOD_LOW)
-                    half flowHash = screenIgn - 0.5h;
-                    half3 flowNormalWS = half3(flowHash, 0.0h, -flowHash) * (half)_FlowNormalStrength;
-                #else
-                float flowScale = max(_FlowNormalScale, 0.0001);
-                float2 flowUv = IN.positionWS.xz * flowScale +
-                    float2(IN.positionWS.y * flowScale * 2.13, IN.positionWS.y * flowScale * 0.37);
-                half3 flowNormalWS = HectonResolveXZNormalOffset(
-                    HectonUnpackNormalRG(
-                        SAMPLE_TEXTURE2D(_FlowNormal, sampler_FlowNormal, flowUv),
-                        (half)_FlowNormalStrength));
-                #endif
+                half flowHash = screenIgn - 0.5h;
+                half3 cheapFlowNormalWS = half3(flowHash, 0.0h, -flowHash) * (half)_FlowNormalStrength;
+                half3 flowNormalWS = cheapFlowNormalWS;
+                if (terrainMathLodWeight > 0.0001h)
+                {
+                    float flowScale = max(_FlowNormalScale, 0.0001);
+                    float2 flowUv = IN.positionWS.xz * flowScale +
+                        float2(IN.positionWS.y * flowScale * 2.13, IN.positionWS.y * flowScale * 0.37);
+                    half3 sampledFlowNormalWS = HectonResolveXZNormalOffset(
+                        HectonUnpackNormalRG(
+                            SAMPLE_TEXTURE2D(_FlowNormal, sampler_FlowNormal, flowUv),
+                            (half)_FlowNormalStrength));
+                    flowNormalWS = lerp(cheapFlowNormalWS, sampledFlowNormalWS, terrainMathLodWeight);
+                }
                 half3 finalNormalWS = HectonDominantAxisDirection(
                     IN.normalWS + blendedNormalOffset + flowNormalWS * steepMask);
                 half sedimentMask = saturate(control.a * hasControl) * (half)_SedimentStrength;

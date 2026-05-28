@@ -103,7 +103,7 @@ namespace Hecton8.Construction
             structuralJamThreshold = runtime.structuralJamThreshold01;
             catastrophicPressure = runtime.catastrophicPressureDifferentialATM;
             if (runtime._hatchDefaultsInitialized &&
-                runtime.Resolve(in runtime._hatchTuningHandle, out NativeArray<HatchTuningDTO> tuning) &&
+                runtime.Resolve(in runtime._hatchTuningHandle, BufferID.Shinobu343HatchTuning, out NativeArray<HatchTuningDTO> tuning) &&
                 tuning.IsCreated &&
                 tuning.Length > 0)
             {
@@ -146,7 +146,7 @@ namespace Hecton8.Construction
             if (vault == null || !runtime.EnsureHatchLockVaultState(vault, runtime.ResolveHatchCapacity(), allowDefaultProfileLoad: false))
                 return false;
 
-            if (!TryAcquireWriteLane(vault, in runtime._hatchProfilesHandle, 1, out NativeArray<HatchHardwareProfileDTO> profiles))
+            if (!TryAcquireWriteLane(vault, in runtime._hatchProfilesHandle, BufferID.Shinobu343HatchProfiles, 1, out NativeArray<HatchHardwareProfileDTO> profiles))
                 return false;
 
             int parsed;
@@ -207,19 +207,19 @@ namespace Hecton8.Construction
                 return false;
 
             int safeCapacity = math.clamp(capacity, 1, BulkheadContainmentConstants.DefaultBulkheadCapacity);
-            if (!IsVaultHandleCreated(in _hatchStatesHandle))
+            if (!IsBulkheadVaultHandle(in _hatchStatesHandle, BufferID.Shinobu343HatchStates))
                 _hatchStatesHandle = vault.EnsureGenerationHandle<HatchStateDTO>(BufferID.Shinobu343HatchStates, safeCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            if (!IsVaultHandleCreated(in _hatchTelemetryHandle))
+            if (!IsBulkheadVaultHandle(in _hatchTelemetryHandle, BufferID.Shinobu343HatchTelemetryRing))
                 _hatchTelemetryHandle = vault.EnsureGenerationHandle<HatchTelemetryEntry>(BufferID.Shinobu343HatchTelemetryRing, HatchLockConstants.TelemetryFrameCount, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            if (!IsVaultHandleCreated(in _hatchTelemetryCursorHandle))
+            if (!IsBulkheadVaultHandle(in _hatchTelemetryCursorHandle, BufferID.Shinobu343HatchTelemetryCursor))
                 _hatchTelemetryCursorHandle = vault.EnsureGenerationHandle<uint>(BufferID.Shinobu343HatchTelemetryCursor, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            if (!IsVaultHandleCreated(in _hatchTuningHandle))
+            if (!IsBulkheadVaultHandle(in _hatchTuningHandle, BufferID.Shinobu343HatchTuning))
                 _hatchTuningHandle = vault.EnsureGenerationHandle<HatchTuningDTO>(BufferID.Shinobu343HatchTuning, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            if (!IsVaultHandleCreated(in _hatchProfilesHandle))
+            if (!IsBulkheadVaultHandle(in _hatchProfilesHandle, BufferID.Shinobu343HatchProfiles))
                 _hatchProfilesHandle = vault.EnsureGenerationHandle<HatchHardwareProfileDTO>(BufferID.Shinobu343HatchProfiles, HatchLockConstants.ProfileCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            if (!IsVaultHandleCreated(in _hatchCsvScratchHandle))
+            if (!IsBulkheadVaultHandle(in _hatchCsvScratchHandle, BufferID.Shinobu343HatchCsvScratch))
                 _hatchCsvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.Shinobu343HatchCsvScratch, HatchLockConstants.CsvScratchBytes, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
-            if (!IsVaultHandleCreated(in _hatchMockFluidCompartmentsHandle))
+            if (!IsBulkheadVaultHandle(in _hatchMockFluidCompartmentsHandle, BufferID.Shinobu343HatchMockFluidCompartments))
                 _hatchMockFluidCompartmentsHandle = vault.EnsureGenerationHandle<FluidCompartmentDTO>(
                     BufferID.Shinobu343HatchMockFluidCompartments,
                     safeCapacity * HatchLockConstants.MockFluidRowsPerHatch,
@@ -240,10 +240,10 @@ namespace Hecton8.Construction
                 return false;
 
             int safeCapacity = math.clamp(capacity, 1, BulkheadContainmentConstants.DefaultBulkheadCapacity);
-            if (!Resolve(in _hatchStatesHandle, out NativeArray<HatchStateDTO> hatches) ||
-                !Resolve(in _hatchTelemetryHandle, out NativeArray<HatchTelemetryEntry> telemetry) ||
-                !Resolve(in _hatchProfilesHandle, out NativeArray<HatchHardwareProfileDTO> profiles) ||
-                !Resolve(in _hatchMockFluidCompartmentsHandle, out NativeArray<FluidCompartmentDTO> mockFluid))
+            if (!Resolve(in _hatchStatesHandle, BufferID.Shinobu343HatchStates, out NativeArray<HatchStateDTO> hatches) ||
+                !Resolve(in _hatchTelemetryHandle, BufferID.Shinobu343HatchTelemetryRing, out NativeArray<HatchTelemetryEntry> telemetry) ||
+                !Resolve(in _hatchProfilesHandle, BufferID.Shinobu343HatchProfiles, out NativeArray<HatchHardwareProfileDTO> profiles) ||
+                !Resolve(in _hatchMockFluidCompartmentsHandle, BufferID.Shinobu343HatchMockFluidCompartments, out NativeArray<FluidCompartmentDTO> mockFluid))
             {
                 return false;
             }
@@ -267,14 +267,14 @@ namespace Hecton8.Construction
             {
                 if (!_hatchDefaultsInitialized)
                 {
-                    if (!TryAcquireWriteLane(vault, in _hatchTelemetryCursorHandle, 1, out NativeArray<uint> cursor))
+                    if (!TryAcquireWriteLane(vault, in _hatchTelemetryCursorHandle, BufferID.Shinobu343HatchTelemetryCursor, 1, out NativeArray<uint> cursor))
                         return false;
                     cursorLocked = true;
                     cursor[0] = 0u;
                     _hatchDefaultsInitialized = true;
                 }
 
-                if (!TryAcquireWriteLane(vault, in _hatchTuningHandle, 1, out NativeArray<HatchTuningDTO> tuning))
+                if (!TryAcquireWriteLane(vault, in _hatchTuningHandle, BufferID.Shinobu343HatchTuning, 1, out NativeArray<HatchTuningDTO> tuning))
                     return false;
                 tuningLocked = true;
                 WriteHatchTuningRow(tuning, profiles, _hatchProfileRowCount, safeCapacity, ResolveBulkheadQualityWeight());
@@ -315,7 +315,7 @@ namespace Hecton8.Construction
         private bool TryWriteHatchTuningRow()
         {
             IDataVault vault = ResolveVault();
-            if (!TryAcquireWriteLane(vault, in _hatchTuningHandle, 1, out NativeArray<HatchTuningDTO> tuning))
+            if (!TryAcquireWriteLane(vault, in _hatchTuningHandle, BufferID.Shinobu343HatchTuning, 1, out NativeArray<HatchTuningDTO> tuning))
             {
                 return false;
             }
@@ -323,7 +323,7 @@ namespace Hecton8.Construction
             try
             {
                 NativeArray<HatchHardwareProfileDTO> profiles = default;
-                Resolve(in _hatchProfilesHandle, out profiles);
+                Resolve(in _hatchProfilesHandle, BufferID.Shinobu343HatchProfiles, out profiles);
                 WriteHatchTuningRow(tuning, profiles, _hatchProfileRowCount, ResolveHatchCapacity(), ResolveBulkheadQualityWeight());
                 return true;
             }
@@ -409,11 +409,11 @@ namespace Hecton8.Construction
                 !moduleIntegrity.IsCreated ||
                 !_vaultInitialized ||
                 !EnsureHatchLayoutValid() ||
-                !Resolve(in _hatchStatesHandle, out NativeArray<HatchStateDTO> hatches) ||
-                !Resolve(in _hatchTelemetryHandle, out NativeArray<HatchTelemetryEntry> telemetry) ||
-                !Resolve(in _hatchTelemetryCursorHandle, out NativeArray<uint> telemetryCursor) ||
-                !Resolve(in _hatchTuningHandle, out NativeArray<HatchTuningDTO> tuning) ||
-                !Resolve(in _hatchProfilesHandle, out NativeArray<HatchHardwareProfileDTO> profiles))
+                !Resolve(in _hatchStatesHandle, BufferID.Shinobu343HatchStates, out NativeArray<HatchStateDTO> hatches) ||
+                !Resolve(in _hatchTelemetryHandle, BufferID.Shinobu343HatchTelemetryRing, out NativeArray<HatchTelemetryEntry> telemetry) ||
+                !Resolve(in _hatchTelemetryCursorHandle, BufferID.Shinobu343HatchTelemetryCursor, out NativeArray<uint> telemetryCursor) ||
+                !Resolve(in _hatchTuningHandle, BufferID.Shinobu343HatchTuning, out NativeArray<HatchTuningDTO> tuning) ||
+                !Resolve(in _hatchProfilesHandle, BufferID.Shinobu343HatchProfiles, out NativeArray<HatchHardwareProfileDTO> profiles))
             {
                 return dependency;
             }
@@ -461,7 +461,7 @@ namespace Hecton8.Construction
             NativeArray<FluidCompartmentDTO> fluidCompartments = default;
             bool useMockFluid = generateMockHatchPressure;
             if (!useMockFluid &&
-                IsVaultHandleCreated(in _hatchFluidCompartmentsHandle) &&
+                IsVaultHandleForBuffer(in _hatchFluidCompartmentsHandle, BufferID.ShinobuFluidCompartmentFront) &&
                 TryLockOptionalBulkheadJobPin(BufferID.ShinobuFluidCompartmentFront, BulkheadJobPinHatchFluidFront) &&
                 vault.TryReadHandle(in _hatchFluidCompartmentsHandle, out fluidCompartments) &&
                 fluidCompartments.IsCreated &&
@@ -476,7 +476,7 @@ namespace Hecton8.Construction
             }
 
             if (useMockFluid &&
-                Resolve(in _hatchMockFluidCompartmentsHandle, out NativeArray<FluidCompartmentDTO> mockFluid) &&
+                Resolve(in _hatchMockFluidCompartmentsHandle, BufferID.Shinobu343HatchMockFluidCompartments, out NativeArray<FluidCompartmentDTO> mockFluid) &&
                 mockFluid.IsCreated &&
                 mockFluid.Length >= activeCount * HatchLockConstants.MockFluidRowsPerHatch)
             {
@@ -521,7 +521,7 @@ namespace Hecton8.Construction
 
             StructuralIntegrityStateDTO* structuralPtr = null;
             int structuralCount = 0;
-            if (IsVaultHandleCreated(in _hatchStructuralStatesHandle) &&
+            if (IsVaultHandleForBuffer(in _hatchStructuralStatesHandle, BufferID.StructuralIntegrityStates) &&
                 TryLockOptionalBulkheadJobPin(BufferID.StructuralIntegrityStates, BulkheadJobPinHatchStructural) &&
                 vault.TryReadHandle(in _hatchStructuralStatesHandle, out NativeArray<StructuralIntegrityStateDTO> structuralStates) &&
                 structuralStates.IsCreated &&
@@ -613,9 +613,9 @@ namespace Hecton8.Construction
 
             if (vault == null ||
                 !AreHatchGraphicsBuffersReady() ||
-                !Resolve(in _hatchStatesHandle, out NativeArray<HatchStateDTO> hatches) ||
-                !Resolve(in _hatchTelemetryHandle, out NativeArray<HatchTelemetryEntry> telemetry) ||
-                !Resolve(in _hatchTelemetryCursorHandle, out NativeArray<uint> cursor))
+                !Resolve(in _hatchStatesHandle, BufferID.Shinobu343HatchStates, out NativeArray<HatchStateDTO> hatches) ||
+                !Resolve(in _hatchTelemetryHandle, BufferID.Shinobu343HatchTelemetryRing, out NativeArray<HatchTelemetryEntry> telemetry) ||
+                !Resolve(in _hatchTelemetryCursorHandle, BufferID.Shinobu343HatchTelemetryCursor, out NativeArray<uint> cursor))
             {
                 DisableHatchShaderGlobals();
                 return;
@@ -764,7 +764,9 @@ namespace Hecton8.Construction
                     return;
                 cursorPinned = true;
 
-                if (!vault.TryResolveHandle(in _hatchTelemetryHandle, out NativeArray<HatchTelemetryEntry> telemetry) ||
+                if (!IsBulkheadVaultHandle(in _hatchTelemetryHandle, BufferID.Shinobu343HatchTelemetryRing) ||
+                    !IsBulkheadVaultHandle(in _hatchTelemetryCursorHandle, BufferID.Shinobu343HatchTelemetryCursor) ||
+                    !vault.TryResolveHandle(in _hatchTelemetryHandle, out NativeArray<HatchTelemetryEntry> telemetry) ||
                     !vault.TryResolveHandle(in _hatchTelemetryCursorHandle, out NativeArray<uint> cursor) ||
                     !telemetry.IsCreated ||
                     !cursor.IsCreated ||
@@ -863,7 +865,7 @@ namespace Hecton8.Construction
             if (vault == null || string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            if (!TryAcquireWriteLane(vault, in _hatchProfilesHandle, 1, out NativeArray<HatchHardwareProfileDTO> profiles))
+            if (!TryAcquireWriteLane(vault, in _hatchProfilesHandle, BufferID.Shinobu343HatchProfiles, 1, out NativeArray<HatchHardwareProfileDTO> profiles))
                 return false;
 
             bool scratchLocked = false;
@@ -875,7 +877,7 @@ namespace Hecton8.Construction
                 if (!forceReload && _hatchProfileCsvLoaded && info.LastWriteTimeUtc.Ticks == _hatchProfilesCsvLastWriteTicks)
                     return false;
 
-                if (!TryAcquireWriteLane(vault, in _hatchCsvScratchHandle, 1, out NativeArray<byte> scratch))
+                if (!TryAcquireWriteLane(vault, in _hatchCsvScratchHandle, BufferID.Shinobu343HatchCsvScratch, 1, out NativeArray<byte> scratch))
                     return false;
 
                 scratchLocked = true;
@@ -977,13 +979,13 @@ namespace Hecton8.Construction
         {
             if (vault != null)
             {
-                ReleaseVaultHandle(vault, ref _hatchStatesHandle);
-                ReleaseVaultHandle(vault, ref _hatchTelemetryHandle);
-                ReleaseVaultHandle(vault, ref _hatchTelemetryCursorHandle);
-                ReleaseVaultHandle(vault, ref _hatchTuningHandle);
-                ReleaseVaultHandle(vault, ref _hatchProfilesHandle);
-                ReleaseVaultHandle(vault, ref _hatchCsvScratchHandle);
-                ReleaseVaultHandle(vault, ref _hatchMockFluidCompartmentsHandle);
+                ReleaseVaultHandle(vault, ref _hatchStatesHandle, BufferID.Shinobu343HatchStates);
+                ReleaseVaultHandle(vault, ref _hatchTelemetryHandle, BufferID.Shinobu343HatchTelemetryRing);
+                ReleaseVaultHandle(vault, ref _hatchTelemetryCursorHandle, BufferID.Shinobu343HatchTelemetryCursor);
+                ReleaseVaultHandle(vault, ref _hatchTuningHandle, BufferID.Shinobu343HatchTuning);
+                ReleaseVaultHandle(vault, ref _hatchProfilesHandle, BufferID.Shinobu343HatchProfiles);
+                ReleaseVaultHandle(vault, ref _hatchCsvScratchHandle, BufferID.Shinobu343HatchCsvScratch);
+                ReleaseVaultHandle(vault, ref _hatchMockFluidCompartmentsHandle, BufferID.Shinobu343HatchMockFluidCompartments);
             }
 
             _hatchStatesHandle = default;
@@ -1022,8 +1024,8 @@ namespace Hecton8.Construction
         private void DrawHatchLockGizmos()
         {
             if (!_vaultInitialized ||
-                !Resolve(in _hatchStatesHandle, out NativeArray<HatchStateDTO> hatches) ||
-                !Resolve(in _aupsHandle, out NativeArray<double3> aups) ||
+                !Resolve(in _hatchStatesHandle, BufferID.Shinobu343HatchStates, out NativeArray<HatchStateDTO> hatches) ||
+                !Resolve(in _aupsHandle, BufferID.Shinobu220BulkheadAups, out NativeArray<double3> aups) ||
                 !hatches.IsCreated ||
                 !aups.IsCreated)
             {

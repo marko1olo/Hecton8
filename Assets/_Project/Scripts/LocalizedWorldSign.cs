@@ -124,6 +124,7 @@ namespace Hecton.Localization
             }
 
             PrepareDisplayBuffer(sourceBuffer, sourceLength, out char[] displayBuffer, out int displayLength);
+            targetText.richText = Hecton8.UI.BabelRichTextLodPolicy.ShouldEnableTmpRichTextParsing();
             targetText.isRightToLeftText = LocalizationManager.IsRightToLeftLanguage(LocRegistry.ActiveLanguage);
             targetText.SetCharArray(displayBuffer, 0, displayLength);
             targetText.SetVerticesDirty();

@@ -814,7 +814,7 @@ namespace Hecton8.AI
             if (CreatureUtilityContext.UseAlphaLeviathanCognition(in context))
                 input.Flags |= (int)CognitionInputFlags.UseAlphaLeviathanCognition;
             if (UsesApexCognitionSteering(contextIsApexPredator))
-                input.Flags |= (int)CognitionInputFlags.HighTierSmoothSteering;
+                input.Flags |= (int)CognitionInputFlags.ApexSmoothSteering;
             if ((_speciesProfile != null && _speciesProfile.isAmbusher) ||
                 (_dataTemplate != null && _dataTemplate.CanBurrowAmbush))
             {

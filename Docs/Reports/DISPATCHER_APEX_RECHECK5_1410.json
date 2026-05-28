@@ -1,0 +1,1368 @@
+﻿{
+    "agentId":  "1410",
+    "role":  "DISPATCHER_PHASE_ALIGNMENT_AND_LATEFRAME_SYNC_VALIDATOR",
+    "domain":  "Echelon 1 Core Infrastructure / Tick Dispatcher \u0026 Time Dilation",
+    "generatedAt":  "2026-05-28T16:01:46.2102303+04:00",
+    "status":  "STATIC_APEX_RECHECK_COMPLETE_BUILD_BLOCKED_BY_CONTENTION",
+    "zeroGcScan":  {
+                       "elapsedMicroseconds":  12546036,
+                       "totals":  {
+                                      "methods":  71,
+                                      "missingMethods":  0,
+                                      "newTokens":  3,
+                                      "referenceNew":  0,
+                                      "valueTypeNew":  3,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreach":  0
+                                  },
+                       "rows":  [
+                                    {
+                                        "file":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                        "method":  "FixedTick",
+                                        "found":  true,
+                                        "startLine":  8752,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                        "method":  "LateFrameTick",
+                                        "found":  true,
+                                        "startLine":  7217,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                        "method":  "QueueMovementAcousticSignal",
+                                        "found":  true,
+                                        "startLine":  7306,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                        "method":  "QueueKccWallScrapeAcoustic",
+                                        "found":  true,
+                                        "startLine":  7313,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                        "method":  "FlushQueuedFeedbackSignals",
+                                        "found":  true,
+                                        "startLine":  7320,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                                        "method":  "TryProcessKccWallScrapeFeedback",
+                                        "found":  true,
+                                        "startLine":  11738,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  1,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+                                                           {
+                                                               "token":  "new AcousticPingSignal",
+                                                               "type":  "AcousticPingSignal",
+                                                               "classification":  "value-type"
+                                                           }
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+                                        "method":  "LateFrameTick",
+                                        "found":  true,
+                                        "startLine":  1415,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+                                        "method":  "PublishCavitationRumbleIfNeeded",
+                                        "found":  true,
+                                        "startLine":  3040,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  1,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+                                                           {
+                                                               "token":  "new AudioPingTriggerPayload",
+                                                               "type":  "AudioPingTriggerPayload",
+                                                               "classification":  "value-type"
+                                                           }
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+                                        "method":  "QueueCavitationFeedback",
+                                        "found":  true,
+                                        "startLine":  4530,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+                                        "method":  "FlushQueuedCavitationFeedback",
+                                        "found":  true,
+                                        "startLine":  4537,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+                                        "method":  "FlushQueuedBrineHullFeedback",
+                                        "found":  true,
+                                        "startLine":  4561,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+                                        "method":  "LateFrameTick",
+                                        "found":  true,
+                                        "startLine":  658,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+                                        "method":  "EmitAirReleaseIfNeeded",
+                                        "found":  true,
+                                        "startLine":  1627,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+                                        "method":  "QueueFloodStressAcoustic",
+                                        "found":  true,
+                                        "startLine":  2209,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+                                        "method":  "QueueCriticalFloodHaptic",
+                                        "found":  true,
+                                        "startLine":  2215,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+                                        "method":  "QueueAirReleaseAudio",
+                                        "found":  true,
+                                        "startLine":  2221,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+                                        "method":  "FlushDynamicFloodFeedback",
+                                        "found":  true,
+                                        "startLine":  2238,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+                                        "method":  "EmitDynamicFloodFeedback",
+                                        "found":  true,
+                                        "startLine":  2150,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+                                        "method":  "LateFrameTick",
+                                        "found":  true,
+                                        "startLine":  3201,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+                                        "method":  "QueueProceduralAudioEvent",
+                                        "found":  true,
+                                        "startLine":  3235,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+                                        "method":  "FlushQueuedPresentationFeedback",
+                                        "found":  true,
+                                        "startLine":  3242,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+                                        "method":  "ClearQueuedPresentationFeedback",
+                                        "found":  true,
+                                        "startLine":  3273,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+                                        "method":  "QueueProceduralAudioPing",
+                                        "found":  true,
+                                        "startLine":  6255,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  1,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+                                                           {
+                                                               "token":  "new AudioPingTriggerPayload",
+                                                               "type":  "AudioPingTriggerPayload",
+                                                               "classification":  "value-type"
+                                                           }
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+                                        "method":  "EmitLeviathanAttackTelegraphPing",
+                                        "found":  true,
+                                        "startLine":  4061,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+                                        "method":  "RaisePredationAudioPing",
+                                        "found":  true,
+                                        "startLine":  5952,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Prologue/Space/OrbitalRelativityDirector.cs",
+                                        "method":  "Tick",
+                                        "found":  true,
+                                        "startLine":  332,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Prologue/Space/OrbitalRelativityDirector.cs",
+                                        "method":  "LateFrameTick",
+                                        "found":  true,
+                                        "startLine":  368,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Prologue/Space/OrbitalRelativityDirector.cs",
+                                        "method":  "FlushQueuedFeedbackSignals",
+                                        "found":  true,
+                                        "startLine":  901,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+                                        "method":  "LateFrameTick",
+                                        "found":  true,
+                                        "startLine":  3255,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+                                        "method":  "QueueStructuralStressHaptic",
+                                        "found":  true,
+                                        "startLine":  5133,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+                                        "method":  "FlushQueuedStructuralStressHaptic",
+                                        "found":  true,
+                                        "startLine":  5153,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+                                        "method":  "HandleStructuralStressTriggered",
+                                        "found":  true,
+                                        "startLine":  6786,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
+                                        "method":  "OnSpawn",
+                                        "found":  true,
+                                        "startLine":  415,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
+                                        "method":  "OnDespawn",
+                                        "found":  true,
+                                        "startLine":  437,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
+                                        "method":  "OnUnequip",
+                                        "found":  true,
+                                        "startLine":  464,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
+                                        "method":  "ClearHeadlightGlobals",
+                                        "found":  true,
+                                        "startLine":  2027,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
+                                        "method":  "LateFrameTick",
+                                        "found":  true,
+                                        "startLine":  649,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Fabricator.cs",
+                                        "method":  "LateFrameTick",
+                                        "found":  true,
+                                        "startLine":  936,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Fabricator.cs",
+                                        "method":  "QueueProceduralAudioPing",
+                                        "found":  true,
+                                        "startLine":  2736,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Fabricator.cs",
+                                        "method":  "FlushPendingProceduralAudioPings",
+                                        "found":  true,
+                                        "startLine":  2766,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Fabricator.cs",
+                                        "method":  "FlushProceduralAudioPing",
+                                        "found":  true,
+                                        "startLine":  2781,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Fabricator.cs",
+                                        "method":  "RaiseFabricatorProgressAudioPing",
+                                        "found":  true,
+                                        "startLine":  2792,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Fabricator.cs",
+                                        "method":  "QueueFabricatorProgressHaptics",
+                                        "found":  true,
+                                        "startLine":  2809,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Fabricator.cs",
+                                        "method":  "FlushPendingProgressHaptics",
+                                        "found":  true,
+                                        "startLine":  2823,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Fabricator.cs",
+                                        "method":  "TriggerCraftFailureFeedback",
+                                        "found":  true,
+                                        "startLine":  2840,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                        "method":  "LateFrameTick",
+                                        "found":  true,
+                                        "startLine":  2132,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                        "method":  "EmitSonarPulse",
+                                        "found":  true,
+                                        "startLine":  2236,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                        "method":  "QueueActiveSonarAcousticSignal",
+                                        "found":  true,
+                                        "startLine":  3435,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                        "method":  "FlushQueuedActiveSonarAcousticSignal",
+                                        "found":  true,
+                                        "startLine":  3443,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                        "method":  "ClearQueuedActiveSonarAcousticSignal",
+                                        "found":  true,
+                                        "startLine":  3460,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                        "method":  "FlushQueuedSpectrumShaderGlobals",
+                                        "found":  true,
+                                        "startLine":  2709,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                        "method":  "PublishActiveSonarGeoGlobals",
+                                        "found":  true,
+                                        "startLine":  3611,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                        "method":  "WriteActiveSonarGeoTelemetry",
+                                        "found":  true,
+                                        "startLine":  3705,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                        "method":  "TryPlayAbyssalAnchorReturn",
+                                        "found":  true,
+                                        "startLine":  4182,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                        "method":  "FlushQueuedSpectrumAudio",
+                                        "found":  true,
+                                        "startLine":  4193,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                        "method":  "ClearActiveSonarGeoGlobals",
+                                        "found":  true,
+                                        "startLine":  3667,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                        "method":  "MarkAupDiscoveryCell",
+                                        "found":  true,
+                                        "startLine":  2889,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                        "method":  "MarkAupDiscoveryPulseShell",
+                                        "found":  true,
+                                        "startLine":  2938,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                        "method":  "LateFrameTick",
+                                        "found":  true,
+                                        "startLine":  605,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                        "method":  "PlaySound",
+                                        "found":  true,
+                                        "startLine":  1268,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                        "method":  "FlushPendingAudio",
+                                        "found":  true,
+                                        "startLine":  1276,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                        "method":  "TryRegisterLateFrameTick",
+                                        "found":  true,
+                                        "startLine":  1085,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                        "method":  "TryUnregisterLateFrameTick",
+                                        "found":  true,
+                                        "startLine":  1093,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+                                        "method":  "Tick",
+                                        "found":  true,
+                                        "startLine":  502,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+                                        "method":  "LateFrameTick",
+                                        "found":  true,
+                                        "startLine":  508,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+                                        "method":  "PlayDiscoveryStinger",
+                                        "found":  true,
+                                        "startLine":  727,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+                                        "method":  "PlayDangerStinger",
+                                        "found":  true,
+                                        "startLine":  739,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+                                        "method":  "PlayRecoveryStinger",
+                                        "found":  true,
+                                        "startLine":  751,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+                                        "method":  "FlushPendingStingers",
+                                        "found":  true,
+                                        "startLine":  775,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+                                        "method":  "TryPlayStinger",
+                                        "found":  true,
+                                        "startLine":  2561,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    },
+                                    {
+                                        "file":  "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+                                        "method":  "TryPlayPendingStinger",
+                                        "found":  true,
+                                        "startLine":  2613,
+                                        "referenceNew":  0,
+                                        "valueTypeNew":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreach":  0,
+                                        "newDetails":  [
+
+                                                       ]
+                                    }
+                                ]
+                   },
+    "routeBackendScan":  {
+                             "routeMethodCount":  27,
+                             "missingRouteMethods":  0,
+                             "forbiddenBackendFindings":  0,
+                             "findings":  [
+
+                                          ],
+                             "scannedPatterns":  [
+                                                     "Shader.SetGlobal",
+                                                     "Material.Set",
+                                                     "MaterialPropertyBlock",
+                                                     "PlayStatic2D",
+                                                     "ToolHapticsRuntime.TryEnqueue",
+                                                     "ProceduralAudioEvents.TryRaiseAudioPingTriggered",
+                                                     "SignalBus\u003cAcousticPingSignal\u003e.TryPushTracked",
+                                                     "SignalBus\u003cHapticRequest\u003e.TryPushTracked",
+                                                     "SignalBus\u003cSignalAudioEvent\u003e.TryPushTracked",
+                                                     "_stingerSource.Play"
+                                                 ]
+                         },
+    "valueTypeProof":  [
+                           {
+                               "file":  "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs",
+                               "line":  141,
+                               "declaration":  "public readonly struct AudioPingTriggerPayload"
+                           },
+                           {
+                               "file":  "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.CoreFoundation.cs",
+                               "line":  225,
+                               "declaration":  "public struct AudioEvent : ISignal"
+                           },
+                           {
+                               "file":  "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.PhysicsInventory.cs",
+                               "line":  80,
+                               "declaration":  "public struct HapticRequest : ISignal"
+                           },
+                           {
+                               "file":  "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+                               "line":  875,
+                               "declaration":  "public struct AcousticPingSignal : ISignal"
+                           },
+                           {
+                               "file":  "Assets/_Project/Scripts/Fabricator.cs",
+                               "line":  341,
+                               "declaration":  "private struct ProceduralAudioPingRequest"
+                           },
+                           {
+                               "file":  "Assets/_Project/Scripts/Fabricator.cs",
+                               "line":  351,
+                               "declaration":  "private struct FabricatorHapticRequest"
+                           },
+                           {
+                               "file":  "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+                               "line":  817,
+                               "declaration":  "private struct CavitationFeedbackRequest"
+                           },
+                           {
+                               "file":  "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+                               "line":  484,
+                               "declaration":  "private struct ProceduralAudioPingRequest"
+                           },
+                           {
+                               "file":  "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+                               "line":  1214,
+                               "declaration":  "private struct StructuralStressHapticRequest"
+                           }
+                       ],
+    "dataVaultProof":  {
+                           "newGlobalDataVaultBuffersIntroduced":  false,
+                           "bufferIds":  [
+                                             {
+                                                 "name":  "AupDiscoveryGridBufferId",
+                                                 "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                                 "line":  1575,
+                                                 "value":  "(BufferID)71030"
+                                             },
+                                             {
+                                                 "name":  "ActiveSonarGeoTelemetryRingBufferId",
+                                                 "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                                 "line":  1576,
+                                                 "value":  "(BufferID)71031"
+                                             }
+                                         ],
+                           "writeLocks":  [
+                                              {
+                                                  "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                                  "acquireLine":  2898,
+                                                  "finallyLine":  2917,
+                                                  "releaseLine":  2919,
+                                                  "buffer":  "AupDiscoveryGridBufferId"
+                                              },
+                                              {
+                                                  "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                                  "acquireLine":  2947,
+                                                  "finallyLine":  2985,
+                                                  "releaseLine":  2987,
+                                                  "buffer":  "AupDiscoveryGridBufferId"
+                                              },
+                                              {
+                                                  "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                                  "acquireLine":  3712,
+                                                  "finallyLine":  3740,
+                                                  "releaseLine":  3742,
+                                                  "buffer":  "ActiveSonarGeoTelemetryRingBufferId"
+                                              }
+                                          ]
+                       },
+    "lateFrameDeferrals":  [
+                               {
+                                   "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                   "stagedLines":  "1801-1803, 3436-3465",
+                                   "flushLines":  "2136, 3444-3456",
+                                   "backend":  "SignalBus\u003cAcousticPingSignal\u003e.TryPushTracked only in FlushQueuedActiveSonarAcousticSignal"
+                               },
+                               {
+                                   "file":  "Assets/_Project/Scripts/Fabricator.cs",
+                                   "stagedLines":  "264-268, 2737-2765, 2810-2820",
+                                   "flushLines":  "966-967, 2767-2788, 2824-2838",
+                                   "backend":  "ProceduralAudioEvents/ToolHapticsRuntime only in Flush*"
+                               },
+                               {
+                                   "file":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                                   "stagedLines":  "487-488, 1269-1274",
+                                   "flushLines":  "606-610, 1277-1291",
+                                   "backend":  "IAudioService.PlayStatic2D only in FlushPendingAudio"
+                               },
+                               {
+                                   "file":  "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+                                   "stagedLines":  "814-817, 3041-3073, 4531-4535",
+                                   "flushLines":  "1417, 4538-4557",
+                                   "backend":  "ToolHapticsRuntime/SignalBus\u003cSignalAudioEvent\u003e only in FlushQueuedCavitationFeedback"
+                               },
+                               {
+                                   "file":  "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+                                   "stagedLines":  "471-484, 1628-1646, 2210-2236",
+                                   "flushLines":  "659-661, 2239-2266",
+                                   "backend":  "ProceduralAudioEvents/SignalBus feedback only in FlushDynamicFloodFeedback"
+                               },
+                               {
+                                   "file":  "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+                                   "stagedLines":  "321-323, 727-757",
+                                   "flushLines":  "509-526, 774-793",
+                                   "backend":  "_stingerSource.Play only in TryPlayStinger reached from late-frame flush"
+                               },
+                               {
+                                   "file":  "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+                                   "stagedLines":  "680-681, 3236-3239, 6256-6274",
+                                   "flushLines":  "3211, 3243-3249",
+                                   "backend":  "SignalBus\u003cSignalAudioEvent\u003e only in FlushQueuedPresentationFeedback"
+                               },
+                               {
+                                   "file":  "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+                                   "stagedLines":  "1197-1214, 5134-5150, 6787-6828",
+                                   "flushLines":  "3260, 5154-5169",
+                                   "backend":  "ToolHapticsRuntime only in FlushQueuedStructuralStressHaptic"
+                               },
+                               {
+                                   "file":  "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
+                                   "stagedLines":  "432-445, 470-472, 2028-2034",
+                                   "flushLines":  "672-678",
+                                   "backend":  "Headlight global clear staged for spawn/despawn/unequip"
+                               }
+                           ],
+    "continuousQualityProof":  [
+                                   {
+                                       "file":  "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+                                       "lines":  "289,292,295,1078-1098",
+                                       "proof":  "GlobalQualityWeight is continuous float, render scale/fractional slice and shader upload are staged/flushed"
+                                   },
+                                   {
+                                       "file":  "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+                                       "lines":  "534,550,668-670",
+                                       "proof":  "chunk fade uses math.lerp(fade01, smoothFade01, HomeostasisBrain.GlobalQualityWeight)"
+                                   },
+                                   {
+                                       "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                       "lines":  "3606-3626,3737",
+                                       "proof":  "active sonar geo fidelity reads HomeostasisBrain.GlobalQualityWeight and maps via math.lerp"
+                                   },
+                                   {
+                                       "file":  "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+                                       "lines":  "1905-1913,2624",
+                                       "proof":  "ballast sampling budget reads cached continuous GlobalQualityWeight"
+                                   }
+                               ],
+    "binaryLowEndSwitchScan":  {
+                                   "filesScanned":  11,
+                                   "matches":  0,
+                                   "command":  "rg -n \"if\\s*\\(\\s*isLowEnd|if\\s*\\(\\s*lowEnd|isLowEnd|LowEnd|lowEnd\" \u003chot files\u003e",
+                                   "exitCode":  1
+                               },
+    "buildGate":  {
+                      "sampledAt":  "2026-05-28T16:01:46.2345580+04:00",
+                      "cpuLoadPercent":  66,
+                      "activeCompilerProcesses":  [
+                                                      {
+                                                          "Id":  50672,
+                                                          "ProcessName":  "dotnet",
+                                                          "CPU":  685.78125,
+                                                          "StartTime":  "\/Date(1779968926372)\/"
+                                                      },
+                                                      {
+                                                          "Id":  28580,
+                                                          "ProcessName":  "VBCSCompiler",
+                                                          "CPU":  51.75,
+                                                          "StartTime":  "\/Date(1779969041518)\/"
+                                                      }
+                                                  ],
+                      "buildDecision":  "BLOCKED_BY_COMPILATION_RESOURCE_THROTTLE",
+                      "dotnetBuildInvoked":  false
+                  },
+    "gitDiffCheck":  {
+                         "command":  "git diff --check -- \u003c1410 hot files\u003e",
+                         "exitCode":  0,
+                         "warnings":  "LF-\u003eCRLF warnings only; no whitespace errors"
+                     },
+    "runtimeLimitations":  [
+                               "No dotnet build executed because CPU gate and/or active compiler process blocked compilation.",
+                               "No Unity playmode/runtime profiler capture executed.",
+                               "Profiler microseconds saved are not claimed; only static scan elapsed microseconds are reported.",
+                               "No Docs/AgentLogs/Dump_1410.* artifact was produced because no runtime crash/NaN/test failure occurred in this pass."
+                           ],
+    "fileHashes":  [
+                       {
+                           "file":  "Assets/_Project/Scripts/HectonPlayerMovement.cs",
+                           "sha256":  "d22189fd75c1f4664beea73da22fcf0c51723a4138d64be683866efd86fd06e1"
+                       },
+                       {
+                           "file":  "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+                           "sha256":  "eb4a196d081f82f82d21c958f29546357001d80d1732935b445757bf626adf1e"
+                       },
+                       {
+                           "file":  "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+                           "sha256":  "848ed5c541a6e63048d12f0aec4df9dd46657c8d8051274e89527e9608846463"
+                       },
+                       {
+                           "file":  "Assets/_Project/Scripts/Fauna/FaunaBrain.cs",
+                           "sha256":  "4c3d88cd4d70ae757bbbd22d8b32f855809f403100d527980d9dd755a4fc307b"
+                       },
+                       {
+                           "file":  "Assets/_Project/Scripts/Prologue/Space/OrbitalRelativityDirector.cs",
+                           "sha256":  "3c17218f6e7e8587857995cba135fa538fc57edc41b1951b12d4d8bbe12fec93"
+                       },
+                       {
+                           "file":  "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+                           "sha256":  "ead67312b2cb095b1c129dc528b61f065d648ecfd30490475927bd3820fe8c98"
+                       },
+                       {
+                           "file":  "Assets/_Project/Scripts/Gameplay/MantaScooter.cs",
+                           "sha256":  "7afffcd670116dbb19b03c703268bb282de14d623c565d29d5a2714e29cd1525"
+                       },
+                       {
+                           "file":  "Assets/_Project/Scripts/Fabricator.cs",
+                           "sha256":  "683667bd6b3cbd0baf7f01624dd3f9f2c7e2be3d1796c76c8d40b7f790692179"
+                       },
+                       {
+                           "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                           "sha256":  "f9ff9841b0d92a5d8b5a7152fa1fc876501a2452d4cfd622c7e2fcaaee2af52b"
+                       },
+                       {
+                           "file":  "Assets/_Project/Scripts/PlayerFlashlight.cs",
+                           "sha256":  "4aa391b8c6a5e7468a25ca74d677cd052dfd80b897e076a77ccdee7bf42e80c7"
+                       },
+                       {
+                           "file":  "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+                           "sha256":  "76debe4f459f86b6036e93591506aae0c57f2e9d51327d68f9b47076a8b5a522"
+                       }
+                   ]
+}

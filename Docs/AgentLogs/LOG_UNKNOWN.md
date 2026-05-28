@@ -1531,6 +1531,281 @@ Cinematic cheats used:
 
 Exact microseconds saved:
 - Runtime: `0 us` claimed. No profiler/player proof.
+
+## 2026-05-28 - UNKNOWN - Platform Pressure Continuous Scaling Pass
+
+What was wrong:
+- `PlatformBatteryWatchdog.cs` and `PlatformAdaptiveBudgetGovernor.cs` still used binary transient-low scalability override callers for battery/platform pressure.
+- The clean platform pressure code therefore still had a low-tier route instead of only continuous pressure/quality scalars.
+
+What was done:
+- Removed target-file `SetTransientLowScalabilityOverride` callers and cached override writer/state from the clean battery/platform pressure files.
+- Added continuous battery pressure: `CriticalBatteryPressureMilli`.
+- Added continuous platform outputs: `PressureIntensityMilli`, `RecommendedQualityWeightMilli`, `RecommendedRenderScaleMilli`, `FrostTickIntervalFrames`, and `SecondaryHudEffectWeightMilli`.
+- Composed local recommendations with `HomeostasisBrain.GlobalQualityWeight` and `HomeostasisBrain.TargetRenderScale01`.
+- Left central dirty `GlobalRegistry`, `HomeostasisBrain.ScalabilityDictator`, and `HardwareThermalService` residual binary override sites documented but not edited in this pass.
+
+Cinematic cheats used:
+- Presentation-budget cheat only: render scale, cadence, and optional HUD effect weight. No physical simulation was added.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+
+Proof:
+- Source: `Assets/_Project/Scripts/Core/PlatformBatteryWatchdog.cs`.
+- Source SHA-256: `04FD74026E77487A4F80ADCD5AB1F386B2C1BE3B531BA59D13A1C75B78B9B9A5`.
+- Source: `Assets/_Project/Scripts/Core/PlatformAdaptiveBudgetGovernor.cs`.
+- Source SHA-256: `959E605EC7AD3145F804BD1AC506C3E40AE04D3AFEAC25B33F0218401F61F763`.
+- Report JSON SHA-256: `08E9154E9A309D2F29B8523D16363D103C1F40C9ED9326B25179209B61AB348A`.
+- Report: `Docs/Reports/APEX_FINAL_VERIFICATION_UNKNOWN_PLATFORM_PRESSURE_CONTINUOUS_PASS_20260528.md`.
+- Target-file binary override scan: exit `1`, hits `0`.
+- Added-line scan: reference `new=0`, `string.Format=0`, `.ToString()=0`, LINQ `0`, `foreach=0`, `.Complete()=0`, added `GlobalRegistry=0`, binary low-end tokens `0`, `HomeostasisBrain.GlobalQualityWeight/TargetRenderScale01` reads `2`.
+- Brace counts: `23/23` and `41/41`.
+- Scoped `git diff --check`: exit `0`; LF/CRLF warnings only.
+- Build guard: CPU `100%`, active `dotnet` PID `57828`; build invocations `0`.
+
+Residuals:
+- Status remains `PENDING_RUNTIME_VERIFICATION`.
+- No Unity import, Console, Play Mode, profiler/GCMonitor, player build, device run, or crash dump was produced.
+- Central binary override residual remains in `GlobalRegistry.cs`, `HomeostasisBrain.ScalabilityDictator.cs`, and `HardwareThermalService.cs`; left for a coordinated central pass to avoid dirty-file interference.
+
+## 2026-05-28 - UNKNOWN - Hardware Thermal Owner-Route Split
+
+What was wrong:
+- `HardwareThermalService.SampleAndApplyCold` and `WriteBlackBox` called helpers that could reach `EnsureGenerationHandle` when the DataVault handle was missing.
+- That made FrostTick/Tick-capable thermal telemetry routes capable of cold owner-open behavior instead of resolve-existing fail-closed behavior.
+
+What was done:
+- `SampleAndApplyCold` now uses `TryAcquireThermalSeverityWriteView`.
+- `WriteBlackBox` now uses `TryAcquireThermalBlackBoxWriteView`.
+- `EnsureNativeState` keeps open/acquire through `OpenOrAcquireThermalSeverityWriteViewForOwnerRoute` and `OpenOrAcquireThermalBlackBoxWriteViewForOwnerRoute`.
+- Exact old helper names `OpenOrAcquireThermalSeverityWriteView(` and `OpenOrAcquireThermalBlackBoxWriteView(` scan as `0`.
+
+Cinematic cheats used:
+- None. No visual/physics simulation was added. This was DataVault route hygiene only.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+
+Proof:
+- Source: `Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs`.
+- Source SHA-256: `A58EF53E751769CA26BD7CA593E57F4042C677C8EBE4B3382D33151929063478`.
+- Report JSON SHA-256: `3CF3074A50A62DB74DB866C832FF78E0D0ACB44C3704E78AF9E391FA962CC918`.
+- Report: `Docs/Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HARDWARE_THERMAL_OWNER_ROUTE_PASS_20260528.md`.
+- BufferIDs: `HardwareThermalSeverity=166`, `HardwareThermalBlackBox=167`.
+- Added-line scan: reference `new=0`, `string.Format=0`, `.ToString()=0`, LINQ `0`, `foreach=0`, `.Complete()=0`, `EnsureGenerationHandle=0`, `GlobalRegistry=0`, binary low-end tokens `0`.
+- Hot range scan: `SampleAndApplyCold` reference `new=0`; `WriteBlackBox` reference `new=0`, allowed struct `new HardwareThermalTelemetryEntry=1`.
+- Brace counts: `106/106`.
+- Scoped `git diff --check`: exit `0`; CRLF warning only.
+- Build guard: CPU `100%`, active `dotnet.exe` PID `65020`; final recheck CPU `100%`, active `csc.exe` PID `28228` and `dotnet.exe` PID `46892`; build invocations `0`.
+
+Residuals:
+- Status remains `PENDING_RUNTIME_VERIFICATION`.
+- Existing binary `GlobalRegistry.SetTransientLowScalabilityOverride(bool)` thermal-pressure route remains at `HardwareThermalService.cs:581-583` and `:610-612`.
+- No Unity import, Play Mode, profiler, GCMonitor, player build, device run, or new crash dump was produced.
+
+## 2026-05-28 - Job Admission DataVault Writer-Lock Pass
+
+What was wrong:
+- `BurstTokenBucketJobAdmissionService.cs` wrote `SystemID.JobAdmission` Vault buffers through mutable resolved views in `Initialize`, `Refill`, `TryAdmitJob`, and `ReportJobCompleted`.
+- Fault telemetry used mutable `Resolve*` helpers even though it only needed read-only snapshots.
+
+What was done:
+- Added `TryAcquireWriteView<T>()` / `ReleaseWriteView<T>()` over `TryAcquireWriteLock` / `ReleaseWriteLock`.
+- Locked and released JobAdmission write paths for `JobAdmissionLaneBudgets`, `JobAdmissionBaseRefill`, `JobAdmissionJobHashes`, `JobAdmissionEwmaCosts`, and `JobAdmissionBlackBox`.
+- Removed mutable `Resolve*` helper surface from the service; mutable resolve helper/call count is now `0`.
+
+Cinematic cheats used:
+- No physical simulation or visual effect added. Existing scalar token bucket remains a cheap continuous load-shed mechanism for job admission and VFX kill-switch pressure.
+
+Proof:
+- Source SHA-256: `1EBF137AC6055BF2F3B3E8AC8EA03CAA8AD00CC10603654671AB4D4C70AD8FD7`.
+- Report: `Docs/Reports/APEX_FINAL_VERIFICATION_UNKNOWN_JOB_ADMISSION_LOCK_PASS_20260528.json`.
+- Report SHA-256: `ECBE6B5EA34B997ACC118B836B3BC162164C1E7BB8CCB48D0F468F5BA91A7686`.
+- Added-line scan: reference `new=0`, `string.Format=0`, `.ToString()=0`, LINQ `0`, `foreach=0`, `.Complete()=0`, `GlobalRegistry=0`, binary low-end tokens `0`.
+- Build guard: CPU `90.0%`, active `dotnet.exe` PID `28668`, active `csc.exe` PID `21340`; build invocations `0`.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+
+Residual:
+- Runtime proof absent: no Unity import, Console, Play Mode, profiler/GCMonitor, player build, device run, or crash dump.
+
+## 2026-05-28 - UNKNOWN - Input Route Naming Pass
+
+What was wrong:
+- `InputDispatcher.cs` had a private helper named `TryResolveOrAcquireInputBuffer<T>`.
+- That helper calls `vault.EnsureGenerationHandle<T>` at `InputDispatcher.cs:1006`, so it is an owner/open route, not a pure resolve accessor.
+
+What was done:
+- Renamed the helper to `OpenOrAcquireInputBufferForOwnerRoute<T>`.
+- Updated deterministic input owner buffers at `InputDispatcher.cs:864..932`.
+- Updated XR input owner open at `InputDispatcher.cs:2726`.
+- Updated haptic synthesis owner buffers at `HectonInputRuntime_HapticSynth.cs:407..445`.
+
+Cinematic cheats used:
+- None. No visual/physics simulation was added.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+
+Proof:
+- `TryResolveOrAcquireInputBuffer` scan: no match, `rg` exit `1`.
+- `OpenOrAcquireInputBufferForOwnerRoute` references: `21`.
+- `InputDispatcher.cs` SHA-256: `E8196DA9E38B2AD893A03C5867596B0C09CF67879FA33A00F9AA14B402C61450`.
+- `HectonInputRuntime_HapticSynth.cs` SHA-256: `FBE414B7CD6036146EAA299447E6689E68A2C7CF5AC19082ED841DBC11F06B03`.
+- Added-line scan: reference `new=0`, `string.Format=0`, `.ToString()=0`, LINQ `0`, `foreach=0`, `.Complete()=0`, added `GlobalRegistry=0`, added `EnsureGenerationHandle=0`.
+- Brace counts: `InputDispatcher.cs 339/339`, `HectonInputRuntime_HapticSynth.cs 51/51`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warnings only.
+- Report: `Docs/Reports/APEX_FINAL_VERIFICATION_UNKNOWN_INPUT_ROUTE_NAMING_PASS_20260528.md`.
+- JSON SHA-256: `A38DE05D5D31067D593E305C8CA081AC44B843EAFDF1DD2DD9667E93BC062528`.
+- Build throttle: CPU `51.7%`, no active dotnet/csc/VBCSCompiler listed, `dotnet build` invocations `0` because CPU exceeded the 50% guard and global compile-wall repair belongs to another agent.
+
+Residuals:
+- Status remains `PENDING_RUNTIME_VERIFICATION`.
+- No Unity import, Play Mode, profiler/GCMonitor, player build, device run, or crash dump exists for this pass.
+
+## 2026-05-28 - UNKNOWN - Simulation Bucketer Writer-Lock / Job-Pin Pass
+
+What was wrong:
+- `ModuloSimulationBucketer.cs` wrote DataVault-backed mutable views without writer-lock proof.
+- Scheduled `LoadBalancingJob` used DataVault-backed `NativeArray` views for cost/work/rebalance load/result buffers without local relocation pins.
+- Cost writes could occur while the rebalance job was pending.
+
+What was done:
+- Added `TryAcquireWriteView<T>` / `ReleaseWriteView<T>` for `SystemID.SimulationBucketer`.
+- Routed synchronous writes through writer locks and `finally` release.
+- Pinned rebalance job buffers `SimulationBucketEntityCostEwma`, `SimulationBucketEntityWork`, `SimulationBucketRebalanceLoads`, and `SimulationBucketRebalanceResult` with `TryLockBuffer`.
+- Released pins on schedule failure, job completion, and dispose.
+- Blocked `TryReportEntityCostMs` while rebalance is pending and skipped work/cost writes in register/unregister during pending rebalance.
+
+Cinematic cheats used:
+- None. No visual/physics simulation was added or changed.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+
+Proof:
+- Source: `Assets/_Project/Scripts/Core/Bucketing/ModuloSimulationBucketer.cs`.
+- Source SHA-256: `51F68EBFFA50165B4153E5C3DCC8E3151D418B494F4F9256CDDD6B1DE24AA1BD`.
+- Report: `Docs/Reports/APEX_FINAL_VERIFICATION_UNKNOWN_SIMULATION_BUCKETER_LOCK_PIN_PASS_20260528.md`.
+- JSON SHA-256: `CD394CF9AFBBA0E9A82E3CF6C8FCE17D5F32BC461F5C6E50DCCF3E3CC3CF555F`.
+- Added-line scan: reference `new=0`, `string.Format=0`, `.ToString()=0`, LINQ `0`, `foreach=0`, `.Complete()=0`, `TryLockBuffer=4`, `TryUnlockBuffer=4`, `finally=13`.
+- BufferIDs secured: `98`, `99`, `100`, `101`, `102`, `103`, `104`, `194`.
+- Struct offsets recorded in the APEX JSON for `SimulationBucketFrameState`, `SimulationBucketRebalanceResult`, and `SimulationBucketBlackBoxEntry`.
+- Brace counts: `150/150`.
+- Scoped `git diff --check`: exit `0`, LF/CRLF warning only.
+- Build throttle: CPU `99.8%`, active `dotnet.exe` PIDs `10736`, `42644`; `dotnet build` invocations `0`.
+
+Residuals:
+- Status remains `PENDING_RUNTIME_VERIFICATION`.
+- No Unity import, Play Mode, profiler/GCMonitor, player build, device run, or `Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR.bin` exists for this pass.
+
+## 2026-05-28 - UNKNOWN - APEX Current Recheck
+
+What was checked:
+- Source hashes for Input route naming and SimulationBucketer lock/pin pass.
+- JSON parse for current APEX artifacts.
+- SHA-256 sidecar matches.
+- Combined added-line forbidden scan.
+- Scoped `git diff --check`.
+- Final CPU/compiler state before deciding whether to build.
+
+Proof:
+- Current recheck report: `Docs/Reports/APEX_FINAL_VERIFICATION_UNKNOWN_CURRENT_RECHECK_20260528.md`.
+- Current recheck JSON SHA-256: `562AE537F4D33103F2D07D0EAC8AC88CC73B8210DC6A1F42D2F4B3473753DAB7`.
+- Combined added-line scan: reference `new=0`, `string.Format=0`, `.ToString()=0`, LINQ `0`, `foreach=0`, `.Complete()=0`, `GlobalRegistry=0`, binary low-end tokens `0`.
+- `TryResolveOrAcquireInputBuffer`: no match, `rg` exit `1`.
+- Bucketer braces: `150/150`.
+- Scoped `git diff --check`: exit `0`, line-ending warnings only.
+- Build throttle: CPU `98.7%`, active `dotnet.exe` PID `68208`, `dotnet build` invocations `0`.
+
+Residuals:
+- Status remains `PENDING_RUNTIME_VERIFICATION`.
+- No Unity import, Console, Play Mode, profiler/GCMonitor, player build, device run, or crash dump exists for this recheck.
+
+## 2026-05-28 - UNKNOWN - AUP Origin Writer-Lock / Job-Pin Pass
+
+What was wrong:
+- AUP origin route had been split into owner-open and resolve-only paths, but owner DataVault buffers still had direct resolved-view writes.
+- Scheduled AUP rebase jobs could own DataVault-backed pointers without a local pin lifetime artifact.
+- The previous AUP report correctly left this as open residual.
+
+What was done:
+- Added `TryAcquireWriteView()` over `IDataVault.TryAcquireWriteLock()`.
+- Routed writes to `RuntimeStateBuffer`, `TelemetryRingBuffer`, `MockCameraBuffer`, `CsvScratchBuffer`, `CounterBuffer`, `MockStatesBuffer`, `MockVelocitiesBuffer`, and `MockHistoricalPointsBuffer` through writer-lock/finally release paths.
+- Added scheduled pin flags in `AupOriginShiftScheduleInfo.Flags`.
+- Pinned scheduled AUP buffers with `TryLockBuffer`, reopened pinned buffers before passing them into jobs, and released pins through `ReleaseScheduledRebaseLocks`.
+- Updated `HectonFloatingOrigin.ShiftWorldAsync` to release scheduled pins after `AwaitTransformShiftJobAsync` completion and again in `finally` before allocation unlock.
+
+Cinematic cheats used:
+- None. No simulation realism was added. Existing AUP batch sizing remains a deterministic math LOD through `HomeostasisBrain.GlobalQualityWeight`.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+
+Proof:
+- Source: `Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs`.
+- Source: `Assets/_Project/Scripts/HectonFloatingOrigin.cs`.
+- AUP source SHA-256: `5F11D259FF25C1469463034608EEFD2CC783A9B3F9D32A0E5C17FA3ED52EBF03`.
+- FloatingOrigin source SHA-256: `061B6D3820FF35AA0CC4F51068F97ACA7EAE555309D217354787D57E0AC67EC6`.
+- Report: `Docs/Reports/APEX_FINAL_VERIFICATION_UNKNOWN_AUP_LOCK_PIN_PASS_20260528.md`.
+- Report JSON SHA-256: `E10FCFC8F1A3824A92380982B7C182854DD1FF203D7D94314127D7EC1C7BDD4A`.
+- Added-line scan: reference `new=0`, `string.Format=0`, `.ToString()=0`, LINQ `0`, `foreach=0`, `.Complete()=0`, `EnsureGenerationHandle=0`, `GlobalRegistry=0`.
+- Brace counts: `AupOriginShiftCoordinator.cs 173/173`; `HectonFloatingOrigin.cs 230/230`.
+- Scoped `git diff --check`: exit `0`; LF/CRLF warnings only.
+
+Compilation:
+- Guard before build: CPU `31.2%`, no active `dotnet`, `csc`, or `VBCSCompiler`.
+- Attempted one throttled build: `dotnet build Hecton8.slnx /m:1 /nr:false /p:UseSharedCompilation=false`.
+- Result: no green proof. Timeout at `904s`; owned lingering `dotnet.exe` PID `31496` was stopped.
+- Build log: `Docs/Reports/BUILD_UNKNOWN_AUP_LOCK_PIN_PASS_20260528.log`.
+- Build log SHA-256: `CC2A637194272D74A26D4BD294F30B28D15BAAF65774FDE4ADCFA630BBBE8289`.
+- Captured blockers: `60` errors, `0` warnings, first blockers in `ModularEquipmentEngine.cs`; additional blockers in `SargassumMicroFaunaBoids.cs`.
+
+Residuals:
+- Status remains `PENDING_RUNTIME_VERIFICATION`.
+- No Unity import, Console, Play Mode, profiler/GCMonitor, player build, device run, or runtime crash/NaN dump artifact was produced.
+- Full-project compile wall is outside this pass and left untouched per user instruction.
+
+## 2026-05-28 - UNKNOWN - AUP Origin Route Resolve/Open Split
+
+What was wrong:
+- `AupOriginShiftCoordinator` used `EnsureRuntimeState()` and `TryResolveOrAcquire<T>()` for a route that can create or grow DataVault buffers.
+- `TickPreSimulation()`, `ScheduleVaultOriginRebase()`, `RecordRebaseCompletion()`, and `TryGetEditorSnapshot()` could reach that route, so frame/shift/read-looking callers had hidden ownership mutation.
+
+What was done:
+- Renamed the owner route to `OpenOrAcquireRuntimeStateForOwnerRoute()`.
+- Renamed the mutating helper to `OpenOrAcquireVaultBufferForOwnerRoute<T>()`.
+- Added `TryResolveRuntimeState()` as a resolve-only route.
+- Moved pre-simulation, schedule, completion, and editor snapshot readback to `TryResolveRuntimeState()`.
+- Updated `HectonFloatingOrigin.ShiftWorldAsync()` to call `OpenOrAcquireRuntimeStateForOwnerRoute()` before the existing `LockAllocationsForAupShift()` call.
+
+Cinematic cheats used:
+- None. No visual/physics simulation was added.
+- Existing AUP rebase batch size remains continuous through `HomeostasisBrain.GlobalQualityWeight`.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+
+Proof:
+- Source: `Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs`.
+- Source SHA-256: `4FE8D7649224590D900F97E2C79B53E24FEC7831C30E750920C3B39316FAF04D`.
+- Source: `Assets/_Project/Scripts/HectonFloatingOrigin.cs`.
+- Source SHA-256: `86C8B2CC51620AED9DFF22C522A168BD4A643F42053ABAD00D649F198A2E105F`.
+- Report: `Docs/Reports/APEX_FINAL_VERIFICATION_UNKNOWN_AUP_ORIGIN_ROUTE_20260528.md`.
+- Report JSON SHA-256: `2619A7A03D51E6A7C3D9BA1A2F122B73C63032C10E43478358929F2E1142267F`.
+- Old-name scan: `TryResolveOrAcquire|EnsureRuntimeState` exit `1`.
+- Scoped `git diff --check`: exit `0`.
+- Brace counts: `AupOriginShiftCoordinator.cs` `134/134`; `HectonFloatingOrigin.cs` `229/229`.
+- Added-line scan: reference `new=0`, `string.Format=0`, `.ToString()=0`, LINQ calls `0`, `foreach=0`, `.Complete()=0`, `GlobalRegistry.DataVault=0`, `EnsureGenerationHandle=0`.
+- BufferIDs listed in report: `73030..73037`.
+- CPU/build guard: CPU `87.5%`, active `dotnet.exe` PIDs `37700` and `67192`; build invocations `0`.
+
+Residuals:
+- Status remains `PENDING_RUNTIME_VERIFICATION`.
+- AUP direct NativeArray writes still need a separate DataVault writer-lock/job-pin lifetime pass. This pass did not add `TryAcquireWriteLock`.
+- No Unity import, Play Mode, profiler, GCMonitor, player build, device run, or crash dump artifact was produced.
 - Expected value is lower stale-native/rebind/shutdown risk, not measured frame-time improvement.
 
 Proof:
@@ -1987,3 +2262,216 @@ Residuals:
 - Status remains `PENDING VERIFICATION`.
 - `Docs/Tasks/POLISH.txt` does not exist.
 - No Unity Editor import, Play Mode, profiler, GCMonitor, player build, device run, DataVault hot-swap runtime test, or `Docs/AgentLogs/Dump_*.bin` artifact exists for this pass.
+
+## Foveated Native Ownership Pass - 2026-05-28
+
+What was wrong:
+- `FoveatedSimulationManager` kept `11` persistent private `NativeArray<T>` aliases for DataVault-backed buffers.
+- Frame/job routes could reach DataVault open/acquire behavior through the old native buffer helper.
+- This was stale-alias and read-route purity debt in Core native ownership.
+
+What was done:
+- Added method-scoped `FoveatedNativeBuffers`.
+- Removed all persistent private `NativeArray<T>` fields from the manager.
+- Added explicit owner route `OpenOrAcquireNativeBuffersForOwnerRoute()`.
+- Added pure consumer routes `TryResolveNativeBuffers()` and `TryResolveTelemetryRing()`.
+- Kept `EnsureGenerationHandle<T>()` only inside the named open/acquire helper.
+- Left dirty `GlobalDataVault.cs` and `SystemDispatcher.cs` untouched to avoid interfering with other agents.
+
+Cinematic cheats used:
+- None. This was Core route hygiene, not simulation or presentation work.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+- Expected benefit: less stale native view risk and no hidden DataVault open/acquire from foveated frame/job consumer phases.
+
+Proof:
+- Source: `Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs`.
+- Patch commit: `a5e50127b`.
+- Source SHA-256: `99007E91B3187F3B6085709C913204BB85115074168E0CE2D2A0A27990EED287`.
+- Report JSON SHA-256: `29542D260E8DCF99C97F24A0D3DC56DCE2CE8FE3703605BBAA59B16E5EE14AFA`.
+- Old private `NativeArray<T>` fields: `11`.
+- Current private `NativeArray<T>` fields: `0`.
+- `EnsureNativeBuffersAllocated` references: `0`.
+- `TryEnsureVaultArray` references: `0`.
+- `TryAcquireWriteLock` references in this file: `0`.
+- Current brace counts: `148` open, `148` close.
+- Added-line scan: `0` reference-class-like `new`, `0` `string.Format`, `0` `.ToString()`, `0` LINQ, `0` `foreach`, `0` added `.Complete()`.
+- `git diff --check a5e50127b^ a5e50127b -- Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs` exited `0`.
+- CPU/build guard: CPU `96.2%`, active `dotnet.exe` PID `43068`, build invocations `0`.
+
+Residuals:
+- Status remains `PENDING VERIFICATION`.
+- DataVault write-lock/finally proof is not closed for foveated score/telemetry writes.
+- `IFoveatedDispatcher.TryResolveTick(...)` still mutates accumulator state under a `TryResolve*` name and needs a coordinated dispatcher/interface pass.
+- No Unity Editor import, Play Mode, profiler, GCMonitor, player build, device run, DataVault hot-swap runtime test, or `Docs/AgentLogs/Dump_*.bin` artifact exists for this pass.
+
+## APEX Foveated Verification And Lock Correction - 2026-05-28
+
+What was wrong:
+- The previous foveated report was honest but incomplete: `TryAcquireWriteLock` count was `0`, so Data Sovereignty was not proven.
+- Scheduled importance jobs held DataVault-backed pointers without explicit relocation pins.
+
+What was done:
+- Added writer locks with `finally` release for `FoveatedScorePositions` and `FoveatedTelemetryRing`.
+- Added `TryLockBuffer`/`TryUnlockBuffer` relocation pins for job BufferIDs `73220..73226`.
+- Updated `UNITY_FOVEATED_NATIVE_OWNERSHIP_PASS_UNKNOWN_20260528.*`.
+- Added `APEX_FINAL_VERIFICATION_UNKNOWN_FOVEATED_20260528.*`.
+
+Cinematic cheats used:
+- None. No physical simulation or presentation effect was introduced.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+
+Proof:
+- Source SHA-256: `DFB61D9C458AD11A352829FB47D3128792AB15EB1090B9AB6AE4C7770122F13A`.
+- APEX JSON SHA-256: `449AE64F67D7564AE849FEE4D8A182BCE2C6E28D434AA6D30F929E91A6E356D1`.
+- Updated foveated report JSON SHA-256: `EA8A05BE37670F8378FCFCA8BB52C8EAB765B34330E1F045497F87AA2767113C`.
+
+## 2026-05-28 - UNKNOWN - Foveated APEX Line-Range Correction
+
+What was wrong:
+- The source SHA was current, but report line ranges were stale for `TryCompleteFrameJobsInternal`, `ScheduleImportanceScoringJob`, `WriteTelemetryFrame`, `TryWriteScorePositionsForImportanceJob`, and dispose fallback release.
+
+What was done:
+- Re-ran declaration-based static range scan.
+- Updated `APEX_FINAL_VERIFICATION_UNKNOWN_FOVEATED_20260528.*`.
+- Updated `UNITY_FOVEATED_NATIVE_OWNERSHIP_PASS_UNKNOWN_20260528.*`.
+- Regenerated sidecar hashes.
+
+Proof:
+- APEX JSON SHA-256: `1DD80284EDD64321D1C46EC4E5F0D000FF7F0468F4FE40CDED448B6864A58F64`.
+- Updated foveated report JSON SHA-256: `67B708FE02C5FE4E51B72A87FFF687479CA1F53AF6DE71C5869EDC44CE1A56F7`.
+- Runtime proof remains missing; this was an evidence correction, not a source patch.
+
+## 2026-05-28 - UNKNOWN - Foveated Tick Route Contract Fix
+
+What was wrong:
+- `IFoveatedDispatcher.TryResolveTick()` mutated tick accumulator state while using a resolve-style name.
+
+What was done:
+- Renamed interface method to `TryAdvanceTick()`.
+- Renamed `FoveatedSimulationManager` implementation to `TryAdvanceTick()`.
+- Updated the sole dispatcher call site in `SystemDispatcher.cs`.
+
+Proof:
+- `TryResolveTick` active first-party references: `0`.
+- `TryAdvanceTick` active first-party references: `3`.
+- Foveated source SHA-256: `1B0EE455A705CC22B82DD0391E50451AE2420644569D5717B5C4879304426338`.
+- SystemDispatcher SHA-256: `DDAA490B5C808EC3C7BBA98DA2DF0C4D69B4C7E5AC0D2E4509F5AB4FA6BD262D`.
+- Final build guard after route/doc/hash work: CPU `61.5%`, active `dotnet.exe` PID `6088`; build invocations `0`.
+- APEX JSON SHA-256: `999B48C6A45FF134C2AF5F1ABA9EBE7D9FD164F8E9D9931F09DAB67AA30F5838`.
+- Updated foveated report JSON SHA-256: `0CE6153E7862186ABF48F2D1C610690E6E01863B46D37E3B91E24C83DC1F578F`.
+- Runtime proof remains missing; no build was launched under active load.
+- Current source counts: private native aliases `0`, `TryAcquireWriteLock=2`, `ReleaseWriteLock=2`, `TryLockBuffer=1`, `TryUnlockBuffer=7`.
+- Zero-GC hot-range scan: reference `new=0`, `string.Format=0`, `.ToString()=0`, LINQ `0`, `foreach=0`; one value-type `new FoveatedSimulationTelemetryEntry`.
+- CPU/build guard: initial APEX guard CPU `100%`, active `csc.exe` PID `16180`, active `dotnet.exe` PID `31636`; final pre-build guard CPU `68.4%`, active `dotnet.exe` PID `20256`; build invocations `0`.
+
+Residuals:
+- Status remains `PENDING VERIFICATION`.
+- `Docs/AgentLogs/Dump_FOVEATED_SIMULATION_DIRECTOR.bin` does not exist.
+- No Unity import, Play Mode, profiler, GCMonitor, player build, device run, or DataVault hot-swap runtime test was performed.
+
+## 2026-05-28 - UNKNOWN - Homeostasis Scalability Read Accessor / Writer Lock Pass
+
+What was wrong:
+- `HomeostasisBrain.ScalabilityDictator` still had read-like routes that could open/acquire DataVault buffers or write sanitized data back from read APIs.
+- `MockTerrainSamplerStatusJob` wrote to a DataVault-backed `NativeArray` without a relocation pin.
+
+What was done:
+- `TryReadMockHeavyLoad`, `TryResolveMockTerrainSamplerStatus`, `TryResolveCsvScratch`, and `TryResolveScalabilityTelemetry` now resolve existing storage only.
+- `TryGetHardwareDictatorTuning`, `TryGetHardwareDictatorSnapshot`, and `TryGetMockTerrainSamplerStatus` now copy out sanitized values only and perform `0` native writes.
+- Added read-only helper views through `TryReadOnlyHandle`.
+- `WriteDictatorState`, `RecordScalabilityTelemetry`, editor terrain sampler execution, and `SetMockHeavyLoadForTuner` write through DataVault writer locks with `finally` release.
+- Player mock terrain sampler scheduling pins `ShinobuScalabilityMockScatterDensity` with `TryLockBuffer` and releases with `TryUnlockBuffer`.
+
+Cinematic cheats used:
+- The existing mock terrain sampler remains a one-row proof signal driven by continuous `GlobalQualityWeight`; no terrain simulation or physical visual system was added.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+
+Proof:
+- Source: `Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs`.
+- Source SHA-256: `54BADEA0B9DE7ACB05DC6126456DE224729AD9F51448110AF9AC25D893AB8042`.
+- APEX JSON SHA-256: `45202940359096680F0D9D82DB57DFB80FC4D0B8A34DE47FB28B5F53E6F90472`.
+- Report: `Docs/Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HOMEOSTASIS_SCALABILITY_20260528.md`.
+- Added-line scan: reference `new=0`, `string.Format=0`, `.ToString()=0`, LINQ `0`, `foreach=0`.
+- Read-like methods listed in the APEX JSON all have `Ensure=0`, `TryResolveOrAcquire=0`, and native writes `0`.
+- Added DataVault proof calls: `TryAcquireWriteLock=1`, `ReleaseWriteLock=7`, `TryLockBuffer=1`, `TryUnlockBuffer=1`, `finally=5`, `TryReadOnlyHandle=4`.
+- Struct layout proof is in the APEX JSON for `SystemHealthDTO`, `ScalabilityStateDTO`, `MockHeavyLoadSignal`, `MockTerrainSamplerStatus`, and `ScalabilityTelemetryEntry`.
+- CPU/build guard: CPU `100%`, active `dotnet.exe` PID `59388`, active `VBCSCompiler.exe` PID `14544`; build invocations `0`.
+
+Residuals:
+- Status remains `PENDING_RUNTIME_VERIFICATION`.
+- `Docs/AgentLogs/Dump_HARDWARE_THROTTLING_DIRECTOR.bin` does not exist.
+- No Unity import, Play Mode, profiler, GCMonitor, player build, device run, or DataVault hot-swap runtime test was performed.
+
+## 2026-05-28 - UNKNOWN - Content Authority DataVault Lock Pass
+
+What was wrong:
+- `ContentRuntimeServices.cs` kept mutating DataVault open/acquire paths behind `TryResolve*`/`TryResolveOrAcquire` names.
+- Bundle refs, pending loads, and content authority telemetry wrote through unsafe native pointer views without explicit writer-lock proof.
+
+What was done:
+- Removed active `TryResolveTelemetryPointer`, `TryResolveTelemetryBuffers`, `TryResolvePendingLoads`, `TryResolveOrAcquire`, and `TryResolveNormalized` references.
+- Replaced them with `OpenOrAcquire*Write*` routes.
+- Added DataVault writer-lock acquisition and `finally` release paths for bundle refs, pending loads, and telemetry writes.
+- Kept blackbox dump reads resolve-existing only through `TryResolveExistingTelemetryPointer`.
+
+Cinematic cheats used:
+- None. No visual/physics simulation was added. This was memory ownership hygiene only.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+
+Proof:
+- Source: `Assets/_Project/Scripts/Core/Content/ContentRuntimeServices.cs`.
+- Source SHA-256: `E4A64A1BF9DC433AE2A5990231BB25D4834555BE82086126A5E7AD8C3B60A24D`.
+- Report JSON SHA-256: `02E88835B73E03525C8174EBC9180C6E9AF866AD66BBB5201B1F63371C224D50`.
+- Report: `Docs/Reports/UNITY_CONTENT_AUTHORITY_DATAVAULT_LOCK_PASS_UNKNOWN_20260528.md`.
+- Active old-name scan: `rg` exit `1`.
+- Brace counts: `268/268`.
+- Scoped `git diff --check`: exit `0`.
+- Added-line scan: reference `new=0`, `string.Format=0`, `.ToString()=0`, LINQ `0`, `foreach=0`, `.Complete()=0`, added `GlobalRegistry` reads `0`.
+- Added DataVault proof calls: `TryAcquireWriteLock=2`, `ReleaseWriteLock=11`, `finally=9`.
+- Build guard: intended check skipped at CPU `100%` with one active compiler/dotnet process; follow-up guard CPU `57%`, active `dotnet.exe` PID `48280`; build invocations `0`.
+
+Residuals:
+- Status remains `PENDING_RUNTIME_VERIFICATION`.
+- No Unity import, Play Mode, profiler, GCMonitor, player build, device run, or DataVault hot-swap runtime test was performed.
+
+## 2026-05-28 - UNKNOWN - APEX Fresh Recheck Before Response
+
+What was checked:
+- Reread `Docs/Tasks/Status_UNKNOWN.md` and `Docs/AgentLogs/Rationale_UNKNOWN.md`.
+- Recomputed SHA-256 for touched sources and report JSON artifacts.
+- Verified report `.sha256` sidecars.
+- Reran scoped `git diff --check`.
+- Reran added-line forbidden-pattern scan over touched Core files.
+- Reran quick residual Core scan for `TryResolveOrAcquire` and direct `GlobalRegistry.DataVault`.
+- Sampled CPU/compiler state before deciding whether to build.
+
+Fresh proof:
+- `Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs` SHA-256: `1B0EE455A705CC22B82DD0391E50451AE2420644569D5717B5C4879304426338`.
+- `Assets/_Project/Scripts/Core/SystemDispatcher.cs` SHA-256: `DDAA490B5C808EC3C7BBA98DA2DF0C4D69B4C7E5AC0D2E4509F5AB4FA6BD262D`.
+- `Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs` SHA-256: `54BADEA0B9DE7ACB05DC6126456DE224729AD9F51448110AF9AC25D893AB8042`.
+- `Assets/_Project/Scripts/Core/Content/ContentRuntimeServices.cs` SHA-256: `E4A64A1BF9DC433AE2A5990231BB25D4834555BE82086126A5E7AD8C3B60A24D`.
+- `APEX_FINAL_VERIFICATION_UNKNOWN_FOVEATED_20260528.json` SHA-256: `999B48C6A45FF134C2AF5F1ABA9EBE7D9FD164F8E9D9931F09DAB67AA30F5838`; sidecar match: `true`.
+- `APEX_FINAL_VERIFICATION_UNKNOWN_HOMEOSTASIS_SCALABILITY_20260528.json` SHA-256: `45202940359096680F0D9D82DB57DFB80FC4D0B8A34DE47FB28B5F53E6F90472`; sidecar match: `true`.
+- `UNITY_CONTENT_AUTHORITY_DATAVAULT_LOCK_PASS_UNKNOWN_20260528.json` SHA-256: `02E88835B73E03525C8174EBC9180C6E9AF866AD66BBB5201B1F63371C224D50`; sidecar match: `true`.
+- Scoped `git diff --check`: exit `0`; LF/CRLF warnings only.
+- Added-line scan: reference `new=0`, `string.Format=0`, `.ToString()=0`, LINQ call tokens `0`, `foreach=0`, `.Complete()=0`, `TryAcquireWriteLock=5`, `ReleaseWriteLock=20`, `finally=19`.
+- LINQ query-token scan had three false positives: `where T : struct` generic constraints.
+- Content old mutating names scan exit `1` for `TryResolveTelemetryPointer|TryResolveTelemetryBuffers|TryResolvePendingLoads|TryResolveOrAcquire|TryResolveNormalized`.
+- Foveated tick scan: `TryResolveTick=0`; `TryAdvanceTick=3`.
+- CPU/build guard: CPU `75.1%`, active `dotnet.exe` PID `21428`; build invocations `0`.
+
+Residuals still open:
+- Status is `PENDING_RUNTIME_VERIFICATION`, not complete.
+- Runtime proof absent: no Unity import, Console, Play Mode, profiler/GCMonitor, player build, device run, or DataVault hot-swap runtime test.
+- Project-wide Core still has residual `TryResolveOrAcquire` and direct `GlobalRegistry.DataVault` references outside the final three touched domains, including `HomeostasisBrain.cs`, `AupOriginShiftCoordinator.cs`, `InputDispatcher.cs`, `HectonInputRuntime_HapticSynth.cs`, several Bridge/Editor diagnostics, and dispatcher/service bootstrap sites. These were not edited in this response because many agents are active and the final mandate requested proof, not a broad dirty-file collision.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.

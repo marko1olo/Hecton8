@@ -1,0 +1,81 @@
+{
+  "agent_id": "AUDIT_NATIVE_STATE",
+  "timestamp": "2026-05-28T20:16:45.7570911+04:00",
+  "scope": "AI Sensory AcousticEchoLocationRuntime DataVault exact-handle sweep",
+  "modified_files": [
+    "Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs"
+  ],
+  "buffer_ids_secured": [
+    {
+      "name": "AcousticEchoFrameTaps",
+      "value": 229,
+      "owner": "SystemID.AISensory",
+      "proof_lines": [294, 308, 422, 447, 456, 461, 475, 483, 489, 507, 519],
+      "lock_protocol": "No TryAcquireWriteLock/TryLockBuffer in this runtime; exact descriptor gates resolve/reuse/release only."
+    },
+    {
+      "name": "AcousticEchoPendingTaps",
+      "value": 636,
+      "owner": "SystemID.AISensory",
+      "proof_lines": [295, 314, 422, 447, 456, 461, 476, 483, 489, 545, 553, 554],
+      "lock_protocol": "No TryAcquireWriteLock/TryLockBuffer in this runtime; exact descriptor gates resolve/reuse/release only."
+    },
+    {
+      "name": "AcousticEchoTrailState",
+      "value": 230,
+      "owner": "SystemID.AISensory",
+      "proof_lines": [296, 320, 422, 447, 456, 461, 477, 483, 489, 508, 520],
+      "lock_protocol": "No TryAcquireWriteLock/TryLockBuffer in this runtime; exact descriptor gates resolve/reuse/release only."
+    },
+    {
+      "name": "AcousticEchoBlackBox",
+      "value": 231,
+      "owner": "SystemID.AISensory",
+      "proof_lines": [297, 326, 422, 447, 456, 461, 478, 483, 489, 529, 538],
+      "lock_protocol": "No TryAcquireWriteLock/TryLockBuffer in this runtime; exact descriptor gates resolve/reuse/release only."
+    }
+  ],
+  "zero_gc_diff_scan": {
+    "command": "git diff -- AcousticEchoLocationRuntime.cs | rg -n \"^\\+.*\\b(new\\s+[A-Za-z_][A-Za-z0-9_]*\\s*\\(|string\\.Format\\s*\\(|\\.ToString\\s*\\(|\\.Select\\s*\\(|\\.Where\\s*\\(|\\.OrderBy\\s*\\(|\\.Aggregate\\s*\\(|foreach\\s*\\()\"",
+    "exit_code": 1,
+    "matches": 0,
+    "stdout": "",
+    "stderr_note": "Git reported LF-to-CRLF working-copy warning only."
+  },
+  "layout_diff_scan": {
+    "command": "git diff -- AcousticEchoLocationRuntime.cs | rg -n \"^\\+.*(StructLayout|FieldOffset|UnsafeUtility\\.SizeOf|Marshal\\.OffsetOf|sizeof\\()\"",
+    "exit_code": 1,
+    "matches": 0,
+    "stdout": "",
+    "stderr_note": "Git reported LF-to-CRLF working-copy warning only."
+  },
+  "bad_pattern_scan": {
+    "command": "rg -n \"currentService as IDataVault|previousService as IDataVault|IsVaultHandleCreated|handle\\.BufferID\\s*(!=|==)\\s*0u|BufferID\\s*(!=|==)\\s*0u|OwnerSystemID|IsHandleCreated\\(\" AcousticEchoLocationRuntime.cs",
+    "exit_code": 1,
+    "matches": 0,
+    "stdout": ""
+  },
+  "diff_numstat": [
+    "33 36 Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs"
+  ],
+  "compilation_resource_throttling": {
+    "cpu_load_percent_before_compile": 100,
+    "active_compiler_processes": [
+      { "id": 65020, "name": "dotnet", "cpu_seconds": 342.546875, "start_time": "2026-05-28T20:09:44+04:00" }
+    ],
+    "dotnet_build_launched_by_this_pass": false,
+    "reason": "CPU > 50% and active dotnet compiler lane present."
+  },
+  "cinematic_cheat_and_scalability": {
+    "changed_physical_simulation": false,
+    "changed_global_quality_weight_logic": false,
+    "binary_low_end_switch_added": false,
+    "reason": "Patch is native descriptor identity hardening only. Existing acoustic echo quality weighting and portal echo behavior are preserved."
+  },
+  "runtime_proof_absence": {
+    "dotnet_build": "not run in this pass",
+    "unity_import": "not run",
+    "play_mode": "not run",
+    "profiler_or_gc_monitor": "not run"
+  }
+}

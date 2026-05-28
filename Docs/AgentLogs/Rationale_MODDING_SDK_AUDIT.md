@@ -914,3 +914,135 @@ Rejected Alternatives: Leaving the Hub synchronous because the Workbench has asy
 Scalability potential: Low tier Unity Editor users avoid UI stalls while static validation runs. Middle tier authors keep the same Hub workflow. High tier can run heavier static checks without freezing the entry screen. Ultra tier can add richer diagnostics over the same async process lane without changing runtime authority.
 
 Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is Editor/offline tooling only. It prevents authoring UI stalls before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, Burst/job paths, or device quality scaling.
+
+## Decision 77 - Workbench health must match the no-Unity validator
+
+Problem: `ExternalStarterKitWorkbenchWindow.RequiredStarterFiles` drifted from `Tools/validate_structure.ps1`: it still checked stale `Schemas/h8table.schema.json` and `Schemas/h8loc.schema.json`, while the actual starter contract requires `Schemas/settings_table.schema.json`, `Schemas/locale.schema.json`, `Schemas/assets.schema.json`, folder READMEs, and `Tools/README.md`. A valid copied starter kit could therefore look broken in the integrated Workbench, which is a direct usability failure for random external modders.
+
+Solution: Align the Workbench health list with the validator's required-file list and add a schema/static proof flag, `ExternalStarterKitWorkbenchRequiredFileListMatchesValidator`, so stale schema names or omitted required files fail the modding static validator. Schema revision 89, runtime playbook, README, API spec, authoring plan, product blueprint, and starter file contract now record the parity.
+
+Rejected Alternatives: Renaming starter schema files back to old names was rejected because `settings_table.schema.json` and `locale.schema.json` are already the current editor schema mappings validated by `.vscode/settings.json`. Leaving the direct `Validate Structure Only` button as the only truth was rejected because health UI must not lie before the user clicks validation. Reimplementing the PowerShell validator in C# was rejected because it would create a second file contract.
+
+Scalability potential: Low tier authors still use the copied folder and root `h8mod.ps1` without Unity. Middle tier Unity authors get accurate required-file health from the Workbench. High tier can add graph/table/asset panels over the same file contract. Ultra tier can add package diff, preview, and simulation without changing the required-file owner.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is Editor/offline SDK tooling only. It prevents false broken-starter states before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, Burst/job paths, or device quality scaling.
+
+## Decision 78 - Failed SDK tools must be Editor error UI
+
+Problem: The SDK Hub and External Starter Kit Workbench already ran validators/tools asynchronously, but completed nonzero process exits were rendered through normal info help boxes. For random external modders this hides the severity of broken structure validation, failed prepare, or failed static validation behind a visually neutral message.
+
+Solution: Track process-result severity separately from summary text. `ModdingSdkHubWindow` stores `_lastValidatorFailed`; `ExternalStarterKitWorkbenchWindow` stores `_toolSummaryIsError`. Missing scripts, launch failures, process-start failures, and nonzero exit codes render as `MessageType.Error`; running/already-running and successful summaries stay informational. Schema revision 90 and the static validator now fail if those error-state routes disappear.
+
+Rejected Alternatives: Parsing stderr text in docs was rejected because UI severity must not depend on human interpretation. Reimplementing starter validation in C# was rejected because the PowerShell/pwsh starter tools are the copied no-Unity authority. Adding modal dialogs was rejected because tool output must remain reviewable in the Workbench/Hub surface without blocking the authoring loop.
+
+Scalability potential: Low tier authors using only `h8mod.ps1` keep the same CLI contract. Middle tier Unity authors get immediate severity in the integrated Workbench/Hub. High tier can add richer tool-result panels over the same boolean error state. Ultra tier can add diagnostics, package diff, and simulation after the same process-result contract without changing runtime authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is Editor/offline SDK UX only. It prevents failed authoring packages from advancing toward runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, Burst/job paths, or device quality scaling.
+
+## Decision 79 - Workbench must show graph contract state before validation
+
+Problem: The External Starter Kit Workbench could open `Graphs/main.h8graph.json` and list allowed opcodes, but it did not show whether the current graph already violated the copied starter contract. A random internet author had to edit raw JSON and run validation to discover duplicate node IDs, missing fields, invalid opcode aliases/hex tokens, wrong `Runtime`, or `MaxEnvelopesPerFrame` budget drift.
+
+Solution: Add an Editor-only Graph Contract Preview to `ExternalStarterKitWorkbenchWindow`. It parses `Graphs/main.h8graph.json`, loads `Reference/allowed_opcodes.csv`, validates CSV hex/alias shape, compares graph budget to `mod.h8manifest.json`, caps the preview at `256` nodes, `1 MB` graph/CSV files, and `512` opcode rows, and surfaces runtime flag, node count, duplicate IDs, invalid opcodes, missing fields, and budget errors before tool execution. Schema revision 91 and the static validator prove the panel remains present.
+
+Rejected Alternatives: Reimplementing the full PowerShell validator in C# was rejected because `Tools/validate_structure.ps1` remains the no-Unity authority. A docs-only note was rejected because the usability defect is interactive visibility, not missing prose. Adding a runtime graph compiler was rejected because public runtime ingress remains envelope-only and this pass is editor/offline authoring.
+
+Scalability potential: Low tier authors still use `h8mod.ps1` and schema-aware text editors without Unity. Middle tier Unity authors get immediate graph-contract feedback in the integrated Workbench. High tier can add structured graph editing over the same file contract. Ultra tier can add simulation, diff, and visual diagnostics after the same validation route without changing runtime authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is Editor/offline SDK UX only. It prevents invalid graph authoring states from advancing toward runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, Burst/job paths, or device quality scaling.
+
+## Decision 80 - Graph node creation must be a generated snippet, not blind JSON surgery
+
+Problem: The Workbench graph preview made contract defects visible, but creation of a new graph node was still a raw JSON editing task. A random external modder could mistype an opcode alias, invent an invalid node id, or ask tooling to mutate `Graphs/main.h8graph.json` directly and risk losing unknown future fields or author ordering.
+
+Solution: Add `Tools/create_graph_node_snippet.ps1` as an offline snippet generator. It validates node IDs, resolves opcode aliases or hex values from `Reference/allowed_opcodes.csv`, writes a minimal object to `Generated/graph_node_snippet.json`, supports machine-readable JSON output, and leaves the graph file untouched. The Unity Workbench exposes the same route through Node Id/Opcode fields and generate/open buttons. The root `h8mod.ps1` launcher exposes `node-snippet`, and the SDK Hub generator writes the same tool into refreshed starter kits. Schema revision 92 and static validation prove the tool, Workbench route, root launcher route, docs, and runtime playbook flags.
+
+Rejected Alternatives: Directly appending nodes into `Graphs/main.h8graph.json` was rejected because it can destroy unknown fields, comments are already unavailable in JSON, and author ordering/conflict resolution belongs to a future structured graph editor. A Unity-only graph editor was rejected because the external starter kit explicitly supports authors with no Unity project. A runtime graph compiler was rejected because public runtime ingress remains envelope-only and this pass is authoring-only.
+
+Scalability potential: Low tier authors use `h8mod.ps1 -Action node-snippet` and copy one generated object in a text editor. Middle tier authors use the Workbench panel with immediate graph preview and structure validation. High tier can add structured insert/merge after the same snippet contract. Ultra tier can add visual graph simulation, diff, and package diagnostics after the same review manifest without changing runtime authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is Editor/offline SDK UX only. It prevents malformed graph nodes before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, Burst/job paths, or device quality scaling.
+
+## Decision 81 - Submission handoff must be a review package, not runtime install
+
+Problem: The starter kit could validate and build `Reports/review_manifest.json`, but a public author still had no single handoff artifact. A direct install/copy-to-`Mods/` route would be false because current runtime UGC ingress remains envelope-only and loose starter sources are not a verified loader format.
+
+Solution: Add `Tools/build_submission_package.ps1` as an offline submission packer. It runs prepare, validates review manifest schema/runtime, packages reviewed starter sources plus `Reports/review_manifest.json` into `Generated/<mod-id>_submission.zip`, rejects unsafe paths, refuses review-listed `Generated/`/`Reports/` source inputs, and is exposed through `h8mod.ps1 -Action submission` plus the Workbench button. Schema revision 93 and the static validator now prove generator/template/Workbench/root-launcher parity.
+
+Rejected Alternatives: Installing directly into `Mods/` was rejected because it would imply runtime support the loader policy does not grant. Blindly zipping the folder was rejected because it can include stale reports, generated outputs, or unsafe paths. A Unity-only export was rejected because the starter kit must work for authors without the full project.
+
+Scalability potential: Low tier authors get one PowerShell/pwsh command that produces a bounded review artifact. Middle tier authors use the Workbench button over the same tool. High tier can layer package diff and moderation checks over the same zip and manifest. Ultra tier can add simulation/preview diagnostics after the same review manifest without changing runtime authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is offline SDK tooling only. It reduces failed handoffs before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, Burst/job paths, or device quality scaling.
+
+## Decision 82 - Submission package status must be visible and replacement must preserve the previous zip
+
+Problem: Schema 93 produced a review/submission zip, but a Unity Workbench author still had no integrated status for the current `Generated/<mod-id>_submission.zip`: no path, freshness, byte size, or direct open/reveal route. The packer also removed the previous zip before installing the replacement, so a final move failure could erase the last good handoff artifact.
+
+Solution: Add an Editor-only submission package status panel to `ExternalStarterKitWorkbenchWindow` that finds the newest `Generated/*_submission.zip`, compares its write time to `Reports/review_manifest.json`, shows path/bytes/write time/freshness, opens the zip, and reveals `Generated/` when absent. Change checked-in and generated `Tools/build_submission_package.ps1` to write a temp zip first, move the old zip to a `.previous` backup only during replacement, restore that backup on replacement failure, and clean stale temp/backup outputs. Schema revision 94 and the static validator prove the Workbench status route and previous-zip preservation route.
+
+Rejected Alternatives: A runtime `Mods/` install button was rejected because public runtime ingress remains envelope-only and this starter zip is a review handoff artifact. Blindly opening `Generated/` without freshness was rejected because it leaves stale package risk invisible. Removing the old zip before temp creation or before final replacement proof was rejected because it destroys the last known-good review artifact on failure.
+
+Scalability potential: Low tier authors use `h8mod.ps1 -Action submission` and keep the previous zip if replacement fails. Middle tier authors use the Workbench package status/open route. High tier can add package diff and moderation checks over the same review manifest and zip. Ultra tier can add simulation, preview, and visual diagnostics after the same handoff artifact without changing runtime authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is Editor/offline SDK tooling only. It prevents failed handoff artifacts before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, Burst/job paths, or device quality scaling.
+
+## Decision 83 - Settings and locale authoring must fail before handoff
+
+Problem: The external starter kit exposed settings and locale JSON files, but the Workbench did not show their current contract state and the no-Unity validator only proved shallow existence. A random author could submit invalid setting IDs, wrong setting kinds/default types, bad locale codes, bad string keys, or empty localized values and only discover the damage later in review/runtime integration.
+
+Solution: Make settings and locale data first-class authoring contracts. The checked-in and generated validators now enforce settings schema, row array shape, row cap, canonical row IDs, duplicates, kind enum, required/default type rules, locale schema, locale code, canonical string keys, non-empty string values, and string cap. The Workbench now has a bounded Authoring Data Preview over `Tables/settings.h8table.json` and `Locales/en.h8loc.json`. JSON Schemas and static validation were updated to schema revision 95 with negative probes for bad settings and locale files.
+
+Rejected Alternatives: A runtime loader fallback was rejected because malformed authoring data must not reach runtime. A full Unity table/locale editor was rejected for this pass because it would create a larger UI surface before the file contract was strict. Duplicating every PowerShell validator rule in C# was rejected because the Workbench panel is a preview; `Tools/validate_structure.ps1` remains the no-Unity authority.
+
+Scalability potential: Low tier authors use `h8mod.ps1 -Action validate` and schema-aware editors without Unity. Middle tier Unity authors see settings/locale status directly in the Workbench before package handoff. High tier can add structured table/locale editing over the same strict file contract. Ultra tier can add visual preview, localization diffing, and package simulation after the same review manifest without changing runtime authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is Editor/offline SDK tooling only. It prevents invalid authoring data before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, Burst/job paths, or device quality scaling.
+
+## Decision 84 - Public mod powers must be explicit before they become broader
+
+Problem: The starter kit had safe envelope-only boundaries and increasingly strict graph/settings/locale/review tooling, but a public author still had to infer what could be modded from scattered files. That creates two bad outcomes: authors assume forbidden routes like Harmony/BepInEx/loose AssetBundles, or they under-use the allowed graph/settings/locale/content/review surfaces.
+
+Solution: Add a first-class capability contract that is visible in both no-Unity and Unity authoring loops. `Docs/capabilities.md` now lists supported surfaces, forbidden runtime rights, no-Unity flow, Unity Workbench flow, and expansion route. `h8mod.ps1 -Action capabilities` prints it. `ExternalStarterKitWorkbenchWindow` now shows a Capability Matrix with supported authoring surfaces, declared manifest capability count, allowed opcode counts, budgets, file state, and forbidden runtime rights. `Tools/validate_structure.ps1`, the SDK Hub generator, schema revision 96, static validator, runtime playbook, and public docs now prove this route and fail on drift.
+
+Rejected Alternatives: Enabling arbitrary managed DLLs, Harmony, BepInEx, or loose asset runtime loading was rejected because the current owner model has no runtime authority, sandbox proof, save boundary, hot lane capacity, or security telemetry for those rights. A docs-only guide outside the starter kit was rejected because random authors using a copied folder may never open project docs. A Unity-only capability UI was rejected because public authors can build mods without the HECTON-8 Unity project.
+
+Scalability potential: Low tier authors use `h8mod.ps1 -Action capabilities`, JSON files, schemas, and validation without Unity. Middle tier authors use the Workbench Capability Matrix plus graph/data previews. High tier can add structured graph/table/content editors over the same file contract. Ultra tier can add preview simulation, package diff, visual diagnostics, and capability-specific validators after the same engine-owned route without changing runtime truth ownership.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is Editor/offline SDK UX and validation only. It prevents false runtime promises before FutureCommandEnvelope validation, SignalBus, GlobalRegistry, GlobalDataVault, save, physics, rendering, Burst/job, telemetry, or quality-scaling routes are changed.
+
+## Decision 85 - Settings and locale creation must be snippet-generated before structured editors
+
+Problem: Schema 96 made public mod powers explicit and schema 95 validated settings/locale data, but a random external author still had to hand-author new settings rows and locale entries as raw JSON. That is a usability and safety defect: the validator catches bad objects after the fact, while the starter kit should also generate the correct object shape before copy/paste.
+
+Solution: Add no-Unity snippet helpers for settings rows and locale entries, expose them through root `h8mod.ps1`, surface them in `ExternalStarterKitWorkbenchWindow`, and make `ModdingSdkHubWindow` generate the same scripts/routes/docs into refreshed starter kits. The helpers write only under `Generated/`, validate canonical IDs/keys and typed defaults/values, support machine-readable JSON, and explicitly do not mutate `Tables/settings.h8table.json` or `Locales/en.h8loc.json`. Schema revision 97 and static validation now fail if this route drifts.
+
+Rejected Alternatives: Directly editing `Tables/settings.h8table.json` or `Locales/en.h8loc.json` from a helper was rejected because it can destroy unknown future fields, reorder author data, or hide merge conflicts. A Unity-only editor was rejected because public starter-kit authoring must work without the HECTON-8 Unity project. Managed DLL/Harmony/BepInEx expansion was rejected because current runtime authority remains envelope-only and lacks sandbox, save-boundary, hot-lane, telemetry, and device-budget proof.
+
+Scalability potential: Low tier authors use `h8mod.ps1 -Action setting-snippet` and `h8mod.ps1 -Action locale-snippet` in a copied folder with no Unity install. Middle tier authors use the Workbench panel and the same scripts. High tier can add structured table/locale editors over this Generated-only object contract. Ultra tier can add simulation, diff, localization preview, and package diagnostics after the same review manifest without changing runtime truth ownership.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is Editor/offline SDK UX only. It prevents malformed settings/locale objects before runtime loader, FutureCommandEnvelope validation, HectonEventBus mod isolation, SignalBus, GlobalRegistry, GlobalDataVault, save, physics, rendering, Burst/job, telemetry, or continuous `GlobalQualityWeight` routes are touched.
+
+## Decision 86 - Settings and locale snippets need a bounded apply path
+
+Problem: Schema 97 generated valid settings and locale snippets, but the primary workflow still told random external authors to copy JSON by hand into `Tables/settings.h8table.json` and `Locales/en.h8loc.json`. That is exactly where non-technical modders break brackets, duplicate IDs, destroy unknown future fields, or miss validation before review handoff.
+
+Solution: Add bounded offline apply helpers for settings and locale snippets. The helpers accept only safe starter-relative Generated snippets and exact target files, reject duplicate IDs/keys unless `-Replace` is explicit, write through temp files, validate the whole starter kit after replacement, and restore the previous file on failure. Expose the route through `h8mod.ps1`, External Starter Kit Workbench buttons, SDK Hub generator output, local validator requirements, schema revision 98, static validator probes, and public docs.
+
+Rejected Alternatives: Blind append was rejected because it can corrupt unknown table/locale structure and silently create duplicates. Always replacing was rejected because overwrite must be an explicit author decision. A Unity-only editor was rejected because the starter kit must remain usable by authors without the HECTON-8 Unity project. Runtime code/mod DLL expansion was rejected because this is authoring data, and runtime UGC authority remains envelope-only.
+
+Scalability potential: Low tier authors can create and apply settings/locale entries from PowerShell or pwsh without Unity. Middle tier authors can use Workbench buttons over the same tools. High tier can layer a structured table/locale editor on this contract. Ultra tier can add preview, localization diff, simulation, package diagnostics, and visual-overkill authoring views without changing runtime truth ownership.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is offline SDK UX and validation only. It prevents malformed authoring data before runtime loader, FutureCommandEnvelope validation, HectonEventBus mod isolation, SignalBus, GlobalRegistry, GlobalDataVault, save, physics, rendering, Burst/job, telemetry, or continuous GlobalQualityWeight routes are touched.
+
+## Decision 87 - Validator invocation from apply tools must not treat null LASTEXITCODE as failure
+
+Problem: The first apply implementation invoked `validate_structure.ps1` in-process and interpreted a null `$LASTEXITCODE` as nonzero. The validator printed PASS but the apply helper still failed. That would make the new UX path unusable despite a valid table/locale write.
+
+Solution: Add `-ThrowInsteadOfExit` to `validate_structure.ps1` and generated validator output. Apply helpers call the validator with that switch and suppress PASS text so JSON output remains machine-readable. If validation throws, the apply helper restores the backup; if validation returns, the apply operation succeeds.
+
+Rejected Alternatives: Nested `powershell` validation was rejected because the starter tools already enforce in-process script chaining for portability and static proof. Ignoring validation after write was rejected because the helper must prove the whole starter kit still passes before reporting success.
+
+Scalability potential: Low tier CLI authors get deterministic success/failure. Middle tier Workbench receives clean process output. High/Ultra tier automation can parse JSON apply output without host text contamination.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame. This is no-Unity offline tooling; the gain is failed-handoff prevention, not frame time.

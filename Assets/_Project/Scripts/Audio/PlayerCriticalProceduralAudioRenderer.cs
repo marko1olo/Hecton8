@@ -1189,6 +1189,13 @@ namespace Hecton8.Audio
         private float _pendingListenerReverbWetMix;
         private float _pendingListenerReverbDecayTime;
         private float _pendingListenerReverbOpenness;
+        private int _pendingProceduralPingTriggerCount;
+        private long _pendingProceduralPingStartFrame0;
+        private long _pendingProceduralPingStartFrame1;
+        private float _pendingProceduralPingIntensity0;
+        private float _pendingProceduralPingIntensity1;
+        private bool _pendingStructuralStressHapticDirty;
+        private StructuralStressHapticRequest _pendingStructuralStressHaptic;
         private int _pendingSonarStateReadIndex;
         private int _audioParameterSnapshotReadIndex;
         private int _pendingSonarSequence;
@@ -1203,6 +1210,18 @@ namespace Hecton8.Audio
         private int _sonarEchoCompositeScheduledCandidateCount;
         private int _workerConsumedSonarSequence;
         private int _workerConsumedSonarRevision;
+
+        private struct StructuralStressHapticRequest
+        {
+            public float LowFrequencyIntensity;
+            public float HighFrequencyIntensity;
+            public float DurationSeconds;
+            public float PulseFrequencyHz;
+            public byte Priority;
+            public byte MotorMask;
+            public byte Channel;
+        }
+
         private int _workerActiveSonarTapCount;
         private int _pendingSonarEchoTapCountA;
         private int _pendingSonarEchoTapCountB;
@@ -2685,7 +2704,8 @@ namespace Hecton8.Audio
             bool locked = false;
             try
             {
-                if (!vault.TryAcquireWriteLock(in _prologueTransitionRingHandle, VaultOwner, out NativeArray<AudioTransitionState> prologueTransitionRing) ||
+                if (!IsPlayerCriticalVaultHandle(in _prologueTransitionRingHandle, PlayerCriticalPrologueTransitionRingBufferId) ||
+                    !vault.TryAcquireWriteLock(in _prologueTransitionRingHandle, VaultOwner, out NativeArray<AudioTransitionState> prologueTransitionRing) ||
                     !prologueTransitionRing.IsCreated)
                 {
                     RecordAudioSynthesisTelemetry(
@@ -2735,10 +2755,14 @@ namespace Hecton8.Audio
 
             if (activeIndex == 0)
             {
+                if (!IsPlayerCriticalVaultHandle(in _pendingSonarEchoTapsAHandle, BufferID.PlayerCriticalPendingSonarEchoTapsA))
+                    return false;
+
                 if (!vault.TryReadOnlyHandle(in _pendingSonarEchoTapsAHandle, out taps))
                     return false;
             }
-            else if (!vault.TryReadOnlyHandle(in _pendingSonarEchoTapsBHandle, out taps))
+            else if (!IsPlayerCriticalVaultHandle(in _pendingSonarEchoTapsBHandle, BufferID.PlayerCriticalPendingSonarEchoTapsB) ||
+                     !vault.TryReadOnlyHandle(in _pendingSonarEchoTapsBHandle, out taps))
             {
                 return false;
             }
@@ -2803,6 +2827,7 @@ namespace Hecton8.Audio
             UnsubscribeTransportCoordinator();
             TryUnregister();
             TryUnregisterRuntimeService();
+            ClearQueuedProceduralPingTriggers();
             _spatialAudioListenerCaveReadModel = null;
             _spatialAudioBinauralEmitterReadModel = null;
             _audioServiceLookupFrame = -4096;
@@ -2833,6 +2858,7 @@ namespace Hecton8.Audio
             SpectrumEvents.UnregisterAcousticEchoListener(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
             TryUnregisterPhysicsImpactListener();
+            ClearQueuedProceduralPingTriggers();
             bool producerStopped = StopAudioProducerThread();
             _audioProducerWakeSignal.Set();
             Thread producerThread = _audioProducerThread;
@@ -2864,7 +2890,8 @@ namespace Hecton8.Audio
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                RebindDataVault(currentService as IDataVault);
+                IDataVault currentVault = currentService is IDataVault vault ? vault : null;
+                RebindDataVault(currentVault);
                 return;
             }
 
@@ -2887,8 +2914,9 @@ namespace Hecton8.Audio
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
+                IDataVault currentVault = currentService is IDataVault vault ? vault : null;
                 if (!ReferenceEquals(previousService, currentService))
-                    RebindDataVault(currentService as IDataVault);
+                    RebindDataVault(currentVault);
                 return;
             }
 
@@ -3235,6 +3263,8 @@ namespace Hecton8.Audio
         public void LateFrameTick()
         {
             FlushQueuedListenerReverbProfile();
+            FlushQueuedProceduralPingTriggers();
+            FlushQueuedStructuralStressHaptic();
             ConsumeAcousticImpulseSignals();
             FlushSonarEchoCompositeGroups();
             PublishPendingDspProducerOverBudgetWarning();
@@ -5055,11 +5085,95 @@ namespace Hecton8.Audio
 
         private void RaiseProceduralPingTriggered(long scheduledStartFrame, float intensity)
         {
+            QueueProceduralPingTrigger(scheduledStartFrame, intensity);
+        }
+
+        private void QueueProceduralPingTrigger(long scheduledStartFrame, float intensity)
+        {
+            if (_pendingProceduralPingTriggerCount == 0)
+            {
+                _pendingProceduralPingStartFrame0 = scheduledStartFrame;
+                _pendingProceduralPingIntensity0 = math.saturate(intensity);
+                _pendingProceduralPingTriggerCount = 1;
+                return;
+            }
+
+            _pendingProceduralPingStartFrame1 = scheduledStartFrame;
+            _pendingProceduralPingIntensity1 = math.saturate(intensity);
+            _pendingProceduralPingTriggerCount = 2;
+        }
+
+        private void FlushQueuedProceduralPingTriggers()
+        {
+            int count = _pendingProceduralPingTriggerCount;
+            if (count <= 0)
+                return;
+
+            _pendingProceduralPingTriggerCount = 0;
+            int sampleRate = math.max(_sampleRate, 1);
             ProceduralAudioEvents.TryRaiseAudioPingTriggered(
-                scheduledStartFrame,
-                math.max(_sampleRate, 1),
-                math.saturate(intensity),
+                _pendingProceduralPingStartFrame0,
+                sampleRate,
+                _pendingProceduralPingIntensity0,
                 SonarChirpDurationSeconds);
+
+            if (count > 1)
+            {
+                ProceduralAudioEvents.TryRaiseAudioPingTriggered(
+                    _pendingProceduralPingStartFrame1,
+                    sampleRate,
+                    _pendingProceduralPingIntensity1,
+                    SonarChirpDurationSeconds);
+            }
+
+            ClearQueuedProceduralPingTriggers();
+        }
+
+        private void ClearQueuedProceduralPingTriggers()
+        {
+            _pendingProceduralPingTriggerCount = 0;
+            _pendingProceduralPingStartFrame0 = 0L;
+            _pendingProceduralPingStartFrame1 = 0L;
+            _pendingProceduralPingIntensity0 = 0f;
+            _pendingProceduralPingIntensity1 = 0f;
+        }
+
+        private void QueueStructuralStressHaptic(
+            float lowFrequencyIntensity,
+            float highFrequencyIntensity,
+            float durationSeconds,
+            float pulseFrequencyHz,
+            byte priority,
+            byte motorMask,
+            byte channel)
+        {
+            _pendingStructuralStressHaptic.LowFrequencyIntensity = lowFrequencyIntensity;
+            _pendingStructuralStressHaptic.HighFrequencyIntensity = highFrequencyIntensity;
+            _pendingStructuralStressHaptic.DurationSeconds = durationSeconds;
+            _pendingStructuralStressHaptic.PulseFrequencyHz = pulseFrequencyHz;
+            _pendingStructuralStressHaptic.Priority = priority;
+            _pendingStructuralStressHaptic.MotorMask = motorMask;
+            _pendingStructuralStressHaptic.Channel = channel;
+            _pendingStructuralStressHapticDirty = true;
+            TryRegister();
+        }
+
+        private void FlushQueuedStructuralStressHaptic()
+        {
+            if (!_pendingStructuralStressHapticDirty)
+                return;
+
+            StructuralStressHapticRequest request = _pendingStructuralStressHaptic;
+            _pendingStructuralStressHaptic = default;
+            _pendingStructuralStressHapticDirty = false;
+            Hecton8.Tools.ToolHapticsRuntime.TryEnqueueCommand(
+                request.LowFrequencyIntensity,
+                request.HighFrequencyIntensity,
+                request.DurationSeconds,
+                request.PulseFrequencyHz,
+                request.Priority,
+                request.MotorMask,
+                request.Channel);
         }
 
         private void RecordDirectSonarPing(Vector3 origin, float intensity)
@@ -6718,7 +6832,7 @@ namespace Hecton8.Audio
             if (pressureDelta > 0.08f || stress > 0.65f)
             {
                 float hapticDrive = math.saturate(stress * 0.45f + pressureDelta * 0.65f);
-                Hecton8.Tools.ToolHapticsRuntime.TryEnqueueCommand(
+                QueueStructuralStressHaptic(
                     hapticDrive * 0.4f,
                     hapticDrive,
                     0.08f + hapticDrive * 0.11f,
@@ -7005,6 +7119,8 @@ namespace Hecton8.Audio
             _registered = false;
             _slowTickRegistered = false;
             _lateFrameRegistered = false;
+            _pendingStructuralStressHapticDirty = false;
+            _pendingStructuralStressHaptic = default;
         }
 
         private void TryUnregisterRuntimeService()
@@ -7221,22 +7337,37 @@ namespace Hecton8.Audio
                 math.max(1, length),
                 VaultOwner,
                 options);
+            if (!IsPlayerCriticalVaultHandle(in handle, bufferId))
+            {
+                handle = default;
+                return default;
+            }
+
             return vault.TryResolveHandle(in handle, out NativeArray<T> buffer) && buffer.IsCreated
                 ? buffer
                 : default;
         }
 
-        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle, BufferID expectedBufferId)
             where T : struct
         {
-            if (vault != null && handle.BufferID != 0u)
+            if (vault != null && IsPlayerCriticalVaultHandle(in handle, expectedBufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
         }
 
+        private static bool IsPlayerCriticalVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)VaultOwner &&
+                   handle.Generation != 0u;
+        }
+
         private bool TryAcquireAudioWriteBuffer<T>(
             in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
             int requiredLength,
             out NativeArray<T> buffer,
             int failureCode) where T : struct
@@ -7244,8 +7375,7 @@ namespace Hecton8.Audio
             buffer = default;
             IDataVault vault = _dataVault;
             if (vault == null ||
-                handle.BufferID == 0u ||
-                handle.SystemID != (uint)VaultOwner)
+                !IsPlayerCriticalVaultHandle(in handle, expectedBufferId))
             {
                 NoteAudioSynthesisConsecutiveFailure();
                 RecordAudioSynthesisTelemetry(
@@ -7315,15 +7445,15 @@ namespace Hecton8.Audio
             bool success = false;
             try
             {
-                if (!TryAcquireAudioWriteBuffer(in _metallicGrainBankHandle, MetallicGrainBankCapacity, out views.MetallicGrainBank, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _granularVoiceActiveHandle, GranularVoiceCapacity, out views.VoiceActive, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _granularVoiceElapsedHandle, GranularVoiceCapacity, out views.VoiceElapsed, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _granularVoiceLengthHandle, GranularVoiceCapacity, out views.VoiceLength, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _granularVoiceStartHandle, GranularVoiceCapacity, out views.VoiceStart, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _granularVoiceSeedHandle, GranularVoiceCapacity, out views.VoiceSeed, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _granularVoiceCursorHandle, GranularVoiceCapacity, out views.VoiceCursor, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _granularVoicePlaybackRateHandle, GranularVoiceCapacity, out views.VoicePlaybackRate, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _granularVoiceGainHandle, GranularVoiceCapacity, out views.VoiceGain, AudioSynthesisFailureVaultResolution))
+                if (!TryAcquireAudioWriteBuffer(in _metallicGrainBankHandle, BufferID.PlayerCriticalMetallicGrainBank, MetallicGrainBankCapacity, out views.MetallicGrainBank, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _granularVoiceActiveHandle, BufferID.PlayerCriticalGranularVoiceActive, GranularVoiceCapacity, out views.VoiceActive, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _granularVoiceElapsedHandle, BufferID.PlayerCriticalGranularVoiceElapsed, GranularVoiceCapacity, out views.VoiceElapsed, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _granularVoiceLengthHandle, BufferID.PlayerCriticalGranularVoiceLength, GranularVoiceCapacity, out views.VoiceLength, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _granularVoiceStartHandle, BufferID.PlayerCriticalGranularVoiceStart, GranularVoiceCapacity, out views.VoiceStart, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _granularVoiceSeedHandle, BufferID.PlayerCriticalGranularVoiceSeed, GranularVoiceCapacity, out views.VoiceSeed, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _granularVoiceCursorHandle, BufferID.PlayerCriticalGranularVoiceCursor, GranularVoiceCapacity, out views.VoiceCursor, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _granularVoicePlaybackRateHandle, BufferID.PlayerCriticalGranularVoicePlaybackRate, GranularVoiceCapacity, out views.VoicePlaybackRate, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _granularVoiceGainHandle, BufferID.PlayerCriticalGranularVoiceGain, GranularVoiceCapacity, out views.VoiceGain, AudioSynthesisFailureVaultResolution))
                 {
                     return false;
                 }
@@ -7350,12 +7480,12 @@ namespace Hecton8.Audio
             bool success = false;
             try
             {
-                if (!TryAcquireAudioWriteBuffer(in _binauralDelayRingHandle, BinauralDelayCapacity, out views.BinauralDelayRing, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _binauralShadowHistoryHandle, BinauralOutputChannels, out views.BinauralShadowHistory, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _lowPassInputHistory1Handle, MaxFilterChannels, out views.LowPassInputHistory1, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _lowPassInputHistory2Handle, MaxFilterChannels, out views.LowPassInputHistory2, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _lowPassOutputHistory1Handle, MaxFilterChannels, out views.LowPassOutputHistory1, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _lowPassOutputHistory2Handle, MaxFilterChannels, out views.LowPassOutputHistory2, AudioSynthesisFailureVaultResolution))
+                if (!TryAcquireAudioWriteBuffer(in _binauralDelayRingHandle, BufferID.PlayerCriticalBinauralDelayRing, BinauralDelayCapacity, out views.BinauralDelayRing, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _binauralShadowHistoryHandle, BufferID.PlayerCriticalBinauralShadowHistory, BinauralOutputChannels, out views.BinauralShadowHistory, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _lowPassInputHistory1Handle, BufferID.PlayerCriticalLowPassInputHistory1, MaxFilterChannels, out views.LowPassInputHistory1, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _lowPassInputHistory2Handle, BufferID.PlayerCriticalLowPassInputHistory2, MaxFilterChannels, out views.LowPassInputHistory2, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _lowPassOutputHistory1Handle, BufferID.PlayerCriticalLowPassOutputHistory1, MaxFilterChannels, out views.LowPassOutputHistory1, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _lowPassOutputHistory2Handle, BufferID.PlayerCriticalLowPassOutputHistory2, MaxFilterChannels, out views.LowPassOutputHistory2, AudioSynthesisFailureVaultResolution))
                 {
                     return false;
                 }
@@ -7382,10 +7512,10 @@ namespace Hecton8.Audio
             bool success = false;
             try
             {
-                if (!TryAcquireAudioWriteBuffer(in _sabineReverbDelayHandle, SabineReverbDelayCapacity, out views.SabineReverbDelay, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _caveConvolutionImpulseHandle, CaveConvolutionImpulseLength, out views.CaveConvolutionImpulse, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _caveConvolutionDelayHandle, CaveConvolutionDelayCapacity, out views.CaveConvolutionDelay, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _interiorFdnDelayHandle, InteriorFdnDelayCapacity, out views.InteriorFdnDelay, AudioSynthesisFailureVaultResolution))
+                if (!TryAcquireAudioWriteBuffer(in _sabineReverbDelayHandle, BufferID.PlayerCriticalSabineReverbDelay, SabineReverbDelayCapacity, out views.SabineReverbDelay, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _caveConvolutionImpulseHandle, BufferID.PlayerCriticalCaveConvolutionImpulse, CaveConvolutionImpulseLength, out views.CaveConvolutionImpulse, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _caveConvolutionDelayHandle, BufferID.PlayerCriticalCaveConvolutionDelay, CaveConvolutionDelayCapacity, out views.CaveConvolutionDelay, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _interiorFdnDelayHandle, BufferID.PlayerCriticalInteriorFdnDelay, InteriorFdnDelayCapacity, out views.InteriorFdnDelay, AudioSynthesisFailureVaultResolution))
                 {
                     return false;
                 }
@@ -7412,8 +7542,8 @@ namespace Hecton8.Audio
             bool success = false;
             try
             {
-                if (!TryAcquireAudioWriteBuffer(in _impactClangDelayHandle, ImpactClangDelayCapacity, out views.ImpactClangDelay, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _thrusterCombDelayHandle, ThrusterCombDelayCapacity, out views.ThrusterCombDelay, AudioSynthesisFailureVaultResolution))
+                if (!TryAcquireAudioWriteBuffer(in _impactClangDelayHandle, BufferID.PlayerCriticalImpactClangDelay, ImpactClangDelayCapacity, out views.ImpactClangDelay, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _thrusterCombDelayHandle, BufferID.PlayerCriticalThrusterCombDelay, ThrusterCombDelayCapacity, out views.ThrusterCombDelay, AudioSynthesisFailureVaultResolution))
                 {
                     return false;
                 }
@@ -7441,15 +7571,15 @@ namespace Hecton8.Audio
             bool success = false;
             try
             {
-                if (!TryAcquireAudioWriteBuffer(in _hullScratchHandle, safeFrameCount, out views.HullScratch, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _sonarScratchHandle, safeFrameCount, out views.SonarScratch, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _impactEchoScratchHandle, safeFrameCount, out views.ImpactEchoScratch, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _thrusterScratchHandle, safeFrameCount, out views.ThrusterScratch, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _heartbeatScratchHandle, safeFrameCount, out views.HeartbeatScratch, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _heartbeatDuckScratchHandle, safeFrameCount, out views.HeartbeatDuckScratch, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _bubbleScratchHandle, safeFrameCount, out views.BubbleScratch, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _mixScratchHandle, safeFrameCount, out views.MixScratch, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _stereoMixScratchHandle, safeFrameCount * BinauralOutputChannels, out views.StereoMixScratch, AudioSynthesisFailureVaultResolution))
+                if (!TryAcquireAudioWriteBuffer(in _hullScratchHandle, BufferID.PlayerCriticalHullScratch, safeFrameCount, out views.HullScratch, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _sonarScratchHandle, BufferID.PlayerCriticalSonarScratch, safeFrameCount, out views.SonarScratch, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _impactEchoScratchHandle, BufferID.PlayerCriticalImpactEchoScratch, safeFrameCount, out views.ImpactEchoScratch, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _thrusterScratchHandle, BufferID.PlayerCriticalThrusterScratch, safeFrameCount, out views.ThrusterScratch, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _heartbeatScratchHandle, BufferID.PlayerCriticalHeartbeatScratch, safeFrameCount, out views.HeartbeatScratch, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _heartbeatDuckScratchHandle, BufferID.PlayerCriticalHeartbeatDuckScratch, safeFrameCount, out views.HeartbeatDuckScratch, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _bubbleScratchHandle, BufferID.PlayerCriticalBubbleScratch, safeFrameCount, out views.BubbleScratch, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _mixScratchHandle, BufferID.PlayerCriticalMixScratch, safeFrameCount, out views.MixScratch, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _stereoMixScratchHandle, BufferID.PlayerCriticalStereoMixScratch, safeFrameCount * BinauralOutputChannels, out views.StereoMixScratch, AudioSynthesisFailureVaultResolution))
                 {
                     return false;
                 }
@@ -7476,10 +7606,10 @@ namespace Hecton8.Audio
             bool success = false;
             try
             {
-                if (!TryAcquireAudioWriteBuffer(in _pendingSonarEchoTapsAHandle, SonarEchoTapCapacity, out views.PendingA, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _pendingSonarEchoTapsBHandle, SonarEchoTapCapacity, out views.PendingB, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _workerSonarEchoTapsHandle, SonarEchoTapCapacity, out views.Worker, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _sonarEchoTapUploadRingHandle, SonarEchoTapCapacity, out views.UploadRing, AudioSynthesisFailureVaultResolution))
+                if (!TryAcquireAudioWriteBuffer(in _pendingSonarEchoTapsAHandle, BufferID.PlayerCriticalPendingSonarEchoTapsA, SonarEchoTapCapacity, out views.PendingA, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _pendingSonarEchoTapsBHandle, BufferID.PlayerCriticalPendingSonarEchoTapsB, SonarEchoTapCapacity, out views.PendingB, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _workerSonarEchoTapsHandle, BufferID.PlayerCriticalWorkerSonarEchoTaps, SonarEchoTapCapacity, out views.Worker, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _sonarEchoTapUploadRingHandle, PlayerCriticalSonarEchoTapUploadRingBufferId, SonarEchoTapCapacity, out views.UploadRing, AudioSynthesisFailureVaultResolution))
                 {
                     return false;
                 }
@@ -7513,12 +7643,12 @@ namespace Hecton8.Audio
             bool success = false;
             try
             {
-                if (!TryAcquireAudioWriteBuffer(in _sonarEchoDelayHandle, SonarEchoDelayCapacity, out views.EchoDelay, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _sonarEchoReadCursorsHandle, SonarEchoTapCapacity, out views.ReadCursors, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _sonarEchoFilterInput1Handle, SonarEchoTapCapacity, out views.FilterInput1, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _sonarEchoFilterInput2Handle, SonarEchoTapCapacity, out views.FilterInput2, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _sonarEchoFilterOutput1Handle, SonarEchoTapCapacity, out views.FilterOutput1, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _sonarEchoFilterOutput2Handle, SonarEchoTapCapacity, out views.FilterOutput2, AudioSynthesisFailureVaultResolution))
+                if (!TryAcquireAudioWriteBuffer(in _sonarEchoDelayHandle, BufferID.PlayerCriticalSonarEchoDelay, SonarEchoDelayCapacity, out views.EchoDelay, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _sonarEchoReadCursorsHandle, BufferID.PlayerCriticalSonarEchoReadCursors, SonarEchoTapCapacity, out views.ReadCursors, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _sonarEchoFilterInput1Handle, BufferID.PlayerCriticalSonarEchoFilterInput1, SonarEchoTapCapacity, out views.FilterInput1, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _sonarEchoFilterInput2Handle, BufferID.PlayerCriticalSonarEchoFilterInput2, SonarEchoTapCapacity, out views.FilterInput2, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _sonarEchoFilterOutput1Handle, BufferID.PlayerCriticalSonarEchoFilterOutput1, SonarEchoTapCapacity, out views.FilterOutput1, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _sonarEchoFilterOutput2Handle, BufferID.PlayerCriticalSonarEchoFilterOutput2, SonarEchoTapCapacity, out views.FilterOutput2, AudioSynthesisFailureVaultResolution))
                 {
                     return false;
                 }
@@ -7556,11 +7686,11 @@ namespace Hecton8.Audio
             bool success = false;
             try
             {
-                if (!TryAcquireAudioWriteBuffer(in _sonarEchoCompositeCandidatesAHandle, SonarEchoCompositeCandidateCapacity, out views.CandidatesA, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _sonarEchoCompositeCandidatesBHandle, SonarEchoCompositeCandidateCapacity, out views.CandidatesB, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _sonarEchoCompositeGroupsHandle, SonarEchoCompositeGroupCapacity, out views.Groups, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _sonarEchoCompositeGroupCountNativeHandle, 1, out views.GroupCount, AudioSynthesisFailureVaultResolution) ||
-                    !TryAcquireAudioWriteBuffer(in _sonarEcholocationHitsHandle, SonarEchoTapCapacity, out views.Hits, AudioSynthesisFailureVaultResolution))
+                if (!TryAcquireAudioWriteBuffer(in _sonarEchoCompositeCandidatesAHandle, BufferID.PlayerCriticalSonarEchoCompositeCandidatesA, SonarEchoCompositeCandidateCapacity, out views.CandidatesA, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _sonarEchoCompositeCandidatesBHandle, BufferID.PlayerCriticalSonarEchoCompositeCandidatesB, SonarEchoCompositeCandidateCapacity, out views.CandidatesB, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _sonarEchoCompositeGroupsHandle, BufferID.PlayerCriticalSonarEchoCompositeGroups, SonarEchoCompositeGroupCapacity, out views.Groups, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _sonarEchoCompositeGroupCountNativeHandle, BufferID.PlayerCriticalSonarEchoCompositeGroupCount, 1, out views.GroupCount, AudioSynthesisFailureVaultResolution) ||
+                    !TryAcquireAudioWriteBuffer(in _sonarEcholocationHitsHandle, BufferID.PlayerCriticalSonarEcholocationHits, SonarEchoTapCapacity, out views.Hits, AudioSynthesisFailureVaultResolution))
                 {
                     return false;
                 }
@@ -7675,12 +7805,12 @@ namespace Hecton8.Audio
             views = default;
         }
 
-        private bool IsReadOnlyVaultBufferCreated<T>(in VaultGenerationHandle<T> handle, int requiredLength)
+        private bool IsReadOnlyVaultBufferCreated<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId, int requiredLength)
             where T : struct
         {
             IDataVault vault = _dataVault;
             return vault != null &&
-                   handle.BufferID != 0u &&
+                   IsPlayerCriticalVaultHandle(in handle, expectedBufferId) &&
                    vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= math.max(1, requiredLength);
@@ -7688,25 +7818,25 @@ namespace Hecton8.Audio
 
         private bool AreGranularVoiceBuffersCreated()
         {
-            return IsReadOnlyVaultBufferCreated(in _metallicGrainBankHandle, MetallicGrainBankCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _granularVoiceActiveHandle, GranularVoiceCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _granularVoiceElapsedHandle, GranularVoiceCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _granularVoiceLengthHandle, GranularVoiceCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _granularVoiceStartHandle, GranularVoiceCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _granularVoiceSeedHandle, GranularVoiceCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _granularVoiceCursorHandle, GranularVoiceCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _granularVoicePlaybackRateHandle, GranularVoiceCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _granularVoiceGainHandle, GranularVoiceCapacity);
+            return IsReadOnlyVaultBufferCreated(in _metallicGrainBankHandle, BufferID.PlayerCriticalMetallicGrainBank, MetallicGrainBankCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _granularVoiceActiveHandle, BufferID.PlayerCriticalGranularVoiceActive, GranularVoiceCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _granularVoiceElapsedHandle, BufferID.PlayerCriticalGranularVoiceElapsed, GranularVoiceCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _granularVoiceLengthHandle, BufferID.PlayerCriticalGranularVoiceLength, GranularVoiceCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _granularVoiceStartHandle, BufferID.PlayerCriticalGranularVoiceStart, GranularVoiceCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _granularVoiceSeedHandle, BufferID.PlayerCriticalGranularVoiceSeed, GranularVoiceCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _granularVoiceCursorHandle, BufferID.PlayerCriticalGranularVoiceCursor, GranularVoiceCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _granularVoicePlaybackRateHandle, BufferID.PlayerCriticalGranularVoicePlaybackRate, GranularVoiceCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _granularVoiceGainHandle, BufferID.PlayerCriticalGranularVoiceGain, GranularVoiceCapacity);
         }
 
         private bool AreBinauralFilterBuffersCreated()
         {
-            return IsReadOnlyVaultBufferCreated(in _binauralDelayRingHandle, BinauralDelayCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _binauralShadowHistoryHandle, BinauralOutputChannels) &&
-                   IsReadOnlyVaultBufferCreated(in _lowPassInputHistory1Handle, 1) &&
-                   IsReadOnlyVaultBufferCreated(in _lowPassInputHistory2Handle, 1) &&
-                   IsReadOnlyVaultBufferCreated(in _lowPassOutputHistory1Handle, 1) &&
-                   IsReadOnlyVaultBufferCreated(in _lowPassOutputHistory2Handle, 1);
+            return IsReadOnlyVaultBufferCreated(in _binauralDelayRingHandle, BufferID.PlayerCriticalBinauralDelayRing, BinauralDelayCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _binauralShadowHistoryHandle, BufferID.PlayerCriticalBinauralShadowHistory, BinauralOutputChannels) &&
+                   IsReadOnlyVaultBufferCreated(in _lowPassInputHistory1Handle, BufferID.PlayerCriticalLowPassInputHistory1, 1) &&
+                   IsReadOnlyVaultBufferCreated(in _lowPassInputHistory2Handle, BufferID.PlayerCriticalLowPassInputHistory2, 1) &&
+                   IsReadOnlyVaultBufferCreated(in _lowPassOutputHistory1Handle, BufferID.PlayerCriticalLowPassOutputHistory1, 1) &&
+                   IsReadOnlyVaultBufferCreated(in _lowPassOutputHistory2Handle, BufferID.PlayerCriticalLowPassOutputHistory2, 1);
         }
 
         private static bool HasBinauralFilterBuffers(ref BinauralFilterVaultViews views)
@@ -7727,10 +7857,10 @@ namespace Hecton8.Audio
 
         private bool AreReverbBuffersCreated()
         {
-            return IsReadOnlyVaultBufferCreated(in _sabineReverbDelayHandle, SabineReverbDelayCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _caveConvolutionImpulseHandle, CaveConvolutionImpulseLength) &&
-                   IsReadOnlyVaultBufferCreated(in _caveConvolutionDelayHandle, CaveConvolutionDelayCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _interiorFdnDelayHandle, InteriorFdnDelayCapacity);
+            return IsReadOnlyVaultBufferCreated(in _sabineReverbDelayHandle, BufferID.PlayerCriticalSabineReverbDelay, SabineReverbDelayCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _caveConvolutionImpulseHandle, BufferID.PlayerCriticalCaveConvolutionImpulse, CaveConvolutionImpulseLength) &&
+                   IsReadOnlyVaultBufferCreated(in _caveConvolutionDelayHandle, BufferID.PlayerCriticalCaveConvolutionDelay, CaveConvolutionDelayCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _interiorFdnDelayHandle, BufferID.PlayerCriticalInteriorFdnDelay, InteriorFdnDelayCapacity);
         }
 
         private static bool HasReverbBuffers(ref ReverbVaultViews views)
@@ -7747,8 +7877,8 @@ namespace Hecton8.Audio
 
         private bool AreTransientDelayBuffersCreated()
         {
-            return IsReadOnlyVaultBufferCreated(in _impactClangDelayHandle, ImpactClangDelayCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _thrusterCombDelayHandle, ThrusterCombDelayCapacity);
+            return IsReadOnlyVaultBufferCreated(in _impactClangDelayHandle, BufferID.PlayerCriticalImpactClangDelay, ImpactClangDelayCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _thrusterCombDelayHandle, BufferID.PlayerCriticalThrusterCombDelay, ThrusterCombDelayCapacity);
         }
 
         private static bool HasTransientDelayBuffers(ref TransientDelayVaultViews views)
@@ -7762,15 +7892,15 @@ namespace Hecton8.Audio
         private bool AreFrameScratchBuffersCreated(int frameCount)
         {
             int safeFrameCount = math.max(1, frameCount);
-            return IsReadOnlyVaultBufferCreated(in _hullScratchHandle, safeFrameCount) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarScratchHandle, safeFrameCount) &&
-                   IsReadOnlyVaultBufferCreated(in _impactEchoScratchHandle, safeFrameCount) &&
-                   IsReadOnlyVaultBufferCreated(in _thrusterScratchHandle, safeFrameCount) &&
-                   IsReadOnlyVaultBufferCreated(in _heartbeatScratchHandle, safeFrameCount) &&
-                   IsReadOnlyVaultBufferCreated(in _heartbeatDuckScratchHandle, safeFrameCount) &&
-                   IsReadOnlyVaultBufferCreated(in _bubbleScratchHandle, safeFrameCount) &&
-                   IsReadOnlyVaultBufferCreated(in _mixScratchHandle, safeFrameCount) &&
-                   IsReadOnlyVaultBufferCreated(in _stereoMixScratchHandle, safeFrameCount * BinauralOutputChannels);
+            return IsReadOnlyVaultBufferCreated(in _hullScratchHandle, BufferID.PlayerCriticalHullScratch, safeFrameCount) &&
+                   IsReadOnlyVaultBufferCreated(in _sonarScratchHandle, BufferID.PlayerCriticalSonarScratch, safeFrameCount) &&
+                   IsReadOnlyVaultBufferCreated(in _impactEchoScratchHandle, BufferID.PlayerCriticalImpactEchoScratch, safeFrameCount) &&
+                   IsReadOnlyVaultBufferCreated(in _thrusterScratchHandle, BufferID.PlayerCriticalThrusterScratch, safeFrameCount) &&
+                   IsReadOnlyVaultBufferCreated(in _heartbeatScratchHandle, BufferID.PlayerCriticalHeartbeatScratch, safeFrameCount) &&
+                   IsReadOnlyVaultBufferCreated(in _heartbeatDuckScratchHandle, BufferID.PlayerCriticalHeartbeatDuckScratch, safeFrameCount) &&
+                   IsReadOnlyVaultBufferCreated(in _bubbleScratchHandle, BufferID.PlayerCriticalBubbleScratch, safeFrameCount) &&
+                   IsReadOnlyVaultBufferCreated(in _mixScratchHandle, BufferID.PlayerCriticalMixScratch, safeFrameCount) &&
+                   IsReadOnlyVaultBufferCreated(in _stereoMixScratchHandle, BufferID.PlayerCriticalStereoMixScratch, safeFrameCount * BinauralOutputChannels);
         }
 
         private static bool HasFrameScratchBuffers(ref FrameScratchVaultViews views, int frameCount)
@@ -7790,29 +7920,29 @@ namespace Hecton8.Audio
 
         private bool AreSonarTapBuffersCreated()
         {
-            return IsReadOnlyVaultBufferCreated(in _pendingSonarEchoTapsAHandle, SonarEchoTapCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _pendingSonarEchoTapsBHandle, SonarEchoTapCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _workerSonarEchoTapsHandle, SonarEchoTapCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEchoTapUploadRingHandle, SonarEchoTapCapacity);
+            return IsReadOnlyVaultBufferCreated(in _pendingSonarEchoTapsAHandle, BufferID.PlayerCriticalPendingSonarEchoTapsA, SonarEchoTapCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _pendingSonarEchoTapsBHandle, BufferID.PlayerCriticalPendingSonarEchoTapsB, SonarEchoTapCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _workerSonarEchoTapsHandle, BufferID.PlayerCriticalWorkerSonarEchoTaps, SonarEchoTapCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _sonarEchoTapUploadRingHandle, PlayerCriticalSonarEchoTapUploadRingBufferId, SonarEchoTapCapacity);
         }
 
         private bool AreSonarDspBuffersCreated()
         {
-            return IsReadOnlyVaultBufferCreated(in _sonarEchoDelayHandle, SonarEchoDelayCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEchoReadCursorsHandle, SonarEchoTapCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEchoFilterInput1Handle, SonarEchoTapCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEchoFilterInput2Handle, SonarEchoTapCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEchoFilterOutput1Handle, SonarEchoTapCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEchoFilterOutput2Handle, SonarEchoTapCapacity);
+            return IsReadOnlyVaultBufferCreated(in _sonarEchoDelayHandle, BufferID.PlayerCriticalSonarEchoDelay, SonarEchoDelayCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _sonarEchoReadCursorsHandle, BufferID.PlayerCriticalSonarEchoReadCursors, SonarEchoTapCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _sonarEchoFilterInput1Handle, BufferID.PlayerCriticalSonarEchoFilterInput1, SonarEchoTapCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _sonarEchoFilterInput2Handle, BufferID.PlayerCriticalSonarEchoFilterInput2, SonarEchoTapCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _sonarEchoFilterOutput1Handle, BufferID.PlayerCriticalSonarEchoFilterOutput1, SonarEchoTapCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _sonarEchoFilterOutput2Handle, BufferID.PlayerCriticalSonarEchoFilterOutput2, SonarEchoTapCapacity);
         }
 
         private bool AreSonarSpatialBuffersCreated()
         {
-            return IsReadOnlyVaultBufferCreated(in _sonarEchoCompositeCandidatesAHandle, SonarEchoCompositeCandidateCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEchoCompositeCandidatesBHandle, SonarEchoCompositeCandidateCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEchoCompositeGroupsHandle, SonarEchoCompositeGroupCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEchoCompositeGroupCountNativeHandle, 1) &&
-                   IsReadOnlyVaultBufferCreated(in _sonarEcholocationHitsHandle, SonarEchoTapCapacity);
+            return IsReadOnlyVaultBufferCreated(in _sonarEchoCompositeCandidatesAHandle, BufferID.PlayerCriticalSonarEchoCompositeCandidatesA, SonarEchoCompositeCandidateCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _sonarEchoCompositeCandidatesBHandle, BufferID.PlayerCriticalSonarEchoCompositeCandidatesB, SonarEchoCompositeCandidateCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _sonarEchoCompositeGroupsHandle, BufferID.PlayerCriticalSonarEchoCompositeGroups, SonarEchoCompositeGroupCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _sonarEchoCompositeGroupCountNativeHandle, BufferID.PlayerCriticalSonarEchoCompositeGroupCount, 1) &&
+                   IsReadOnlyVaultBufferCreated(in _sonarEcholocationHitsHandle, BufferID.PlayerCriticalSonarEcholocationHits, SonarEchoTapCapacity);
         }
 
         private bool TryReadSonarHitView(out NativeArray<AcousticEcholocationRayHit>.ReadOnly hits)
@@ -7820,7 +7950,7 @@ namespace Hecton8.Audio
             hits = default;
             IDataVault vault = _dataVault;
             return vault != null &&
-                   _sonarEcholocationHitsHandle.BufferID != 0u &&
+                   IsPlayerCriticalVaultHandle(in _sonarEcholocationHitsHandle, BufferID.PlayerCriticalSonarEcholocationHits) &&
                    vault.TryReadOnlyHandle(in _sonarEcholocationHitsHandle, out hits) &&
                    hits.IsCreated &&
                    hits.Length >= SonarEchoTapCapacity;
@@ -7836,10 +7966,10 @@ namespace Hecton8.Audio
                    AreReverbBuffersCreated() &&
                    AreBinauralFilterBuffersCreated() &&
                    AreGranularVoiceBuffersCreated() &&
-                   IsReadOnlyVaultBufferCreated(in _granularTelemetryRingHandle, GranularTelemetryCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _prologueTransitionTelemetryRingHandle, PrologueTransitionTelemetryCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _prologueTransitionRingHandle, PrologueTransitionQueueCapacity) &&
-                   IsReadOnlyVaultBufferCreated(in _audioSynthesisTelemetryRingHandle, AudioSynthesisTelemetryCapacity);
+                   IsReadOnlyVaultBufferCreated(in _granularTelemetryRingHandle, BufferID.PlayerCriticalGranularTelemetryRing, GranularTelemetryCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _prologueTransitionTelemetryRingHandle, BufferID.PlayerCriticalPrologueTransitionTelemetryRing, PrologueTransitionTelemetryCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _prologueTransitionRingHandle, PlayerCriticalPrologueTransitionRingBufferId, PrologueTransitionQueueCapacity) &&
+                   IsReadOnlyVaultBufferCreated(in _audioSynthesisTelemetryRingHandle, PlayerCriticalAudioSynthesisTelemetryRingBufferId, AudioSynthesisTelemetryCapacity);
         }
 
         private void ClearVaultBackedAudioBuffers()
@@ -7975,7 +8105,7 @@ namespace Hecton8.Audio
                 }
             }
 
-            if (TryAcquireAudioWriteBuffer(in _granularTelemetryRingHandle, GranularTelemetryCapacity, out NativeArray<GranularAudioTelemetryEntry> granularTelemetryRing, AudioSynthesisFailureVaultResolution))
+            if (TryAcquireAudioWriteBuffer(in _granularTelemetryRingHandle, BufferID.PlayerCriticalGranularTelemetryRing, GranularTelemetryCapacity, out NativeArray<GranularAudioTelemetryEntry> granularTelemetryRing, AudioSynthesisFailureVaultResolution))
             {
                 try
                 {
@@ -7987,7 +8117,7 @@ namespace Hecton8.Audio
                 }
             }
 
-            if (TryAcquireAudioWriteBuffer(in _prologueTransitionTelemetryRingHandle, PrologueTransitionTelemetryCapacity, out NativeArray<PrologueAudioTransitionTelemetryEntry> prologueTelemetryRing, AudioSynthesisFailureVaultResolution))
+            if (TryAcquireAudioWriteBuffer(in _prologueTransitionTelemetryRingHandle, BufferID.PlayerCriticalPrologueTransitionTelemetryRing, PrologueTransitionTelemetryCapacity, out NativeArray<PrologueAudioTransitionTelemetryEntry> prologueTelemetryRing, AudioSynthesisFailureVaultResolution))
             {
                 try
                 {
@@ -7999,7 +8129,7 @@ namespace Hecton8.Audio
                 }
             }
 
-            if (TryAcquireAudioWriteBuffer(in _prologueTransitionRingHandle, PrologueTransitionQueueCapacity, out NativeArray<AudioTransitionState> prologueTransitionRing, AudioSynthesisFailureVaultResolution))
+            if (TryAcquireAudioWriteBuffer(in _prologueTransitionRingHandle, PlayerCriticalPrologueTransitionRingBufferId, PrologueTransitionQueueCapacity, out NativeArray<AudioTransitionState> prologueTransitionRing, AudioSynthesisFailureVaultResolution))
             {
                 try
                 {
@@ -8011,7 +8141,7 @@ namespace Hecton8.Audio
                 }
             }
 
-            if (TryAcquireAudioWriteBuffer(in _audioSynthesisTelemetryRingHandle, AudioSynthesisTelemetryCapacity, out NativeArray<AudioSynthesisTelemetryEntry> audioSynthesisTelemetryRing, AudioSynthesisFailureVaultResolution))
+            if (TryAcquireAudioWriteBuffer(in _audioSynthesisTelemetryRingHandle, PlayerCriticalAudioSynthesisTelemetryRingBufferId, AudioSynthesisTelemetryCapacity, out NativeArray<AudioSynthesisTelemetryEntry> audioSynthesisTelemetryRing, AudioSynthesisFailureVaultResolution))
             {
                 try
                 {
@@ -8096,7 +8226,7 @@ namespace Hecton8.Audio
                 return;
 
             bool retainedSabineReverbDelay =
-                IsReadOnlyVaultBufferCreated(in _sabineReverbDelayHandle, SabineReverbDelayCapacity);
+                IsReadOnlyVaultBufferCreated(in _sabineReverbDelayHandle, BufferID.PlayerCriticalSabineReverbDelay, SabineReverbDelayCapacity);
             DisposeBuffers(disposeSabineReverbDelay: false);
 
             _frameCapacity = frameCapacity;
@@ -8247,55 +8377,55 @@ namespace Hecton8.Audio
 
         private void ReleaseVaultBackedAudioBufferHandles(IDataVault vault)
         {
-            ReleaseVaultBuffer(vault, ref _hullScratchHandle);
-            ReleaseVaultBuffer(vault, ref _sonarScratchHandle);
-            ReleaseVaultBuffer(vault, ref _impactEchoScratchHandle);
-            ReleaseVaultBuffer(vault, ref _thrusterScratchHandle);
-            ReleaseVaultBuffer(vault, ref _heartbeatScratchHandle);
-            ReleaseVaultBuffer(vault, ref _heartbeatDuckScratchHandle);
-            ReleaseVaultBuffer(vault, ref _bubbleScratchHandle);
-            ReleaseVaultBuffer(vault, ref _mixScratchHandle);
-            ReleaseVaultBuffer(vault, ref _stereoMixScratchHandle);
-            ReleaseVaultBuffer(vault, ref _sonarEchoDelayHandle);
-            ReleaseVaultBuffer(vault, ref _pendingSonarEchoTapsAHandle);
-            ReleaseVaultBuffer(vault, ref _pendingSonarEchoTapsBHandle);
-            ReleaseVaultBuffer(vault, ref _workerSonarEchoTapsHandle);
-            ReleaseVaultBuffer(vault, ref _sonarEchoReadCursorsHandle);
-            ReleaseVaultBuffer(vault, ref _sonarEchoFilterInput1Handle);
-            ReleaseVaultBuffer(vault, ref _sonarEchoFilterInput2Handle);
-            ReleaseVaultBuffer(vault, ref _sonarEchoFilterOutput1Handle);
-            ReleaseVaultBuffer(vault, ref _sonarEchoFilterOutput2Handle);
-            ReleaseVaultBuffer(vault, ref _sonarEchoCompositeCandidatesAHandle);
-            ReleaseVaultBuffer(vault, ref _sonarEchoCompositeCandidatesBHandle);
-            ReleaseVaultBuffer(vault, ref _sonarEchoCompositeGroupsHandle);
-            ReleaseVaultBuffer(vault, ref _sonarEchoCompositeGroupCountNativeHandle);
-            ReleaseVaultBuffer(vault, ref _sonarEcholocationHitsHandle);
-            ReleaseVaultBuffer(vault, ref _sonarEchoTapUploadRingHandle);
-            ReleaseVaultBuffer(vault, ref _impactClangDelayHandle);
-            ReleaseVaultBuffer(vault, ref _thrusterCombDelayHandle);
-            ReleaseVaultBuffer(vault, ref _sabineReverbDelayHandle);
-            ReleaseVaultBuffer(vault, ref _caveConvolutionImpulseHandle);
-            ReleaseVaultBuffer(vault, ref _caveConvolutionDelayHandle);
-            ReleaseVaultBuffer(vault, ref _interiorFdnDelayHandle);
-            ReleaseVaultBuffer(vault, ref _binauralDelayRingHandle);
-            ReleaseVaultBuffer(vault, ref _binauralShadowHistoryHandle);
-            ReleaseVaultBuffer(vault, ref _lowPassInputHistory1Handle);
-            ReleaseVaultBuffer(vault, ref _lowPassInputHistory2Handle);
-            ReleaseVaultBuffer(vault, ref _lowPassOutputHistory1Handle);
-            ReleaseVaultBuffer(vault, ref _lowPassOutputHistory2Handle);
-            ReleaseVaultBuffer(vault, ref _metallicGrainBankHandle);
-            ReleaseVaultBuffer(vault, ref _granularVoiceActiveHandle);
-            ReleaseVaultBuffer(vault, ref _granularVoiceElapsedHandle);
-            ReleaseVaultBuffer(vault, ref _granularVoiceLengthHandle);
-            ReleaseVaultBuffer(vault, ref _granularVoiceStartHandle);
-            ReleaseVaultBuffer(vault, ref _granularVoiceSeedHandle);
-            ReleaseVaultBuffer(vault, ref _granularVoiceCursorHandle);
-            ReleaseVaultBuffer(vault, ref _granularVoicePlaybackRateHandle);
-            ReleaseVaultBuffer(vault, ref _granularVoiceGainHandle);
-            ReleaseVaultBuffer(vault, ref _granularTelemetryRingHandle);
-            ReleaseVaultBuffer(vault, ref _prologueTransitionTelemetryRingHandle);
-            ReleaseVaultBuffer(vault, ref _prologueTransitionRingHandle);
-            ReleaseVaultBuffer(vault, ref _audioSynthesisTelemetryRingHandle);
+            ReleaseVaultBuffer(vault, ref _hullScratchHandle, BufferID.PlayerCriticalHullScratch);
+            ReleaseVaultBuffer(vault, ref _sonarScratchHandle, BufferID.PlayerCriticalSonarScratch);
+            ReleaseVaultBuffer(vault, ref _impactEchoScratchHandle, BufferID.PlayerCriticalImpactEchoScratch);
+            ReleaseVaultBuffer(vault, ref _thrusterScratchHandle, BufferID.PlayerCriticalThrusterScratch);
+            ReleaseVaultBuffer(vault, ref _heartbeatScratchHandle, BufferID.PlayerCriticalHeartbeatScratch);
+            ReleaseVaultBuffer(vault, ref _heartbeatDuckScratchHandle, BufferID.PlayerCriticalHeartbeatDuckScratch);
+            ReleaseVaultBuffer(vault, ref _bubbleScratchHandle, BufferID.PlayerCriticalBubbleScratch);
+            ReleaseVaultBuffer(vault, ref _mixScratchHandle, BufferID.PlayerCriticalMixScratch);
+            ReleaseVaultBuffer(vault, ref _stereoMixScratchHandle, BufferID.PlayerCriticalStereoMixScratch);
+            ReleaseVaultBuffer(vault, ref _sonarEchoDelayHandle, BufferID.PlayerCriticalSonarEchoDelay);
+            ReleaseVaultBuffer(vault, ref _pendingSonarEchoTapsAHandle, BufferID.PlayerCriticalPendingSonarEchoTapsA);
+            ReleaseVaultBuffer(vault, ref _pendingSonarEchoTapsBHandle, BufferID.PlayerCriticalPendingSonarEchoTapsB);
+            ReleaseVaultBuffer(vault, ref _workerSonarEchoTapsHandle, BufferID.PlayerCriticalWorkerSonarEchoTaps);
+            ReleaseVaultBuffer(vault, ref _sonarEchoReadCursorsHandle, BufferID.PlayerCriticalSonarEchoReadCursors);
+            ReleaseVaultBuffer(vault, ref _sonarEchoFilterInput1Handle, BufferID.PlayerCriticalSonarEchoFilterInput1);
+            ReleaseVaultBuffer(vault, ref _sonarEchoFilterInput2Handle, BufferID.PlayerCriticalSonarEchoFilterInput2);
+            ReleaseVaultBuffer(vault, ref _sonarEchoFilterOutput1Handle, BufferID.PlayerCriticalSonarEchoFilterOutput1);
+            ReleaseVaultBuffer(vault, ref _sonarEchoFilterOutput2Handle, BufferID.PlayerCriticalSonarEchoFilterOutput2);
+            ReleaseVaultBuffer(vault, ref _sonarEchoCompositeCandidatesAHandle, BufferID.PlayerCriticalSonarEchoCompositeCandidatesA);
+            ReleaseVaultBuffer(vault, ref _sonarEchoCompositeCandidatesBHandle, BufferID.PlayerCriticalSonarEchoCompositeCandidatesB);
+            ReleaseVaultBuffer(vault, ref _sonarEchoCompositeGroupsHandle, BufferID.PlayerCriticalSonarEchoCompositeGroups);
+            ReleaseVaultBuffer(vault, ref _sonarEchoCompositeGroupCountNativeHandle, BufferID.PlayerCriticalSonarEchoCompositeGroupCount);
+            ReleaseVaultBuffer(vault, ref _sonarEcholocationHitsHandle, BufferID.PlayerCriticalSonarEcholocationHits);
+            ReleaseVaultBuffer(vault, ref _sonarEchoTapUploadRingHandle, PlayerCriticalSonarEchoTapUploadRingBufferId);
+            ReleaseVaultBuffer(vault, ref _impactClangDelayHandle, BufferID.PlayerCriticalImpactClangDelay);
+            ReleaseVaultBuffer(vault, ref _thrusterCombDelayHandle, BufferID.PlayerCriticalThrusterCombDelay);
+            ReleaseVaultBuffer(vault, ref _sabineReverbDelayHandle, BufferID.PlayerCriticalSabineReverbDelay);
+            ReleaseVaultBuffer(vault, ref _caveConvolutionImpulseHandle, BufferID.PlayerCriticalCaveConvolutionImpulse);
+            ReleaseVaultBuffer(vault, ref _caveConvolutionDelayHandle, BufferID.PlayerCriticalCaveConvolutionDelay);
+            ReleaseVaultBuffer(vault, ref _interiorFdnDelayHandle, BufferID.PlayerCriticalInteriorFdnDelay);
+            ReleaseVaultBuffer(vault, ref _binauralDelayRingHandle, BufferID.PlayerCriticalBinauralDelayRing);
+            ReleaseVaultBuffer(vault, ref _binauralShadowHistoryHandle, BufferID.PlayerCriticalBinauralShadowHistory);
+            ReleaseVaultBuffer(vault, ref _lowPassInputHistory1Handle, BufferID.PlayerCriticalLowPassInputHistory1);
+            ReleaseVaultBuffer(vault, ref _lowPassInputHistory2Handle, BufferID.PlayerCriticalLowPassInputHistory2);
+            ReleaseVaultBuffer(vault, ref _lowPassOutputHistory1Handle, BufferID.PlayerCriticalLowPassOutputHistory1);
+            ReleaseVaultBuffer(vault, ref _lowPassOutputHistory2Handle, BufferID.PlayerCriticalLowPassOutputHistory2);
+            ReleaseVaultBuffer(vault, ref _metallicGrainBankHandle, BufferID.PlayerCriticalMetallicGrainBank);
+            ReleaseVaultBuffer(vault, ref _granularVoiceActiveHandle, BufferID.PlayerCriticalGranularVoiceActive);
+            ReleaseVaultBuffer(vault, ref _granularVoiceElapsedHandle, BufferID.PlayerCriticalGranularVoiceElapsed);
+            ReleaseVaultBuffer(vault, ref _granularVoiceLengthHandle, BufferID.PlayerCriticalGranularVoiceLength);
+            ReleaseVaultBuffer(vault, ref _granularVoiceStartHandle, BufferID.PlayerCriticalGranularVoiceStart);
+            ReleaseVaultBuffer(vault, ref _granularVoiceSeedHandle, BufferID.PlayerCriticalGranularVoiceSeed);
+            ReleaseVaultBuffer(vault, ref _granularVoiceCursorHandle, BufferID.PlayerCriticalGranularVoiceCursor);
+            ReleaseVaultBuffer(vault, ref _granularVoicePlaybackRateHandle, BufferID.PlayerCriticalGranularVoicePlaybackRate);
+            ReleaseVaultBuffer(vault, ref _granularVoiceGainHandle, BufferID.PlayerCriticalGranularVoiceGain);
+            ReleaseVaultBuffer(vault, ref _granularTelemetryRingHandle, BufferID.PlayerCriticalGranularTelemetryRing);
+            ReleaseVaultBuffer(vault, ref _prologueTransitionTelemetryRingHandle, BufferID.PlayerCriticalPrologueTransitionTelemetryRing);
+            ReleaseVaultBuffer(vault, ref _prologueTransitionRingHandle, PlayerCriticalPrologueTransitionRingBufferId);
+            ReleaseVaultBuffer(vault, ref _audioSynthesisTelemetryRingHandle, PlayerCriticalAudioSynthesisTelemetryRingBufferId);
         }
 
         private void RefreshNativeOutputBridge()
@@ -9180,6 +9310,7 @@ namespace Hecton8.Audio
             ring = default;
             IDataVault vault = _dataVault;
             return vault != null &&
+                   IsPlayerCriticalVaultHandle(in _granularTelemetryRingHandle, BufferID.PlayerCriticalGranularTelemetryRing) &&
                    vault.TryReadOnlyHandle(in _granularTelemetryRingHandle, out ring) &&
                    ring.IsCreated;
         }
@@ -9189,6 +9320,7 @@ namespace Hecton8.Audio
             ring = default;
             IDataVault vault = _dataVault;
             return vault != null &&
+                   IsPlayerCriticalVaultHandle(in _prologueTransitionTelemetryRingHandle, BufferID.PlayerCriticalPrologueTransitionTelemetryRing) &&
                    vault.TryReadOnlyHandle(in _prologueTransitionTelemetryRingHandle, out ring) &&
                    ring.IsCreated;
         }
@@ -9198,6 +9330,7 @@ namespace Hecton8.Audio
             ring = default;
             IDataVault vault = _dataVault;
             return vault != null &&
+                   IsPlayerCriticalVaultHandle(in _audioSynthesisTelemetryRingHandle, PlayerCriticalAudioSynthesisTelemetryRingBufferId) &&
                    vault.TryReadOnlyHandle(in _audioSynthesisTelemetryRingHandle, out ring) &&
                    ring.IsCreated;
         }
@@ -9820,7 +9953,7 @@ namespace Hecton8.Audio
 
         private void PopulateMetallicGrainBank()
         {
-            if (!TryAcquireAudioWriteBuffer(in _metallicGrainBankHandle, MetallicGrainBankCapacity, out NativeArray<float> metallicGrainBank, AudioSynthesisFailureVaultResolution))
+            if (!TryAcquireAudioWriteBuffer(in _metallicGrainBankHandle, BufferID.PlayerCriticalMetallicGrainBank, MetallicGrainBankCapacity, out NativeArray<float> metallicGrainBank, AudioSynthesisFailureVaultResolution))
                 return;
 
             try
@@ -11767,7 +11900,8 @@ namespace Hecton8.Audio
             NativeArray<AudioSynthesisTelemetryEntry> telemetryRing = default;
             try
             {
-                if (!vault.TryAcquireWriteLock(in _audioSynthesisTelemetryRingHandle, VaultOwner, out telemetryRing))
+                if (!IsPlayerCriticalVaultHandle(in _audioSynthesisTelemetryRingHandle, PlayerCriticalAudioSynthesisTelemetryRingBufferId) ||
+                    !vault.TryAcquireWriteLock(in _audioSynthesisTelemetryRingHandle, VaultOwner, out telemetryRing))
                 {
                     int failureCount = Interlocked.Increment(ref _audioSynthesisConsecutiveVaultFailures);
                     if (failureCount >= AudioSynthesisTelemetryFailureDumpThreshold)
@@ -11858,7 +11992,8 @@ namespace Hecton8.Audio
             NativeArray<GranularAudioTelemetryEntry> granularTelemetryRing = default;
             try
             {
-                if (!vault.TryAcquireWriteLock(in _granularTelemetryRingHandle, VaultOwner, out granularTelemetryRing) ||
+                if (!IsPlayerCriticalVaultHandle(in _granularTelemetryRingHandle, BufferID.PlayerCriticalGranularTelemetryRing) ||
+                    !vault.TryAcquireWriteLock(in _granularTelemetryRingHandle, VaultOwner, out granularTelemetryRing) ||
                     !granularTelemetryRing.IsCreated)
                 {
                     RecordAudioSynthesisTelemetry(
@@ -11946,7 +12081,8 @@ namespace Hecton8.Audio
             NativeArray<PrologueAudioTransitionTelemetryEntry> prologueTelemetryRing = default;
             try
             {
-                if (!vault.TryAcquireWriteLock(in _prologueTransitionTelemetryRingHandle, VaultOwner, out prologueTelemetryRing) ||
+                if (!IsPlayerCriticalVaultHandle(in _prologueTransitionTelemetryRingHandle, BufferID.PlayerCriticalPrologueTransitionTelemetryRing) ||
+                    !vault.TryAcquireWriteLock(in _prologueTransitionTelemetryRingHandle, VaultOwner, out prologueTelemetryRing) ||
                     !prologueTelemetryRing.IsCreated)
                 {
                     RecordAudioSynthesisTelemetry(
@@ -12972,7 +13108,7 @@ namespace Hecton8.Audio
 
         private void DrainPrologueTransitionQueue()
         {
-            if (!TryAcquireAudioWriteBuffer(in _prologueTransitionRingHandle, PrologueTransitionQueueCapacity, out NativeArray<AudioTransitionState> prologueTransitionRing, AudioSynthesisFailureVaultResolution))
+            if (!TryAcquireAudioWriteBuffer(in _prologueTransitionRingHandle, PlayerCriticalPrologueTransitionRingBufferId, PrologueTransitionQueueCapacity, out NativeArray<AudioTransitionState> prologueTransitionRing, AudioSynthesisFailureVaultResolution))
                 return;
 
             try
@@ -13002,7 +13138,7 @@ namespace Hecton8.Audio
 
         private void PrewarmPrologueTransitionQueue()
         {
-            if (!TryAcquireAudioWriteBuffer(in _prologueTransitionRingHandle, PrologueTransitionQueueCapacity, out NativeArray<AudioTransitionState> prologueTransitionRing, AudioSynthesisFailureVaultResolution))
+            if (!TryAcquireAudioWriteBuffer(in _prologueTransitionRingHandle, PlayerCriticalPrologueTransitionRingBufferId, PrologueTransitionQueueCapacity, out NativeArray<AudioTransitionState> prologueTransitionRing, AudioSynthesisFailureVaultResolution))
                 return;
 
             try

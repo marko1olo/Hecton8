@@ -26,7 +26,7 @@ namespace Hecton8.Core
         void RegisterTarget(IFoveatedSimulationTarget target);
         void UnregisterTarget(IFoveatedSimulationTarget target);
         void BeginDispatcherFrame(float frameDeltaTime);
-        bool TryResolveTick(IUpdatable item, float frameDeltaTime, out float effectiveDeltaTime);
+        bool TryAdvanceTick(IUpdatable item, float frameDeltaTime, out float effectiveDeltaTime);
         void NotifyTickCompleted(IUpdatable item);
         void ScheduleFrameJobs();
         void VisualSyncTick();
@@ -287,6 +287,7 @@ namespace Hecton8.Core
         private bool _nativeMemoryBudgetRegistered;
         private bool _registeredHotSwapListener;
         private bool _voxelTeardownBackpressureActive;
+        private bool _importanceJobBuffersLocked;
         private bool _forceImmediateImportanceRefresh;
         private bool _hasSignalCameraPose;
         private bool _blackBoxDumped;
@@ -510,7 +511,7 @@ namespace Hecton8.Core
             return _foveatedClockSeconds;
         }
 
-        public bool TryResolveTick(IUpdatable item, float frameDeltaTime, out float effectiveDeltaTime)
+        public bool TryAdvanceTick(IUpdatable item, float frameDeltaTime, out float effectiveDeltaTime)
         {
             if (!(item is IFoveatedSimulationTarget target))
             {
@@ -671,8 +672,15 @@ namespace Hecton8.Core
                 }
                 else
                 {
-                    ApplyImportanceResults();
-                    _importanceScheduled = false;
+                    try
+                    {
+                        ApplyImportanceResults();
+                    }
+                    finally
+                    {
+                        ReleaseImportanceJobBufferLocks();
+                        _importanceScheduled = false;
+                    }
                 }
             }
 
@@ -823,18 +831,19 @@ namespace Hecton8.Core
             if (_targetCount <= 0 || !TryResolveScoringCamera(out Vector3 cameraPosition, out Vector3 cameraForward, out Vector3 cameraUp))
                 return;
 
-            if (!TryResolveNativeBuffers(out FoveatedNativeBuffers buffers))
+            if (!TryWriteScorePositionsForImportanceJob())
                 return;
 
-            ResolveScalabilityThresholds(out _activeDistanceMeters, out _frozenDistanceMeters);
+            if (!TryLockImportanceJobBuffers())
+                return;
 
-            for (int i = 0; i < _targetCount; i++)
+            if (!TryResolveNativeBuffers(out FoveatedNativeBuffers buffers))
             {
-                Transform simulationTransform = _simulationTransforms[i];
-                buffers.ScorePositions[i] = simulationTransform != null
-                    ? (float3)simulationTransform.position
-                    : float3.zero;
+                ReleaseImportanceJobBufferLocks();
+                return;
             }
+
+            ResolveScalabilityThresholds(out _activeDistanceMeters, out _frozenDistanceMeters);
 
             ImportanceScoringJob scoringJob = new ImportanceScoringJob
             {
@@ -853,10 +862,20 @@ namespace Hecton8.Core
                 FrustumForwardDotThreshold = FrustumForwardDotThreshold,
             };
 
-            _importanceHandle = scoringJob.Schedule(_targetCount, ImportanceScoreBatchSize);
-            _importanceScheduled = true;
-            _importanceAccumulator = 0.0f;
-            _forceImmediateImportanceRefresh = false;
+            bool scheduled = false;
+            try
+            {
+                _importanceHandle = scoringJob.Schedule(_targetCount, ImportanceScoreBatchSize);
+                _importanceScheduled = true;
+                _importanceAccumulator = 0.0f;
+                _forceImmediateImportanceRefresh = false;
+                scheduled = true;
+            }
+            finally
+            {
+                if (!scheduled)
+                    ReleaseImportanceJobBufferLocks();
+            }
         }
 
         private void ApplyImportanceResults()
@@ -1100,28 +1119,42 @@ namespace Hecton8.Core
 
         private void WriteTelemetryFrame(Vector3 cameraPosition, Vector3 cameraForward)
         {
-            if (!TryResolveTelemetryRing(out NativeArray<FoveatedSimulationTelemetryEntry> telemetryRing))
-                return;
-
             if (!IsFinite(cameraPosition) || !IsFinite(cameraForward))
                 DumpTelemetryBlackBoxOnce();
 
-            int cursor = _telemetryCursor;
-            telemetryRing[cursor] = new FoveatedSimulationTelemetryEntry
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in _telemetryRingHandle, VaultOwnerSystemId, out NativeArray<FoveatedSimulationTelemetryEntry> telemetryRing))
             {
-                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
-                TargetCount = _targetCount,
-                FrozenEntityCount = _frozenEntityCount,
-                Tier0Count = _tier0Count,
-                Tier1Count = _tier1Count,
-                Tier2Count = _tier2Count,
-                CameraPosition = cameraPosition,
-                CameraForward = cameraForward,
-                Flags = _forceImmediateImportanceRefresh ? 1u : 0u,
-                StateHash = ComputeStateHash()
-            };
+                return;
+            }
 
-            _telemetryCursor = cursor + 1 >= TelemetryCapacity ? 0 : cursor + 1;
+            try
+            {
+                if (!telemetryRing.IsCreated || telemetryRing.Length < TelemetryCapacity)
+                    return;
+
+                int cursor = _telemetryCursor;
+                telemetryRing[cursor] = new FoveatedSimulationTelemetryEntry
+                {
+                    Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
+                    TargetCount = _targetCount,
+                    FrozenEntityCount = _frozenEntityCount,
+                    Tier0Count = _tier0Count,
+                    Tier1Count = _tier1Count,
+                    Tier2Count = _tier2Count,
+                    CameraPosition = cameraPosition,
+                    CameraForward = cameraForward,
+                    Flags = _forceImmediateImportanceRefresh ? 1u : 0u,
+                    StateHash = ComputeStateHash()
+                };
+
+                _telemetryCursor = cursor + 1 >= TelemetryCapacity ? 0 : cursor + 1;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _telemetryRingHandle, VaultOwnerSystemId);
+            }
         }
 
         private uint ComputeStateHash()
@@ -1346,6 +1379,110 @@ namespace Hecton8.Core
             return TryResolveVaultArray(vault, in _telemetryRingHandle, TelemetryCapacity, out telemetryRing);
         }
 
+        private bool TryWriteScorePositionsForImportanceJob()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in _jobScorePositionsHandle, VaultOwnerSystemId, out NativeArray<float3> scorePositions))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!scorePositions.IsCreated || scorePositions.Length < MaxTargets)
+                    return false;
+
+                for (int i = 0; i < _targetCount; i++)
+                {
+                    Transform simulationTransform = _simulationTransforms[i];
+                    scorePositions[i] = simulationTransform != null
+                        ? (float3)simulationTransform.position
+                        : float3.zero;
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _jobScorePositionsHandle, VaultOwnerSystemId);
+            }
+        }
+
+        private bool TryLockImportanceJobBuffers()
+        {
+            if (_importanceJobBuffersLocked)
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            int lockedCount = 0;
+            bool lockedAll = false;
+            try
+            {
+                if (!TryLockImportanceJobBuffer(vault, FoveatedScorePositionsBufferId, ref lockedCount) ||
+                    !TryLockImportanceJobBuffer(vault, FoveatedEntityAupsBufferId, ref lockedCount) ||
+                    !TryLockImportanceJobBuffer(vault, FoveatedImportanceScoresBufferId, ref lockedCount) ||
+                    !TryLockImportanceJobBuffer(vault, FoveatedTickRateCodesBufferId, ref lockedCount) ||
+                    !TryLockImportanceJobBuffer(vault, FoveatedInsideFrustumFlagsBufferId, ref lockedCount) ||
+                    !TryLockImportanceJobBuffer(vault, FoveatedEntitySimTiersBufferId, ref lockedCount) ||
+                    !TryLockImportanceJobBuffer(vault, FoveatedDistancesMetersBufferId, ref lockedCount))
+                {
+                    return false;
+                }
+
+                _importanceJobBuffersLocked = true;
+                lockedAll = true;
+                return true;
+            }
+            finally
+            {
+                if (!lockedAll)
+                    ReleaseImportanceJobBufferLocks(vault, lockedCount);
+            }
+        }
+
+        private static bool TryLockImportanceJobBuffer(IDataVault vault, BufferID bufferId, ref int lockedCount)
+        {
+            if (!vault.TryLockBuffer(bufferId, VaultOwnerSystemId))
+                return false;
+
+            lockedCount++;
+            return true;
+        }
+
+        private void ReleaseImportanceJobBufferLocks()
+        {
+            if (!_importanceJobBuffersLocked)
+                return;
+
+            ReleaseImportanceJobBufferLocks(_dataVault, 7);
+            _importanceJobBuffersLocked = false;
+        }
+
+        private static void ReleaseImportanceJobBufferLocks(IDataVault vault, int lockedCount)
+        {
+            if (vault == null || lockedCount <= 0)
+                return;
+
+            if (lockedCount >= 7)
+                vault.TryUnlockBuffer(FoveatedDistancesMetersBufferId, VaultOwnerSystemId);
+            if (lockedCount >= 6)
+                vault.TryUnlockBuffer(FoveatedEntitySimTiersBufferId, VaultOwnerSystemId);
+            if (lockedCount >= 5)
+                vault.TryUnlockBuffer(FoveatedInsideFrustumFlagsBufferId, VaultOwnerSystemId);
+            if (lockedCount >= 4)
+                vault.TryUnlockBuffer(FoveatedTickRateCodesBufferId, VaultOwnerSystemId);
+            if (lockedCount >= 3)
+                vault.TryUnlockBuffer(FoveatedImportanceScoresBufferId, VaultOwnerSystemId);
+            if (lockedCount >= 2)
+                vault.TryUnlockBuffer(FoveatedEntityAupsBufferId, VaultOwnerSystemId);
+            if (lockedCount >= 1)
+                vault.TryUnlockBuffer(FoveatedScorePositionsBufferId, VaultOwnerSystemId);
+        }
+
         private static bool OpenOrAcquireVaultArray<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
@@ -1387,6 +1524,7 @@ namespace Hecton8.Core
             MemoryBudgetTracker.Unregister(MemoryBudgetOwnerName);
             JobHandle disposeHandle = dependency;
             DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+            ReleaseImportanceJobBufferLocks();
 
             ReleaseNativeVaultHandles(_dataVault);
             ClearNativeBufferAliases();

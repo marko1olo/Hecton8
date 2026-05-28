@@ -587,8 +587,8 @@ namespace Hecton8.Core.Contracts.Signals
         public ulong Reserved4;
     }
 
-    /// <summary>Telemetry anomaly signal. Size: 32 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    /// <summary>Telemetry anomaly signal. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct TelemetryAnomalySignal : ISignal
     {
         [FieldOffset(0)] public uint SystemHash;
@@ -600,10 +600,14 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(18)] private ushort _padTail0;
         [FieldOffset(20)] private uint _padTail1;
         [FieldOffset(24)] private ulong _padTail2;
+        [FieldOffset(32)] private ulong _padTail3;
+        [FieldOffset(40)] private ulong _padTail4;
+        [FieldOffset(48)] private ulong _padTail5;
+        [FieldOffset(56)] private ulong _padTail6;
     }
 
-    /// <summary>Crash/postmortem telemetry signal. Size: 32 bytes.</summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    /// <summary>Crash/postmortem telemetry signal. Size: 64 bytes.</summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct CrashTelemetrySignal : ISignal
     {
         [FieldOffset(0)] public uint SystemHash;
@@ -616,6 +620,10 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(25)] public byte Flags;
         [FieldOffset(26)] private ushort _padTail0;
         [FieldOffset(28)] private uint _padTail1;
+        [FieldOffset(32)] private ulong _padTail2;
+        [FieldOffset(40)] private ulong _padTail3;
+        [FieldOffset(48)] private ulong _padTail4;
+        [FieldOffset(56)] private ulong _padTail5;
     }
 
     /// <summary>Habitat construction graph mutation signal. Size: 64 bytes.</summary>

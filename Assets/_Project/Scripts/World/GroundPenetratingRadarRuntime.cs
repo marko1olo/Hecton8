@@ -915,7 +915,7 @@ namespace Hecton8.World
             _highestSignalStrength = highestSignalStrength;
             uint frameId = AdvanceRadarFrameId();
 
-            if (_activeGprPings > 0 && TryResolveGprPingWriteBuffer(out GraphicsBuffer gprPingWriteBuffer))
+            if (_activeGprPings > 0 && TryAcquireGprPingWriteBuffer(out GraphicsBuffer gprPingWriteBuffer))
             {
                 GraphicsBufferUploadUtility.UploadNativeArray(gprPingWriteBuffer, pending.PingGpu, _activeGprPings);
                 _activeGprPingBuffer = gprPingWriteBuffer;
@@ -1552,7 +1552,7 @@ namespace Hecton8.World
             _activeGprArgsBuffer = argsWriteBuffer;
         }
 
-        private bool TryResolveGprPingWriteBuffer(out GraphicsBuffer buffer)
+        private bool TryAcquireGprPingWriteBuffer(out GraphicsBuffer buffer)
         {
             buffer = _gprUploadBufferIndex == 0 ? _gprPingBufferA : _gprPingBufferB;
             if (buffer == null)

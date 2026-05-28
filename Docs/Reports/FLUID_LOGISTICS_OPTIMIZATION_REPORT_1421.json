@@ -1,0 +1,461 @@
+{
+  "agent_id": 1421,
+  "role": "FLUID_PIPE_AND_SUMP_PUMP_LOGISTICS_OPTIMIZER",
+  "status": "PENDING_VERIFICATION",
+  "date": "2026-05-28",
+  "modified_csharp_files": [
+    {
+      "path": "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
+      "sha256": "4B01DD13E3C3D5FF36ED44D9BEBBA278C8BA8BC2764C9A30400F5E9E20DE42B5",
+      "notes": "Quality-weight cadence/pass fix, 1421 blackbox dump route, and strict schedule-failure finally cleanup with pending JobHandle completion before DataVault unlock."
+    },
+    {
+      "path": "Assets/_Project/Scripts/Construction/SumpPumpPipeGridJobs.cs",
+      "sha256": "123EFB79DD5E12E034CCDA7974D1084EB3D62CE2793B20587C7681A688C0C70C",
+      "notes": "Inspected hot CSR jobs; no code change in this pass."
+    },
+    {
+      "path": "Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs",
+      "sha256": "95613F0560F20276E1343E8E5CE65314C225D1F8239D41112441A89E6C1434F3",
+      "notes": "Added Vault-backed pipe CSR buffers, topology dirty rebuild scheduling, continuous quality cadence, and finally-wrapped completion unlock."
+    },
+    {
+      "path": "Assets/_Project/Scripts/Construction/FluidPipePressureJobs.cs",
+      "sha256": "A5D96E5E5C4E407B5A3E89472E6B4FD7223EEB0612A08594B69E37F36C421DEA",
+      "notes": "Added BuildFluidPipeCsrJob and changed pressure transfer traversal from edge-list scan to CSR offset spans."
+    },
+    {
+      "path": "Assets/_Project/Scripts/Construction/FluidPipeGraphTypes.cs",
+      "sha256": "C206C48C02AFF2404A1887149C2CEDD84F8BF4A7F47E7E44118F0CADCDBBEA3F",
+      "notes": "Added continuous ResolveCadenceSeconds(float globalQualityWeight); retained legacy LOD overload as compatibility shim."
+    },
+    {
+      "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "sha256": "1497D927CDB85AB48EB378EBE1A057C72A7B032E6DFF5963996AE849EC0C377B",
+      "notes": "Changed flood-incursion node budget, analytical stress detail, and module stress shader displacement from fixed tier routes to continuous HomeostasisBrain.GlobalQualityWeight. Unrelated local handle-gate edits in this file predated the 1421 pass and are not claimed here."
+    },
+    {
+      "path": "Assets/_Project/Scripts/Construction/HabitatStressJobs.cs",
+      "sha256": "952779B7A54A789ED839943B64572E9EA833043685906ACE37E130D8AB57C95B",
+      "notes": "Inspected fixed-queue CSR flood jobs; no code change in this pass."
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/FluidLogisticsCsr1421EditTests.cs",
+      "sha256": "CE6DB191DACF3316546B9854BCCD9E88D02806D4A36FB03A48AD78A77F0FF48D",
+      "notes": "Editor-only sump 10000/30000 CSR stress harness plus fluid-pipe CSR/cadence guards."
+    }
+  ],
+  "dynamic_collections_deleted": {
+    "count": 0,
+    "reason": "Assigned sump solver and adjacent fluid pipe graph already had no NativeList, NativeQueue, Queue<T>, Dictionary, HashSet, LINQ, string formatting, interpolation, or foreach in the inspected hot files. The remaining issue was edge-list traversal locality in FluidPipePressureSolveJob."
+  },
+  "fluid_pipe_csr_materialization": {
+    "buffer_ids": {
+      "PipeConnectionSourcesBufferId": 72098,
+      "PipeConnectionDestinationsBufferId": 72099,
+      "PipeConnectionOffsetsBufferId": 72101,
+      "PipeConnectionCsrDestinationsBufferId": 72102,
+      "PipeConnectionWriteCursorBufferId": 72103
+    },
+    "vault_owner": "SystemID.Construction",
+    "topology_rebuild_job": "BuildFluidPipeCsrJob",
+    "dirty_sources": [
+      "EnsureNativeState",
+      "TryRegisterPipeNode",
+      "TryConnectPipeNodes",
+      "DisposeNativeState"
+    ],
+    "index_math": "For node n, outgoing directed connections occupy ConnectionCsrDestinations[ConnectionOffsets[n]..ConnectionOffsets[n+1]). The first pass counts degrees in ConnectionWriteCursor[n], prefix-sums offsets, then reuses ConnectionWriteCursor[n] as the per-node write head. The solve loop reads contiguous spans per node and skips neighbor <= nodeIndex to preserve the previous undirected transfer semantics over symmetric connections."
+  },
+  "sump_csr_materialization": {
+    "node_arrays": [
+      "PumpNodes",
+      "NodeAup",
+      "PumpRoomIndices"
+    ],
+    "edge_arrays": [
+      "PipeEdges",
+      "CsrDestinations",
+      "CsrConductance",
+      "CsrFlow",
+      "CsrFlatEdgeIndex"
+    ],
+    "offset_arrays": [
+      "CsrOffsets",
+      "CsrWriteCursor"
+    ],
+    "vault_owner": "SumpPumpDrainageBufferIds 95820..95845",
+    "topology_rebuild_job": "BuildCsrPipeGraphJob"
+  },
+  "bfs_and_relaxation_proof": {
+    "sump_solver_type": "CSR pressure relaxation, not object BFS.",
+    "base_flood_bfs": "HabitatDirtyRegionRebuildJob uses EdgeOffsets, EdgeDestinations, TraversalQueue, VisitStamp, and IslandIds. HabitatGraphManager now feeds graph flood work through ResolveGraphFloodNodeBudget(HomeostasisBrain.GlobalQualityWeight), scaling fixed-queue work from 64 to 512 nodes per tick without changing graph authority.",
+    "route_bfs": "LogisticsPipeRoutingKernel uses preallocated Queue and Visited scratch arrays from DataVault.",
+    "dynamic_queue_allocation": "absent in inspected hot graph files"
+  },
+  "quality_scaling": {
+    "sump_cadence_source": "ResolveSolveCadenceSeconds(quality)",
+    "sump_pressure_pass_source": "ResolveDrainageDeltaPassCount(quality)",
+    "sump_pass_range": {
+      "minimum_survival": 1,
+      "middle": 2,
+      "high": 3,
+      "visual_overkill": 4
+    },
+    "fluid_pipe_cadence_source": "FluidPipeGraphConstants.ResolveCadenceSeconds(HomeostasisBrain.GlobalQualityWeight)",
+    "fluid_pipe_cadence_seconds": {
+      "minimum_survival": 1.0,
+      "middle_curve": 0.525,
+      "ultra": 0.05
+    },
+    "habitat_flood_node_budget_source": "ResolveGraphFloodNodeBudget(HomeostasisBrain.GlobalQualityWeight)",
+    "habitat_flood_node_budget_range": {
+      "minimum_survival": 64,
+      "middle_curve": 288,
+      "visual_overkill": 512
+    },
+    "habitat_analytical_stress_detail_source": "ResolveAnalyticalDetailWeight(HomeostasisBrain.GlobalQualityWeight)",
+    "habitat_module_stress_displacement_source": "ResolveModuleStressDisplacementMaxMeters(HomeostasisBrain.GlobalQualityWeight)",
+    "binary_switches_added": 0
+  },
+  "arm64_layout_proof": {
+    "DrainageNodeDTO": {
+      "size_bytes": 32,
+      "validator": "SumpPumpPipeGridValidation.ValidateDrainageNodeLayout"
+    },
+    "PipeEdgeDTO": {
+      "size_bytes": 32,
+      "validator": "SumpPumpPipeGridValidation.ValidatePipeEdgeLayout"
+    },
+    "DrainageTuningDTO": {
+      "size_bytes": 80,
+      "validator": "SumpPumpPipeGridValidation.ValidateDrainageTuningLayout"
+    },
+    "DrainageTelemetryEntry": {
+      "size_bytes": 64,
+      "validator": "SumpPumpPipeGridValidation.ValidateDrainageTelemetryLayout"
+    },
+    "DrainageDumpHeader": {
+      "size_bytes": 64,
+      "validator": "SumpPumpPipeGridValidation.ValidateDrainageDumpHeaderLayout"
+    },
+    "DrainageRoomDrainLock64": {
+      "size_bytes": 64,
+      "validator": "SumpPumpPipeGridValidation.ValidateRoomDrainLockLayout"
+    },
+    "FluidPipeRuptureRecord": {
+      "size_bytes": 48,
+      "validator": "FluidPipeGraphLayoutSentinel.ValidateRuntimeDtos"
+    },
+    "FluidPipeTelemetryEntry": {
+      "size_bytes": 64,
+      "validator": "FluidPipeGraphLayoutSentinel.ValidateRuntimeDtos"
+    }
+  },
+  "try_finally_locking_proof": {
+    "fluid_pipe_job_lock_entry": "TryAcquireSolveWriteBuffers acquires all solve and CSR buffers with exact BufferID/SystemID/Generation gates.",
+    "fluid_pipe_failure_release": "TryAcquireSolveWriteBuffers finally releases partial lock masks on failure; ScheduleSolve finally releases all locks if solve scheduling fails.",
+    "fluid_pipe_completion_release": "CompleteSolve captures _solveLockMask, waits for DispatcherJobSwap.TryComplete, then releases the captured mask inside a finally block.",
+    "sump_job_lock_entry": "TryLockJobBuffers before ScheduleDrainageSolve buffer borrowing.",
+    "sump_failure_release": "ScheduleDrainageSolve wraps optional vault borrows and the full schedule chain in try/finally. If scheduling does not reach the committed state, it completes the latest pending JobHandle and then calls UnlockJobBuffers inside finally.",
+    "sump_completion_release": "LateFrameTick wraps StampSolverWallTime with finally UnlockJobBuffers.",
+    "habitat_flood_job_lock_entry": "RunFloodPropagationJob acquires summary, room, and graph buffers before HabitatFloodPropagationJob scheduling.",
+    "habitat_flood_failure_release": "RunFloodPropagationJob releases summary, room, and graph write locks in failure branches and schedule-failure cleanup.",
+    "habitat_flood_completion_release": "TryFinalizeFloodPropagationJobNoWait and teardown release held flood propagation locks after job completion."
+  },
+  "blackbox": {
+    "telemetry_capacity": 300,
+    "entry_size_bytes": 64,
+    "sump_dump_path": "Docs/AgentLogs/Dump_1421_FluidLogistics.bin",
+    "fluid_pipe_dump_path": "Docs/AgentLogs/Dump_FluidPipeGraphRuntime.bin",
+    "sump_trigger_flags": [
+      "NonFinite",
+      "SolverOverBudget"
+    ],
+    "sump_dump_header_flag_added": "DumpedBlackBox"
+  },
+  "stress_harness": {
+    "path": "Assets/_Project/Tests/Editor/FluidLogisticsCsr1421EditTests.cs",
+    "sump_nodes": 10000,
+    "sump_edges": 30000,
+    "sump_jobs": [
+      "BuildCsrPipeGraphJob",
+      "EvaluatePipePressureDeltaPassJob"
+    ],
+    "fluid_pipe_csr_guard": "BuildFluidPipeCsrJob_CompactsConnectionsIntoContiguousOffsets",
+    "fluid_pipe_cadence_guard": "FluidPipeCadence_ConsumesContinuousQualityWeight",
+    "measured_execution_time_microseconds": null,
+    "measurement_status": "PENDING_VERIFICATION; Unity Test Runner was not invoked in this session."
+  },
+  "apex_static_zero_gc_scan": [
+    {
+      "path": "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
+      "NativeList": 0,
+      "NativeQueue": 0,
+      "Queue": 0,
+      "Dictionary": 0,
+      "HashSet": 0,
+      "Linq": 0,
+      "Foreach": 0,
+      "StringFormat": 0,
+      "ToString": 0,
+      "Interpolation": 0
+    },
+    {
+      "path": "Assets/_Project/Scripts/Construction/SumpPumpPipeGridJobs.cs",
+      "NativeList": 0,
+      "NativeQueue": 0,
+      "Queue": 0,
+      "Dictionary": 0,
+      "HashSet": 0,
+      "Linq": 0,
+      "Foreach": 0,
+      "StringFormat": 0,
+      "ToString": 0,
+      "Interpolation": 0
+    },
+    {
+      "path": "Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs",
+      "NativeList": 0,
+      "NativeQueue": 0,
+      "Queue": 0,
+      "Dictionary": 0,
+      "HashSet": 0,
+      "Linq": 0,
+      "Foreach": 0,
+      "StringFormat": 0,
+      "ToString": 0,
+      "Interpolation": 0
+    },
+    {
+      "path": "Assets/_Project/Scripts/Construction/FluidPipePressureJobs.cs",
+      "NativeList": 0,
+      "NativeQueue": 0,
+      "Queue": 0,
+      "Dictionary": 0,
+      "HashSet": 0,
+      "Linq": 0,
+      "Foreach": 0,
+      "StringFormat": 0,
+      "ToString": 0,
+      "Interpolation": 0
+    },
+    {
+      "path": "Assets/_Project/Scripts/Construction/FluidPipeGraphTypes.cs",
+      "NativeList": 0,
+      "NativeQueue": 0,
+      "Queue": 0,
+      "Dictionary": 0,
+      "HashSet": 0,
+      "Linq": 0,
+      "Foreach": 0,
+      "StringFormat": 0,
+      "ToString": 0,
+      "Interpolation": 0
+    },
+    {
+      "path": "Assets/_Project/Scripts/Construction/HabitatStressJobs.cs",
+      "NativeList": 0,
+      "NativeQueue": 0,
+      "Queue": 0,
+      "Dictionary": 0,
+      "HashSet": 0,
+      "Linq": 0,
+      "Foreach": 0,
+      "StringFormat": 0,
+      "ToString": 0,
+      "Interpolation": 0
+    }
+  ],
+  "apex_static_zero_gc_hot_ranges": [
+    {
+      "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "range": "ApplyHydrodynamicStress",
+      "start_line": 748,
+      "end_line": 774,
+      "New": 0,
+      "NativeList": 0,
+      "NativeQueue": 0,
+      "Queue": 0,
+      "Dictionary": 0,
+      "HashSet": 0,
+      "Linq": 0,
+      "Foreach": 0,
+      "StringFormat": 0,
+      "ToString": 0,
+      "Interpolation": 0
+    },
+    {
+      "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "range": "ApplyGraphFluidIncursion",
+      "start_line": 2213,
+      "end_line": 2268,
+      "New": 0,
+      "NativeList": 0,
+      "NativeQueue": 0,
+      "Queue": 0,
+      "Dictionary": 0,
+      "HashSet": 0,
+      "Linq": 0,
+      "Foreach": 0,
+      "StringFormat": 0,
+      "ToString": 0,
+      "Interpolation": 0
+    },
+    {
+      "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "range": "FloodQualityHelpers",
+      "start_line": 3008,
+      "end_line": 3056,
+      "New": 0,
+      "NativeList": 0,
+      "NativeQueue": 0,
+      "Queue": 0,
+      "Dictionary": 0,
+      "HashSet": 0,
+      "Linq": 0,
+      "Foreach": 0,
+      "StringFormat": 0,
+      "ToString": 0,
+      "Interpolation": 0
+    },
+    {
+      "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "range": "ContinuousAnalyticalStress",
+      "start_line": 883,
+      "end_line": 985,
+      "New": 0,
+      "ReferenceNew": 0,
+      "NativeList": 0,
+      "NativeQueue": 0,
+      "Queue": 0,
+      "Dictionary": 0,
+      "HashSet": 0,
+      "Linq": 0,
+      "Foreach": 0,
+      "StringFormat": 0,
+      "ToString": 0,
+      "Interpolation": 0
+    },
+    {
+      "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "range": "ContinuousModuleStressMatrix",
+      "start_line": 1182,
+      "end_line": 1318,
+      "New": 1,
+      "ReferenceNew": 0,
+      "ValueTypeNew": 1,
+      "NativeList": 0,
+      "NativeQueue": 0,
+      "Queue": 0,
+      "Dictionary": 0,
+      "HashSet": 0,
+      "Linq": 0,
+      "Foreach": 0,
+      "StringFormat": 0,
+      "ToString": 0,
+      "Interpolation": 0
+    },
+    {
+      "path": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "range": "ContinuousStressVisualSync",
+      "start_line": 1818,
+      "end_line": 1988,
+      "New": 2,
+      "ReferenceNew": 0,
+      "ValueTypeNew": 2,
+      "NativeList": 0,
+      "NativeQueue": 0,
+      "Queue": 0,
+      "Dictionary": 0,
+      "HashSet": 0,
+      "Linq": 0,
+      "Foreach": 0,
+      "StringFormat": 0,
+      "ToString": 0,
+      "Interpolation": 0
+    },
+    {
+      "path": "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
+      "range": "ScheduleDrainageSolve",
+      "start_line": 574,
+      "end_line": 804,
+      "New": 7,
+      "ReferenceNew": 0,
+      "ValueTypeJobNew": 7,
+      "NativeList": 0,
+      "NativeQueue": 0,
+      "Queue": 0,
+      "Dictionary": 0,
+      "HashSet": 0,
+      "Linq": 0,
+      "Foreach": 0,
+      "StringFormat": 0,
+      "ToString": 0,
+      "Interpolation": 0
+    },
+    {
+      "path": "Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs",
+      "range": "CompleteSolve",
+      "start_line": 686,
+      "end_line": 710,
+      "New": 0,
+      "ReferenceNew": 0,
+      "NativeList": 0,
+      "NativeQueue": 0,
+      "Queue": 0,
+      "Dictionary": 0,
+      "HashSet": 0,
+      "Linq": 0,
+      "Foreach": 0,
+      "StringFormat": 0,
+      "ToString": 0,
+      "Interpolation": 0
+    }
+  ],
+  "new_keyword_classification": {
+    "hot_reference_new_in_modified_solve_paths": 0,
+    "value_type_new_in_jobs": [
+      "job structs",
+      "float3",
+      "DTO records"
+    ],
+    "cold_reference_new": [
+      "GraphicsBuffer in sump GPU setup",
+      "byte[]/AutoResetEvent/Thread/FileStream in one-shot dump paths",
+      "FileStream/BinaryWriter in fluid pipe blackbox dump"
+    ]
+  },
+  "compilation_gate": {
+    "dotnet_build_launched": false,
+    "cpu_load_percent_samples": [
+      93,
+      85,
+      87,
+      100,
+      69,
+      100,
+      88,
+      100
+    ],
+    "compiler_processes": [
+      "samples 1-3: none observed",
+      "sample 4: dotnet PID 57416 observed; csc/VBCSCompiler not observed",
+      "sample 5: dotnet PID 54548 observed; csc/VBCSCompiler not observed",
+      "sample 6: dotnet PID 30776 observed; csc/VBCSCompiler not observed",
+      "sample 7: dotnet PID 45520 observed; csc/VBCSCompiler not observed",
+      "sample 8: no compiler or dotnet process observed"
+    ],
+    "decision": "BLOCKED_BY_CONTENTION; CPU exceeded 50 percent on all eight samples, and samples 4-7 also had an existing dotnet process, so no build was launched."
+  },
+  "static_verification": {
+    "git_diff_check": "exit 0; CRLF warnings only",
+    "buffer_id_collision_scan": "72101..72103 are unique in Assets/_Project/Scripts/Construction; next construction block starts at Habitat 72120.",
+    "legacy_fixed_pass_constant": "absent from sump runtime",
+    "fixed_ultra_flood_tier": "removed from ApplyHydrodynamicStress flood-incursion budget route.",
+    "habitat_tier_route_scan": "No HectonQualityTier, ResolveLegacyHabitatQualityTier, IsAnalyticalHighScalabilityTier, or IsModuleStressLowTier references remain in HabitatGraphManager.cs; one external BaseModuleCompromisedSignal.LowTierVisualOnlyFlag contract name remains.",
+    "legacy_dump_path": "absent from sump runtime",
+    "archaeology_report_json": "valid JSON"
+  },
+  "first_20_minutes_route_moment": "Flooded base compartment survivability: pump logistics, pipe pressure transfer, and graph flood node budgets stay cache-local or fixed-queue; weak devices shed cadence/pass count/node budget instead of stalling the main route."
+}

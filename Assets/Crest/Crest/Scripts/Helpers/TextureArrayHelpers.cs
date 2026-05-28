@@ -17,6 +17,9 @@ namespace Crest
         private static int krnl_ClearToBlack = -1;
         private static ComputeShader s_clearToBlackShader = null;
         private static int sp_LD_TexArray_Target = Shader.PropertyToID("_LD_TexArray_Target");
+        private static int sp_CrestClearWidth = Shader.PropertyToID("_CrestClearWidth");
+        private static int sp_CrestClearHeight = Shader.PropertyToID("_CrestClearHeight");
+        private static int sp_CrestClearDepth = Shader.PropertyToID("_CrestClearDepth");
 
         static TextureArrayHelpers()
         {
@@ -43,22 +46,41 @@ namespace Crest
         // https://github.com/wave-harmonic/crest/commit/9160898972051a276f12eff0bd9b832d2992ae62
         public static void ClearToBlack(RenderTexture dst)
         {
+            if (dst == null)
+            {
+                return;
+            }
+
             if (!s_UseLegacyClear)
             {
                 Helpers.ClearRenderTexture(dst, Color.black, depth: false);
                 return;
             }
 
-            if (s_clearToBlackShader == null)
+            int width = dst.width;
+            int height = dst.height;
+            int depth = dst.volumeDepth;
+            if (s_clearToBlackShader == null || krnl_ClearToBlack < 0 || width <= 0 || height <= 0 || depth <= 0)
             {
                 return;
             }
+
+            int groupsX = (width + LodDataMgr.THREAD_GROUP_SIZE_X - 1) / LodDataMgr.THREAD_GROUP_SIZE_X;
+            int groupsY = (height + LodDataMgr.THREAD_GROUP_SIZE_Y - 1) / LodDataMgr.THREAD_GROUP_SIZE_Y;
+            if (groupsX <= 0 || groupsY <= 0)
+            {
+                return;
+            }
+
+            s_clearToBlackShader.SetInt(sp_CrestClearWidth, width);
+            s_clearToBlackShader.SetInt(sp_CrestClearHeight, height);
+            s_clearToBlackShader.SetInt(sp_CrestClearDepth, depth);
             s_clearToBlackShader.SetTexture(krnl_ClearToBlack, sp_LD_TexArray_Target, dst);
             s_clearToBlackShader.Dispatch(
                 krnl_ClearToBlack,
-                OceanRenderer.Instance.LodDataResolution / LodDataMgr.THREAD_GROUP_SIZE_X,
-                OceanRenderer.Instance.LodDataResolution / LodDataMgr.THREAD_GROUP_SIZE_Y,
-                dst.volumeDepth
+                groupsX,
+                groupsY,
+                depth
             );
         }
 

@@ -95,7 +95,6 @@ namespace Hecton8.Core.Hardware
         private bool _throttlingPolicyApplied;
         private bool _criticalPolicyApplied;
         private bool _hapticMuteApplied;
-        private bool _transientLowTierOverrideApplied;
         private bool _criticalDumped;
         private IFoveatedSimulationDirector _foveatedDirector;
         private SystemDispatcher _dispatcher;
@@ -292,7 +291,7 @@ namespace Hecton8.Core.Hardware
             _sequence++;
             PlatformBatteryWatchdog.SampleAndApply(this);
 
-            if (OpenOrAcquireThermalSeverityWriteView(out NativeArray<byte> thermalSeverity))
+            if (TryAcquireThermalSeverityWriteView(out NativeArray<byte> thermalSeverity))
             {
                 try
                 {
@@ -575,15 +574,6 @@ namespace Hecton8.Core.Hardware
                 SignalBus<HUDNotificationSignal>.TryPushTracked(in warning, ref s_x001HardwareThermalServiceSignalPushDropCount);
             }
 
-            bool transientLowTierOverride = throttling || hapticMute;
-            if (!_policyInitialized || transientLowTierOverride != _transientLowTierOverrideApplied)
-            {
-                GlobalRegistry.SetTransientLowScalabilityOverride(
-                    GlobalRegistry.TransientScalabilityThermalPressureMask,
-                    transientLowTierOverride);
-                _transientLowTierOverrideApplied = transientLowTierOverride;
-            }
-
             _policyInitialized = true;
         }
 
@@ -605,18 +595,10 @@ namespace Hecton8.Core.Hardware
             if (haptics != null)
                 haptics.SetPowerSaveMute(false);
 
-            if (_transientLowTierOverrideApplied)
-            {
-                GlobalRegistry.SetTransientLowScalabilityOverride(
-                    GlobalRegistry.TransientScalabilityThermalPressureMask,
-                    false);
-            }
-
             _policyInitialized = false;
             _throttlingPolicyApplied = false;
             _criticalPolicyApplied = false;
             _hapticMuteApplied = false;
-            _transientLowTierOverrideApplied = false;
         }
 
         private void PublishSignalsCold(uint frame, byte previousSeverity)
@@ -682,7 +664,7 @@ namespace Hecton8.Core.Hardware
 
         private void WriteBlackBox(uint frame)
         {
-            if (!OpenOrAcquireThermalBlackBoxWriteView(out NativeArray<HardwareThermalTelemetryEntry> blackBox))
+            if (!TryAcquireThermalBlackBoxWriteView(out NativeArray<HardwareThermalTelemetryEntry> blackBox))
                 return;
 
             try
@@ -770,10 +752,10 @@ namespace Hecton8.Core.Hardware
 
         private void EnsureNativeState()
         {
-            if (OpenOrAcquireThermalSeverityWriteView(out _))
+            if (OpenOrAcquireThermalSeverityWriteViewForOwnerRoute(out _))
                 ReleaseThermalSeverityWriteView();
 
-            if (OpenOrAcquireThermalBlackBoxWriteView(out _))
+            if (OpenOrAcquireThermalBlackBoxWriteViewForOwnerRoute(out _))
                 ReleaseThermalBlackBoxWriteView();
         }
 
@@ -805,22 +787,33 @@ namespace Hecton8.Core.Hardware
             RebindCachedService(serviceSlot, currentService);
         }
 
-        private bool OpenOrAcquireThermalSeverityWriteView(out NativeArray<byte> severity)
+        private bool TryAcquireThermalSeverityWriteView(out NativeArray<byte> severity)
+        {
+            severity = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || _thermalSeverityHandle.BufferID == 0u)
+                return false;
+
+            if (!vault.TryAcquireWriteLock(in _thermalSeverityHandle, SystemID.HardwareHomeostasis, out severity))
+                return false;
+
+            if (severity.IsCreated && severity.Length >= 1)
+                return true;
+
+            vault.ReleaseWriteLock(in _thermalSeverityHandle, SystemID.HardwareHomeostasis);
+            severity = default;
+            return false;
+        }
+
+        private bool OpenOrAcquireThermalSeverityWriteViewForOwnerRoute(out NativeArray<byte> severity)
         {
             severity = default;
             IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            if (_thermalSeverityHandle.BufferID != 0u &&
-                vault.TryAcquireWriteLock(in _thermalSeverityHandle, SystemID.HardwareHomeostasis, out severity))
-            {
-                if (severity.IsCreated && severity.Length >= 1)
-                    return true;
-
-                vault.ReleaseWriteLock(in _thermalSeverityHandle, SystemID.HardwareHomeostasis);
-                severity = default;
-            }
+            if (TryAcquireThermalSeverityWriteView(out severity))
+                return true;
 
             if (vault.IsAllocationLocked)
             {
@@ -880,22 +873,33 @@ namespace Hecton8.Core.Hardware
                    blackBox.Length >= BlackBoxFrameCount;
         }
 
-        private bool OpenOrAcquireThermalBlackBoxWriteView(out NativeArray<HardwareThermalTelemetryEntry> blackBox)
+        private bool TryAcquireThermalBlackBoxWriteView(out NativeArray<HardwareThermalTelemetryEntry> blackBox)
+        {
+            blackBox = default;
+            IDataVault vault = _dataVault;
+            if (vault == null || _blackBoxHandle.BufferID == 0u)
+                return false;
+
+            if (!vault.TryAcquireWriteLock(in _blackBoxHandle, SystemID.HardwareHomeostasis, out blackBox))
+                return false;
+
+            if (blackBox.IsCreated && blackBox.Length >= BlackBoxFrameCount)
+                return true;
+
+            vault.ReleaseWriteLock(in _blackBoxHandle, SystemID.HardwareHomeostasis);
+            blackBox = default;
+            return false;
+        }
+
+        private bool OpenOrAcquireThermalBlackBoxWriteViewForOwnerRoute(out NativeArray<HardwareThermalTelemetryEntry> blackBox)
         {
             blackBox = default;
             IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            if (_blackBoxHandle.BufferID != 0u &&
-                vault.TryAcquireWriteLock(in _blackBoxHandle, SystemID.HardwareHomeostasis, out blackBox))
-            {
-                if (blackBox.IsCreated && blackBox.Length >= BlackBoxFrameCount)
-                    return true;
-
-                vault.ReleaseWriteLock(in _blackBoxHandle, SystemID.HardwareHomeostasis);
-                blackBox = default;
-            }
+            if (TryAcquireThermalBlackBoxWriteView(out blackBox))
+                return true;
 
             if (vault.IsAllocationLocked)
             {

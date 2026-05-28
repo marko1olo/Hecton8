@@ -23,7 +23,6 @@ Shader "Hidden/Hecton8/RetinaDistortion"
             #pragma fragment Frag
             #pragma multi_compile_instancing
             #pragma instancing_options assumeuniformscaling
-            #pragma multi_compile _ _QUALITY_MX350
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
 
             #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
@@ -42,6 +41,7 @@ Shader "Hidden/Hecton8/RetinaDistortion"
             #define _HectonRetinaChromaticOffset _HectonRetinaParams1.x
             #define _HectonRetinaDistortionOffset _HectonRetinaParams1.y
             #define _HectonRetinaVignetteStrength _HectonRetinaParams1.z
+            #define _HectonRetinaQualityWeight _HectonRetinaParams1.w
 
             TEXTURE2D_X(_BlitTexture);
             float4 _BlitTexture_TexelSize;
@@ -106,6 +106,12 @@ Shader "Hidden/Hecton8/RetinaDistortion"
                 return lobe * lobe * (3.0 - 2.0 * lobe);
             }
 
+            float HectonRetinaSmoothRange01(float low, float high, float value)
+            {
+                float t = saturate((value - low) / max(high - low, 0.0001));
+                return t * t * (3.0 - 2.0 * t);
+            }
+
             float HeartbeatPulse(float bpm)
             {
                 float phase01 = frac(_Time.y * max(1.0, bpm) * (1.0 / 60.0));
@@ -136,11 +142,9 @@ Shader "Hidden/Hecton8/RetinaDistortion"
                 float narcosisDrive = narcosis01 * edge01 * (0.64 + abs(noise) * 0.36);
                 float distortion = _HectonRetinaDistortionOffset * edge01 * max(pulseDrive, narcosisDrive * 0.78) * (1.0 + noise * 0.34);
                 float chroma = _HectonRetinaChromaticOffset * edge01 * max(pulseDrive, narcosisDrive);
-            #if defined(_QUALITY_MX350)
-                distortion = 0.0;
-            #else
-                chroma *= 1.0 - step(0.000001, abs(distortion));
-            #endif
+                float retinaQuality = HectonRetinaSmoothRange01(0.0, 1.0, _HectonRetinaQualityWeight);
+                distortion *= retinaQuality;
+                chroma *= HectonRetinaSmoothRange01(0.45, 0.95, retinaQuality);
                 float2 refractedUV = saturate(input.screenUV + radialDir * distortion);
                 float2 chromaOffset = radialDir * chroma;
 

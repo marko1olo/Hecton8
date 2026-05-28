@@ -318,7 +318,7 @@ namespace Hecton8.Construction
         /// </summary>
         public static void FlushPending()
         {
-            if (!IsHandleCreated(in _pendingEventsHandle))
+            if (!IsSnapshotVaultHandle(in _pendingEventsHandle))
                 return;
 
             if (_listenerCount <= 0)
@@ -472,7 +472,7 @@ namespace Hecton8.Construction
 
             IDataVault vault = _vault;
             if (vault == null ||
-                !IsHandleCreated(in _pendingEventsHandle) ||
+                !IsSnapshotVaultHandle(in _pendingEventsHandle) ||
                 !vault.TryAcquireWriteLock(in _pendingEventsHandle, SystemID.Construction, out NativeArray<HectonDroneFleetSnapshotPayload> buffer))
             {
                 return false;
@@ -492,14 +492,14 @@ namespace Hecton8.Construction
             }
             finally
             {
-                vault.ReleaseWriteLock(in _pendingEventsHandle, SystemID.Construction);
+                ReleaseSnapshotVaultWrite(vault, in _pendingEventsHandle);
             }
         }
 
         private static void PromoteNextFrameEventsIfFrontEmpty()
         {
-            if (!IsHandleCreated(in _pendingEventsHandle) ||
-                !IsHandleCreated(in _nextFrameEventsHandle) ||
+            if (!IsSnapshotVaultHandle(in _pendingEventsHandle) ||
+                !IsSnapshotVaultHandle(in _nextFrameEventsHandle) ||
                 _pendingEventReadIndex < _pendingEventCount ||
                 _nextFrameEventCount <= 0)
             {
@@ -525,8 +525,9 @@ namespace Hecton8.Construction
             if (TryReadPayloadBuffer(vault, in handle, out _))
                 return true;
 
-            BufferID bufferId = handle.BufferID != 0u ? (BufferID)(int)handle.BufferID : defaultBufferId;
-            if (vault.TryGetGenerationHandle<HectonDroneFleetSnapshotPayload>(bufferId, out VaultGenerationHandle<HectonDroneFleetSnapshotPayload> existingHandle))
+            BufferID bufferId = ResolveSnapshotBufferId(in handle, defaultBufferId);
+            if (vault.TryGetGenerationHandle<HectonDroneFleetSnapshotPayload>(bufferId, out VaultGenerationHandle<HectonDroneFleetSnapshotPayload> existingHandle) &&
+                IsSnapshotVaultHandle(in existingHandle))
             {
                 handle = existingHandle;
                 if (TryReadPayloadBuffer(vault, in handle, out _))
@@ -549,7 +550,7 @@ namespace Hecton8.Construction
         {
             IDataVault vault = _vault;
             if (vault == null ||
-                !IsHandleCreated(in handle) ||
+                !IsSnapshotVaultHandle(in handle) ||
                 index < 0 ||
                 !vault.TryAcquireWriteLock(in handle, SystemID.Construction, out NativeArray<HectonDroneFleetSnapshotPayload> buffer))
             {
@@ -566,7 +567,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                vault.ReleaseWriteLock(in handle, SystemID.Construction);
+                ReleaseSnapshotVaultWrite(vault, in handle);
             }
         }
 
@@ -584,7 +585,7 @@ namespace Hecton8.Construction
         {
             buffer = default;
             return vault != null &&
-                   IsHandleCreated(in handle) &&
+                   IsSnapshotVaultHandle(in handle) &&
                    vault.TryReadOnlyHandle(in handle, out buffer) &&
                    buffer.Length >= PendingEventCapacity;
         }
@@ -599,15 +600,36 @@ namespace Hecton8.Construction
         private static void ReleaseSnapshotVaultBuffer(ref VaultGenerationHandle<HectonDroneFleetSnapshotPayload> handle)
         {
             IDataVault vault = _vault;
-            if (vault != null && IsHandleCreated(in handle))
+            if (vault != null && IsSnapshotVaultHandle(in handle))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
         }
 
-        private static bool IsHandleCreated(in VaultGenerationHandle<HectonDroneFleetSnapshotPayload> handle)
+        private static void ReleaseSnapshotVaultWrite(
+            IDataVault vault,
+            in VaultGenerationHandle<HectonDroneFleetSnapshotPayload> handle)
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            if (vault != null && IsSnapshotVaultHandle(in handle))
+                vault.ReleaseWriteLock(in handle, SystemID.Construction);
+        }
+
+        private static BufferID ResolveSnapshotBufferId(
+            in VaultGenerationHandle<HectonDroneFleetSnapshotPayload> handle,
+            BufferID defaultBufferId)
+        {
+            if (IsSnapshotVaultHandle(in handle))
+                return (BufferID)(int)handle.BufferID;
+
+            return defaultBufferId;
+        }
+
+        private static bool IsSnapshotVaultHandle(in VaultGenerationHandle<HectonDroneFleetSnapshotPayload> handle)
+        {
+            return (handle.BufferID == unchecked((uint)(int)PendingEventBufferId) ||
+                    handle.BufferID == unchecked((uint)(int)NextFrameEventBufferId)) &&
+                   handle.SystemID == (uint)SystemID.Construction &&
+                   handle.Generation != 0u;
         }
     }
 
@@ -1119,7 +1141,7 @@ namespace Hecton8.Construction
             s_UsePhantomColorsPropertyId = 0;
             s_DroneShaderPropertyIdsInitialized = false;
 
-            ReleaseDroneVaultHandle(ref s_TaskClaimCountsHandle);
+            ReleaseDroneVaultHandle(ref s_TaskClaimCountsHandle, BufferID.ShinobuDroneFleetTaskClaimCounts);
         }
 
         internal static HectonDroneFleetSnapshot CurrentSnapshot
@@ -1557,7 +1579,7 @@ namespace Hecton8.Construction
                     s_CachedVegetationBridge = currentService as HectonMapMagicVegetationBridge;
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
-                    RebindDroneDataVault(currentService as IDataVault);
+                    RebindDroneDataVault(currentService is IDataVault currentVault ? currentVault : null);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     TryUnregisterHeadlessDriverLanes();
@@ -1897,41 +1919,41 @@ namespace Hecton8.Construction
         {
             ReleaseDroneServiceCommandWriteLocks();
             ReleaseDroneHeadlessScratchWriteLocks();
-            ReleaseDroneVaultHandle(vault, ref s_DroneStatesHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneStateBackBufferHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneRenderMatricesHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneRenderMatrixBackBufferHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneRenderInstancesHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneCullingStatesHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DronePositionsSoAHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneStateBytesHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneBlackBoxHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneTuningConstantsHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneMacroWaypointsHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneMacroWaypointStatesHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneAStarOpenHeapHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneAStarGCostsHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneAStarCameFromHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneAStarNodeStatesHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneMacroRouteNodesHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneMacroRouteCountsHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneAStarTelemetryHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneAStarPersistentStatesHandle);
-            ReleaseDroneVaultHandle(vault, ref s_HeadlessTaskClaimOwnersHandle);
-            ReleaseDroneVaultHandle(vault, ref s_FleetTelemetryAccumulatorHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneTaskPriorityHeapHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneStateDtosHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneTargetDtosHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneAssignmentTasksHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneProceduralArgsHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneServiceCommandsHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneServiceCommandCursorHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneSpatialBucketHeadsHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneSpatialNextIndicesHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneSpatialKeysHandle);
-            ReleaseDroneVaultHandle(vault, ref s_DroneChassisSpecsHandle);
+            ReleaseDroneVaultHandle(vault, ref s_DroneStatesHandle, BufferID.ShinobuDroneFleetStates);
+            ReleaseDroneVaultHandle(vault, ref s_DroneStateBackBufferHandle, BufferID.ShinobuDroneFleetStateBackBuffer);
+            ReleaseDroneVaultHandle(vault, ref s_DroneRenderMatricesHandle, BufferID.ShinobuDroneFleetRenderMatrices);
+            ReleaseDroneVaultHandle(vault, ref s_DroneRenderMatrixBackBufferHandle, BufferID.ShinobuDroneFleetRenderMatrixBackBuffer);
+            ReleaseDroneVaultHandle(vault, ref s_DroneRenderInstancesHandle, BufferID.ShinobuDroneFleetRenderInstances);
+            ReleaseDroneVaultHandle(vault, ref s_DroneCullingStatesHandle, BufferID.DroneFleetCullingStates);
+            ReleaseDroneVaultHandle(vault, ref s_DronePositionsSoAHandle, BufferID.ShinobuDroneFleetPositionsSoA);
+            ReleaseDroneVaultHandle(vault, ref s_DroneStateBytesHandle, BufferID.ShinobuDroneFleetStateBytes);
+            ReleaseDroneVaultHandle(vault, ref s_DroneBlackBoxHandle, BufferID.ShinobuDroneFleetBlackBox);
+            ReleaseDroneVaultHandle(vault, ref s_DroneTuningConstantsHandle, BufferID.ShinobuDroneFleetTuningConstants);
+            ReleaseDroneVaultHandle(vault, ref s_DroneMacroWaypointsHandle, BufferID.ShinobuDroneFleetMacroWaypoints);
+            ReleaseDroneVaultHandle(vault, ref s_DroneMacroWaypointStatesHandle, BufferID.ShinobuDroneFleetMacroWaypointStates);
+            ReleaseDroneVaultHandle(vault, ref s_DroneAStarOpenHeapHandle, BufferID.ShinobuDroneFleetAStarOpenHeap);
+            ReleaseDroneVaultHandle(vault, ref s_DroneAStarGCostsHandle, BufferID.ShinobuDroneFleetAStarGCosts);
+            ReleaseDroneVaultHandle(vault, ref s_DroneAStarCameFromHandle, BufferID.ShinobuDroneFleetAStarCameFrom);
+            ReleaseDroneVaultHandle(vault, ref s_DroneAStarNodeStatesHandle, BufferID.ShinobuDroneFleetAStarNodeStates);
+            ReleaseDroneVaultHandle(vault, ref s_DroneMacroRouteNodesHandle, BufferID.ShinobuDroneFleetMacroRouteNodes);
+            ReleaseDroneVaultHandle(vault, ref s_DroneMacroRouteCountsHandle, BufferID.ShinobuDroneFleetMacroRouteCounts);
+            ReleaseDroneVaultHandle(vault, ref s_DroneAStarTelemetryHandle, BufferID.ShinobuDroneFleetAStarTelemetry);
+            ReleaseDroneVaultHandle(vault, ref s_DroneAStarPersistentStatesHandle, DroneFleetAStarPersistentStatesBufferId);
+            ReleaseDroneVaultHandle(vault, ref s_HeadlessTaskClaimOwnersHandle, BufferID.ShinobuDroneFleetTaskClaimOwners);
+            ReleaseDroneVaultHandle(vault, ref s_FleetTelemetryAccumulatorHandle, BufferID.ShinobuDroneFleetTelemetryAccumulator);
+            ReleaseDroneVaultHandle(vault, ref s_DroneTaskPriorityHeapHandle, BufferID.ShinobuDroneFleetTaskPriorityHeap);
+            ReleaseDroneVaultHandle(vault, ref s_DroneStateDtosHandle, DroneFleetStateDtoBufferId);
+            ReleaseDroneVaultHandle(vault, ref s_DroneTargetDtosHandle, DroneFleetTargetDtoBufferId);
+            ReleaseDroneVaultHandle(vault, ref s_DroneAssignmentTasksHandle, DroneFleetAssignmentTasksBufferId);
+            ReleaseDroneVaultHandle(vault, ref s_DroneProceduralArgsHandle, DroneFleetProceduralArgsBufferId);
+            ReleaseDroneVaultHandle(vault, ref s_DroneServiceCommandsHandle, DroneFleetServiceCommandsBufferId);
+            ReleaseDroneVaultHandle(vault, ref s_DroneServiceCommandCursorHandle, DroneFleetServiceCommandCursorBufferId);
+            ReleaseDroneVaultHandle(vault, ref s_DroneSpatialBucketHeadsHandle, DroneFleetSpatialBucketHeadsBufferId);
+            ReleaseDroneVaultHandle(vault, ref s_DroneSpatialNextIndicesHandle, DroneFleetSpatialNextIndicesBufferId);
+            ReleaseDroneVaultHandle(vault, ref s_DroneSpatialKeysHandle, DroneFleetSpatialKeysBufferId);
+            ReleaseDroneVaultHandle(vault, ref s_DroneChassisSpecsHandle, DroneFleetChassisSpecsBufferId);
 #if UNITY_EDITOR
-            ReleaseDroneVaultHandle(vault, ref s_DroneSpecsCsvScratchHandle);
+            ReleaseDroneVaultHandle(vault, ref s_DroneSpecsCsvScratchHandle, DroneFleetCsvScratchBufferId);
 #endif
             ReleaseDroneTransactionMemory(vault);
             ClearHeadlessManagedState();
@@ -2177,31 +2199,27 @@ namespace Hecton8.Construction
             if (vault == null)
                 return false;
 
-            bool commandsLocked = vault.TryAcquireWriteLock(
+            bool commandsLocked = TryAcquireDroneVaultWriteBuffer(
+                vault,
                 in s_DroneServiceCommandsHandle,
-                SystemID.Construction,
+                DroneFleetServiceCommandsBufferId,
+                DroneServiceCommandCapacity,
                 out commands);
-            if (!commandsLocked ||
-                !commands.IsCreated ||
-                commands.Length < DroneServiceCommandCapacity)
+            if (!commandsLocked)
             {
-                if (commandsLocked)
-                    vault.ReleaseWriteLock(in s_DroneServiceCommandsHandle, SystemID.Construction);
                 commands = default;
                 return false;
             }
 
-            bool cursorLocked = vault.TryAcquireWriteLock(
+            bool cursorLocked = TryAcquireDroneVaultWriteBuffer(
+                vault,
                 in s_DroneServiceCommandCursorHandle,
-                SystemID.Construction,
+                DroneFleetServiceCommandCursorBufferId,
+                1,
                 out cursor);
-            if (!cursorLocked ||
-                !cursor.IsCreated ||
-                cursor.Length <= 0)
+            if (!cursorLocked)
             {
-                if (cursorLocked)
-                    vault.ReleaseWriteLock(in s_DroneServiceCommandCursorHandle, SystemID.Construction);
-                vault.ReleaseWriteLock(in s_DroneServiceCommandsHandle, SystemID.Construction);
+                ReleaseDroneVaultWrite(vault, in s_DroneServiceCommandsHandle, DroneFleetServiceCommandsBufferId);
                 commands = default;
                 cursor = default;
                 return false;
@@ -2218,26 +2236,24 @@ namespace Hecton8.Construction
             IDataVault vault = s_DroneServiceCommandWriteLockVault;
             if (vault != null)
             {
-                vault.ReleaseWriteLock(in s_DroneServiceCommandCursorHandle, SystemID.Construction);
-                vault.ReleaseWriteLock(in s_DroneServiceCommandsHandle, SystemID.Construction);
+                ReleaseDroneVaultWrite(vault, in s_DroneServiceCommandCursorHandle, DroneFleetServiceCommandCursorBufferId);
+                ReleaseDroneVaultWrite(vault, in s_DroneServiceCommandsHandle, DroneFleetServiceCommandsBufferId);
             }
 
             s_DroneServiceCommandWriteLockVault = null;
             s_DroneServiceCommandWriteLocksHeld = false;
         }
 
-        private static void ReleaseDroneVaultHandle<T>(ref VaultGenerationHandle<T> handle)
+        private static void ReleaseDroneVaultHandle<T>(ref VaultGenerationHandle<T> handle, BufferID bufferId)
             where T : struct
         {
-            ReleaseDroneVaultHandle(s_CachedDataVault, ref handle);
+            ReleaseDroneVaultHandle(s_CachedDataVault, ref handle, bufferId);
         }
 
-        private static void ReleaseDroneVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseDroneVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle, BufferID bufferId)
             where T : struct
         {
-            if (vault != null &&
-                handle.BufferID != 0u &&
-                handle.Generation != 0u)
+            if (vault != null && IsDroneVaultHandle(in handle, bufferId))
             {
                 vault.ReleaseBuffer(in handle);
             }
@@ -2256,8 +2272,7 @@ namespace Hecton8.Construction
             buffer = default;
             if (vault == null ||
                 requiredLength <= 0 ||
-                handle.BufferID != unchecked((uint)(int)bufferId) ||
-                handle.Generation == 0u)
+                !IsDroneVaultHandle(in handle, bufferId))
             {
                 return false;
             }
@@ -2282,8 +2297,7 @@ namespace Hecton8.Construction
             buffer = default;
             if (vault == null ||
                 requiredLength <= 0 ||
-                handle.BufferID != unchecked((uint)(int)bufferId) ||
-                handle.Generation == 0u)
+                !IsDroneVaultHandle(in handle, bufferId))
             {
                 return false;
             }
@@ -2321,6 +2335,24 @@ namespace Hecton8.Construction
             }
 
             return true;
+        }
+
+        private static void ReleaseDroneVaultWrite<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId)
+            where T : struct
+        {
+            if (vault != null && IsDroneVaultHandle(in handle, bufferId))
+                vault.ReleaseWriteLock(in handle, SystemID.Construction);
+        }
+
+        private static bool IsDroneVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)SystemID.Construction &&
+                   handle.Generation != 0u;
         }
 
         private static bool TryOpenDroneCoreBuffers(

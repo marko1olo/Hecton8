@@ -493,6 +493,7 @@ namespace Hecton8.Gameplay
         private bool _pendingBreathingPitchDirty;
         private bool _pendingBreathingLowPassHzDirty;
         private bool _pendingBreathingLowPassQDirty;
+        private bool _pendingVelocityAnchorHapticDirty;
         private Vector4 _pendingSomaticState;
         private Vector4 _pendingJerkState;
         private Vector4 _pendingKccComfortState;
@@ -503,6 +504,7 @@ namespace Hecton8.Gameplay
         private float _pendingBreathingPitch;
         private float _pendingBreathingLowPassHz;
         private float _pendingBreathingLowPassQ;
+        private SomaticHapticRequest _pendingVelocityAnchorHaptic;
         private uint _lastObservedAupShiftSequence;
         private uint _handGhostMask;
         private int _blackBoxCursor;
@@ -514,6 +516,17 @@ namespace Hecton8.Gameplay
         private VRSomaticChestSocketPose _flareSocketPose;
         private VRSomaticCollisionState _collisionState;
         private VRSomaticSnapshot _snapshot = VRSomaticSnapshot.Inactive;
+
+        private struct SomaticHapticRequest
+        {
+            public float LowFrequencyIntensity;
+            public float HighFrequencyIntensity;
+            public float DurationSeconds;
+            public float DecayRate;
+            public byte Priority;
+            public byte MotorMask;
+            public byte BlendMode;
+        }
 
         public bool IsActive => _snapshot.IsActive;
         public VRSomaticSnapshot CurrentSnapshot => _snapshot;
@@ -803,6 +816,7 @@ namespace Hecton8.Gameplay
             TryUnregisterUpdate();
             TryUnregisterService();
             TryUnregisterHotSwap();
+            ClearQueuedVelocityAnchorHaptic();
             ApplyInactiveState(0f, hadRuntimeState);
             _playerRuntimeContext = null;
             _cachedPlayerCamera = null;
@@ -992,6 +1006,7 @@ namespace Hecton8.Gameplay
                    _comfortVignetteShaderDirty ||
                    _somaticComfortShaderStateDirty ||
                    _breathingAudioDirty ||
+                   _pendingVelocityAnchorHapticDirty ||
                    (_snapshot.IsActive && CanRunHeadCollisionQuery());
         }
 
@@ -2452,6 +2467,7 @@ namespace Hecton8.Gameplay
             FlushQueuedSomaticComfortShaderState();
             FlushQueuedComfortVignette();
             FlushQueuedBreathingAudio();
+            FlushQueuedVelocityAnchorHaptic();
         }
 
         private void FlushQueuedTransformPoses()
@@ -2647,15 +2663,40 @@ namespace Hecton8.Gameplay
             float speed01 = math.saturate((_headLinearSpeedMetersPerSecond - threshold) * math.rcp(math.max(threshold, 0.25f)));
             float lowFrequency = math.lerp(0.035f, 0.16f, speed01);
             float highFrequency = math.lerp(0.015f, 0.09f, speed01);
-            ToolHapticsRuntime.TryEnqueueCommand(
-                lowFrequency,
-                highFrequency,
-                SanitizeMinimum(velocityHapticDurationSeconds, 0.01f),
-                0f,
-                HapticPriorityComfort,
-                BothMotorMask,
-                HapticBlendAdditive);
+            _pendingVelocityAnchorHaptic.LowFrequencyIntensity = lowFrequency;
+            _pendingVelocityAnchorHaptic.HighFrequencyIntensity = highFrequency;
+            _pendingVelocityAnchorHaptic.DurationSeconds = SanitizeMinimum(velocityHapticDurationSeconds, 0.01f);
+            _pendingVelocityAnchorHaptic.DecayRate = 0f;
+            _pendingVelocityAnchorHaptic.Priority = HapticPriorityComfort;
+            _pendingVelocityAnchorHaptic.MotorMask = BothMotorMask;
+            _pendingVelocityAnchorHaptic.BlendMode = HapticBlendAdditive;
+            _pendingVelocityAnchorHapticDirty = true;
             _velocityHapticCooldownRemaining = SanitizeMinimum(velocityHapticIntervalSeconds, 0.03f);
+            TryRegisterLateFrame();
+        }
+
+        private void FlushQueuedVelocityAnchorHaptic()
+        {
+            if (!_pendingVelocityAnchorHapticDirty)
+                return;
+
+            _pendingVelocityAnchorHapticDirty = false;
+            SomaticHapticRequest request = _pendingVelocityAnchorHaptic;
+            _pendingVelocityAnchorHaptic = default;
+            ToolHapticsRuntime.TryEnqueueCommand(
+                request.LowFrequencyIntensity,
+                request.HighFrequencyIntensity,
+                request.DurationSeconds,
+                request.DecayRate,
+                request.Priority,
+                request.MotorMask,
+                request.BlendMode);
+        }
+
+        private void ClearQueuedVelocityAnchorHaptic()
+        {
+            _pendingVelocityAnchorHapticDirty = false;
+            _pendingVelocityAnchorHaptic = default;
         }
 
         private void PublishComfortTelemetry()

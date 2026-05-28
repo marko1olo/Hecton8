@@ -1,0 +1,60 @@
+{
+  "agent_id": "1424",
+  "source": "Unity Manual - Profiler counters reference, https://docs.unity.cn/Manual/profiler-counters-reference.html",
+  "unity_api": "Unity.Profiling.ProfilerRecorder",
+  "runtime_file": "Assets/_Project/Scripts/QA/QA_WatchdogBot.cs",
+  "hot_path_rule": "Recorders are started on cold path. Hot path reads LastValue and writes blittable 32-byte records only.",
+  "counters": [
+    {
+      "name": "CPU Total Frame Time",
+      "category": "ProfilerCategory.Internal",
+      "unit": "TimeNanoseconds",
+      "purpose": "Frame-time gate; three consecutive samples above 25000 microseconds fail the run.",
+      "fallback": "Frame Time, then the last validated dispatcher FastTick delta converted to microseconds. UnityEngine.Time is not read from the hot metric path."
+    },
+    {
+      "name": "GC Allocated In Frame",
+      "category": "ProfilerCategory.Memory",
+      "unit": "Bytes",
+      "purpose": "Zero-GC proof gate; any non-zero value during simulation fails the run.",
+      "fallback": "No fallback value is trusted. Missing recorder emits 0 and metadata records recorder absence."
+    },
+    {
+      "name": "Gfx Used Memory",
+      "category": "ProfilerCategory.Memory",
+      "unit": "Bytes",
+      "purpose": "VRAM target gate; 1600 MB is the fatal project target for this bot.",
+      "fallback": "Gfx Used Memory Bytes, then Profiler.GetAllocatedMemoryForGraphicsDriver converted to MB."
+    },
+    {
+      "name": "Batches Count",
+      "category": "ProfilerCategory.Render",
+      "unit": "Count",
+      "purpose": "Render pressure correlation in CSV and black-box dump.",
+      "fallback": "0 when recorder is unavailable."
+    },
+    {
+      "name": "SetPass Calls Count",
+      "category": "ProfilerCategory.Render",
+      "unit": "Count",
+      "purpose": "Render state-change correlation in CSV and black-box dump.",
+      "fallback": "0 when recorder is unavailable."
+    }
+  ],
+  "storage": {
+    "metric_record_size_bytes": 32,
+    "metric_capacity_frames": 36000,
+    "blackbox_record_size_bytes": 64,
+    "blackbox_capacity_frames": 300,
+    "primary_owner": "GlobalDataVault buffer ids 74240 and 74241, owner SystemID.QAEndurance.",
+    "fallback": "Preallocated managed arrays only if GlobalDataVault is unavailable before bootstrap."
+  },
+  "thresholds": {
+    "frame_spike_microseconds": 25000,
+    "frame_spike_consecutive_samples": 3,
+    "gc_alloc_bytes": 0,
+    "vram_target_mb": 1600,
+    "vram_hard_mb": 1800,
+    "distance_target_m": 10000
+  }
+}

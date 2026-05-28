@@ -1,10 +1,15 @@
 param(
-    [string]$Root = (Split-Path -Parent $PSScriptRoot)
+    [string]$Root = (Split-Path -Parent $PSScriptRoot),
+    [switch]$ThrowInsteadOfExit
 )
 
 $ErrorActionPreference = 'Stop'
 
 function Fail([string]$Message) {
+    if ($ThrowInsteadOfExit) {
+        throw ('[H8MOD_STARTER_VALIDATION] ' + $Message)
+    }
+
     Write-Error ('[H8MOD_STARTER_VALIDATION] ' + $Message)
     exit 1
 }
@@ -117,9 +122,99 @@ function Read-AllowedGraphOpcodeTokens() {
     return $tokens
 }
 
-@('Content','Graphs','Tables','Locales','Generated','Reports','Reference','Schemas','Tools','.vscode') | ForEach-Object { Require-Directory $_ }
+function Validate-JsonArray([object]$Value, [string]$Label) {
+    if ($null -eq $Value -or -not $Value.GetType().IsArray) {
+        Fail ($Label + ' must be a JSON array.')
+    }
+
+    return @($Value)
+}
+
+function Validate-SettingDefault([object]$Value, [string]$Kind, [string]$Label) {
+    switch ($Kind) {
+        'bool' {
+            if ($Value -isnot [bool]) { Fail ($Label + ' Default must be a JSON boolean.') }
+            return
+        }
+        'int' {
+            if (-not (($Value -is [int]) -or ($Value -is [long]))) { Fail ($Label + ' Default must be a JSON integer.') }
+            return
+        }
+        'float' {
+            if (-not (($Value -is [double]) -or ($Value -is [decimal]) -or ($Value -is [single]) -or ($Value -is [int]) -or ($Value -is [long]))) {
+                Fail ($Label + ' Default must be a JSON number.')
+            }
+            return
+        }
+        'string' {
+            [void](Validate-RequiredText ([string]$Value) ($Label + ' Default'))
+            return
+        }
+        'enum' {
+            [void](Validate-RequiredText ([string]$Value) ($Label + ' Default'))
+            return
+        }
+        default {
+            Fail ($Label + ' Kind must be one of: bool, int, float, string, enum.')
+        }
+    }
+}
+
+function Validate-SettingsTable([object]$Settings) {
+    if ([string]$Settings.Schema -ne 'hecton8.settings_table.draft.v1') {
+        Fail 'Tables/settings.h8table.json Schema must be hecton8.settings_table.draft.v1.'
+    }
+
+    [void](Validate-JsonArray $Settings.Rows 'Tables/settings.h8table.json Rows')
+    $rows = @($Settings.Rows)
+    if ($rows.Count -gt 128) { Fail 'Tables/settings.h8table.json Rows exceeds 128 entries.' }
+    $rowIds = @{}
+    for ($i = 0; $i -lt $rows.Count; $i++) {
+        $row = $rows[$i]
+        if ($null -eq $row) { Fail ('Tables/settings.h8table.json Rows[' + $i + '] must not be null.') }
+        $label = 'Tables/settings.h8table.json Rows[' + $i + ']'
+        $rowId = Validate-ModId ([string]$row.Id) ($label + ' Id')
+        if ($rowIds.ContainsKey($rowId)) { Fail ('Tables/settings.h8table.json duplicate row Id: ' + $rowId) }
+        $rowIds[$rowId] = $true
+
+        $kind = Validate-RequiredText ([string]$row.Kind) ($label + ' Kind')
+        if (@('bool','int','float','string','enum') -notcontains $kind) {
+            Fail ($label + ' Kind must be one of: bool, int, float, string, enum.')
+        }
+
+        $defaultProperty = $row.PSObject.Properties['Default']
+        if ($null -eq $defaultProperty) { Fail ($label + ' Default is required.') }
+        Validate-SettingDefault $defaultProperty.Value $kind $label
+    }
+}
+
+function Validate-LocaleTable([object]$LocaleDocument) {
+    if ([string]$LocaleDocument.Schema -ne 'hecton8.locale.draft.v1') {
+        Fail 'Locales/en.h8loc.json Schema must be hecton8.locale.draft.v1.'
+    }
+
+    $localeId = Validate-RequiredText ([string]$LocaleDocument.Locale) 'Locales/en.h8loc.json Locale'
+    if ($localeId -notmatch '^[a-z]{2}(-[A-Z]{2})?$') {
+        Fail 'Locales/en.h8loc.json Locale must use xx or xx-YY form.'
+    }
+
+    $stringsProperty = $LocaleDocument.PSObject.Properties['Strings']
+    if ($null -eq $stringsProperty -or $null -eq $stringsProperty.Value -or $stringsProperty.Value.GetType().IsArray) {
+        Fail 'Locales/en.h8loc.json Strings must be a JSON object.'
+    }
+
+    $stringEntries = @($stringsProperty.Value.PSObject.Properties)
+    if ($stringEntries.Count -gt 512) { Fail 'Locales/en.h8loc.json Strings exceeds 512 entries.' }
+    foreach ($entry in $stringEntries) {
+        [void](Validate-ModId ([string]$entry.Name) 'Locales/en.h8loc.json Strings key')
+        [void](Validate-RequiredText ([string]$entry.Value) ('Locales/en.h8loc.json Strings.' + [string]$entry.Name))
+    }
+}
+
+@('Content','Docs','Graphs','Tables','Locales','Generated','Reports','Reference','Schemas','Tools','.vscode') | ForEach-Object { Require-Directory $_ }
 @(
     'README.md',
+    'Docs/capabilities.md',
     'h8mod.ps1',
     'mod.h8manifest.json',
     'mod.json',
@@ -141,12 +236,26 @@ function Read-AllowedGraphOpcodeTokens() {
     'Schemas/settings_table.schema.json',
     'Tools/README.md',
     'Tools/build_review_manifest.ps1',
+    'Tools/build_submission_package.ps1',
+    'Tools/apply_graph_node_snippet.ps1',
+    'Tools/apply_locale_entry_snippet.ps1',
+    'Tools/apply_settings_row_snippet.ps1',
+    'Tools/create_locale_entry_snippet.ps1',
+    'Tools/create_graph_node_snippet.ps1',
+    'Tools/create_settings_row_snippet.ps1',
     'Tools/list_allowed_opcodes.ps1',
     'Tools/prepare_mod.ps1',
     'Tools/set_mod_identity.ps1',
     'Tools/validate_structure.ps1',
     '.vscode/settings.json'
 ) | ForEach-Object { [void](Require-File $_) }
+
+$capabilitiesText = Get-Content -Raw -LiteralPath (Require-File 'Docs/capabilities.md')
+foreach ($requiredCapabilityText in @('Supported now','Not public rights','envelope-only','FutureCommandEnvelope','Harmony','BepInEx','h8mod.ps1 -Action capabilities','h8mod.ps1 -Action node-snippet','h8mod.ps1 -Action apply-node-snippet','h8mod.ps1 -Action setting-snippet','h8mod.ps1 -Action locale-snippet','h8mod.ps1 -Action apply-setting-snippet','h8mod.ps1 -Action apply-locale-snippet')) {
+    if (-not $capabilitiesText.Contains($requiredCapabilityText)) {
+        Fail ('Docs/capabilities.md missing required capability text: ' + $requiredCapabilityText)
+    }
+}
 
 $authoring = Read-Json 'mod.h8manifest.json'
 $runtime = Read-Json 'mod.json'
@@ -199,7 +308,9 @@ if ([int]$graph.MaxEnvelopesPerFrame -gt [int]$authoring.Budgets.MaxEnvelopesPer
 $allowedGraphOpcodes = Read-AllowedGraphOpcodeTokens
 $graphNodeIds = @{}
 $graphOpcodeNodeCount = 0
-foreach ($node in @($graph.Nodes)) {
+$graphNodes = @($graph.Nodes)
+if ($graphNodes.Count -gt 256) { Fail 'Graphs/main.h8graph.json Nodes exceeds 256 entries.' }
+foreach ($node in $graphNodes) {
     if ($null -eq $node) { Fail 'Graphs/main.h8graph.json Nodes must not contain null entries.' }
     $nodeId = [string]$node.Id
     if ([string]::IsNullOrWhiteSpace($nodeId)) { Fail 'Graphs/main.h8graph.json node Id is required.' }
@@ -219,8 +330,8 @@ foreach ($node in @($graph.Nodes)) {
 }
 if ($graphOpcodeNodeCount -gt 0 -and [int]$graph.MaxEnvelopesPerFrame -lt 1) { Fail 'Graphs/main.h8graph.json MaxEnvelopesPerFrame must be >= 1 when opcode nodes exist.' }
 if ($null -eq $assets.Assets) { Fail 'Content/assets.h8manifest.json requires Assets array.' }
-if ($null -eq $settings.Rows) { Fail 'Tables/settings.h8table.json requires Rows array.' }
-if ([string]::IsNullOrWhiteSpace([string]$locale.Locale)) { Fail 'Locales/en.h8loc.json requires Locale.' }
+Validate-SettingsTable $settings
+Validate-LocaleTable $locale
 if ($null -eq $vscodeSettings.PSObject.Properties['json.schemas']) { Fail '.vscode/settings.json requires json.schemas mapping.' }
 $schemaMappings = @($vscodeSettings.PSObject.Properties['json.schemas'].Value)
 $requiredSchemaMappings = @(

@@ -125,8 +125,8 @@ namespace Hecton8.Core
             ValidateSignalSize<RebaseSignal>(32);
             ValidateSignalSize<ControlSignal>(32);
             ValidateSignalPayload<AnomalySignal>(32);
-            ValidateSignalSize<TelemetryAnomalySignal>(32);
-            ValidateSignalSize<CrashTelemetrySignal>(32);
+            ValidateSignalSize<TelemetryAnomalySignal>(64);
+            ValidateSignalSize<CrashTelemetrySignal>(64);
             ValidateSignalSize<HabitatConstructionSignal>(64);
             ValidateSignalSize<DeconstructRequestSignal>(128);
             ValidateSignalSize<DeconstructResultSignal>(64);

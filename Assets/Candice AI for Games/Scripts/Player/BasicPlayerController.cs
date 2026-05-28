@@ -33,6 +33,8 @@ public class BasicPlayerController : MonoBehaviour
 
     public void CandiceReceiveDamage(float damage)
     {
-        Debug.Log("Received " + damage.ToString() + " damage.");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.Log("Received player damage.");
+#endif
     }
 }

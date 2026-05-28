@@ -520,7 +520,7 @@ namespace Hecton8.AI
         IsApexPredator = 1 << 13,
         IsAmbusher = 1 << 14,
         HasPackTarget = 1 << 15,
-        HighTierSmoothSteering = 1 << 16,
+        ApexSmoothSteering = 1 << 16,
         RetinalBlind = 1 << 17,
         UseAlphaLeviathanCognition = 1 << 18,
     }
@@ -4389,9 +4389,9 @@ namespace Hecton8.AI
                 PackedCognitionOutput output = _outputs[slot];
                 byte phase = _stalkingPhases[slot];
                 byte flags = 0;
-                bool highTierSmoothSteering = (input.Flags & (int)CognitionInputFlags.HighTierSmoothSteering) != 0;
+                bool apexSmoothSteering = (input.Flags & (int)CognitionInputFlags.ApexSmoothSteering) != 0;
                 bool hasPlayerTarget = (input.Flags & (int)CognitionInputFlags.HasPlayerTarget) != 0;
-                if (!highTierSmoothSteering)
+                if (!apexSmoothSteering)
                     flags |= AlphaLeviathanTelemetryFlags.SurvivalRadialFallback;
                 if ((output.OutputFlags & (uint)CognitionOutputFlags.EmitThreatPulse) != 0u)
                     flags |= AlphaLeviathanTelemetryFlags.RoarEmitted;
@@ -4407,7 +4407,7 @@ namespace Hecton8.AI
                     float3 playerForward = ResolveAlphaTelemetryDirection(input.PlayerForward, -awayFromPlayer);
                     if (math.dot(playerForward, awayFromPlayer) >= AlphaPlayerGazeDotThreshold)
                         flags |= AlphaLeviathanTelemetryFlags.PlayerGazeBreak;
-                    if (highTierSmoothSteering && phase == AlphaLeviathanPhase.Hidden)
+                    if (apexSmoothSteering && phase == AlphaLeviathanPhase.Hidden)
                         flags |= AlphaLeviathanTelemetryFlags.SdfDiveRequested;
                 }
 
@@ -5808,7 +5808,7 @@ namespace Hecton8.AI
                 bool isFlocking = (input.Flags & (int)CognitionInputFlags.IsFlocking) != 0;
                 bool hasVisualPlayerHint = (input.Flags & (int)CognitionInputFlags.HasVisualPlayerHint) != 0;
                 bool isApexPredator = (input.Flags & (int)CognitionInputFlags.IsApexPredator) != 0;
-                bool useHighTierSmoothSteering = (input.Flags & (int)CognitionInputFlags.HighTierSmoothSteering) != 0;
+                bool useApexSmoothSteering = (input.Flags & (int)CognitionInputFlags.ApexSmoothSteering) != 0;
 
                 bool playerVisible = hasPlayerTarget && hasVisualPlayerHint && ResolveThreatVisibility(resolvedInput.Position, resolvedInput.PlayerPosition, resolvedInput.ImportanceScore);
                 bool threatVisible = hasThreatTarget && ResolveThreatVisibility(resolvedInput.Position, resolvedInput.ThreatPosition, resolvedInput.ImportanceScore);
@@ -5825,7 +5825,7 @@ namespace Hecton8.AI
                 fear = math.max(fear, math.max(rawFear, fearPheromoneSignal * FearPheromoneContagionShare));
 
                 PackedCognitionOutput output = isPredator
-                    ? EvaluatePredator(slot, ref core, ref control, in resolvedInput, fallbackForward, canFlee, hasPlayerTarget, playerVisible, threatVisible, rivalApexVisible, preyVisible, scavengeVisible, useHighTierSmoothSteering, aggression, ref hunger, ref fatigue, ref fear, ref threatLevel)
+                    ? EvaluatePredator(slot, ref core, ref control, in resolvedInput, fallbackForward, canFlee, hasPlayerTarget, playerVisible, threatVisible, rivalApexVisible, preyVisible, scavengeVisible, useApexSmoothSteering, aggression, ref hunger, ref fatigue, ref fear, ref threatLevel)
                     : EvaluatePassive(slot, ref control, in resolvedInput, fallbackForward, canFlee, hasPlayerTarget, playerVisible, threatVisible, useHomeTerritory, isFlocking, ref hunger, ref fatigue, ref fear, ref threatLevel);
 
                 core.StateFlags = PackWorldStateFlags((FaunaBrain.AIState)output.LegacyState);
@@ -6026,7 +6026,7 @@ namespace Hecton8.AI
                 bool rivalApexVisible,
                 bool preyVisible,
                 bool scavengeVisible,
-                bool useHighTierSmoothSteering,
+                bool useApexSmoothSteering,
                 float aggression,
                 ref float hunger,
                 ref float fatigue,
@@ -6268,7 +6268,7 @@ namespace Hecton8.AI
                         hasPlayerTarget,
                         predictedPlayerPosition,
                         retinalBlindActive,
-                        useHighTierSmoothSteering);
+                        useApexSmoothSteering);
                     if (alphaDirective.OverrideActive != 0)
                     {
                         alphaOverrideActive = true;
@@ -6441,7 +6441,7 @@ namespace Hecton8.AI
                     }
                 }
 
-                float3 desiredDirection = ResolvePredatorDirection(slot, stateMask, input.Position, targetPosition, fallbackForward, input.CurrentTime, control, isApexPredator, useHighTierSmoothSteering);
+                float3 desiredDirection = ResolvePredatorDirection(slot, stateMask, input.Position, targetPosition, fallbackForward, input.CurrentTime, control, isApexPredator, useApexSmoothSteering);
                 PackedCognitionOutput output = default;
                 output.DesiredDirection = desiredDirection;
                 output.PackedScores = PackScoreTriplet(hungerScore, aggressionWeight, fearScore);
@@ -6574,7 +6574,7 @@ namespace Hecton8.AI
                 bool hasPlayerTarget,
                 float3 predictedPlayerPosition,
                 bool retinalBlindActive,
-                bool useHighTierSmoothSteering)
+                bool useApexSmoothSteering)
             {
                 AlphaLeviathanDirective directive = default;
                 directive.Phase = AlphaLeviathanPhase.Hidden;
@@ -6643,7 +6643,7 @@ namespace Hecton8.AI
                 StalkingPhases[slot] = phase;
 
                 byte flags = 0;
-                if (!useHighTierSmoothSteering)
+                if (!useApexSmoothSteering)
                     flags |= AlphaLeviathanTelemetryFlags.SurvivalRadialFallback;
                 if (playerGazeBreak)
                     flags |= AlphaLeviathanTelemetryFlags.PlayerGazeBreak;
@@ -6660,7 +6660,7 @@ namespace Hecton8.AI
                             in input,
                             awayFromPlayer,
                             fallbackForward,
-                            useHighTierSmoothSteering,
+                            useApexSmoothSteering,
                             ref flags);
                         directive.TargetPosition = input.Position + (diveDirection * AlphaDiveDepthMeters);
                         directive.StateMask = PredatorUtilityState.Fleeing;
@@ -6685,7 +6685,7 @@ namespace Hecton8.AI
                             playerPosition,
                             awayFromPlayer,
                             directive.RingDistanceMeters,
-                            useHighTierSmoothSteering);
+                            useApexSmoothSteering);
                         directive.TargetPosition = input.Position + (circleDirection * math.max(8f, directive.RingDistanceMeters * 0.25f));
                         directive.StateMask = PredatorUtilityState.Stalking;
                         break;
@@ -6702,7 +6702,7 @@ namespace Hecton8.AI
                 float3 playerPosition,
                 float3 awayFromPlayer,
                 float ringDistanceMeters,
-                bool useHighTierSmoothSteering)
+                bool useApexSmoothSteering)
             {
                 float3 up = new float3(0f, 1f, 0f);
                 float3 tangent = ResolveRsqrtDirection(math.cross(up, awayFromPlayer), math.cross(new float3(0f, 0f, 1f), awayFromPlayer));
@@ -6713,17 +6713,17 @@ namespace Hecton8.AI
                     : ringDistanceMeters;
                 float radialCorrection = math.clamp((ringDistanceMeters - currentDistance) * AlphaRingCorrectionScale, -1f, 1f);
                 float3 desired = tangent + (awayFromPlayer * radialCorrection);
-                return ResolveSteeringAxis(desired, tangent, useHighTierSmoothSteering);
+                return ResolveSteeringAxis(desired, tangent, useApexSmoothSteering);
             }
 
             private float3 ResolveAlphaDiveDirection(
                 in CognitionInput input,
                 float3 awayFromPlayer,
                 float3 fallbackForward,
-                bool useHighTierSmoothSteering,
+                bool useApexSmoothSteering,
                 ref byte flags)
             {
-                if (!useHighTierSmoothSteering)
+                if (!useApexSmoothSteering)
                 {
                     flags |= AlphaLeviathanTelemetryFlags.SurvivalRadialFallback;
                     return ResolveDominantAxis(awayFromPlayer, fallbackForward);
@@ -7563,7 +7563,7 @@ namespace Hecton8.AI
                 float currentTime,
                 CognitionControl control,
                 bool isApexPredator,
-                bool useHighTierSmoothSteering)
+                bool useApexSmoothSteering)
             {
                 if (stateMask == PredatorUtilityState.Fleeing)
                 {
@@ -7577,7 +7577,7 @@ namespace Hecton8.AI
                         float3 up = new float3(0f, 1f, 0f);
                         float3 lateral = ResolveRsqrtDirection(math.cross(up, awayFromLight), math.cross(new float3(0f, 0f, 1f), awayFromLight));
                         lateral = math.select(lateral, -lateral, (slot & 1) != 0);
-                        float3 flinchDirection = useHighTierSmoothSteering
+                        float3 flinchDirection = useApexSmoothSteering
                             ? ResolveRetinalThrashDirection(slot, awayFromLight, lateral, currentTime)
                             : lateral;
                         return SanitizeSteeringVector(ApplyVortexSteering(selfPosition, flinchDirection, lateral, false), lateral);
@@ -7589,7 +7589,7 @@ namespace Hecton8.AI
 
                 bool useApexSCurve =
                     isApexPredator &&
-                    useHighTierSmoothSteering &&
+                    useApexSmoothSteering &&
                     (stateMask == PredatorUtilityState.Stalking || stateMask == PredatorUtilityState.Attacking);
                 float3 desiredDirection = useApexSCurve
                     ? ResolveApexSCurveDirection(slot, stateMask, selfPosition, targetPosition, fallbackForward, currentTime)

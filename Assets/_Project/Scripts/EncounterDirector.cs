@@ -354,7 +354,7 @@ namespace Hecton8.Systems.AI
         private bool _predatorAupPlayerUploadPending;
         private bool _predatorAupClearPending;
         private float3 _pendingPredatorAupPlayerPosition;
-        private readonly int _candidateCount;
+        private readonly float _candidateHardwareWeight01;
         private IMetaCampaignService _metaCampaignService;
         private int _pendingPhaseOverride = -1;
         private bool _pendingReset;
@@ -387,7 +387,7 @@ namespace Hecton8.Systems.AI
             _trackedThreatClasses = new EncounterThreatClass[MaxActiveEnemies];
             _trackedTokenCosts = new float[MaxActiveEnemies];
             _predatorAupSourceIds = new int[PredatorAupBufferCapacity];
-            _candidateCount = ResolveCandidateCount();
+            _candidateHardwareWeight01 = ResolveCandidateHardwareWeight01();
             _threatAuthoring = BuildDefaultThreatAuthoringSnapshot();
 
             PrecomputeCandidateDirections();
@@ -889,7 +889,7 @@ namespace Hecton8.Systems.AI
                 ActiveEnemies = _enemyTokens,
                 FrustumPlanes = _frustumPlanes,
                 CandidateDirections = _candidateDirections,
-                CandidateCount = _candidateCount,
+                CandidateCount = ResolveCandidateCount(_candidateHardwareWeight01),
                 PlayerPosition = currentState.PlayerPosition,
                 PlayerVelocity = currentState.PlayerVelocity,
                 PlayerForward = new float4(NormalizeSafe(frameContext.PlayerForward, new float3(0f, 0f, 1f)), 0f),
@@ -1873,10 +1873,35 @@ namespace Hecton8.Systems.AI
             }
         }
 
-        private static int ResolveCandidateCount()
+        private static int ResolveCandidateCount(float hardwareWeight01)
         {
-            bool highTier = SystemInfo.processorCount >= 8 && SystemInfo.graphicsMemorySize >= 4096;
-            return highTier ? HighCandidateCount : BaseCandidateCount;
+            float runtimeWeight01 = math.min(
+                SanitizeQualityWeight01(HomeostasisBrain.GlobalQualityWeight, 1f),
+                SanitizeQualityWeight01(PlatformAdaptiveBudgetGovernor.RecommendedQualityWeight, 1f));
+            float combinedWeight01 = math.saturate(SanitizeQualityWeight01(hardwareWeight01, 1f) * runtimeWeight01);
+            return math.clamp(
+                (int)math.round(math.lerp(BaseCandidateCount, HighCandidateCount, combinedWeight01)),
+                BaseCandidateCount,
+                HighCandidateCount);
+        }
+
+        private static float ResolveCandidateHardwareWeight01()
+        {
+            float cpuWeight01 = SmoothRange01(4f, 8f, SystemInfo.processorCount);
+            float graphicsWeight01 = SmoothRange01(1536f, 4096f, SystemInfo.graphicsMemorySize);
+            return math.min(cpuWeight01, graphicsWeight01);
+        }
+
+        private static float SmoothRange01(float minInclusive, float maxInclusive, float value)
+        {
+            float denominator = math.max(0.0001f, maxInclusive - minInclusive);
+            float t = math.saturate((value - minInclusive) / denominator);
+            return t * t * (3f - 2f * t);
+        }
+
+        private static float SanitizeQualityWeight01(float value, float fallback)
+        {
+            return math.saturate(math.isfinite(value) ? value : fallback);
         }
 
         private static float ResolveTokenCost(EncounterThreatClass threatClass, EncounterThreatAuthoringSnapshot authoring)

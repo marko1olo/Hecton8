@@ -1,0 +1,739 @@
+{
+  "agentId": "1410",
+  "domain": "Echelon 1 Core Infrastructure / Tick Dispatcher & Time Dilation",
+  "generatedUtc": "2026-05-28T13:13:42Z",
+  "status": "STATIC_RECHECK7_COMPLETE_BUILD_BLOCKED_BY_ACTIVE_DOTNET",
+  "scope": "runtime C# scripts under Assets/_Project/Scripts; Editor and Tests folders excluded from route scan",
+  "changedFiles": [
+    "Assets/_Project/Scripts/Gameplay/LifePodFireExtinguisherNozzle.cs",
+    "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs",
+    "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+    "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs"
+  ],
+  "changedFileSha256": {
+    "Assets/_Project/Scripts/Gameplay/LifePodFireExtinguisherNozzle.cs": "bc6e1184621126f7bb7e99dd17a5b503ca86fc8adc9e00c0c6dfeacac556d978",
+    "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs": "ab90edb57df7a7285937601e0eb0bd8335b08b0494a1498c71d08ddbdad0f9b4",
+    "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs": "76c2a33f332d4fcbf4c445862634a53b0b1aa03f8d7c309a763a1e7aacae691c",
+    "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs": "3ccf5735d5191c25a66c548b1c704009fa41cbf9cce5ac436af67453400e9c39"
+  },
+  "phaseRouteScan": {
+    "candidateFiles": 266,
+    "methods": 24565,
+    "rootsTraversed": 359,
+    "forbiddenBackendFindings": [],
+    "expandedBackendPatterns": [
+      "Shader.SetGlobal",
+      "Material.Set",
+      "SetPropertyBlock",
+      "Graphics",
+      "CommandBuffer",
+      "AsyncGPUReadback",
+      "ToolHapticsRuntime.TryEnqueue",
+      "ProceduralAudioEvents.TryRaise",
+      "NotificationEvents.TryPush",
+      "IAudioService.PlayAtPoint",
+      "IAudioService.PlayStatic2D",
+      "IAudioService.QueueHullStressSignal",
+      "AudioSource.PlayStop"
+    ],
+    "elapsedMicroseconds": 80548914
+  },
+  "zeroGcScan": {
+    "methodsRequested": 31,
+    "rows": [
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/LifePodFireExtinguisherNozzle.cs",
+        "method": "Tick",
+        "line": 167,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/LifePodFireExtinguisherNozzle.cs",
+        "method": "LateFrameTick",
+        "line": 197,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/LifePodFireExtinguisherNozzle.cs",
+        "method": "QueueSprayHaptic",
+        "line": 279,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/LifePodFireExtinguisherNozzle.cs",
+        "method": "FlushQueuedSprayHaptic",
+        "line": 299,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/LifePodFireExtinguisherNozzle.cs",
+        "method": "TryRegisterLateFrameTick",
+        "line": 357,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/LifePodFireExtinguisherNozzle.cs",
+        "method": "TryUnregisterLateFrameTick",
+        "line": 365,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs",
+        "method": "Tick",
+        "line": 438,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs",
+        "method": "FixedTick",
+        "line": 556,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs",
+        "method": "LateFrameTick",
+        "line": 874,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs",
+        "method": "QueueTransportOneShotAudio",
+        "line": 2440,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs",
+        "method": "FlushQueuedTransportAudio",
+        "line": 2452,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs",
+        "method": "ClearQueuedTransportAudio",
+        "line": 2465,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs",
+        "method": "ResolveTransportOneShotClip",
+        "line": 2471,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs",
+        "method": "NotifyEntanglementStressHaptic",
+        "line": 1300,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs",
+        "method": "PublishEntanglementStructuralStress",
+        "line": 1312,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs",
+        "method": "NotifyEntanglementCritical",
+        "line": 1325,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs",
+        "method": "FlushQueuedEntanglementFeedback",
+        "line": 2307,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs",
+        "method": "ClearQueuedEntanglementFeedback",
+        "line": 2357,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+        "method": "PostFixedTick",
+        "line": 676,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+        "method": "CompletePidJob",
+        "line": 2589,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+        "method": "EmitPidHullStressSignal",
+        "line": 2647,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 1,
+        "newValueTypeNames": [
+          "HullStressSignal"
+        ],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+        "method": "QueuePidHullStressSignal",
+        "line": 2679,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+        "method": "FlushDynamicFloodFeedback",
+        "line": 2278,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+        "method": "ClearPendingDynamicFloodFeedback",
+        "line": 923,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+        "method": "Tick",
+        "line": 690,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+        "method": "LateFrameTick",
+        "line": 746,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+        "method": "TryEmitVelocityAnchorHaptics",
+        "line": 2657,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+        "method": "FlushQueuedVelocityAnchorHaptic",
+        "line": 2678,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+        "method": "ClearQueuedVelocityAnchorHaptic",
+        "line": 2696,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+        "method": "FlushQueuedPresentationOutputs",
+        "line": 2463,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+        "method": "ShouldKeepLateFrameRegistered",
+        "line": 1001,
+        "newReferenceTypes": 0,
+        "newReferenceTypeNames": [],
+        "newValueTypes": 0,
+        "newValueTypeNames": [],
+        "stringFormat": 0,
+        "toString": 0,
+        "linq": 0,
+        "foreach": 0
+      }
+    ],
+    "missing": [],
+    "elapsedMicroseconds": 232736,
+    "totals": {
+      "newReferenceTypes": 0,
+      "newValueTypes": 1,
+      "stringFormat": 0,
+      "toString": 0,
+      "linq": 0,
+      "foreach": 0
+    }
+  },
+  "lineProof": {
+    "Assets/_Project/Scripts/Gameplay/LifePodFireExtinguisherNozzle.cs": {
+      "lateFrameTick": [
+        197
+      ],
+      "queuedPayloadFields": [
+        71,
+        72,
+        200,
+        289,
+        290,
+        291,
+        292,
+        293,
+        294,
+        295,
+        301,
+        304,
+        305,
+        306,
+        373,
+        374
+      ],
+      "queueMethods": [
+        194,
+        279
+      ],
+      "flushMethods": [
+        199,
+        299
+      ],
+      "backendCalls": [
+        307
+      ]
+    },
+    "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs": {
+      "lateFrameTick": [
+        874,
+        881,
+        883
+      ],
+      "queuedPayloadFields": [
+        227,
+        228,
+        229,
+        230,
+        231,
+        232,
+        233,
+        234,
+        235,
+        264,
+        1093,
+        1124,
+        1130,
+        1136,
+        1181,
+        1185,
+        1191,
+        1302,
+        1303,
+        1304,
+        1305,
+        1306,
+        1307,
+        1308,
+        1309,
+        1319,
+        1320,
+        1321,
+        1322,
+        1327,
+        1328,
+        1329,
+        1330,
+        1331,
+        1332,
+        1333,
+        1334,
+        1335,
+        2309,
+        2311,
+        2315,
+        2317,
+        2318,
+        2319,
+        2330,
+        2332,
+        2333,
+        2334,
+        2345,
+        2347,
+        2348,
+        2349,
+        2359,
+        2360,
+        2361,
+        2362,
+        2363,
+        2364,
+        2365,
+        2446,
+        2447,
+        2448,
+        2449,
+        2454,
+        2457,
+        2458,
+        2459,
+        2467,
+        2468
+      ],
+      "queueMethods": [
+        828,
+        1070,
+        1137,
+        1138,
+        1300,
+        1312,
+        1325,
+        2011,
+        2440
+      ],
+      "flushMethods": [
+        877,
+        878,
+        2307,
+        2452
+      ],
+      "backendCalls": [
+        1830,
+        2312,
+        2320,
+        2335,
+        2350,
+        2462
+      ]
+    },
+    "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs": {
+      "lateFrameTick": [
+        692
+      ],
+      "queuedPayloadFields": [
+        504,
+        505,
+        935,
+        936,
+        2322,
+        2324,
+        2325,
+        2326,
+        2681,
+        2682
+      ],
+      "queueMethods": [
+        2676,
+        2679
+      ],
+      "flushMethods": [
+        694,
+        2278
+      ],
+      "backendCalls": [
+        2285,
+        2327
+      ]
+    },
+    "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs": {
+      "lateFrameTick": [
+        746
+      ],
+      "queuedPayloadFields": [
+        496,
+        507,
+        1009,
+        2666,
+        2667,
+        2668,
+        2669,
+        2670,
+        2671,
+        2672,
+        2673,
+        2680,
+        2683,
+        2684,
+        2685,
+        2698,
+        2699
+      ],
+      "queueMethods": [
+        740,
+        2657
+      ],
+      "flushMethods": [
+        752,
+        762,
+        769,
+        2463,
+        2470,
+        2678
+      ],
+      "backendCalls": [
+        2311,
+        2686
+      ]
+    }
+  },
+  "dataSovereignty": {
+    "migratedGlobalDataVaultFields": [],
+    "newBufferIdsIntroduced": [],
+    "existingSpectrumBufferIds": [
+      {
+        "name": "AupDiscoveryGridBufferId",
+        "file": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+        "line": 1575,
+        "constant": "(BufferID)71030"
+      },
+      {
+        "name": "ActiveSonarGeoTelemetryRingBufferId",
+        "file": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+        "line": 1576,
+        "constant": "(BufferID)71031"
+      }
+    ],
+    "writeLocks": [
+      {
+        "file": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+        "tryAcquireWriteLockLine": 2898,
+        "finallyLine": 2917
+      },
+      {
+        "file": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+        "tryAcquireWriteLockLine": 2947,
+        "finallyLine": 2985
+      },
+      {
+        "file": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+        "tryAcquireWriteLockLine": 3712,
+        "finallyLine": 3740
+      }
+    ]
+  },
+  "unmanagedPayloadProof": {
+    "SprayHapticRequest": "4 floats + 2 bytes; private value-type field, no managed references",
+    "TransportHapticRequest": "4 floats + 3 bytes; private value-type field, no managed references",
+    "EntanglementStructuralStressRequest": "Vector3 + 2 floats; private value-type field, no managed references",
+    "TransportAudioOneShotRequest": "Vector3 + float + byte; private value-type field; clip resolved at flush by byte selector, no persisted AudioClip reference",
+    "SomaticHapticRequest": "4 floats + 3 bytes; private value-type field, no managed references",
+    "HullStressSignal": "explicit-layout readonly struct Size=96 in Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs:139-233; reused as value payload"
+  },
+  "scalabilityAndCinematicCheat": {
+    "binaryLowEndSwitchMatches": 0,
+    "globalQualityWeightEvidence": [
+      "SubmarineAutoLevelBallastController.cs:1952 caches HomeostasisBrain.GlobalQualityWeight and scales active ballast sample budget at :2719",
+      "VRSomaticProvider.cs:3051 reads HomeostasisBrain.GlobalQualityWeight for comfort pressure scaling",
+      "DroneFleetManager.cs:6876 uses ResolveGlobalQualityWeight for render distance"
+    ],
+    "cheatProtocol": "No new physical simulation was introduced; haptics/audio/notifications are cached presentation fakes drained in LateFrameTick. Existing subsystem quality continues through continuous GlobalQualityWeight scalars."
+  },
+  "buildGate": {
+    "cpuLoadPercent": 45,
+    "activeCompilerProcesses": [
+      {
+        "id": 14652,
+        "processName": "dotnet",
+        "cpu": 27.78125,
+        "startTime": "2026-05-28T17:09:05+04:00"
+      }
+    ],
+    "dotnetBuildInvoked": false,
+    "decision": "BLOCKED_BY_ACTIVE_DOTNET_PROCESS"
+  },
+  "notes": [
+    "Expanded recheck7 scanner added IAudioService.PlayAtPoint/PlayStatic2D/QueueHullStressSignal and AudioSource Play/Stop patterns. It found the transport one-shot route, which was fixed before this report was generated.",
+    "LifePod late-frame unregister now clears pending haptic state even if late-frame registration was never acquired.",
+    "git diff --check exit code 0 for touched runtime files; only LF-to-CRLF warnings were emitted."
+  ]
+}

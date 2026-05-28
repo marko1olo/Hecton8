@@ -16,26 +16,38 @@ using UnityEngine;
 namespace Hecton8.Core
 {
     /// <summary>
-    /// Sixteen-byte dump header prefix. Do not add fields here; use the sealed 1024-byte dump header extension.
+    /// Sixty-four-byte dump header DTO. The first 16 bytes remain the sealed on-disk prefix.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct TelemetryHeaderDTO
     {
         [FieldOffset(0)] public ulong Timestamp;
         [FieldOffset(8)] public uint FrameNumber;
         [FieldOffset(12)] public uint FatalHash;
+        [FieldOffset(16)] private ulong _pad0;
+        [FieldOffset(24)] private ulong _pad1;
+        [FieldOffset(32)] private ulong _pad2;
+        [FieldOffset(40)] private ulong _pad3;
+        [FieldOffset(48)] private ulong _pad4;
+        [FieldOffset(56)] private ulong _pad5;
     }
 
     /// <summary>
-    /// Sixteen-byte event marker used as the allocation-free callstack surrogate.
+    /// Sixty-four-byte event marker used as the allocation-free callstack surrogate.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct TelemetryEventDTO
     {
         [FieldOffset(0)] public uint EventHash;
         [FieldOffset(4)] public float ScalarValue;
         [FieldOffset(8)] public uint EntityId;
         [FieldOffset(12)] public uint _pad0;
+        [FieldOffset(16)] private ulong _pad1;
+        [FieldOffset(24)] private ulong _pad2;
+        [FieldOffset(32)] private ulong _pad3;
+        [FieldOffset(40)] private ulong _pad4;
+        [FieldOffset(48)] private ulong _pad5;
+        [FieldOffset(56)] private ulong _pad6;
     }
 
     /// <summary>
@@ -111,16 +123,22 @@ namespace Hecton8.Core
         }
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct TelemetryLoggingMaskDTO
     {
         [FieldOffset(0)] public uint SystemHash;
         [FieldOffset(4)] public uint Mask;
         [FieldOffset(8)] public uint Version;
         [FieldOffset(12)] public uint _pad0;
+        [FieldOffset(16)] private ulong _pad1;
+        [FieldOffset(24)] private ulong _pad2;
+        [FieldOffset(32)] private ulong _pad3;
+        [FieldOffset(40)] private ulong _pad4;
+        [FieldOffset(48)] private ulong _pad5;
+        [FieldOffset(56)] private ulong _pad6;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal unsafe struct BlackboxSourceSlot
     {
         [FieldOffset(0)] internal byte* SourcePtr;
@@ -129,6 +147,10 @@ namespace Hecton8.Core
         [FieldOffset(16)] public int PayloadBytes;
         [FieldOffset(20)] public int _pad0;
         [FieldOffset(24)] private ulong _pad1;
+        [FieldOffset(32)] private ulong _pad2;
+        [FieldOffset(40)] private ulong _pad3;
+        [FieldOffset(48)] private ulong _pad4;
+        [FieldOffset(56)] private ulong _pad5;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -349,7 +371,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Pushes a 16-byte telemetry event into the atomic unmanaged event ring.
+        /// Pushes a 64-byte telemetry event into the atomic unmanaged event ring.
         /// </summary>
         public static void PushEvent(uint eventHash, float scalarValue)
         {
@@ -357,7 +379,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Pushes a 16-byte telemetry event into the atomic unmanaged event ring.
+        /// Pushes a 64-byte telemetry event into the atomic unmanaged event ring.
         /// </summary>
         public static void PushEvent(uint eventHash, float scalarValue, uint entityId)
         {
@@ -1925,7 +1947,7 @@ namespace Hecton8.Core
         }
 
 #if UNITY_EDITOR
-        [StructLayout(LayoutKind.Explicit, Size = 32)]
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
         public struct BlackboxEditorFrame
         {
             [FieldOffset(0)] public uint FrameNumber;
@@ -1934,6 +1956,10 @@ namespace Hecton8.Core
             [FieldOffset(12)] public Vector3 ImpactPosition;
             [FieldOffset(24)] public int Slot;
             [FieldOffset(28)] public uint _pad0;
+            [FieldOffset(32)] private ulong _pad1;
+            [FieldOffset(40)] private ulong _pad2;
+            [FieldOffset(48)] private ulong _pad3;
+            [FieldOffset(56)] private ulong _pad4;
         }
 
         public static unsafe int CopyBlackboxEditorFrames(BlackboxEditorFrame[] destination)

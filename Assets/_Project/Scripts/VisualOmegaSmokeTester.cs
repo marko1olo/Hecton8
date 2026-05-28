@@ -115,7 +115,8 @@ namespace Hecton8.Dev
             CheckNotContains(voxelStreamingSource, "$\"VoxelCave_", "voxel-streaming-hotpath-string-purged");
             CheckContains(volumetricComputeSource, "clamp((int)round(_HectonVolumetricShadowParams.x), 1, HECTON_VOLUMETRIC_LIGHT_MAX_STEPS)", "volumetric-shadow-step-continuous-quality-cap");
             CheckNotContains(volumetricComputeSource, "_MATH_LOD" + "_LOW", "volumetric-light-no-binary-math-lod");
-            CheckContains(retinaShaderSource, "_QUALITY_MX350", "retina-mx350-mode-toggle");
+            CheckNotContains(retinaShaderSource, "_QUALITY_MX350", "retina-no-binary-mx350-keyword");
+            CheckContains(retinaShaderSource, "_HectonRetinaQualityWeight", "retina-continuous-quality-weight");
             CheckNotContains(causticsRuntimeSource, "TrySampleWaveKinematics", "caustics-ocean-kinematics-sample-purged");
             CheckContains(causticsRuntimeSource, "RunPendingCausticsKernel(job);", "caustics-one-dto-job-run-path");
             CheckContains(causticsDeferredShaderSource, "sdfSampleBudget", "caustics-continuous-sdf-sample-budget");

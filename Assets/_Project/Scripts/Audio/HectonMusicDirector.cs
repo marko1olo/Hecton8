@@ -318,6 +318,7 @@ namespace Hecton8.Audio
         private int _recentShortWriteIndex;
         private int _recentShortCount;
         private bool _currentBaseContext;
+        private bool _pendingDiscoveryStinger;
         private bool _pendingDangerStinger;
         private bool _pendingRecoveryStinger;
         private int _forceCalmSelectionsRemaining;
@@ -514,7 +515,11 @@ namespace Hecton8.Audio
             }
 
             if (!_pendingMusicTickDirty)
+            {
+                if (HasPendingStingers())
+                    FlushPendingStingers();
                 return;
+            }
 
             float deltaTime = _pendingMusicTickDeltaTime;
             _pendingMusicTickDeltaTime = 0f;
@@ -724,7 +729,8 @@ namespace Hecton8.Audio
             if (_overrideActive || _combatLatched || _currentBaseContext)
                 return;
 
-            TryPlayPendingStinger(StingerKind.Discovery);
+            _pendingDiscoveryStinger = true;
+            TryRegisterLateFrameTick();
         }
 
         /// <summary>
@@ -735,7 +741,8 @@ namespace Hecton8.Audio
             if (_overrideActive || _currentBaseContext)
                 return;
 
-            TryPlayPendingStinger(StingerKind.Danger);
+            _pendingDangerStinger = true;
+            TryRegisterLateFrameTick();
         }
 
         /// <summary>
@@ -746,7 +753,8 @@ namespace Hecton8.Audio
             if (_overrideActive || _currentBaseContext)
                 return;
 
-            TryPlayPendingStinger(StingerKind.Recovery);
+            _pendingRecoveryStinger = true;
+            TryRegisterLateFrameTick();
         }
 
         private void UpdateStingerCooldowns(float deltaTime)
@@ -767,6 +775,12 @@ namespace Hecton8.Audio
 
         private void FlushPendingStingers()
         {
+            if (_pendingDiscoveryStinger)
+            {
+                if (TryPlayPendingStinger(StingerKind.Discovery) || _overrideActive || _combatLatched || _currentBaseContext)
+                    _pendingDiscoveryStinger = false;
+            }
+
             if (_pendingDangerStinger)
             {
                 if (TryPlayPendingStinger(StingerKind.Danger) || _overrideActive || _currentBaseContext)
@@ -778,6 +792,11 @@ namespace Hecton8.Audio
                 if (TryPlayPendingStinger(StingerKind.Recovery) || _overrideActive || _currentBaseContext)
                     _pendingRecoveryStinger = false;
             }
+        }
+
+        private bool HasPendingStingers()
+        {
+            return _pendingDiscoveryStinger || _pendingDangerStinger || _pendingRecoveryStinger;
         }
 
         /// <summary>
@@ -825,6 +844,10 @@ namespace Hecton8.Audio
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLateFrameTick = false;
             }
+
+            _pendingDiscoveryStinger = false;
+            _pendingDangerStinger = false;
+            _pendingRecoveryStinger = false;
         }
 
         private void TryRegisterLateFrameTick()

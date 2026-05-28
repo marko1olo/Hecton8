@@ -689,6 +689,7 @@ namespace Hecton8.Core.Diagnostics
         private const int WorkerFlagDiskFallback = 1 << 1;
         private const int WorkerFlagEndpointConfigured = 1 << 2;
         private const int WorkerFlagFaulted = 1 << 3;
+        private const ulong WorkerVaultMutationGuardMask = 1UL << 61;
         private static readonly ProfilerMarker ProcessQueueMarker = new ProfilerMarker("H8.Analytics.ProcessQueue");
         private static readonly ProfilerMarker HandoffMarker = new ProfilerMarker("H8.Analytics.ExportSignal");
         private static AsynchronousTelemetryExporter s_active;
@@ -1280,49 +1281,22 @@ namespace Hecton8.Core.Diagnostics
 
         private bool LockWorkerVaultBuffers()
         {
-            if (_workerBuffersLocked || _dataVault == null)
+            IDataVault vault = _dataVault;
+            if (_workerBuffersLocked || vault == null)
                 return _workerBuffersLocked;
 
-            bool locked =
-                _dataVault.TryLockBuffer(AnalyticsVaultBufferIds.RoutineIngress, SystemID.CoreDiagnostics) &&
-                _dataVault.TryLockBuffer(AnalyticsVaultBufferIds.CriticalIngress, SystemID.CoreDiagnostics) &&
-                _dataVault.TryLockBuffer(AnalyticsVaultBufferIds.IngressCursor, SystemID.CoreDiagnostics) &&
-                _dataVault.TryLockBuffer(AnalyticsVaultBufferIds.HandoffA, SystemID.CoreDiagnostics) &&
-                _dataVault.TryLockBuffer(AnalyticsVaultBufferIds.HandoffB, SystemID.CoreDiagnostics) &&
-                _dataVault.TryLockBuffer(AnalyticsVaultBufferIds.WorkerAccum, SystemID.CoreDiagnostics) &&
-                _dataVault.TryLockBuffer(AnalyticsVaultBufferIds.RawBatchScratch, SystemID.CoreDiagnostics) &&
-                _dataVault.TryLockBuffer(AnalyticsVaultBufferIds.CompressedScratch, SystemID.CoreDiagnostics) &&
-                _dataVault.TryLockBuffer(AnalyticsVaultBufferIds.DumpSnapshot, SystemID.CoreDiagnostics);
-            _workerBuffersLocked = locked;
-            if (!locked)
-            {
-                _dataVault.TryUnlockBuffer(AnalyticsVaultBufferIds.DumpSnapshot, SystemID.CoreDiagnostics);
-                _dataVault.TryUnlockBuffer(AnalyticsVaultBufferIds.CompressedScratch, SystemID.CoreDiagnostics);
-                _dataVault.TryUnlockBuffer(AnalyticsVaultBufferIds.RawBatchScratch, SystemID.CoreDiagnostics);
-                _dataVault.TryUnlockBuffer(AnalyticsVaultBufferIds.WorkerAccum, SystemID.CoreDiagnostics);
-                _dataVault.TryUnlockBuffer(AnalyticsVaultBufferIds.HandoffB, SystemID.CoreDiagnostics);
-                _dataVault.TryUnlockBuffer(AnalyticsVaultBufferIds.HandoffA, SystemID.CoreDiagnostics);
-                _dataVault.TryUnlockBuffer(AnalyticsVaultBufferIds.IngressCursor, SystemID.CoreDiagnostics);
-                _dataVault.TryUnlockBuffer(AnalyticsVaultBufferIds.CriticalIngress, SystemID.CoreDiagnostics);
-                _dataVault.TryUnlockBuffer(AnalyticsVaultBufferIds.RoutineIngress, SystemID.CoreDiagnostics);
-            }
-            return locked;
+            _workerBuffersLocked = vault.TryAcquireMutationGuard(WorkerVaultMutationGuardMask);
+            return _workerBuffersLocked;
         }
 
         private void UnlockWorkerVaultBuffers()
         {
-            if (!_workerBuffersLocked || _dataVault == null)
+            if (!_workerBuffersLocked)
                 return;
 
-            _dataVault.TryUnlockBuffer(AnalyticsVaultBufferIds.DumpSnapshot, SystemID.CoreDiagnostics);
-            _dataVault.TryUnlockBuffer(AnalyticsVaultBufferIds.CompressedScratch, SystemID.CoreDiagnostics);
-            _dataVault.TryUnlockBuffer(AnalyticsVaultBufferIds.RawBatchScratch, SystemID.CoreDiagnostics);
-            _dataVault.TryUnlockBuffer(AnalyticsVaultBufferIds.WorkerAccum, SystemID.CoreDiagnostics);
-            _dataVault.TryUnlockBuffer(AnalyticsVaultBufferIds.HandoffB, SystemID.CoreDiagnostics);
-            _dataVault.TryUnlockBuffer(AnalyticsVaultBufferIds.HandoffA, SystemID.CoreDiagnostics);
-            _dataVault.TryUnlockBuffer(AnalyticsVaultBufferIds.IngressCursor, SystemID.CoreDiagnostics);
-            _dataVault.TryUnlockBuffer(AnalyticsVaultBufferIds.CriticalIngress, SystemID.CoreDiagnostics);
-            _dataVault.TryUnlockBuffer(AnalyticsVaultBufferIds.RoutineIngress, SystemID.CoreDiagnostics);
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                vault.ReleaseMutationGuard(WorkerVaultMutationGuardMask);
             _workerBuffersLocked = false;
         }
 

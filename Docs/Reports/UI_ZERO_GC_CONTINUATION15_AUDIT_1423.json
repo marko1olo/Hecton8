@@ -1,0 +1,91 @@
+{
+  "agent_id": "1423",
+  "status": "PENDING VERIFICATION",
+  "generated_at": "2026-05-28T20:32:48+04:00",
+  "domain": "ECHELON 8 PRESENTATION AND UX / Zero-GC Subtitles (Babel), VWS",
+  "audit_scope": "Continuation15 broad UI runtime ToCharArray reduction after the VWS fallback ownership repair.",
+  "files_changed": {
+    "Assets/_Project/Scripts/UI/LoadingScreenController.cs": "9431DDBF774A1926593D50AD1246399B326279C3B4ADFC6DF701ACB2E84E0E0B",
+    "Assets/_Project/Scripts/UI/SaveSlotHoverPreview.cs": "93B7C368F69688DA453C800F0BB5687BD8DBFAA7DDD9F4DEECAB04DDE3BCBEDA",
+    "Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs": "9A06A4553A77FF32CB786BCAB736952534B61516893ECEA614FC1D1A8770FE23",
+    "Assets/_Project/Scripts/UI/PDAAtlasSignalTab.cs": "87B3FD1901D8E16D0A1BC4B18D1A355746C60B213706D69A951C41C4DD8C1705"
+  },
+  "completed_current_delta": {
+    "problem": "A broad domain scan found more cold static .ToCharArray() clones in small UI runtime components outside the subtitle/VWS core route.",
+    "solution": "Replaced those clones with ReadOnlySpan<char> literal/template properties and copied spans into existing instance buffers before TMP SetCharArray or LocNumericBuffer writes.",
+    "line_evidence": {
+      "loading_span_literals": "Assets/_Project/Scripts/UI/LoadingScreenController.cs:35",
+      "loading_stage_span_route": "Assets/_Project/Scripts/UI/LoadingScreenController.cs:320",
+      "save_preview_span_literals": "Assets/_Project/Scripts/UI/SaveSlotHoverPreview.cs:45",
+      "save_preview_span_append": "Assets/_Project/Scripts/UI/SaveSlotHoverPreview.cs:502",
+      "builder_span_literals": "Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs:25",
+      "builder_title_copy": "Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs:426",
+      "builder_numeric_template": "Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs:840",
+      "builder_span_copy_helper": "Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs:873",
+      "atlas_span_templates": "Assets/_Project/Scripts/UI/PDAAtlasSignalTab.cs:48",
+      "atlas_empty_timer_copy": "Assets/_Project/Scripts/UI/PDAAtlasSignalTab.cs:759",
+      "atlas_numeric_span_template": "Assets/_Project/Scripts/UI/PDAAtlasSignalTab.cs:942",
+      "atlas_span_copy_helper": "Assets/_Project/Scripts/UI/PDAAtlasSignalTab.cs:996"
+    }
+  },
+  "zero_gc_static_evidence": {
+    "changed_files_to_char_array_hits": 0,
+    "changed_files_forbidden_scan_counts": {
+      "string.Format": 0,
+      ".ToString(": 0,
+      "TMP_Text.text assignment": 0,
+      "new string": 0,
+      "StringBuilder": 0,
+      "Array.Resize": 0,
+      "foreach": 0
+    },
+    "changed_files_set_char_array_single_argument_hits": 0,
+    "changed_files_invalid_static_readonlyspan_field_or_array_hits": 0,
+    "domain_to_char_array_remaining_hits": 30,
+    "domain_to_char_array_remaining_by_file": {
+      "Assets/_Project/Scripts/LocRegistry.cs": 1,
+      "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs": 29
+    },
+    "deferred_reason": "LocRegistry exposes a legacy char[] buffer API for missing-key fallback, and SuitHUDV4CanvasOverlay includes a mutable static MEMORY SUBSYSTEM BREACH buffer plus many HUD label buffers. Those need a dedicated route-safe migration, not a blind span substitution.",
+    "git_diff_check": "exit 0; CRLF normalization warnings only"
+  },
+  "bounded_cursor_proof": {
+    "loading": "ResolvePipelineStageBuffer now returns ReadOnlySpan<char>; UpdateStatus clamps safeLength to _currentStatusBuffer.Length before copy and TMP SetCharArray.",
+    "save_preview": "Unknown timestamp and zero playtime literals now use AppendSpan, whose cursor is bounded by destination length before copy.",
+    "builder": "Title and module-index templates are copied through CopyToBuffer/LocNumericBuffer into existing buffers, then SetBufferText clamps length to buffer.Length.",
+    "atlas": "Pulse timer empty/template spans are copied into _pulseTimerBuffer or numeric destination buffers before SetBufferText clamps length."
+  },
+  "data_sovereignty": {
+    "new_global_data_vault_migrations_in_latest_delta": 0,
+    "new_try_acquire_write_lock_sites": 0,
+    "lock_release_change_in_latest_delta": "No DataVault ownership or locks changed in CONT15."
+  },
+  "cinematic_cheat_and_scalability": {
+    "cinematic_cheat": "No simulation or layout solver was added. These are fixed literal/template UI text paths using existing buffers.",
+    "binary_quality_switches_added": 0,
+    "global_quality_weight_contract": "No gameplay truth, DTO layout, save identity, or authority route changed. Existing continuous UI quality routes remain untouched."
+  },
+  "build_throttle": {
+    "build_launched_in_latest_delta": false,
+    "cpu_sample_percent": 100,
+    "active_dotnet_csc_vbcscompiler": [
+      "dotnet PID 13464 CPU 42.53125 StartTime 2026-05-28 20:31:56"
+    ],
+    "reason": "CPU > 50 and active dotnet process exists.",
+    "previous_build_failure_dump": "Docs/AgentLogs/Dump_1423_CONT9_BUILD_FAILURE.txt",
+    "previous_build_failure_dump_sha256": "9CBEE6CDC1A63242D46CEB23F7029637F1857AF5F0DC063F1DAEB46C59B64273"
+  },
+  "verification_truth": {
+    "project_build_passed": false,
+    "editor_tests_executed": false,
+    "runtime_profiler_gc_bytes": null,
+    "runtime_zero_gc_claim": false
+  },
+  "residual_faults": [
+    "Domain scan still reports 30 .ToCharArray() hits: LocRegistry missing-key char[] fallback and SuitHUDV4CanvasOverlay HUD/static breach buffers.",
+    "Runtime 0B GC remains unmeasured because no passing build/profiler run exists.",
+    "Project compilation is still blocked by the previously captured out-of-domain ModularEquipmentEngine.cs CS8168/CS8350 wall."
+  ],
+  "report_path": "Docs/Reports/UI_ZERO_GC_CONTINUATION15_AUDIT_1423.json",
+  "report_kind": "UI_ZERO_GC_CONTINUATION15_AUDIT_1423"
+}

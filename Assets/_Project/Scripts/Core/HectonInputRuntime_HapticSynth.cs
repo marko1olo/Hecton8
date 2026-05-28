@@ -404,37 +404,37 @@ namespace Hecton8.Core
                 Hecton8.Core.H8Debug.LogError("[InputDispatcher] Haptic synthesis ABI violation.");
 #endif
             bool ready =
-                TryResolveOrAcquireInputBuffer(
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _hapticSynthesisPulsesHandle,
                     BufferID.ShinobuHapticSynthesisPulses,
                     HapticSynthesisMath.PulseCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
-                TryResolveOrAcquireInputBuffer(
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _hapticSynthesisFinalPulseHandle,
                     BufferID.ShinobuHapticSynthesisFinalPulse,
                     1,
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
-                TryResolveOrAcquireInputBuffer(
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _hapticSynthesisMockImpulsesHandle,
                     BufferID.ShinobuHapticSynthesisMockImpulses,
                     HapticSynthesisMath.MockImpulseCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
-                TryResolveOrAcquireInputBuffer(
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _hapticSynthesisTelemetryRingHandle,
                     BufferID.ShinobuHapticSynthesisTelemetryRing,
                     HapticSynthesisMath.TelemetryCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
-                TryResolveOrAcquireInputBuffer(
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _hapticSynthesisProfilesHandle,
                     BufferID.ShinobuHapticSynthesisProfileTable,
                     HapticSynthesisMath.ProfileCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
-                TryResolveOrAcquireInputBuffer(
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _hapticSynthesisTuningHandle,
                     BufferID.ShinobuHapticSynthesisTuning,
                     1,
@@ -442,7 +442,7 @@ namespace Hecton8.Core
                     out _);
 #if UNITY_EDITOR
             ready = ready &&
-                TryResolveOrAcquireInputBuffer(
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _hapticSynthesisCsvScratchHandle,
                     BufferID.ShinobuHapticSynthesisCsvScratch,
                     HapticSynthesisMath.ProfileCsvScratchBytes,

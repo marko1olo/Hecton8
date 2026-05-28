@@ -95,3 +95,43 @@ Solution: Treat the strict log as an unsuppressed audit artifact, not the normal
 Rejected Alternatives: Suppressing strict warnings to recreate a fake 0/0 was rejected. Mass-editing serialized fields during a compile-medic fix was rejected because it would create wide prefab/serialization churn without domain-owner review.
 Scalability potential: Runtime tier behavior is unchanged. Normal builds remain warning-clean while strict audit debt is visible instead of hidden.
 Hardware Impact: Runtime microseconds saved: 0 claimed. This is diagnostic classification only.
+
+## 2026-05-28 Parallel Dirty Compile Recovery
+
+Problem: New builds ran while other agents were editing and rebuilding. Fresh logs showed `ModuloSimulationBucketer.ReleaseRebalanceBufferPins` missing, but the current source already contained the method and the matching pin-held fields.
+Solution: Waited for external `dotnet/csc` activity to finish, inspected the DataVault lock contract, and rebuilt `Hecton8.Core` from the settled tree. `BUILD_COMPILE_MEDIC_CORE_FINAL_AFTER_BUCKETER_20260528_1.log` proves 0 warnings and 0 errors.
+Rejected Alternatives: Adding a duplicate helper or changing the method name was rejected because current source was already coherent. Killing the running solution build was rejected because it was real compiler work from a parallel route.
+Scalability potential: Low/middle/high/ultra behavior is unchanged. The rebalance job keeps relocation pins only for scheduled job lifetime and does not add writer-lock contention.
+Hardware Impact: Runtime microseconds saved: 0 claimed. This removed a stale compile signal only.
+
+## 2026-05-28 Modular Equipment Ref Safety
+
+Problem: `ModularEquipmentEngine` used a `ref` lock counter path with `EquipmentVaultView<T>` ref-struct views, producing C# ref-safety compiler failures.
+Solution: The helper now only acquires and returns the write view; the caller increments `acquiredCount` after each successful acquisition and releases by counted buffer order on failure.
+Rejected Alternatives: `scoped ref` propagation, unsafe counter storage, and warning suppression were rejected because they obscure ownership and still keep the ref-struct escape risk.
+Scalability potential: All tiers keep the same equipment vault buffer surface. Failure unwinds remain deterministic and no extra heap allocation or registry polling is added.
+Hardware Impact: Runtime microseconds saved: 0 claimed. The fix is compile/ref-safety correctness with neutral frame-time cost.
+
+## 2026-05-28 Ballistics Ricochet Constant Ownership
+
+Problem: `BallisticIntersectionJob` is namespace-level code, so it could not resolve an unqualified private `MaxRicochetsPerTrajectory` member from `BallisticsRuntime`.
+Solution: Made the ricochet budget constant internal on the owner type and qualified the job access as `BallisticsRuntime.MaxRicochetsPerTrajectory`.
+Rejected Alternatives: A magic literal inside the job and a new duplicated constant were rejected because one fact must have one owner.
+Scalability potential: Ballistics keeps one authoritative ricochet cap across low/middle/high/ultra tiers. No gameplay authority or DTO layout changed.
+Hardware Impact: Runtime microseconds saved: 0 claimed. The fix is compile ownership only.
+
+## 2026-05-28 Crest and MapMagic Boundary Verification
+
+Problem: The user specifically flagged manually edited MapMagic graphs and Crest water. Current workspace has no MapMagic or `02_HECTON_WORLD.unity` diff, but Crest has compute/C# safety edits around dispatch bounds, FFT resolution clamps, null shader/resource guards, and bake cleanup.
+Solution: Rebuilt Crest runtime/editor and all MapMagic runtime/editor/settings/MicroSplat C# targets in `BUILD_COMPILE_MEDIC_TARGETED_FINAL_AFTER_BUCKETER_20260528_1.csv`; all are exit=0, warnings=0, errors=0. Static diff scan found no conflict markers or placeholder stubs in those paths.
+Rejected Alternatives: Editing MapMagic graphs or scene YAML was rejected because there is no current diff and dotnet cannot validate Unity serialized graph semantics. Claiming shader safety as fully proven was rejected because compute shader import/runtime validation needs Unity Editor.
+Scalability potential: Crest changes are continuous-boundary guards and dispatch sizing, not low/ultra binary switches. MapMagic feature surface is not amputated.
+Hardware Impact: Runtime microseconds saved: 0 claimed. Crest guards may prevent out-of-bounds GPU writes on non-divisible resolutions; expected CPU cost is negligible relative to compute dispatch.
+
+## 2026-05-28 Strict Audit Debt Classification
+
+Problem: Current strict Core audit still reports 904 warnings when normal warning policy is disabled. Normal builds are warning-clean, but strict mode exposes Unity serialized-field, dead event, obsolete API, and source/DLL duplicate-type audit debt.
+Solution: Recorded the strict log as `BUILD_COMPILE_MEDIC_CORE_STRICT_AUDIT_AFTER_BUCKETER_20260528_1.log`, with 0 errors. Did not mass-edit serialized fields or public event surfaces during compile-medic work.
+Rejected Alternatives: Suppressing the strict audit or mass-initializing hundreds of serialized fields was rejected because it would either hide real debt or risk prefab/scene serialization churn without owner review.
+Scalability potential: Runtime tier behavior is unchanged. This is a diagnostic debt ledger, not runtime path code.
+Hardware Impact: Runtime microseconds saved: 0 claimed. Normal build warnings remain 0; strict warning cleanup remains a separate policy task.

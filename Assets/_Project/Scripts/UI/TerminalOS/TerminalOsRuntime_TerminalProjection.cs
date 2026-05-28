@@ -119,10 +119,10 @@ namespace Hecton8.UI
 
         private void ReleaseTerminalProjectionVaultHandles(IDataVault vault)
         {
-            ReleaseVaultHandle(vault, ref _terminalInputStatesHandle);
-            ReleaseVaultHandle(vault, ref _terminalInputTelemetryRingHandle);
-            ReleaseVaultHandle(vault, ref _terminalInputTuningHandle);
-            ReleaseVaultHandle(vault, ref _terminalInputRowHashesHandle);
+            ReleaseVaultHandle(vault, ref _terminalInputStatesHandle, TerminalInputStatesBufferId);
+            ReleaseVaultHandle(vault, ref _terminalInputTelemetryRingHandle, TerminalInputTelemetryRingBufferId);
+            ReleaseVaultHandle(vault, ref _terminalInputTuningHandle, TerminalInputTuningBufferId);
+            ReleaseVaultHandle(vault, ref _terminalInputRowHashesHandle, TerminalInputRowHashesBufferId);
         }
 
         private void InitializeTerminalProjectionState()

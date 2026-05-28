@@ -804,8 +804,9 @@ namespace Hecton8.Core
             GameObject primitive = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             primitive.SetActive(false);
             primitive.hideFlags = HideFlags.HideAndDontSave;
-            MeshFilter meshFilter = primitive.GetComponent<MeshFilter>();
-            s_staticCylinderMesh = meshFilter != null ? meshFilter.sharedMesh : null;
+            s_staticCylinderMesh = primitive.TryGetComponent(out MeshFilter meshFilter)
+                ? meshFilter.sharedMesh
+                : null;
             if (Application.isPlaying)
                 UnityEngine.Object.Destroy(primitive);
             else

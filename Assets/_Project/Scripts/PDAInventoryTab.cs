@@ -37,42 +37,39 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/PDA Inventory Tab")]
     public sealed class PDAInventoryTab : MonoBehaviour, IUpdatable, ILateFrameTickable, IPDAEventListener, ILocalizationCorruptionVisualStateListener, IGlobalRegistryHotSwapListener
     {
-        private static readonly char[] StackCountTemplateChars = "×{0}".ToCharArray();
-        private static readonly char[] DetailWeightStackTemplateChars = "MASS: {0:0.0} kg  |  STACK x{1}  |  TOTAL {2:0.0} kg".ToCharArray();
-        private static readonly char[] DetailWeightTemplateChars = "MASS: {0:0.0} kg".ToCharArray();
-        private static readonly char[] CargoWeightTemplateChars = "CARGO: {0:0.0} kg  |  {1}/{2} CELLS".ToCharArray();
-        private static readonly char[] CargoDigestPrefixAnchorsChars = "ANCHORS ".ToCharArray();
-        private static readonly char[] CargoDigestUnitsChars = "  |  UNITS ".ToCharArray();
-        private static readonly char[] CargoDigestFreeChars = "  |  FREE ".ToCharArray();
-        private static readonly char[] CargoDigestLineBreakChars = "\n".ToCharArray();
-        private static readonly char[] CargoDigestToolsChars = "TOOLS ".ToCharArray();
-        private static readonly char[] CargoDigestConsumablesChars = "  |  CONS ".ToCharArray();
-        private static readonly char[] CargoDigestMaterialsChars = "  |  MATS ".ToCharArray();
-        private static readonly char[] CargoDigestComponentsChars = "  |  PARTS ".ToCharArray();
-        private static readonly char[] CargoDigestMiscChars = "  |  MISC ".ToCharArray();
-        private static readonly char[] FilterDigestPrefixChars = "FILTER: ".ToCharArray();
-        private static readonly char[] FilterDigestShowingChars = "  |  SHOWING ".ToCharArray();
-        private static readonly char[] FilterDigestItemsChars = " ITEMS".ToCharArray();
-        private static readonly char[] FilterLabelAllChars = "ALL".ToCharArray();
-        private static readonly char[] FilterLabelToolsChars = "TOOLS".ToCharArray();
-        private static readonly char[] FilterLabelConsumablesChars = "CONS".ToCharArray();
-        private static readonly char[] FilterLabelMaterialsChars = "MATS".ToCharArray();
-        private static readonly char[] FilterLabelComponentsChars = "PARTS".ToCharArray();
-        private static readonly char[] FilterEmptyLabelToolsChars = "TOOLS".ToCharArray();
-        private static readonly char[] FilterEmptyLabelConsumablesChars = "CONSUMABLES".ToCharArray();
-        private static readonly char[] FilterEmptyLabelMaterialsChars = "MATERIALS".ToCharArray();
-        private static readonly char[] FilterEmptyLabelComponentsChars = "COMPONENTS".ToCharArray();
-        private static readonly char[] PageDigestPrefixChars = "PAGE ".ToCharArray();
+        private static ReadOnlySpan<char> StackCountTemplateChars => "\u00D7{0}".AsSpan();
+        private static ReadOnlySpan<char> DetailWeightStackTemplateChars => "MASS: {0:0.0} kg  |  STACK x{1}  |  TOTAL {2:0.0} kg".AsSpan();
+        private static ReadOnlySpan<char> DetailWeightTemplateChars => "MASS: {0:0.0} kg".AsSpan();
+        private static ReadOnlySpan<char> CargoWeightTemplateChars => "CARGO: {0:0.0} kg  |  {1}/{2} CELLS".AsSpan();
+        private static ReadOnlySpan<char> CargoDigestPrefixAnchorsChars => "ANCHORS ".AsSpan();
+        private static ReadOnlySpan<char> CargoDigestUnitsChars => "  |  UNITS ".AsSpan();
+        private static ReadOnlySpan<char> CargoDigestFreeChars => "  |  FREE ".AsSpan();
+        private static ReadOnlySpan<char> CargoDigestLineBreakChars => "\n".AsSpan();
+        private static ReadOnlySpan<char> CargoDigestToolsChars => "TOOLS ".AsSpan();
+        private static ReadOnlySpan<char> CargoDigestConsumablesChars => "  |  CONS ".AsSpan();
+        private static ReadOnlySpan<char> CargoDigestMaterialsChars => "  |  MATS ".AsSpan();
+        private static ReadOnlySpan<char> CargoDigestComponentsChars => "  |  PARTS ".AsSpan();
+        private static ReadOnlySpan<char> CargoDigestMiscChars => "  |  MISC ".AsSpan();
+        private static ReadOnlySpan<char> FilterDigestPrefixChars => "FILTER: ".AsSpan();
+        private static ReadOnlySpan<char> FilterDigestShowingChars => "  |  SHOWING ".AsSpan();
+        private static ReadOnlySpan<char> FilterDigestItemsChars => " ITEMS".AsSpan();
+        private static ReadOnlySpan<char> FilterLabelAllChars => "ALL".AsSpan();
+        private static ReadOnlySpan<char> FilterLabelToolsChars => "TOOLS".AsSpan();
+        private static ReadOnlySpan<char> FilterLabelConsumablesChars => "CONS".AsSpan();
+        private static ReadOnlySpan<char> FilterLabelMaterialsChars => "MATS".AsSpan();
+        private static ReadOnlySpan<char> FilterLabelComponentsChars => "PARTS".AsSpan();
+        private static ReadOnlySpan<char> FilterEmptyLabelToolsChars => "TOOLS".AsSpan();
+        private static ReadOnlySpan<char> FilterEmptyLabelConsumablesChars => "CONSUMABLES".AsSpan();
+        private static ReadOnlySpan<char> FilterEmptyLabelMaterialsChars => "MATERIALS".AsSpan();
+        private static ReadOnlySpan<char> FilterEmptyLabelComponentsChars => "COMPONENTS".AsSpan();
+        private static ReadOnlySpan<char> PageDigestPrefixChars => "PAGE ".AsSpan();
         private static readonly char[] EmptyTextChars = new char[1];
         private static readonly int ItemDescriptionFallbackKeyHash = unchecked((int)H8LocHashes.ITEM_DESCRIPTION_FALLBACK);
         private static readonly int PdaInventoryItemDescriptionSourceHash =
             LocHash.Compute("PDAInventoryTab.ItemDescription".AsSpan());
         private const int MaxDynamicTextBufferChars = 4096;
         private static readonly char[] SharedOversizedTextBuffer = new char[MaxDynamicTextBufferChars]; // COLD ALLOC: char[4096] - no-GC fallback for unusually long PDA strings - owner: PDAInventoryTab
-        // COLD ALLOC: string[4] — cached PDA tool-slot key labels — owner: PDAInventoryTab
-        private static readonly string[] ToolSlotKeyLabels = { "1", "2", "3", "4" };
-        // COLD ALLOC: string[5] — cached PDA tab bar labels — owner: PDAInventoryTab
-        private static readonly string[] TabLabels = { "INVENTORY", "LOADOUT", "CONSTRUCT", "BARTER", "DATA LOG" };
+        private const int TabLabelCount = 5;
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -97,6 +94,7 @@ namespace Hecton8.UI
         private const int MaxItems = 48;
         private const int MaxVisibleBlocks = 32;
         private const int ToolSlotCount = 4;
+        private const int PrefabToolCacheCapacity = 32;
 
         private const float InventoryUiParallaxStrength = 0.018f;
         private static readonly int PdaInventoryParallaxId = Shader.PropertyToID("_HectonPdaInventoryParallax");
@@ -250,6 +248,10 @@ namespace Hecton8.UI
         private char[] _descriptionTextBuffer;
         private char[] _loadoutAssignTextBuffer;
         private FixedCharBuffer _notificationBuffer = new FixedCharBuffer(192); // COLD ALLOC: char[192] - inventory HUD notification staging buffer - owner: PDAInventoryTab
+        private readonly int[] _prefabToolCacheIds = new int[PrefabToolCacheCapacity]; // COLD ALLOC: int[32] - prefab metadata lookup cache keys - owner: PDAInventoryTab
+        private readonly byte[] _prefabToolCacheStates = new byte[PrefabToolCacheCapacity]; // COLD ALLOC: byte[32] - 1=hit, 2=miss - owner: PDAInventoryTab
+        private readonly IPlayerToolDataReadModel[] _prefabToolCacheTools = new IPlayerToolDataReadModel[PrefabToolCacheCapacity]; // COLD ALLOC: interface[32] - cached prefab tool metadata - owner: PDAInventoryTab
+        private int _prefabToolCacheCount;
         private int[] _filteredAnchorIndices;
         private bool _gridDirty;
         private bool _detailsDirty;
@@ -758,14 +760,13 @@ namespace Hecton8.UI
             RectTransform parent = transform.parent as RectTransform;
             if (parent == null) return;
 
-            string[] labels = TabLabels;
             Transform existing = parent.Find("PDA_TabBar");
             if (existing != null)
             {
                 _tabBarRoot = existing as RectTransform;
                 HorizontalLayoutGroup existingLayoutGroup = EnsureHorizontalLayout(_tabBarRoot, 6f, TextAnchor.MiddleCenter);
                 LocalizedLayoutMirror.ConfigureRuntime(existingLayoutGroup, _tabBarRoot, true, true, false);
-                if (TryCacheExistingTabButtons(labels.Length))
+                if (TryCacheExistingTabButtons(TabLabelCount))
                     return;
 
                 for (int i = _tabBarRoot.childCount - 1; i >= 0; i--)
@@ -784,12 +785,12 @@ namespace Hecton8.UI
                        new Vector2(0f, -4f), new Vector2(0f, 36f));
             }
 
-            EnsureTabButtonCache(labels.Length);
+            EnsureTabButtonCache(TabLabelCount);
             float tabWidth = 126f;
             HorizontalLayoutGroup layoutGroup = EnsureHorizontalLayout(_tabBarRoot, 6f, TextAnchor.MiddleCenter);
             LocalizedLayoutMirror.ConfigureRuntime(layoutGroup, _tabBarRoot, true, true, false);
 
-            for (int i = 0; i < labels.Length; i++)
+            for (int i = 0; i < TabLabelCount; i++)
             {
                 RectTransform tabRect = CreateRect("Tab_" + i, _tabBarRoot);
                 tabRect.sizeDelta = new Vector2(tabWidth, 30f);
@@ -806,7 +807,7 @@ namespace Hecton8.UI
                 TextMeshProUGUI tabLabel = CreateText("Label", tabRect, 11f,
                     FontStyles.Bold, TextAlignmentOptions.Center);
                 Stretch(tabLabel.rectTransform);
-                SetBufferedText(tabLabel, labels[i]);
+                SetBufferedText(tabLabel, ResolveTabLabelChars(i));
                 tabLabel.color = i == 0 ? TabActive : TabInactive;
 
                 PDATabButton btn = tabRect.gameObject.AddComponent<PDATabButton>();
@@ -1297,7 +1298,7 @@ namespace Hecton8.UI
                     FontStyles.Bold, TextAlignmentOptions.TopLeft);
                 Anchor(keyLbl.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f),
                        new Vector2(4f, -3f), new Vector2(16f, 14f));
-                SetBufferedText(keyLbl, ToolSlotKeyLabels[i]);
+                SetBufferedText(keyLbl, ResolveToolSlotKeyLabelChars(i));
                 keyLbl.color = A(DimLow, 0.5f);
                 _toolSlotKeys[i] = keyLbl;
             }
@@ -1788,8 +1789,8 @@ namespace Hecton8.UI
                 _toolSlotBgs[i].color = isActive ? ToolSlotActive : ToolSlotBg;
 
                 GameObject prefab = toolManager.GetAssignedToolPrefab(i);
-                if (prefab != null && prefab.TryGetComponent<IPlayerToolDataReadModel>(out var tool)
-                    && tool.ToolData != null && tool.ToolData.icon != null)
+                IPlayerToolDataReadModel tool = ResolvePrefabTool(prefab);
+                if (tool != null && tool.ToolData != null && tool.ToolData.icon != null)
                 {
                     _toolSlotIcons[i].sprite = tool.ToolData.icon;
                     SetGraphicVisible(_toolSlotIcons[i], true);
@@ -2533,22 +2534,22 @@ namespace Hecton8.UI
             graphic.enabled = visible;
         }
 
-        private static void SetNumericText(TMP_Text label, char[] template, LocNumericArg value0)
+        private static void SetNumericText(TMP_Text label, ReadOnlySpan<char> template, LocNumericArg value0)
         {
-            if (label == null || template == null)
+            if (label == null || template.Length == 0)
                 return;
 
-            LocNumericBuffer.Write(new ReadOnlySpan<char>(template), value0, out char[] buffer, out int length);
+            LocNumericBuffer.Write(template, value0, out char[] buffer, out int length);
             int safeLength = Mathf.Clamp(length, 0, buffer != null ? buffer.Length : 0);
             label.SetCharArray(buffer, 0, safeLength);
         }
 
-        private static void SetNumericText(TMP_Text label, char[] template, LocNumericArg value0, LocNumericArg value1, LocNumericArg value2)
+        private static void SetNumericText(TMP_Text label, ReadOnlySpan<char> template, LocNumericArg value0, LocNumericArg value1, LocNumericArg value2)
         {
-            if (label == null || template == null)
+            if (label == null || template.Length == 0)
                 return;
 
-            LocNumericBuffer.Write(new ReadOnlySpan<char>(template), value0, value1, value2, out char[] buffer, out int length);
+            LocNumericBuffer.Write(template, value0, value1, value2, out char[] buffer, out int length);
             int safeLength = Mathf.Clamp(length, 0, buffer != null ? buffer.Length : 0);
             label.SetCharArray(buffer, 0, safeLength);
         }
@@ -2576,6 +2577,23 @@ namespace Hecton8.UI
             EnsureCharCapacity(ref _detailTextBuffer, value.Length);
             int writeLength = Mathf.Min(value.Length, _detailTextBuffer.Length);
             value.AsSpan(0, writeLength).CopyTo(_detailTextBuffer.AsSpan());
+            ApplyDynamicBuffer(label, _detailTextBuffer, writeLength);
+        }
+
+        private void SetBufferedText(TMP_Text label, ReadOnlySpan<char> value)
+        {
+            if (label == null)
+                return;
+
+            if (value.Length == 0)
+            {
+                ClearText(label);
+                return;
+            }
+
+            EnsureCharCapacity(ref _detailTextBuffer, value.Length);
+            int writeLength = Mathf.Min(value.Length, _detailTextBuffer.Length);
+            value.Slice(0, writeLength).CopyTo(_detailTextBuffer.AsSpan());
             ApplyDynamicBuffer(label, _detailTextBuffer, writeLength);
         }
 
@@ -2710,6 +2728,42 @@ namespace Hecton8.UI
             }
         }
 
+        private static ReadOnlySpan<char> ResolveToolSlotKeyLabelChars(int slotIndex)
+        {
+            switch (slotIndex)
+            {
+                case 0:
+                    return "1".AsSpan();
+                case 1:
+                    return "2".AsSpan();
+                case 2:
+                    return "3".AsSpan();
+                case 3:
+                    return "4".AsSpan();
+                default:
+                    return ReadOnlySpan<char>.Empty;
+            }
+        }
+
+        private static ReadOnlySpan<char> ResolveTabLabelChars(int tabIndex)
+        {
+            switch (tabIndex)
+            {
+                case 0:
+                    return "INVENTORY".AsSpan();
+                case 1:
+                    return "LOADOUT".AsSpan();
+                case 2:
+                    return "CONSTRUCT".AsSpan();
+                case 3:
+                    return "BARTER".AsSpan();
+                case 4:
+                    return "DATA LOG".AsSpan();
+                default:
+                    return ReadOnlySpan<char>.Empty;
+            }
+        }
+
         private static bool TryWriteLiteral(Span<char> destination, ref int index, ReadOnlySpan<char> literal)
         {
             if ((uint)index > (uint)destination.Length || literal.Length > destination.Length - index)
@@ -2762,6 +2816,32 @@ namespace Hecton8.UI
 
             hasEffect = true;
             return true;
+        }
+
+        private IPlayerToolDataReadModel ResolvePrefabTool(GameObject prefab)
+        {
+            if (prefab == null)
+                return null;
+
+            int prefabId = prefab.GetInstanceID();
+            for (int i = 0; i < _prefabToolCacheCount; i++)
+            {
+                if (_prefabToolCacheIds[i] == prefabId)
+                    return _prefabToolCacheStates[i] == 1 ? _prefabToolCacheTools[i] : null;
+            }
+
+            if (!prefab.TryGetComponent(out IPlayerToolDataReadModel resolvedTool))
+                resolvedTool = null;
+
+            if (_prefabToolCacheCount < PrefabToolCacheCapacity)
+            {
+                int index = _prefabToolCacheCount++;
+                _prefabToolCacheIds[index] = prefabId;
+                _prefabToolCacheStates[index] = resolvedTool != null ? (byte)1 : (byte)2;
+                _prefabToolCacheTools[index] = resolvedTool;
+            }
+
+            return resolvedTool;
         }
 
         private static ReadOnlySpan<char> ResolveFilterEmptyLabelChars(InventoryViewFilter filter)
@@ -3209,9 +3289,7 @@ namespace Hecton8.UI
             if (IsSelectedItemAssignableTool())
             {
                 GameObject prefab = toolManager != null ? toolManager.GetKnownToolPrefabForItem(_selectedItem) : null;
-                IPlayerToolDataReadModel tool = null;
-                if (prefab != null)
-                    prefab.TryGetComponent(out tool);
+                IPlayerToolDataReadModel tool = ResolvePrefabTool(prefab);
                 if (tool != null && tool.Metadata != null)
                 {
                     return TryWriteLiteral(destination, ref length, "TOOL PROFILE: DURABILITY ".AsSpan()) &&

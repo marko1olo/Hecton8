@@ -74,45 +74,72 @@ namespace Crest
             // works well. So we can take 16 slices, and in the future we know that the period
             // of a bunch of the lods was much smaller, so we could take much denser samples.
 
-            var buf = new CommandBuffer();
+            var frameCount = (int)(resolutionTime * loopPeriod);
+            if (fftWaves == null || fftWaves._resolution <= 0 || lodCount <= 0 || frameCount <= 0)
+            {
+                Debug.LogError("Crest: Cannot bake FFT data with non-positive resolution, LOD count, or frame count.", fftWaves);
+                return null;
+            }
 
             var waveCombineShader = Resources.Load<ComputeShader>("FFT/FFTBake");
+            if (waveCombineShader == null)
+            {
+                Debug.LogError("Crest: Missing FFT bake compute shader.", fftWaves);
+                return null;
+            }
+
             var kernel = waveCombineShader.FindKernel("FFTBakeMultiRes");
 
-            var bakedWaves = new RenderTexture(fftWaves._resolution, fftWaves._resolution * lodCount, 1, RenderTextureFormat.ARGBFloat, 0);
-            bakedWaves.name = "CrestFFTBakedWaves";
-            bakedWaves.enableRandomWrite = true;
-            bakedWaves.Create();
+            var buf = new CommandBuffer();
+            RenderTexture bakedWaves = null;
+            Texture2D stagingTexture = null;
 
-            var stagingTexture = new Texture2D(fftWaves._resolution, fftWaves._resolution * lodCount, TextureFormat.RGBAHalf, false, true);
-            stagingTexture.name = "CrestFFTBakedStaging";
-
-            var frameCount = (int)(resolutionTime * loopPeriod);
             var frames = new half[frameCount][];
-
-            for (int timeIndex = 0; timeIndex < frameCount; timeIndex++) // this means resolutionTime is actually FPS
+            try
             {
-                float t = timeIndex / (float)resolutionTime;
+                bakedWaves = new RenderTexture(fftWaves._resolution, fftWaves._resolution * lodCount, 1, RenderTextureFormat.ARGBFloat, 0);
+                bakedWaves.name = "CrestFFTBakedWaves";
+                bakedWaves.enableRandomWrite = true;
+                if (!bakedWaves.Create())
+                {
+                    Debug.LogError("Crest: Failed to create FFT bake render texture.", fftWaves);
+                    return null;
+                }
 
-                buf.Clear();
+                stagingTexture = new Texture2D(fftWaves._resolution, fftWaves._resolution * lodCount, TextureFormat.RGBAHalf, false, true);
+                stagingTexture.name = "CrestFFTBakedStaging";
 
-                // Generate multi-res FFT into a texture array
-                var fftWaveDataTA = FFTCompute.GenerateDisplacements(buf, fftWaves._resolution, loopPeriod,
-                    fftWaves._windTurbulence, fftWaves.WindDirRadForFFT, fftWaves.WindSpeed, t,
-                    fftWaves._spectrum, true);
+                var groupsX = (bakedWaves.width + 7) / 8;
+                var groupsY = (bakedWaves.height + 7) / 8;
 
-                // Compute shader generates the final waves
-                buf.SetComputeFloatParam(waveCombineShader, ShaderIDs.s_BakeTime, t);
-                buf.SetComputeIntParam(waveCombineShader, ShaderIDs.s_MinSlice, firstLod);
-                buf.SetComputeTextureParam(waveCombineShader, kernel, ShaderIDs.s_InFFTWaves, fftWaveDataTA);
-                buf.SetComputeTextureParam(waveCombineShader, kernel, ShaderIDs.s_OutDisplacements, bakedWaves);
-                buf.DispatchCompute(waveCombineShader, kernel, bakedWaves.width / 8, bakedWaves.height / 8, 1);
+                for (int timeIndex = 0; timeIndex < frameCount; timeIndex++) // this means resolutionTime is actually FPS
+                {
+                    float t = timeIndex / (float)resolutionTime;
 
-                Graphics.ExecuteCommandBuffer(buf);
+                    buf.Clear();
 
-                // Readback data to CPU
-                RenderTexture.active = bakedWaves;
-                stagingTexture.ReadPixels(new Rect(0, 0, bakedWaves.width, bakedWaves.height), 0, 0);
+                    // Generate multi-res FFT into a texture array
+                    var fftWaveDataTA = FFTCompute.GenerateDisplacements(buf, fftWaves._resolution, loopPeriod,
+                        fftWaves._windTurbulence, fftWaves.WindDirRadForFFT, fftWaves.WindSpeed, t,
+                        fftWaves._spectrum, true);
+                    if (fftWaveDataTA == null)
+                    {
+                        Debug.LogError("Crest: FFT bake displacement generator did not produce a texture array.", fftWaves);
+                        return null;
+                    }
+
+                    // Compute shader generates the final waves
+                    buf.SetComputeFloatParam(waveCombineShader, ShaderIDs.s_BakeTime, t);
+                    buf.SetComputeIntParam(waveCombineShader, ShaderIDs.s_MinSlice, firstLod);
+                    buf.SetComputeTextureParam(waveCombineShader, kernel, ShaderIDs.s_InFFTWaves, fftWaveDataTA);
+                    buf.SetComputeTextureParam(waveCombineShader, kernel, ShaderIDs.s_OutDisplacements, bakedWaves);
+                    buf.DispatchCompute(waveCombineShader, kernel, groupsX, groupsY, 1);
+
+                    Graphics.ExecuteCommandBuffer(buf);
+
+                    // Readback data to CPU
+                    RenderTexture.active = bakedWaves;
+                    stagingTexture.ReadPixels(new Rect(0, 0, bakedWaves.width, bakedWaves.height), 0, 0);
 
 #if CREST_DEBUG_DUMP_EXRS
                 const string folderName = "FFTBaker";
@@ -125,12 +152,29 @@ namespace Crest
                 File.WriteAllBytes($"{folderName}/test_{timeIndex}.exr", encodedTexture);
 #endif
 
-                frames[timeIndex] = stagingTexture.GetRawTextureData<half>().ToArray();
+                    frames[timeIndex] = stagingTexture.GetRawTextureData<half>().ToArray();
+                }
             }
+            finally
+            {
+                if (RenderTexture.active == bakedWaves)
+                {
+                    RenderTexture.active = null;
+                }
 
-            bakedWaves.Release();
-            Helpers.Destroy(bakedWaves);
-            Helpers.Destroy(stagingTexture);
+                buf.Release();
+
+                if (bakedWaves != null)
+                {
+                    bakedWaves.Release();
+                    Helpers.Destroy(bakedWaves);
+                }
+
+                if (stagingTexture != null)
+                {
+                    Helpers.Destroy(stagingTexture);
+                }
+            }
 
             var framesFlattened = frames.SelectMany(x => x).ToArray();
             //Debug.Log($"Crest: Width: {fftWaves._resolution}, frame count: {frameCount}, slices: {lodCount}, floats per frame: {frames[0].Length}, total floats: {framesFlattened.Length}");

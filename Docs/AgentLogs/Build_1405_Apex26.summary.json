@@ -1,0 +1,16 @@
+﻿{
+    "timestampUtc":  "2026-05-28T12:13:32.0025242Z",
+    "status":  "SUCCEEDED",
+    "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+    "preflightCpuSamplesPercent":  [
+                                       23
+                                   ],
+    "preflightCompilerProcessCount":  0,
+    "launched":  true,
+    "exitCode":  0,
+    "warnings":  0,
+    "errors":  0,
+    "elapsed":  "00:00:19.95",
+    "outputAssembly":  "Temp/CodexBuild/Assembly-CSharp/Assembly-CSharp.dll",
+    "rule":  "Build launched once only because CPU \u003c= 50 and no dotnet/csc/VBCSCompiler processes were active."
+}

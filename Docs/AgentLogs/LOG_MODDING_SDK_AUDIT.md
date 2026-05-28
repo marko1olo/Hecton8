@@ -1945,6 +1945,42 @@ Verification:
 Evidence class:
 - STATIC_SOURCE / STATIC_DOC / CLI_SCRIPT. No Unity Console, PlayMode, profiler, player build, or runtime GC proof claimed.
 
+## 2026-05-28 - Pass 65 - Schema 89 Workbench Required-File List Parity
+
+What was wrong:
+- `ExternalStarterKitWorkbenchWindow.RequiredStarterFiles` drifted from `Tools/validate_structure.ps1`.
+- The Workbench checked stale `Schemas/h8table.schema.json` and `Schemas/h8loc.schema.json`, but the actual starter uses `Schemas/settings_table.schema.json`, `Schemas/locale.schema.json`, and `Schemas/assets.schema.json`.
+- It also omitted validator-required files such as folder READMEs and `Tools/README.md`, so valid starter folders could show false missing-file health.
+
+What was done:
+- Aligned the Workbench required-file health list with the starter validator file contract.
+- Added `starterWorkbenchRequiredFileListMatchesValidator` and `externalStarterKitWorkbenchRequiredFileListMatchesValidator` to `Signal_Schema.json` schema revision `89`.
+- Extended `Validate_Mod_API_Static.ps1` so stale Workbench schema names or missing validator-required health entries fail the static gate.
+- Updated README, API spec, runtime playbook, SDK authoring plan, product blueprint, and external starter file contract.
+
+Cinematic Cheats used:
+- Editor/offline UX contract fix only. No runtime ingress, no managed DLL enablement, no Harmony/BepInEx path, no loose AssetBundle/PNG/localization route, and no hot signal path changed.
+
+Exact Microseconds saved:
+- Runtime frame: `0 us/frame` measured/claimed.
+- Editor/offline: prevents false Workbench health errors before validation; no frame-time metric claimed.
+
+Verification:
+- PASS: `Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `89`, `ExternalStarterKitWorkbenchRequiredFileListMatchesValidator=True`.
+- PASS: `Signal_Schema.json` parse -> `schemaRevision=89`, `starterWorkbenchRequiredFileListMatchesValidator=True`, snapshot `externalStarterKitWorkbenchRequiredFileListMatchesValidator=True`.
+- PASS: `h8mod.ps1 -Action validate`.
+- PASS: `h8mod.ps1 -Action prepare`.
+- PASS: `Reports/review_manifest.json` parse -> schema `hecton8.external_review_manifest.v1`, id `com.example.starter`, `25` files, `47352` bytes, root launcher included.
+- PASS: stale schema-88 scan.
+- PASS: stale `h8table.schema.json`/`h8loc.schema.json` scan found hits only in negative static-validator assertions.
+- PASS: scoped `git diff --check`; line-ending warnings only.
+- PASS: touched-file trailing whitespace scan.
+- PASS: touched-file non-ASCII scan.
+- DEFERRED: dotnet/Unity compile by resource gate. Samples: CPU `100`, active `csc.exe` PID `12916`, active `dotnet.exe` PID `42716`, no Unity lock.
+
+Evidence class:
+- STATIC_SOURCE / STATIC_DOC / CLI_SCRIPT. No Unity Console, PlayMode, profiler, player build, or runtime GC proof claimed.
+
 ## 2026-05-28 - Pass 64 - Schema 88 SDK Hub Async Validator
 
 What was wrong:
@@ -1978,3 +2014,333 @@ Verification:
 
 Evidence class:
 - STATIC_SOURCE / STATIC_DOC / CLI_SCRIPT. No Unity Console, PlayMode, profiler, player build, or runtime GC proof claimed.
+
+## 2026-05-28 - Pass 66 - Schema 90 SDK Tool Failure Error UI
+
+What was wrong:
+- SDK Hub and External Starter Kit Workbench had async tool execution, but failed validator/tool exits were still displayed as normal info help boxes.
+- A random mod author could miss the severity of a failed structure validator, failed prepare, missing tool, or failed static validator because the UI color/state did not distinguish success from failure.
+
+What was done:
+- Added `_lastValidatorFailed` to `ModdingSdkHubWindow` and render failed validator summaries with `MessageType.Error`.
+- Added `_toolSummaryIsError` to `ExternalStarterKitWorkbenchWindow` and render failed starter tool summaries with `MessageType.Error`.
+- Marked missing scripts, launch failures, process-start failures, and nonzero exit codes as failures; kept running/already-running/successful states informational.
+- Bumped `Signal_Schema.json` to schema revision `90`.
+- Extended `Validate_Mod_API_Static.ps1` with source/schema/runtime-playbook gates for `ModdingSdkHubShowsValidatorFailuresAsErrors` and `ExternalStarterKitWorkbenchShowsToolFailuresAsErrors`.
+- Updated README, API spec, runtime playbook, SDK authoring plan, product blueprint, and external starter file contract.
+
+Cinematic Cheats used:
+- Editor/offline UX severity fix only. No runtime ingress, no managed DLL enablement, no Harmony/BepInEx path, no loose AssetBundle/PNG/localization route, no SignalBus hot path, and no gameplay authority route changed.
+
+Exact Microseconds saved:
+- Runtime frame: `0 us/frame` measured/claimed.
+- Editor/offline: prevents failed tool output from looking successful; no frame-time metric claimed.
+
+Verification:
+- PASS: `Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `90`, `ModdingSdkHubShowsValidatorFailuresAsErrors=True`, `ExternalStarterKitWorkbenchShowsToolFailuresAsErrors=True`.
+- PASS: `Signal_Schema.json` parse -> `schemaRevision=90`, `hubShowsValidatorFailuresAsErrors=True`, `starterWorkbenchShowsToolFailuresAsErrors=True`, snapshot flags true.
+- PASS: `h8mod.ps1 -Action validate`.
+- PASS: `h8mod.ps1 -Action prepare`.
+- PASS: source scan found `_lastValidatorFailed`, `_toolSummaryIsError`, `MessageType.Error`, and `exitCode != 0`.
+- PASS: stale `89` scan found only review-manifest SHA/byte substrings and `.meta` GUID, not stale schema text.
+- PASS: scoped `git diff --check`; line-ending warnings only.
+- PASS: touched-file trailing whitespace scan.
+- PASS: touched-file non-ASCII scan.
+- PASS: `dotnet build Assembly-CSharp.csproj -v:minimal` -> `0 Warning(s)`, `0 Error(s)`.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session.
+
+Evidence class:
+- STATIC_SOURCE / STATIC_DOC / CLI_SCRIPT / DOTNET_COMPILE. No Unity Console, PlayMode, profiler, player build, or runtime GC proof claimed.
+
+## 2026-05-28 - Pass 73 - Schema 97 Settings And Locale Snippet Authoring
+
+What was wrong:
+- Settings and locale data had validation and Workbench preview, but a public author still had to hand-author new row/entry JSON.
+- The starter kit did not provide one low-friction no-Unity route for generating correct settings/locale object shapes.
+- A first static run exposed a real contract-marker drift in the Workbench safety text; the UI said `do not mutate`, while the static contract expected `does not mutate` as the safety marker.
+
+What was done:
+- Added `ModdingSDK/ExternalStarterKit/Tools/create_settings_row_snippet.ps1`.
+- Added `ModdingSDK/ExternalStarterKit/Tools/create_locale_entry_snippet.ps1`.
+- Added root launcher actions `setting-snippet` and `locale-snippet`.
+- Added Workbench `Authoring Snippets` panel with settings/locale fields, generate buttons, generated-file open buttons, and tool open buttons.
+- Updated SDK Hub generator so refreshed starter kits include the new scripts, launcher routes, capability guide text, README/tool README text, and validator required-file/capability checks.
+- Updated `Signal_Schema.json` to schema revision `97`.
+- Updated `Validate_Mod_API_Static.ps1`, Runtime Playbook, README, API spec, authoring plan, product blueprint, external starter contract, checked-in starter README, starter capability guide, and tools README.
+- Regenerated `Reports/review_manifest.json` and `Generated/com.example.starter_submission.zip`.
+
+Cinematic Cheats used:
+- Offline Generated-only snippets instead of runtime table mutation, runtime localization repair, managed DLL execution, Harmony/BepInEx patching, loose asset runtime loading, SignalBus hot lanes, or new gameplay authority.
+
+Exact Microseconds saved:
+- Runtime: `0 us/frame` measured/claimed.
+- Authoring risk removed: malformed settings/locale objects are generated safely and validated before review/submission; no frame-time saving claimed.
+
+Evidence:
+- PASS: PowerShell parser scan for changed launcher/tool/static-validator scripts.
+- PASS: root `h8mod.ps1 -Action setting-snippet`.
+- PASS: root `h8mod.ps1 -Action locale-snippet`.
+- PASS: direct JSON settings/locale snippet probes emitted `hecton8.settings_row_snippet.v1` and `hecton8.locale_entry_snippet.v1`.
+- PASS: negative probes reject invalid settings default, invalid settings ID, invalid locale key, and empty locale value.
+- PASS: starter validate.
+- PASS: starter submission package build.
+- PASS: static validator schema revision `97`, authoring snippet Workbench/tool/root launcher flags true.
+- PASS: review manifest parse: `30` hashed files, `89173` total bytes, settings/locale snippet tools included, no `Generated/` or `Reports/` source entries.
+- PASS: zip inspection: `31` entries, required manifests/review manifest/settings snippet tool/locale snippet tool present, no `Generated/*` entry.
+- PASS: scoped `git diff --check`, line-ending warnings only.
+- PASS: touched-file trailing whitespace scan, editor C# ASCII scan, stale schema-96 text scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal`; build gate saw CPU `99`, then CPU `60` with active `dotnet.exe` PID `35512`; no Unity lockfile.
+- NOT RUN: Unity MCP/Editor console verification; Unity MCP tools are unavailable in this session.
+
+Evidence class:
+- STATIC_SOURCE / STATIC_DOC / CLI_SCRIPT. No DOTNET_COMPILE, Unity Console, PlayMode, profiler, player build, or runtime GC proof claimed for this pass.
+
+## 2026-05-28 - Pass 72 - Schema 96 Capability Matrix And Public Author Route
+
+What was wrong:
+- The modding route was safe but not explicit enough for random public authors. The starter kit exposed graph/settings/locale/content/review files, but did not provide one authoritative answer for "what can I mod, what is blocked, and how do I start".
+- The Unity Workbench had health, graph, settings/locale, and submission panels, but no capability matrix that connected those files to supported/forbidden rights.
+- The root no-Unity launcher had no direct capability discovery action.
+
+What was done:
+- Added `ModdingSDK/ExternalStarterKit/Docs/capabilities.md` with supported surfaces, not-public runtime rights, no-Unity workflow, Unity Workbench workflow, and expansion route.
+- Added `h8mod.ps1 -Action capabilities` and generator parity in `ModdingSdkHubWindow`.
+- Added Capability Matrix to `ExternalStarterKitWorkbenchWindow`: supported surfaces, declared manifest capabilities, allowed opcode counts, budgets, required file state, and forbidden runtime rights.
+- Updated checked-in and generated `Tools/validate_structure.ps1` to require capability guide content.
+- Updated `Signal_Schema.json` to schema revision `96`.
+- Updated `Validate_Mod_API_Static.ps1`, Runtime Playbook, README, API spec, authoring plan, product blueprint, starter file contract, starter README, and tool README.
+- Regenerated `Reports/review_manifest.json` and `Generated/com.example.starter_submission.zip`.
+
+Cinematic Cheats used:
+- Offline/Editor capability surfacing instead of runtime execution broadening. The engine still owns command execution, hot lanes, asset loading, save authority, and validation.
+
+Exact Microseconds saved:
+- Runtime: `0 us/frame` claimed. No runtime loader, FutureCommandEnvelope validation, SignalBus, GlobalRegistry, GlobalDataVault, save, physics, rendering, Burst/job, or quality route was changed.
+- Authoring risk removed: public authors now get a single validated capability route before they attempt forbidden runtime paths.
+
+Evidence:
+- PASS: starter validate.
+- PASS: `h8mod.ps1 -Action capabilities` printed `# HECTON-8 Mod Capability Matrix`.
+- PASS: starter submission package build.
+- PASS: static validator schema revision `96`, `ExternalStarterKitWorkbenchShowsCapabilityMatrix=True`, `ExternalStarterKitWritesCapabilityGuide=True`, `ExternalStarterKitValidatorChecksCapabilityGuide=True`, `ExternalStarterKitRootLauncherSupportsCapabilities=True`.
+- PASS: schema JSON parse: `schemaRevision=96`, `starterWorkbenchShowsCapabilityMatrix=True`, `externalStarterKitWritesCapabilityGuide=True`.
+- PASS: review manifest parse: `28` hashed files, `73424` total bytes, `Docs/capabilities.md` included, no `Generated/` or `Reports/` source entries.
+- PASS: zip inspection: `29` entries, `Docs/capabilities.md` and `Reports/review_manifest.json` present, no `Generated/*` entry.
+- PASS: scoped `git diff --check`, trailing whitespace scan, editor C# ASCII scan, JSON parse scan, stale schema-95 text scan.
+- PASS: `dotnet build Assembly-CSharp.csproj -v:minimal`; launched only after gate allowed it with CPU `33`, no active compiler processes, and no Unity lockfile; result `0 Warning(s)`, `0 Error(s)`.
+- NOT RUN: Unity MCP/Editor console verification; Unity MCP tools are unavailable in this session.
+
+Evidence class:
+- STATIC_SOURCE / STATIC_DOC / CLI_SCRIPT / DOTNET_COMPILE. No Unity Console, PlayMode, profiler, player build, or runtime GC proof claimed.
+
+## 2026-05-28 - Pass 67 - Schema 91 Workbench Graph Contract Preview
+
+What was wrong:
+- The integrated Workbench could open `Graphs/main.h8graph.json` and list allowed opcodes, but did not show whether the current graph was already invalid.
+- External authors still had to edit raw JSON and run validation before seeing duplicate IDs, invalid opcode aliases/hex tokens, missing fields, wrong runtime flag, or `MaxEnvelopesPerFrame` budget drift.
+
+What was done:
+- Added `Graph Contract Preview` to `ExternalStarterKitWorkbenchWindow`.
+- The preview parses `Graphs/main.h8graph.json`, loads and shape-checks `Reference/allowed_opcodes.csv`, compares graph budget to `mod.h8manifest.json`, caps preview work at `256` nodes, `1 MB` graph/CSV files, and `512` opcode rows, and reports runtime flag, node count, invalid opcodes, duplicate node IDs, missing/invalid fields, and budget errors.
+- Bumped `Signal_Schema.json` to schema revision `91`.
+- Extended `Validate_Mod_API_Static.ps1` with source/schema/runtime-playbook gates for `ExternalStarterKitWorkbenchShowsGraphContractPreview`.
+- Updated README, API spec, runtime playbook, SDK authoring plan, product blueprint, and external starter file contract.
+
+Cinematic Cheats used:
+- Editor/offline authoring preview only. No runtime graph compiler, managed DLL execution, Harmony/BepInEx patching, loose AssetBundle/PNG/localization ingress, SignalBus hot path, or gameplay authority route was enabled.
+
+Exact Microseconds saved:
+- Runtime frame: `0 us/frame` measured/claimed.
+- Editor/offline: prevents graph-contract mistakes from advancing to review/runtime handoff; no frame-time metric claimed.
+
+Verification:
+- PASS: `Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `91`, `ExternalStarterKitWorkbenchShowsGraphContractPreview=True`.
+- PASS: `Signal_Schema.json` parse -> `schemaRevision=91`, `starterWorkbenchShowsGraphContractPreview=True`, snapshot `externalStarterKitWorkbenchShowsGraphContractPreview=True`.
+- PASS: `h8mod.ps1 -Action validate`.
+- PASS: `h8mod.ps1 -Action prepare`.
+- PASS: source scan found `Graph Contract Preview`, `LoadGraphContractPreview`, `MaxGraphPreviewNodes`, invalid opcode text, duplicate node ID text, and budget-drift text.
+- PASS: stale schema-90 scan found no stale current revision text in touched modding docs/source.
+- PASS: scoped `git diff --check`; line-ending warnings only.
+- PASS: touched-file trailing whitespace scan.
+- PASS: touched-file non-ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` by resource gate. Samples: CPU `71` with active `dotnet.exe` PID `6088`, then CPU `96` with active `csc.exe` PID `38600` and `dotnet.exe` PID `59612`; no Unity lock.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session.
+
+Evidence class:
+- STATIC_SOURCE / STATIC_DOC / CLI_SCRIPT. No DOTNET_COMPILE, Unity Console, PlayMode, profiler, player build, or runtime GC proof claimed.
+
+## 2026-05-28 - Pass 69 - Schema 93 Submission Package Handoff
+
+What was wrong:
+- External starter kit authors could validate and generate `Reports/review_manifest.json`, but there was no single checked handoff artifact.
+- A direct `Mods/` install route would be false under the current envelope-only runtime boundary.
+- SDK generator, Workbench, root launcher, local validator, schema, and docs needed one route or they would drift again.
+
+What was done:
+- Added `ModdingSDK/ExternalStarterKit/Tools/build_submission_package.ps1`.
+- Added `h8mod.ps1 -Action submission` and Workbench `Build Submission Package`.
+- Updated `ModdingSdkHubWindow` so newly generated starter kits include the submission packer, launcher action, README text, tools README text, and validator required-file list.
+- Updated the checked-in starter validator required-file list.
+- Raised `Signal_Schema.json` to schema revision `93`.
+- Extended `Validate_Mod_API_Static.ps1` with submission package probes and schema/runtime-playbook gates.
+- Updated modding README/spec/playbook/authoring/product/file-contract docs.
+- Regenerated `Reports/review_manifest.json`; it now hashes `27` files and includes `Tools/build_submission_package.ps1`.
+
+Cinematic Cheats used:
+- No runtime physical simulation or visual effect was touched.
+- The product-side shortcut is a bounded review zip instead of pretending a loose folder is runtime-ready.
+
+Exact Microseconds saved:
+- Runtime frame: `0 us/frame` measured/claimed.
+- Editor/offline: reduces review handoff ambiguity; no frame-time metric claimed.
+
+Verification:
+- PASS: `h8mod.ps1 -Action validate`.
+- PASS: `h8mod.ps1 -Action submission`.
+- PASS: submission zip inspection found `mod.json`, `mod.h8manifest.json`, `Tools/build_submission_package.ps1`, and `Reports/review_manifest.json`; no `Generated/*` entry was packaged.
+- PASS: `Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `93`, submission Workbench/tool/root launcher flags true.
+- PASS: `Reports/review_manifest.json` parse -> schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, `27` files, `62294` bytes, `Generated/`/`Reports/` excluded.
+- PASS: scoped `git diff --check`; line-ending warnings only.
+- PASS: touched-file trailing whitespace scan.
+- PASS: editor C# ASCII scan.
+- PASS: stale schema-92 scan found no stale current revision text; remaining `92` hits were SHA/meta/numeric substrings.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` by resource gate. Samples: CPU `100`, then CPU `66`; no active `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild`; no Unity lock.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session.
+
+Evidence class:
+- STATIC_SOURCE / STATIC_DOC / CLI_SCRIPT. No DOTNET_COMPILE, Unity Console, PlayMode, profiler, player build, or runtime GC proof claimed.
+
+## 2026-05-28 - Pass 68 - Schema 92 Graph Node Snippet Helper
+
+What was wrong:
+- The Workbench could show graph contract errors, but creating a valid graph node was still raw JSON authoring.
+- External authors had no no-Unity helper for canonical node IDs, opcode alias/hex resolution, or safe snippet generation.
+- A direct graph mutation tool would be unsafe because it could erase unknown future fields or reorder author-controlled graph data.
+
+What was done:
+- Added `ModdingSDK/ExternalStarterKit/Tools/create_graph_node_snippet.ps1`.
+- Added root launcher action `h8mod.ps1 -Action node-snippet -NodeId <id> -Opcode <alias-or-hex>`.
+- Added Workbench UI fields/buttons for graph node snippet generation and opening the generated snippet/tool.
+- Updated SDK Hub starter-kit generation so refreshed kits include the tool, root launcher route, README text, and validator requirement.
+- Updated `Tools/validate_structure.ps1`, starter docs, modding docs, runtime playbook, schema, and static validator.
+- Bumped `Signal_Schema.json` to schema revision `92`.
+
+Cinematic Cheats used:
+- Offline authoring snippet instead of runtime graph mutation, managed DLL execution, Harmony/BepInEx patching, loose AssetBundle/PNG/localization ingress, SignalBus hot path, or gameplay authority changes.
+
+Exact Microseconds saved:
+- Runtime frame: `0 us/frame` measured/claimed.
+- Editor/offline: prevents invalid node JSON and review churn before loader/runtime handoff; no frame-time metric claimed.
+
+Verification:
+- PASS: `Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `92`, snippet Workbench/tool/root launcher flags true.
+- PASS: static validator negative probes reject invalid graph opcode, invalid snippet opcode, invalid semver, and oversized review file.
+- PASS: `h8mod.ps1 -Action validate`.
+- PASS: `Reports/review_manifest.json` parse -> schema `hecton8.external_review_manifest.v1`, `26` files, `55170` bytes.
+- PASS: stale schema-91 scan found no stale current revision text in touched modding docs/source.
+- PASS: scoped `git diff --check`; line-ending warnings only.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` by resource gate. Sample: CPU `98.64`, active `csc.exe` PID `29640`, active `dotnet.exe` PID `23460`, no Unity lock.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session.
+
+Evidence class:
+- STATIC_SOURCE / STATIC_DOC / CLI_SCRIPT. No DOTNET_COMPILE, Unity Console, PlayMode, profiler, player build, or runtime GC proof claimed.
+
+## 2026-05-28 - Pass 70 - Schema 94 Submission Package Status And Atomic Handoff
+
+What was wrong:
+- The Workbench could build `Generated/<mod-id>_submission.zip`, but it did not show the current package path, bytes, timestamp, or freshness against `Reports/review_manifest.json`.
+- The submission packer could delete the previous zip before a replacement was safely installed.
+
+What was done:
+- `ExternalStarterKitWorkbenchWindow` now shows a `Submission Package` status panel, checks newest `Generated/*_submission.zip`, reports stale/missing package states, opens the current zip, and reveals `Generated/`.
+- Checked-in and generated `Tools/build_submission_package.ps1` now write temp zip output first and use `.previous` backup/restore during final replacement.
+- `Signal_Schema.json` advanced to schema revision `94`.
+- `Validate_Mod_API_Static.ps1`, Runtime Playbook, README, API spec, authoring plan, product blueprint, starter file contract, and starter README/tool README now prove and document Workbench package status plus previous-zip preservation.
+
+Cinematic Cheats used:
+- None. This pass is SDK authoring/offline packaging only.
+
+Exact Microseconds saved:
+- Runtime: `0 us/frame` claimed. No runtime loader, SignalBus, GlobalDataVault, save, physics, rendering, Burst/job, or quality route was changed.
+- Authoring risk removed: stale handoff package visibility and previous zip loss during failed replacement.
+
+Evidence:
+- PASS: starter validate.
+- PASS: starter submission package build.
+- PASS: zip inspection: `28` entries, required manifests/tool/review manifest present, no `Generated/*` entry.
+- PASS: static validator schema revision `94`, `ExternalStarterKitWorkbenchShowsSubmissionPackageStatus=True`, `ExternalStarterKitSubmissionPackagePreservesPreviousOutputUntilSuccess=True`.
+- PASS: review manifest parse: `27` hashed files, `63955` total bytes, no `Generated/` or `Reports/` source entries.
+- PASS: scoped `git diff --check`, trailing whitespace scan, editor C# ASCII scan, stale schema-93 text scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal`; build gate saw CPU `100` with active `csc.exe` PID `41544` and `dotnet.exe` PID `43740`, then CPU `80` with active `dotnet.exe` PID `62104`; no Unity lockfile.
+- NOT RUN: Unity MCP/Editor console verification; Unity MCP tools are unavailable in this session.
+
+Evidence class:
+- STATIC_SOURCE / STATIC_DOC / CLI_SCRIPT. No DOTNET_COMPILE, Unity Console, PlayMode, profiler, player build, or runtime GC proof claimed.
+
+## 2026-05-28 - Pass 71 - Schema 95 Authoring Data Preview And Validation
+
+What was wrong:
+- Settings and locale files were part of the public starter kit, but the integrated Workbench did not show their current validity before review/submission handoff.
+- `Tools/validate_structure.ps1` proved presence and parseability but did not deeply validate settings row IDs/kinds/defaults or locale code/key/value contracts.
+- Generated starter kits could drift from the checked-in validator/schemas if only the template was hardened.
+
+What was done:
+- Added bounded `Authoring Data Preview` to `ExternalStarterKitWorkbenchWindow` for `Tables/settings.h8table.json` and `Locales/en.h8loc.json`.
+- Hardened checked-in and generated `Tools/validate_structure.ps1` for settings schema, row array cap, canonical IDs, duplicate IDs, supported kinds, default type matching, locale schema/code, canonical string keys, non-empty values, and locale string cap.
+- Hardened `settings_table.schema.json` and `locale.schema.json`, plus the SDK Hub schema/validator generator.
+- Updated `Signal_Schema.json` to schema revision `95`.
+- Updated `Validate_Mod_API_Static.ps1`, Runtime Playbook, README, API spec, authoring plan, product blueprint, starter file contract, starter README, and tool README.
+- Regenerated `Reports/review_manifest.json` and `Generated/com.example.starter_submission.zip`.
+
+Cinematic Cheats used:
+- Offline/editor validation and preview instead of runtime loader repair, runtime localization fallback, managed DLL execution, SignalBus hot lanes, or gameplay authority changes.
+
+Exact Microseconds saved:
+- Runtime: `0 us/frame` claimed. No runtime loader, FutureCommandEnvelope validation, SignalBus, GlobalDataVault, save, physics, rendering, Burst/job, or quality route was changed.
+- Authoring risk removed: malformed settings/locale data is rejected before review/submission.
+
+Evidence:
+- PASS: starter validate.
+- PASS: starter submission package build.
+- PASS: static validator schema revision `95`, `ExternalStarterKitWorkbenchShowsAuthoringDataPreview=True`, `ExternalStarterKitValidatorChecksSettingsAndLocaleContracts=True`.
+- PASS: negative static probes reject invalid settings row ID/kind and invalid locale code/key/value.
+- PASS: JSON parse for `Signal_Schema.json`, starter settings schema, starter locale schema, and review manifest.
+- PASS: zip inspection: `28` entries, required manifests/settings schema/locale schema/review manifest present, no `Generated/*` entry.
+- PASS: scoped `git diff --check`, trailing whitespace scan, editor C# ASCII scan, stale schema-94 text scan.
+- PASS: `dotnet build Assembly-CSharp.csproj -v:minimal`; launched only after gate allowed it with CPU `44.53`, no active compiler processes, and no Unity lockfile; result `0 Warning(s)`, `0 Error(s)`.
+- NOT RUN: Unity MCP/Editor console verification; Unity MCP tools are unavailable in this session.
+
+Evidence class:
+- STATIC_SOURCE / STATIC_DOC / CLI_SCRIPT / DOTNET_COMPILE. No Unity Console, PlayMode, profiler, player build, or runtime GC proof claimed.
+
+## MODDING_SDK_AUDIT - Pass 74 - Schema 98 Bounded Settings/Locale Apply
+
+What was wrong:
+- Settings/locale snippets existed, but random authors still had to hand-splice JSON into table/locale files.
+- Initial apply validator call treated null `$LASTEXITCODE` as failure and polluted `-Json` output with validator PASS text.
+
+What was done:
+- Added `Tools/apply_settings_row_snippet.ps1` and `Tools/apply_locale_entry_snippet.ps1` with safe path checks, duplicate rejection, explicit `-Replace`, temp-write, post-write validation, and rollback.
+- Added `apply-setting-snippet` and `apply-locale-snippet` to root `h8mod.ps1`.
+- Added Workbench Apply Setting/Locale Snippet buttons plus target/tool open routes.
+- Updated SDK Hub generator to emit the same apply tools, launcher routes, validator requirements, docs, and capability guide text.
+- Added `-ThrowInsteadOfExit` validator mode so apply tools can validate in-process without false failure or JSON contamination.
+- Updated `Signal_Schema.json` to revision 98 and extended `Validate_Mod_API_Static.ps1` with temp-copy apply probes and duplicate-rejection gates.
+- Updated public docs and starter docs for the actual no-Unity and Workbench workflow.
+
+Cinematic Cheats used:
+- None. This is SDK/offline authoring UX, not runtime rendering/simulation.
+
+Exact Microseconds saved:
+- Runtime frame: 0 us/frame. No gameplay loop changed.
+- Low-end i3/MX350 impact: 0 us/frame; avoids failed review packages and authoring support churn before runtime.
+
+Evidence:
+- Static validator PASS at schema 98.
+- Starter validate PASS.
+- Starter submission PASS.
+- Review manifest includes 32 source files and both apply tools; Generated/ excluded.
+- Submission zip includes 33 entries, both apply tools, and Reports/review_manifest.json; Generated/ excluded.
+- Parser, JSON parse, scoped diff check, trailing whitespace, C# ASCII, stale schema-97 scans PASS.
+- Dotnet build deferred by CPU gate: samples 100.00 and 63.70 percent.

@@ -8,6 +8,110 @@ using Unity.Mathematics;
 namespace Hecton8.Logistics
 {
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+    public struct BuildFluidPipeCsrJob : IJob
+    {
+        public int NodeCount;
+        public int ConnectionCount;
+
+        [ReadOnly, NoAlias] public NativeArray<int> ConnectionSources;
+        [ReadOnly, NoAlias] public NativeArray<int> ConnectionDestinations;
+        [NoAlias] public NativeArray<int> ConnectionOffsets;
+        [NoAlias] public NativeArray<int> ConnectionCsrDestinations;
+        [NoAlias] public NativeArray<int> ConnectionWriteCursor;
+
+        public void Execute()
+        {
+            if (!HasRequiredArrays())
+                return;
+
+            int nodeCount = ResolveSafeNodeCount();
+            int connectionCount = ResolveSafeConnectionCount();
+            int edgeCapacity = ConnectionCsrDestinations.Length;
+
+            for (int nodeIndex = 0; nodeIndex <= nodeCount; nodeIndex++)
+            {
+                ConnectionOffsets[nodeIndex] = 0;
+                if (nodeIndex < ConnectionWriteCursor.Length)
+                    ConnectionWriteCursor[nodeIndex] = 0;
+            }
+
+            for (int edgeIndex = 0; edgeIndex < connectionCount; edgeIndex++)
+            {
+                int source = ConnectionSources[edgeIndex];
+                int destination = ConnectionDestinations[edgeIndex];
+                if (IsValidConnection(source, destination, nodeCount))
+                    ConnectionWriteCursor[source]++;
+            }
+
+            int prefix = 0;
+            ConnectionOffsets[0] = 0;
+            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+            {
+                int degree = math.max(0, ConnectionWriteCursor[nodeIndex]);
+                int nextPrefix = math.min(edgeCapacity, prefix + degree);
+                ConnectionOffsets[nodeIndex] = prefix;
+                ConnectionOffsets[nodeIndex + 1] = nextPrefix;
+                ConnectionWriteCursor[nodeIndex] = prefix;
+                prefix = nextPrefix;
+            }
+
+            for (int edgeIndex = 0; edgeIndex < prefix; edgeIndex++)
+                ConnectionCsrDestinations[edgeIndex] = -1;
+
+            for (int edgeIndex = 0; edgeIndex < connectionCount; edgeIndex++)
+            {
+                int source = ConnectionSources[edgeIndex];
+                int destination = ConnectionDestinations[edgeIndex];
+                if (!IsValidConnection(source, destination, nodeCount))
+                    continue;
+
+                int writeIndex = ConnectionWriteCursor[source];
+                int edgeEnd = ConnectionOffsets[source + 1];
+                if (writeIndex < edgeEnd && writeIndex < edgeCapacity)
+                {
+                    ConnectionCsrDestinations[writeIndex] = destination;
+                    ConnectionWriteCursor[source] = writeIndex + 1;
+                }
+            }
+        }
+
+        private bool HasRequiredArrays()
+        {
+            return ConnectionSources.IsCreated &&
+                   ConnectionDestinations.IsCreated &&
+                   ConnectionOffsets.IsCreated &&
+                   ConnectionOffsets.Length > 1 &&
+                   ConnectionCsrDestinations.IsCreated &&
+                   ConnectionWriteCursor.IsCreated;
+        }
+
+        private int ResolveSafeNodeCount()
+        {
+            int count = math.max(0, NodeCount);
+            count = math.min(count, ConnectionOffsets.Length - 1);
+            count = math.min(count, ConnectionWriteCursor.Length);
+            return count;
+        }
+
+        private int ResolveSafeConnectionCount()
+        {
+            int count = math.max(0, ConnectionCount);
+            count = math.min(count, ConnectionSources.Length);
+            count = math.min(count, ConnectionDestinations.Length);
+            return count;
+        }
+
+        private static bool IsValidConnection(int source, int destination, int nodeCount)
+        {
+            return source >= 0 &&
+                   source < nodeCount &&
+                   destination >= 0 &&
+                   destination < nodeCount &&
+                   source != destination;
+        }
+    }
+
+    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
     public struct FluidPipePressureSolveJob : IJob
     {
         public int NodeCount;
@@ -18,8 +122,8 @@ namespace Hecton8.Logistics
 
         public int ConnectionCount;
 
-        [ReadOnly, NoAlias] public NativeArray<int> ConnectionSources;
-        [ReadOnly, NoAlias] public NativeArray<int> ConnectionDestinations;
+        [ReadOnly, NoAlias] public NativeArray<int> ConnectionOffsets;
+        [ReadOnly, NoAlias] public NativeArray<int> ConnectionCsrDestinations;
         [ReadOnly, NoAlias] public NativeArray<byte> PipeContentKinds;
         [ReadOnly, NoAlias] public NativeArray<int> PipeNetworkIds;
         [ReadOnly, NoAlias] public NativeArray<int> PipeRoomIndices;
@@ -84,24 +188,25 @@ namespace Hecton8.Logistics
                 PipeRoomExchangeContents[i] = 0f;
             }
 
-            int edgeCount = math.max(0, math.min(ConnectionCount, math.min(ConnectionSources.Length, ConnectionDestinations.Length)));
-            for (int edgeIndex = 0; edgeIndex < edgeCount; edgeIndex++)
+            int offsetNodeCount = math.min(count, ConnectionOffsets.Length - 1);
+            for (int nodeIndex = 0; nodeIndex < offsetNodeCount; nodeIndex++)
             {
-                int nodeIndex = ConnectionSources[edgeIndex];
-                int neighborIndex = ConnectionDestinations[edgeIndex];
-                if (nodeIndex < 0 ||
-                    nodeIndex >= count ||
-                    neighborIndex <= nodeIndex ||
-                    neighborIndex >= count)
-                    continue;
-
                 byte flags = PipeFlags[nodeIndex];
                 if ((flags & (byte)FluidPipeFlags.Active) == 0 ||
                     (flags & (byte)FluidPipeFlags.Disabled) != 0 ||
                     (flags & (byte)FluidPipeFlags.Ruptured) != 0)
                     continue;
 
-                TransferAcrossEdge(nodeIndex, neighborIndex, dt, defaultRate);
+                int edgeStart = math.clamp(ConnectionOffsets[nodeIndex], 0, ConnectionCsrDestinations.Length);
+                int edgeEnd = math.clamp(ConnectionOffsets[nodeIndex + 1], edgeStart, ConnectionCsrDestinations.Length);
+                for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+                {
+                    int neighborIndex = ConnectionCsrDestinations[edgeIndex];
+                    if (neighborIndex <= nodeIndex || neighborIndex >= count)
+                        continue;
+
+                    TransferAcrossEdge(nodeIndex, neighborIndex, dt, defaultRate);
+                }
             }
 
             float totalWater = 0f;
@@ -190,8 +295,9 @@ namespace Hecton8.Logistics
                    PipeFlags.IsCreated &&
                    PipeFlowVectors.IsCreated &&
                    PipeRoomExchangeContents.IsCreated &&
-                   ConnectionSources.IsCreated &&
-                   ConnectionDestinations.IsCreated;
+                   ConnectionOffsets.IsCreated &&
+                   ConnectionOffsets.Length > 1 &&
+                   ConnectionCsrDestinations.IsCreated;
         }
 
         private int ResolveSafeNodeCount()
@@ -202,6 +308,7 @@ namespace Hecton8.Logistics
             count = math.min(count, PipeFlags.Length);
             count = math.min(count, PipeFlowVectors.Length);
             count = math.min(count, PipeRoomExchangeContents.Length);
+            count = math.min(count, ConnectionOffsets.Length - 1);
             return count;
         }
 

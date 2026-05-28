@@ -1,0 +1,178 @@
+{
+    "agent":  "1415",
+    "role":  "CIRCULAR_TELEMETRY_RING_HARDENER",
+    "domain":  "Echelon 1 Core Infrastructure / Crash Telemetry Layout",
+    "generatedUtc":  "2026-05-28T13:35:44.2265409Z",
+    "prompt":  {
+                   "source":  "Docs/Tasks/CURRENT_BATCH.md",
+                   "extractedCopy":  "Docs/Tasks/_1415_extracted_prompt.tmp.md",
+                   "taskCount":  20,
+                   "sha256":  "b922c32c7f14ef7844c5f6bfa20bcdeb1e370a8c02d21641c43739f7c96780b0"
+               },
+    "issue":  {
+                  "staleScratchComment":  "CrashTelemetryBuffer still documented runtime_telemetry.bin scratch as byte[32] after v2 migration to 64 bytes.",
+                  "dataSovereigntyViolation":  "VaultArray\u003cT\u003e.set wrote resolved GlobalDataVault views without TryAcquireWriteLock/finally ReleaseWriteLock."
+              },
+    "fix":  {
+                "crashTelemetrySource":  "Assets/_Project/Scripts/CrashTelemetryBuffer.cs:315-345,401-402",
+                "vaultArraySetter":  "Setter now acquires GlobalDataVault writer lock with SystemID.CoreDiagnostics, writes only inside the locked window, and releases in finally.",
+                "scratchComment":  "Cold allocation comment now says byte[64], matching LiveTelemetryRecordSizeBytes=64.",
+                "directRingAssignments":  36,
+                "directRingAssignmentRoute":  "Every _ringBuffer[writeIndex] = entry assignment routes through VaultArray\u003cT\u003e.set."
+            },
+    "dataSovereignty":  {
+                            "migratedToGlobalDataVault":  false,
+                            "existingBufferIds":  [
+                                                      {
+                                                          "constant":  "RingBufferId",
+                                                          "value":  "BufferID.CrashTelemetryRing",
+                                                          "line":  69,
+                                                          "owner":  "SystemID.CoreDiagnostics"
+                                                      },
+                                                      {
+                                                          "constant":  "ExportSnapshotBufferId",
+                                                          "value":  "BufferID.CrashTelemetryExportSnapshot",
+                                                          "line":  70,
+                                                          "owner":  "SystemID.CoreDiagnostics"
+                                                      },
+                                                      {
+                                                          "constant":  "ExportScratchBufferId",
+                                                          "value":  "BufferID.CrashTelemetryExportScratch",
+                                                          "line":  71,
+                                                          "owner":  "SystemID.CoreDiagnostics"
+                                                      }
+                                                  ],
+                            "tryAcquireWriteLockLine":  333,
+                            "finallyLine":  339,
+                            "releaseWriteLockLine":  342,
+                            "ensuredHandleLines":  [
+                                                       2381,
+                                                       2388,
+                                                       2395
+                                                   ],
+                            "proof":  "Setter uses bool locked=false; TryAcquireWriteLock(in _handle, SystemID.CoreDiagnostics, out buffer); finally releases only when locked is true."
+                        },
+    "liveTelemetryLayout":  {
+                                "sizeBytes":  64,
+                                "version":  2,
+                                "byteMap":  "0 Magic, 4 Version, 8 RecordSizeBytes, 12 FrameIndex, 16 ActiveChunkCount, 20 GcAllocBytes, 24 CpuFrameTimeMs, 28 DeltaTime, 32 ReservedMemoryMb, 36 LatencyMs, 40 GpuFrameTimeMs, 44 SystemMask, 48 ErrorFlags, 52 VelocityPacked, 56 AupShiftSequence, 60 LastOriginShiftFrame.",
+                                "staleV1SourceScanMatches":  0
+                            },
+    "zeroGcHotPathScan":  [
+                              {
+                                  "block":  "VaultArraySetter",
+                                  "found":  true,
+                                  "startLine":  315,
+                                  "endLine":  345,
+                                  "newKeyword":  0,
+                                  "stringFormat":  0,
+                                  "toString":  0,
+                                  "linq":  0,
+                                  "foreach":  0,
+                                  "lowEndSwitch":  0,
+                                  "globalQualityWeight":  0,
+                                  "tryAcquireWriteLock":  1,
+                                  "finally":  1,
+                                  "releaseWriteLock":  1
+                              },
+                              {
+                                  "block":  "TryWriteLiveTelemetry",
+                                  "found":  true,
+                                  "startLine":  3236,
+                                  "endLine":  3295,
+                                  "newKeyword":  0,
+                                  "stringFormat":  0,
+                                  "toString":  0,
+                                  "linq":  0,
+                                  "foreach":  0,
+                                  "lowEndSwitch":  0,
+                                  "globalQualityWeight":  0,
+                                  "tryAcquireWriteLock":  0,
+                                  "finally":  1,
+                                  "releaseWriteLock":  0
+                              },
+                              {
+                                  "block":  "ResolveLiveTelemetryWriteIntervalFrames",
+                                  "found":  true,
+                                  "startLine":  3297,
+                                  "endLine":  3308,
+                                  "newKeyword":  0,
+                                  "stringFormat":  0,
+                                  "toString":  0,
+                                  "linq":  0,
+                                  "foreach":  0,
+                                  "lowEndSwitch":  0,
+                                  "globalQualityWeight":  1,
+                                  "tryAcquireWriteLock":  0,
+                                  "finally":  0,
+                                  "releaseWriteLock":  0
+                              },
+                              {
+                                  "block":  "WritePendingLiveTelemetryToFile",
+                                  "found":  true,
+                                  "startLine":  3316,
+                                  "endLine":  3360,
+                                  "newKeyword":  0,
+                                  "stringFormat":  0,
+                                  "toString":  0,
+                                  "linq":  0,
+                                  "foreach":  0,
+                                  "lowEndSwitch":  0,
+                                  "globalQualityWeight":  0,
+                                  "tryAcquireWriteLock":  0,
+                                  "finally":  1,
+                                  "releaseWriteLock":  0
+                              }
+                          ],
+    "continuousScalability":  {
+                                  "globalQualityWeightLineRange":  "Assets/_Project/Scripts/CrashTelemetryBuffer.cs:3297-3308",
+                                  "minIntervalFramesLine":  40,
+                                  "maxIntervalFramesLine":  41,
+                                  "formula":  "round(lerp(120, 30, saturate(GlobalQualityWeight))) clamped 30..120.",
+                                  "weakDeviceCadence":  "120 frames at GlobalQualityWeight=0.0",
+                                  "middleCadence":  "75 frames at GlobalQualityWeight=0.5",
+                                  "highUltraCadence":  "30 frames at GlobalQualityWeight=1.0",
+                                  "binaryLowEndSwitchHits":  0,
+                                  "physicalSimulationAdded":  false
+                              },
+    "verification":  {
+                         "promptReextract":  "taskCount=20; sha256=b922c32c7f14ef7844c5f6bfa20bcdeb1e370a8c02d21641c43739f7c96780b0",
+                         "dashboardSmoke":  "python -B Tools\\\\TelemetryDashboard\\\\smoke_test.py =\u003e telemetry dashboard smoke ok",
+                         "gitDiffCheck":  "exit=0; CRLF warnings only",
+                         "sourceStaleV1Scan":  "Assets/_Project/Scripts/CrashTelemetryBuffer.cs + Tools/TelemetryDashboard/server.py: 0 matches",
+                         "jsonEncoding":  "UTF-8 without BOM"
+                     },
+    "compilation":  {
+                        "fullSolution":  {
+                                             "preCpuLoadPercent":  13,
+                                             "activeCompilerProcesses":  0,
+                                             "command":  "dotnet build .\\\\Hecton8.slnx --no-restore -m:1 -p:UseSharedCompilation=false -clp:ErrorsOnly",
+                                             "result":  "timeout after 604009 ms",
+                                             "cleanup":  "stopped own dotnet PID 21428"
+                                         },
+                        "targetedCore":  {
+                                             "preCpuLoadPercent":  46,
+                                             "activeCompilerProcesses":  0,
+                                             "command":  "dotnet build .\\\\Hecton8.Core.csproj --no-restore -m:1 -p:UseSharedCompilation=false -clp:ErrorsOnly",
+                                             "result":  "failed after 00:01:38.52",
+                                             "errors":  56,
+                                             "blockingFile":  "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+                                             "blockingLines":  "1290-1317",
+                                             "errorIds":  "CS8168, CS8350",
+                                             "cleanup":  "stopped own dotnet PID 37700"
+                                         },
+                        "cs0636Emitted":  false,
+                        "crashTelemetryDiagnostics":  0,
+                        "validatorDiagnostics":  0,
+                        "dump":  "Docs/AgentLogs/Dump_1415_BuildBlockedByDependency_20260528T133135Z.txt",
+                        "status":  "BLOCKED_BY_DEPENDENCY"
+                    },
+    "sourceHashes":  {
+                         "Assets/_Project/Scripts/CrashTelemetryBuffer.cs":  "2affa02e488381832490daf556af22e74619c3d3c64204bc5861265ae3032f12",
+                         "Tools/TelemetryDashboard/server.py":  "de5a87ab506b05e298d118d96d9bcb3c9a05e2e4de59b79b670415c17e494f7d",
+                         "Tools/TelemetryDashboard/smoke_test.py":  "4b71bc0dbe57f280dfc0b26a67f608b373665a217e2d7278f5cb0b4a9c11c155",
+                         "Tools/TelemetryDashboard/README.md":  "54a29fc3b31ba35ec77382faeadc0bf4fbfaa594eaf23787b29c800fb55ce162",
+                         "Assets/_Project/Scripts/Editor/TelemetryLayoutValidator1415.cs":  "4c9e0f2fcf1131769372df24cbad8420c04badf4b1d525e2bfa8d2fef9f6bf01",
+                         "Docs/AgentLogs/Dump_1415_BuildBlockedByDependency_20260528T133135Z.txt":  "c07788f9a87d148b1c8cb4e9e033071e16d42c62df3afa62f19d00b0d395e4f6"
+                     }
+}

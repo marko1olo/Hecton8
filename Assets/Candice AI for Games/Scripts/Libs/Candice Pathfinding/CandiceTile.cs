@@ -8,6 +8,8 @@ namespace CandiceAIforGames.AI
     {
         // COLD ALLOC: Collider[16] - bounded neighbor query scratch for Candice tile adjacency - owner: CandiceTile
         private static readonly Collider[] NeighborColliders = new Collider[16];
+        // COLD ALLOC: RaycastHit[1] - vertical occupancy probe scratch - owner: CandiceTile
+        private static readonly RaycastHit[] OccupancyHits = new RaycastHit[1];
 
         public bool walkable = true;
         public bool current = false;
@@ -107,8 +109,8 @@ namespace CandiceAIforGames.AI
 
                 if (candiceTile.walkable)
                 {
-                    RaycastHit hit;
-                    if (!Physics.Raycast(candiceTile.transform.position, Vector3.up, out hit, 1) || (candiceTile == target))
+                    int hitCount = Physics.RaycastNonAlloc(candiceTile.transform.position, Vector3.up, OccupancyHits, 1);
+                    if (hitCount == 0 || (candiceTile == target))
                     {
                         adjacencyList.Add(candiceTile);
                     }

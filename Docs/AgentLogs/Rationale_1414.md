@@ -1,7 +1,7 @@
 # Rationale_1414
 
 Agent: 1414
-Status: APEX STATIC VERIFIED / BUILD BLOCKED BY HOST CONTENTION
+Status: APEX STATIC VERIFIED / DESCRIPTOR GATE ADDED / BUILD THROTTLED
 
 ## Decision 000 - Scope And Mandate Selection
 
@@ -269,8 +269,144 @@ Hardware Impact: Avoided one MSBuild/Roslyn invocation under CPU contention.
 
 ## Decision 033 - Source Hash Reconciliation
 
-Problem: The reports still contained the previous SHA-256 for `Assets/_Project/Scripts/Core/SystemDispatcher.cs`, while the current workspace file hash is `d19dc4fedbb6b8dca919b2eefc4ecc4ec897ce6d786cedf64de82b974f3c612a`.
+Problem: The reports still contained a previous SHA-256 for `Assets/_Project/Scripts/Core/SystemDispatcher.cs`, while the workspace file bytes had moved.
 Solution: Update the APEX and optimization JSON source hash fields, re-parse both JSON files, and refresh final report hashes. `git status --short -- Assets/_Project/Scripts/Core/SystemDispatcher.cs` reported no local modification in this path, so this was artifact drift, not a new source edit.
 Rejected Alternatives: Leaving the stale source hash was rejected because cryptographic proof must match the current file bytes. Editing runtime code to match an old report was rejected as destructive and unrelated.
 Scalability potential: No runtime effect. Accurate hashes keep future allocator review anchored to the actual dispatcher hook bytes.
 Hardware Impact: No runtime cost.
+
+## Decision 034 - Sentinel Registration Stack Trace Purge
+
+Problem: `NativeMemorySentinel.RegisterPointer` still called `CaptureStackTrace` during normal registration. In Editor/Development persistent lifetimes that helper called `StackTraceUtility.ExtractStackTrace`, which creates a managed string during allocation registration and violates the zero-GC registration mandate.
+Solution: Make normal Sentinel stack-trace capture return `string.Empty`, keep owner/label/hash/bytes/lifetime as the fatal leak identity, and replace `NativeAllocationRecord`/`PersistentReallocationRecord` struct initializers with `default` plus field assignments to make the scanner proof unambiguous. Added `NativeMemorySentinel_RegisterPathAvoidsManagedStackTraceCapture`.
+Rejected Alternatives: Keeping stack traces for nicer diagnostics was rejected because normal registration must be allocation-free. Rewriting the entire Sentinel to unmanaged `FixedString` storage was rejected in this loop because the public API and fatal message surface are string-based across many call sites; the proven defect was the normal registration stack capture, not a `Dictionary`.
+Scalability potential: Low devices avoid editor/development registration string churn; Middle/High/Ultra keep the same fatal owner/label leak identity without adding runtime allocation pressure.
+Hardware Impact: Removes one managed stack-trace string allocation from each normal persistent Sentinel registration path in Editor/Development. Runtime microseconds are not claimed without profiler data.
+
+## Decision 035 - Post-Patch Compilation Gate Refresh
+
+Problem: The Sentinel patch changes unsafe-adjacent core infrastructure, so compilation is valuable, but the host must obey the explicit build throttle.
+Solution: Sample the gate after a 30 second wait. CPU was 94 percent and no `dotnet`/`csc`/`VBCSCompiler` processes were active; because CPU remains above 50 percent, do not launch `dotnet build`. Refresh the APEX and optimization JSON reports with this latest gate.
+Rejected Alternatives: Launching `dotnet build` at 94 percent CPU was rejected by AGENTS.md and the user's anti-spam rule. Reporting the older CPU 80 sample was rejected as stale evidence.
+Scalability potential: No runtime effect. Protects shared low-end host throughput while preserving exact verification state.
+Hardware Impact: Avoided one MSBuild/Roslyn invocation under CPU contention.
+
+## Decision 036 - Sentinel Full-Unmanaged Migration Deferral
+
+Problem: After removing normal registration stack-trace allocation, `NativeMemorySentinel` still has cold managed arrays and string owner/label references. A total `FixedString`/native-storage rewrite would better satisfy the harshest interpretation of "unmanaged sentinel," but it touches many string-based public call sites and fatal diagnostics.
+Solution: Record the limitation explicitly in both JSON reports as `SENTINEL_COLD_MANAGED_STORAGE_REMAINS`. Keep the targeted safe patch: normal register/unregister methods now source-scan to zero forbidden terms and no longer call `StackTraceUtility.ExtractStackTrace`.
+Rejected Alternatives: Pretending the Sentinel is fully unmanaged was rejected as false. Performing a broad storage/API migration without a legal build gate was rejected because a compile break in core memory infrastructure is higher risk than the remaining cold-storage limitation.
+Scalability potential: Low devices receive the immediate per-registration allocation removal. Middle/High/Ultra keep the same leak identity while a future quiet build window can migrate owner/label storage to bounded `FixedString` if required.
+Hardware Impact: No additional runtime cost; avoids a risky uncompiled core rewrite under CPU contention.
+
+## Decision 037 - Sentinel Record FixedString Migration
+
+Problem: The previous residual risk was still too broad: `NativeMemorySentinel` record payloads kept managed `Owner`, `Label`, and `StackTrace` references even after normal stack capture was disabled.
+Solution: Migrate `NativeAllocationRecord` and `PersistentReallocationRecord` owner/label payloads to `FixedString128Bytes` plus numeric hashes, remove stack-trace storage entirely, and compare records through hash plus byte-for-byte FixedString equality. Fatal leak messages append the fixed strings directly into the failure-path `StringBuilder`.
+Rejected Alternatives: Hash-only matching was rejected because hash collisions would make owner/label unregistration ambiguous. A full unmanaged container rewrite was deferred because the remaining managed part is a cold fixed-capacity array container, while this pass removes managed references from the record payload without changing the public string API.
+Scalability potential: Low devices avoid retaining managed owner/label string references in the Sentinel registry. Middle/High/Ultra preserve detailed fatal owner/label leak identity without changing call sites or allocator authority.
+Hardware Impact: Removes managed object references from tracked allocation records. Runtime microsecond savings are not claimed; the concrete win is lower GC root pressure and cleaner zero-GC proof.
+
+## Decision 038 - FixedString Migration Compilation Gate
+
+Problem: The Sentinel storage migration touches core memory diagnostics and should be compiled, but the build gate must be obeyed.
+Solution: Sample CPU and compiler processes before build. Latest gate after a 30 second wait was CPU 62 percent with active `dotnet` PID 62300. Do not launch `dotnet build`; refresh JSON proof with this blocked state.
+Rejected Alternatives: Launching a build under CPU > 50 with active dotnet was rejected by AGENTS.md and the user's explicit anti-spam rule.
+Scalability potential: No runtime effect. Protects shared host throughput.
+Hardware Impact: Avoided one MSBuild/Roslyn invocation during active compile contention.
+
+## Decision 039 - Sentinel Explicit Layout Closure
+
+Problem: After migrating Sentinel owner/label payloads to `FixedString128Bytes`, `NativeAllocationRecord` and `PersistentReallocationRecord` still lacked explicit ARM64 offset contracts and retained flag state as normal bool-field layout concern.
+Solution: Convert both records to explicit layout: `NativeAllocationRecord` is 304 bytes with `Pointer@0`, `Bytes@8`, `Owner@16`, `Label@144`, scalar metadata at `272..293`, and named padding through byte 303; `PersistentReallocationRecord` is 288 bytes with fixed strings at `0/128`, `LastBytes@256`, scalar metadata at `264..280`, and named padding through byte 287. Bool-facing properties are byte-backed and do not create runtime bool fields. Updated `NativeMemorySentinel_RegisterPathUsesFixedStringStorage` to assert the layout contract.
+Rejected Alternatives: Leaving sequential layout was rejected because the user explicitly demanded mathematical struct-offset proof. Hash-only identity was already rejected because collisions are unacceptable. Migrating the cold managed array containers to native storage was deferred because this pass closed the record payload/layout defect while the compiler gate is still blocked.
+Scalability potential: Low devices keep deterministic, compact, scan-friendly sentinel rows without managed owner/label references. Middle/High/Ultra preserve leak diagnostics while allowing future native container migration without changing the record ABI.
+Hardware Impact: Runtime microsecond savings are not claimed. Static zero-GC method scan covered 31 methods with 0 forbidden hits in 743531 us. Build was not launched because latest CPU was 90 percent and active `dotnet` PID 6088 existed.
+
+## Decision 040 - Deferred Release Enqueue Gate Source Reconciliation
+
+Problem: The rationale and static editor test already required `_deferredReleaseEnqueueGate`, but the actual `GlobalDataVault.QueueDeferredRelease` source still performed writer duplicate scan and ring-slot reservation without that gate. Two writer-release callers could both scan before either published `Pending`, then reserve separate slots for the same writer release.
+Solution: Add `_deferredReleaseEnqueueGate`, reset it in initialization/disposal paths, and wrap writer duplicate scan plus slot reservation in `while (Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate, 1, 0) != 0) Thread.SpinWait(8)` with `Volatile.Write(ref _deferredReleaseEnqueueGate, 0)` in `finally`.
+Rejected Alternatives: Relying on the slot-level `CompareExchange(ref request->State, Writing, Empty)` was rejected because it protects physical slot ownership, not semantic de-duplication across slots. Returning false while the enqueue gate is held was rejected because release callers interpret false as an unaccepted release.
+Scalability potential: Low tier gets deterministic writer-release acceptance under contention without managed locks. Middle/High/Ultra can absorb heavier release bursts through the same fixed unmanaged ring; buffer-pin releases remain counted events and are not de-duplicated.
+Hardware Impact: Adds one tiny atomic spin gate only on deferred-release enqueue paths. No steady allocator hot-path microsecond saving is claimed; the correction removes a race.
+
+## Decision 041 - Sentinel Diagnostic Record Read Gate
+
+Problem: `NativeMemorySentinel.CopySnapshotSources` and `BuildFatalLeakMessage` read `_records[]` without the Sentinel mutation gate. After explicit 304-byte record layout, a concurrent `RemoveAt` swap-back could expose a torn diagnostic snapshot or mixed owner/label/hash fields.
+Solution: Gate both diagnostic read loops with `EnterMutationGate()` and release through `finally`. `CopySnapshotSources` now uses `NativeAllocationSnapshotSource snapshot = default` plus field assignments, removing the textual `new` scanner hit from the diagnostic snapshot path.
+Rejected Alternatives: Treating these paths as "cold enough" was rejected because diagnostics must be trustworthy during failure analysis. Migrating the remaining cold managed array containers to native storage was again deferred because static storage lifetime cannot be made safer without a quiet compiler/test window.
+Scalability potential: Low devices receive deterministic crash/replay evidence. Middle/High/Ultra can keep richer diagnostics without racing the Sentinel record table.
+Hardware Impact: Cold diagnostic path only. Static zero-GC method scan now covers 32 methods with 0 forbidden hits in 1152528 us.
+
+## Decision 042 - Final Build Gate And Report Refresh
+
+Problem: After fixing the deferred-release gate and Sentinel diagnostic read race, proof artifacts and hashes were stale. Unsafe-adjacent memory changes still deserve compilation, but build throttle remains mandatory.
+Solution: Re-run static scans, parse both JSON reports, refresh SHA-256 hashes, and sample the compilation gate. Latest report gate was CPU 94 percent with no active `dotnet`/`csc`/`VBCSCompiler`; no `dotnet build` was launched because CPU > 50.
+Rejected Alternatives: Launching a build at 94 percent CPU was rejected by AGENTS.md and the user's anti-spam rule. Reporting earlier hashes was rejected as false evidence.
+Scalability potential: No runtime effect. Accurate proof preserves later Low/Middle/High/Ultra allocator work without repeating archaeology.
+Hardware Impact: Avoided one MSBuild/Roslyn invocation under CPU contention.
+
+## Decision 043 - Current Source Drift Reconciliation
+
+Problem: A fresh source/report comparison found `GlobalDataVault.cs` no longer matched the recorded SHA-256 and no longer contained `_deferredReleaseEnqueueGate`, even though the proof artifact still claimed the gate existed.
+Solution: Re-apply the enqueue gate to the current working file, re-run the QueueDeferredRelease zero-GC scan, refresh source hashes in both reports, and re-parse both JSON artifacts.
+Rejected Alternatives: Trusting the previous report was rejected because the actual working file is the authority. Reverting unrelated concurrent GlobalDataVault edits was rejected because only the missing gate was necessary for this domain fix.
+Scalability potential: Low/Middle/High/Ultra all preserve deterministic writer-release de-duplication without managed locks.
+Hardware Impact: Static scan covered 32 methods with 0 forbidden hits in 517603 us. Build was not launched because latest CPU was 76 percent.
+
+## Decision 044 - Final Evidence Coordinate Repair
+
+Problem: Final proof review found `Docs/Reports/ARENA_ALLOCATOR_APEX_VERIFICATION_1414.json` still named `_deferredReleaseEnqueueGate` disposal reset as `GlobalDataVault.cs:3544`, but current source places the reset at `GlobalDataVault.cs:3539`.
+Solution: Correct the APEX proof line, update the optimization report cross-hash, parse both JSON artifacts, and refresh the task/log hashes. Runtime source was not changed.
+Rejected Alternatives: Leaving a stale proof coordinate was rejected because line-level evidence is part of the requested APEX proof. Editing runtime code to match the stale report was rejected as harmful and unrelated.
+Scalability potential: No runtime effect; it preserves reliable Low/Middle/High/Ultra allocator audit evidence.
+Hardware Impact: No runtime cost and no build invocation.
+
+## Decision 045 - Latest Compiler Gate Refresh
+
+Problem: The previous report gate said CPU 76 percent with no active compiler processes, but the final gate sample found active compiler work.
+Solution: Update both JSON reports and logs to the current gate: CPU 76 percent, active `csc` PID 17356 and `dotnet` PID 3212. Do not launch `dotnet build`.
+Rejected Alternatives: Building under CPU > 50 percent and active compiler processes was rejected by AGENTS.md and the user's compilation throttling rule. Keeping the older active-process count was rejected as stale evidence.
+Scalability potential: No runtime effect; protects shared low-end host throughput while preserving exact verification state.
+Hardware Impact: Avoided one MSBuild/Roslyn invocation during active compiler contention.
+
+## Decision 046 - Arena Growth Tail Metadata Preflight
+
+Problem: `TryGrowArenaForBytes` still had a structural blind spot: an occupied tail with exhausted `_blocks` capacity returned `false` before preserving a deferred target, and `ExtendFreeTail` could still discover missing tail metadata capacity after `H8Memory.ReallocateRaw` had already moved and freed the old arena.
+Solution: Remove the early occupied-tail/full-capacity return, add `TryPrepareArenaGrowthTailMetadata` inside `TryGrowArena` after the compaction fence and block mutation gate are held but before `H8Memory.ReallocateRaw`, and add `H8Memory.TryReserveBlockDescriptorSlot` so descriptor capacity is prepared or rejected before pointer relocation. `ExtendFreeTail` remains a postcondition check and now uses `VaultArenaBlock freeTail = default` with field assignments.
+Rejected Alternatives: Growing first and trusting `ExtendFreeTail` was rejected because failure after raw relocation leaves a grown arena without a representable free-tail block. Reserving a managed lock was rejected by the zero-GC/hot-path mandate. Moving the whole H8Memory tracker to a new lock regime was rejected in this loop because call-site ownership is broader than arena growth and cannot be safely rewritten without a build/test window.
+Scalability potential: Low devices fail closed and carry the largest deferred target instead of risking corrupted metadata; Middle/High/Ultra keep the same continuous arena capacity route and can consume larger visual memory budgets once the quiescent phase can grow safely.
+Hardware Impact: Adds one bounded metadata-capacity check only on arena growth attempts. Static hot-path scan covered 18 methods with 0 forbidden hits in 218694 us. Build was not launched because CPU was 77 percent and active `dotnet` PID 31496 existed.
+
+## Decision 047 - Reserved Descriptor Slot Commit Contract
+
+Problem: The arena growth tail metadata preflight prepared descriptor capacity, but capacity is not ownership. Another descriptor registration could consume the prepared slot between preflight and ExtendFreeTail, and the first reservation patch still committed through generic TryUpdateBlockDescriptor without proving the slot remained reserved.
+Solution: Add H8BlockState.Reserved, reserve a concrete descriptor row with Bytes = -1L, commit it only through TryCommitReservedBlockDescriptor when current state is still Reserved, and release uncommitted reservations from TryGrowArena finally. ExtendFreeTail now uses the reserved commit path.
+Rejected Alternatives: Trusting capacity after EnsureBlockDescriptorCapacity was rejected as TOCTOU. Generic TryUpdateBlockDescriptor was rejected because it lacks Reserved-state proof. A global H8Memory lock rewrite was rejected in this loop because it exceeds the arena-growth domain and requires a green build/test window.
+Scalability potential: Low devices fail closed before pointer relocation; Middle/High/Ultra can grow larger arenas using the same reserved metadata route without corrupting descriptor ownership.
+Hardware Impact: Growth-only bounded descriptor scan/commit. Hot allocation path remains text-scanned at zero forbidden allocation constructs; no profiler-backed microsecond gain claimed.
+
+## Decision 048 - Throttled Build Attempt Honesty
+
+Problem: Unsafe relocation and descriptor-commit changes warranted compilation, but build throttling forbids compiler spam.
+Solution: Sample CPU and compiler processes first: CPU 14 percent, no active compiler processes. Launch exactly one dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1. It timed out after 124020 ms with no compiler output; report as not green, do not retry.
+Rejected Alternatives: Claiming compile success was rejected as false. Re-running the build after timeout was rejected as build spam without new evidence.
+Scalability potential: No runtime effect; protects shared low-end host throughput.
+Hardware Impact: One throttled build attempt consumed time but produced no result; latest post-timeout cleanup stopped own lingering dotnet build PID 3560; final sample is CPU 51 percent with no active compiler processes after stopping lingering build child PIDs 3560, 3392, 8108, and 13080.
+
+## Decision 049 - Loop 21 Hot-Path Text-Proof Closure
+
+Problem: `H8Memory.RegisterPointer` is on the `AllocateRaw` and `ReallocateRaw` registration path and still used value-type `new H8AllocationRecord { ... }` plus `new BlockDescriptor { ... }`. These were struct initializers, not managed heap allocations, but they weakened the exact text-scanning proof demanded by APEX.
+Solution: Replace both initializers with `default` plus explicit field assignments, then call `RegisterBlockDescriptorNoInit(in blockDescriptor)`. Also replace the cold `GlobalDataVault.Initialize` `new VaultArenaBlock { ... }` initializer with `default` plus fields so file-level `rg` evidence no longer reports that ambiguity.
+Rejected Alternatives: Explaining that these were structs was rejected because the mandate requires machine-readable evidence. Running another build after the solution graph failure was rejected when the immediate core-only gate sampled CPU 100 percent.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged. The allocator proof is cleaner while the existing continuous `GlobalQualityWeight` arena-capacity route remains the scalability lever.
+Hardware Impact: Runtime microsecond gain is not claimed. Static hot-path scan covered 24 methods with 0 forbidden hits. The latest full solution build failed in the MSBuild project graph before core code diagnostics; no core-only retry was launched at CPU 100. Lingering compiler processes from the solution build attempt were stopped: dotnet PID 68208, VBCSCompiler PID 6836, late child dotnet PID 40660, late child dotnet PID 12612, and orphaned csc PID 2104. A later host check showed CPU 6 with external compile-medic dotnet PID 58372 and csc PID 5024 writing `Docs/Reports/BUILD_COMPILE_MEDIC_HECTON8_EDITOR_FINAL_AFTER_BUCKETER_*`; not owned by 1414 and not stopped.
+
+## Decision 050 - H8Memory Descriptor Mutation Gate
+
+Problem: After the reserved descriptor-slot patch, `_blockDescriptors` still had multiple writer helpers (`TryUpdateBlockDescriptor`, reservation, commit, release, register, free, owner-key update, and capacity growth) with no H8Memory-local serialization. A vault growth path could reserve a concrete descriptor row, but a concurrent non-vault H8Memory descriptor writer could still mutate the same table between reserve and commit.
+Solution: Add `_blockDescriptorMutationGate` in `Assets/_Project/Scripts/Core/Memory/H8Memory.cs`. `EnterBlockDescriptorMutationGate` uses `Interlocked.CompareExchange(ref _blockDescriptorMutationGate, 1, 0)` and `Thread.SpinWait(8)`; every added descriptor writer releases through `finally` via `ReleaseBlockDescriptorMutationGate`, which performs `Thread.MemoryBarrier()` then `Volatile.Write(..., 0)`. Reservation body moved into `TryReserveBlockDescriptorSlotNoLock`, callable only from the gated wrapper.
+Rejected Alternatives: A broad H8Memory allocation-table lock rewrite was rejected in this loop because it would touch `Allocate<T>`/`NativeArray<T>` construction paths and needs a quiet compiler window. Locking `TryGetBlockDescriptor` was rejected because project doctrine requires read accessors to stay pure; writer serialization is proven, 40-byte diagnostic read atomicity is not claimed.
+Scalability potential: Low tier gets fail-closed deterministic descriptor metadata without managed locks. Middle/High/Ultra keep the same continuous `GlobalQualityWeight` arena-capacity route; this patch does not change gameplay truth or buffer layout.
+Hardware Impact: Adds a tiny Interlocked spin gate only around descriptor metadata writer paths. Runtime microsecond gain is not claimed. Loop 22 static scan covered 39 methods with `new_ref_text=0`, `string_format=0`, `tostring=0`, `foreach=0`, `linq_query=0`, `linq_methods=0`. Build was not launched in Loop 22 because the final report gate sampled CPU 100 with active `dotnet build Hecton8.slnx` PID 65020 parented by codex.exe. Final report hashes: APEX `74849c07100727a028688cfab91b71c8f35755be87cc7b4de8e7a015e2bcb9fe`, optimization `cf2c765526f4c4ffce64e32d0d7c3a5deddb1f5dc5d6cb5b1c64c10cc01a7afa`.

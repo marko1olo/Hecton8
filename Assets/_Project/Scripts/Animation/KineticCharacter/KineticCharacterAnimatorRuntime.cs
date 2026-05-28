@@ -155,11 +155,12 @@ namespace Hecton8.Animation.KineticCharacter
             if (vault == null)
                 return false;
 
-            if (!IsVaultHandleCreated(in _tuningHandle))
+            if (!IsOwnedVaultHandle(in _tuningHandle, KineticCharacterAnimatorBufferIds.Tuning))
                 EnsureVaultBuffers();
 
-            return TryResolveVaultBuffer(
+            return TryResolveOwnedVaultBuffer(
                 vault,
+                KineticCharacterAnimatorBufferIds.Tuning,
                 in _tuningHandle,
                 KineticCharacterAnimatorConstants.TuningCapacity,
                 out tuning);
@@ -177,8 +178,8 @@ namespace Hecton8.Animation.KineticCharacter
             if (vault == null)
                 return false;
 
-            if (!TryResolveVaultBuffer(vault, in _matricesHandle, 1, out NativeArray<float4x4> mutableMatrices) ||
-                !TryResolveVaultBuffer(vault, in _parentIndicesHandle, 1, out NativeArray<int> mutableParents))
+            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.BoneMatrices, in _matricesHandle, 1, out NativeArray<float4x4> mutableMatrices) ||
+                !TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.ParentIndices, in _parentIndicesHandle, 1, out NativeArray<int> mutableParents))
             {
                 return false;
             }
@@ -199,13 +200,13 @@ namespace Hecton8.Animation.KineticCharacter
             if (vault == null)
                 return false;
 
-            if (!TryResolveVaultBuffer(vault, in _rigsHandle, 1, out NativeArray<KineticCharacterRigDTO> rigs))
+            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Rigs, in _rigsHandle, 1, out NativeArray<KineticCharacterRigDTO> rigs))
                 return false;
 
             if (rigs[0].BoneCount <= 0)
                 GenerateEmergencyMockRig();
 
-            if (!TryResolveVaultBuffer(vault, in _rigsHandle, 1, out rigs))
+            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Rigs, in _rigsHandle, 1, out rigs))
                 return false;
 
             KineticCharacterTuningDTO tuningDto = tuning[0];
@@ -225,13 +226,13 @@ namespace Hecton8.Animation.KineticCharacter
             if (vault == null)
                 return false;
 
-            if (!TryResolveVaultBuffer(vault, in _rigsHandle, 1, out NativeArray<KineticCharacterRigDTO> rigs))
+            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Rigs, in _rigsHandle, 1, out NativeArray<KineticCharacterRigDTO> rigs))
                 return false;
 
             if (rigs[0].BoneCount <= 0)
                 GenerateEmergencyMockRig();
 
-            if (!TryResolveVaultBuffer(vault, in _rigsHandle, 1, out rigs))
+            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Rigs, in _rigsHandle, 1, out rigs))
                 return false;
 
             KineticCharacterTuningDTO tuningDto = tuning[0];
@@ -248,7 +249,7 @@ namespace Hecton8.Animation.KineticCharacter
             if (vault == null || !EnsureVaultBuffers())
                 return false;
 
-            if (!TryResolveVaultBuffer(vault, in _csvScratchHandle, 1, out NativeArray<byte> scratch) || byteCount <= 0)
+            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.CsvScratch, in _csvScratchHandle, 1, out NativeArray<byte> scratch) || byteCount <= 0)
                 return false;
 
             int safeCount = math.min(byteCount, scratch.Length);
@@ -510,7 +511,9 @@ namespace Hecton8.Animation.KineticCharacter
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            BindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
+            IDataVault currentVault = currentService is IDataVault nextVault ? nextVault : null;
+            IDataVault previousVault = previousService is IDataVault oldVault ? oldVault : null;
+            BindDataVaultForLifecycle(currentVault, previousVault);
             ClearGpuSkinningBinding();
             if (_dataVault != null)
             {
@@ -527,12 +530,12 @@ namespace Hecton8.Animation.KineticCharacter
                 return;
 
             int boneCapacity = math.clamp(_boneCapacity, KineticCharacterAnimatorConstants.EmergencyMockBoneCount, KineticCharacterAnimatorConstants.DefaultBoneCapacity);
-            if (!TryResolveVaultBuffer(vault, in _rigsHandle, 1, out NativeArray<KineticCharacterRigDTO> rigs) ||
-                !TryResolveVaultBuffer(vault, in _parentIndicesHandle, boneCapacity, out NativeArray<int> parents) ||
-                !TryResolveVaultBuffer(vault, in _bindPosesHandle, boneCapacity, out NativeArray<float4x4> bindPoses) ||
-                !TryResolveVaultBuffer(vault, in _tuningHandle, KineticCharacterAnimatorConstants.TuningCapacity, out NativeArray<KineticCharacterTuningDTO> tuning) ||
-                !TryResolveVaultBuffer(vault, in _inputsHandle, KineticCharacterAnimatorConstants.CharacterCapacity, out NativeArray<KineticCharacterFrameInputDTO> inputs) ||
-                !TryResolveVaultBuffer(vault, in _ikTargetsHandle, KineticCharacterAnimatorConstants.CharacterCapacity * KineticCharacterAnimatorConstants.IkTargetCount, out NativeArray<ProceduralIKTargetDTO> targets))
+            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Rigs, in _rigsHandle, 1, out NativeArray<KineticCharacterRigDTO> rigs) ||
+                !TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.ParentIndices, in _parentIndicesHandle, boneCapacity, out NativeArray<int> parents) ||
+                !TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.BindPoses, in _bindPosesHandle, boneCapacity, out NativeArray<float4x4> bindPoses) ||
+                !TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Tuning, in _tuningHandle, KineticCharacterAnimatorConstants.TuningCapacity, out NativeArray<KineticCharacterTuningDTO> tuning) ||
+                !TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.FrameInputs, in _inputsHandle, KineticCharacterAnimatorConstants.CharacterCapacity, out NativeArray<KineticCharacterFrameInputDTO> inputs) ||
+                !TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.IkTargets, in _ikTargetsHandle, KineticCharacterAnimatorConstants.CharacterCapacity * KineticCharacterAnimatorConstants.IkTargetCount, out NativeArray<ProceduralIKTargetDTO> targets))
             {
                 return;
             }
@@ -723,8 +726,9 @@ namespace Hecton8.Animation.KineticCharacter
             if (!resolved)
                 return false;
 
-            if (TryResolveVaultBuffer(
+            if (TryResolveOwnedVaultBuffer(
                     vault,
+                    KineticCharacterAnimatorBufferIds.Tuning,
                     in _tuningHandle,
                     KineticCharacterAnimatorConstants.TuningCapacity,
                     out NativeArray<KineticCharacterTuningDTO> tuning) &&
@@ -736,20 +740,21 @@ namespace Hecton8.Animation.KineticCharacter
             return true;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsVaultHandleForBuffer<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == (uint)expectedBufferId && handle.Generation != 0u;
         }
 
-        private static bool TryResolveVaultBuffer<T>(
+        private static bool TryResolveOwnedVaultBuffer<T>(
             IDataVault vault,
+            BufferID bufferId,
             in VaultGenerationHandle<T> handle,
             int requiredLength,
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
             return vault != null &&
-                   IsVaultHandleCreated(in handle) &&
+                   IsOwnedVaultHandle(in handle, bufferId) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
@@ -764,7 +769,10 @@ namespace Hecton8.Animation.KineticCharacter
             buffer = default;
             return vault != null &&
                    vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle) &&
-                   TryResolveVaultBuffer(vault, in handle, requiredLength, out buffer);
+                   IsVaultHandleForBuffer(in handle, bufferId) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
         }
 
         private static bool TryResolveOrAcquireVaultBuffer<T>(
@@ -777,7 +785,7 @@ namespace Hecton8.Animation.KineticCharacter
         {
             buffer = default;
             if (IsOwnedVaultHandle(in handle, bufferId) &&
-                TryResolveVaultBuffer(vault, in handle, requiredLength, out buffer))
+                TryResolveOwnedVaultBuffer(vault, bufferId, in handle, requiredLength, out buffer))
             {
                 return true;
             }
@@ -790,8 +798,13 @@ namespace Hecton8.Animation.KineticCharacter
                 requiredLength,
                 SystemID.AnimationLocomotion,
                 options);
-            if (!TryResolveVaultBuffer(vault, in acquired, requiredLength, out buffer))
+            if (!TryResolveOwnedVaultBuffer(vault, bufferId, in acquired, requiredLength, out buffer))
+            {
+                if (IsOwnedVaultHandle(in acquired, bufferId))
+                    vault.ReleaseBuffer(in acquired);
+
                 return false;
+            }
 
             handle = acquired;
             return true;
@@ -827,17 +840,17 @@ namespace Hecton8.Animation.KineticCharacter
                 return false;
 
             int boneCapacity = math.clamp(_boneCapacity, KineticCharacterAnimatorConstants.EmergencyMockBoneCount, KineticCharacterAnimatorConstants.DefaultBoneCapacity);
-            return TryResolveVaultBuffer(vault, in _rigsHandle, KineticCharacterAnimatorConstants.CharacterCapacity, out rigs) &&
-                   TryResolveVaultBuffer(vault, in _inputsHandle, KineticCharacterAnimatorConstants.CharacterCapacity, out inputs) &&
-                   TryResolveVaultBuffer(vault, in _parentIndicesHandle, boneCapacity, out parents) &&
-                   TryResolveVaultBuffer(vault, in _bindPosesHandle, boneCapacity, out bindPoses) &&
-                   TryResolveVaultBuffer(vault, in _boneOutputsHandle, boneCapacity, out boneOutputs) &&
-                   TryResolveVaultBuffer(vault, in _matricesHandle, boneCapacity, out matrices) &&
-                   TryResolveVaultBuffer(vault, in _ikTargetsHandle, KineticCharacterAnimatorConstants.CharacterCapacity * KineticCharacterAnimatorConstants.IkTargetCount, out ikTargets) &&
-                   TryResolveVaultBuffer(vault, in _statsHandle, KineticCharacterAnimatorConstants.CharacterCapacity, out stats) &&
-                   TryResolveVaultBuffer(vault, in _telemetryHandle, KineticCharacterAnimatorConstants.TelemetryCapacity, out telemetry) &&
-                   TryResolveVaultBuffer(vault, in _telemetryCursorHandle, 1, out cursor) &&
-                   TryResolveVaultBuffer(vault, in _tuningHandle, KineticCharacterAnimatorConstants.TuningCapacity, out tuning);
+            return TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Rigs, in _rigsHandle, KineticCharacterAnimatorConstants.CharacterCapacity, out rigs) &&
+                   TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.FrameInputs, in _inputsHandle, KineticCharacterAnimatorConstants.CharacterCapacity, out inputs) &&
+                   TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.ParentIndices, in _parentIndicesHandle, boneCapacity, out parents) &&
+                   TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.BindPoses, in _bindPosesHandle, boneCapacity, out bindPoses) &&
+                   TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.BoneOutputs, in _boneOutputsHandle, boneCapacity, out boneOutputs) &&
+                   TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.BoneMatrices, in _matricesHandle, boneCapacity, out matrices) &&
+                   TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.IkTargets, in _ikTargetsHandle, KineticCharacterAnimatorConstants.CharacterCapacity * KineticCharacterAnimatorConstants.IkTargetCount, out ikTargets) &&
+                   TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.FrameStats, in _statsHandle, KineticCharacterAnimatorConstants.CharacterCapacity, out stats) &&
+                   TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.TelemetryRing, in _telemetryHandle, KineticCharacterAnimatorConstants.TelemetryCapacity, out telemetry) &&
+                   TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.TelemetryCursor, in _telemetryCursorHandle, 1, out cursor) &&
+                   TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.Tuning, in _tuningHandle, KineticCharacterAnimatorConstants.TuningCapacity, out tuning);
         }
 
         private bool WriteFrameInput(IDataVault vault, NativeArray<KineticCharacterFrameInputDTO> inputs, float dt, float quality)
@@ -1072,8 +1085,9 @@ namespace Hecton8.Animation.KineticCharacter
         private float ResolveGlobalQualityWeight(IDataVault vault)
         {
             float quality = math.saturate(HomeostasisBrain.GlobalQualityWeight);
-            if (TryResolveVaultBuffer(
+            if (TryResolveOwnedVaultBuffer(
                     vault,
+                    KineticCharacterAnimatorBufferIds.Tuning,
                     in _tuningHandle,
                     KineticCharacterAnimatorConstants.TuningCapacity,
                     out NativeArray<KineticCharacterTuningDTO> tuning))
@@ -1093,8 +1107,8 @@ namespace Hecton8.Animation.KineticCharacter
             if (vault == null)
                 return;
 
-            if (!TryResolveVaultBuffer(vault, in _telemetryHandle, 1, out NativeArray<KineticAnimationTelemetryEntry> telemetry) ||
-                !TryResolveVaultBuffer(vault, in _telemetryCursorHandle, 1, out NativeArray<int> cursor) ||
+            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.TelemetryRing, in _telemetryHandle, 1, out NativeArray<KineticAnimationTelemetryEntry> telemetry) ||
+                !TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.TelemetryCursor, in _telemetryCursorHandle, 1, out NativeArray<int> cursor) ||
                 telemetry.Length <= 0 ||
                 cursor[0] <= 0)
                 return;
@@ -1127,8 +1141,8 @@ namespace Hecton8.Animation.KineticCharacter
             if (vault == null)
                 return false;
 
-            if (!TryResolveVaultBuffer(vault, in _telemetryHandle, 1, out NativeArray<KineticAnimationTelemetryEntry> telemetry) ||
-                !TryResolveVaultBuffer(vault, in _telemetryCursorHandle, 1, out NativeArray<int> cursor) ||
+            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.TelemetryRing, in _telemetryHandle, 1, out NativeArray<KineticAnimationTelemetryEntry> telemetry) ||
+                !TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.TelemetryCursor, in _telemetryCursorHandle, 1, out NativeArray<int> cursor) ||
                 telemetry.Length <= 0 ||
                 cursor[0] <= 0)
                 return false;
@@ -1143,8 +1157,8 @@ namespace Hecton8.Animation.KineticCharacter
             if (vault == null)
                 return;
 
-            if (!TryResolveVaultBuffer(vault, in _telemetryHandle, 1, out NativeArray<KineticAnimationTelemetryEntry> telemetry) ||
-                !TryResolveVaultBuffer(vault, in _telemetryCursorHandle, 1, out NativeArray<int> cursor))
+            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.TelemetryRing, in _telemetryHandle, 1, out NativeArray<KineticAnimationTelemetryEntry> telemetry) ||
+                !TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.TelemetryCursor, in _telemetryCursorHandle, 1, out NativeArray<int> cursor))
             {
                 return;
             }
@@ -1161,7 +1175,7 @@ namespace Hecton8.Animation.KineticCharacter
                 return false;
             }
 
-            if (!TryResolveVaultBuffer(vault, in _matricesHandle, 1, out NativeArray<float4x4> matrices))
+            if (!TryResolveOwnedVaultBuffer(vault, KineticCharacterAnimatorBufferIds.BoneMatrices, in _matricesHandle, 1, out NativeArray<float4x4> matrices))
             {
                 ClearGpuSkinningBinding();
                 return false;
@@ -1293,40 +1307,34 @@ namespace Hecton8.Animation.KineticCharacter
             if (vault == null)
                 return;
 
-            ReleaseVaultHandle(vault, ref _rigsHandle);
-            ReleaseVaultHandle(vault, ref _inputsHandle);
-            ReleaseVaultHandle(vault, ref _parentIndicesHandle);
-            ReleaseVaultHandle(vault, ref _bindPosesHandle);
-            ReleaseVaultHandle(vault, ref _boneOutputsHandle);
-            ReleaseVaultHandle(vault, ref _matricesHandle);
-            ReleaseVaultHandle(vault, ref _ikTargetsHandle);
-            ReleaseVaultHandle(vault, ref _statsHandle);
-            ReleaseVaultHandle(vault, ref _telemetryHandle);
-            ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
-            ReleaseVaultHandle(vault, ref _tuningHandle);
+            ReleaseVaultHandle(vault, KineticCharacterAnimatorBufferIds.Rigs, ref _rigsHandle);
+            ReleaseVaultHandle(vault, KineticCharacterAnimatorBufferIds.FrameInputs, ref _inputsHandle);
+            ReleaseVaultHandle(vault, KineticCharacterAnimatorBufferIds.ParentIndices, ref _parentIndicesHandle);
+            ReleaseVaultHandle(vault, KineticCharacterAnimatorBufferIds.BindPoses, ref _bindPosesHandle);
+            ReleaseVaultHandle(vault, KineticCharacterAnimatorBufferIds.BoneOutputs, ref _boneOutputsHandle);
+            ReleaseVaultHandle(vault, KineticCharacterAnimatorBufferIds.BoneMatrices, ref _matricesHandle);
+            ReleaseVaultHandle(vault, KineticCharacterAnimatorBufferIds.IkTargets, ref _ikTargetsHandle);
+            ReleaseVaultHandle(vault, KineticCharacterAnimatorBufferIds.FrameStats, ref _statsHandle);
+            ReleaseVaultHandle(vault, KineticCharacterAnimatorBufferIds.TelemetryRing, ref _telemetryHandle);
+            ReleaseVaultHandle(vault, KineticCharacterAnimatorBufferIds.TelemetryCursor, ref _telemetryCursorHandle);
+            ReleaseVaultHandle(vault, KineticCharacterAnimatorBufferIds.Tuning, ref _tuningHandle);
 #if UNITY_EDITOR
-            ReleaseVaultHandle(vault, ref _csvScratchHandle);
+            ReleaseVaultHandle(vault, KineticCharacterAnimatorBufferIds.CsvScratch, ref _csvScratchHandle);
 #endif
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        private static void ReleaseVaultHandle<T>(IDataVault vault, BufferID bufferId, ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (IsOwnedVaultHandle(in handle))
+            if (IsOwnedVaultHandle(in handle, bufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
         }
 
-        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle) where T : struct
-        {
-            return IsVaultHandleCreated(in handle) &&
-                   handle.SystemID == (uint)SystemID.AnimationLocomotion;
-        }
-
         private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
         {
-            return IsOwnedVaultHandle(in handle) &&
-                   handle.BufferID == (uint)expectedBufferId;
+            return IsVaultHandleForBuffer(in handle, expectedBufferId) &&
+                   handle.SystemID == (uint)SystemID.AnimationLocomotion;
         }
 
         private void ClearHandles()

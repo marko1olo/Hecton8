@@ -1,0 +1,148 @@
+{
+  "agent_id": "AUDIT_NATIVE_STATE",
+  "domain": "NativeArray/GlobalDataVault/MonoBehaviour lifecycle",
+  "date": "2026-05-28",
+  "scope": {
+    "source_files_audited": [
+      "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs",
+      "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime_TerminalProjection.cs",
+      "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs",
+      "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs",
+      "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs",
+      "Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs",
+      "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs",
+      "Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs",
+      "Assets/_Project/Scripts/UI/WristHologramHudRuntime_PdaScreenProjector.cs"
+    ],
+    "diff_hunk_count": 46,
+    "numstat": {
+      "Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs": { "added": 2, "deleted": 1 },
+      "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs": { "added": 96, "deleted": 33 },
+      "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime_TerminalProjection.cs": { "added": 4, "deleted": 4 },
+      "Assets/_Project/Scripts/UI/WristHologramHudRuntime_PdaScreenProjector.cs": { "added": 1, "deleted": 0 },
+      "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs": { "added": 2, "deleted": 1 },
+      "Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs": { "added": 2, "deleted": 1 },
+      "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs": { "added": 4, "deleted": 4 },
+      "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs": { "added": 12, "deleted": 1 },
+      "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs": { "added": 2, "deleted": 1 },
+      "Assets/_Project/Scripts/Visor/SpectrumSystem.cs": { "added": 81, "deleted": 20 }
+    }
+  },
+  "zero_gc_self_audit": {
+    "command": "git diff --unified=0 -- <audited source files> | Select-String '^+[^+].*(new|string.Format|.ToString(|foreach(|.Select(|.Where(|.Any(|.ToArray(|.ToList()'",
+    "diff_added_line_matches": 0,
+    "reference_type_new_matches": 0,
+    "string_format_matches": 0,
+    "to_string_matches": 0,
+    "linq_matches": 0,
+    "foreach_matches": 0,
+    "finding": "No added source line in the audited patch introduced new reference allocation syntax, string.Format, .ToString(), LINQ query helpers, ToArray/ToList, or foreach."
+  },
+  "unmanaged_layout_audit": {
+    "command": "git diff --unified=0 -- <audited source files> | Select-String '^+[^+].*(\\bstruct\\b|StructLayout|FieldOffset|UnsafeUtility.SizeOf|UnsafeUtility.GetFieldOffset)'",
+    "diff_added_line_matches": 0,
+    "finding": "No unmanaged struct declaration, StructLayout, FieldOffset, UnsafeUtility.SizeOf, or UnsafeUtility.GetFieldOffset line was added or modified in the audited patch. DTO layout/offset proof is therefore unchanged by this patch."
+  },
+  "data_sovereignty": {
+    "global_legacy_pattern_scan": {
+      "scope": "Assets/_Project/Scripts/UI and Assets/_Project/Scripts/Visor",
+      "patterns": [
+        "currentService as IDataVault",
+        "_dataVault = GlobalRegistry.DataVault",
+        "_vault = GlobalRegistry.DataVault",
+        "_cachedDataVault = GlobalRegistry.DataVault",
+        "handle.BufferID != 0u",
+        "IsVaultHandleCreated",
+        "IsValidVaultHandle"
+      ],
+      "matches": 0
+    },
+    "secured_buffer_ids": {
+      "TerminalOsRuntime": [
+        "TerminalStatesBufferId=(BufferID)71360",
+        "ScreenCommandsBufferId=(BufferID)71361",
+        "GlyphUvsBufferId=(BufferID)71362",
+        "TerminalPositionsBufferId=(BufferID)71363",
+        "TerminalForwardsBufferId=(BufferID)71364",
+        "DirtyIndicesBufferId=(BufferID)71365",
+        "TelemetryRingBufferId=(BufferID)71366",
+        "MockPowerBufferId=(BufferID)71367",
+        "MockDamageBufferId=(BufferID)71368",
+        "MockPowerStatusBufferId=(BufferID)71369",
+        "ButtonAabbBufferId=(BufferID)71370",
+        "PanelInstancesBufferId=(BufferID)71371",
+        "TerminalClickScratchBufferId=(BufferID)71372",
+        "TerminalPlanesBufferId=(BufferID)71373",
+        "GazeRayBufferId=(BufferID)71374",
+        "TerminalInteractionsBufferId=(BufferID)71375",
+        "DecryptionPuzzlesBufferId=BufferID.TerminalDecryptionPuzzles",
+        "DecryptionTerminalsBufferId=BufferID.TerminalDecryptionTerminals",
+        "DecryptionKnobInputBufferId=BufferID.TerminalDecryptionKnobInput",
+        "DecryptionTelemetryRingBufferId=BufferID.TerminalDecryptionTelemetryRing",
+        "TerminalInputStatesBufferId=(BufferID)71380",
+        "TerminalInputTelemetryRingBufferId=(BufferID)71381",
+        "TerminalInputTuningBufferId=(BufferID)71382",
+        "TerminalInputRowHashesBufferId=(BufferID)71383"
+      ],
+      "SpectrumSystem": [
+        "AupDiscoveryGridBufferId=(BufferID)71030",
+        "ActiveSonarGeoTelemetryRingBufferId=(BufferID)71031"
+      ],
+      "HectonVisorUberPostFeature": [
+        "ReconstructionConstantsVaultId=(BufferID)UberNoirReconstructionVaultIds.Constants",
+        "ReconstructionTelemetryVaultId=(BufferID)UberNoirReconstructionVaultIds.Telemetry",
+        "ReconstructionProfileVaultId=(BufferID)UberNoirReconstructionVaultIds.AestheticProfiles",
+        "ReconstructionCsvScratchVaultId=(BufferID)UberNoirReconstructionVaultIds.CsvScratch",
+        "ReconstructionMockSignalVaultId=(BufferID)UberNoirReconstructionVaultIds.MockSignal",
+        "NoirConstantsVaultId=BufferID.Shinobu235NoirConstants",
+        "NoirInputVaultId=BufferID.Shinobu235NoirInput",
+        "NoirTelemetryVaultId=BufferID.Shinobu235NoirTelemetry",
+        "NoirTuningVaultId=BufferID.Shinobu235NoirTuning",
+        "NoirColorProfilesVaultId=BufferID.Shinobu235NoirColorProfiles",
+        "NoirCsvScratchVaultId=BufferID.Shinobu235NoirCsvScratch"
+      ]
+    },
+    "new_or_hardened_owner_predicates": [
+      "TerminalOsRuntime.cs:1317 IsExactVaultHandle requires expected BufferID, SystemID.UI, and generation.",
+      "TerminalOsRuntime.cs:1325 IsTerminalOsVaultHandle gates known TerminalOS BufferIDs plus SystemID.UI and generation.",
+      "SpectrumSystem.cs:3045 IsSpectrumVaultHandle requires expected BufferID, SpectrumVaultOwner(SystemID.UI), and generation.",
+      "HectonVisorUberPostFeature.cs:1279 BindUberDataVaultForLifecycle releases old noir/reconstruction handles before storing next Vault."
+    ],
+    "write_lock_release_proof": [
+      "SpectrumSystem.cs:2895 TryAcquireWriteLock(_aupDiscoveryGridHandle); SpectrumSystem.cs:2914 finally; SpectrumSystem.cs:2916 ReleaseWriteLock.",
+      "SpectrumSystem.cs:2944 TryAcquireWriteLock(_aupDiscoveryGridHandle); SpectrumSystem.cs:2982 finally; SpectrumSystem.cs:2984 ReleaseWriteLock.",
+      "SpectrumSystem.cs:3717 TryAcquireWriteLock(_activeSonarGeoTelemetryRingHandle); SpectrumSystem.cs:3745 finally; SpectrumSystem.cs:3747 ReleaseWriteLock.",
+      "HectonVisorUberPostFeature.cs and HectonVisorUberPostFeature.Noir.cs existing write-lock sites were not newly introduced by this patch; scanned sites still release in finally blocks."
+    ]
+  },
+  "cinematic_cheat_and_scalability": {
+    "changed_physical_simulation": false,
+    "changed_visual_algorithms": false,
+    "changed_quality_weight_policy": false,
+    "finding": "The patch is lifecycle/ownership only. It did not add binary low-end switches and did not replace GlobalQualityWeight-driven behavior. Terminal texture-array fake, Spectrum grid-space sonar memory fake, Uber noir/reconstruction visual path, wrist/PDA projection fake, and existing quality scaling remain unchanged."
+  },
+  "compilation_resource_throttling": {
+    "dotnet_build_invocations_in_apex_pass": 0,
+    "latest_guard_sample": {
+      "dotnet_process": "PID 30956 active",
+      "cpu_load_percent": 99
+    },
+    "previous_guard_samples": [
+      "PID 5428 dotnet + PID 16076 csc, CPU 100%",
+      "no compiler process, CPU 70%"
+    ],
+    "final_compile_status": "not launched",
+    "reason": "Project rule forbids dotnet build while compiler lane is active or CPU load is above 50%."
+  },
+  "verification_status": {
+    "git_diff_check": "passed with LF/CRLF warnings only",
+    "csharp_compile": "not proven in this APEX pass",
+    "unity_import": "not proven",
+    "play_mode": "not proven",
+    "profiler_gc": "not proven",
+    "native_ledger": "not proven",
+    "dump_file": null,
+    "failure_truth": "No runtime crash/NaN/test execution occurred in this pass, so no Docs/AgentLogs/Dump_*.bin was generated by this pass. The remaining fault is absence of compile/import/runtime proof."
+  }
+}

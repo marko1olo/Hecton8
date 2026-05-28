@@ -346,6 +346,21 @@ namespace Crest
         void CombinePassCompute(CommandBuffer buf)
         {
             var lodCount = OceanRenderer.Instance.CurrentLodCount;
+            var dataTexture = DataTexture;
+            if (dataTexture == null)
+            {
+                return;
+            }
+
+            int width = dataTexture.width;
+            int height = dataTexture.height;
+            if (width <= 0 || height <= 0)
+            {
+                return;
+            }
+
+            int groupsX = (width + THREAD_GROUP_SIZE_X - 1) / THREAD_GROUP_SIZE_X;
+            int groupsY = (height + THREAD_GROUP_SIZE_Y - 1) / THREAD_GROUP_SIZE_Y;
 
             int combineShaderKernel = krnl_ShapeCombine;
             int combineShaderKernel_lastLOD = krnl_ShapeCombine_DISABLE_COMBINE;
@@ -403,14 +418,14 @@ namespace Crest
                 // Set the animated waves texture where the results will be combined.
                 _combineProperties.SetTexture(
                     sp_LD_TexArray_AnimatedWaves_Compute,
-                    DataTexture
+                    dataTexture
                 );
 
                 _combineProperties.SetInt(sp_LD_SliceIndex, lodIdx);
 
                 buf.DispatchCompute(_combineShader, selectedShaderKernel,
-                    OceanRenderer.Instance.LodDataResolution / THREAD_GROUP_SIZE_X,
-                    OceanRenderer.Instance.LodDataResolution / THREAD_GROUP_SIZE_Y,
+                    groupsX,
+                    groupsY,
                     1);
             }
         }

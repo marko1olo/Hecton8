@@ -1,0 +1,109 @@
+{
+  "agent_id": "AUDIT_NATIVE_STATE",
+  "timestamp": "2026-05-28T20:10:54.8593760+04:00",
+  "scope": "VFX and GameplayTools DataVault exact-handle sweep",
+  "modified_files": [
+    "Assets/_Project/Scripts/Vehicles/VFX/HullDentShaderController.cs",
+    "Assets/_Project/Scripts/VFX/Materials/MaterialDecayRuntime.cs",
+    "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs",
+    "Assets/_Project/Scripts/Tools/ToolHapticsRuntime.cs"
+  ],
+  "buffer_ids_secured": [
+    {
+      "name": "HullDents",
+      "value": 76,
+      "owner": "SystemID.Vfx",
+      "file": "Assets/_Project/Scripts/Vehicles/VFX/HullDentShaderController.cs",
+      "proof_lines": [122, 123, 473, 511, 521, 542, 555, 571, 585, 595, 613, 638, 662, 665, 672],
+      "lock_protocol": "TryLockBuffer(BufferID.HullDents, SystemID.Vfx) at lines 473, 521, 555; TryUnlockBuffer in finally at lines 511, 542, 571."
+    },
+    {
+      "name": "MaterialDecayBlackBox",
+      "value": 273,
+      "owner": "SystemID.Vfx",
+      "file": "Assets/_Project/Scripts/VFX/Materials/MaterialDecayRuntime.cs",
+      "proof_lines": [276, 465, 478, 496, 501, 518, 538, 547, 554],
+      "lock_protocol": "No write-lock API in this runtime; single black-box lane is resolved through exact descriptor and released only through exact BufferID/SystemID/generation."
+    },
+    {
+      "name": "WfcDoorCutProgress01",
+      "value": 96,
+      "owner": "SystemID.GameplayTools",
+      "file": "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs",
+      "proof_lines": [96, 201, 235, 253, 261, 276, 281, 290, 308, 314],
+      "lock_protocol": "No TryAcquireWriteLock in this helper; static runtime uses exact handle resolve/release only."
+    },
+    {
+      "name": "WfcLaserCutBlackBox",
+      "value": 97,
+      "owner": "SystemID.GameplayTools",
+      "file": "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs",
+      "proof_lines": [102, 211, 235, 253, 261, 276, 281, 290, 309, 314],
+      "lock_protocol": "No TryAcquireWriteLock in this helper; static runtime uses exact handle resolve/release only."
+    },
+    {
+      "name": "ToolHapticFrontCommands",
+      "value": 234,
+      "owner": "SystemID.GameplayTools",
+      "file": "Assets/_Project/Scripts/Tools/ToolHapticsRuntime.cs",
+      "proof_lines": [507, 531, 542, 551, 556, 570, 598, 604, 872],
+      "lock_protocol": "No TryAcquireWriteLock in this MonoBehaviour; command lanes are exact resolved and exact released."
+    },
+    {
+      "name": "ToolHapticBackCommands",
+      "value": 235,
+      "owner": "SystemID.GameplayTools",
+      "file": "Assets/_Project/Scripts/Tools/ToolHapticsRuntime.cs",
+      "proof_lines": [517, 531, 542, 551, 556, 570, 599, 604, 872],
+      "lock_protocol": "No TryAcquireWriteLock in this MonoBehaviour; command lanes are exact resolved and exact released."
+    }
+  ],
+  "zero_gc_diff_scan": {
+    "command": "git diff -- <4 files> | rg -n \"^\\+.*\\b(new\\s+[A-Za-z_][A-Za-z0-9_]*\\s*\\(|string\\.Format\\s*\\(|\\.ToString\\s*\\(|\\.Select\\s*\\(|\\.Where\\s*\\(|\\.OrderBy\\s*\\(|\\.Aggregate\\s*\\(|foreach\\s*\\()\"",
+    "exit_code": 1,
+    "matches": 0,
+    "stdout": "",
+    "stderr_note": "Git reported LF-to-CRLF working-copy warnings only."
+  },
+  "layout_diff_scan": {
+    "command": "git diff -- <4 files> | rg -n \"^\\+.*(StructLayout|FieldOffset|UnsafeUtility\\.SizeOf|Marshal\\.OffsetOf|sizeof\\()\"",
+    "exit_code": 1,
+    "matches": 0,
+    "stdout": "",
+    "stderr_note": "Git reported LF-to-CRLF working-copy warnings only."
+  },
+  "bad_pattern_scan": {
+    "command": "rg -n \"currentService as IDataVault|previousService as IDataVault|IsVaultHandleCreated|handle\\.BufferID\\s*(!=|==)\\s*0u|BufferID\\s*(!=|==)\\s*0u|OwnerSystemID|IsHandleCreated\\(\" <4 files>",
+    "exit_code": 1,
+    "matches": 0,
+    "stdout": ""
+  },
+  "diff_numstat": [
+    "20 9 Assets/_Project/Scripts/Tools/ToolHapticsRuntime.cs",
+    "23 14 Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs",
+    "12 7 Assets/_Project/Scripts/VFX/Materials/MaterialDecayRuntime.cs",
+    "17 8 Assets/_Project/Scripts/Vehicles/VFX/HullDentShaderController.cs"
+  ],
+  "compilation_resource_throttling": {
+    "cpu_load_percent_before_compile": 100,
+    "active_compiler_processes": [
+      { "id": 50396, "name": "csc", "cpu_seconds": 26.109375, "start_time": "2026-05-28T20:10:18+04:00" },
+      { "id": 55012, "name": "dotnet", "cpu_seconds": 33.5625, "start_time": "2026-05-28T20:09:42+04:00" },
+      { "id": 65020, "name": "dotnet", "cpu_seconds": 66.421875, "start_time": "2026-05-28T20:09:44+04:00" }
+    ],
+    "dotnet_build_launched_by_this_pass": false,
+    "reason": "CPU > 50% and active dotnet/csc compiler lane present."
+  },
+  "cinematic_cheat_and_scalability": {
+    "changed_physical_simulation": false,
+    "changed_global_quality_weight_logic": false,
+    "binary_low_end_switch_added": false,
+    "reason": "Patch is descriptor identity hardening only. Existing VFX/tool quality paths are preserved."
+  },
+  "runtime_proof_absence": {
+    "dotnet_build": "not run in this pass",
+    "unity_import": "not run",
+    "play_mode": "not run",
+    "profiler_or_gc_monitor": "not run"
+  }
+}

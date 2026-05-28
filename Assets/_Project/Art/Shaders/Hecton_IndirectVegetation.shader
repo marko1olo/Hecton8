@@ -813,7 +813,10 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 out float wakeShear)
             {
                 wakeShear = 0.0;
-#if !defined(_MATH_LOD_LOW)
+                float wakeQuality = smoothstep(0.12, 0.65, ResolveIndirectVegetationQualityWeight());
+                if (wakeQuality <= 0.0001)
+                    return float3(0.0, 0.0, 0.0);
+
                 float3 wakeOffset = float3(0.0, 0.0, 0.0);
                 int wakeCount = min(_HectonFloraWakeCount, HECTON_MAX_PROCEDURAL_WAKE_POINTS);
                 UNITY_LOOP
@@ -833,16 +836,13 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     float2 radialDirection = SafeNormalize2(wakeDelta.xz + float2(0.001, -0.001));
                     float typeScale = instanceType < 0.5 ? 0.55 : (instanceType < 1.5 ? 1.35 : 0.72);
                     float rootPinnedHeight = bendMask * lerp(0.22, 1.15, heightMask);
-                    float bendStrength = influence * intensity * rootPinnedHeight * typeScale;
+                    float bendStrength = influence * intensity * rootPinnedHeight * typeScale * wakeQuality;
                     wakeOffset.xz += radialDirection * (bendStrength * radius * 0.22);
                     wakeOffset.y += bendStrength * (instanceType < 1.5 ? 0.08 : 0.025);
                     wakeShear = max(wakeShear, influence * intensity);
                 }
 
                 return wakeOffset;
-#else
-                return float3(0.0, 0.0, 0.0);
-#endif
             }
 
             half FastVegetationPower01(half value, half exponent)

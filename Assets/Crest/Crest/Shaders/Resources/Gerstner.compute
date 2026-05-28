@@ -95,7 +95,15 @@ void ComputeGerstner( float2 worldPosXZ, float worldSize, GerstnerWaveComponent4
 [numthreads(THREAD_GROUP_SIZE_X, THREAD_GROUP_SIZE_Y, 1)]
 void Gerstner(uint3 id : SV_DispatchThreadID)
 {
+	uint width; uint height; uint depth;
+	_WaveBuffer.GetDimensions(width, height, depth);
+
 	const uint cascadeIndex = id.z + _FirstCascadeIndex;
+	if (id.x >= width || id.y >= height || cascadeIndex >= depth || _TextureRes <= 0.0)
+	{
+		return;
+	}
+
 	const float worldSize = 0.5f * (1 << cascadeIndex);
 
 	// Each cascade lies on XZ plane and starts from the origin

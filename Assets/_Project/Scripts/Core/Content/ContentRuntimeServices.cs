@@ -7,6 +7,7 @@ using Hecton8.Core.Memory;
 using Hecton8.Optimization;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Mathematics;
 using UnityEngine;
 #if UNITY_ADDRESSABLES_EXIST
 using UnityEngine.AddressableAssets;
@@ -78,6 +79,8 @@ namespace Hecton8.Core.Content
     /// </summary>
     public sealed class ContentBundleReferenceCounter
     {
+        private const ulong BundleRefMutationGuardMask = 1UL << 55;
+
         private readonly int _capacity;
         private IDataVault _vault;
         private VaultGenerationHandle<ContentBundleRefState> _statesHandle;
@@ -129,52 +132,63 @@ namespace Hecton8.Core.Content
                 return false;
             }
 
-            if (!TryResolveNormalized(out ContentBundleRefState* states, out int* countPtr, out int count))
+            if (!OpenOrAcquireNormalizedWriteViews(
+                    out ContentBundleRefState* states,
+                    out int* countPtr,
+                    out int count,
+                    out IDataVault writeVault))
             {
                 LogVaultUnavailable("acquire", hash);
                 return false;
             }
 
-            for (int i = 0; i < count; i++)
+            try
             {
-                if (states[i].Hash != hash)
-                    continue;
-
-                ContentBundleRefState state = states[i];
-                if (state.RefCount < 0 || state.RefCount == int.MaxValue)
+                for (int i = 0; i < count; i++)
                 {
-                    LogRefCountViolation(hash);
+                    if (states[i].Hash != hash)
+                        continue;
+
+                    ContentBundleRefState state = states[i];
+                    if (state.RefCount < 0 || state.RefCount == int.MaxValue)
+                    {
+                        LogRefCountViolation(hash);
+                        return false;
+                    }
+
+                    state.RefCount++;
+                    state.LastAccessFrame = frame;
+                    if (bytes > state.Bytes)
+                        state.Bytes = bytes;
+                    if (isBiomeCache)
+                        state.IsBiomeCache = 1;
+                    states[i] = state;
+                    return true;
+                }
+
+                if (count >= _capacity)
+                {
+                    LogBundleRefCapacityExceeded(hash, _capacity);
                     return false;
                 }
 
-                state.RefCount++;
-                state.LastAccessFrame = frame;
-                if (bytes > state.Bytes)
-                    state.Bytes = bytes;
-                if (isBiomeCache)
-                    state.IsBiomeCache = 1;
-                states[i] = state;
+                states[count] = new ContentBundleRefState
+                {
+                    Hash = hash,
+                    RefCount = 1,
+                    Bytes = bytes > 0L ? bytes : 0L,
+                    LastAccessFrame = frame,
+                    BiomeId = biomeId,
+                    Tier = tier,
+                    IsBiomeCache = isBiomeCache ? (byte)1 : (byte)0
+                };
+                *countPtr = count + 1;
                 return true;
             }
-
-            if (count >= _capacity)
+            finally
             {
-                LogBundleRefCapacityExceeded(hash, _capacity);
-                return false;
+                ReleaseBundleRefMutationGuard(writeVault);
             }
-
-            states[count] = new ContentBundleRefState
-            {
-                Hash = hash,
-                RefCount = 1,
-                Bytes = bytes > 0L ? bytes : 0L,
-                LastAccessFrame = frame,
-                BiomeId = biomeId,
-                Tier = tier,
-                IsBiomeCache = isBiomeCache ? (byte)1 : (byte)0
-            };
-            *countPtr = count + 1;
-            return true;
         }
 
         public unsafe bool Release(uint hash, int frame, out bool becameUnused)
@@ -186,33 +200,44 @@ namespace Hecton8.Core.Content
                 return false;
             }
 
-            if (!TryResolveNormalized(out ContentBundleRefState* states, out int* _, out int count))
+            if (!OpenOrAcquireNormalizedWriteViews(
+                    out ContentBundleRefState* states,
+                    out int* _,
+                    out int count,
+                    out IDataVault writeVault))
             {
                 LogVaultUnavailable("release", hash);
                 return false;
             }
 
-            for (int i = 0; i < count; i++)
+            try
             {
-                if (states[i].Hash != hash)
-                    continue;
-
-                ContentBundleRefState state = states[i];
-                if (state.RefCount <= 0)
+                for (int i = 0; i < count; i++)
                 {
-                    LogRefCountViolation(hash);
-                    return false;
+                    if (states[i].Hash != hash)
+                        continue;
+
+                    ContentBundleRefState state = states[i];
+                    if (state.RefCount <= 0)
+                    {
+                        LogRefCountViolation(hash);
+                        return false;
+                    }
+
+                    state.RefCount--;
+                    state.LastAccessFrame = frame;
+                    becameUnused = state.RefCount == 0;
+                    states[i] = state;
+                    return true;
                 }
 
-                state.RefCount--;
-                state.LastAccessFrame = frame;
-                becameUnused = state.RefCount == 0;
-                states[i] = state;
-                return true;
+                LogRefCountViolation(hash);
+                return false;
             }
-
-            LogRefCountViolation(hash);
-            return false;
+            finally
+            {
+                ReleaseBundleRefMutationGuard(writeVault);
+            }
         }
 
         public unsafe bool TryGetState(uint hash, out ContentBundleRefState state)
@@ -272,31 +297,42 @@ namespace Hecton8.Core.Content
                 return false;
             }
 
-            if (!TryResolveNormalized(out ContentBundleRefState* states, out int* countPtr, out int count))
+            if (!OpenOrAcquireNormalizedWriteViews(
+                    out ContentBundleRefState* states,
+                    out int* countPtr,
+                    out int count,
+                    out IDataVault writeVault))
             {
                 LogVaultUnavailable("remove", hash);
                 return false;
             }
 
-            for (int i = 0; i < count; i++)
+            try
             {
-                if (states[i].Hash != hash)
-                    continue;
-
-                if (states[i].RefCount > 0)
+                for (int i = 0; i < count; i++)
                 {
-                    LogActiveRemoveRejected(hash, states[i].RefCount);
-                    return false;
+                    if (states[i].Hash != hash)
+                        continue;
+
+                    if (states[i].RefCount > 0)
+                    {
+                        LogActiveRemoveRejected(hash, states[i].RefCount);
+                        return false;
+                    }
+
+                    int last = count - 1;
+                    states[i] = states[last];
+                    states[last] = default;
+                    *countPtr = last;
+                    return true;
                 }
 
-                int last = count - 1;
-                states[i] = states[last];
-                states[last] = default;
-                *countPtr = last;
-                return true;
+                return false;
             }
-
-            return false;
+            finally
+            {
+                ReleaseBundleRefMutationGuard(writeVault);
+            }
         }
 
         public unsafe long EstimateResidentBytes()
@@ -330,50 +366,83 @@ namespace Hecton8.Core.Content
 
         public unsafe void Clear()
         {
-            if (!TryResolve(out ContentBundleRefState* states, out int* countPtr))
+            if (!OpenOrAcquireWriteViews(out ContentBundleRefState* states, out int* countPtr, out IDataVault writeVault))
                 return;
 
-            int count = *countPtr;
-            if ((uint)count > (uint)_capacity)
-                count = _capacity;
+            try
+            {
+                int count = *countPtr;
+                if ((uint)count > (uint)_capacity)
+                    count = _capacity;
 
-            for (int i = 0; i < count; i++)
-                states[i] = default;
+                for (int i = 0; i < count; i++)
+                    states[i] = default;
 
-            *countPtr = 0;
+                *countPtr = 0;
+            }
+            finally
+            {
+                ReleaseBundleRefMutationGuard(writeVault);
+            }
         }
 
-        private unsafe bool TryResolve(out ContentBundleRefState* states, out int* count)
+        private unsafe bool OpenOrAcquireWriteViews(
+            out ContentBundleRefState* states,
+            out int* count,
+            out IDataVault writeVault)
         {
             states = null;
             count = null;
+            writeVault = null;
 
             IDataVault vault = _vault;
             if (vault == null)
                 return false;
 
-            if (!TryResolveOrAcquire(
+            if (!OpenOrAcquireBuffer(
                     vault,
                     ref _statesHandle,
                     BufferID.ContentAuthorityBundleRefs,
                     _capacity,
-                    out NativeArray<ContentBundleRefState> statesBuffer) ||
-                !TryResolveOrAcquire(
+                    out _) ||
+                !OpenOrAcquireBuffer(
                     vault,
                     ref _countHandle,
                     BufferID.ContentAuthorityBundleRefCount,
                     1,
-                    out NativeArray<int> countBuffer))
+                    out _) ||
+                !vault.TryAcquireMutationGuard(BundleRefMutationGuardMask))
             {
+                return false;
+            }
+
+            writeVault = vault;
+            if (!vault.TryResolveHandle(in _statesHandle, out NativeArray<ContentBundleRefState> statesBuffer) ||
+                !vault.TryResolveHandle(in _countHandle, out NativeArray<int> countBuffer) ||
+                !statesBuffer.IsCreated ||
+                !countBuffer.IsCreated ||
+                statesBuffer.Length < _capacity ||
+                countBuffer.Length < 1)
+            {
+                ReleaseBundleRefMutationGuard(vault);
+                writeVault = null;
                 return false;
             }
 
             states = (ContentBundleRefState*)statesBuffer.GetUnsafePtr();
             count = (int*)countBuffer.GetUnsafePtr();
-            return states != null && count != null && statesBuffer.Length >= _capacity && countBuffer.Length >= 1;
+            if (states != null && count != null && statesBuffer.Length >= _capacity && countBuffer.Length >= 1)
+            {
+                writeVault = vault;
+                return true;
+            }
+
+            ReleaseBundleRefMutationGuard(vault);
+            writeVault = null;
+            return false;
         }
 
-        private static bool TryResolveOrAcquire<T>(
+        private static bool OpenOrAcquireBuffer<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -403,6 +472,34 @@ namespace Hecton8.Core.Content
                    buffer.Length >= requiredLength;
         }
 
+        private unsafe bool OpenOrAcquireNormalizedWriteViews(
+            out ContentBundleRefState* states,
+            out int* countPtr,
+            out int count,
+            out IDataVault writeVault)
+        {
+            count = 0;
+            if (!OpenOrAcquireWriteViews(out states, out countPtr, out writeVault))
+                return false;
+
+            count = *countPtr;
+            if ((uint)count <= (uint)_capacity)
+                return true;
+
+            LogLedgerCountCorruption();
+            ClearResolved(states, countPtr, _capacity);
+            count = 0;
+            return true;
+        }
+
+        private static void ReleaseBundleRefMutationGuard(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            vault.ReleaseMutationGuard(BundleRefMutationGuardMask);
+        }
+
         private void ReleaseVaultHandles()
         {
             IDataVault vault = _vault;
@@ -422,25 +519,6 @@ namespace Hecton8.Core.Content
             }
 
             handle = default;
-        }
-
-        private unsafe bool TryResolveNormalized(
-            out ContentBundleRefState* states,
-            out int* countPtr,
-            out int count)
-        {
-            count = 0;
-            if (!TryResolve(out states, out countPtr))
-                return false;
-
-            count = *countPtr;
-            if ((uint)count <= (uint)_capacity)
-                return true;
-
-            LogLedgerCountCorruption();
-            ClearResolved(states, countPtr, _capacity);
-            count = 0;
-            return true;
         }
 
         private bool TryReadNormalized(
@@ -570,6 +648,8 @@ namespace Hecton8.Core.Content
         private const uint NonFiniteFlag = 1u << 3;
         private const uint VramLedgerOwnerHash = 0xC0A77A57u;
         private const ulong BlackBoxMagic = 0x484543544F4E3800UL;
+        private const ulong ContentPendingLoadMutationGuardMask = 1UL << 53;
+        private const ulong ContentTelemetryMutationGuardMask = 1UL << 54;
         private const uint BlackBoxEntrySizeBytes = 64u;
         private const int TelemetryCapacity = 300;
         public const int MaxPendingLoadCount = 64;
@@ -826,58 +906,80 @@ namespace Hecton8.Core.Content
                 return false;
             }
 
-            if (!TryResolvePendingLoadsNormalized(out ContentPendingLoadState* pendingLoads, out int* countPtr, out int count))
+            if (!OpenOrAcquirePendingLoadNormalizedWritePointers(
+                    out ContentPendingLoadState* pendingLoads,
+                    out int* countPtr,
+                    out int count,
+                    out IDataVault writeVault))
             {
                 LogPendingLoadVaultUnavailable(hash);
                 return false;
             }
 
-            for (int i = 0; i < count; i++)
+            try
             {
-                if (pendingLoads[i].Hash != hash || _pendingLoadTargets[i] != targetRenderer)
-                    continue;
+                for (int i = 0; i < count; i++)
+                {
+                    if (pendingLoads[i].Hash != hash || _pendingLoadTargets[i] != targetRenderer)
+                        continue;
 
+                    return true;
+                }
+
+                if (count >= PendingLoadCapacity)
+                {
+                    LogPendingLoadCapacityExceeded(hash);
+                    return false;
+                }
+
+                pendingLoads[count] = new ContentPendingLoadState
+                {
+                    Hash = hash,
+                    StartTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
+                    HologramIndex = -1
+                };
+                _pendingLoadTargets[count] = targetRenderer;
+                *countPtr = count + 1;
                 return true;
             }
-
-            if (count >= PendingLoadCapacity)
+            finally
             {
-                LogPendingLoadCapacityExceeded(hash);
-                return false;
+                ReleasePendingLoadMutationGuard(writeVault);
             }
-
-            pendingLoads[count] = new ContentPendingLoadState
-            {
-                Hash = hash,
-                StartTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
-                HologramIndex = -1
-            };
-            _pendingLoadTargets[count] = targetRenderer;
-            *countPtr = count + 1;
-            return true;
         }
 
         public unsafe bool CompleteAsyncLoad(uint hash, Renderer targetRenderer)
         {
-            if (!TryResolvePendingLoadsNormalized(out ContentPendingLoadState* pendingLoads, out int* countPtr, out int count))
+            if (!OpenOrAcquirePendingLoadNormalizedWritePointers(
+                    out ContentPendingLoadState* pendingLoads,
+                    out int* countPtr,
+                    out int count,
+                    out IDataVault writeVault))
             {
                 LogPendingLoadVaultUnavailable(hash);
                 return false;
             }
 
-            for (int i = count - 1; i >= 0; i--)
+            try
             {
-                ContentPendingLoadState pending = pendingLoads[i];
-                if (pending.Hash != hash || _pendingLoadTargets[i] != targetRenderer)
-                    continue;
+                for (int i = count - 1; i >= 0; i--)
+                {
+                    ContentPendingLoadState pending = pendingLoads[i];
+                    if (pending.Hash != hash || _pendingLoadTargets[i] != targetRenderer)
+                        continue;
 
-                HideHologram(pending.HologramIndex);
-                RemovePendingLoadAt(i, pendingLoads, countPtr);
-                return true;
+                    HideHologram(pending.HologramIndex);
+                    RemovePendingLoadAt(i, pendingLoads, countPtr);
+                    return true;
+                }
+
+                LogAsyncLoadCompletionMiss(hash, targetRenderer == null);
+                return false;
             }
-
-            LogAsyncLoadCompletionMiss(hash, targetRenderer == null);
-            return false;
+            finally
+            {
+                ReleasePendingLoadMutationGuard(writeVault);
+            }
         }
 
         public bool TryResolveContentEntry(uint hash, out ContentAssetEntry entry)
@@ -978,22 +1080,33 @@ namespace Hecton8.Core.Content
 
         private unsafe void TickPendingLoads(ref uint flags)
         {
-            if (!TryResolvePendingLoadsNormalized(out ContentPendingLoadState* pendingLoads, out int* _, out int count))
+            if (!OpenOrAcquirePendingLoadNormalizedWritePointers(
+                    out ContentPendingLoadState* pendingLoads,
+                    out int* _,
+                    out int count,
+                    out IDataVault writeVault))
                 return;
 
-            if (count == 0)
-                return;
-
-            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
-            for (int i = 0; i < count; i++)
+            try
             {
-                ContentPendingLoadState pending = pendingLoads[i];
-                if (pending.HologramIndex >= 0 || now - pending.StartTime < GhostProxyDelaySeconds)
-                    continue;
+                if (count == 0)
+                    return;
 
-                pending.HologramIndex = ShowHologram(_pendingLoadTargets[i]);
-                pendingLoads[i] = pending;
-                flags |= HologramFlag;
+                float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+                for (int i = 0; i < count; i++)
+                {
+                    ContentPendingLoadState pending = pendingLoads[i];
+                    if (pending.HologramIndex >= 0 || now - pending.StartTime < GhostProxyDelaySeconds)
+                        continue;
+
+                    pending.HologramIndex = ShowHologram(_pendingLoadTargets[i]);
+                    pendingLoads[i] = pending;
+                    flags |= HologramFlag;
+                }
+            }
+            finally
+            {
+                ReleasePendingLoadMutationGuard(writeVault);
             }
         }
 
@@ -1082,16 +1195,27 @@ namespace Hecton8.Core.Content
 
         private unsafe void ClearPendingLoads()
         {
-            if (TryResolvePendingLoadsNormalized(out ContentPendingLoadState* pendingLoads, out int* countPtr, out int count))
+            if (OpenOrAcquirePendingLoadNormalizedWritePointers(
+                    out ContentPendingLoadState* pendingLoads,
+                    out int* countPtr,
+                    out int count,
+                    out IDataVault writeVault))
             {
-                for (int i = 0; i < count; i++)
+                try
                 {
-                    HideHologram(pendingLoads[i].HologramIndex);
-                    pendingLoads[i] = default;
-                    _pendingLoadTargets[i] = null;
-                }
+                    for (int i = 0; i < count; i++)
+                    {
+                        HideHologram(pendingLoads[i].HologramIndex);
+                        pendingLoads[i] = default;
+                        _pendingLoadTargets[i] = null;
+                    }
 
-                *countPtr = 0;
+                    *countPtr = 0;
+                }
+                finally
+                {
+                    ReleasePendingLoadMutationGuard(writeVault);
+                }
             }
 
             if (_pendingLoadTargets == null)
@@ -1401,73 +1525,114 @@ namespace Hecton8.Core.Content
                              unchecked((uint)bundleRefCount * 19349663u) ^
                              unchecked((uint)_hologramsActive * 83492791u);
 
-            if (!TryResolveTelemetryPointer(out ContentAuthorityTelemetryEntry* telemetry, out int* cursorPtr))
+            if (!OpenOrAcquireTelemetryWritePointer(
+                    out ContentAuthorityTelemetryEntry* telemetry,
+                    out int* cursorPtr,
+                    out IDataVault writeVault))
                 return;
 
-            int cursor = *cursorPtr;
-            if ((uint)cursor >= TelemetryCapacity)
-                cursor = 0;
-
-            telemetry[cursor] = new ContentAuthorityTelemetryEntry
+            try
             {
-                Frame = SystemDispatcher.CurrentFrameId,
-                Flags = flags,
-                PendingLoads = pendingLoadCount,
-                HologramsActive = _hologramsActive,
-                BundleRefCount = bundleRefCount,
-                EstimatedVramBytes = estimate,
-                VramPressure01 = vramPressure,
-                RamPressure01 = ramPressure,
-                StateHash = stateHash
-            };
-            cursor++;
-            if (cursor >= TelemetryCapacity)
-                cursor = 0;
-            *cursorPtr = cursor;
+                int cursor = *cursorPtr;
+                if ((uint)cursor >= TelemetryCapacity)
+                    cursor = 0;
+
+                telemetry[cursor] = new ContentAuthorityTelemetryEntry
+                {
+                    Frame = SystemDispatcher.CurrentFrameId,
+                    Flags = flags,
+                    PendingLoads = pendingLoadCount,
+                    HologramsActive = _hologramsActive,
+                    BundleRefCount = bundleRefCount,
+                    EstimatedVramBytes = estimate,
+                    VramPressure01 = vramPressure,
+                    RamPressure01 = ramPressure,
+                    StateHash = stateHash
+                };
+                cursor++;
+                if (cursor >= TelemetryCapacity)
+                    cursor = 0;
+                *cursorPtr = cursor;
+            }
+            finally
+            {
+                ReleaseTelemetryMutationGuard(writeVault);
+            }
 
             if (nonFinite)
                 DumpBlackBox();
         }
 
-        private unsafe bool TryResolveTelemetryPointer(
+        private unsafe bool OpenOrAcquireTelemetryWritePointer(
             out ContentAuthorityTelemetryEntry* telemetry,
-            out int* cursor)
+            out int* cursor,
+            out IDataVault writeVault)
         {
             telemetry = null;
             cursor = null;
+            writeVault = null;
 
-            if (!TryResolveTelemetryBuffers(
+            if (!OpenOrAcquireTelemetryWriteBuffers(
                     out NativeArray<ContentAuthorityTelemetryEntry> telemetryBuffer,
-                    out NativeArray<int> cursorBuffer))
+                    out NativeArray<int> cursorBuffer,
+                    out writeVault))
                 return false;
 
             telemetry = (ContentAuthorityTelemetryEntry*)telemetryBuffer.GetUnsafePtr();
             cursor = (int*)cursorBuffer.GetUnsafePtr();
-            return telemetry != null && cursor != null;
+            if (telemetry != null && cursor != null)
+                return true;
+
+            ReleaseTelemetryMutationGuard(writeVault);
+            writeVault = null;
+            return false;
         }
 
-        private bool TryResolveTelemetryBuffers(
+        private bool OpenOrAcquireTelemetryWriteBuffers(
             out NativeArray<ContentAuthorityTelemetryEntry> telemetry,
-            out NativeArray<int> cursor)
+            out NativeArray<int> cursor,
+            out IDataVault writeVault)
         {
             telemetry = default;
             cursor = default;
+            writeVault = null;
             IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            return TryResolveOrAcquire(
-                       vault,
-                       ref _telemetryHandle,
-                       BufferID.ContentAuthorityBlackBox,
-                       TelemetryCapacity,
-                       out telemetry) &&
-                   TryResolveOrAcquire(
-                       vault,
-                       ref _telemetryCursorHandle,
-                       BufferID.ContentAuthorityTelemetryCursor,
-                       1,
-                       out cursor);
+            if (!OpenOrAcquireBuffer(
+                    vault,
+                    ref _telemetryHandle,
+                    BufferID.ContentAuthorityBlackBox,
+                    TelemetryCapacity,
+                    out _) ||
+                !OpenOrAcquireBuffer(
+                    vault,
+                    ref _telemetryCursorHandle,
+                    BufferID.ContentAuthorityTelemetryCursor,
+                    1,
+                    out _) ||
+                !vault.TryAcquireMutationGuard(ContentTelemetryMutationGuardMask))
+            {
+                return false;
+            }
+
+            writeVault = vault;
+            if (!vault.TryResolveHandle(in _telemetryHandle, out telemetry) ||
+                !vault.TryResolveHandle(in _telemetryCursorHandle, out cursor) ||
+                !telemetry.IsCreated ||
+                !cursor.IsCreated ||
+                telemetry.Length < TelemetryCapacity ||
+                cursor.Length < 1)
+            {
+                ReleaseTelemetryMutationGuard(vault);
+                telemetry = default;
+                cursor = default;
+                writeVault = null;
+                return false;
+            }
+
+            return true;
         }
 
         private unsafe int GetPendingLoadCount()
@@ -1501,48 +1666,73 @@ namespace Hecton8.Core.Content
             return false;
         }
 
-        private unsafe bool TryResolvePendingLoads(
+        private unsafe bool OpenOrAcquirePendingLoadWritePointers(
             out ContentPendingLoadState* pendingLoads,
-            out int* count)
+            out int* count,
+            out IDataVault writeVault)
         {
             pendingLoads = null;
             count = null;
+            writeVault = null;
 
             IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            if (!TryResolveOrAcquire(
+            if (!OpenOrAcquireBuffer(
                     vault,
                     ref _pendingLoadsHandle,
                     BufferID.ContentAuthorityPendingLoads,
                     PendingLoadCapacity,
-                    out NativeArray<ContentPendingLoadState> pendingLoadsBuffer) ||
-                !TryResolveOrAcquire(
+                    out _) ||
+                !OpenOrAcquireBuffer(
                     vault,
                     ref _pendingLoadCountHandle,
                     BufferID.ContentAuthorityPendingLoadCount,
                     1,
-                    out NativeArray<int> countBuffer))
+                    out _) ||
+                !vault.TryAcquireMutationGuard(ContentPendingLoadMutationGuardMask))
             {
+                return false;
+            }
+
+            writeVault = vault;
+            if (!vault.TryResolveHandle(in _pendingLoadsHandle, out NativeArray<ContentPendingLoadState> pendingLoadsBuffer) ||
+                !vault.TryResolveHandle(in _pendingLoadCountHandle, out NativeArray<int> countBuffer) ||
+                !pendingLoadsBuffer.IsCreated ||
+                !countBuffer.IsCreated ||
+                pendingLoadsBuffer.Length < PendingLoadCapacity ||
+                countBuffer.Length < 1)
+            {
+                ReleasePendingLoadMutationGuard(vault);
+                writeVault = null;
                 return false;
             }
 
             pendingLoads = (ContentPendingLoadState*)pendingLoadsBuffer.GetUnsafePtr();
             count = (int*)countBuffer.GetUnsafePtr();
-            return pendingLoads != null &&
-                   count != null &&
-                   pendingLoadsBuffer.Length >= PendingLoadCapacity &&
-                   countBuffer.Length >= 1;
+            if (pendingLoads != null &&
+                count != null &&
+                pendingLoadsBuffer.Length >= PendingLoadCapacity &&
+                countBuffer.Length >= 1)
+            {
+                writeVault = vault;
+                return true;
+            }
+
+            ReleasePendingLoadMutationGuard(vault);
+            writeVault = null;
+            return false;
         }
 
-        private unsafe bool TryResolvePendingLoadsNormalized(
+        private unsafe bool OpenOrAcquirePendingLoadNormalizedWritePointers(
             out ContentPendingLoadState* pendingLoads,
             out int* countPtr,
-            out int count)
+            out int count,
+            out IDataVault writeVault)
         {
             count = 0;
-            if (!TryResolvePendingLoads(out pendingLoads, out countPtr))
+            if (!OpenOrAcquirePendingLoadWritePointers(out pendingLoads, out countPtr, out writeVault))
                 return false;
 
             count = *countPtr;
@@ -1633,7 +1823,7 @@ namespace Hecton8.Core.Content
             handle = default;
         }
 
-        private static bool TryResolveOrAcquire<T>(
+        private static bool OpenOrAcquireBuffer<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -1661,6 +1851,59 @@ namespace Hecton8.Core.Content
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
+        }
+
+        private static void ReleaseTelemetryMutationGuard(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            vault.ReleaseMutationGuard(ContentTelemetryMutationGuardMask);
+        }
+
+        private static void ReleasePendingLoadMutationGuard(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            vault.ReleaseMutationGuard(ContentPendingLoadMutationGuardMask);
+        }
+
+        private unsafe bool TryResolveExistingTelemetryPointer(
+            out ContentAuthorityTelemetryEntry* telemetry,
+            out int* cursor)
+        {
+            telemetry = null;
+            cursor = null;
+
+            if (!TryResolveExistingTelemetryBuffers(
+                    out NativeArray<ContentAuthorityTelemetryEntry> telemetryBuffer,
+                    out NativeArray<int> cursorBuffer))
+            {
+                return false;
+            }
+
+            telemetry = (ContentAuthorityTelemetryEntry*)telemetryBuffer.GetUnsafePtr();
+            cursor = (int*)cursorBuffer.GetUnsafePtr();
+            return telemetry != null && cursor != null;
+        }
+
+        private bool TryResolveExistingTelemetryBuffers(
+            out NativeArray<ContentAuthorityTelemetryEntry> telemetry,
+            out NativeArray<int> cursor)
+        {
+            telemetry = default;
+            cursor = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   _telemetryHandle.BufferID != 0u &&
+                   _telemetryCursorHandle.BufferID != 0u &&
+                   vault.TryResolveHandle(in _telemetryHandle, out telemetry) &&
+                   telemetry.IsCreated &&
+                   telemetry.Length >= TelemetryCapacity &&
+                   vault.TryResolveHandle(in _telemetryCursorHandle, out cursor) &&
+                   cursor.IsCreated &&
+                   cursor.Length >= 1;
         }
 
         private void ClearBundleResidencyState()
@@ -1691,7 +1934,7 @@ namespace Hecton8.Core.Content
             if (_blackBoxDumpedThisSession)
                 return;
 
-            if (!TryResolveTelemetryPointer(out ContentAuthorityTelemetryEntry* telemetry, out int* cursorPtr))
+            if (!TryResolveExistingTelemetryPointer(out ContentAuthorityTelemetryEntry* telemetry, out int* cursorPtr))
                 return;
 
             string path = _blackBoxDumpPath;
@@ -2061,6 +2304,13 @@ namespace Hecton8.Core.Content
 
     public static class ContentTieredGroupPolicy
     {
+        private const int SurvivalGraphicsMemoryMb = 2048;
+        private const int OverkillGraphicsMemoryMb = 4096;
+        private const float XrVisualBudgetCeiling01 = 0.42f;
+        private const float CoreTierVisualCeiling01 = 0.38f;
+        private const float HighResTierVisualCeiling01 = 0.68f;
+        private const float OverkillDownloadThreshold01 = 0.74f;
+
         public const uint VisualFeatureSaltCrystals = 1u << 0;
         public const uint VisualFeatureVolumetricSiltWake = 1u << 1;
         public const uint VisualFeatureProceduralHullDents = 1u << 2;
@@ -2081,19 +2331,14 @@ namespace Hecton8.Core.Content
             if (tier != ContentTier.Overkill)
                 return true;
 
-            if (HectonXRRuntimeState.IsXRActive)
-                return false;
-
-            int graphicsMemory = SystemInfo.graphicsMemorySize;
-            return graphicsMemory > 4096;
+            return ResolveRuntimeVisualBudgetWeight01(ContentTier.Overkill) >= OverkillDownloadThreshold01;
         }
 
         public static ContentTier ResolveMaximumRuntimeTier()
         {
-            if (HectonXRRuntimeState.IsXRActive || SystemInfo.graphicsMemorySize <= 2048)
-                return ContentTier.HighRes;
-
-            return SystemInfo.graphicsMemorySize > 4096 ? ContentTier.Overkill : ContentTier.HighRes;
+            return ResolveRuntimeVisualBudgetWeight01(ContentTier.Overkill) >= OverkillDownloadThreshold01
+                ? ContentTier.Overkill
+                : ContentTier.HighRes;
         }
 
         public static uint ResolveVisualFeatureMask(ContentTier tier)
@@ -2106,42 +2351,10 @@ namespace Hecton8.Core.Content
             if (!IsValidTier(tier))
             {
                 LogInvalidContentTier(tier);
-                return ResolveLowVisualBudget();
+                return ResolveVisualBudgetForWeight(0f);
             }
 
-            if (HectonXRRuntimeState.IsXRActive || SystemInfo.graphicsMemorySize <= 2048)
-                return ResolveLowVisualBudget();
-
-            if (tier == ContentTier.Overkill && SystemInfo.graphicsMemorySize > 4096)
-            {
-                return new ContentVisualFeatureBudget
-                {
-                    FeatureMask = VisualFeatureSaltCrystals |
-                                  VisualFeatureVolumetricSiltWake |
-                                  VisualFeatureProceduralHullDents |
-                                  VisualFeatureRaymarchDetail |
-                                  VisualFeatureParallaxOcclusion16Tap,
-                    MaxParticles = 16384,
-                    RaymarchSteps = 64,
-                    PomTaps = 16,
-                    SiltWakeLayers = 4,
-                    SaltCrystalLayers = 3,
-                    HullDentOctaves = 4
-                };
-            }
-
-            return new ContentVisualFeatureBudget
-            {
-                FeatureMask = VisualFeatureSaltCrystals |
-                              VisualFeatureVolumetricSiltWake |
-                              DearLieTriangleNoise,
-                MaxParticles = 2048,
-                RaymarchSteps = 24,
-                PomTaps = 4,
-                SiltWakeLayers = 2,
-                SaltCrystalLayers = 2,
-                HullDentOctaves = 2
-            };
+            return ResolveVisualBudgetForWeight(ResolveRuntimeVisualBudgetWeight01(tier));
         }
 
         private static bool IsValidTier(ContentTier tier)
@@ -2149,20 +2362,99 @@ namespace Hecton8.Core.Content
             return tier <= ContentTier.Overkill;
         }
 
-        private static ContentVisualFeatureBudget ResolveLowVisualBudget()
+        internal static float ResolveRuntimeVisualBudgetWeight01(ContentTier tier)
         {
+            return ResolveRuntimeVisualBudgetWeight01(
+                tier,
+                SystemInfo.graphicsMemorySize,
+                HectonXRRuntimeState.IsXRActive,
+                HomeostasisBrain.GlobalQualityWeight);
+        }
+
+        internal static float ResolveRuntimeVisualBudgetWeight01(
+            ContentTier tier,
+            int graphicsMemoryMb,
+            bool xrActive,
+            float globalQualityWeight)
+        {
+            float globalWeight = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 0f);
+            float hardwareWeight = ResolveHardwareVisualCapacity01(graphicsMemoryMb);
+            float platformCeiling = xrActive ? XrVisualBudgetCeiling01 : 1f;
+            float tierCeiling = ResolveTierVisualCeiling01(tier);
+            return Smooth01(math.min(math.min(globalWeight, hardwareWeight), math.min(platformCeiling, tierCeiling)));
+        }
+
+        internal static float ResolveHardwareVisualCapacity01(int graphicsMemoryMb)
+        {
+            if (graphicsMemoryMb <= 0)
+                return HighResTierVisualCeiling01;
+
+            float range = math.max(1f, OverkillGraphicsMemoryMb - SurvivalGraphicsMemoryMb);
+            float t = math.saturate((graphicsMemoryMb - SurvivalGraphicsMemoryMb) / range);
+            return Smooth01(t);
+        }
+
+        private static float ResolveTierVisualCeiling01(ContentTier tier)
+        {
+            if (tier == ContentTier.Overkill)
+                return 1f;
+
+            if (tier == ContentTier.HighRes)
+                return HighResTierVisualCeiling01;
+
+            return CoreTierVisualCeiling01;
+        }
+
+        private static ContentVisualFeatureBudget ResolveVisualBudgetForWeight(float visualWeight01)
+        {
+            float weight = Smooth01(visualWeight01);
             return new ContentVisualFeatureBudget
             {
-                FeatureMask = DearLieOneDimensionalLut |
-                              DearLieTriangleNoise |
-                              DearLieDotProductVision,
-                MaxParticles = 512,
-                RaymarchSteps = 8,
-                PomTaps = 0,
-                SiltWakeLayers = 1,
-                SaltCrystalLayers = 1,
-                HullDentOctaves = 1
+                FeatureMask = ResolveVisualFeatureMaskForWeight(weight),
+                MaxParticles = (ushort)RoundLerpInt(512f, 16384f, weight, 512, 16384),
+                RaymarchSteps = (byte)RoundLerpInt(8f, 64f, weight, 8, 64),
+                PomTaps = (byte)RoundLerpInt(0f, 16f, SmoothRange01(0.28f, 1f, weight), 0, 16),
+                SiltWakeLayers = (byte)RoundLerpInt(1f, 4f, weight, 1, 4),
+                SaltCrystalLayers = (byte)RoundLerpInt(1f, 3f, weight, 1, 3),
+                HullDentOctaves = (byte)RoundLerpInt(1f, 4f, SmoothRange01(0.48f, 1f, weight), 1, 4)
             };
+        }
+
+        private static uint ResolveVisualFeatureMaskForWeight(float visualWeight01)
+        {
+            uint mask = DearLieOneDimensionalLut |
+                        DearLieTriangleNoise |
+                        DearLieDotProductVision;
+
+            if (visualWeight01 >= 0.18f)
+                mask |= VisualFeatureSaltCrystals;
+            if (visualWeight01 >= 0.34f)
+                mask |= VisualFeatureVolumetricSiltWake;
+            if (visualWeight01 >= 0.52f)
+                mask |= VisualFeatureProceduralHullDents;
+            if (visualWeight01 >= 0.64f)
+                mask |= VisualFeatureRaymarchDetail;
+            if (visualWeight01 >= 0.78f)
+                mask |= VisualFeatureParallaxOcclusion16Tap;
+
+            return mask;
+        }
+
+        private static int RoundLerpInt(float min, float max, float weight01, int floor, int ceiling)
+        {
+            return math.clamp((int)math.round(math.lerp(min, max, math.saturate(weight01))), floor, ceiling);
+        }
+
+        private static float SmoothRange01(float start, float end, float value)
+        {
+            float range = math.max(0.0001f, end - start);
+            return Smooth01((value - start) / range);
+        }
+
+        private static float Smooth01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - 2f * t);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

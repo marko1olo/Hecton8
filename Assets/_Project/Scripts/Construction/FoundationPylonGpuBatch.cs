@@ -852,7 +852,7 @@ namespace Hecton8.Construction
             {
                 CompletePendingForTeardown();
                 ClearVaultCacheCold();
-                _vault = currentService as IDataVault;
+                _vault = currentService is IDataVault currentVault ? currentVault : null;
                 ClearUploadedBatch();
                 if (isActiveAndEnabled)
                     EnsureBuffersCold();

@@ -172,10 +172,27 @@ namespace Crest
                 _renderSimProperties.SetBuffer(OceanRenderer.sp_CrestCascadeDataSource, usePreviousFrameTransform ? OceanRenderer.Instance._bufCascadeDataSrc : OceanRenderer.Instance._bufCascadeDataTgt);
                 _renderSimProperties.SetBuffer(OceanRenderer.sp_cascadeData, OceanRenderer.Instance._bufCascadeDataTgt);
 
+                int width = current != null ? current.width : 0;
+                int height = current != null ? current.height : 0;
+                int depth = current != null ? current.volumeDepth : 0;
+                int lodDispatchCount = OceanRenderer.Instance.CurrentLodCount;
+                if (lodDispatchCount > depth)
+                {
+                    lodDispatchCount = depth;
+                }
+
+                if (width <= 0 || height <= 0 || lodDispatchCount <= 0)
+                {
+                    continue;
+                }
+
+                int groupsX = (width + THREAD_GROUP_SIZE_X - 1) / THREAD_GROUP_SIZE_X;
+                int groupsY = (height + THREAD_GROUP_SIZE_Y - 1) / THREAD_GROUP_SIZE_Y;
+
                 buf.DispatchCompute(_shader, krnl_ShaderSim,
-                    OceanRenderer.Instance.LodDataResolution / THREAD_GROUP_SIZE_X,
-                    OceanRenderer.Instance.LodDataResolution / THREAD_GROUP_SIZE_Y,
-                    OceanRenderer.Instance.CurrentLodCount);
+                    groupsX,
+                    groupsY,
+                    lodDispatchCount);
 
                 // Only add forces if we did a step
                 if (substepDt > 0f)

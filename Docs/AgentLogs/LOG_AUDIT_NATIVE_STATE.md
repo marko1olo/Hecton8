@@ -2921,3 +2921,787 @@ Verification:
 - Scoped grep confirms the old `vault != null && handle.BufferID != 0u` release predicate is gone and all three release calls pass expected BufferIDs.
 - `git diff --check -- BabelSubtitleSyncRuntime.cs` reports clean.
 - Targeted compile/import/profiler proof not launched because the compiler/CPU guard was active.
+
+## 2026-05-28 - Wrist HUD And PDA Projector Vault Teardown
+
+What was wrong:
+- Wrist HUD and PDA projector handles were defaulted during teardown instead of being released through the owning Vault.
+- Shared exact-handle validation checked BufferID and generation but not `SystemID.UI`.
+- The DataVault service callback still used `currentService as IDataVault`.
+
+What was done:
+- Wrist HUD state, quads, font atlas, telemetry, counters, and acoustic tap handles now release through `ReleaseWristHudVaultHandle`.
+- PDA projector state, input, telemetry, cursor, tuning, profile, and editor CSV scratch handles now release through the same exact owner helper.
+- `IsExactVaultHandle` now requires expected BufferID, `SystemID.UI`, and generation.
+- The projector partial imports `Hecton8.Core.Data` because it now references `IDataVault` directly.
+- SDF HUD rendering, PDA projection math, GPU buffer upload, CSV parsing, and quality scaling were not changed.
+
+Cinematic cheats used:
+- None changed. Existing SDF wrist HUD and PDA projection visual fakes remain intact.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+
+Verification:
+- Scoped grep confirms no `currentService as IDataVault`, no direct `_cachedDataVault = GlobalRegistry.DataVault`, release calls carry expected BufferIDs, and exact handle proof includes `SystemID.UI`.
+- `git diff --check -- WristHologramHudRuntime.cs WristHologramHudRuntime_PdaScreenProjector.cs` reports only LF/CRLF warning.
+- Targeted compile/import/profiler proof not launched: external `dotnet` PID `51336`, CPU `77%`.
+
+## 2026-05-28 - Terminal OS DataVault Hot-Swap And Release Ownership
+
+What was wrong:
+- `TerminalOsRuntime` cold cache directly assigned `_vault = GlobalRegistry.DataVault`.
+- DataVault replacement used a direct cast and released native state without proving the previous Vault route.
+- Release accepted any nonzero UI handle instead of exact terminal/projection/decryption BufferIDs.
+- Hot-swap could release native lanes while terminal jobs were still scheduled.
+
+What was done:
+- Cold cache now calls `BindDataVaultForLifecycle`.
+- DataVault hot-swap completes terminal jobs, releases old native lanes through the old/previous Vault, and then binds the replacement Vault.
+- Fresh `EnsureGenerationHandle` results are rejected unless expected `BufferID`, `SystemID.UI`, and generation match.
+- All 24 terminal, projection, and decryption release paths pass exact BufferIDs.
+- Terminal rendering, glyph SDF upload, decryption math, projection raycast, DTO layout, and quality scaling were not changed.
+
+Cinematic cheats used:
+- None changed. The existing texture-array terminal fake and projection input fake remain.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+
+Verification:
+- Scoped grep over `TerminalOsRuntime.cs` and `TerminalOsRuntime_TerminalProjection.cs` returns no hits for direct DataVault cast/cache, old `IsValidVaultHandle`, ownerless `handle.BufferID != 0u`, or no-expected-id release calls.
+- `git diff --check -- TerminalOsRuntime.cs TerminalOsRuntime_TerminalProjection.cs` reports only LF/CRLF warnings.
+- Targeted compile/import/profiler proof not launched: external `dotnet` PID `9760`, CPU `100%`.
+
+## 2026-05-28 - UI/Visor Residual DataVault Lifecycle Sweep
+
+What was wrong:
+- Four already-fixed systems still used `currentService as IDataVault` in hot-swap callbacks.
+- `HectonVisorUberPostFeature` split DataVault binding across noir/reconstruction partials and direct cold assignments.
+- `SpectrumSystem` still had direct DataVault binding and nonzero handle predicates for AUP discovery and active-sonar telemetry.
+
+What was done:
+- Replaced residual direct DataVault casts in `DiegeticVisorLensRuntime`, `HectonVisorARStencilRendererFeature`, `InternalFloodWaterlineRuntime`, and `DiegeticGyroCompassRuntime`.
+- Added `BindUberDataVaultForLifecycle` for Uber noir/reconstruction handles.
+- Added `BindDataVaultForLifecycle` and exact `IsSpectrumVaultHandle` checks for Spectrum `71030` and `71031`.
+- Preserved other agents' existing `SpectrumSystem` acoustic queue changes.
+
+Cinematic cheats used:
+- None changed. Existing sonar grid fake, noir/reconstruction visuals, gyro/waterline/stencil paths remain.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+
+Verification:
+- Global grep over `Assets/_Project/Scripts/UI` and `Assets/_Project/Scripts/Visor` returns no hits for `currentService as IDataVault`, direct DataVault field assignment from `GlobalRegistry.DataVault`, ownerless `handle.BufferID != 0u`, `IsVaultHandleCreated`, or `IsValidVaultHandle`.
+- Combined `git diff --check` for touched UI/Visor files reports only LF/CRLF warnings.
+- Targeted compile/import/profiler proof not launched: external `dotnet` PID `5428`, child `csc` PID `16076`, CPU `100%`.
+- Recheck after waiting: compiler lane cleared, but CPU sampled `70%`; targeted compile still not launched.
+- APEX JSON artifact: `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_20260528.json`.
+- APEX JSON SHA-256: `91799EB7B3623EF83201D2C8FEA96605A6981C270A686B425C46EF94A91BA2F4`.
+- JSON validation: `ConvertFrom-Json` succeeded.
+- Final compile guard after JSON hashing: no `dotnet/csc/VBCSCompiler` process output, CPU `100%`; no build launched.
+
+## 2026-05-28 - Vocal Warning DataVault Owner Predicate Tail
+
+What was wrong:
+- Global grep outside UI/Visor still found project-wide lifecycle tails; UI/Visor closure was not global project closure.
+- `VocalWarningSystem` used `currentService as IDataVault` in both DataVault callbacks.
+- `ReleaseVaultBuffer` released any nonzero descriptor across 12 owned audio warning lanes.
+
+What was done:
+- DataVault callbacks now pattern-match `IDataVault`.
+- Queue, priority state, flags, cooldowns, severity, source IDs, current state, dispatch, profiles, tuning, editor CSV scratch, and telemetry handles now pass exact expected BufferIDs to teardown.
+- `IsVocalWarningVaultHandle` requires expected `BufferID`, `SystemID.AudioVocalWarning`, and generation before `ReleaseBuffer`.
+
+Cinematic cheats used:
+- None changed. Warning priority math, subtitle dispatch, telemetry layout, and audio behavior are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+
+Verification:
+- Scoped grep reports no `currentService as IDataVault`, no ownerless `handle.BufferID != 0u`, and no `OwnerSystemID` typo in `Assets/_Project/Scripts/Audio/VocalWarningSystem.cs`.
+- `git diff --check -- Assets/_Project/Scripts/Audio/VocalWarningSystem.cs` reports only LF/CRLF warning.
+- Compile/import/profiler proof not launched: CPU `48%`, but external `dotnet.exe build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` PID `6088` is active.
+
+## 2026-05-28 - Vocal Bank Playback Exact Vault Gates
+
+What was wrong:
+- `VocalBankPlaybackRuntime` used `currentService as IDataVault` during DataVault replacement.
+- Audio callback/control/init/bank/CSV write-lock paths did not prove exact vocal synthesis BufferID before `TryAcquireWriteLock`.
+- Teardown released any nonzero vocal synthesis descriptor.
+
+What was done:
+- DataVault replacement now pattern-matches `IDataVault`.
+- Write-lock acquisition now requires exact BufferID, `SystemID.AudioVocalSynthesis`, and generation for state, codec, telemetry, counters, waveform, mock bank bytes, mock records, CSV metadata, and CSV scratch.
+- Read-only revalidation and teardown use the same exact descriptor gate.
+
+Cinematic cheats used:
+- None changed. DSP decode, mock bank generation, vocal cue SignalBus flow, and audio filter behavior are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+
+Verification:
+- Combined grep over `VocalWarningSystem.cs` and `VocalBankPlaybackRuntime.cs` reports no `currentService as IDataVault`, no ownerless `handle.BufferID != 0u`, no old handle helper, and no `OwnerSystemID` typo.
+- `git diff --check -- Assets/_Project/Scripts/Audio/VocalWarningSystem.cs Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs` reports only LF/CRLF warnings.
+- Diff size for the two audio files: `VocalBankPlaybackRuntime.cs +64/-46`, `VocalWarningSystem.cs +36/-16`.
+- Compile/import/profiler proof not launched: external `dotnet.exe build Hecton8.Core.csproj --no-restore -nologo -v:minimal /m:1 /p:UseSharedCompilation=false /nr:false` PID `59612` active and CPU `85%`.
+
+## 2026-05-28 - Native Audio Frame Ring Telemetry Release Predicate
+
+What was wrong:
+- `NativeAudioFrameRingBuffer` released its DataVault telemetry handle with a generic nonzero descriptor predicate.
+
+What was done:
+- Release now requires exact `BufferID.AudioFrameRingTelemetry`, `SystemID.AudioFrameRing`, and generation before `ReleaseBuffer`.
+- Raw SPSC audio bridge memory, native plugin descriptor validation, overflow telemetry, and DSP write logic were not changed.
+
+Cinematic cheats used:
+- None changed. Existing bridge/ring buffer behavior is unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+
+Verification:
+- Scoped grep reports no ownerless `handle.BufferID != 0u` in `Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs`.
+- `git diff --check -- Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs` reports only LF/CRLF warning.
+- Compile/import/profiler proof not launched: external build lane and CPU guard remain active.
+
+## 2026-05-28 - Audio Continuation APEX Artifact
+
+What was wrong:
+- The previous APEX JSON artifact predates the audio continuation patches and cannot prove them.
+
+What was done:
+- Created `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_AUDIO_CONTINUATION_20260528.json`.
+- Parsed it with `ConvertFrom-Json`: OK.
+- Hashed it with SHA-256.
+
+Cinematic cheats used:
+- None; verification-only.
+
+Exact microseconds saved:
+- Measured: 0 us.
+
+Verification:
+- Audio continuation JSON SHA-256: `34D58A9FBBB9EDA1EB5AF473763F6618802D1C4EAF8BEECCBAA5CE97F1D81908`.
+- Artifact records source diff hunk count `31`, diff Zero-GC scan `0`, layout diff scan `0`, scoped audio bad-pattern scan `0`, remaining audio static debt, and explicit compile/import/profiler proof absence.
+
+## 2026-05-28 - Procedural/Adaptive/Dynamic Audio Exact Gates
+
+What was wrong:
+- `ProceduralAudioEvents` used generic `IsVaultHandleCreated` for two static event rings.
+- `AdaptiveStemAudioMixer` and `DynamicMusicGranularSynthesizer` still had unsafe DataVault replacement casts and ownerless release/read/write gates.
+- `PlayerCriticalProceduralAudioRenderer` still has four matching bad-pattern hits, but that file already contains active unrelated ping/haptic edits from another agent.
+
+What was done:
+- `ProceduralAudioEvents` now requires exact pending/next-frame event BufferIDs, owner, and generation before ensure/read/write/release.
+- `AdaptiveStemAudioMixer` gates all owned stem handles by exact BufferID, `SystemID.AudioStemMixer`, and generation before resolve/write-lock and release.
+- `DynamicMusicGranularSynthesizer` gates all owned synth handles by exact BufferID, `SystemID.AudioDynamicMusic`, and generation before resolve/write-lock and release.
+- Player-critical renderer was not edited in this pass to avoid overwriting the active unrelated diff.
+
+Cinematic cheats used:
+- None changed. DSP decode, stem mix, dynamic synth scheduling, grain-bank fake, and signal semantics are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+
+Verification:
+- Audio scoped bad-pattern count is reduced to `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:4` only.
+- Scoped patched-file grep returns no `currentService as IDataVault`, ownerless `handle.BufferID != 0u`, old `IsVaultHandleCreated`, or `OwnerSystemID`.
+- `git diff --check` for patched audio files reports only LF/CRLF warnings.
+- Compile/import/profiler proof not launched: external `dotnet` PID `50672`, `VBCSCompiler` PID `28580`, CPU `42%`; compiler lane still occupied.
+
+## 2026-05-28 - PlayerCritical Audio Exact-Gate Closure
+
+What was wrong:
+- `PlayerCriticalProceduralAudioRenderer` was the last audio-folder hit for the scoped native/DataVault anti-pattern grep.
+- DataVault callbacks used direct `currentService as IDataVault`.
+- Release/read/write helpers accepted ownerless or generic descriptors instead of proving the expected PlayerCritical buffer lane.
+- The file already contained unrelated procedural ping/haptic queue edits from another agent; those are not claimed here.
+
+What was done:
+- Added `IsPlayerCriticalVaultHandle(handle, expectedBufferId)` requiring exact `BufferID`, `SystemID.AudioPlayerCritical`, and non-zero generation.
+- Validated `EnsureGenerationHandle` output before `TryResolveHandle`.
+- Added exact expected BufferIDs before shared write-lock acquisition, direct prologue queue writes, telemetry writes, read-only sonar/telemetry reads, and teardown release.
+- Converted every PlayerCritical release call to pass the expected BufferID for all 49 owned lanes.
+- Audio scoped bad-pattern grep now returns `0` for `currentService as IDataVault`, ownerless `handle.BufferID != 0u`, `handle.BufferID == 0u`, old handle helpers, and `OwnerSystemID`.
+
+Cinematic cheats used:
+- None added. DSP/reverb/sonar/granular behavior was not changed.
+- Continuous audio quality behavior was preserved; no `isLowEnd` binary switch was added.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us; this is descriptor-sovereignty hardening around existing native operations.
+
+Evidence:
+- `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_AUDIO_SWEEP2_20260528.json`
+- SHA-256: `948D5DEC982B61E579023F1C059143414D6F4903718F464DFA4F0353FEB9A3C8`
+- Zero-GC diff scan over seven audio files: `0`.
+- Unsafe layout diff scan over seven audio files: `0` for `StructLayout`, `FieldOffset`, `UnsafeUtility.SizeOf`, and `UnsafeUtility.GetFieldOffset`.
+- Audio bad-pattern scan: `0`.
+- Build/import/profiler proof: absent. External `dotnet` PID `23460` and `csc` PID `29640` were active, CPU sampled `99%`; final guard later found external `dotnet` PID `59388` running `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1`, CPU `70%`. No project build was launched by this pass.
+## 2026-05-28T16:40:28+04:00 - Construction Validation Vault Exact Gates
+
+What was wrong:
+- `Assets/_Project/Scripts/Construction/ModularBaseConstructionValidator.cs` read, write-locked, and released DataVault validation handles by generic nonzero descriptor checks even though the helper received exact `BufferID`.
+- The failed write-lock branch released outside `finally`.
+
+What was done:
+- Added exact `IsValidationVaultHandle` proof: expected `BufferID` + `SystemID.Construction` + nonzero generation.
+- Routed tuner, telemetry, bounds, and occupancy read/release/write-lock helpers through the exact proof.
+- Kept construction validation math, CSV parsing, telemetry DTO layout, and quality scaling unchanged.
+
+Cinematic Cheats used:
+- None added. Existing cheap mock terrain/bounds validation remains; no physical simulation was introduced.
+
+Exact Microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. This is correctness hardening around existing Vault calls, not a frame-time optimization.
+
+Evidence:
+- `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_CONSTRUCTION_20260528.json`
+- SHA-256: `F5BEFFF0AFE83B238E66BC5B05AA6C3987E12E6867E4B689577544624B3DB685`
+- `rg` bad-pattern scan over the patched file returned 0 hits for ownerless handle checks, old helper signatures, chained write locks, direct DataVault callback casts, and `OwnerSystemID`.
+- Diff Zero-GC scan returned 0 hits for added `new`, `string.Format`, `.ToString()`, LINQ, or `foreach`.
+- Diff layout scan returned 0 hits for added `StructLayout`, `FieldOffset`, `UnsafeUtility.SizeOf`, `Marshal.OffsetOf`, or `sizeof`.
+- Compile/import/profiler proof not produced: CPU was 75%, `dotnet` PID 59388 and `VBCSCompiler` PID 14544 were active.
+
+## 2026-05-28T16:48:39+04:00 - Autonomous Extractor And VR Pipe Preview Exact Gates
+
+What was wrong:
+- `AutonomousExtractorSystem` hot-swapped DataVault through direct casts and released owned extractor handles by owner/nonzero descriptor instead of exact BufferID proof.
+- `VRPipeBlueprintPreview` hot-swapped DataVault through a direct cast and used pipe preview handles in read/write/resolve paths without proving the exact pipe state, visual, and indirect-args lanes.
+
+What was done:
+- Pattern-matched previous/current DataVault services in `AutonomousExtractorSystem` and current DataVault in `VRPipeBlueprintPreview`.
+- Passed exact expected BufferIDs into autonomous extractor release for job inputs, job results, cycle timers, buffered item IDs, buffered counts, and completed counts.
+- Added `IsPipeVaultHandle` and required exact pipe `BufferID`, `SystemID.Construction`, and generation before VR pipe preview read reuse, post-ensure acceptance, write-lock acquisition, and locked resolve.
+
+Cinematic Cheats used:
+- None added. Existing extractor simulation and pipe hologram visual fake remain unchanged.
+
+Exact Microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us.
+
+Evidence:
+- `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_CONSTRUCTION_SWEEP2_20260528.json`
+- SHA-256: `DEC533590AE1BF8FC966ADDA111E175402E66E2BC5FA602DDC2BEB758D47C5BC`
+- Scoped grep over both patched files returned 0 hits for direct DataVault casts, ownerless handle checks, old helper names, chained write-lock expressions, and `OwnerSystemID`.
+- Diff Zero-GC scan returned 0 hits.
+- Diff layout scan returned 0 hits.
+- `git diff --check` reports only LF/CRLF warnings.
+- Compile/import/profiler proof not produced: CPU was 8%, but `VBCSCompiler` PID 14544 remained active.
+
+## 2026-05-28T16:55:03+04:00 - Blueprint Preview Batch Exact Gates
+
+What was wrong:
+- `HectonBlueprintPreviewBatch` hot-swapped DataVault through a direct cast.
+- Builder ghost state, visual, telemetry, and indirect-args handles were used before exact BufferID ownership proof.
+
+What was done:
+- Added `IsBlueprintVaultHandle` requiring exact `ShinobuSocketConstructionRuntime` BufferID, `SystemID.Construction`, and generation.
+- Gated read reuse, read-only state/visual views, post-ensure acceptance, write-lock acquisition, locked resolve, and telemetry write with the exact predicate.
+- Left builder ghost jobs, signal lane, graphics upload, DTO layout, and shared release semantics unchanged.
+
+Cinematic Cheats used:
+- None added. Existing hologram/indirect-args visual fake remains.
+
+Exact Microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us.
+
+Evidence:
+- `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_CONSTRUCTION_SWEEP3_20260528.json`
+- SHA-256: `D2B634279289CF75F3465039AC2EF3E128C585915814B7DC0BE94C81DF241C0F`
+- Scoped grep over the patched file returned 0 hits for direct DataVault casts, ownerless handle predicates, old handle helpers, chained write-lock expressions, and `OwnerSystemID`.
+- Diff Zero-GC scan returned 0 hits.
+- Diff layout scan returned 0 hits.
+- `git diff --check` reports only LF/CRLF warning.
+- Compile/import/profiler proof not produced: CPU was 64%, active `dotnet` PID 68368 and `VBCSCompiler` PID 53788.
+
+## 2026-05-28T17:07:23+04:00 - Compile Repair After Targeted Build Failure
+
+What was wrong:
+- Guarded `dotnet build Hecton8.Core.csproj --no-restore -nologo -clp:ErrorsOnly -maxcpucount:1 /p:UseSharedCompilation=false /nr:false` failed in 113.8s with 57 errors.
+- Local audio error: `PlayerCriticalProceduralAudioRenderer.cs:7363` compared `uint` to `BufferID`.
+- Dirty equipment error wall: `ModularEquipmentEngine.cs:1290-1317` passed `ref acquiredCount` while also writing `out` fields on a `ref struct`.
+
+What was done:
+- `PlayerCriticalProceduralAudioRenderer` now compares `handle.BufferID` to `unchecked((uint)(int)expectedBufferId)`.
+- `ModularEquipmentEngine.TryAcquireEquipmentWriteBuffer` no longer receives `ref acquiredCount`; caller increments count only after each successful retained lock.
+- Invalid acquired equipment write locks are released inside the helper before failure returns.
+
+Cinematic Cheats used:
+- None. This was compile/lifecycle repair only.
+
+Exact Microseconds saved:
+- Measured runtime: 0 us. Build wall time consumed: 113800000 us.
+
+Evidence:
+- `Docs/AgentLogs/Dump_AUDIT_NATIVE_STATE_COMPILE_REPAIR_20260528.json`
+- SHA-256: `E72A8E3B96EF6D4878849EB78AF7EF96ACF06A3D0E886331A0E7499EE5C6CF92`
+- Static grep over the two files returned 0 hits for `handle.BufferID == expectedBufferId` and `ref acquiredCount`.
+- `git diff --check` reports only LF/CRLF warnings.
+- Repeat compile not launched: CPU samples after the fixes were 100%, 79%, and 70%.
+
+## 2026-05-28T17:19:02+04:00 - Vehicle Docking Exact Vault Gates
+
+What was wrong:
+- `VehicleDockingModule` hot-swapped DataVault through a direct cast.
+- Docking telemetry ring/cursor handles were accepted by generic descriptor checks before read, write-lock, and release paths.
+
+What was done:
+- Replaced the direct callback cast with `currentService is IDataVault currentVault`.
+- Added `IsDockTelemetryHandle` requiring exact `BufferID.VehicleDockingTelemetryRing` or `BufferID.VehicleDockingTelemetryCursor`, `SystemID.VehiclesPhysics`, and nonzero generation.
+- Gated telemetry validation, both write-lock acquisitions, both write-lock releases, and read-handle reuse with the exact predicate.
+
+Cinematic Cheats used:
+- None added. Existing docking visuals, wake/impact/cargo behavior, and physics path were left unchanged.
+
+Exact Microseconds saved:
+- Measured runtime: 0 us. Expected steady-frame delta: 0 us.
+
+Evidence:
+- `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_CONSTRUCTION_SWEEP4_20260528.json`
+- SHA-256: `F6795F6803940390DB6CFE5224B27C393E293932F6AF8938A702421E447EA252`
+- Source anchors: `VehicleDockingModule.cs:428`, `1089`, `1092`, `1343-1357`, `1394-1397`, `1410-1426`.
+- Scoped bad-pattern grep returned 0 hits.
+- Diff Zero-GC scan returned 0 hits.
+- Diff layout scan returned 0 hits.
+- `git diff --check` reports only LF/CRLF warning.
+- Compile/import/profiler proof not produced: CPU sampled 88%, and external `dotnet` PID 21428 was running `dotnet build .\Hecton8.slnx --no-restore -m:1 -p:UseSharedCompilation=false -clp:ErrorsOnly`.
+
+## 2026-05-28T17:30:22+04:00 - Sump Pump Drainage Exact Vault Gates
+
+What was wrong:
+- `SumpPumpPipeGridRuntime` hot-swapped DataVault through a direct cast.
+- Validation, read/borrow, and release helpers accepted owner-local drainage handles through generic nonzero descriptor checks.
+- The runtime owns 26 same-owner drainage lanes, so owner-only proof was not enough.
+
+What was done:
+- Replaced the DataVault callback cast with `currentService is IDataVault currentVault`.
+- Added exact `SumpPumpDrainageBufferIds.*` expectations to `TryBorrowMutable`, `TryRead`, `HasResolvedBuffer`, and `ReleaseOwnedHandle`.
+- Passed exact IDs for all drainage lanes `95820-95845` at validation, solver borrow, telemetry, visual upload, debug/gizmo reads, and release call sites.
+
+Cinematic Cheats used:
+- None added. The existing two-pass drainage solver, mock topology, visual flow upload, and continuous quality-weight budget were left unchanged.
+
+Exact Microseconds saved:
+- Measured runtime: 0 us. Expected steady-frame delta: 0 us.
+
+Evidence:
+- `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_CONSTRUCTION_SWEEP5_20260528.json`
+- SHA-256: `7847B706188B28890591CA8A79A91BA8967C5A185FDAA44188207904AD0593A8`
+- Source anchors: `SumpPumpPipeGridRuntime.cs:261`, `504`, `512`, `553`, `565`, `525-550`, `578-601`, `1438-1468`.
+- Scoped bad-pattern grep returned 0 hits.
+- Diff Zero-GC scan returned 0 hits.
+- Diff layout scan returned 0 hits.
+- `git diff --check` reports only LF/CRLF warning.
+- Compile/import/profiler proof not produced: CPU sampled 100%; external `dotnet` PIDs 67192/37700 and `csc` PID 36376 were active.
+
+## 2026-05-28T17:40:59+04:00 - Foundation Pylon And Fluid Pipe Exact Vault Gates
+
+What was wrong:
+- `FoundationPylonGpuBatch` direct-cast the replacement DataVault.
+- `FluidPipeGraphRuntime` used direct previous/current DataVault casts and generic nonzero handle predicates for 21 same-owner pipe graph lanes.
+- Same-owner float/int lanes could be confused without exact BufferID proof.
+
+What was done:
+- Pattern-matched DataVault replacement in foundation pylon and fluid pipe hot-swap paths.
+- Added exact pipe BufferID proof for read-only, ensure, write-lock acquisition, write-lock release, and buffer release paths.
+- Mapped solve-lock bits back to exact pipe BufferIDs before `TryAcquireWriteLock`.
+
+Cinematic Cheats used:
+- None added. Pipe solver, rupture dispatch, room exchange, electrolysis integration, foundation SDF, GPU upload, and quality behavior were left unchanged.
+
+Exact Microseconds saved:
+- Measured runtime: 0 us. Expected steady-frame delta: 0 us.
+
+Evidence:
+- `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_CONSTRUCTION_SWEEP6_20260528.json`
+- SHA-256: `D3C677D6B1DB9F6031BBB209F04F05C74A61571512B9A72AB26CABA8955BEF29`
+- Source anchors: `FoundationPylonGpuBatch.cs:855`; `FluidPipeGraphRuntime.cs:170`, `226-228`, `313-314`, `368-369`, `656-657`, `749-751`, `816-817`, `854-855`, `877-890`, `1069-1089`, `1213-1214`, `1229-1249`, `1262-1326`.
+- Scoped bad-pattern grep returned 0 hits.
+- Diff Zero-GC scan returned 0 hits.
+- Diff layout scan returned 0 hits.
+- `git diff --check` reports only LF/CRLF warnings.
+- Compile/import/profiler proof not produced: CPU sampled 74%; external `dotnet` PID 3212 was active.
+
+## 2026-05-28T17:47:33+04:00 - Construction Direct DataVault Cast Tail
+
+What was wrong:
+- `BulkheadContainmentRuntime` and `DroneFleetManager` still used direct DataVault casts in hot-swap callbacks.
+- This did not close all handle predicate debt; it only removed the direct callback-cast class from Construction.
+
+What was done:
+- Bulkhead rebound/replaced callbacks now pattern-match `IDataVault` before `RequestDataVaultRebind`.
+- DroneFleet service replacement now pattern-matches `IDataVault` before `RebindDroneDataVault`.
+
+Cinematic Cheats used:
+- None. Bulkhead/hatch/drone/pathing/rendering behavior was left unchanged.
+
+Exact Microseconds saved:
+- Measured runtime: 0 us. Expected steady-frame delta: 0 us.
+
+Evidence:
+- `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_CONSTRUCTION_SWEEP7_20260528.json`
+- SHA-256: `C420A096DAC2030573A093C3577CE35439E2585AEEA8C9B8EE10795E8622AF42`
+- Construction-wide direct DataVault cast scan returned 0 hits.
+- Residual construction handle predicate count remains 35.
+- Diff Zero-GC scan returned 0 hits.
+- Diff layout scan returned 0 hits.
+- `git diff --check` reports only LF/CRLF warnings.
+- Compile/import/profiler proof not produced: CPU sampled 83%.
+
+## 2026-05-28T17:51:53+04:00 - Logistics Pipe Scheduler Exact Vault Gates
+
+What was wrong:
+- `LogisticsPipeTransportScheduler` accepted seven same-owner integer DAG-sort handles by nonzero descriptor checks.
+- Because every logistics lane is `NativeArray<int>`, type checks alone could not catch wrong-lane descriptors.
+
+What was done:
+- Added exact BufferID validation for lanes `72054-72060`.
+- Hardened read-only, locked resolve, write-lock acquisition, write-lock release, and buffer release helpers.
+- Left DAG sort, crate transfer cadence, and cycle repair behavior unchanged.
+
+Cinematic Cheats used:
+- None. Scheduling and gameplay logic were unchanged.
+
+Exact Microseconds saved:
+- Measured runtime: 0 us. Expected steady-frame delta: 0 us.
+
+Evidence:
+- `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_CONSTRUCTION_SWEEP8_20260528.json`
+- SHA-256: `F0901C1A139A43E4D72F0F4F74AAAF1F2FC7DC0EFD30598949B2643D7FE95167`
+- Source anchors: `LogisticsPipeTransportScheduler.cs:215`, `435-444`, `545-551`, `554-596`, `625-637`, `644-674`.
+- Scoped bad-pattern grep returned 0 hits.
+- Construction residual predicate count dropped from 35 to 30.
+- Diff Zero-GC scan returned 0 hits.
+- Diff layout scan returned 0 hits.
+- `git diff --check` reports only LF/CRLF warning.
+- Compile/import/profiler proof not produced: CPU sampled 42%, but external `dotnet` PID 56280 was active.
+2026-05-28T18:35+04:00 | Construction Bulkhead/hatch exact-gate sweep
+What was wrong: `BulkheadContainmentRuntime` and `BulkheadContainmentRuntime_HatchLocks` still allowed generic descriptor use. Owned Bulkhead/hatch `Resolve`, `Read`, write-lock, and release paths could accept any generated descriptor rather than proving the exact lane. Hatch partial still called the old write-lock helper and old created predicate.
+What was done: Added expected `BufferID` to Bulkhead `Resolve<T>`, `Read<T>`, `TryAcquireWriteLane`, and `ReleaseVaultHandle`; all owned Bulkhead 220 and Shinobu 343 hatch lanes now pass exact IDs. Borrowed external reads for `PlayerKinematicState`, `StructuralIntegrityStates`, and `ShinobuFluidCompartmentFront` use exact `BufferID`+generation without lying that Construction owns them.
+Cinematic Cheats used: None added. Existing pressure/hatch visual fake and quality-weight behavior stayed unchanged.
+Exact Microseconds saved: measured 0 us; expected steady-frame delta 0 us. This is stability work, not a frame-time optimization.
+Evidence: construction bad-pattern grep 0 hits; Bulkhead diff Zero-GC scan 0; layout diff scan 0; `git diff --check` only LF/CRLF warnings. Artifact `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_CONSTRUCTION_SWEEP9_20260528.json`, SHA-256 `D0051A0F159EC811244B2CA908278E01864961B33E0262311F8A62E309DD43D3`.
+Blocked proof: no build/import/profiler run; guard sampled CPU 67% and active external `dotnet` PID 62104.
+2026-05-28T18:47+04:00 | AudioLogSystem exact-gate sweep
+What was wrong: `AudioLogSystem` used direct `currentService as IDataVault` on hot-swap and generic generated-handle checks across five AudioLog Vault lanes. The queue and encrypted fragment lanes share `uint`, so wrong-lane descriptors could pass type-level checks.
+What was done: Added exact `IsAudioLogVaultHandle` checks for BufferIDs `70672-70676` with `SystemID.Audio`; all AudioLog read, write-lock, release, telemetry, and handle reuse paths now carry expected BufferIDs.
+Cinematic Cheats used: None added. Playback, subtitle/HUD dispatch, save mask, and atmospheric radio behavior stayed unchanged.
+Exact Microseconds saved: measured 0 us; expected steady-frame delta 0 us. This is stability work, not a frame-time optimization.
+Evidence: scoped bad-pattern grep 0 hits; diff Zero-GC scan 0; layout diff scan 0; `git diff --check` only LF/CRLF warning. Artifact `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_AUDIOLOG_20260528.json`, SHA-256 `7003C0129AE25283D0085557EC0F3D95F798CB3147420995300F785512C74929`.
+Blocked proof: no build/import/profiler run; guard sampled CPU 97% with active `dotnet` PID 3560 and `csc` PID 23236.
+2026-05-28T18:51+04:00 | HUDNotification exact queue gate
+What was wrong: `HUDNotification` used direct DataVault casts on hot-swap and a generic generated-handle predicate for `HudNotificationQueue`.
+What was done: Added exact `IsHudQueueHandle` for BufferID `74315` with `SystemID.UI`; queue ensure/read/write-lock/release paths now require that exact descriptor.
+Cinematic Cheats used: None added. Notification text, severity visuals, queue overflow behavior, and tick timing stayed unchanged.
+Exact Microseconds saved: measured 0 us; expected steady-frame delta 0 us. This is stability work, not a frame-time optimization.
+Evidence: scoped bad-pattern grep 0 hits; diff Zero-GC scan 0; layout diff scan 0; `git diff --check` only LF/CRLF warning. Artifact `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_HUD_NOTIFICATION_20260528.json`, SHA-256 `BB3B606708712EB79352940AE0457E22A17D7CCC6145AC51C571EA8DBFEC82EC`.
+Blocked proof: no build/import/profiler run; guard sampled CPU 99% with active `dotnet` PIDs 3392 and 57880.
+2026-05-28T20:10+04:00 | VFX/GameplayTools exact handle gate sweep
+What was wrong: `HullDentShaderController`, `MaterialDecayRuntime`, `WfcLaserCutRuntime`, and `ToolHapticsRuntime` still had direct DataVault casts or generic nonzero/generation handle predicates before resolve/release. WFC/haptic newly acquired handle failure paths could leave exact owned buffers alive.
+What was done: Exact predicates now secure `HullDents=76`, `MaterialDecayBlackBox=273`, `WfcDoorCutProgress01=96`, `WfcLaserCutBlackBox=97`, `ToolHapticFrontCommands=234`, and `ToolHapticBackCommands=235` with the expected `SystemID` and generation. Failed WFC/haptic acquisitions release only exact owned descriptors.
+Cinematic Cheats used: None added. Dent, material decay, WFC heat/cut, and haptic feedback behavior stayed unchanged.
+Exact Microseconds saved: measured 0 us; expected steady-frame delta 0 us. This removes stale/wrong-lane native memory risk.
+Evidence: `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_VFX_TOOLS_SWEEP1_20260528.json`, SHA-256 `D31A6868B0821DA7D7895F3BEFE896AE4060D7A27B39C0E5550264CBD4A5047E`; static bad-pattern/Zero-GC/layout scans are 0.
+Blocked proof: no build/import/profiler run; guard sampled CPU 100% with `csc` PID 50396 and `dotnet` PIDs 55012, 65020.
+2026-05-28T20:16+04:00 | AI Sensory acoustic echo exact-gate sweep
+What was wrong: `AcousticEchoLocationRuntime` used direct DataVault cast on hot-swap and generic handle-created/owner checks for four AISensory lanes. `EchoTap` lanes could be confused by type alone.
+What was done: Exact predicates now secure `AcousticEchoFrameTaps=229`, `AcousticEchoPendingTaps=636`, `AcousticEchoTrailState=230`, and `AcousticEchoBlackBox=231` with `SystemID.AISensory` and generation. Failed exact acquisitions release owned handles.
+Cinematic Cheats used: None added. Portal echo math, predator trail job behavior, quality byte flow, and black-box DTO layout stayed unchanged.
+Exact Microseconds saved: measured 0 us; expected steady-frame delta 0 us. This is stale/wrong-lane native memory hardening.
+Evidence: `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_AI_SENSORY_SWEEP1_20260528.json`, SHA-256 `58C0DF873C9B79EF60AB2789CFF83676C82D42583FD0C10C669EEF48E847F390`; static bad-pattern/Zero-GC/layout scans are 0.
+Blocked proof: no build/import/profiler run; guard sampled CPU 100% with active `dotnet` PID 65020.
+2026-05-28T20:20+04:00 | VFX direct DataVault hot-swap cast tail
+What was wrong: `ParasiteSwarmGpuRuntime`, `JacobianFoamGpuRuntime`, and `ShinobuPlasmaBeamRuntime` still used direct `currentService as IDataVault` in DataVault hot-swap callbacks.
+What was done: Replaced all three with pattern-matched `IDataVault` rebinding. Existing exact `IsOwnedHandle` logic for each runtime was preserved.
+Cinematic Cheats used: None added. Parasite GPU visuals, Jacobian foam, and plasma beam behavior stayed unchanged.
+Exact Microseconds saved: measured 0 us; expected steady-frame delta 0 us. This is callback hygiene and stale-route prevention.
+Evidence: `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_VFX_DIRECT_CAST_SWEEP1_20260528.json`, SHA-256 `8695A8209558D9F82152495F97A9FEBF9EF7DE7AE30D65F3E6EAAD07F7001F6A`; static bad-pattern/Zero-GC/layout scans are 0.
+Blocked proof: no build/import/profiler run; guard sampled CPU 96%.
+2026-05-28T20:25+04:00 | Procedural ladder climb exact-gate sweep
+What was wrong: `ProceduralLadderClimbRuntime` used direct DataVault cast and generic created-handle checks for five AnimationLocomotion Vault lanes.
+What was done: Exact predicates now secure `LadderClimbIkInput=155`, `LadderClimbIkOutput=156`, `LadderAUPs=121`, `LadderClimbIkTelemetryRing=157`, and `LadderClimbIkTelemetryCursor=158` with `SystemID.AnimationLocomotion` and generation. Failed exact acquisitions release owned handles.
+Cinematic Cheats used: None added. Existing camera-slide fake, ladder IK, and VR grip behavior stayed unchanged.
+Exact Microseconds saved: measured 0 us; expected steady-frame delta 0 us. This is stale/wrong-lane native memory hardening.
+Evidence: `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_LADDER_CLIMB_SWEEP1_20260528.json`, SHA-256 `F70C922ACE729342CA8F219580B08E0DCB9032000410FFB62B99884A50F915DF`; static bad-pattern/Zero-GC/layout scans are 0.
+Blocked proof: no build/import/profiler run; guard sampled CPU 99% with active `dotnet` PID 46540.
+## 2026-05-28 - LaserCutter DOD Exact Vault Gate Sweep
+
+What was wrong:
+- `Assets/_Project/Scripts/Tools/LaserCutterDodRuntime.cs` used a generic nonzero/generation handle predicate for cutter buffers.
+- Same owner does not prove same lane. Cutter lanes include primitive `int`, `byte`, and same-capacity DTO arrays; wrong-lane descriptors could pass type/created checks.
+- Old release code would release any `SystemID.GameplayTools` handle from the field, even when the expected `BufferID` for that field was different.
+- Rare failed acquisition validation could leave an exact newly acquired handle alive.
+
+What was done:
+- Threaded exact `BufferID` values through owned read/reuse/release checks.
+- Added `IsLaserCutterVaultHandle(handle, bufferId)` requiring exact `BufferID`, `SystemID.GameplayTools`, and nonzero generation.
+- Added `IsScalabilityStateHandle` for read-only external `ShinobuScalabilityState=70481` owned by `SystemID.GraphicsScalability`.
+- Released only exact owned handles and released exact newly acquired handles on failed resolve/length validation.
+
+Exact lanes secured:
+- `71320 RequestsBuffer`
+- `71321 RequestCountBuffer`
+- `71322 SdfSnapshotBuffer`
+- `71323 SdfProbeHitsBuffer`
+- `71324 HitResultsBuffer`
+- `71325 DeformationBuffer`
+- `71326 BatteryDrainBuffer`
+- `71327 GlowDecalBuffer`
+- `71328 ImpactVfxBuffer`
+- `71329 CooldownBuffer`
+- `71330 TelemetryRingBuffer`
+- `71331 TelemetryCursorBuffer`
+- `71332 TuningBuffer`
+- `71333 SpecBuffer`
+- `71334 CsvScratchBuffer`
+- `71335 CountersBuffer`
+- `71336 RequestMetaBuffer`
+- external read-only `70481 ShinobuScalabilityState`
+
+Cinematic cheats used:
+- No physical molten-material simulation added.
+- Existing cheap visual route preserved: glow decals, deformation DTOs, impact VFX DTOs, and scalar spark count.
+- Continuous quality route preserved: `_cachedGlobalQualityWeight` drives SDF steps and spark count through smooth curves.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Expected steady-frame delta: `0 us`; checks are scalar predicates adjacent to DataVault operations.
+- Risk removed: wrong-lane DataVault reuse/release after Vault churn and failed acquisition leaks.
+
+Evidence:
+- Artifact: `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_LASER_CUTTER_DOD_SWEEP1_20260528.json`
+- SHA-256: `BE429B943889F44CEE065CCCB960AF454E7B74D11AA4CDB0806875488749A72D`
+- Bad-pattern scan: `0` hits.
+- Diff Zero-GC scan: `0` hits.
+- Layout diff scan: `0` hits.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Compile/import/profiler: not run. CPU sampled `100%`; active compiler processes were `csc` PID `39112` and `dotnet` PID `42888`.
+
+## 2026-05-28 - FabricationAssembler Exact Vault Gate Sweep
+
+What was wrong:
+- `Assets/_Project/Scripts/FabricationAssemblerRuntime.cs` used direct DataVault hot-swap casts.
+- Generic nonzero handle checks guarded fabrication read, write-lock, and release paths.
+- Same owner did not prove the expected fabrication lane for job, runtime, GPU payload, telemetry, tuning, timing, or editor CSV scratch buffers.
+
+What was done:
+- Replaced DataVault hot-swap casts with pattern matching.
+- Added `HasFabricationHandle(handle, bufferId)` requiring exact `BufferID`, `SystemID.Construction`, and nonzero generation.
+- Added `HasScalabilityHandle` for read-only external `ShinobuScalabilityState=70481` owned by `SystemID.GraphicsScalability`.
+- Threaded exact IDs into read, read-only, write-lock, release, simulation, post-simulation, visual sync, editor stats, and CSV ingestion paths.
+
+Exact lanes secured:
+- `71140 ShinobuFabricationJobs`
+- `71141 ShinobuFabricationRuntime`
+- `71142 ShinobuFabricationGpuPayload`
+- `71143 ShinobuFabricationTelemetryRing`
+- `71145 ShinobuFabricationTuning`
+- `71146 ShinobuFabricationTimingLookup`
+- `71147 ShinobuFabricationCsvScratch`
+- external read-only `70481 ShinobuScalabilityState`
+
+Cinematic cheats used:
+- No physical assembly simulation added.
+- Existing shader payload / GPU upload visual fake preserved.
+- Continuous quality preserved through visual upload count and stride scaling.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Expected steady-frame delta: `0 us`; added checks are scalar descriptor predicates.
+- Risk removed: wrong-lane fabrication buffer read/write-lock/release after Vault churn.
+
+Evidence:
+- Artifact: `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_FABRICATION_ASSEMBLER_SWEEP1_20260528.json`
+- SHA-256: `4AA063464D1DCFCE75FB881702824DC1DF74800EE7CEFEC71DC64C4982A60927`
+- Bad-pattern scan: `0` hits.
+- Diff Zero-GC scan: `0` hits.
+- Layout diff scan: `0` hits.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Compile/import/profiler: not run. CPU sampled `100%`; active compiler process was `dotnet` PID `1252`.
+
+## 2026-05-28 - Migratory Sargassum Exact Vault Gate Sweep
+
+What was wrong:
+- `Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs` stored Vault handles in `MigratoryVaultArray<T>` without storing the expected lane id.
+- Resolve, write-lock, unlock, and release accepted any nonzero generated descriptor.
+- Six same-owner WorldSargassum lanes could be confused after DataVault churn.
+
+What was done:
+- Added expected `BufferID` storage to `MigratoryVaultArray<T>`.
+- Added exact `IsMigratorySargassumHandle(handle, bufferId)` requiring `BufferID`, `SystemID.WorldSargassum`, and generation.
+- Exact-gated resolve, write-lock, unlock, release, and newly acquired handle validation.
+- Exact newly acquired handles are released if resolve/length validation fails.
+
+Exact lanes secured:
+- `74369 WorldScatterMigratorySargassumIslands`
+- `74370 WorldScatterMigratorySargassumScratchIslands`
+- `74371 WorldScatterMigratorySargassumSelectedSources`
+- `74372 WorldScatterMigratorySargassumFlowSamples`
+- `74373 WorldScatterMigratorySargassumSpatialHandles`
+- `74374 WorldScatterMigratorySargassumScratchSpatialHandles`
+
+Cinematic cheats used:
+- No physical seaweed simulation added.
+- Existing data-only canopy islands and AUP spatial hash volumes preserved.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Expected steady-frame delta: `0 us`; added checks are scalar descriptor predicates.
+- Risk removed: wrong-lane Sargassum native buffer resolve/write-lock/release after Vault churn.
+
+Evidence:
+- Artifact: `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_MIGRATORY_SARGASSUM_SWEEP1_20260528.json`
+- SHA-256: `E43B526E012BFB8BF7795D24755641A8A21C02C5857FAC3EC4A936DF92F89698`
+- Bad-pattern scan: `0` hits.
+- Diff Zero-GC scan: `0` hits.
+- Layout diff scan: `0` hits.
+- `git diff --check`: exit `0`, LF/CRLF warning only.
+- Compile/import/profiler: not run. CPU sampled `74%`.
+
+## 2026-05-28 - Migratory Sargassum Lock-Final Repair
+
+What was wrong:
+- Fresh APEX self-audit found the Sargassum exact-gate patch did not fully satisfy lock-finalization proof.
+- `TryAcquireMigratorySargassumJobBuffers` had branch release for partial lock acquisition.
+- `ReleaseMigratorySargassumJobBufferLocks` released flow then islands without `finally`, so a flow-release fault could skip island-release.
+
+What was done:
+- Added `try/finally` partial-acquisition cleanup in `WorldProceduralScatterDirectorMigratorySargassum.cs`.
+- Added `try/finally` release sequencing so `WorldScatterMigratorySargassumIslands=74369` is released even if `WorldScatterMigratorySargassumFlowSamples=74372` release faults.
+- Preserved cross-frame job ownership; locks remain held only while `_migratorySargassumJobBuffersLocked` is true.
+
+Cinematic cheats used:
+- No physical seaweed simulation added.
+- Existing data-only canopy island fake and AUP spatial hash route preserved.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Expected steady-frame delta: `0 us`; change touches acquisition/release edges, not per-island math.
+
+Evidence:
+- Artifact: `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_SARGASSUM_LOCK_FINAL_20260528.json`
+- SHA-256: `94B6C1BEE088579F70A3565B1E235D71438CE2B0C15BE8330C59340316449095`
+- Build-failure dump: `Docs/AgentLogs/Dump_AUDIT_NATIVE_STATE_BUILD_FAIL_AFTER_SARGASSUM_LOCK_FINAL_20260528.json`
+- Dump SHA-256: `D3768C6F311C5414F72FDDAF9FD12B2584DBDD5FEDB28C9DFD90B823962D8928`
+- Combined diff Zero-GC scan: `0` hits for added `new`, `string.Format`, `.ToString`, LINQ, and `foreach`.
+- Layout diff scan: `0` hits.
+- Bad-pattern scan: `0` hits.
+- `git diff --check`: exit `0`, LF/CRLF warnings only.
+- Build: guard sample CPU `45%`, no compiler processes; one `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` run; exit `1` after `123.2s`, empty stdout/stderr. No compile-green claim.
+
+## 2026-05-28 - Animation Exact Vault Gates
+
+What was wrong:
+- `KineticCharacterAnimatorRuntime` and `ProceduralBoneBlenderRuntime` still accepted generic generated handles for many same-owner lanes.
+- Hot-swap callbacks used `currentService as IDataVault` / `previousService as IDataVault`.
+- Release helpers could release same-owner handles without proving the expected BufferID.
+
+What was done:
+- Added exact BufferID predicates and owned resolve helpers.
+- Replaced generic resolve calls with exact owned resolve calls.
+- Release helpers now require the expected BufferID.
+- Failed newly acquired invalid handles are released only when exact owner + BufferID proof succeeds.
+
+Cinematic cheats used:
+- No physical animation simulation expansion.
+- Existing procedural IK, bone wave fake, and GPU upload cadence preserved.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Expected steady-frame delta: `0 us`; scalar predicates wrap existing Vault paths.
+
+Evidence:
+- Artifact: `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_ANIMATION_EXACT_GATES_20260528.json`
+- SHA-256: `F9E1F630E9A86FA4A70C235B6A587E54DEB6DB425453FAF305B83FE0D276E905`
+- Kinetic BufferIDs: `13671360-13671371`
+- ProceduralBone BufferIDs: `71680-71690`
+- Bad-pattern scan: `0` hits.
+- Diff Zero-GC scan: `0` hits.
+- Layout diff scan: `0` hits.
+- `git diff --check`: exit `0`, LF/CRLF warnings only.
+- Build/import/profiler: not run. CPU sampled `91%`; resource throttle blocked build.
+
+## 2026-05-28 - AI PathFunnel / Voxel A* Exact Vault Gates
+
+What was wrong:
+- `PathFunnelNavmeshRuntime` and `PathFunnelNavmeshRuntime_VoxelAStar` accepted generic nonzero/generation handles for same-owner AIPathfinding lanes.
+- Release helpers could release same-owner handles without proving the expected BufferID.
+- `WfcOutpostGrid=19` was cached as an external handle without exact `SystemID.CoreDataVault` proof.
+- The editor pathing-profile write locks were branch-released instead of `finally`-released.
+
+What was done:
+- Added exact BufferID + SystemID + generation predicates for owned and external DataVault handles.
+- Threaded exact BufferIDs through PathFunnel owned resolves/reads/releases and Voxel A* resolves/reads/releases.
+- Replaced DataVault hot-swap `as IDataVault` with pattern matching.
+- Wrapped the profile table/count write-lock pair in `try/finally`.
+
+Cinematic cheats used:
+- No physical pathing simulation expansion.
+- Existing bounded Voxel A* data jobs, string-pulling fake, WFC invalidation, and black-box rings preserved.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Expected steady-frame delta: `0 us`; scalar descriptor predicates wrap existing Vault paths.
+
+Evidence:
+- Artifact: `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_AI_PATHFUNNEL_EXACT_GATES_20260528.json`
+- SHA-256: `36CBFE2AB8590D5A712AFC2A989DE0F9C87EC128C620BA7F8C00A3C267EF4423`
+- PathFunnel BufferIDs: `195-199`.
+- Voxel A* BufferIDs: `73420-73436`.
+- External read-only BufferID: `WfcOutpostGrid=19`, owner `SystemID.CoreDataVault`.
+- Bad-pattern scan: `0` hits.
+- Diff Zero-GC scan: `0` hits.
+- Layout diff scan: `0` hits.
+- `git diff --check`: exit `0`, LF/CRLF warnings only.
+- Build/import/profiler: not run. CPU sampled `100%`; active `dotnet` PID `6896` and `csc` PID `33428` blocked build.
+
+## 2026-05-28 - AI Ambient / Ecosystem Exact Vault Gates
+
+What was wrong:
+- `AmbientBiotaDirector` still relied on generic generated-handle proof in readiness/release paths for several same-owner AmbientBiota lanes.
+- `EcosystemPopulationBalancer` used a direct `currentService as IDataVault` callback cast and a generic nonzero/generation resolver for owned AIEcology lanes.
+- Ecosystem borrowed `EntityAUPs` and `EntityFlags` through the same generic resolver, without exact external BufferID proof.
+- Ecosystem cross-frame `TryLockBuffer` partial acquisition released through repeated branches instead of a finally-owned partial-release path.
+
+What was done:
+- Ambient owned lanes now require exact `BufferID`, `SystemID.AmbientBiota`, and generation before readiness, resolve, and release.
+- Ecosystem owned lanes now require exact `BufferID`, `SystemID.AIEcology`, and generation before readiness, resolve, failed-acquire release, and release.
+- Borrowed entity lanes are exact-gated by `BufferID` plus generation only; no unproven owner was invented.
+- Ecosystem partial job-lock acquisition releases from `finally`, and teardown lock state resets from `finally`.
+
+Cinematic cheats used:
+- No physical simulation expansion.
+- Existing Ambient continuous `HomeostasisBrain.GlobalQualityWeight` scaling preserved.
+- Ecosystem remains a data-only ecology governor; no binary low-end switch was added.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Expected steady-frame delta: `0 us`; exact predicates and finally blocks wrap existing DataVault operations.
+
+Evidence:
+- Artifact: `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_AI_AMBIENT_ECOSYSTEM_EXACT_GATES_20260528.json`
+- SHA-256: `C14241C703FBFB890CE501ECD12173CF150CB03FF52F6123891934CC05F710DC`
+- Ambient BufferIDs: `91`, `92`, `93`, `225`, `159`, `160`.
+- Ecosystem owned BufferIDs: `205`, `206`, `207`, `208`, `209`, `210`.
+- Ecosystem borrowed BufferIDs: `EntityAUPs=13`, `EntityFlags=29`.
+- Bad-pattern scan: `0` hits.
+- Diff Zero-GC scan: `0` hits.
+- Layout diff scan: `0` hits.
+- `TryAcquireWriteLock` scan in scope: `0` hits; this slice uses `TryLockBuffer` job locks, not write-lock leases.
+- `git diff --check`: exit `0`, LF/CRLF warnings only.
+- Build/import/profiler: one build attempt ran after CPU dropped to `47%` and no compiler processes were active. `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` timed out after `244019 ms` with exit `124`; orphaned `dotnet` PID `53816` and `VBCSCompiler` PID `51936` were killed. Post-kill compiler scan was empty, CPU was `100%`. Unity import, Play Mode, profiler, GCMonitor, and native ledger proof were not run.
+- Failure dump: `Docs/AgentLogs/Dump_AUDIT_NATIVE_STATE_BUILD_TIMEOUT_AI_AMBIENT_ECOSYSTEM_20260528.json`, SHA-256 `400AE15289A0D89A1AA6DE57928440A6D2ECA2D9AA2EC9CB76ED76D96673CF16`.

@@ -46,6 +46,13 @@ namespace CandiceAIforGames.AI
         public Animator TemplateAnimator;
         private Transform CandiceVSFX;
         private Rigidbody thisRigidbody;
+        private Transform[] _vfxSlots = Array.Empty<Transform>();
+        private float[] _vfxDisableAt = Array.Empty<float>();
+        private CandiceAIController _aiController;
+        private CandiceAIPlayerController _playerController;
+        private bool _pendingGenericCombo;
+        private int _pendingGenericComboAttack;
+        private float _pendingGenericComboAt;
 
         //Animation Speed Control
         //When set on character animSpeed overides globalSpeed, but when gloablSpeed > 1f then it is possible to slow down time, or generate other complex time manipulation animation scenarios.
@@ -72,8 +79,15 @@ namespace CandiceAIforGames.AI
         public float thisComboDamagePerHit = 0f;
 
         void Start() {
-            mainCam = Camera.main.gameObject.transform.parent.gameObject;
+            Camera mainCamera = Camera.main;
+            if (mainCamera != null)
+            {
+                Transform mainCameraTransform = mainCamera.transform;
+                mainCam = mainCameraTransform.parent != null ? mainCameraTransform.parent.gameObject : mainCameraTransform.gameObject;
+            }
             thisRigidbody = GetComponent<Rigidbody>();
+            _aiController = GetComponent<CandiceAIController>();
+            _playerController = GetComponent<CandiceAIPlayerController>();
             //When called in Start it allows for you to attach this script to an agent independently from the CandiceAIController
             //Some scenarios call for control this way. Scenarios such as cataclysms, massive destruction on cosmic scales etc.
             InitializeAnimations();
@@ -98,20 +112,35 @@ namespace CandiceAIforGames.AI
                 candicePlayerOverrides = new CandicePlayerOverrides();
                 
             }
+            if (standardActions == null)
+            {
+                // COLD ALLOC: animation action bridge constructed during Candice startup only.
+                standardActions = new CandiceStandardActions();
+            }
+            if (candiceHumanoidMelee == null)
+            {
+                // COLD ALLOC: animation action bridge constructed during Candice startup only.
+                candiceHumanoidMelee = new CandiceHumanoidMelee();
+            }
+            if (candicePlayerOverrides == null)
+            {
+                // COLD ALLOC: player override bridge constructed during Candice startup only.
+                candicePlayerOverrides = new CandicePlayerOverrides();
+            }
 
             //Get Candice AI Agent being animated
             //Since CandiceAIController now inherits from this class, we can instantiate the agent transform here first.
             thisAgent = transform;
-            CandiceVSFX = thisAgent.Find("VSFX");
-            if (CandiceVSFX != null) {
-                foreach (Transform vfx in CandiceVSFX)
-                {
-                    if (vfx.gameObject.tag == "CandiceVSFX")
-                    {
-                        vfx.gameObject.SetActive(false);
-                    }
-                }
+            if (_aiController == null)
+            {
+                _aiController = thisAgent.GetComponent<CandiceAIController>();
             }
+            if (_playerController == null)
+            {
+                _playerController = thisAgent.GetComponent<CandiceAIPlayerController>();
+            }
+            CandiceVSFX = thisAgent.Find("VSFX");
+            CacheVfxSlots();
 
             //Get this Animator in case one is not provided as a template, has to be attached on this agent.
             //All standard CandiceAI prefabs contain an animator and animation controller.
@@ -146,23 +175,30 @@ namespace CandiceAIforGames.AI
             }
             //Set main camera      
             if (mainCam == null) {
-                Transform camTransform = Camera.main.gameObject.transform;
-                if(camTransform.parent != null)
+                Camera currentCamera = Camera.main;
+                if (currentCamera != null)
                 {
-                    mainCam = camTransform.parent.gameObject;
-                }
-                else
-                {
-                    mainCam = camTransform.gameObject;
+                    Transform camTransform = currentCamera.transform;
+                    if(camTransform.parent != null)
+                    {
+                        mainCam = camTransform.parent.gameObject;
+                    }
+                    else
+                    {
+                        mainCam = camTransform.gameObject;
+                    }
                 }
                 
             }
             candiceCamera.MainCamera = mainCam;
 
             //Set shake data for CandiceAI Tag objects
-            if (thisAgent.gameObject.tag == "Player" || thisAgent.gameObject.tag == "CandiceAgent")
+            if (thisAgent.gameObject.CompareTag("Player") || thisAgent.gameObject.CompareTag("CandiceAgent"))
             {
-                shakeData = thisAgent.GetComponent<CandiceAIController>().CameraShakeData;
+                if (_aiController != null)
+                {
+                    shakeData = _aiController.CameraShakeData;
+                }
                 //add the shake data to candiceCamera
                 candiceCamera.ShakeData = shakeData;
             }
@@ -213,42 +249,21 @@ namespace CandiceAIforGames.AI
             }
             //set the agent on the UI element
             candiceUI.thisAgent = thisAgent.gameObject;
-            //if agent has no healthbar
-            if (HealthBar == null) {
-                //if agent is player
-                if (thisAgent.gameObject.tag == "Player")
-                {
-                    HealthBar = GameObject.FindWithTag("PlayerHealthBar");
-                }
-                else {
-                    HealthBar = GameObject.FindWithTag("AgentHealthBar");
-                }
-                
-            }
             //assign Healthbar in candiceUI
             candiceUI.HealthBar = HealthBar;
+            candicePlayerOverrides.PrepareAttackTarget(thisAgent);
 
             //grab the player controller speed variables
-            if (thisAgent.gameObject.tag == "Player") {
+            if (thisAgent.gameObject.CompareTag("Player")) {
                 thisGlobalSpeed = globalSpeed;
                 //we want to inference the player controller speeds with the animation speeds for advanced time effects
                 //we can also control the player controller speeds this way for special animations like: shiftJump (also called blink or phaseShift), groundSmash and other high-level animations requiring special timing.
-                CandiceAIPlayerController candicePlayerController = thisAgent.GetComponent<CandiceAIPlayerController>();
-                if(candicePlayerController != null)
+                if(_playerController != null)
                 {
-                    thisCharacterMoveSpeed = candicePlayerController.speed;
-                    thisCharacterJumpSpeed = candicePlayerController.jumpSpeed;
+                    thisCharacterMoveSpeed = _playerController.speed;
+                    thisCharacterJumpSpeed = _playerController.jumpSpeed;
                 }
                 
-            }
-
-            //quick ui check
-            //remove later
-            GameObject rendp1 = GameObject.Find("Renderer P1");
-            GameObject rendp2 = GameObject.Find("Renderer P2");
-            if (rendp1 != null && rendp2 != null) {
-                /*rendp1.GetComponent<LincolnCpp.HUDIndicator.IndicatorRenderer>().camera = Camera.main;
-                rendp2.GetComponent<LincolnCpp.HUDIndicator.IndicatorRenderer>().camera = Camera.main;*/
             }
 
         }
@@ -256,15 +271,16 @@ namespace CandiceAIforGames.AI
         //Update is called once per frame
         public void Animate()
         {
+            ProcessScheduledVfx();
             if (TemplateAnimator == null || TemplateAnimator.runtimeAnimatorController == null)
             {
                 return;
             }
+            ProcessGenericCombo();
             //player animations
-            if (gameObject.tag == "Player")
+            if (gameObject.CompareTag("Player"))
             {
-                CandiceAIPlayerController candicePlayerController = thisAgent.GetComponent<CandiceAIPlayerController>();
-                if (candicePlayerController != null)
+                if (_playerController != null)
                 {
                     PlayerInput();
                 }
@@ -279,14 +295,14 @@ namespace CandiceAIforGames.AI
         public bool IveHitSomething(Collision col)
         {
             //if colliding with agent projectiles
-            if (col.gameObject.tag == "Projectile")
+            if (col.gameObject.CompareTag("Projectile"))
             {
                 //ive been hit by a candice projectile
                 hit = true;
                 //we want some control over the attack damage of the projectile
                 atkDamage = col.gameObject.transform.GetComponent<CandiceProjectile>().attackDamage;
             }
-            else if (col.gameObject.tag == "Player")
+            else if (col.gameObject.CompareTag("Player"))
             {
                 //ive been hit by a candice projectile
                 hit = true;
@@ -384,7 +400,7 @@ namespace CandiceAIforGames.AI
                     currentAttackInChainedCombo = 0;
                 }
                 isAttack = true;
-                StartCoroutine(candiceHumanoidMelee.GenericCombo(currentAttackInChainedCombo, 0.33f));
+                ScheduleGenericCombo(currentAttackInChainedCombo, 0.33f);
                 //Shake it baby!!!
                 candiceCamera.ShakeData = shakeData;
                 candiceCamera.CameraShake();
@@ -395,7 +411,7 @@ namespace CandiceAIforGames.AI
             else if (EvaluateInput("Fire2", false, false, false))
             {
                 candiceHumanoidMelee.Throw();
-                candicePlayerOverrides.PATRAN_BOOSTED_CANDICEAI(thisAgent.GetComponent<CandiceAIController>());         
+                candicePlayerOverrides.PATRAN_BOOSTED_CANDICEAI(_aiController);
                 verticalInput = 0f;
                 horizontalInput = 0f;
             }
@@ -460,8 +476,11 @@ namespace CandiceAIforGames.AI
                 standardActions.Idle();
                 globalSpeed = thisGlobalSpeed;
                 SetSpeed(TemplateAnimator, "animSpeed", globalSpeed);
-                thisAgent.GetComponent<CandiceAIPlayerController>().speed = thisCharacterMoveSpeed;
-                thisAgent.GetComponent<CandiceAIPlayerController>().jumpSpeed = thisCharacterJumpSpeed;
+                if (_playerController != null)
+                {
+                    _playerController.speed = thisCharacterMoveSpeed;
+                    _playerController.jumpSpeed = thisCharacterJumpSpeed;
+                }
             }
 
             //Running
@@ -471,8 +490,11 @@ namespace CandiceAIforGames.AI
                 //flash step
                 globalSpeed = templGlobalSpeed;
                 SetSpeed(TemplateAnimator, "animSpeed", globalSpeed);
-                thisAgent.GetComponent<CandiceAIPlayerController>().speed += (templGlobalSpeed * Time.deltaTime);
-                thisAgent.GetComponent<CandiceAIPlayerController>().jumpSpeed += (templGlobalSpeed * Time.deltaTime);
+                if (_playerController != null)
+                {
+                    _playerController.speed += (templGlobalSpeed * Time.deltaTime);
+                    _playerController.jumpSpeed += (templGlobalSpeed * Time.deltaTime);
+                }
                 //Shake it baby!!!
                 candiceCamera.ShakeData = shakeData;
                 candiceCamera.CameraShake();
@@ -484,8 +506,11 @@ namespace CandiceAIforGames.AI
                 //flash step
                 globalSpeed = templGlobalSpeed;
                 SetSpeed(TemplateAnimator, "animSpeed", globalSpeed);
-                thisAgent.GetComponent<CandiceAIPlayerController>().speed += (templGlobalSpeed * Time.deltaTime);
-                thisAgent.GetComponent<CandiceAIPlayerController>().jumpSpeed += (templGlobalSpeed * Time.deltaTime);
+                if (_playerController != null)
+                {
+                    _playerController.speed += (templGlobalSpeed * Time.deltaTime);
+                    _playerController.jumpSpeed += (templGlobalSpeed * Time.deltaTime);
+                }
                 //Shake it baby!!!
                 candiceCamera.ShakeData = shakeData;
                 candiceCamera.CameraShake();
@@ -497,21 +522,27 @@ namespace CandiceAIforGames.AI
                 //flash step
                 globalSpeed = templGlobalSpeed;
                 SetSpeed(TemplateAnimator, "animSpeed", globalSpeed);
-                thisAgent.GetComponent<CandiceAIPlayerController>().speed += (templGlobalSpeed * Time.deltaTime);
-                thisAgent.GetComponent<CandiceAIPlayerController>().jumpSpeed += (templGlobalSpeed * Time.deltaTime);
+                if (_playerController != null)
+                {
+                    _playerController.speed += (templGlobalSpeed * Time.deltaTime);
+                    _playerController.jumpSpeed += (templGlobalSpeed * Time.deltaTime);
+                }
                 //Shake it baby!!!
                 candiceCamera.ShakeData = shakeData;
                 candiceCamera.CameraShake();
             }
 
             //Health & UI
-            if (CheckHealth(1f) && hit) { standardActions.Hurt(); candiceUI.UpdateHealthUI("ClassicProgressBar", atkDamage); hit = false; }
-            else if (dead) { standardActions.Death(); candiceInventoryManager.drop = inventoryDrop; candiceInventoryManager.Drop(thisAgent); }
+            if (CheckHealth(1f) && hit) { standardActions.Hurt(); candiceUI.UpdateHealthUI("ClassicProgressBar", atkDamage); ActivateVfxByName("Hurt", transform.position, 5f); hit = false; }
+            else if (dead) { standardActions.Death(); if (candiceInventoryManager != null) { candiceInventoryManager.drop = inventoryDrop; candiceInventoryManager.Drop(thisAgent); } ActivateVfxByName("Death", transform.position, 5f); candiceCamera.CameraShake(); dead = false; }
 
             //Handicaps
             if (Handicaper.SelectedHandicap == "Bleed")
             {
-                thisAgent.GetComponent<CandiceAIController>().CandiceReceiveDamage(5f * Time.deltaTime);
+                if (_aiController != null)
+                {
+                    _aiController.CandiceReceiveDamage(5f * Time.deltaTime);
+                }
                 candiceUI.UpdateHealthUI("ClassicProgressBar", 5f * Time.deltaTime);
             }
 
@@ -520,96 +551,32 @@ namespace CandiceAIforGames.AI
                 //when in movement
                 if (horizontalInput != 0f || verticalInput != 0f)
                 {
-                    //special considerations
-                    foreach (Transform vfx in CandiceVSFX)
+                    if (isAttack) { ActivateVfxByName("Attack", transform.position, 1f); isAttack = false; }
+                    ActivateVfxByName("Footsteps", transform.position, 1f);
+                    SetVfxActiveByName("PowerAura", true);
+                    if (EvaluateInput("Run", false, false, false)) {
+                        ActivateVfxByName("Run", transform.position, 0.33f);
+                        globalSpeed = thisGlobalSpeed;
+                        SetSpeed(TemplateAnimator, "animSpeed", thisGlobalSpeed);
+                    }
+                    if (EvaluateInput("Fire3", false, true, false))
                     {
-                        if (isAttack && vfx.gameObject.tag == "CandiceVSFX" && vfx.gameObject.name == "Attack")
-                        {
-                            GameObject attack = Instantiate(vfx.gameObject, vfx.position, Quaternion.identity);
-                            attack.SetActive(true);
-                            Destroy(attack, 1f);
-                            isAttack = false;
-                        }
-                        if (hit && vfx.gameObject.tag == "CandiceVSFX" && vfx.gameObject.name == "Hurt")
-                        {
-                            GameObject hurt = Instantiate(vfx.gameObject, vfx.position, Quaternion.identity);
-                            hurt.SetActive(true);
-                            Destroy(hurt, 5f);
-                            hit = false;
-                        }
-                        else if (dead && vfx.gameObject.tag == "CandiceVSFX" && vfx.gameObject.name == "Death")
-                        {
-                            GameObject death = Instantiate(vfx.gameObject, transform.position, Quaternion.identity);
-                            death.SetActive(true);
-                            candiceCamera.CameraShake();
-                            Destroy(death, 5f);
-                            dead = false;
-
-                        }
-                        else if (vfx.gameObject.tag == "CandiceVSFX" && vfx.gameObject.name == "Footsteps")
-                        {
-                            GameObject footsteps = Instantiate(vfx.gameObject, transform.position, Quaternion.identity);
-                            footsteps.SetActive(true);
-                            Destroy(footsteps, 1f);
-                        }
-                        else if (vfx.gameObject.tag == "CandiceVSFX" && vfx.gameObject.name == "PowerAura")
-                        {
-                            vfx.gameObject.SetActive(true);
-                        }
-                        else if (vfx.gameObject.tag == "CandiceVSFX" && vfx.gameObject.name == "Run" && EvaluateInput("Run", false, false, false)) {
-                            GameObject run = Instantiate(vfx.gameObject, transform.position, Quaternion.identity);
-                            run.SetActive(true);
-                            Destroy(run, 0.33f);
-                            globalSpeed = thisGlobalSpeed;
-                            SetSpeed(TemplateAnimator, "animSpeed", thisGlobalSpeed);
-                        }
-                        else if (vfx.gameObject.tag == "CandiceVSFX" && vfx.gameObject.name == "GroundSmash" && EvaluateInput("Fire3", false, true, false))
-                        {
-                            GameObject groundSmash = Instantiate(vfx.gameObject, transform.position, Quaternion.identity);
-                            groundSmash.SetActive(true);
-                            Destroy(groundSmash, 1f);
-                        }
-
+                        ActivateVfxByName("GroundSmash", transform.position, 1f);
                     }
                 }
                 //when idle, show no sfx except idle animation
                 //can be tweaked
                 else
                 {
-                    foreach (Transform vfx in CandiceVSFX)
+                    SetVfxActiveByName("PowerAura", false);
+                    if (isAttack)
                     {
-                        if (isAttack && vfx.gameObject.tag == "CandiceVSFX" && vfx.gameObject.name == "Attack")
-                        {
-                            GameObject attack = Instantiate(vfx.gameObject, vfx.position, Quaternion.identity);
-                            attack.SetActive(true);
-                            Destroy(attack, 1f);
-                            isAttack = false;
-                        }
-                        else if (hit && vfx.gameObject.tag == "CandiceVSFX" && vfx.gameObject.name == "Hurt")
-                        {
-                            GameObject hurt = Instantiate(vfx.gameObject, vfx.position, Quaternion.identity);
-                            hurt.SetActive(true);
-                            Destroy(hurt, 5f);
-                            hit = false;
-                        }
-                        else if (dead && vfx.gameObject.tag == "CandiceVSFX" && vfx.gameObject.name == "Death")
-                        {
-                            GameObject death = Instantiate(vfx.gameObject, transform.position, Quaternion.identity);
-                            death.SetActive(true);
-                            candiceCamera.CameraShake();
-                            //Destroy(death, 5f);
-                            dead = false;
-                        }
-                        else if (vfx.gameObject.tag == "CandiceVSFX" && vfx.gameObject.name == "GroundSmash" && EvaluateInput("Fire3", false, true, false))
-                        {
-                            GameObject groundSmash = Instantiate(vfx.gameObject, transform.position, Quaternion.identity);
-                            groundSmash.SetActive(true);
-                            Destroy(groundSmash, 1f);
-                        }
-                        else if (vfx.gameObject.tag == "CandiceVSFX")
-                        {
-                            vfx.gameObject.SetActive(false);
-                        }
+                        ActivateVfxByName("Attack", transform.position, 1f);
+                        isAttack = false;
+                    }
+                    if (EvaluateInput("Fire3", false, true, false))
+                    {
+                        ActivateVfxByName("GroundSmash", transform.position, 1f);
                     }
                 }
             }
@@ -627,7 +594,7 @@ namespace CandiceAIforGames.AI
         //Handles all AI input
         public void AgentInput() {
             
-            isAttack = thisAgent.GetComponent<CandiceAIController>().isAttacking;
+            isAttack = _aiController != null && _aiController.isAttacking;
 
             //when in motion or not
             if (thisRigidbody == null) {
@@ -689,37 +656,17 @@ namespace CandiceAIforGames.AI
 
             //if you collide and you're not dead
             //ui support to come (in case you want to display enemy health bars in 3D and not in the UI layer.
-            if (CheckHealth(1f) && hit) { standardActions.Hurt(); hit = false; }
-            else if (dead) { standardActions.Death(); candiceInventoryManager.drop = inventoryDrop; candiceInventoryManager.Drop(thisAgent);} 
+            if (CheckHealth(1f) && hit) { standardActions.Hurt(); ActivateVfxByName("Hurt", transform.position, 5f); hit = false; }
+            else if (dead) { standardActions.Death(); if (candiceInventoryManager != null) { candiceInventoryManager.drop = inventoryDrop; candiceInventoryManager.Drop(thisAgent); } ActivateVfxByName("Death", transform.position, 5f); candiceCamera.CameraShake(); dead = false;}
 
             //VFX
             if (CandiceVSFX != null)
             {
-                //Special Considerations
-                foreach (Transform vfx in CandiceVSFX)
+                if (isWalking)
                 {
-                    if (hit && vfx.gameObject.tag == "CandiceVSFX" && vfx.gameObject.name == "Hurt")
-                    {
-                        GameObject hurt = Instantiate(vfx.gameObject, transform.position, Quaternion.identity);
-                        hurt.SetActive(true);
-                        Destroy(hurt, 5f);
-                        hit = false;
-                    }
-                    else if (dead && vfx.gameObject.tag == "CandiceVSFX" && vfx.gameObject.name == "Death")
-                    {
-                        GameObject death = Instantiate(vfx.gameObject, transform.position, Quaternion.identity);
-                        death.SetActive(true);
-                        candiceCamera.CameraShake();
-                        Destroy(death, 5f);
-                        dead = false;
-                    }
-                    else if (isWalking && vfx.gameObject.tag == "CandiceVSFX" && vfx.gameObject.name == "Footsteps") {
-                        GameObject footsteps = Instantiate(vfx.gameObject, transform.position, Quaternion.identity);
-                        footsteps.SetActive(true);
-                        candiceCamera.CameraShake();
-                        Destroy(footsteps, 1f);
-                        isWalking = false;
-                    }
+                    ActivateVfxByName("Footsteps", transform.position, 1f);
+                    candiceCamera.CameraShake();
+                    isWalking = false;
                 }
             }
 
@@ -732,7 +679,7 @@ namespace CandiceAIforGames.AI
 
         //Used to assess all agent types health
         private bool CheckHealth(float minHealthToTrigger) {            
-            if (thisAgent.GetComponent<CandiceAIController>().hitPoints >= minHealthToTrigger)
+            if (_aiController != null && _aiController.hitPoints >= minHealthToTrigger)
             {
                 return true;
             }
@@ -741,39 +688,24 @@ namespace CandiceAIforGames.AI
             }
         }
 
-        private IEnumerator TimedDelay(float waitTime) { 
-            yield return new WaitForSeconds(waitTime);
-        }
-
         //OnTriggerEnter ensures this script can also be attached to a gameObject for more direct control of some variables, while fully invokable by type and serialization in CandiceAIController
         //Currently used to add impact vsfx to environment and other objects
         void OnTriggerEnter(Collider collider) {
-            if (collider.gameObject.tag == "Projectile")
+            if (collider.gameObject.CompareTag("Projectile"))
             {
                 if (CandiceVSFX != null)
                 {
-                    foreach (Transform vfx in CandiceVSFX)
-                    {
-
-                        //environment
-                        if (vfx.gameObject.tag == "CandiceVSFX" && vfx.gameObject.name == "EnviroImpacts")
-                        {
-                            GameObject enviroImpact = Instantiate(vfx.gameObject, collider.transform.position, Quaternion.identity);
-                            enviroImpact.SetActive(true);
-                            //Shake it baby!!!
-                            candiceCamera.ShakeData = shakeData;
-                            candiceCamera.CameraShake();
-                            Destroy(enviroImpact, 5f);
-                            if (LayerMask.LayerToName(transform.gameObject.layer) == "Obstacle") {
-                                Destroy(transform.gameObject);
-                            }
-                        }
+                    ActivateVfxByName("EnviroImpacts", collider.transform.position, 5f);
+                    candiceCamera.ShakeData = shakeData;
+                    candiceCamera.CameraShake();
+                    if (LayerMask.LayerToName(transform.gameObject.layer) == "Obstacle") {
+                        transform.gameObject.SetActive(false);
                     }
                 }
                 else
                 {
                     //shake on any other CandiceVSFX activation during projectile collisions
-                    if (thisAgent.gameObject.tag == "CandiceVSFX")
+                    if (thisAgent.gameObject.CompareTag("CandiceVSFX"))
                     {
                         candiceCamera.ShakeData = shakeData;
                         candiceCamera.CameraShake();
@@ -781,11 +713,108 @@ namespace CandiceAIforGames.AI
                 }
 
             }
-            else if (collider.gameObject.tag == "Enemy") {                
-                if (collider.gameObject.GetComponent<CandiceAIController>().hitPoints > 0.01f) {
-                    collider.gameObject.GetComponent<CandiceAIController>().IsAttacking = true;
-                    collider.gameObject.GetComponent<CandiceAIController>().CandiceReceiveDamage(thisComboDamagePerHit);
+            else if (collider.gameObject.CompareTag("Enemy")) {
+                if (collider.gameObject.TryGetComponent(out CandiceAIController enemyController) && enemyController.hitPoints > 0.01f) {
+                    enemyController.IsAttacking = true;
+                    enemyController.CandiceReceiveDamage(thisComboDamagePerHit);
                 }
+            }
+        }
+
+        private void CacheVfxSlots()
+        {
+            if (CandiceVSFX == null)
+            {
+                _vfxSlots = Array.Empty<Transform>();
+                _vfxDisableAt = Array.Empty<float>();
+                return;
+            }
+
+            int childCount = CandiceVSFX.childCount;
+            if (_vfxSlots.Length != childCount)
+            {
+                // COLD ALLOC: Transform[childCount] - Candice VFX slot table built during animation initialization only.
+                _vfxSlots = new Transform[childCount];
+                // COLD ALLOC: float[childCount] - Candice VFX disable schedule built during animation initialization only.
+                _vfxDisableAt = new float[childCount];
+            }
+
+            for (int i = 0; i < childCount; i++)
+            {
+                Transform vfx = CandiceVSFX.GetChild(i);
+                _vfxSlots[i] = vfx;
+                _vfxDisableAt[i] = 0f;
+                if (vfx != null && vfx.gameObject.CompareTag("CandiceVSFX"))
+                {
+                    vfx.gameObject.SetActive(false);
+                }
+            }
+        }
+
+        private void ProcessScheduledVfx()
+        {
+            float now = Time.time;
+            for (int i = 0; i < _vfxSlots.Length; i++)
+            {
+                Transform vfx = _vfxSlots[i];
+                if (vfx != null && _vfxDisableAt[i] > 0f && now >= _vfxDisableAt[i])
+                {
+                    vfx.gameObject.SetActive(false);
+                    _vfxDisableAt[i] = 0f;
+                }
+            }
+        }
+
+        private void ActivateVfxByName(string vfxName, Vector3 position, float activeSeconds)
+        {
+            for (int i = 0; i < _vfxSlots.Length; i++)
+            {
+                Transform vfx = _vfxSlots[i];
+                if (vfx != null && vfx.gameObject.CompareTag("CandiceVSFX") && vfx.gameObject.name == vfxName)
+                {
+                    vfx.position = position;
+                    vfx.gameObject.SetActive(true);
+                    _vfxDisableAt[i] = activeSeconds > 0f ? Time.time + activeSeconds : 0f;
+                    return;
+                }
+            }
+        }
+
+        private void SetVfxActiveByName(string vfxName, bool isActive)
+        {
+            for (int i = 0; i < _vfxSlots.Length; i++)
+            {
+                Transform vfx = _vfxSlots[i];
+                if (vfx != null && vfx.gameObject.CompareTag("CandiceVSFX") && vfx.gameObject.name == vfxName)
+                {
+                    vfx.gameObject.SetActive(isActive);
+                    if (!isActive)
+                    {
+                        _vfxDisableAt[i] = 0f;
+                    }
+                    return;
+                }
+            }
+        }
+
+        private void ScheduleGenericCombo(int attackNumber, float delaySeconds)
+        {
+            _pendingGenericCombo = true;
+            _pendingGenericComboAttack = attackNumber;
+            _pendingGenericComboAt = Time.time + Mathf.Max(0f, delaySeconds);
+        }
+
+        private void ProcessGenericCombo()
+        {
+            if (!_pendingGenericCombo || Time.time < _pendingGenericComboAt)
+            {
+                return;
+            }
+
+            _pendingGenericCombo = false;
+            if (candiceHumanoidMelee != null)
+            {
+                candiceHumanoidMelee.TriggerGenericCombo(_pendingGenericComboAttack);
             }
         }
 

@@ -723,7 +723,8 @@ namespace Hecton8.Visor
 
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                RebindDataVaultForLifecycle(currentService as IDataVault);
+                IDataVault nextVault = currentService is IDataVault dataVault ? dataVault : null;
+                RebindDataVaultForLifecycle(nextVault);
                 if (_vault != null)
                     EnsureNativeState();
             }
@@ -861,16 +862,25 @@ namespace Hecton8.Visor
                 return false;
             }
 
-            if (vault.IsCompactionFenceActive ||
-                !buffer.IsCreated ||
-                buffer.Length < length)
+            bool releaseOnExit = true;
+            try
             {
-                vault.ReleaseWriteLock(in handle, OwnerSystem);
-                buffer = default;
-                return false;
-            }
+                if (vault.IsCompactionFenceActive ||
+                    !buffer.IsCreated ||
+                    buffer.Length < length)
+                {
+                    buffer = default;
+                    return false;
+                }
 
-            return true;
+                releaseOnExit = false;
+                return true;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                    vault.ReleaseWriteLock(in handle, OwnerSystem);
+            }
         }
 
         private static bool IsVisorVaultHandle<T>(

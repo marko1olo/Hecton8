@@ -542,7 +542,7 @@ namespace Hecton8.EditorTools
 
             bool mx350Enabled = material.IsKeywordEnabled(QualityMx350Keyword);
             bool highEnabled = material.IsKeywordEnabled(QualityHighKeyword);
-            if (!mx350Enabled || highEnabled)
+            if (mx350Enabled || highEnabled)
             {
                 failureLabel = "quality-keyword-mismatch";
                 return true;
@@ -755,7 +755,7 @@ namespace Hecton8.EditorTools
             float heightScale)
         {
             material.DisableKeyword(QualityHighKeyword);
-            material.EnableKeyword(QualityMx350Keyword);
+            material.DisableKeyword(QualityMx350Keyword);
             material.SetFloat(NormalScaleProperty, normalScale);
             material.SetFloat(TriplanarScaleProperty, triplanarScale);
             material.SetFloat(TriplanarSharpnessProperty, triplanarSharpness);

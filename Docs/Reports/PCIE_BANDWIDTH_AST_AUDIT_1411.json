@@ -1,7 +1,7 @@
 ﻿{
     "agentId":  "1411",
     "status":  "PASS",
-    "checkedAtUtc":  "2026-05-28T10:27:50.3999853Z",
+    "checkedAtUtc":  "2026-05-28T12:54:26.7548496Z",
     "targets":  [
                     "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
                     "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
@@ -19,7 +19,19 @@
                     "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
                     "Assets/_Project/Scripts/HectonBoidController.cs",
                     "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
-                    "Assets/_Project/Scripts/World/AbyssalThermalManager.cs"
+                    "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+                    "Assets/_Project/Art/Shaders/SargassumMicroFaunaBoids.compute",
+                    "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+                    "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+                    "Assets/_Project/Art/Shaders/Hecton_VegetationWakeTrailSim.compute",
+                    "Assets/_Project/Scripts/World/SargassumCutManager.cs",
+                    "Assets/_Project/Art/Shaders/Hecton_SargassumCutMask.compute",
+                    "Assets/_Project/Art/Shaders/Hecton_TerrainDamageVolume.compute",
+                    "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralGpuUploadDispatcher.cs",
+                    "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageGpuUploadDispatcher.cs",
+                    "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+                    "Assets/_Project/Art/Shaders/Hecton_AbyssalSwarmCull.compute",
+                    "Assets/_Project/Art/Shaders/Hecton_MarineSnow.compute"
                 ],
     "checks":  {
                    "UploadRangeMethodPresent":  true,
@@ -79,10 +91,22 @@
                    "BoidSpawnResetStagingUpload":  true,
                    "GpuScatterDirectorVisibilityCacheStagingClear":  true,
                    "GpuScatterDirectorArgsNotLockCapable":  true,
+                   "SargassumComputeWritesBoidBuffer":  true,
+                   "SargassumBoidGpuWriteBuffersNotLockCapable":  true,
+                   "SargassumBoidCpuUploadUsesGpuWriteSetDataFallback":  true,
+                   "SargassumBoidCpuUploadNoMappedWrite":  true,
                    "VegetationCullTelemetryStagingClear":  true,
                    "AbyssalThermalSmokeBuffersNotLockCapable":  true,
                    "AbyssalThermalParticleResetStagingUpload":  true,
-                   "AbyssalThermalExplicitGpuLayouts":  true
+                   "AbyssalThermalExplicitGpuLayouts":  true,
+                   "FloraWakeTrailStampBuffersCpuInputOnly":  true,
+                   "FloraFlowFieldUploadIsCpuReadOnlyBuffer":  true,
+                   "SargassumCutStampBuffersCpuInputOnly":  true,
+                   "SargassumDamageVolumeStampBuffersCpuInputOnly":  true,
+                   "ProceduralCoralDispatcherUsesCpuOnlyMappedDrawBuffers":  true,
+                   "ProceduralWreckageDispatcherUsesCpuOnlyMappedDrawBuffers":  true,
+                   "ShinobuGpuCullingWriteTargetsNotLockCapable":  true,
+                   "ShinobuCpuMatrixUploadBuffersAreInputOnly":  true
                },
     "fatalFailures":  [
 

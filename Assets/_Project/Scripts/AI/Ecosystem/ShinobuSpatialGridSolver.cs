@@ -648,27 +648,41 @@ namespace Hecton8.AI.Ecosystem
                 !ValidateVaultHandle(in TelemetryCursorHandle, BufferID.ShinobuSpatialGridTelemetryCursor))
                 return;
 
-            NativeArray<SpatialGridTelemetryEntry> telemetry = default;
-            NativeArray<int> telemetryCursor = default;
-            bool telemetryLocked = false;
+            int slotCursor = 0;
             bool cursorLocked = false;
 
             try
             {
-                telemetryLocked = vault.TryAcquireWriteLock(in TelemetryHandle, SystemID.AIEcology, out telemetry);
-                if (!telemetryLocked || !telemetry.IsCreated || telemetry.Length <= 0)
-                    return;
-
-                cursorLocked = vault.TryAcquireWriteLock(in TelemetryCursorHandle, SystemID.AIEcology, out telemetryCursor);
-                if (!cursorLocked || !telemetryCursor.IsCreated || telemetryCursor.Length <= 0)
+                cursorLocked = vault.TryAcquireWriteLock(in TelemetryCursorHandle, SystemID.AIEcology, out NativeArray<int> telemetryCursor);
+                if (!cursorLocked ||
+                    !telemetryCursor.IsCreated ||
+                    telemetryCursor.Length <= 0)
                     return;
 
                 int cursor = telemetryCursor[0];
-                if (cursor < 0 || cursor >= int.MaxValue - telemetry.Length)
+                if (cursor < 0 ||
+                    cursor >= int.MaxValue - ShinobuSpatialGridConstants.TelemetryCapacity)
                     cursor = 0;
 
-                int slot = cursor % telemetry.Length;
+                slotCursor = cursor;
                 telemetryCursor[0] = cursor + 1;
+            }
+            finally
+            {
+                if (cursorLocked)
+                    vault.ReleaseWriteLock(in TelemetryCursorHandle, SystemID.AIEcology);
+            }
+
+            bool telemetryLocked = false;
+            try
+            {
+                telemetryLocked = vault.TryAcquireWriteLock(in TelemetryHandle, SystemID.AIEcology, out NativeArray<SpatialGridTelemetryEntry> telemetry);
+                if (!telemetryLocked ||
+                    !telemetry.IsCreated ||
+                    telemetry.Length <= 0)
+                    return;
+
+                int slot = slotCursor % telemetry.Length;
 
                 SpatialGridTelemetryEntry entry = default;
                 entry.Frame = Frame;
@@ -693,8 +707,6 @@ namespace Hecton8.AI.Ecosystem
             }
             finally
             {
-                if (cursorLocked)
-                    vault.ReleaseWriteLock(in TelemetryCursorHandle, SystemID.AIEcology);
                 if (telemetryLocked)
                     vault.ReleaseWriteLock(in TelemetryHandle, SystemID.AIEcology);
             }

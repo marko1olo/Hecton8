@@ -1295,7 +1295,7 @@ namespace Hecton8.Physics.Vehicles
     {
         [ReadOnly, NoAlias] public NativeArray<SubmarineKinematicState> States;
         [ReadOnly, NoAlias] public NativeArray<SubmarineMassProperties> MassProperties;
-        [ReadOnly, NoAlias] public NativeArray<SubmarineKinematicConfig> Configs;
+        public SubmarineKinematicConfig Config;
         [ReadOnly, NoAlias] public NativeArray<SubmarineHullProfileDTO> HullProfiles;
         [ReadOnly, NoAlias] public NativeArray<SubmarineAddedMassTuningDTO> Tuning;
         [NoAlias] public NativeArray<AddedMassProfileDTO> AddedMassProfiles;
@@ -1309,15 +1309,14 @@ namespace Hecton8.Physics.Vehicles
             if ((uint)index >= (uint)VehicleCount ||
                 (uint)index >= (uint)States.Length ||
                 (uint)index >= (uint)MassProperties.Length ||
-                (uint)index >= (uint)AddedMassProfiles.Length ||
-                Configs.Length == 0)
+                (uint)index >= (uint)AddedMassProfiles.Length)
             {
                 return;
             }
 
             SubmarineKinematicState state = States[index];
             SubmarineMassProperties mass = MassProperties[index];
-            SubmarineKinematicConfig config = Configs[0];
+            SubmarineKinematicConfig config = Config;
             SubmarineAddedMassTuningDTO tuning = ResolveTuning(in Tuning);
             float3 localPosition = SubmarineAddedMassMath.ToLocal(in state.Aup, in config);
             float depthMeters = math.max(0f, -localPosition.y);
@@ -1582,13 +1581,13 @@ namespace Hecton8.Physics.Vehicles
         [NoAlias] public NativeArray<SubmarineKinematicTelemetry> Telemetry;
         [ReadOnly, NoAlias] public NativeArray<AddedMassProfileDTO> AddedMassProfiles;
         [ReadOnly, NoAlias] public NativeArray<SubmarineAddedMassTuningDTO> Tuning;
-        [ReadOnly, NoAlias] public NativeArray<SubmarineKinematicConfig> Configs;
+        public SubmarineKinematicConfig Config;
         [ReadOnly, NoAlias] public NativeArray<float> DragLut;
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
         // SignalBus owns the cavitation acoustic lane and this integrator receives a producer-only writer.
         // Unity cannot infer that external queue ownership from the field type, so its warning is a false
         // positive for this finite event emission path. [NoAlias] tells Burst the queue writer cannot alias
-        // the submarine SoA state, control, PID, mass, force, telemetry, tuning, config, or drag LUT buffers.
+        // the submarine SoA state, control, PID, mass, force, telemetry, tuning, config DTO, or drag LUT buffers.
         //
         // SAFETY_JUSTIFICATION_PARAGRAPH_2:
         // Rejected direct audio/runtime calls from the integrator because that would introduce managed side
@@ -1617,7 +1616,6 @@ namespace Hecton8.Physics.Vehicles
                 (uint)index >= (uint)MassProperties.Length ||
                 (uint)index >= (uint)Forces.Length ||
                 (uint)index >= (uint)AddedMassProfiles.Length ||
-                Configs.Length == 0 ||
                 DragLut.Length == 0)
             {
                 return;
@@ -1628,7 +1626,7 @@ namespace Hecton8.Physics.Vehicles
             SubmarinePidState pid = PidStates[index];
             SubmarineMassProperties mass = MassProperties[index];
             SubmarineForceAccumulator force = Forces[index];
-            SubmarineKinematicConfig config = Configs[0];
+            SubmarineKinematicConfig config = Config;
             SubmarineAddedMassTuningDTO tuning = ResolveTuning(in Tuning);
 
             float dt = math.clamp(FixedDeltaTime, 0.001f, 0.05f);

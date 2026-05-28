@@ -137,9 +137,12 @@ namespace Hecton8.World
     /// <summary>
     /// Fixed black-box telemetry sample for the chunk residency system.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 72)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct ChunkResidencyTelemetryEntry
     {
+        private const uint FlagsMask = 0x0000FFFFu;
+        private const int ActiveImpostorCountShift = 16;
+
         [FieldOffset(0)]
         public long FocusChunkId;
         [FieldOffset(8)]
@@ -153,7 +156,7 @@ namespace Hecton8.World
         [FieldOffset(44)]
         public uint Frame;
         [FieldOffset(48)]
-        public uint Flags;
+        private uint _packedFlags;
         [FieldOffset(52)]
         public uint StateHash;
         [FieldOffset(56)]
@@ -164,12 +167,18 @@ namespace Hecton8.World
         public ushort LoadingCount;
         [FieldOffset(62)]
         public ushort EvictingCount;
-        [FieldOffset(64)]
-        public ushort ActiveImpostorCount;
-        [FieldOffset(66)]
-        private ushort _pad0;
-        [FieldOffset(68)]
-        private uint _pad1;
+
+        public uint Flags
+        {
+            get => _packedFlags & FlagsMask;
+            set => _packedFlags = (_packedFlags & ~FlagsMask) | (value & FlagsMask);
+        }
+
+        public ushort ActiveImpostorCount
+        {
+            get => (ushort)(_packedFlags >> ActiveImpostorCountShift);
+            set => _packedFlags = (_packedFlags & FlagsMask) | ((uint)value << ActiveImpostorCountShift);
+        }
     }
 
     /// <summary>
@@ -583,6 +592,7 @@ namespace Hecton8.World
         private const int DefaultMaxChunkCount = 512;
         private const int DefaultLoadQueueCapacity = 256;
         private const int TelemetryCapacity = 300;
+        private const int ResidencyTelemetryEntrySizeBytes = 64;
         private const int MaxActivationsPerFrame = 5;
         private const int MemoryGuardBytes = 500 * 1024 * 1024;
         private const float DefaultLoadRadiusMeters = 500f;
@@ -5746,37 +5756,52 @@ namespace Hecton8.World
 
         private void WriteTelemetrySample(long focusChunkId, uint flags)
         {
-            NativeArray<ChunkResidencyTelemetryEntry> telemetryRing = ResolveResidencyTelemetryRing();
-            if (!telemetryRing.IsCreated)
+            IDataVault vault = _dataVault;
+            if (vault == null || _residencyTelemetryHandle.BufferID == 0u)
                 return;
 
-            RefreshStateDiagnosticsIfDirty();
-            AbsoluteUniversePosition playerAup = default;
-            TryCapturePlayerAupSnapshot(out playerAup);
-            int resident = _debugResidentChunks;
-            int loading = _debugLoadingChunks;
-            int evicting = _debugEvictingChunks;
-            uint stateHash = _debugStateHash;
+            if (!vault.TryAcquireWriteLock(in _residencyTelemetryHandle, VaultOwnerSystem, out NativeArray<ChunkResidencyTelemetryEntry> telemetryRing))
+                return;
 
-            telemetryRing[_telemetryCursor] = new ChunkResidencyTelemetryEntry
+            try
             {
-                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                Flags = flags,
-                FocusChunkId = focusChunkId,
-                PlayerGridX = playerAup.GridX,
-                PlayerGridY = playerAup.GridY,
-                PlayerGridZ = playerAup.GridZ,
-                PlayerLocal = new float3(playerAup.LocalX, playerAup.LocalY, playerAup.LocalZ),
-                PendingLoads = (ushort)math.min(ushort.MaxValue, _pendingLoadRequestCount),
-                ResidentCount = (ushort)math.min(ushort.MaxValue, resident),
-                LoadingCount = (ushort)math.min(ushort.MaxValue, loading),
-                EvictingCount = (ushort)math.min(ushort.MaxValue, evicting),
-                ActiveImpostorCount = (ushort)math.min(ushort.MaxValue, _activeImpostorCount),
-                StateHash = stateHash
-            };
-            _telemetryCursor++;
-            if (_telemetryCursor >= TelemetryCapacity)
-                _telemetryCursor = 0;
+                if (!telemetryRing.IsCreated || telemetryRing.Length < TelemetryCapacity)
+                    return;
+
+                RefreshStateDiagnosticsIfDirty();
+                AbsoluteUniversePosition playerAup = default;
+                TryCapturePlayerAupSnapshot(out playerAup);
+                int resident = _debugResidentChunks;
+                int loading = _debugLoadingChunks;
+                int evicting = _debugEvictingChunks;
+                uint stateHash = _debugStateHash;
+
+                ChunkResidencyTelemetryEntry entry = default;
+                entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+                entry.Flags = flags;
+                entry.FocusChunkId = focusChunkId;
+                entry.PlayerGridX = playerAup.GridX;
+                entry.PlayerGridY = playerAup.GridY;
+                entry.PlayerGridZ = playerAup.GridZ;
+                entry.PlayerLocal.x = playerAup.LocalX;
+                entry.PlayerLocal.y = playerAup.LocalY;
+                entry.PlayerLocal.z = playerAup.LocalZ;
+                entry.PendingLoads = (ushort)math.min(ushort.MaxValue, _pendingLoadRequestCount);
+                entry.ResidentCount = (ushort)math.min(ushort.MaxValue, resident);
+                entry.LoadingCount = (ushort)math.min(ushort.MaxValue, loading);
+                entry.EvictingCount = (ushort)math.min(ushort.MaxValue, evicting);
+                entry.ActiveImpostorCount = (ushort)math.min(ushort.MaxValue, _activeImpostorCount);
+                entry.StateHash = stateHash;
+
+                telemetryRing[_telemetryCursor] = entry;
+                _telemetryCursor++;
+                if (_telemetryCursor >= TelemetryCapacity)
+                    _telemetryCursor = 0;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _residencyTelemetryHandle, VaultOwnerSystem);
+            }
         }
 
         private void DumpTelemetry(uint reasonFlags)
@@ -5819,28 +5844,62 @@ namespace Hecton8.World
                 Directory.CreateDirectory(directory);
 
             using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
             {
+                Span<byte> row = stackalloc byte[ResidencyTelemetryEntrySizeBytes];
                 for (int i = 0; i < TelemetryCapacity; i++)
                 {
                     ChunkResidencyTelemetryEntry entry = telemetryRing[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.FocusChunkId);
-                    writer.Write(entry.PlayerGridX);
-                    writer.Write(entry.PlayerGridY);
-                    writer.Write(entry.PlayerGridZ);
-                    writer.Write(entry.PlayerLocal.x);
-                    writer.Write(entry.PlayerLocal.y);
-                    writer.Write(entry.PlayerLocal.z);
-                    writer.Write(entry.PendingLoads);
-                    writer.Write(entry.ResidentCount);
-                    writer.Write(entry.LoadingCount);
-                    writer.Write(entry.EvictingCount);
-                    writer.Write(entry.ActiveImpostorCount);
-                    writer.Write(entry.StateHash);
+                    WriteChunkResidencyTelemetryEntry(row, in entry);
+                    stream.Write(row);
                 }
             }
+        }
+
+        private static void WriteChunkResidencyTelemetryEntry(Span<byte> destination, in ChunkResidencyTelemetryEntry entry)
+        {
+            destination.Clear();
+            WriteInt64LittleEndian(destination.Slice(0, 8), entry.FocusChunkId);
+            WriteInt64LittleEndian(destination.Slice(8, 8), entry.PlayerGridX);
+            WriteInt64LittleEndian(destination.Slice(16, 8), entry.PlayerGridY);
+            WriteInt64LittleEndian(destination.Slice(24, 8), entry.PlayerGridZ);
+            WriteSingleLittleEndian(destination.Slice(32, 4), entry.PlayerLocal.x);
+            WriteSingleLittleEndian(destination.Slice(36, 4), entry.PlayerLocal.y);
+            WriteSingleLittleEndian(destination.Slice(40, 4), entry.PlayerLocal.z);
+            WriteUInt32LittleEndian(destination.Slice(44, 4), entry.Frame);
+            WriteUInt32LittleEndian(destination.Slice(48, 4), entry.Flags | ((uint)entry.ActiveImpostorCount << 16));
+            WriteUInt32LittleEndian(destination.Slice(52, 4), entry.StateHash);
+            WriteUInt16LittleEndian(destination.Slice(56, 2), entry.PendingLoads);
+            WriteUInt16LittleEndian(destination.Slice(58, 2), entry.ResidentCount);
+            WriteUInt16LittleEndian(destination.Slice(60, 2), entry.LoadingCount);
+            WriteUInt16LittleEndian(destination.Slice(62, 2), entry.EvictingCount);
+        }
+
+        private static void WriteSingleLittleEndian(Span<byte> destination, float value)
+        {
+            WriteUInt32LittleEndian(destination, math.asuint(value));
+        }
+
+        private static void WriteInt64LittleEndian(Span<byte> destination, long value)
+        {
+            WriteUInt64LittleEndian(destination, unchecked((ulong)value));
+        }
+
+        private static void WriteUInt64LittleEndian(Span<byte> destination, ulong value)
+        {
+            for (int i = 0; i < 8; i++)
+                destination[i] = (byte)(value >> (i * 8));
+        }
+
+        private static void WriteUInt32LittleEndian(Span<byte> destination, uint value)
+        {
+            for (int i = 0; i < 4; i++)
+                destination[i] = (byte)(value >> (i * 8));
+        }
+
+        private static void WriteUInt16LittleEndian(Span<byte> destination, ushort value)
+        {
+            destination[0] = (byte)value;
+            destination[1] = (byte)(value >> 8);
         }
 
         private void DisposeNativeState()

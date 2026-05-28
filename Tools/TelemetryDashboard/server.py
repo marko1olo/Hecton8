@@ -50,7 +50,9 @@ MACRO_SWARM_ENTRY = struct.Struct("<IIiifiII")
 FAUNA_MUTATION_ENTRY = struct.Struct("<IIiiiIfffII4x")
 HEADLESS_HEADER = struct.Struct("<Iiii")
 HEADLESS_ENTRY = struct.Struct("<IiIqqqffffffI")
-LIVE_TELEMETRY_ENTRY = struct.Struct("<IIIIIfff")
+LIVE_TELEMETRY_ENTRY_V1 = struct.Struct("<IIIIIfff")
+LIVE_TELEMETRY_ENTRY_V2 = struct.Struct("<IIIIIIfffffIIIII")
+LIVE_TELEMETRY_ENTRY = LIVE_TELEMETRY_ENTRY_V2
 
 
 app = FastAPI(title="HECTON-8 Telemetry Dashboard", version="1.0.0")
@@ -520,27 +522,56 @@ def parse_headless_blackbox(path: Path, data: bytes) -> dict[str, Any]:
 
 
 def parse_live_telemetry(path: Path, data: bytes) -> dict[str, Any]:
-    if len(data) < LIVE_TELEMETRY_ENTRY.size:
+    if len(data) < LIVE_TELEMETRY_ENTRY_V1.size:
         return {"type": "live_telemetry", "entries": [], "warnings": ["truncated_payload"]}
-    fields = LIVE_TELEMETRY_ENTRY.unpack_from(data, 0)
-    if fields[0] != LIVE_TELEMETRY_MAGIC:
+    magic, version = struct.unpack_from("<II", data, 0)
+    if magic != LIVE_TELEMETRY_MAGIC:
         return {"type": "live_telemetry", "entries": [], "warnings": ["invalid_header"]}
-    latest = {
-        "frame": fields[2],
-        "version": fields[1],
-        "activeChunkCount": fields[3],
-        "gcAllocBytes": fields[4],
-        "cpuFrameTimeMs": round(fields[5], 4),
-        "deltaTimeMs": round(fields[6] * 1000.0, 4),
-        "reservedMemoryMb": round(fields[7], 4),
-    }
+
+    warnings = []
+    if version >= 2 and len(data) >= LIVE_TELEMETRY_ENTRY_V2.size:
+        fields = LIVE_TELEMETRY_ENTRY_V2.unpack_from(data, 0)
+        if fields[2] != LIVE_TELEMETRY_ENTRY_V2.size:
+            warnings.append("record_size_mismatch")
+        latest = {
+            "frame": fields[3],
+            "version": fields[1],
+            "recordSizeBytes": fields[2],
+            "activeChunkCount": fields[4],
+            "gcAllocBytes": fields[5],
+            "cpuFrameTimeMs": round(fields[6], 4),
+            "deltaTimeMs": round(fields[7] * 1000.0, 4),
+            "reservedMemoryMb": round(fields[8], 4),
+            "latencyMs": round(fields[9], 4),
+            "gpuFrameTimeMs": round(fields[10], 4),
+            "systemMask": fields[11],
+            "errorFlags": fields[12],
+            "velocityPacked": fields[13],
+            "aupShiftSequence": fields[14],
+            "lastOriginShiftFrame": fields[15],
+        }
+        entry_size = LIVE_TELEMETRY_ENTRY_V2.size
+    else:
+        fields = LIVE_TELEMETRY_ENTRY_V1.unpack_from(data, 0)
+        latest = {
+            "frame": fields[2],
+            "version": fields[1],
+            "activeChunkCount": fields[3],
+            "gcAllocBytes": fields[4],
+            "cpuFrameTimeMs": round(fields[5], 4),
+            "deltaTimeMs": round(fields[6] * 1000.0, 4),
+            "reservedMemoryMb": round(fields[7], 4),
+        }
+        entry_size = LIVE_TELEMETRY_ENTRY_V1.size
+        warnings.append("legacy_v1_32_byte_record")
+
     return {
         "type": "live_telemetry",
-        "entrySize": LIVE_TELEMETRY_ENTRY.size,
+        "entrySize": entry_size,
         "returnedEntryCount": 1,
         "entries": [latest],
         "latest": latest,
-        "warnings": [],
+        "warnings": warnings,
     }
 
 
@@ -619,7 +650,7 @@ def parse_dump_file(path: Path) -> dict[str, Any]:
             return {**base, **parse_fauna_mutation_dump(path, data)}
     if len(data) >= HEADLESS_HEADER.size and struct.unpack_from("<I", data, 0)[0] == HEADLESS_MAGIC:
         return {**base, **parse_headless_blackbox(path, data)}
-    if len(data) >= LIVE_TELEMETRY_ENTRY.size and struct.unpack_from("<I", data, 0)[0] == LIVE_TELEMETRY_MAGIC:
+    if len(data) >= LIVE_TELEMETRY_ENTRY_V1.size and struct.unpack_from("<I", data, 0)[0] == LIVE_TELEMETRY_MAGIC:
         return {**base, **parse_live_telemetry(path, data)}
     if "THERMAL" in name:
         return {**base, **parse_thermal_dump(path, data)}

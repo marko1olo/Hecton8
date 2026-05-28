@@ -1,0 +1,116 @@
+{
+  "agent_id": "1423",
+  "status": "PENDING VERIFICATION",
+  "generated_at": "2026-05-28T20:21:33+04:00",
+  "domain": "ECHELON 8 PRESENTATION AND UX / Zero-GC Subtitles (Babel), VWS",
+  "audit_scope": "Continuation14 self-audit and repair of remaining managed-string ownership in VWS caption fallback and submarine OS terminal static text.",
+  "files_changed": {
+    "Assets/_Project/Scripts/VwsCaptionFallbackCatalog.cs": "A31CE42F5DADA23DE66866072B1A716FDF439B3E929DEBCDB75B009F1600B264",
+    "Assets/_Project/Scripts/VwsCaptionFallbackCatalog.cs.meta": "65B85683A44C1BA9A8E5DDBD4A684001E5F740A4D8A3C94880E024D8B5AFE55B",
+    "Assets/_Project/Scripts/SpatialAudioManager.cs": "E27961F2EDBF7355F9CD138F8EA9E04FE2500DCEAD78F7299DB72194E01D54CB",
+    "Assets/_Project/Scripts/UI/HectonSubmarineOsDisplay.cs": "891D476DA712B8A6E8F6C65CF9D5EA7B73CE764E2C70D0E539DEB8F0FAFA9FDE",
+    "Assets/_Project/Scripts/UI/BIOSMessageStreamer.cs": "E9C9A10C8A3E1CFAB2B0F384CE03D58294B64541A817BDF0EDD989F060919606",
+    "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs": "AD7114A44E109FC238A4FC67A88ACB531649783BF85F84058A86CE1E81AF8B31"
+  },
+  "completed_current_delta": {
+    "problem": "AudioCaptionEvents still physically owned fixed English fallback caption literals, and submarine OS/BIOS terminal components cloned static strings into managed char arrays through ToCharArray during cold initialization.",
+    "solution": "Moved built-in VWS fallback literals into VwsCaptionFallbackCatalog, made AudioCaptionEvents only alias caption hashes and delegate fallback resolution, replaced submarine OS and BIOS static readonly char[] clones with ReadOnlySpan<char> literal properties plus bounded AppendSpan/CopySpan writes into existing buffers.",
+    "line_evidence": {
+      "fallback_catalog": "Assets/_Project/Scripts/VwsCaptionFallbackCatalog.cs:8",
+      "fallback_hashes": "Assets/_Project/Scripts/VwsCaptionFallbackCatalog.cs:10",
+      "fallback_resolver": "Assets/_Project/Scripts/VwsCaptionFallbackCatalog.cs:22",
+      "audio_caption_hash_aliases": "Assets/_Project/Scripts/SpatialAudioManager.cs:11972",
+      "audio_caption_delegate_resolver": "Assets/_Project/Scripts/SpatialAudioManager.cs:12249",
+      "submarine_os_span_literals": "Assets/_Project/Scripts/UI/HectonSubmarineOsDisplay.cs:40",
+      "submarine_os_append_span": "Assets/_Project/Scripts/UI/HectonSubmarineOsDisplay.cs:784",
+      "bios_span_literals": "Assets/_Project/Scripts/UI/BIOSMessageStreamer.cs:21",
+      "bios_append_span": "Assets/_Project/Scripts/UI/BIOSMessageStreamer.cs:468",
+      "source_regression_audio_literals": "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs:277",
+      "source_regression_to_char_array": "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs:302"
+    }
+  },
+  "zero_gc_static_evidence": {
+    "audio_caption_events_block_range": "Assets/_Project/Scripts/SpatialAudioManager.cs:11965-12305",
+    "audio_caption_events_block_counts": {
+      "string.Format": 0,
+      ".ToString(": 0,
+      "TMP_Text.text assignment": 0,
+      "new string": 0,
+      "StringBuilder": 0,
+      "Array.Resize": 0,
+      "foreach": 0,
+      "LINQ": 0,
+      "reference_type_new_suspects": 0
+    },
+    "ui_terminal_runtime_scan_files": [
+      "Assets/_Project/Scripts/VwsCaptionFallbackCatalog.cs",
+      "Assets/_Project/Scripts/UI/HectonSubmarineOsDisplay.cs",
+      "Assets/_Project/Scripts/UI/BIOSMessageStreamer.cs"
+    ],
+    "ui_terminal_runtime_scan_counts": {
+      "ToCharArray": 0,
+      "string.Format": 0,
+      ".ToString(": 0,
+      "TMP_Text.text assignment": 0,
+      "new string": 0,
+      "StringBuilder": 0,
+      "Array.Resize": 0,
+      "foreach": 0,
+      "LINQ": 0,
+      "invalid_static_ReadOnlySpan_field_or_array": 0
+    },
+    "spatial_audio_english_literal_scan": {
+      "file": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+      "fixed_caption_literal_hits": 0
+    },
+    "git_diff_check": "exit 0; CRLF normalization warnings only"
+  },
+  "bounded_cursor_proof": {
+    "audio_caption_fallback_write": "displayLength = min(fallbackText.Length, destination.Length); loop writes only destination[i] for 0 <= i < displayLength. If source exceeds destination and displayLength >= 3, last three visible chars are '.', otherwise the buffer is clipped without exception.",
+    "submarine_os_append_span": "safeCursor = clamp(cursor, 0, destination.Length); safeLength = min(source.Length, destination.Length - safeCursor); loop writes destination[safeCursor + i] only for 0 <= i < safeLength.",
+    "bios_append_span": "safeCursor = clamp(cursor, 0, destination.Length); safeLength = min(source.Length, destination.Length - safeCursor); loop writes destination[safeCursor + i] only for 0 <= i < safeLength.",
+    "no_buffer_growth": true
+  },
+  "data_sovereignty": {
+    "new_global_data_vault_migrations_in_latest_delta": 0,
+    "buffer_ids_retained_from_prior_1423_work": [
+      "15070550 SubtitleCueStateBufferId",
+      "15070551 SubtitleCueTelemetryBufferId",
+      "15070552 UIOptimizationTelemetryBufferId"
+    ],
+    "new_try_acquire_write_lock_sites": 0,
+    "lock_release_change_in_latest_delta": "No DataVault lock acquisition changed in CONT14."
+  },
+  "cinematic_cheat_and_scalability": {
+    "cinematic_cheat": "No simulation, layout solver, or physical text rendering was added. The route remains cheap hash/span presentation and fixed terminal buffers.",
+    "global_quality_weight_routes_reused": [
+      "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:700 ResolveCanvasDirtyBudget",
+      "Assets/_Project/Scripts/LocRegistry.cs:2821 ResolveGlobalQualityWeight",
+      "Assets/_Project/Scripts/UI/BabelRichTextLodPolicy.cs:14 ShouldStrip",
+      "Assets/_Project/Scripts/UI/BabelRichTextLodPolicy.cs:21 ShouldEnableTmpRichTextParsing"
+    ],
+    "binary_quality_switches_added": 0
+  },
+  "build_throttle": {
+    "build_launched_in_latest_delta": false,
+    "cpu_sample_percent": 100,
+    "active_dotnet_csc_vbcscompiler": [],
+    "reason": "CPU > 50. Compilation resource throttling forbids launching a build even with no active compiler process.",
+    "previous_build_failure_dump": "Docs/AgentLogs/Dump_1423_CONT9_BUILD_FAILURE.txt",
+    "previous_build_failure_dump_sha256": "9CBEE6CDC1A63242D46CEB23F7029637F1857AF5F0DC063F1DAEB46C59B64273"
+  },
+  "verification_truth": {
+    "project_build_passed": false,
+    "editor_tests_executed": false,
+    "runtime_profiler_gc_bytes": null,
+    "runtime_zero_gc_claim": false,
+    "static_source_regressions_updated": true
+  },
+  "residual_faults": [
+    "VWS caption fallback strings are still fixed English literals in VwsCaptionFallbackCatalog because the current Babel JSON/static-data artifact path does not prove authored caption keys are available at runtime.",
+    "Runtime 0B GC remains unmeasured because no passing build/profiler run exists.",
+    "Project compilation is still blocked by the previously captured out-of-domain ModularEquipmentEngine.cs CS8168/CS8350 wall."
+  ],
+  "report_path": "Docs/Reports/UI_ZERO_GC_CONTINUATION14_AUDIT_1423.json",
+  "report_kind": "UI_ZERO_GC_CONTINUATION14_AUDIT_1423"
+}

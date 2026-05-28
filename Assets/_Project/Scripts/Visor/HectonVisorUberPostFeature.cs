@@ -168,60 +168,24 @@ namespace Hecton8.Visor
             [Range(0f, 1f)] public float internalWaterlinePitchScale = 0.52f;
         }
 
-        private readonly struct RuntimeState
+        private struct RuntimeState
         {
-            public RuntimeState(
-                bool visorPostActive,
-                float healthFraction,
-                float localTemperature,
-                float ambientPressure,
-                float playerStress01,
-                float hypoxia01,
-                uint statusMask,
-                float wetLens01,
-                float hullStress01,
-                uint aupShiftFrame,
-                float vrComfortVignette01,
-                Vector4 vrComfortJerkState,
-                Vector4 internalWaterlineParams,
-                Vector4 internalWaterlineDistortion,
-                float qualityPressure01,
-                bool depthlessTBDR)
-            {
-                VisorPostActive = visorPostActive ? (byte)1 : (byte)0;
-                HealthFraction = healthFraction;
-                LocalTemperature = localTemperature;
-                AmbientPressure = ambientPressure;
-                PlayerStress01 = playerStress01;
-                Hypoxia01 = hypoxia01;
-                Bleeding01 = (statusMask & BleedingStatusBit) != 0u ? 1f : 0f;
-                WetLens01 = wetLens01;
-                HullStress01 = hullStress01;
-                AupShiftFrame = aupShiftFrame;
-                VrComfortVignette01 = vrComfortVignette01;
-                VrComfortJerkState = vrComfortJerkState;
-                InternalWaterlineParams = internalWaterlineParams;
-                InternalWaterlineDistortion = internalWaterlineDistortion;
-                QualityPressure01 = qualityPressure01;
-                DepthlessTBDR = depthlessTBDR ? (byte)1 : (byte)0;
-            }
-
-            public readonly byte VisorPostActive;
-            public readonly float HealthFraction;
-            public readonly float LocalTemperature;
-            public readonly float AmbientPressure;
-            public readonly float PlayerStress01;
-            public readonly float Hypoxia01;
-            public readonly float Bleeding01;
-            public readonly float WetLens01;
-            public readonly float HullStress01;
-            public readonly uint AupShiftFrame;
-            public readonly float VrComfortVignette01;
-            public readonly Vector4 VrComfortJerkState;
-            public readonly Vector4 InternalWaterlineParams;
-            public readonly Vector4 InternalWaterlineDistortion;
-            public readonly float QualityPressure01;
-            public readonly byte DepthlessTBDR;
+            public byte VisorPostActive;
+            public float HealthFraction;
+            public float LocalTemperature;
+            public float AmbientPressure;
+            public float PlayerStress01;
+            public float Hypoxia01;
+            public float Bleeding01;
+            public float WetLens01;
+            public float HullStress01;
+            public uint AupShiftFrame;
+            public float VrComfortVignette01;
+            public Vector4 VrComfortJerkState;
+            public Vector4 InternalWaterlineParams;
+            public Vector4 InternalWaterlineDistortion;
+            public float QualityPressure01;
+            public byte DepthlessTBDR;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -282,6 +246,10 @@ namespace Hecton8.Visor
             {
                 internal TextureHandle Source;
                 internal TextureHandle Depth;
+                internal TextureHandle CrackTexture;
+                internal TextureHandle LensDirtTexture;
+                internal TextureHandle BlueNoiseTexture;
+                internal TextureHandle VrComfortMaskTexture;
                 internal Material Material;
                 internal Vector4 Strengths0;
                 internal Vector4 Strengths1;
@@ -311,11 +279,14 @@ namespace Hecton8.Visor
             private FeatureSettings _settings;
             private Material _material;
             private Material _reconstructionMaterial;
-            private Material _boundStaticTextureMaterial;
             private Texture _boundCrackTexture;
             private Texture _boundLensDirtTexture;
             private Texture _boundBlueNoiseTexture;
             private Texture _boundVrComfortMaskTexture;
+            private RTHandle _crackTextureHandle;
+            private RTHandle _lensDirtTextureHandle;
+            private RTHandle _blueNoiseTextureHandle;
+            private RTHandle _vrComfortMaskTextureHandle;
             private GraphicsBuffer _reconstructionConstantsBuffer;
             private RuntimeState _runtimeState;
             private bool _requestRawColorHistory;
@@ -371,6 +342,8 @@ namespace Hecton8.Visor
                 {
                     return;
                 }
+                if (cameraData.renderType != CameraRenderType.Base)
+                    return;
 
                 TextureHandle sourceTexture = resourceData.activeColorTexture;
                 TextureHandle depthTexture = resourceData.activeDepthTexture;
@@ -403,7 +376,7 @@ namespace Hecton8.Visor
 
                 if (reconstructionReady)
                 {
-                    TextureDesc reconstructionDesc = new TextureDesc(sourceDesc);
+                    TextureDesc reconstructionDesc = sourceDesc;
                     reconstructionDesc.name = "_HectonUberNoirReconstruction";
                     reconstructionDesc.clearBuffer = false;
                     reconstructionDesc.depthBufferBits = DepthBits.None;
@@ -475,7 +448,7 @@ namespace Hecton8.Visor
                     return;
                 }
 
-                TextureDesc destinationDesc = new TextureDesc(sourceDesc);
+                TextureDesc destinationDesc = sourceDesc;
                 destinationDesc.name = "_HectonVisorUberPost";
                 destinationDesc.clearBuffer = false;
                 destinationDesc.depthBufferBits = DepthBits.None;
@@ -484,7 +457,15 @@ namespace Hecton8.Visor
                 destinationDesc.useMipMap = false;
                 destinationDesc.autoGenerateMips = false;
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
-                BindStaticPostTextures();
+                if (!TryImportStaticPostTextures(
+                        renderGraph,
+                        out TextureHandle crackTextureHandle,
+                        out TextureHandle lensDirtTextureHandle,
+                        out TextureHandle blueNoiseTextureHandle,
+                        out TextureHandle vrComfortMaskTextureHandle))
+                {
+                    return;
+                }
 
                 using (IRasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<PostPassData>(
                            "Hecton Visor Uber Post",
@@ -493,6 +474,10 @@ namespace Hecton8.Visor
                 {
                     passData.Source = postSourceTexture;
                     passData.Depth = depthTexture;
+                    passData.CrackTexture = crackTextureHandle;
+                    passData.LensDirtTexture = lensDirtTextureHandle;
+                    passData.BlueNoiseTexture = blueNoiseTextureHandle;
+                    passData.VrComfortMaskTexture = vrComfortMaskTextureHandle;
                     passData.Material = _material;
                     passData.HasDepth = hasDepth;
                     PopulatePostPassData(passData, _settings, _runtimeState, _visualTimeSeconds);
@@ -501,6 +486,10 @@ namespace Hecton8.Visor
                     builder.SetRenderAttachment(destinationTexture, 0, AccessFlags.Write);
                     if (hasDepth)
                         builder.UseTexture(depthTexture, AccessFlags.Read);
+                    builder.UseTexture(crackTextureHandle, AccessFlags.Read);
+                    builder.UseTexture(lensDirtTextureHandle, AccessFlags.Read);
+                    builder.UseTexture(blueNoiseTextureHandle, AccessFlags.Read);
+                    builder.UseTexture(vrComfortMaskTextureHandle, AccessFlags.Read);
                     builder.AllowGlobalStateModification(true);
 
                     builder.SetRenderFunc(static (PostPassData data, RasterGraphContext context) =>
@@ -511,6 +500,10 @@ namespace Hecton8.Visor
                         context.cmd.SetGlobalTexture(ShaderConstants.BlitTextureId, data.Source);
                         if (data.HasDepth)
                             context.cmd.SetGlobalTexture(ShaderConstants.CameraDepthTextureId, data.Depth);
+                        context.cmd.SetGlobalTexture(ShaderConstants.CrackTextureId, data.CrackTexture);
+                        context.cmd.SetGlobalTexture(ShaderConstants.LensDirtTextureId, data.LensDirtTexture);
+                        context.cmd.SetGlobalTexture(ShaderConstants.BlueNoiseTextureId, data.BlueNoiseTexture);
+                        context.cmd.SetGlobalTexture(ShaderConstants.VrComfortMaskTextureId, data.VrComfortMaskTexture);
                         BindPostShaderParameters(context.cmd, data);
                         CoreUtils.DrawFullScreen(context.cmd, data.Material, null, 0);
                     });
@@ -595,48 +588,83 @@ namespace Hecton8.Visor
                     settings.vrComfortMaskTexture != null ? 1f : 0f);
             }
 
-            private void BindStaticPostTextures()
+            private bool TryImportStaticPostTextures(
+                RenderGraph renderGraph,
+                out TextureHandle crackTextureHandle,
+                out TextureHandle lensDirtTextureHandle,
+                out TextureHandle blueNoiseTextureHandle,
+                out TextureHandle vrComfortMaskTextureHandle)
             {
-                if (_material == null || _settings == null)
-                    return;
-
-                if (!ReferenceEquals(_boundStaticTextureMaterial, _material))
-                {
-                    _boundStaticTextureMaterial = _material;
-                    _boundCrackTexture = null;
-                    _boundLensDirtTexture = null;
-                    _boundBlueNoiseTexture = null;
-                    _boundVrComfortMaskTexture = null;
-                }
+                crackTextureHandle = TextureHandle.nullHandle;
+                lensDirtTextureHandle = TextureHandle.nullHandle;
+                blueNoiseTextureHandle = TextureHandle.nullHandle;
+                vrComfortMaskTextureHandle = TextureHandle.nullHandle;
+                if (renderGraph == null || _settings == null)
+                    return false;
 
                 Texture crackTexture = _settings.crackTexture != null ? _settings.crackTexture : Texture2D.blackTexture;
                 Texture lensDirtTexture = _settings.lensDirtTexture != null ? _settings.lensDirtTexture : Texture2D.whiteTexture;
                 Texture blueNoiseTexture = _settings.blueNoiseTexture != null ? _settings.blueNoiseTexture : Texture2D.grayTexture;
                 Texture vrComfortMaskTexture = _settings.vrComfortMaskTexture != null ? _settings.vrComfortMaskTexture : Texture2D.grayTexture;
 
-                if (!ReferenceEquals(_boundCrackTexture, crackTexture))
+                RTHandle crackHandle = EnsureStaticPostTextureHandle(crackTexture, ref _boundCrackTexture, ref _crackTextureHandle);
+                RTHandle lensDirtHandle = EnsureStaticPostTextureHandle(lensDirtTexture, ref _boundLensDirtTexture, ref _lensDirtTextureHandle);
+                RTHandle blueNoiseHandle = EnsureStaticPostTextureHandle(blueNoiseTexture, ref _boundBlueNoiseTexture, ref _blueNoiseTextureHandle);
+                RTHandle vrComfortMaskHandle = EnsureStaticPostTextureHandle(vrComfortMaskTexture, ref _boundVrComfortMaskTexture, ref _vrComfortMaskTextureHandle);
+                if (crackHandle == null ||
+                    lensDirtHandle == null ||
+                    blueNoiseHandle == null ||
+                    vrComfortMaskHandle == null)
                 {
-                    _material.SetTexture(ShaderConstants.CrackTextureId, crackTexture);
-                    _boundCrackTexture = crackTexture;
+                    return false;
                 }
 
-                if (!ReferenceEquals(_boundLensDirtTexture, lensDirtTexture))
+                crackTextureHandle = renderGraph.ImportTexture(crackHandle);
+                lensDirtTextureHandle = renderGraph.ImportTexture(lensDirtHandle);
+                blueNoiseTextureHandle = renderGraph.ImportTexture(blueNoiseHandle);
+                vrComfortMaskTextureHandle = renderGraph.ImportTexture(vrComfortMaskHandle);
+                return crackTextureHandle.IsValid() &&
+                       lensDirtTextureHandle.IsValid() &&
+                       blueNoiseTextureHandle.IsValid() &&
+                       vrComfortMaskTextureHandle.IsValid();
+            }
+
+            private static RTHandle EnsureStaticPostTextureHandle(
+                Texture texture,
+                ref Texture boundTexture,
+                ref RTHandle handle)
+            {
+                if (texture == null)
+                    return null;
+
+                if (ReferenceEquals(boundTexture, texture) && handle != null)
+                    return handle;
+
+                if (handle != null)
+                    RTHandles.Release(handle);
+
+                boundTexture = texture;
+                handle = RTHandles.Alloc(texture);
+                return handle;
+            }
+
+            public void ReleaseStaticPostTextureHandles()
+            {
+                ReleaseStaticPostTextureHandle(ref _crackTextureHandle, ref _boundCrackTexture);
+                ReleaseStaticPostTextureHandle(ref _lensDirtTextureHandle, ref _boundLensDirtTexture);
+                ReleaseStaticPostTextureHandle(ref _blueNoiseTextureHandle, ref _boundBlueNoiseTexture);
+                ReleaseStaticPostTextureHandle(ref _vrComfortMaskTextureHandle, ref _boundVrComfortMaskTexture);
+            }
+
+            private static void ReleaseStaticPostTextureHandle(ref RTHandle handle, ref Texture boundTexture)
+            {
+                if (handle != null)
                 {
-                    _material.SetTexture(ShaderConstants.LensDirtTextureId, lensDirtTexture);
-                    _boundLensDirtTexture = lensDirtTexture;
+                    RTHandles.Release(handle);
+                    handle = null;
                 }
 
-                if (!ReferenceEquals(_boundBlueNoiseTexture, blueNoiseTexture))
-                {
-                    _material.SetTexture(ShaderConstants.BlueNoiseTextureId, blueNoiseTexture);
-                    _boundBlueNoiseTexture = blueNoiseTexture;
-                }
-
-                if (!ReferenceEquals(_boundVrComfortMaskTexture, vrComfortMaskTexture))
-                {
-                    _material.SetTexture(ShaderConstants.VrComfortMaskTextureId, vrComfortMaskTexture);
-                    _boundVrComfortMaskTexture = vrComfortMaskTexture;
-                }
+                boundTexture = null;
             }
 
             private static void BindPostShaderParameters(RasterCommandBuffer cmd, PostPassData data)
@@ -843,12 +871,11 @@ namespace Hecton8.Visor
         private int _cachedDepthlessTBDRFrame = int.MinValue;
         private float _cachedMemoryQualityPressureFloor01;
         private bool _cachedDepthlessTBDR;
+        private bool _depthlessTBDRPlatformClassified;
+        private bool _depthlessTBDRPlatformCandidate;
         private ICameraHistoryReadAccess _rawColorHistoryReadAccess;
         private Camera _rawColorHistoryCamera;
-        private ICameraHistoryReadAccess _cachedRawColorHistoryReadAccess;
-        private Camera _rawColorHistoryAccessCamera;
         private bool _rawColorHistoryRequestRegistered;
-        private bool _rawColorHistoryAccessResolved;
         private Camera _pendingReconstructionCamera;
         private RuntimeState _pendingReconstructionRuntimeState;
         private bool _pendingReconstructionStateValid;
@@ -866,6 +893,7 @@ namespace Hecton8.Visor
 #endif
 
             RefreshNoirCachedDependenciesCold();
+            RefreshDepthlessTBDRPlatformCandidate();
             TryRegisterHotSwapListener();
 
             // COLD ALLOC: VisorUberPostPass[1] - reused ScriptableRenderPass instance - owner: HectonVisorUberPostFeature
@@ -923,6 +951,10 @@ namespace Hecton8.Visor
             {
                 return;
             }
+            if (renderingData.cameraData.renderType != CameraRenderType.Base)
+            {
+                return;
+            }
 
             if (settings.deepSeaNoirUnifiedPass)
             {
@@ -961,7 +993,10 @@ namespace Hecton8.Visor
 
             bool requestRawColorHistory = reconstructionStorageReady &&
                                           ShouldRequestRawColorHistory(settings, runtimeState);
-            UpdateRawColorHistoryRequest(renderCamera, requestRawColorHistory);
+            UpdateRawColorHistoryRequest(
+                renderCamera,
+                renderingData.cameraData.historyManager,
+                requestRawColorHistory);
             bool rawColorHistoryAvailable = requestRawColorHistory &&
                                             TryHasReadableRawColorHistory(renderCamera, renderingData.cameraData.xr);
             StageReconstructionInput(renderCamera, in runtimeState, rawColorHistoryAvailable);
@@ -1083,8 +1118,8 @@ namespace Hecton8.Visor
             TryUnregisterLateFrameTickable();
             TryUnregisterHotSwapListener();
             ClearRawColorHistoryRequest();
-            ClearRawColorHistoryAccessCache();
             ClearPendingReconstructionInput();
+            _pass?.ReleaseStaticPostTextureHandles();
             ReleaseNoirVaultHandles(_dataVault);
             ReleaseReconstructionVaultHandles(_dataVault);
             CoreUtils.Destroy(_material);
@@ -1114,9 +1149,12 @@ namespace Hecton8.Visor
             _noirColorProfileCacheCount = 0;
         }
 
-        private void UpdateRawColorHistoryRequest(Camera renderCamera, bool requestRawColorHistory)
+        private void UpdateRawColorHistoryRequest(
+            Camera renderCamera,
+            ICameraHistoryReadAccess historyReadAccess,
+            bool requestRawColorHistory)
         {
-            if (!requestRawColorHistory)
+            if (!requestRawColorHistory || renderCamera == null || historyReadAccess == null)
             {
                 ClearRawColorHistoryRequest();
                 return;
@@ -1124,14 +1162,8 @@ namespace Hecton8.Visor
 
             if (_rawColorHistoryRequestRegistered &&
                 ReferenceEquals(_rawColorHistoryCamera, renderCamera) &&
-                _rawColorHistoryReadAccess != null)
+                ReferenceEquals(_rawColorHistoryReadAccess, historyReadAccess))
             {
-                return;
-            }
-
-            if (!TryResolveHistoryReadAccess(renderCamera, out ICameraHistoryReadAccess historyReadAccess))
-            {
-                ClearRawColorHistoryRequest();
                 return;
             }
 
@@ -1150,40 +1182,6 @@ namespace Hecton8.Visor
             _rawColorHistoryReadAccess = null;
             _rawColorHistoryCamera = null;
             _rawColorHistoryRequestRegistered = false;
-        }
-
-        private bool TryResolveHistoryReadAccess(Camera renderCamera, out ICameraHistoryReadAccess historyReadAccess)
-        {
-            if (renderCamera == null)
-            {
-                historyReadAccess = null;
-                ClearRawColorHistoryAccessCache();
-                return false;
-            }
-
-            if (_rawColorHistoryAccessResolved &&
-                ReferenceEquals(_rawColorHistoryAccessCamera, renderCamera))
-            {
-                historyReadAccess = _cachedRawColorHistoryReadAccess;
-                return historyReadAccess != null;
-            }
-
-            _rawColorHistoryAccessCamera = renderCamera;
-            _cachedRawColorHistoryReadAccess = null;
-            _rawColorHistoryAccessResolved = true;
-
-            if (renderCamera.TryGetComponent(out UniversalAdditionalCameraData additionalCameraData))
-                _cachedRawColorHistoryReadAccess = additionalCameraData.history;
-
-            historyReadAccess = _cachedRawColorHistoryReadAccess;
-            return historyReadAccess != null;
-        }
-
-        private void ClearRawColorHistoryAccessCache()
-        {
-            _cachedRawColorHistoryReadAccess = null;
-            _rawColorHistoryAccessCamera = null;
-            _rawColorHistoryAccessResolved = false;
         }
 
         private static void RequestRawColorHistory(IPerFrameHistoryAccessTracker historyAccess)
@@ -1242,7 +1240,7 @@ namespace Hecton8.Visor
         private bool EnsureReconstructionVaultHandles()
         {
             if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
+                BindUberDataVaultForLifecycle(GlobalRegistry.DataVault, _dataVault);
 
             if (_dataVault == null)
                 return false;
@@ -1274,6 +1272,17 @@ namespace Hecton8.Visor
                 NativeArrayOptions.ClearMemory);
 
             return ReconstructionVaultHandlesReady();
+        }
+
+        private void BindUberDataVaultForLifecycle(IDataVault nextVault, IDataVault previousVault)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            IDataVault releaseVault = _dataVault ?? previousVault;
+            ReleaseNoirVaultHandles(releaseVault);
+            ReleaseReconstructionVaultHandles(releaseVault);
+            _dataVault = nextVault;
         }
 
         private bool ReconstructionVaultHandlesReady()
@@ -2341,23 +2350,23 @@ namespace Hecton8.Visor
                 math.abs(localTemperature) > TemperatureActivityThreshold ||
                 settings.lensDirtTexture != null;
 
-            runtimeState = new RuntimeState(
-                hasActiveSignal,
-                healthFraction,
-                localTemperature,
-                ambientPressure,
-                playerStress,
-                hypoxia,
-                statusMask,
-                wetLens,
-                hullStress,
-                HectonFloatingOrigin.CurrentShiftSequence,
-                vrComfortVignette01,
-                vrComfortJerkState,
-                internalWaterlineParams,
-                internalWaterlineDistortion,
-                qualityPressure01,
-                depthlessTBDR);
+            runtimeState = default;
+            runtimeState.VisorPostActive = hasActiveSignal ? (byte)1 : (byte)0;
+            runtimeState.HealthFraction = healthFraction;
+            runtimeState.LocalTemperature = localTemperature;
+            runtimeState.AmbientPressure = ambientPressure;
+            runtimeState.PlayerStress01 = playerStress;
+            runtimeState.Hypoxia01 = hypoxia;
+            runtimeState.Bleeding01 = (statusMask & BleedingStatusBit) != 0u ? 1f : 0f;
+            runtimeState.WetLens01 = wetLens;
+            runtimeState.HullStress01 = hullStress;
+            runtimeState.AupShiftFrame = HectonFloatingOrigin.CurrentShiftSequence;
+            runtimeState.VrComfortVignette01 = vrComfortVignette01;
+            runtimeState.VrComfortJerkState = vrComfortJerkState;
+            runtimeState.InternalWaterlineParams = internalWaterlineParams;
+            runtimeState.InternalWaterlineDistortion = internalWaterlineDistortion;
+            runtimeState.QualityPressure01 = qualityPressure01;
+            runtimeState.DepthlessTBDR = depthlessTBDR ? (byte)1 : (byte)0;
             return true;
         }
 
@@ -2519,13 +2528,23 @@ namespace Hecton8.Visor
 
         private bool ResolveDepthlessTBDRPath()
         {
+            if (!_depthlessTBDRPlatformClassified)
+                RefreshDepthlessTBDRPlatformCandidate();
+
             int frame = NoirFrameToIndex(ResolveNoirFrameId());
             if (_cachedDepthlessTBDRFrame == frame)
                 return _cachedDepthlessTBDR;
 
             _cachedDepthlessTBDRFrame = frame;
-            _cachedDepthlessTBDR = IsQuestVulkanDepthlessCandidate() && HectonXRRuntimeState.IsXRActive;
+            _cachedDepthlessTBDR = _depthlessTBDRPlatformCandidate && HectonXRRuntimeState.IsXRActive;
             return _cachedDepthlessTBDR;
+        }
+
+        private void RefreshDepthlessTBDRPlatformCandidate()
+        {
+            _depthlessTBDRPlatformCandidate = IsQuestVulkanDepthlessCandidate();
+            _depthlessTBDRPlatformClassified = true;
+            _cachedDepthlessTBDRFrame = int.MinValue;
         }
 
         private static bool IsQuestVulkanDepthlessCandidate()

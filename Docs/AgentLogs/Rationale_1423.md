@@ -281,3 +281,115 @@ Solution: Set `text.richText = BabelRichTextLodPolicy.ShouldEnableTmpRichTextPar
 Rejected Alternatives: Forcing `richText = true` globally; disabling rich text on low tier with a binary branch; relying on whatever TMP state existed before the font swap; adding a layout/physics-style overflow system.
 Scalability potential: Low devices still receive deterministic tag-density reduction through `BabelRichTextLodPolicy.ShouldStrip(textHash)`, while the TMP parser state stays compatible with the continuous global quality scalar. Middle/high/ultra can retain more authored styling without changing text truth ownership, buffer layout, or signal DTOs.
 Hardware Impact: Static/source/report estimate 1150000 us. Runtime allocation delta is zero by construction; expected low-end gain is prevention of stale parser-state visual faults during staged font swaps. Profiler proof absent.
+
+## Decision 036 - Remaining TMP Char-Array Sinks RichText Ownership
+
+Problem: A follow-up scan found more TMP sinks that call `SetCharArray` after Babel/localization decode but did not own the TMP rich-text parser state locally. `SuitHUDV4CanvasOverlay`, `LocalizedWorldSign`, and the PDA decrypt label could inherit stale `TMP_Text.richText` from an earlier UI owner. PDA decrypt is stricter: scrambled glyphs must not be parsed as TMP tags at all.
+Solution: `SuitHUDV4CanvasOverlay.SetLocalizedRtlState` now derives `label.richText` from `BabelRichTextLodPolicy.ShouldEnableTmpRichTextParsing()` before RTL sync. `LocalizedWorldSign.RefreshLocalizedText` sets the same policy before `SetCharArray`. `PDADataArchaeologyDecryptLabel` forces `targetText.richText = false` in `Awake`, `RenderHash`, and `Clear` because decrypt/scramble output is not authored rich text.
+Rejected Alternatives: Leaving parser state inherited from prefab or previous owner; disabling all rich text globally; using a binary low-end switch; attempting a runtime tag sanitizer over scrambled PDA glyphs.
+Scalability potential: Low devices keep deterministic authored tag-density reduction through `ShouldStrip(textHash)` where authored rich text is valid. Middle/high/ultra retain more styling through the same continuous scalar. PDA decrypt remains an intentionally cheap visual fake and does not consume rich-text parser budget on any tier.
+Hardware Impact: Static/source edit estimate 1320000 us. Runtime allocation delta is zero; expected low-end gain is prevention of visual/parser faults without extra buffers. Profiler proof absent.
+
+## Decision 037 - Staged Babel Commit Lock Release Proof
+
+Problem: `LocRegistry.TryCommitStagedBabelDictionary` had many post-validation return paths that manually called `AbortBabelDictionaryStage`. The code was probably recoverable, but it did not satisfy the evidence requirement that a staged DataVault lock/handle is released from one proofable `finally` block.
+Solution: Wrapped the validated commit body in `try/finally` and moved the final staged release to `AbortBabelDictionaryStage()` at `LocRegistry.cs:799-801`. Invalid stage descriptors still return before the finally and do not abort a potentially unrelated stage. Once the stage identity is validated, every exit releases the staged buffer route.
+Rejected Alternatives: Duplicating `AbortBabelDictionaryStage()` on every branch; adding a catch that swallows corruption; expanding the staged dictionary buffer; moving the entire async import system without a route card.
+Scalability potential: Same staged dictionary path on low through ultra devices. Quality may affect presentation density, not dictionary ownership or lock correctness.
+Hardware Impact: Static/source edit estimate 380000 us. Runtime cost is one `finally` frame during dictionary commit, outside per-frame subtitle presentation. It prevents lock leakage on early failure paths.
+
+## Decision 038 - Residual Fault Boundary
+
+Problem: The deeper audit found violations that are real but not safe to hot-patch inside this pass without cross-domain contract migration: legacy read-style `LocRegistry` APIs still decode into compatibility rings; `SubtitleCueSignal` is declared in a Core.Contracts namespace while physically owned by a UI file; `SubtitleManager` still exposes managed string compatibility APIs and a managed `OnCueChanged` event.
+Solution: Documented these as residual faults in `Docs/Reports/UI_ZERO_GC_CONTINUATION7_AUDIT_1423.json` and final status. I did not rename public APIs, move signal DTO files, or remove compatibility methods while the project cannot compile and other agents own adjacent domains. The active VWS route remains hash/DTO based and does not carry managed subtitle text.
+Rejected Alternatives: Performing a broad public API rename without route-card proof; moving `SubtitleCueSignal` across assembly/namespace boundaries during a known blocked build; claiming the compatibility APIs are harmless.
+Scalability potential: The repaired hot presentation route scales continuously through `GlobalQualityWeight`. The residual API cleanup should be handled as a route migration so low/middle/high/ultra behavior stays identical at the data-contract level.
+Hardware Impact: Report/audit estimate 520000 us. Runtime gain from this decision is zero because it is a boundary decision; it prevents a risky patch under active integration contention.
+
+## Decision 039 - Subtitle Cue Signal Physical Contract Ownership
+
+Problem: `SubtitleCueSignal` was declared in namespace `Hecton8.Core.Contracts.Signals` but physically lived in `Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs`. That violates one-route ownership for a VWS/audio-to-UI typed lane: the contract namespace said Core, the source file said UI implementation.
+Solution: Moved `SubtitleCueSignal` into `Assets/_Project/Scripts/Core/Contracts/Signals/SubtitleCueSignal.cs` with unchanged explicit 64-byte layout. Added lane constants to the contract (`ExpectedCapacity=32`, `MaxFrameSignals=64`, `LowTierFrameSignals=64`, `LaneHash=0x53554331`) and changed `BabelSubtitleSyncRuntime` to configure `SignalBus<SubtitleCueSignal>` from those constants.
+Rejected Alternatives: Leaving the namespace/file ownership mismatch; moving all subtitle presentation runtime into Core; changing payload fields; keeping duplicated lane constants in UI.
+Scalability potential: Low tier and high tier consume the same bounded unmanaged lane. Continuous quality may change presentation density after consumption, never lane layout, capacity truth, or hash identity.
+Hardware Impact: Static/source edit estimate 840000 us. Runtime allocation delta is zero; the change removes ownership ambiguity without adding work to the hot VWS route.
+
+## Decision 040 - Scanner Proof And Current Batch Boundary
+
+Problem: `OOP_Voice_Scanner_X_011` hard-coded proof that `SubtitleCueSignal` exists inside `BabelSubtitleSyncRuntime.cs`, so the correct contract move would have produced stale scanner evidence. Also, current `Docs/Tasks/CURRENT_BATCH.md` no longer contains `<AGENT_PROMPT id="1423">`; it currently starts with another agent prompt.
+Solution: Updated the scanner to read `Assets/_Project/Scripts/Core/Contracts/Signals/SubtitleCueSignal.cs` and assert the UI runtime file no longer declares the signal. Added a 1423 editor source-regression for this physical ownership. Kept the last verified 1423 prompt hash in reports and explicitly marked current-batch 1423 extraction as unavailable instead of absorbing another agent's prompt.
+Rejected Alternatives: Reporting old scanner semantics; rewriting unrelated batch files; switching domains to the neighboring 1400 prompt; claiming prompt re-extraction succeeded when it did not.
+Scalability potential: Not runtime-facing. It protects verification integrity while the actual VWS route remains bounded and continuous-quality-safe.
+Hardware Impact: Static/source/report estimate 1450000 us. Build was not launched because CPU sampled 82.00% with active `dotnet.exe` PID 30956.
+
+## Decision 041 - Audio Caption Hash-Only Request
+
+Problem: The spatial audio caption lane still carried a managed `CaptionText` reference in `AudioCaptionRequest`. Current captions are static constants, but the deferred request contract made managed text payloads acceptable in a presentation hot path and forced `AudioCaptionOverlay` helper methods to consume `string`.
+Solution: Removed `CaptionText` from `AudioCaptionRequest`. The request now carries `CaptionHashId`, spatial origin, AUP fallback state, duration, and intensity only. `AudioCaptionEvents.TryResolveCaptionTextSpan` resolves the static caption constants as `ReadOnlySpan<char>` at the UI edge, and `AudioCaptionOverlay` writes/hash-compares fixed buffers from that span.
+Rejected Alternatives: Keeping the static string bridge because it currently points at interned constants; adding a new managed cache; migrating the entire audio caption listener system to `SignalBus<T>` inside this patch without a route card.
+Scalability potential: Low devices avoid deferred managed text references and still get bounded fail-closed caption truncation. Middle/high/ultra devices can spend quality budget on presentation density, not payload ownership. No binary tier branch was added.
+Hardware Impact: Static/source edit estimate 980000 us. Runtime allocation delta is expected to be zero or positive because request payloads no longer retain a managed text field, but profiler proof is absent.
+
+## Decision 042 - Continuation9 Build Wall And Report Boundary
+
+Problem: CONT9 source and report artifacts needed a real build decision. Build throttling allows compilation only when CPU is under 50% and no compiler/dotnet process is active; prior passes were blocked by host load. A build was finally allowed, but the project still did not compile.
+Solution: Sampled CPU at 10.00% and confirmed no active `dotnet`, `csc`, or `VBCSCompiler` process. Ran exactly one `dotnet build Hecton8.Core.csproj --nologo -clp:ErrorsOnly -maxcpucount:1`. Build failed after 96.4 s with 56 errors in out-of-domain `Assets/_Project/Scripts/ModularEquipmentEngine.cs:1284-1311` (`CS8168`, `CS8350`). Wrote forensic evidence to `Docs/AgentLogs/Dump_1423_CONT9_BUILD_FAILURE.txt` and refreshed all 1423 JSON hashes with this failure state.
+Rejected Alternatives: Running a second build, patching `ModularEquipmentEngine.cs` from the localization/VWS agent domain, claiming tests or profiler ran, or leaving reports with the obsolete `dotnet_build_launched=false` state.
+Scalability potential: Not runtime-facing. The report now preserves truthful verification state while the game build is blocked outside this domain.
+Hardware Impact: Build wall time 96400 ms; report/build evidence estimate 1900000 us. Runtime status remains unmeasured.
+
+## Decision 043 - Audio Caption Legacy String Resolver Purge
+
+Problem: CONT9 removed managed caption strings from `AudioCaptionRequest`, but `AudioCaptionEvents.ResolveCaptionText(uint)` still exposed a public managed `string` resolver and the caption hash fields were computed from named `*CaptionText` string constants during static initialization.
+Solution: Deleted `ResolveCaptionText(uint)`, removed the named caption text constants, replaced the hash fields with precomputed `public const uint` FNV-1a values, and kept `TryResolveCaptionTextSpan` as the only production caption text resolver. Source graph scan found no production callers of `ResolveCaptionText`.
+Rejected Alternatives: Keeping the method because it returned interned constants; marking it obsolete while still preserving a managed string route; routing through `LocHash.Compute(CaptionText)` at type initialization after the hot request path was already hash-only.
+Scalability potential: Low devices avoid the compatibility string route and cold static hash work. Middle/high/ultra behavior is identical: the route remains hash plus bounded span presentation, with quality controlled elsewhere by `GlobalQualityWeight`.
+Hardware Impact: Static/source edit estimate 760000 us. Runtime allocation proof remains absent; expected gain is removal of one managed API surface and static hash computation from this caption route.
+
+## Decision 044 - Continuation10 Verification Boundary
+
+Problem: After deleting the legacy resolver, proof artifacts needed fresh hashes, but compilation was not permissible under current host state and known dependency wall.
+Solution: Sampled CPU at 87.00% and found no active `dotnet`, `csc`, or `VBCSCompiler` process. No build launched because CPU exceeded the 50% throttle and the latest build already fails in out-of-domain `ModularEquipmentEngine.cs`. Emitted `UI_ZERO_GC_CONTINUATION10_AUDIT_1423.json` and refreshed AST/APEX/final reports.
+Rejected Alternatives: Re-running a known-blocked build under CPU >50%; claiming source-regression tests executed; leaving CONT9 hashes after CONT10 source edits.
+Scalability potential: Not runtime-facing. The caption route stays cheap and deterministic across low/middle/high/ultra devices.
+Hardware Impact: Report/check estimate 1350000 us. Runtime status remains unmeasured.
+
+## Decision 045 - Audio Caption Babel-First Fixed Ring
+
+Problem: The audio caption route was hash-only, but the queue storage still used nullable lazy payload arrays behind `EnsureInitialized`, and the accept/dispatch guard still proved text existence only through built-in English spans. That left two faults: hidden runtime allocation risk around event registration/enqueue and rejection of future Babel-only caption hashes before the UI writer could decode them.
+Solution: Preallocated `_pendingEvents` and `_nextFrameEvents` as fixed static readonly `AudioCaptionPayload[32]` rings, removed `AudioCaptionEvents.EnsureInitialized`, added `HasCaptionText` with `LocRegistry.TryGetLocalizedSpan` first and fixed English fallback second, added `TryWriteCaptionText(uint, Span<char>, out int, out int, out bool)`, and changed `AudioCaptionOverlay.HandleCaptionRequested` to decode directly into `slot.TextBuffer.AsSpan()` before `TMP_Text.SetCharArray`.
+Rejected Alternatives: Migrating `IAudioCaptionEventListener` to a new `SignalBus<T>` inside this patch without a route-card review; keeping lazy arrays because registration is usually cold; resolving text through a managed string bridge; rejecting Babel-only caption hashes until a later localization content pass.
+Scalability potential: Low devices keep a bounded 32-event ring and a 128-char per-slot buffer with fail-closed ellipsis for fallback captions. Middle devices keep the same route with normal cadence. High and Ultra devices can spend saved presentation budget on richer HUD caption styling through the existing continuous `GlobalQualityWeight` policies without changing payload ownership or caption truth.
+Hardware Impact: Static/source/report estimate 1500000 us. Expected i3/MX350 benefit is removing hidden queue allocation surface and one old span-copy/hash path from spatial caption presentation. Runtime GC/profiler proof remains absent.
+
+## Decision 046 - Audio Caption Double Lookup Purge
+
+Problem: The CONT11 Babel-first writer still paid for two localization probes on the localized route. `TryWriteCaptionText` first called pure `LocRegistry.TryGetLocalizedSpan`, then called `TryWriteVisualSpanFromUtf8(captionHashId, ...)`, which repeats the tracked lookup before decode. `Dispatch` also revalidated caption text after `Enqueue` already accepted the hash.
+Solution: Added `LocRegistry.TryWriteKnownLocalizedSpanFromUtf8` so a caller that already holds a valid `ReadOnlySpan<byte>` can decode it directly into a caller-owned char span. Changed `AudioCaptionEvents.TryWriteCaptionText` to use that known-span writer and removed the redundant `Dispatch` `HasCaptionText` guard. Source regression now asserts no second tracked lookup in this path.
+Rejected Alternatives: Keeping the duplicate lookup because the source is small; caching `ReadOnlySpan<byte>` inside `AudioCaptionPayload` where span lifetime and struct storage would be invalid; migrating the entire listener dispatch to `SignalBus<T>` without a route-card; running `dotnet build` while CPU was 93% and `dotnet.exe` PID 62104 was active.
+Scalability potential: Low devices remove one localized-caption table lookup and one dispatch-side existence probe. Middle devices keep the same bounded caption cadence. High and Ultra devices can spend saved UI budget on existing `GlobalQualityWeight`-driven caption styling; no binary low-end/high-end branch or physical simulation was added.
+Hardware Impact: Static/source/report estimate 1250000 us. Measured runtime savings and runtime GC bytes remain absent because compilation/profiler verification is blocked.
+
+## Decision 047 - Audio Caption Managed Listener Purge
+
+Problem: The caption payload no longer carried managed strings, but `AudioCaptionEvents` still owned an `IAudioCaptionEventListener` object array and invoked managed callbacks from the deferred caption route. That violated the zero-GC/VWS route intent even though the immediate allocation count was not proven bad.
+Solution: Removed the audio caption listener interface, listener slot array, object Register/Unregister, and callback Dispatch. `AudioCaptionOverlay` now registers as an integer-counted pull consumer only when UI and late-frame ticking are active, then drains fixed-ring payloads through `ConsumeNextPendingCaption` during `LateFrameTick`. The dispatcher `FlushPending` remains a compatibility/drop hook and does not deliver managed callbacks.
+Rejected Alternatives: Adding a new `SignalBus<T>` lane without a route-card; keeping callbacks because they no longer carry strings; registering a managed overlay object reference in `AudioCaptionEvents`; building while CPU was 100% and `dotnet.exe` PID 18776 was active.
+Scalability potential: Low devices process at most the existing 32 queued caption payloads and use the late-frame dispatch budget before each drain. Middle/high/ultra retain the same data route and can spend `GlobalQualityWeight` budget on visual styling, not payload truth or listener topology. No binary device switch was added.
+Hardware Impact: Static/source/report estimate 1450000 us. Expected i3/MX350 gain is removal of managed callback/interface traversal from the caption route and no per-frame queue clear when no payloads exist. Runtime profiler proof remains absent.
+
+## Decision 048 - VWS Fallback Ownership And Terminal CharArray Purge
+
+Problem: A follow-up domain scan found two remaining managed-string ownership problems. `AudioCaptionEvents` still physically owned fixed English fallback caption literals even after the caption route became hash/span based, and the submarine OS/BIOS terminal components cloned static text literals into managed `char[]` arrays with `.ToCharArray()` during cold initialization.
+Solution: Added `VwsCaptionFallbackCatalog` as the explicit fallback owner and changed `AudioCaptionEvents` to expose only hash aliases plus delegated `TryResolveCaptionTextSpan`. Replaced submarine OS and BIOS static `char[]` literals with `ReadOnlySpan<char>` expression properties and bounded `AppendSpan`/`CopySpan` writes into existing buffers. Added editor source-regression checks for both the fallback ownership boundary and `.ToCharArray()` removal.
+Rejected Alternatives: Removing the fallback text before the Babel runtime/static-data path proves caption keys exist; adding JSON-only keys that the current static artifact route may not load; keeping cold `.ToCharArray()` clones because they are not per-frame; rewriting terminal text into a physical/layout simulation instead of bounded visual text buffers.
+Scalability potential: Low devices avoid cold managed array clones for terminal labels and keep a fixed fallback route for missing caption data. Middle devices keep identical bounded buffers. High and Ultra can spend `GlobalQualityWeight` budget on existing rich text/canvas styling paths, not on text truth ownership. No binary `isLowEnd` branch was added.
+Hardware Impact: Static/source/report estimate 1350000 us. Expected i3/MX350 benefit is smaller managed cold-init surface and clearer fallback ownership. Runtime GC/profiler proof remains absent. Build was not launched because CPU sampled 100% even though no active `dotnet`/`csc`/`VBCSCompiler` process was found.
+
+## Decision 049 - Small UI Static CharArray Purge
+
+Problem: Broad UI runtime scan after CONT14 still found cold `.ToCharArray()` clones in small UI components: loading screen labels, save preview fallback labels, builder overlay title/template, and PDA Atlas timer/numeric templates.
+Solution: Replaced those static `char[]` clones with `ReadOnlySpan<char>` literal/template properties and copied the spans into existing instance buffers before `SetCharArray` or `LocNumericBuffer.TryWrite`. The changed-file scan now reports 0 `.ToCharArray()` and 0 accidental one-argument `SetCharArray(span)` calls in those four files.
+Rejected Alternatives: Blindly converting `SuitHUDV4CanvasOverlay` in the same patch; that file has 29 remaining `.ToCharArray()` hits and one mutable static memory-breach hex buffer. Changing it safely requires a local mutable instance buffer route, not a mechanical span property. `LocRegistry` also still exposes one missing-key `char[]` fallback because legacy `TryGetVisualBuffer` returns `char[]`.
+Scalability potential: Low devices avoid small cold managed array clones during UI screen bootstrap. Middle/high/ultra behavior is unchanged. This does not alter gameplay truth, save identity, DTO layout, or authority routes.
+Hardware Impact: Static/source/report estimate 1250000 us. Expected i3/MX350 gain is reduced cold managed UI allocation surface. Runtime profiler proof remains absent. Build was not launched because CPU sampled 100% and active `dotnet.exe` PID 13464 was present.

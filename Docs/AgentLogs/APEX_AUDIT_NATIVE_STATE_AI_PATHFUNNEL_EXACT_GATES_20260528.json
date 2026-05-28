@@ -1,0 +1,126 @@
+{
+  "agent_id": "AUDIT_NATIVE_STATE",
+  "artifact": "APEX_AUDIT_NATIVE_STATE_AI_PATHFUNNEL_EXACT_GATES_20260528",
+  "created_local": "2026-05-28T21:17:00+04:00",
+  "proof_class": "STATIC_SOURCE_ONLY",
+  "domain": "NativeArray/GlobalDataVault/MonoBehaviour lifecycle",
+  "target_files": [
+    "Assets/_Project/Scripts/AI/Pathfinding/PathFunnelNavmeshRuntime.cs",
+    "Assets/_Project/Scripts/AI/Pathfinding/PathFunnelNavmeshRuntime_VoxelAStar.cs"
+  ],
+  "problem": {
+    "summary": "AI PathFunnel and Voxel A* DataVault handles used generic nonzero/generation predicates and owner-only release. Same-owner or stale wrong-lane descriptors could pass resolve/read/release after DataVault churn.",
+    "rejected_scope": "No solver math, WFC invalidation math, SDF mock generation, black-box DTO layout, job cadence, or quality-weight behavior was changed."
+  },
+  "secured_buffers": {
+    "owned_system": "SystemID.AIPathfinding",
+    "path_funnel": [
+      { "name": "PathFunnelActivePaths", "buffer_id": 195 },
+      { "name": "PathFunnelCellMasks", "buffer_id": 196 },
+      { "name": "PathFunnelInvalidations", "buffer_id": 197 },
+      { "name": "PathFunnelTelemetryRing", "buffer_id": 198 },
+      { "name": "PathFunnelRuntimeState", "buffer_id": 199 }
+    ],
+    "voxel_a_star": [
+      { "name": "ShinobuVoxelPathRequests", "buffer_id": 73420 },
+      { "name": "ShinobuVoxelPathRingState", "buffer_id": 73421 },
+      { "name": "ShinobuVoxelPathSolverState", "buffer_id": 73422 },
+      { "name": "ShinobuVoxelPathNodes", "buffer_id": 73423 },
+      { "name": "ShinobuVoxelPathOpenHeap", "buffer_id": 73424 },
+      { "name": "ShinobuVoxelPathHeapPositions", "buffer_id": 73425 },
+      { "name": "ShinobuVoxelPathRawPath", "buffer_id": 73426 },
+      { "name": "ShinobuVoxelPathWaypoints", "buffer_id": 73427 },
+      { "name": "ShinobuVoxelPathResults", "buffer_id": 73428 },
+      { "name": "ShinobuVoxelPathTelemetryRing", "buffer_id": 73429 },
+      { "name": "ShinobuVoxelPathTuning", "buffer_id": 73430 },
+      { "name": "ShinobuVoxelPathMockSdf", "buffer_id": 73431 },
+      { "name": "ShinobuVoxelPathSdfHeader", "buffer_id": 73432 },
+      { "name": "ShinobuVoxelPathSpeciesProfiles", "buffer_id": 73433 },
+      { "name": "ShinobuVoxelPathSpeciesProfileCount", "buffer_id": 73434 },
+      { "name": "ShinobuVoxelPathCsvScratch", "buffer_id": 73435 },
+      { "name": "ShinobuVoxelPathClosedDebug", "buffer_id": 73436 }
+    ],
+    "external_read_only": [
+      { "name": "WfcOutpostGrid", "buffer_id": 19, "owner_system": "SystemID.CoreDataVault" }
+    ]
+  },
+  "line_anchors": {
+    "hot_swap_pattern_match": "PathFunnelNavmeshRuntime.cs:171",
+    "external_wfc_grid_exact_get": "PathFunnelNavmeshRuntime.cs:452-453",
+    "exact_descriptor_predicate": "PathFunnelNavmeshRuntime.cs:505-512",
+    "owned_resolve_helper": "PathFunnelNavmeshRuntime.cs:515",
+    "owned_read_helper": "PathFunnelNavmeshRuntime.cs:530",
+    "external_read_helper": "PathFunnelNavmeshRuntime.cs:545",
+    "path_funnel_release_by_buffer": "PathFunnelNavmeshRuntime.cs:605-609",
+    "path_funnel_owned_predicate": "PathFunnelNavmeshRuntime.cs:623-625",
+    "path_funnel_wfc_read": "PathFunnelNavmeshRuntime.cs:791-799",
+    "voxel_profile_lock_profiles": "PathFunnelNavmeshRuntime_VoxelAStar.cs:287-288",
+    "voxel_profile_lock_count": "PathFunnelNavmeshRuntime_VoxelAStar.cs:299-300",
+    "voxel_profile_finally_release": "PathFunnelNavmeshRuntime_VoxelAStar.cs:313-317",
+    "voxel_all_view_resolves": "PathFunnelNavmeshRuntime_VoxelAStar.cs:414-427",
+    "voxel_release_by_buffer": "PathFunnelNavmeshRuntime_VoxelAStar.cs:686-704"
+  },
+  "lock_protocol": {
+    "new_migration_to_global_data_vault": false,
+    "existing_write_locks_secured": [
+      {
+        "method": "TryLoadVoxelPathingProfiles",
+        "profiles_lock_line": 288,
+        "count_lock_line": 300,
+        "release_finally_lines": "313-317",
+        "note": "The only existing TryAcquireWriteLock pair in the patched files now validates exact BufferID before acquisition and releases both acquired locks through finally."
+      }
+    ],
+    "not_claimed": "The patch did not convert all existing owner-local mutable DataVault resolves into TryAcquireWriteLock leases. That would change runtime/job ownership semantics and needs a separate compile/profiler-backed pass."
+  },
+  "zero_gc_scan": {
+    "command": "git diff -U0 -- <target_files> | rg -n \"^\\+.*(new\\s+[A-Za-z_]|string\\.Format|\\.ToString\\(|\\.Where\\(|\\.Select\\(|\\.Any\\(|\\.FirstOrDefault\\(|\\.ToList\\(|foreach\\s*\\()\"",
+    "exit_code": 1,
+    "matches": 0,
+    "stderr": "LF will be replaced by CRLF warnings only"
+  },
+  "layout_scan": {
+    "command": "git diff -U0 -- <target_files> | rg -n \"^\\+.*(StructLayout|FieldOffset|UnsafeUtility\\.SizeOf|Marshal\\.OffsetOf|sizeof\\()\"",
+    "exit_code": 1,
+    "matches": 0,
+    "note": "No runtime DTO layout, offset, or size expression was modified."
+  },
+  "bad_pattern_scan": {
+    "command": "rg -n \"TryResolveVaultBuffer\\(in\\s+_[^,]+,\\s*(Resolve|[0-9])|TryReadVaultBuffer\\(in\\s+_[^,]+,\\s*(Resolve|[0-9])|ReleaseVaultHandle\\(vault, ref|IsVaultHandleCreated|BufferID != 0u|BufferID == 0u|as IDataVault|OwnerSystemID\" <target_files>",
+    "exit_code": 1,
+    "matches": 0
+  },
+  "diff_check": {
+    "command": "git diff --check -- <target_files>",
+    "exit_code": 0,
+    "output": "LF will be replaced by CRLF warnings only"
+  },
+  "diff_numstat": [
+    { "insertions": 83, "deletions": 39, "path": "Assets/_Project/Scripts/AI/Pathfinding/PathFunnelNavmeshRuntime.cs" },
+    { "insertions": 71, "deletions": 55, "path": "Assets/_Project/Scripts/AI/Pathfinding/PathFunnelNavmeshRuntime_VoxelAStar.cs" }
+  ],
+  "cinematic_cheat_and_scalability": {
+    "changed_simulation": false,
+    "continuous_quality_preserved": true,
+    "quality_anchor": "PathFunnelNavmeshRuntime_VoxelAStar.cs:770-773 resolves GlobalQualityWeight continuously from MathLodRuntimeConfig/HomeostasisBrain and tuning clamp.",
+    "binary_low_end_switch_added": false,
+    "physical_simulation_added": false
+  },
+  "build_guard": {
+    "cpu_load_percent_before_build": 100,
+    "active_compiler_processes": [
+      { "pid": 6896, "name": "dotnet.exe", "command": "dotnet build Hecton8.Core.csproj -nologo --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false" },
+      { "pid": 33428, "name": "csc.exe", "command": "Roslyn csc response file under MSBuildTemp" }
+    ],
+    "dotnet_build_launched_by_this_pass": false,
+    "reason": "Compilation Resource Throttling blocked build: CPU > 50 and active dotnet/csc existed."
+  },
+  "verification_limits": [
+    "No Unity import proof.",
+    "No Play Mode proof.",
+    "No profiler or GCMonitor proof.",
+    "No fresh native ledger proof.",
+    "No compile-green proof for this pass."
+  ],
+  "status": "PENDING_COMPILE_AND_RUNTIME_VERIFICATION"
+}

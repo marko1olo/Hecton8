@@ -126,8 +126,10 @@ namespace Hecton8.Power
         [FieldOffset(48)] public float MinPotential;
         [FieldOffset(52)] public float MaxPotential;
         [FieldOffset(56)] public int BrownoutCount;
+        [FieldOffset(56)] public int SolverIterationCount;
         [FieldOffset(60)] public int OverloadedCount;
         [FieldOffset(60)] public int SolverMicroseconds;
+        [FieldOffset(60)] public int SolverMaxIterations;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -253,8 +255,10 @@ namespace Hecton8.Power
                    OffsetOf<PowerTelemetryEntry>(nameof(PowerTelemetryEntry.MinPotential)) == 48 &&
                    OffsetOf<PowerTelemetryEntry>(nameof(PowerTelemetryEntry.MaxPotential)) == 52 &&
                    OffsetOf<PowerTelemetryEntry>(nameof(PowerTelemetryEntry.BrownoutCount)) == 56 &&
+                   OffsetOf<PowerTelemetryEntry>(nameof(PowerTelemetryEntry.SolverIterationCount)) == 56 &&
                    OffsetOf<PowerTelemetryEntry>(nameof(PowerTelemetryEntry.OverloadedCount)) == 60 &&
-                   OffsetOf<PowerTelemetryEntry>(nameof(PowerTelemetryEntry.SolverMicroseconds)) == 60;
+                   OffsetOf<PowerTelemetryEntry>(nameof(PowerTelemetryEntry.SolverMicroseconds)) == 60 &&
+                   OffsetOf<PowerTelemetryEntry>(nameof(PowerTelemetryEntry.SolverMaxIterations)) == 60;
         }
 
         public static bool ValidatePowerGridCounter64Layout()
@@ -585,7 +589,7 @@ namespace Hecton8.Power
             float demandRate = math.saturate(math.max(0f, math.select(0f, demandRaw, math.isfinite(demandRaw))));
             float targetPotential = (weightedPotential + generatorRate - demandRate) * math.rcp(math.max(conductanceSum + 1f, 1f));
             float currentPotential = Sanitize01(FrontPotential[index]);
-            float q = math.saturate(math.select(0f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
+            float q = math.saturate(math.select(1f, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
             float smoothingInput = math.select(1f, SmoothingFactor, math.isfinite(SmoothingFactor));
             float smoothing = math.clamp(smoothingInput * math.lerp(0.35f, 1f, q), 0.05f, 1f);
             float solvedPotential = currentPotential + (targetPotential - currentPotential) * smoothing;

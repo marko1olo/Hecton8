@@ -57,7 +57,10 @@ namespace Hecton8.UI
                 TryGetComponent(out targetText);
 
             if (targetText != null)
+            {
+                targetText.richText = false;
                 targetText.raycastTarget = false;
+            }
         }
 
         private void OnEnable()
@@ -123,6 +126,7 @@ namespace Hecton8.UI
                 ReadOnlySpan<char> sourceSpan = source.AsSpan(0, writeLength);
                 Scramble(sourceSpan, destination, _entityHash, _progress01, _scramblePhase, scrambleIntensity01);
 
+                targetText.richText = false;
                 targetText.isRightToLeftText = LocalizationManager.IsRightToLeftLanguage(LocRegistry.ActiveLanguage);
                 targetText.SetCharArray(lease.Buffer, 0, writeLength);
             }
@@ -225,7 +229,10 @@ namespace Hecton8.UI
             _scrambleIntensity01 = 0f;
 
             if (targetText != null)
+            {
+                targetText.richText = false;
                 targetText.SetCharArray(EmptyText, 0, 0);
+            }
         }
 
         private void TryRegisterHotSwapListener()

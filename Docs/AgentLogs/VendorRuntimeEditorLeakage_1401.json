@@ -1,30 +1,524 @@
 ﻿{
     "agent":  "1401",
-    "generatedAt":  "2026-05-28T04:54:37.7377534+04:00",
+    "generatedAt":  "2026-05-28T20:51:57+04:00",
     "evidenceClass":  "STATIC_SOURCE",
     "scanRoots":  [
                       "Assets/AmplifyImpostors/Plugins/Scripts",
                       "Assets/Technie/PhysicsCreator/Scripts",
                       "Assets/Candice AI for Games/Scripts",
                       "Assets/GPUInstancer/Scripts",
-                      "Assets/Plugins/DarkTonic/MasterAudio/Scripts"
+                      "Assets/Plugins/DarkTonic/MasterAudio/Scripts",
+                      "Assets/MapMagic/Tools",
+                      "Assets/MapMagic/Core"
                   ],
     "skippedEditorFolders":  true,
     "unguardedEditorSymbolCount":  0,
     "findings":  [
 
                  ],
+    "guardedRuntimeEditorSymbolCount":  410,
     "guardedRuntimeEditorSymbols":  [
                                         {
-                                            "file":  "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Singleton\\SingletonScriptable.cs",
-                                            "guardLine":  4,
-                                            "symbolLine":  5
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  12,
+                                            "token":  "UnityEditor",
+                                            "text":  "using UnityEditor;"
                                         },
                                         {
-                                            "file":  "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Singleton\\MasterAudio.cs",
-                                            "guardLine":  2,
-                                            "symbolLine":  3
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  295,
+                                            "token":  "AssetDatabase",
+                                            "text":  "Texture2D outfile = AssetDatabase.LoadAssetAtPath\u003cTexture2D\u003e( path );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  347,
+                                            "token":  "AssetDatabase",
+                                            "text":  "Texture2D outfile = AssetDatabase.LoadAssetAtPath\u003cTexture2D\u003e( path );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  359,
+                                            "token":  "EditorUtility",
+                                            "text":  "EditorUtility.SetDirty( tImporter );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  360,
+                                            "token":  "EditorUtility",
+                                            "text":  "EditorUtility.SetDirty( outfile );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  426,
+                                            "token":  "AssetDatabase",
+                                            "text":  "Shader dilateShader = AssetDatabase.LoadAssetAtPath\u003cShader\u003e( AssetDatabase.GUIDToAssetPath( DilateGUID ) );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  464,
+                                            "token":  "AssetDatabase",
+                                            "text":  "Shader packerShader = AssetDatabase.LoadAssetAtPath\u003cShader\u003e( AssetDatabase.GUIDToAssetPath( PackerGUID ) );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  538,
+                                            "token":  "EditorUtility",
+                                            "text":  "EditorUtility.ClearProgressBar();"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  552,
+                                            "token":  "AssetDatabase",
+                                            "text":  "Shader packerShader = AssetDatabase.LoadAssetAtPath\u003cShader\u003e( AssetDatabase.GUIDToAssetPath( PackerGUID ) );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  652,
+                                            "token":  "EditorUtility",
+                                            "text":  "EditorUtility.ClearProgressBar();"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  665,
+                                            "token":  "AssetDatabase",
+                                            "text":  "Shader packerShader = AssetDatabase.LoadAssetAtPath\u003cShader\u003e( AssetDatabase.GUIDToAssetPath( PackerGUID ) );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  722,
+                                            "token":  "AssetDatabase",
+                                            "text":  "AmplifyImpostorAsset existingAsset = AssetDatabase.LoadAssetAtPath\u003cAmplifyImpostorAsset\u003e( folderPath + fileName + \".asset\" );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  730,
+                                            "token":  "AssetDatabase",
+                                            "text":  "AssetDatabase.CreateAsset( m_data, folderPath + fileName + \".asset\" );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  740,
+                                            "token":  "EditorUtility",
+                                            "text":  "EditorUtility.DisplayProgressBar( \"Baking Impostor\", message, progress );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  743,
+                                            "token":  "EditorUtility",
+                                            "text":  "EditorUtility.ClearProgressBar();"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  780,
+                                            "token":  "AssetDatabase",
+                                            "text":  "AmplifyImpostorBakePreset check = AssetDatabase.LoadAssetAtPath\u003cAmplifyImpostorBakePreset\u003e( AssetDatabase.GUIDToAssetPath( PresetURP ) );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  784,
+                                            "token":  "AssetDatabase",
+                                            "text":  "check = AssetDatabase.LoadAssetAtPath\u003cAmplifyImpostorBakePreset\u003e( AssetDatabase.GUIDToAssetPath( PresetHDRP ) );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  811,
+                                            "token":  "AssetDatabase",
+                                            "text":  "folderPath = Path.GetDirectoryName( AssetDatabase.GetAssetPath( m_data ) ).Replace( \"\\\\\", \"/\" ) + \"/\";"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  834,
+                                            "token":  "AssetDatabase",
+                                            "text":  "AmplifyImpostorAsset existingAsset = AssetDatabase.LoadAssetAtPath\u003cAmplifyImpostorAsset\u003e( folderPath + fileName + \".asset\" );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  837,
+                                            "token":  "AssetDatabase",
+                                            "text":  "AssetDatabase.CreateAsset( m_data, folderPath + fileName + \".asset\" );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  858,
+                                            "token":  "AssetDatabase",
+                                            "text":  "m_data.Preset = AssetDatabase.LoadAssetAtPath\u003cAmplifyImpostorBakePreset\u003e( AssetDatabase.GUIDToAssetPath( PresetHDRP ) );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  860,
+                                            "token":  "AssetDatabase",
+                                            "text":  "m_data.Preset = AssetDatabase.LoadAssetAtPath\u003cAmplifyImpostorBakePreset\u003e( AssetDatabase.GUIDToAssetPath( PresetURP ) );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  862,
+                                            "token":  "AssetDatabase",
+                                            "text":  "m_data.Preset = AssetDatabase.LoadAssetAtPath\u003cAmplifyImpostorBakePreset\u003e( AssetDatabase.GUIDToAssetPath( Preset ) );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  916,
+                                            "token":  "EditorUtility",
+                                            "text":  "EditorUtility.ClearProgressBar();"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  922,
+                                            "token":  "AssetDatabase",
+                                            "text":  "Shader packerShader = AssetDatabase.LoadAssetAtPath\u003cShader\u003e( AssetDatabase.GUIDToAssetPath( PackerGUID ) );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1033,
+                                            "token":  "AssetDatabase",
+                                            "text":  "Shader dilateShader = AssetDatabase.LoadAssetAtPath\u003cShader\u003e( AssetDatabase.GUIDToAssetPath( DilateGUID ) );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1084,
+                                            "token":  "AssetDatabase",
+                                            "text":  "defaultShader = AssetDatabase.LoadAssetAtPath\u003cShader\u003e( AssetDatabase.GUIDToAssetPath( guid ) );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1092,
+                                            "token":  "AssetDatabase",
+                                            "text":  "AssetDatabase.AddObjectToAsset( material, m_data );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1094,
+                                            "token":  "EditorUtility",
+                                            "text":  "EditorUtility.SetDirty( material );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1100,
+                                            "token":  "EditorUtility",
+                                            "text":  "EditorUtility.SetDirty( material );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1120,
+                                            "token":  "AssetDatabase",
+                                            "text":  "m_fileNames[ i ] = AssetDatabase.GetAssetPath( tex );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1143,
+                                            "token":  "AssetDatabase",
+                                            "text":  "m_fileNames[ indexFound ] = AssetDatabase.GetAssetPath( tex );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1156,
+                                            "token":  "EditorUtility",
+                                            "text":  "resizeTextures = EditorUtility.DisplayDialog( \"Resize Textures?\", \"Do you wish to override the Texture Import settings to match the provided Impostor Texture Size?\", \"Yes\", \"No\" );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1195,
+                                            "token":  "AssetDatabase",
+                                            "text":  "AssetDatabase.AddObjectToAsset( mesh, m_data );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1197,
+                                            "token":  "EditorUtility",
+                                            "text":  "EditorUtility.SetDirty( mesh );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1202,
+                                            "token":  "EditorUtility",
+                                            "text":  "EditorUtility.CopySerialized( tempmesh, mesh );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1209,
+                                            "token":  "EditorUtility",
+                                            "text":  "EditorUtility.SetDirty( mesh );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1254,
+                                            "token":  "AssetDatabase",
+                                            "text":  "GameObject targetGO = AssetDatabase.LoadAssetAtPath( folderPath + ( Selection.activeObject as GameObject ).transform.root.gameObject.name + \".prefab\", typeof( GameObject ) ) as GameObject;"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1260,
+                                            "token":  "AssetDatabase",
+                                            "text":  "PrefabUtility.SaveAsPrefabAssetAndConnect( tempGO, AssetDatabase.GetAssetPath( targetPrefab ), InteractionMode.AutomatedAction );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1388,
+                                            "token":  "EditorUtility",
+                                            "text":  "EditorUtility.SetDirty( m_data );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1392,
+                                            "token":  "EditorUtility",
+                                            "text":  "EditorUtility.SetDirty( impostorObject );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1398,
+                                            "token":  "AssetDatabase",
+                                            "text":  "AssetDatabase.SaveAssets();"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1399,
+                                            "token":  "AssetDatabase",
+                                            "text":  "AssetDatabase.Refresh();"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1418,
+                                            "token":  "AssetDatabase",
+                                            "text":  "tex = AssetDatabase.LoadAssetAtPath\u003cTexture2D\u003e( m_fileNames[ i ] );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1437,
+                                            "token":  "AssetDatabase",
+                                            "text":  "tex = AssetDatabase.LoadAssetAtPath\u003cTexture2D\u003e( m_fileNames[ i ] );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1454,
+                                            "token":  "AssetDatabase",
+                                            "text":  "tex = AssetDatabase.LoadAssetAtPath\u003cTexture2D\u003e( filen );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1459,
+                                            "token":  "AssetDatabase",
+                                            "text":  "tex = AssetDatabase.LoadAssetAtPath\u003cTexture2D\u003e( filen );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1464,
+                                            "token":  "AssetDatabase",
+                                            "text":  "tex = AssetDatabase.LoadAssetAtPath\u003cTexture2D\u003e( filen );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostor.cs",
+                                            "line":  1508,
+                                            "token":  "EditorUtility",
+                                            "text":  "EditorUtility.SetDirty( material );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\HelperExtensions.cs",
+                                            "line":  7,
+                                            "token":  "UnityEditor",
+                                            "text":  "using UnityEditor;"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\HelperExtensions.cs",
+                                            "line":  75,
+                                            "token":  "EditorUtility",
+                                            "text":  "EditorUtility.SetDirty( to );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\HelperExtensions.cs",
+                                            "line":  200,
+                                            "token":  "UnityEditor",
+                                            "text":  "public static System.Type Type { get { return ( type == null ) ? type = System.Type.GetType( \"UnityEditor.Sprites.SpriteUtility, UnityEditor\" ) : type; } }"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\ImpostorBakingTools.cs",
+                                            "line":  9,
+                                            "token":  "UnityEditor",
+                                            "text":  "using UnityEditor;"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\ImpostorBakingTools.cs",
+                                            "line":  20,
+                                            "token":  "AssetDatabase",
+                                            "text":  "string objectPath = AssetDatabase.GetAssetPath( instance.RootTransform );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\ImpostorBakingTools.cs",
+                                            "line":  25,
+                                            "token":  "AssetDatabase",
+                                            "text":  "objectPath = AssetDatabase.GetAssetPath( PrefabUtility.GetCorrespondingObjectFromSource( instance.RootTransform ) );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\ImpostorBakingTools.cs",
+                                            "line":  39,
+                                            "token":  "AssetDatabase",
+                                            "text":  "if( Preferences.GlobalDefaultMode \u0026\u0026 AssetDatabase.IsValidFolder( Preferences.GlobalFolder.TrimStart( \u0027/\u0027 ) ) )"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\ImpostorBakingTools.cs",
+                                            "line":  41,
+                                            "token":  "AssetDatabase",
+                                            "text":  "else if( AssetDatabase.IsValidFolder( FileUtil.GetProjectRelativePath( suggestedRelativePath + Preferences.GlobalRelativeFolder ).TrimEnd( \u0027/\u0027 ) ) )"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\ImpostorBakingTools.cs",
+                                            "line":  43,
+                                            "token":  "AssetDatabase",
+                                            "text":  "else if( AssetDatabase.IsValidFolder( FileUtil.GetProjectRelativePath( suggestedRelativePath ).TrimEnd( \u0027/\u0027 ) ) )"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\ImpostorBakingTools.cs",
+                                            "line":  55,
+                                            "token":  "EditorUtility",
+                                            "text":  "string folderpath = EditorUtility.SaveFilePanelInProject( \"Save Impostor to folder\", fileName, \"asset\", \"\", FileUtil.GetProjectRelativePath( fullpath ) );"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\Preferences.cs",
+                                            "line":  6,
+                                            "token":  "UnityEditor",
+                                            "text":  "using UnityEditor;"
+                                        },
+                                        {
+                                            "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\Preferences.cs",
+                                            "line":  114,
+                                            "token":  "EditorUtility",
+                                            "text":  "string folderpath = EditorUtility.SaveFolderPanel( \"Save Impostor to folder\", FileUtil.GetProjectRelativePath( fullpath ), null );"
+                                        },
+                                        {
+                                            "file":  "Assets\\Technie\\PhysicsCreator\\Scripts\\GizmoUtils.cs",
+                                            "line":  7,
+                                            "token":  "UnityEditor",
+                                            "text":  "using UnityEditor;"
+                                        },
+                                        {
+                                            "file":  "Assets\\Technie\\PhysicsCreator\\Scripts\\GizmoUtils.cs",
+                                            "line":  44,
+                                            "token":  "UnityEditor",
+                                            "text":  "Type type = asm.GetType(\"UnityEditor.AnnotationUtility\");"
+                                        },
+                                        {
+                                            "file":  "Assets\\Technie\\PhysicsCreator\\Scripts\\Rigid\\PaintingData.cs",
+                                            "line":  226,
+                                            "token":  "UnityEditor",
+                                            "text":  "UnityEditor.EditorUtility.SetDirty(this);"
+                                        },
+                                        {
+                                            "file":  "Assets\\Technie\\PhysicsCreator\\Scripts\\Rigid\\RigidColliderCreator.cs",
+                                            "line":  4,
+                                            "token":  "UnityEditor",
+                                            "text":  "using UnityEditor;"
+                                        },
+                                        {
+                                            "file":  "Assets\\Technie\\PhysicsCreator\\Scripts\\Skinned\\SkinnedColliderEditorData.cs",
+                                            "line":  4,
+                                            "token":  "UnityEditor",
+                                            "text":  "using UnityEditor;"
+                                        },
+                                        {
+                                            "file":  "Assets\\Technie\\PhysicsCreator\\Scripts\\Skinned\\SkinnedColliderEditorData.cs",
+                                            "line":  270,
+                                            "token":  "EditorUtility",
+                                            "text":  "EditorUtility.SetDirty(this);"
+                                        },
+                                        {
+                                            "file":  "Assets\\Candice AI for Games\\Scripts\\Modules\\CandiceModuleAnimations.cs",
+                                            "line":  11,
+                                            "token":  "UnityEditor",
+                                            "text":  "using UnityEditor;"
+                                        },
+                                        {
+                                            "file":  "Assets\\Candice AI for Games\\Scripts\\Modules\\CandiceModuleAnimations.cs",
+                                            "line":  12,
+                                            "token":  "UnityEditor",
+                                            "text":  "using UnityEditor.Animations;"
+                                        },
+                                        {
+                                            "file":  "Assets\\GPUInstancer\\Scripts\\GPUInstancerDetailManager.cs",
+                                            "line":  7,
+                                            "token":  "UnityEditor",
+                                            "text":  "using UnityEditor;"
+                                        },
+                                        {
+                                            "file":  "Assets\\GPUInstancer\\Scripts\\GPUInstancerEditorSimulator.cs",
+                                            "line":  2,
+                                            "token":  "UnityEditor",
+                                            "text":  "using UnityEditor;"
+                                        },
+                                        {
+                                            "file":  "Assets\\GPUInstancer\\Scripts\\GPUInstancerEditorSimulator.cs",
+                                            "line":  29,
+                                            "token":  "EditorApplication",
+                                            "text":  "EditorApplication.update -= FindSceneViewCamera;"
+                                        },
+                                        {
+                                            "file":  "Assets\\GPUInstancer\\Scripts\\GPUInstancerEditorSimulator.cs",
+                                            "line":  30,
+                                            "token":  "EditorApplication",
+                                            "text":  "EditorApplication.update += FindSceneViewCamera;"
+                                        },
+                                        {
+                                            "file":  "Assets\\GPUInstancer\\Scripts\\GPUInstancerEditorSimulator.cs",
+                                            "line":  32,
+                                            "token":  "EditorApplication",
+                                            "text":  "EditorApplication.pauseStateChanged -= HandlePauseStateChanged;"
+                                        },
+                                        {
+                                            "file":  "Assets\\GPUInstancer\\Scripts\\GPUInstancerEditorSimulator.cs",
+                                            "line":  33,
+                                            "token":  "EditorApplication",
+                                            "text":  "EditorApplication.pauseStateChanged += HandlePauseStateChanged;"
+                                        },
+                                        {
+                                            "file":  "Assets\\GPUInstancer\\Scripts\\GPUInstancerEditorSimulator.cs",
+                                            "line":  35,
+                                            "token":  "EditorApplication",
+                                            "text":  "EditorApplication.playmodeStateChanged = HandlePlayModeStateChanged;"
+                                        },
+                                        {
+                                            "file":  "Assets\\GPUInstancer\\Scripts\\GPUInstancerEditorSimulator.cs",
+                                            "line":  42,
+                                            "token":  "EditorApplication",
+                                            "text":  "if ((Application.isPlaying \u0026\u0026 !EditorApplication.isPaused) || gpuiManager == null || !gpuiManager.isActiveAndEnabled)"
+                                        },
+                                        {
+                                            "file":  "Assets\\GPUInstancer\\Scripts\\GPUInstancerEditorSimulator.cs",
+                                            "line":  47,
+                                            "token":  "EditorApplication",
+                                            "text":  "EditorApplication.update -= FindSceneViewCamera;"
+                                        },
+                                        {
+                                            "file":  "Assets\\GPUInstancer\\Scripts\\GPUInstancerEditorSimulator.cs",
+                                            "line":  48,
+                                            "token":  "EditorApplication",
+                                            "text":  "EditorApplication.update += FindSceneViewCamera;"
+                                        },
+                                        {
+                                            "file":  "Assets\\GPUInstancer\\Scripts\\GPUInstancerEditorSimulator.cs",
+                                            "line":  49,
+                                            "token":  "EditorApplication",
+                                            "text":  "EditorApplication.update -= EditorUpdate;"
                                         }
                                     ],
-    "note":  "Tracks preprocessor UNITY_EDITOR guards for runtime-path C# files. Comments and Editor folders are excluded. AnimatorControllerParameter is not treated as UnityEditor."
+    "patchedThisPass":  [
+                            {
+                                "file":  "Assets/MapMagic/Tools/ThreadManager/ThreadManager.cs",
+                                "line":  3,
+                                "fix":  "Guarded UnityEditor import behind UNITY_EDITOR."
+                            },
+                            {
+                                "file":  "Assets/MapMagic/Tools/Extensions/ScriptableAssetsExtensions.cs",
+                                "lines":  [
+                                              98,
+                                              112,
+                                              126
+                                          ],
+                                "fix":  "Object selector reflection helpers now compile into editor-only logic with player null/-1 fallbacks."
+                            },
+                            {
+                                "file":  "Assets/MapMagic/Core/MapMagicObject.cs",
+                                "line":  141,
+                                "fix":  "Debug developer console force-open remains editor/development only."
+                            }
+                        ],
+    "note":  "Tracks preprocessor UNITY_EDITOR guards for runtime-path C# files. Comments and Editor folders are excluded. SelectionBase is UnityEngine and is not treated as UnityEditor."
 }

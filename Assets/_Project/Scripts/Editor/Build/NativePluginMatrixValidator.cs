@@ -425,13 +425,16 @@ namespace Hecton8.Editor.Build
                 arenaSource.IndexOf("Thread.Yield();", StringComparison.Ordinal) >= 0 &&
                 arenaSource.IndexOf("return vault.ReleaseWriteLock(in handle, owner);\r\n#endif", StringComparison.Ordinal) < 0 &&
                 arenaSource.IndexOf("return vault.ReleaseWriteLock(in handle, owner);\n#endif", StringComparison.Ordinal) < 0;
-            bool dataVaultDeferredWriterReleaseReturnsFalse =
-                (globalDataVaultSource.IndexOf("_ = QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID);\r\n                return false;", StringComparison.Ordinal) >= 0 ||
-                 globalDataVaultSource.IndexOf("_ = QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID);\n                return false;", StringComparison.Ordinal) >= 0) &&
-                (globalDataVaultSource.IndexOf("_ = QueueDeferredWriterRelease(bufferKey, offsetBytes, ResolveActiveLockBit((BufferID)bufferKey), 0);\r\n                return false;", StringComparison.Ordinal) >= 0 ||
-                 globalDataVaultSource.IndexOf("_ = QueueDeferredWriterRelease(bufferKey, offsetBytes, ResolveActiveLockBit((BufferID)bufferKey), 0);\n                return false;", StringComparison.Ordinal) >= 0) &&
-                globalDataVaultSource.IndexOf("return QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID);", StringComparison.Ordinal) < 0 &&
-                globalDataVaultSource.IndexOf("return QueueDeferredWriterRelease(bufferKey, offsetBytes, ResolveActiveLockBit((BufferID)bufferKey), 0);", StringComparison.Ordinal) < 0;
+            bool dataVaultDeferredWriterReleaseQueueContract =
+                globalDataVaultSource.IndexOf("return QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID);", StringComparison.Ordinal) >= 0 &&
+                globalDataVaultSource.IndexOf("return QueueDeferredWriterRelease(bufferKey, offsetBytes, ResolveActiveLockBit((BufferID)bufferKey), 0);", StringComparison.Ordinal) >= 0 &&
+                globalDataVaultSource.IndexOf("if (kind == DeferredReleaseKindWriter)", StringComparison.Ordinal) >= 0 &&
+                globalDataVaultSource.IndexOf("enqueueGateAcquired = Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate, 1, 0) == 0", StringComparison.Ordinal) >= 0 &&
+                globalDataVaultSource.IndexOf("Volatile.Write(ref _deferredReleaseEnqueueGate, 0)", StringComparison.Ordinal) >= 0 &&
+                globalDataVaultSource.IndexOf("pending->Kind == DeferredReleaseKindWriter", StringComparison.Ordinal) >= 0 &&
+                globalDataVaultSource.IndexOf("pending->Kind == kind", StringComparison.Ordinal) < 0 &&
+                globalDataVaultSource.IndexOf("while (Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate", StringComparison.Ordinal) < 0 &&
+                globalDataVaultSource.IndexOf("Thread.SpinWait", StringComparison.Ordinal) < 0;
             bool dumpRouteValid =
                 arenaSource.IndexOf("Dump_1404.bin", StringComparison.Ordinal) >= 0 &&
                 arenaSource.IndexOf("Application.persistentDataPath", StringComparison.Ordinal) >= 0 &&
@@ -482,12 +485,12 @@ namespace Hecton8.Editor.Build
                 manifest.IndexOf("android:name=\"android.app.lib_name\" android:value=\"game\"", StringComparison.Ordinal) >= 0 &&
                 manifest.IndexOf("com.unity3d.player.UnityPlayerActivity", StringComparison.Ordinal) < 0;
 
-            if (nativeBridgeValid && csharpBindingValid && csharpJniExceptionFenceValid && writerReleaseRetryCrossPlatformValid && dataVaultDeferredWriterReleaseReturnsFalse && dumpRouteValid && dumpTelemetryReadOnlyOnly && telemetryDumpChronologicalOrder && cmakeValid && gradleValid && androidIl2CppBackend && androidGameActivityManifestValid)
+            if (nativeBridgeValid && csharpBindingValid && csharpJniExceptionFenceValid && writerReleaseRetryCrossPlatformValid && dataVaultDeferredWriterReleaseQueueContract && dumpRouteValid && dumpTelemetryReadOnlyOnly && telemetryDumpChronologicalOrder && cmakeValid && gradleValid && androidIl2CppBackend && androidGameActivityManifestValid)
                 return;
 
             blockerCount++;
             blockers.Append("- Invalid Data Monolith Android source-built native bridge route.")
-                .Append(" Required: AAsset native source, exact-size read guard, directory EEXIST/S_ISDIR guard, cursor-rotated telemetry dump, read-only dump path, C# DllImport(\"__Internal\"), raw JNI exception fence, cross-platform DataVault writer-release retry, deferred DataVault writer-release false return, owner-local native Dump_1404 route under persistentDataPath, Android IL2CPP backend, Unity GameActivity manifest, Unity 6000 library Gradle template, IL2CPP source-build placeholders, standalone CMake reference, and h8bin noCompress.")
+                .Append(" Required: AAsset native source, exact-size read guard, directory EEXIST/S_ISDIR guard, cursor-rotated telemetry dump, read-only dump path, C# DllImport(\"__Internal\"), raw JNI exception fence, cross-platform DataVault writer-release retry, deferred DataVault writer-release queue acceptance with serialized writer-release de-duplication, owner-local native Dump_1404 route under persistentDataPath, Android IL2CPP backend, Unity GameActivity manifest, Unity 6000 library Gradle template, IL2CPP source-build placeholders, standalone CMake reference, and h8bin noCompress.")
                 .Append('\n');
         }
 

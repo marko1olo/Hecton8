@@ -147,7 +147,6 @@ namespace Hecton8.Rendering.Scatter
         private const uint BlackBoxFlagGpuReady = 1u << 0;
         private const uint BlackBoxFlagCameraSignal = 1u << 1;
         private const uint BlackBoxFlagStressShed = 1u << 2;
-        private const uint BlackBoxFlagHighTier = 1u << 3;
         private const uint BlackBoxFlagNonFiniteVaultMatrix = 1u << 4;
         private const uint BlackBoxFlagInvalidFrustum = 1u << 5;
         private const uint BlackBoxFlagNoActiveInstances = 1u << 6;
@@ -162,8 +161,6 @@ namespace Hecton8.Rendering.Scatter
         private const uint BlackBoxDumpReasonNonFiniteAup = 0x41555031u;
         private const uint BlackBoxDumpReasonAbiLayout = 0x41424931u;
         private const string GpuIndirectKeyword = "HECTON_GPU_INDIRECT";
-        private const string QualityMx350Keyword = "_QUALITY_MX350";
-        private const string QualityHighKeyword = "_QUALITY_HIGH";
         private const string ScatterFrameConstantsBufferName = "HectonScatterFrameConstants";
         private const int ScatterFrameConstantsStrideBytes = 176;
         private const int ScatterBlackBoxEntryStrideBytes = 64;
@@ -219,10 +216,10 @@ namespace Hecton8.Rendering.Scatter
         [Tooltip("Material that consumes Hecton indirect vegetation buffers.")]
         [SerializeField] private Material floraMaterial;
 
-        [Tooltip("Optional pre-authored MX350/low material variant with HECTON_GPU_INDIRECT and _QUALITY_MX350 enabled.")]
+        [Tooltip("Optional legacy low-memory material fallback. Quality scales through continuous shader constants, not keywords.")]
         [SerializeField] private Material lowTierFloraMaterial;
 
-        [Tooltip("Optional pre-authored high/ultra material variant with HECTON_GPU_INDIRECT and _QUALITY_HIGH enabled.")]
+        [Tooltip("Optional legacy dense-material fallback. Quality scales through continuous shader constants, not keywords.")]
         [SerializeField] private Material highTierFloraMaterial;
 
         [Tooltip("Optional camera used for exact frustum planes. CameraFrustumSignal remains the fallback signal authority.")]
@@ -371,15 +368,12 @@ namespace Hecton8.Rendering.Scatter
         private bool _hasCameraSignal;
         private bool _hasExplicitDrawBounds;
         private bool _blackBoxDumped;
-        private bool _pendingHighTier;
-        private bool _cachedHighTier;
         private bool _qualityCacheInitialized;
         private bool _visibleStateDirty;
         private bool _auxiliaryShaderLanesInitialized;
         private bool _visualPayloadDefaultsInitialized;
         private bool _abiLayoutValid;
         private bool _materialVariantCacheInitialized;
-        private bool _cachedMaterialVariantHighTier;
         private bool _cachedMaterialVariantValid;
         private float _pendingQualityWeight01 = 1f;
         private float _cachedQualityWeight01 = 1f;
@@ -1473,16 +1467,10 @@ namespace Hecton8.Rendering.Scatter
 
         private Material ResolveRenderMaterial()
         {
-            if (_cachedHighTier && highTierFloraMaterial != null)
-                return highTierFloraMaterial;
-
-            if (!_cachedHighTier && lowTierFloraMaterial != null)
-                return lowTierFloraMaterial;
-
             if (floraMaterial != null)
                 return floraMaterial;
 
-            return _cachedHighTier ? lowTierFloraMaterial : highTierFloraMaterial;
+            return highTierFloraMaterial != null ? highTierFloraMaterial : lowTierFloraMaterial;
         }
 
         private bool TryValidateRenderMaterialVariant(int activeCount)
@@ -1507,16 +1495,11 @@ namespace Hecton8.Rendering.Scatter
                 return false;
 
             int materialId = material.GetEntityId().GetHashCode();
-            bool highTier = _cachedHighTier;
             bool hasIndirectVariant = material.IsKeywordEnabled(GpuIndirectKeyword);
-            bool hasHighVariant = material.IsKeywordEnabled(QualityHighKeyword);
-            bool hasLowVariant = material.IsKeywordEnabled(QualityMx350Keyword);
-            bool hasExpectedQualityVariant = highTier ? hasHighVariant : hasLowVariant || !hasHighVariant;
-            bool valid = hasIndirectVariant && hasExpectedQualityVariant;
+            bool valid = hasIndirectVariant;
 
             _materialVariantCacheInitialized = true;
             _cachedMaterialVariantInstanceId = materialId;
-            _cachedMaterialVariantHighTier = highTier;
             _cachedMaterialVariantValid = valid;
             return valid;
         }
@@ -1698,13 +1681,11 @@ namespace Hecton8.Rendering.Scatter
         {
             float quality = ResolveGlobalQualityWeight01();
             _pendingQualityWeight01 = quality;
-            _pendingHighTier = IsHighQuality(quality);
 
             if (_qualityCacheInitialized && !forceCommit)
                 return;
 
             _cachedQualityWeight01 = quality;
-            _cachedHighTier = _pendingHighTier;
             _qualityCacheInitialized = true;
             _cullDistanceHysteresisTimer = 0f;
         }
@@ -1721,13 +1702,12 @@ namespace Hecton8.Rendering.Scatter
 
         private void UpdateCullDistance(float deltaTime)
         {
-            if (_pendingHighTier != _cachedHighTier || math.abs(_pendingQualityWeight01 - _cachedQualityWeight01) > 0.02f)
+            if (math.abs(_pendingQualityWeight01 - _cachedQualityWeight01) > 0.02f)
             {
                 _cullDistanceHysteresisTimer += SanitizeNonNegativeFinite(deltaTime);
                 if (_cullDistanceHysteresisTimer >= CullingHysteresisSeconds)
                 {
                     _cachedQualityWeight01 = _pendingQualityWeight01;
-                    _cachedHighTier = _pendingHighTier;
                     _cullDistanceHysteresisTimer = 0f;
                 }
             }
@@ -1956,7 +1936,6 @@ namespace Hecton8.Rendering.Scatter
             flags |= _gpuReady ? BlackBoxFlagGpuReady : 0u;
             flags |= _hasCameraSignal ? BlackBoxFlagCameraSignal : 0u;
             flags |= _systemStress01 > 0.8f ? BlackBoxFlagStressShed : 0u;
-            flags |= _cachedHighTier ? BlackBoxFlagHighTier : 0u;
 
             int blackBoxLength = blackBox.Length;
             int index = _blackBoxCursor % blackBoxLength;
@@ -1984,7 +1963,6 @@ namespace Hecton8.Rendering.Scatter
             flags |= _gpuReady ? BlackBoxFlagGpuReady : 0u;
             flags |= _hasCameraSignal ? BlackBoxFlagCameraSignal : 0u;
             flags |= _systemStress01 > 0.8f ? BlackBoxFlagStressShed : 0u;
-            flags |= _cachedHighTier ? BlackBoxFlagHighTier : 0u;
             flags |= _materialVariantCacheInitialized && !_cachedMaterialVariantValid ? BlackBoxFlagInvalidMaterialVariant : 0u;
             return flags;
         }
@@ -2126,11 +2104,6 @@ namespace Hecton8.Rendering.Scatter
 
             long groups = ((long)count + threadGroupSize - 1L) / threadGroupSize;
             return groups <= MaxDispatchGroupsPerDimension ? (int)groups : 0;
-        }
-
-        private static bool IsHighQuality(float qualityWeight01)
-        {
-            return math.saturate(math.isfinite(qualityWeight01) ? qualityWeight01 : 0f) >= 0.68f;
         }
 
         private static bool IsFiniteBounds(Bounds bounds)

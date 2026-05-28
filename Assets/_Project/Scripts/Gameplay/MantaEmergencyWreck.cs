@@ -112,7 +112,7 @@ namespace Hecton8.Gameplay
                     if (wreckInstance == null)
                         continue;
 
-                    if (!wreckInstance.TryGetComponent(out MantaEmergencyWreck wreck))
+                    if (!TryResolveLastSpawnedWreck(wreckInstance, out MantaEmergencyWreck wreck))
                     {
                         poolManager.Despawn(wreckInstance);
                         ReleaseResidencySlot(slotIndex);
@@ -241,6 +241,7 @@ namespace Hecton8.Gameplay
         private static int s_activeDehydratedResidencySlotCount;
         private static ResidencyRuntime s_residencyRuntime;
         private static IObjectPoolService s_cachedObjectPool;
+        private static MantaEmergencyWreck s_lastSpawnedWreck;
 
         private Rigidbody _rigidbody;
         private PickupItem _pickupItem;
@@ -271,6 +272,7 @@ namespace Hecton8.Gameplay
             s_activeDehydratedResidencySlotCount = 0;
             s_residencyRuntime = null;
             s_cachedObjectPool = null;
+            s_lastSpawnedWreck = null;
         }
 
         /// <summary>
@@ -350,6 +352,7 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void OnSpawn()
         {
+            s_lastSpawnedWreck = this;
             CachePassiveReferences();
             ResetToIdlePickupState(releaseResidencySlot: true);
         }
@@ -357,6 +360,9 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void OnDespawn()
         {
+            if (ReferenceEquals(s_lastSpawnedWreck, this))
+                s_lastSpawnedWreck = null;
+
             bool releaseResidencySlot = !_preserveResidencyOnDespawn;
             _preserveResidencyOnDespawn = false;
             ResetToIdlePickupState(releaseResidencySlot);
@@ -475,6 +481,14 @@ namespace Hecton8.Gameplay
         {
             _preserveResidencyOnDespawn = preserveResidencySlot;
             _selfDeactivateQueued = true;
+        }
+
+        private static bool TryResolveLastSpawnedWreck(GameObject instance, out MantaEmergencyWreck wreck)
+        {
+            wreck = s_lastSpawnedWreck;
+            return instance != null &&
+                   wreck != null &&
+                   ReferenceEquals(wreck.gameObject, instance);
         }
 
         public void LateFrameTick()

@@ -2995,94 +2995,94 @@ namespace Hecton8.Data
                    cursor.Length >= 1;
         }
 
-        private static bool TryAcquireTelemetryWriteViews(
-            out NativeArray<H8DataMonolithTelemetryEntry> ring,
-            out NativeArray<int> cursor)
+        private static bool TryReserveTelemetrySlot(out int index)
         {
-            ring = default;
-            cursor = default;
+            index = 0;
             IDataVault vault = _vault;
             if (vault == null ||
-                _telemetryHandle.BufferID == 0u ||
                 _telemetryCursorHandle.BufferID == 0u ||
-                !vault.TryAcquireWriteLock(in _telemetryHandle, SystemID.CoreDataVault, out ring))
+                !vault.TryAcquireWriteLock(in _telemetryCursorHandle, SystemID.CoreDataVault, out NativeArray<int> cursor))
             {
                 return false;
             }
 
-            bool cursorLocked = false;
+            bool reserved = false;
             try
             {
-                if (!vault.TryAcquireWriteLock(in _telemetryCursorHandle, SystemID.CoreDataVault, out cursor))
-                    return false;
+                if (cursor.IsCreated && cursor.Length >= 1)
+                {
+                    index = cursor[0];
+                    if ((uint)index >= H8DataLayoutConstants.TelemetryRingCapacity)
+                        index = 0;
 
-                cursorLocked = true;
-                return ring.IsCreated &&
-                       ring.Length >= H8DataLayoutConstants.TelemetryRingCapacity &&
-                       cursor.IsCreated &&
-                       cursor.Length >= 1;
+                    int next = index + 1;
+                    if (next >= H8DataLayoutConstants.TelemetryRingCapacity)
+                        next = 0;
+
+                    cursor[0] = next;
+                    reserved = true;
+                }
             }
             finally
             {
-                if (!cursorLocked || !ring.IsCreated || !cursor.IsCreated || ring.Length < H8DataLayoutConstants.TelemetryRingCapacity || cursor.Length < 1)
-                {
-                    if (cursorLocked)
-                        ReleaseWriteLockWithRetry(vault, in _telemetryCursorHandle, SystemID.CoreDataVault);
-
-                    ReleaseWriteLockWithRetry(vault, in _telemetryHandle, SystemID.CoreDataVault);
-                }
+                if (!ReleaseWriteLockWithRetry(vault, in _telemetryCursorHandle, SystemID.CoreDataVault))
+                    reserved = false;
             }
+
+            return reserved;
         }
 
-        private static bool ReleaseTelemetryWriteViews()
+        private static bool TryWriteTelemetryEntry(int index, in H8DataMonolithTelemetryEntry entry)
         {
             IDataVault vault = _vault;
-            if (vault == null || _telemetryHandle.BufferID == 0u || _telemetryCursorHandle.BufferID == 0u)
+            if (vault == null ||
+                _telemetryHandle.BufferID == 0u ||
+                (uint)index >= H8DataLayoutConstants.TelemetryRingCapacity ||
+                !vault.TryAcquireWriteLock(in _telemetryHandle, SystemID.CoreDataVault, out NativeArray<H8DataMonolithTelemetryEntry> ring))
+            {
                 return false;
+            }
 
-            bool cursorReleased = ReleaseWriteLockWithRetry(vault, in _telemetryCursorHandle, SystemID.CoreDataVault);
-            bool ringReleased = ReleaseWriteLockWithRetry(vault, in _telemetryHandle, SystemID.CoreDataVault);
-            return cursorReleased && ringReleased;
+            bool written = false;
+            try
+            {
+                if (ring.IsCreated && ring.Length >= H8DataLayoutConstants.TelemetryRingCapacity)
+                {
+                    ring[index] = entry;
+                    written = true;
+                }
+            }
+            finally
+            {
+                if (!ReleaseWriteLockWithRetry(vault, in _telemetryHandle, SystemID.CoreDataVault))
+                    written = false;
+            }
+
+            return written;
         }
 
         private static void RecordTelemetry(H8DataBlobLoadStatus status, long loadTicks, long ioTicks, uint pathFlags)
         {
             if (!EnsureTelemetry() ||
-                !TryAcquireTelemetryWriteViews(out NativeArray<H8DataMonolithTelemetryEntry> ring, out NativeArray<int> cursor))
+                !TryReserveTelemetrySlot(out int index))
             {
                 return;
             }
 
-            try
-            {
-                int index = cursor[0];
-                if ((uint)index >= H8DataLayoutConstants.TelemetryRingCapacity)
-                    index = 0;
-
-                uint stateHash = ((uint)_residentBlobBytes * H8DataHash.Fnv1A32Prime) ^
-                                 ((uint)_directory.SectionCount << 16) ^
-                                 (uint)status;
-                H8DataMonolithTelemetryEntry entry = default;
-                entry.Checksum64 = _header.Checksum64;
-                entry.LoadTicks = loadTicks;
-                entry.IoTicks = ioTicks;
-                entry.FrameIndex = (uint)Interlocked.Increment(ref _telemetryFrame);
-                entry.BlobBytes = (uint)Math.Max(0, _residentBlobBytes);
-                entry.SectionCount = _directory.SectionCount;
-                entry.LoadStatus = (uint)status;
-                entry.PathFlags = pathFlags;
-                entry.StateHash = stateHash;
-                ring[index] = entry;
-
-                index++;
-                if (index >= H8DataLayoutConstants.TelemetryRingCapacity)
-                    index = 0;
-                cursor[0] = index;
-            }
-            finally
-            {
-                ReleaseTelemetryWriteViews();
-            }
+            uint stateHash = ((uint)_residentBlobBytes * H8DataHash.Fnv1A32Prime) ^
+                             ((uint)_directory.SectionCount << 16) ^
+                             (uint)status;
+            H8DataMonolithTelemetryEntry entry = default;
+            entry.Checksum64 = _header.Checksum64;
+            entry.LoadTicks = loadTicks;
+            entry.IoTicks = ioTicks;
+            entry.FrameIndex = (uint)Interlocked.Increment(ref _telemetryFrame);
+            entry.BlobBytes = (uint)Math.Max(0, _residentBlobBytes);
+            entry.SectionCount = _directory.SectionCount;
+            entry.LoadStatus = (uint)status;
+            entry.PathFlags = pathFlags;
+            entry.StateHash = stateHash;
+            TryWriteTelemetryEntry(index, in entry);
         }
 
         private static void DumpTelemetry(H8DataBlobLoadStatus status)

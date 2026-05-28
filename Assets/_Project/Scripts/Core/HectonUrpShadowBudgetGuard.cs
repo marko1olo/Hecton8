@@ -10,25 +10,48 @@ namespace Hecton8.Core
     /// </summary>
     public static class HectonUrpShadowBudgetGuard
     {
-        private const float MaxShadowDistanceMeters = 40f;
-        private const float DynamicShadowCullDistanceMeters = 20f;
+        private const float SurvivalShadowDistanceMeters = 24f;
+        private const float VisualOverkillShadowDistanceMeters = 40f;
+        private const float SurvivalDynamicShadowCullDistanceMeters = 12f;
+        private const float VisualOverkillDynamicShadowCullDistanceMeters = 28f;
         private const int MaxTrackedDynamicShadowLights = 16;
-        private const int LowTierShadowAtlasResolution = 1024;
-        private const int HighTierShadowAtlasResolution = 2048;
-        private const float CascadeNearSplitNormalized = 8f / MaxShadowDistanceMeters;
-        private static readonly Vector2 CascadeMediumSplitsNormalized = new Vector2(8f / MaxShadowDistanceMeters, 25f / MaxShadowDistanceMeters);
+        private const int SurvivalShadowAtlasResolution = 1024;
+        private const int VisualOverkillShadowAtlasResolution = 2048;
+        private const int SurvivalDynamicShadowCasterBudget = 1;
+        private const int VisualOverkillDynamicShadowCasterBudget = 3;
+        private const int ShadowQualityQuantizationMilli = 25;
+        private const float CascadeNearSplitMeters = 8f;
+        private const float CascadeMediumSplitMeters = 25f;
         // COLD ALLOC: Light[16] — registered dynamic shadow-light slots for runtime budget enforcement — owner: HectonUrpShadowBudgetGuard
         private static readonly Light[] _trackedDynamicShadowLights = new Light[MaxTrackedDynamicShadowLights];
         // COLD ALLOC: Transform[16] - cached dynamic shadow-light transforms for render hot-path distance checks - owner: HectonUrpShadowBudgetGuard
         private static readonly Transform[] _trackedDynamicShadowTransforms = new Transform[MaxTrackedDynamicShadowLights];
         // COLD ALLOC: LightShadows[16] — original shadow modes for registered dynamic shadow-light slots — owner: HectonUrpShadowBudgetGuard
         private static readonly LightShadows[] _trackedDynamicShadowModes = new LightShadows[MaxTrackedDynamicShadowLights];
-        // COLD ALLOC: bool[16] - cached eligibility for the single allowed forward spotlight shadow caster - owner: HectonUrpShadowBudgetGuard
+        // COLD ALLOC: bool[16] - cached eligibility for continuous-quality dynamic shadow casters - owner: HectonUrpShadowBudgetGuard
         private static readonly bool[] _trackedDynamicShadowEligibility = new bool[MaxTrackedDynamicShadowLights];
 
         private static UniversalRenderPipelineAsset _lastResolvedAsset;
-        private static int _lastQualityLevel = -1;
+        private static int _lastQualityWeightMilli = -1;
         private static int _lastDynamicShadowBudgetFrame = -1;
+        private static float _shadowDistanceMeters = SurvivalShadowDistanceMeters;
+        private static float _dynamicShadowCullDistanceMeters = SurvivalDynamicShadowCullDistanceMeters;
+        private static int _dynamicShadowCasterBudget = SurvivalDynamicShadowCasterBudget;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+            RenderPipelineManager.beginCameraRendering -= HandleBeginCameraRendering;
+            _lastResolvedAsset = null;
+            _lastQualityWeightMilli = -1;
+            _lastDynamicShadowBudgetFrame = -1;
+            _shadowDistanceMeters = SurvivalShadowDistanceMeters;
+            _dynamicShadowCullDistanceMeters = SurvivalDynamicShadowCullDistanceMeters;
+            _dynamicShadowCasterBudget = SurvivalDynamicShadowCasterBudget;
+            for (int i = 0; i < MaxTrackedDynamicShadowLights; i++)
+                ClearTrackedDynamicShadowLightSlot(i);
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
@@ -126,13 +149,21 @@ namespace Hecton8.Core
             if (urpAsset == null)
                 return false;
 
-            int qualityLevel = QualitySettings.GetQualityLevel();
-            if (urpAsset == _lastResolvedAsset && qualityLevel == _lastQualityLevel)
+            float shadowQuality01 = ResolveShadowQuality01();
+            int qualityWeightMilli = ResolveQuantizedQualityMilli(shadowQuality01);
+            shadowQuality01 = qualityWeightMilli * 0.001f;
+            if (urpAsset == _lastResolvedAsset &&
+                qualityWeightMilli == _lastQualityWeightMilli)
+            {
                 return false;
+            }
 
-            bool lowTier = qualityLevel <= 1;
-            int atlasResolution = lowTier ? LowTierShadowAtlasResolution : HighTierShadowAtlasResolution;
-            int cascadeCount = lowTier ? 2 : 3;
+            int atlasResolution = ResolveShadowAtlasResolution(shadowQuality01);
+            int cascadeCount = ResolveCascadeCount(shadowQuality01);
+            float shadowDistance = ResolveShadowDistance(shadowQuality01);
+            _shadowDistanceMeters = shadowDistance;
+            _dynamicShadowCullDistanceMeters = ResolveDynamicShadowCullDistance(shadowQuality01);
+            _dynamicShadowCasterBudget = ResolveDynamicShadowCasterBudget(shadowQuality01);
 
             if (urpAsset.mainLightShadowmapResolution != atlasResolution)
                 urpAsset.mainLightShadowmapResolution = atlasResolution;
@@ -140,20 +171,22 @@ namespace Hecton8.Core
             if (urpAsset.additionalLightsShadowmapResolution != atlasResolution)
                 urpAsset.additionalLightsShadowmapResolution = atlasResolution;
 
-            if (urpAsset.shadowDistance != MaxShadowDistanceMeters)
-                urpAsset.shadowDistance = MaxShadowDistanceMeters;
+            if (!Mathf.Approximately(urpAsset.shadowDistance, shadowDistance))
+                urpAsset.shadowDistance = shadowDistance;
 
             if (urpAsset.shadowCascadeCount != cascadeCount)
                 urpAsset.shadowCascadeCount = cascadeCount;
 
-            if (!Mathf.Approximately(urpAsset.cascade2Split, CascadeNearSplitNormalized))
-                urpAsset.cascade2Split = CascadeNearSplitNormalized;
+            float cascade2Split = ResolveCascadeNearSplit(shadowDistance);
+            if (!Mathf.Approximately(urpAsset.cascade2Split, cascade2Split))
+                urpAsset.cascade2Split = cascade2Split;
 
-            if (urpAsset.cascade3Split != CascadeMediumSplitsNormalized)
-                urpAsset.cascade3Split = CascadeMediumSplitsNormalized;
+            Vector2 cascade3Split = ResolveCascadeMediumSplits(shadowDistance);
+            if (urpAsset.cascade3Split != cascade3Split)
+                urpAsset.cascade3Split = cascade3Split;
 
             _lastResolvedAsset = urpAsset;
-            _lastQualityLevel = qualityLevel;
+            _lastQualityWeightMilli = qualityWeightMilli;
             if (HasLoadedRuntimeScene())
             {
                 EnforceSceneShadowDictatorshipCold();
@@ -166,8 +199,16 @@ namespace Hecton8.Core
         private static void ApplyDynamicShadowCasterBudget(Vector3 viewerPosition)
         {
             int nearestIndexA = -1;
+            int nearestIndexB = -1;
+            int nearestIndexC = -1;
             float nearestDistanceSqA = float.MaxValue;
-            float maxDistanceSq = DynamicShadowCullDistanceMeters * DynamicShadowCullDistanceMeters;
+            float nearestDistanceSqB = float.MaxValue;
+            float nearestDistanceSqC = float.MaxValue;
+            int shadowCasterBudget = Mathf.Clamp(
+                _dynamicShadowCasterBudget,
+                SurvivalDynamicShadowCasterBudget,
+                VisualOverkillDynamicShadowCasterBudget);
+            float maxDistanceSq = _dynamicShadowCullDistanceMeters * _dynamicShadowCullDistanceMeters;
 
             for (int i = 0; i < _trackedDynamicShadowLights.Length; i++)
             {
@@ -193,8 +234,28 @@ namespace Hecton8.Core
 
                 if (distanceSq < nearestDistanceSqA)
                 {
+                    nearestDistanceSqC = nearestDistanceSqB;
+                    nearestIndexC = nearestIndexB;
+                    nearestDistanceSqB = nearestDistanceSqA;
+                    nearestIndexB = nearestIndexA;
                     nearestDistanceSqA = distanceSq;
                     nearestIndexA = i;
+                    continue;
+                }
+
+                if (shadowCasterBudget > 1 && distanceSq < nearestDistanceSqB)
+                {
+                    nearestDistanceSqC = nearestDistanceSqB;
+                    nearestIndexC = nearestIndexB;
+                    nearestDistanceSqB = distanceSq;
+                    nearestIndexB = i;
+                    continue;
+                }
+
+                if (shadowCasterBudget > 2 && distanceSq < nearestDistanceSqC)
+                {
+                    nearestDistanceSqC = distanceSq;
+                    nearestIndexC = i;
                 }
             }
 
@@ -207,7 +268,11 @@ namespace Hecton8.Core
                     continue;
                 }
 
-                bool shouldCastShadow = i == nearestIndexA && _trackedDynamicShadowEligibility[i];
+                bool shouldCastShadow =
+                    _trackedDynamicShadowEligibility[i] &&
+                    (i == nearestIndexA ||
+                     (shadowCasterBudget > 1 && i == nearestIndexB) ||
+                     (shadowCasterBudget > 2 && i == nearestIndexC));
                 LightShadows targetShadowMode = shouldCastShadow ? ResolveAllowedShadowMode(_trackedDynamicShadowModes[i]) : LightShadows.None;
                 if (light.shadows != targetShadowMode)
                     light.shadows = targetShadowMode;
@@ -315,6 +380,90 @@ namespace Hecton8.Core
         private static LightShadows ResolveAllowedShadowMode(LightShadows shadowMode)
         {
             return shadowMode == LightShadows.None ? LightShadows.Soft : shadowMode;
+        }
+
+        private static float ResolveShadowQuality01()
+        {
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            if (float.IsNaN(qualityWeight) || float.IsInfinity(qualityWeight))
+                qualityWeight = 1f;
+
+            float platformWeight = PlatformAdaptiveBudgetGovernor.RecommendedQualityWeight;
+            if (!float.IsNaN(platformWeight) && !float.IsInfinity(platformWeight))
+                qualityWeight = Mathf.Min(qualityWeight, platformWeight);
+
+            return Mathf.Clamp01(qualityWeight);
+        }
+
+        private static int ResolveShadowAtlasResolution(float shadowQuality01)
+        {
+            float scaledResolution = Mathf.Lerp(
+                SurvivalShadowAtlasResolution,
+                VisualOverkillShadowAtlasResolution,
+                Mathf.Clamp01(shadowQuality01));
+            return scaledResolution < 1536f
+                ? SurvivalShadowAtlasResolution
+                : VisualOverkillShadowAtlasResolution;
+        }
+
+        private static int ResolveQuantizedQualityMilli(float shadowQuality01)
+        {
+            int qualityMilli = Mathf.Clamp(Mathf.RoundToInt(Mathf.Clamp01(shadowQuality01) * 1000f), 0, 1000);
+            int quantized = (qualityMilli / ShadowQualityQuantizationMilli) * ShadowQualityQuantizationMilli;
+            if (qualityMilli > quantized)
+                quantized += ShadowQualityQuantizationMilli;
+            return Mathf.Clamp(quantized, 0, 1000);
+        }
+
+        private static int ResolveCascadeCount(float shadowQuality01)
+        {
+            return Mathf.Clamp(
+                Mathf.RoundToInt(Mathf.Lerp(2f, 3f, Mathf.Clamp01(shadowQuality01))),
+                2,
+                3);
+        }
+
+        private static float ResolveShadowDistance(float shadowQuality01)
+        {
+            return Mathf.Lerp(
+                SurvivalShadowDistanceMeters,
+                VisualOverkillShadowDistanceMeters,
+                Mathf.Clamp01(shadowQuality01));
+        }
+
+        private static float ResolveDynamicShadowCullDistance(float shadowQuality01)
+        {
+            return Mathf.Lerp(
+                SurvivalDynamicShadowCullDistanceMeters,
+                VisualOverkillDynamicShadowCullDistanceMeters,
+                Mathf.Clamp01(shadowQuality01));
+        }
+
+        private static int ResolveDynamicShadowCasterBudget(float shadowQuality01)
+        {
+            return Mathf.Clamp(
+                Mathf.RoundToInt(Mathf.Lerp(
+                    SurvivalDynamicShadowCasterBudget,
+                    VisualOverkillDynamicShadowCasterBudget,
+                    Mathf.Clamp01(shadowQuality01))),
+                SurvivalDynamicShadowCasterBudget,
+                VisualOverkillDynamicShadowCasterBudget);
+        }
+
+        private static float ResolveCascadeNearSplit(float shadowDistance)
+        {
+            float safeDistance = Mathf.Max(1f, shadowDistance);
+            return Mathf.Clamp(CascadeNearSplitMeters / safeDistance, 0.05f, 0.45f);
+        }
+
+        private static Vector2 ResolveCascadeMediumSplits(float shadowDistance)
+        {
+            float nearSplit = ResolveCascadeNearSplit(shadowDistance);
+            float mediumSplit = Mathf.Clamp(
+                CascadeMediumSplitMeters / Mathf.Max(1f, shadowDistance),
+                nearSplit + 0.05f,
+                0.95f);
+            return new Vector2(nearSplit, mediumSplit);
         }
 
         private static UniversalRenderPipelineAsset ResolveActiveUrpAsset()

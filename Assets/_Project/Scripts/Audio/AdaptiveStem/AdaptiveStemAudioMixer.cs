@@ -426,7 +426,8 @@ namespace Hecton8.Audio
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            RebindDataVaultCold(currentService as IDataVault);
+            IDataVault nextVault = currentService is IDataVault vault ? vault : null;
+            RebindDataVaultCold(nextVault);
 
             EnsureVaultStorage();
             TryRefreshScalabilityStateHandleCold();
@@ -685,17 +686,17 @@ namespace Hecton8.Audio
         private void DisposeVaultStorage()
         {
             IDataVault vault = _dataVault;
-            ReleaseVaultBuffer(vault, ref _stemStateHandle);
-            ReleaseVaultBuffer(vault, ref _stemCommandsHandle);
-            ReleaseVaultBuffer(vault, ref _mixFrameHandle);
-            ReleaseVaultBuffer(vault, ref _rulesHandle);
-            ReleaseVaultBuffer(vault, ref _mockPredatorHandle);
-            ReleaseVaultBuffer(vault, ref _mockDepthHandle);
-            ReleaseVaultBuffer(vault, ref _mockTensionHandle);
-            ReleaseVaultBuffer(vault, ref _telemetryRingHandle);
-            ReleaseVaultBuffer(vault, ref _telemetryCursorHandle);
+            ReleaseVaultBuffer(vault, ref _stemStateHandle, BufferID.AudioStemState);
+            ReleaseVaultBuffer(vault, ref _stemCommandsHandle, BufferID.AudioStemCommands);
+            ReleaseVaultBuffer(vault, ref _mixFrameHandle, BufferID.AudioStemMixFrame);
+            ReleaseVaultBuffer(vault, ref _rulesHandle, BufferID.AudioStemRules);
+            ReleaseVaultBuffer(vault, ref _mockPredatorHandle, BufferID.AudioStemMockPredator);
+            ReleaseVaultBuffer(vault, ref _mockDepthHandle, BufferID.AudioStemMockDepth);
+            ReleaseVaultBuffer(vault, ref _mockTensionHandle, BufferID.AudioStemMockTension);
+            ReleaseVaultBuffer(vault, ref _telemetryRingHandle, BufferID.AudioStemTelemetry);
+            ReleaseVaultBuffer(vault, ref _telemetryCursorHandle, BufferID.AudioStemTelemetryCursor);
 #if UNITY_EDITOR
-            ReleaseVaultBuffer(vault, ref _csvScratchHandle);
+            ReleaseVaultBuffer(vault, ref _csvScratchHandle, BufferID.AudioStemCsvScratch);
 #endif
             _scalabilityStateHandle = default;
 #if UNITY_EDITOR
@@ -706,19 +707,49 @@ namespace Hecton8.Audio
             Volatile.Write(ref _nativeAllocated, 0);
         }
 
-        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId)
             where T : struct
         {
-            if (vault != null && handle.BufferID != 0u)
+            if (vault != null && IsAdaptiveStemVaultHandle(in handle, expectedBufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
         }
 
+        private static bool IsAdaptiveStemVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId)
+            where T : struct
+        {
+            return handle.BufferID == (uint)expectedBufferId &&
+                   handle.SystemID == (uint)VaultOwner &&
+                   handle.Generation != 0u;
+        }
+
+        private bool AreAdaptiveStemVaultHandlesExact()
+        {
+            return IsAdaptiveStemVaultHandle(in _stemStateHandle, BufferID.AudioStemState) &&
+                   IsAdaptiveStemVaultHandle(in _stemCommandsHandle, BufferID.AudioStemCommands) &&
+                   IsAdaptiveStemVaultHandle(in _mixFrameHandle, BufferID.AudioStemMixFrame) &&
+                   IsAdaptiveStemVaultHandle(in _rulesHandle, BufferID.AudioStemRules) &&
+                   IsAdaptiveStemVaultHandle(in _mockPredatorHandle, BufferID.AudioStemMockPredator) &&
+                   IsAdaptiveStemVaultHandle(in _mockDepthHandle, BufferID.AudioStemMockDepth) &&
+                   IsAdaptiveStemVaultHandle(in _mockTensionHandle, BufferID.AudioStemMockTension) &&
+                   IsAdaptiveStemVaultHandle(in _telemetryRingHandle, BufferID.AudioStemTelemetry) &&
+                   IsAdaptiveStemVaultHandle(in _telemetryCursorHandle, BufferID.AudioStemTelemetryCursor)
+#if UNITY_EDITOR
+                   && IsAdaptiveStemVaultHandle(in _csvScratchHandle, BufferID.AudioStemCsvScratch)
+#endif
+                   ;
+        }
+
         private bool AreStemVaultBuffersCreated()
         {
             IDataVault vault = _dataVault;
-            if (vault == null)
+            if (vault == null || !AreAdaptiveStemVaultHandlesExact())
                 return false;
 
             if (!vault.TryReadOnlyHandle(in _stemStateHandle, out NativeArray<AudioStemStateDTO>.ReadOnly stemState) ||
@@ -769,7 +800,7 @@ namespace Hecton8.Audio
         {
             views = default;
             IDataVault vault = _dataVault;
-            if (vault == null)
+            if (vault == null || !AreAdaptiveStemVaultHandlesExact())
                 return false;
 
             bool stateLocked = false;

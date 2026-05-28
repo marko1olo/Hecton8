@@ -2138,16 +2138,25 @@ namespace Hecton8.Visor
                     return false;
                 }
 
-                if (vault.IsCompactionFenceActive ||
-                    !buffer.IsCreated ||
-                    buffer.Length < minLength)
+                bool releaseOnExit = true;
+                try
                 {
-                    vault.ReleaseWriteLock(in handle, OwnerSystemId);
-                    buffer = default;
-                    return false;
-                }
+                    if (vault.IsCompactionFenceActive ||
+                        !buffer.IsCreated ||
+                        buffer.Length < minLength)
+                    {
+                        buffer = default;
+                        return false;
+                    }
 
-                return true;
+                    releaseOnExit = false;
+                    return true;
+                }
+                finally
+                {
+                    if (releaseOnExit)
+                        vault.ReleaseWriteLock(in handle, OwnerSystemId);
+                }
             }
 
             private void ReleaseVaultHandles()

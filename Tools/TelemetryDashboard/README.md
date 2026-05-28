@@ -57,7 +57,7 @@ CSV rows and dump entry arrays returned by `/api/summary` are capped to the late
 - Macro-swarm migration: magic `HECOSWM`, entry count, entry size, oldest index, capacity, then 32-byte macro-swarm entries.
 - Fauna mutation: magic `HECOGUM`, entry count, entry size, oldest index, capacity, then 48-byte mutation entries.
 - Headless QA blackbox: magic `0x48385142`, entry count, entry size, cursor, then 64-byte entries.
-- Crash live telemetry: magic `TELM`, version, frame, active chunk count, GC bytes, CPU frame ms, delta time, reserved memory MB.
+- Crash live telemetry: magic `TELM`; v2 uses a 64-byte record with record size, frame, active chunk count, GC bytes, CPU frame ms, delta time, reserved memory MB, latency ms, GPU frame ms, system mask, error flags, velocity pack, AUP shift sequence, and last origin-shift frame. Legacy v1 32-byte records remain readable with a warning.
 
 Memory-map selection prefers source H8Memory allocation tables over fully estimated defrag summaries when both exist. Defrag-only maps remain labeled as estimated.
 

@@ -192,7 +192,7 @@ namespace Hecton8.AI.Ecosystem
 
             CompleteFrameJobForTeardown();
             UnlockJobBuffers();
-            RebindDataVaultForLifecycle(currentService as IDataVault);
+            RebindDataVaultForLifecycle(currentService is IDataVault currentVault ? currentVault : null);
 
             if (_dataVault == null || !EnsureVaultState())
             {
@@ -364,9 +364,21 @@ namespace Hecton8.AI.Ecosystem
             TryFinalizeFrameJobNoWait();
         }
 
-        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsOwnedVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
         {
-            return handle.BufferID != 0u;
+            return handle.BufferID == (uint)expectedBufferId &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)SystemID.AIEcology;
+        }
+
+        private static bool IsVaultHandleForBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == (uint)expectedBufferId &&
+                   handle.Generation != 0u;
         }
 
         private static VaultGenerationHandle<T> ClaimGenerationHandle<T>(
@@ -380,35 +392,52 @@ namespace Hecton8.AI.Ecosystem
 
             if (vault.IsAllocationLocked)
             {
-                return vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> existing)
-                    ? existing
-                    : default;
+                if (!vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> existing))
+                    return default;
+
+                return IsOwnedVaultHandle(in existing, bufferId) ? existing : default;
             }
 
-            return vault.EnsureGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.AIEcology,
                 options);
+            return IsOwnedVaultHandle(in handle, bufferId) ? handle : default;
         }
 
         private static VaultGenerationHandle<T> BorrowGenerationHandle<T>(
             IDataVault vault,
             BufferID bufferId) where T : struct
         {
-            return vault != null && vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle)
-                ? handle
-                : default;
+            if (vault == null || !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle))
+                return default;
+
+            return IsVaultHandleForBuffer(in handle, bufferId) ? handle : default;
+        }
+
+        private static bool TryResolveOwnedVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   IsOwnedVaultHandle(in handle, expectedBufferId) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
         }
 
         private static bool TryResolveVaultBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
             return vault != null &&
-                   handle.BufferID != 0u &&
+                   IsVaultHandleForBuffer(in handle, expectedBufferId) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated;
         }
@@ -534,26 +563,26 @@ namespace Hecton8.AI.Ecosystem
 
             _ambientEntityHandle = BorrowGenerationHandle<AmbientEntityDTO>(vault, BufferID.ShinobuAmbientEntities);
             _ownsAmbientEntityHandle = false;
-            if (!IsHandleCreated(in _ambientEntityHandle))
+            if (!IsVaultHandleForBuffer(in _ambientEntityHandle, BufferID.ShinobuAmbientEntities))
             {
                 _ambientEntityHandle = ClaimGenerationHandle<AmbientEntityDTO>(
                     vault,
                     BufferID.ShinobuAmbientEntities,
                     _ambientFishCapacity,
                     NativeArrayOptions.ClearMemory);
-                _ownsAmbientEntityHandle = IsHandleCreated(in _ambientEntityHandle);
+                _ownsAmbientEntityHandle = IsOwnedVaultHandle(in _ambientEntityHandle, BufferID.ShinobuAmbientEntities);
             }
 
             _ambientAupHandle = BorrowGenerationHandle<AmbientEntityAupDTO>(vault, BufferID.ShinobuAmbientAups);
             _ownsAmbientAupHandle = false;
-            if (!IsHandleCreated(in _ambientAupHandle))
+            if (!IsVaultHandleForBuffer(in _ambientAupHandle, BufferID.ShinobuAmbientAups))
             {
                 _ambientAupHandle = ClaimGenerationHandle<AmbientEntityAupDTO>(
                     vault,
                     BufferID.ShinobuAmbientAups,
                     _ambientFishCapacity,
                     NativeArrayOptions.ClearMemory);
-                _ownsAmbientAupHandle = IsHandleCreated(in _ambientAupHandle);
+                _ownsAmbientAupHandle = IsOwnedVaultHandle(in _ambientAupHandle, BufferID.ShinobuAmbientAups);
             }
 
             _anomalyFieldHandle = BorrowGenerationHandle<SymbiosisAnomalyFieldMirror>(vault, BufferID.ShinobuSeedShipAnomalyField);
@@ -578,25 +607,25 @@ namespace Hecton8.AI.Ecosystem
 
         private bool AreVaultHandlesReady()
         {
-            return IsHandleCreated(in _floraHandle) &&
-                   IsHandleCreated(in _floraAupHandle) &&
-                   IsHandleCreated(in _linkHandle) &&
-                   IsHandleCreated(in _exchangeHandle) &&
-                   IsHandleCreated(in _telemetryHandle) &&
-                   IsHandleCreated(in _counterHandle) &&
-                   IsHandleCreated(in _scannerVfxHandle) &&
-                   IsHandleCreated(in _oxygenEmitterHandle) &&
-                   IsHandleCreated(in _adherenceHandle) &&
-                   IsHandleCreated(in _seedHandle) &&
-                   IsHandleCreated(in _acousticTapHandle) &&
-                   IsHandleCreated(in _tuningHandle) &&
-                   IsHandleCreated(in _floraBucketHeadHandle) &&
-                   IsHandleCreated(in _floraBucketNextHandle) &&
-                   IsHandleCreated(in _mockBoidHandle) &&
-                   IsHandleCreated(in _legacyScratchHandle) &&
-                   IsHandleCreated(in _mockFishHandle) &&
-                   IsHandleCreated(in _ambientEntityHandle) &&
-                   IsHandleCreated(in _ambientAupHandle);
+            return IsOwnedVaultHandle(in _floraHandle, BufferID.ShinobuSymbiosisFlora) &&
+                   IsOwnedVaultHandle(in _floraAupHandle, BufferID.ShinobuSymbiosisFloraAups) &&
+                   IsOwnedVaultHandle(in _linkHandle, BufferID.ShinobuSymbiosisLinks) &&
+                   IsOwnedVaultHandle(in _exchangeHandle, BufferID.ShinobuSymbiosisExchanges) &&
+                   IsOwnedVaultHandle(in _telemetryHandle, BufferID.ShinobuSymbiosisTelemetryRing) &&
+                   IsOwnedVaultHandle(in _counterHandle, BufferID.ShinobuSymbiosisCounters) &&
+                   IsOwnedVaultHandle(in _scannerVfxHandle, BufferID.ShinobuSymbiosisScannerVfx) &&
+                   IsOwnedVaultHandle(in _oxygenEmitterHandle, BufferID.ShinobuSymbiosisOxygenEmitters) &&
+                   IsOwnedVaultHandle(in _adherenceHandle, BufferID.ShinobuSymbiosisAdherence) &&
+                   IsOwnedVaultHandle(in _seedHandle, BufferID.ShinobuSymbiosisSeeds) &&
+                   IsOwnedVaultHandle(in _acousticTapHandle, BufferID.ShinobuSymbiosisAcousticTaps) &&
+                   IsOwnedVaultHandle(in _tuningHandle, BufferID.ShinobuSymbiosisTuning) &&
+                   IsOwnedVaultHandle(in _floraBucketHeadHandle, BufferID.ShinobuSymbiosisFloraHashBucketHeads) &&
+                   IsOwnedVaultHandle(in _floraBucketNextHandle, BufferID.ShinobuSymbiosisFloraHashNext) &&
+                   IsOwnedVaultHandle(in _mockBoidHandle, BufferID.ShinobuSymbiosisMockBoids) &&
+                   IsOwnedVaultHandle(in _legacyScratchHandle, BufferID.ShinobuSymbiosisLegacyScratch) &&
+                   IsOwnedVaultHandle(in _mockFishHandle, BufferID.ShinobuSymbiosisMockFish) &&
+                   IsVaultHandleForBuffer(in _ambientEntityHandle, BufferID.ShinobuAmbientEntities) &&
+                   IsVaultHandleForBuffer(in _ambientAupHandle, BufferID.ShinobuAmbientAups);
         }
 
         private bool TryBindJobBuffers(
@@ -642,26 +671,26 @@ namespace Hecton8.AI.Ecosystem
             anomalyField = default;
 
             bool ready =
-                TryResolveVaultBuffer(vault, in _floraHandle, out flora) &&
-                TryResolveVaultBuffer(vault, in _floraAupHandle, out floraAups) &&
-                TryResolveVaultBuffer(vault, in _linkHandle, out links) &&
-                TryResolveVaultBuffer(vault, in _exchangeHandle, out exchanges) &&
-                TryResolveVaultBuffer(vault, in _telemetryHandle, out telemetry) &&
-                TryResolveVaultBuffer(vault, in _counterHandle, out counters) &&
-                TryResolveVaultBuffer(vault, in _scannerVfxHandle, out scannerVfx) &&
-                TryResolveVaultBuffer(vault, in _oxygenEmitterHandle, out oxygenEmitters) &&
-                TryResolveVaultBuffer(vault, in _adherenceHandle, out adherence) &&
-                TryResolveVaultBuffer(vault, in _seedHandle, out seeds) &&
-                TryResolveVaultBuffer(vault, in _acousticTapHandle, out acousticTaps) &&
-                TryResolveVaultBuffer(vault, in _tuningHandle, out tuning) &&
-                TryResolveVaultBuffer(vault, in _floraBucketHeadHandle, out floraBucketHeads) &&
-                TryResolveVaultBuffer(vault, in _floraBucketNextHandle, out floraBucketNext) &&
-                TryResolveVaultBuffer(vault, in _mockBoidHandle, out mockBoids) &&
-                TryResolveVaultBuffer(vault, in _mockFishHandle, out mockFish) &&
-                TryResolveVaultBuffer(vault, in _ambientEntityHandle, out ambientEntities) &&
-                TryResolveVaultBuffer(vault, in _ambientAupHandle, out ambientAups);
+                TryResolveOwnedVaultBuffer(vault, in _floraHandle, BufferID.ShinobuSymbiosisFlora, out flora) &&
+                TryResolveOwnedVaultBuffer(vault, in _floraAupHandle, BufferID.ShinobuSymbiosisFloraAups, out floraAups) &&
+                TryResolveOwnedVaultBuffer(vault, in _linkHandle, BufferID.ShinobuSymbiosisLinks, out links) &&
+                TryResolveOwnedVaultBuffer(vault, in _exchangeHandle, BufferID.ShinobuSymbiosisExchanges, out exchanges) &&
+                TryResolveOwnedVaultBuffer(vault, in _telemetryHandle, BufferID.ShinobuSymbiosisTelemetryRing, out telemetry) &&
+                TryResolveOwnedVaultBuffer(vault, in _counterHandle, BufferID.ShinobuSymbiosisCounters, out counters) &&
+                TryResolveOwnedVaultBuffer(vault, in _scannerVfxHandle, BufferID.ShinobuSymbiosisScannerVfx, out scannerVfx) &&
+                TryResolveOwnedVaultBuffer(vault, in _oxygenEmitterHandle, BufferID.ShinobuSymbiosisOxygenEmitters, out oxygenEmitters) &&
+                TryResolveOwnedVaultBuffer(vault, in _adherenceHandle, BufferID.ShinobuSymbiosisAdherence, out adherence) &&
+                TryResolveOwnedVaultBuffer(vault, in _seedHandle, BufferID.ShinobuSymbiosisSeeds, out seeds) &&
+                TryResolveOwnedVaultBuffer(vault, in _acousticTapHandle, BufferID.ShinobuSymbiosisAcousticTaps, out acousticTaps) &&
+                TryResolveOwnedVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSymbiosisTuning, out tuning) &&
+                TryResolveOwnedVaultBuffer(vault, in _floraBucketHeadHandle, BufferID.ShinobuSymbiosisFloraHashBucketHeads, out floraBucketHeads) &&
+                TryResolveOwnedVaultBuffer(vault, in _floraBucketNextHandle, BufferID.ShinobuSymbiosisFloraHashNext, out floraBucketNext) &&
+                TryResolveOwnedVaultBuffer(vault, in _mockBoidHandle, BufferID.ShinobuSymbiosisMockBoids, out mockBoids) &&
+                TryResolveOwnedVaultBuffer(vault, in _mockFishHandle, BufferID.ShinobuSymbiosisMockFish, out mockFish) &&
+                TryResolveVaultBuffer(vault, in _ambientEntityHandle, BufferID.ShinobuAmbientEntities, out ambientEntities) &&
+                TryResolveVaultBuffer(vault, in _ambientAupHandle, BufferID.ShinobuAmbientAups, out ambientAups);
 
-            if (!TryResolveVaultBuffer(vault, in _anomalyFieldHandle, out anomalyField))
+            if (!TryResolveVaultBuffer(vault, in _anomalyFieldHandle, BufferID.ShinobuSeedShipAnomalyField, out anomalyField))
                 anomalyField = default;
 
             return ready;
@@ -728,7 +757,7 @@ namespace Hecton8.AI.Ecosystem
 
         private void RefreshAuthorityTuning(IDataVault vault)
         {
-            if (!TryResolveVaultBuffer(vault, in _tuningHandle, out NativeArray<SymbiosisTuningDTO> tuning))
+            if (!TryResolveOwnedVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSymbiosisTuning, out NativeArray<SymbiosisTuningDTO> tuning))
                 return;
 
             if (!tuning.IsCreated || tuning.Length <= 0)
@@ -761,7 +790,7 @@ namespace Hecton8.AI.Ecosystem
                 if (lastWriteUtc.Ticks == _csvTimestampTicks)
                     return;
 
-                if (!TryResolveVaultBuffer(vault, in _csvScratchHandle, out NativeArray<byte> scratch))
+                if (!TryResolveOwnedVaultBuffer(vault, in _csvScratchHandle, BufferID.ShinobuSymbiosisCsvScratch, out NativeArray<byte> scratch))
                     return;
 
                 if (!scratch.IsCreated)
@@ -771,9 +800,9 @@ namespace Hecton8.AI.Ecosystem
                 if (bytesRead <= 0)
                     return;
 
-                TryResolveVaultBuffer(vault, in _tuningHandle, out NativeArray<SymbiosisTuningDTO> tuning);
-                TryResolveVaultBuffer(vault, in _linkHandle, out NativeArray<SymbiosisChemicalLinkDTO> links);
-                TryResolveVaultBuffer(vault, in _counterHandle, out NativeArray<SymbiosisCounterDTO> counters);
+                TryResolveOwnedVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSymbiosisTuning, out NativeArray<SymbiosisTuningDTO> tuning);
+                TryResolveOwnedVaultBuffer(vault, in _linkHandle, BufferID.ShinobuSymbiosisLinks, out NativeArray<SymbiosisChemicalLinkDTO> links);
+                TryResolveOwnedVaultBuffer(vault, in _counterHandle, BufferID.ShinobuSymbiosisCounters, out NativeArray<SymbiosisCounterDTO> counters);
                 if (!tuning.IsCreated || !links.IsCreated || tuning.Length <= 0)
                     return;
 
@@ -815,7 +844,7 @@ namespace Hecton8.AI.Ecosystem
 
         private bool TryLoadLegacyLinksIntoVault(IDataVault vault)
         {
-            if (!TryResolveVaultBuffer(vault, in _counterHandle, out NativeArray<SymbiosisCounterDTO> counters))
+            if (!TryResolveOwnedVaultBuffer(vault, in _counterHandle, BufferID.ShinobuSymbiosisCounters, out NativeArray<SymbiosisCounterDTO> counters))
                 return false;
 
             if (!counters.IsCreated || counters.Length <= 0 || (counters[0].Flags & TuningFlagLegacyBinary) != 0u)
@@ -827,9 +856,9 @@ namespace Hecton8.AI.Ecosystem
                 if (path == null || path.Length == 0 || !File.Exists(path))
                     return false;
 
-                TryResolveVaultBuffer(vault, in _legacyScratchHandle, out NativeArray<byte> scratch);
-                TryResolveVaultBuffer(vault, in _linkHandle, out NativeArray<SymbiosisChemicalLinkDTO> links);
-                TryResolveVaultBuffer(vault, in _tuningHandle, out NativeArray<SymbiosisTuningDTO> tuning);
+                TryResolveOwnedVaultBuffer(vault, in _legacyScratchHandle, BufferID.ShinobuSymbiosisLegacyScratch, out NativeArray<byte> scratch);
+                TryResolveOwnedVaultBuffer(vault, in _linkHandle, BufferID.ShinobuSymbiosisLinks, out NativeArray<SymbiosisChemicalLinkDTO> links);
+                TryResolveOwnedVaultBuffer(vault, in _tuningHandle, BufferID.ShinobuSymbiosisTuning, out NativeArray<SymbiosisTuningDTO> tuning);
                 if (!scratch.IsCreated || !links.IsCreated || !tuning.IsCreated || tuning.Length <= 0)
                     return false;
 
@@ -950,8 +979,8 @@ namespace Hecton8.AI.Ecosystem
 
         private void WriteTelemetryAndFaultDump(IDataVault vault)
         {
-            TryResolveVaultBuffer(vault, in _telemetryHandle, out NativeArray<SymbiosisTelemetryEntry> telemetry);
-            TryResolveVaultBuffer(vault, in _counterHandle, out NativeArray<SymbiosisCounterDTO> counters);
+            TryResolveOwnedVaultBuffer(vault, in _telemetryHandle, BufferID.ShinobuSymbiosisTelemetryRing, out NativeArray<SymbiosisTelemetryEntry> telemetry);
+            TryResolveOwnedVaultBuffer(vault, in _counterHandle, BufferID.ShinobuSymbiosisCounters, out NativeArray<SymbiosisCounterDTO> counters);
             if (!telemetry.IsCreated || telemetry.Length <= 0 || !counters.IsCreated || counters.Length <= 0)
                 return;
 
@@ -989,8 +1018,8 @@ namespace Hecton8.AI.Ecosystem
 
         private void PublishAcousticTaps(IDataVault vault)
         {
-            TryResolveVaultBuffer(vault, in _counterHandle, out NativeArray<SymbiosisCounterDTO> counters);
-            TryResolveVaultBuffer(vault, in _acousticTapHandle, out NativeArray<SymbiosisAcousticTapDTO> taps);
+            TryResolveOwnedVaultBuffer(vault, in _counterHandle, BufferID.ShinobuSymbiosisCounters, out NativeArray<SymbiosisCounterDTO> counters);
+            TryResolveOwnedVaultBuffer(vault, in _acousticTapHandle, BufferID.ShinobuSymbiosisAcousticTaps, out NativeArray<SymbiosisAcousticTapDTO> taps);
             if (!counters.IsCreated || counters.Length <= 0 || !taps.IsCreated)
                 return;
 
@@ -1021,45 +1050,55 @@ namespace Hecton8.AI.Ecosystem
                 return false;
 
             int locked = 0;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisFlora, SystemID.AIEcology)) return false;
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisFloraAups, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisLinks, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisExchanges, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisTelemetryRing, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisCounters, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisScannerVfx, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisOxygenEmitters, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisAdherence, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisSeeds, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisAcousticTaps, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisTuning, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisFloraHashBucketHeads, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisFloraHashNext, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisMockBoids, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisMockFish, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuAmbientEntities, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuAmbientAups, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, locked); return false; }
-            locked++;
+            bool ownershipTransferred = false;
+            try
+            {
+                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisFlora, SystemID.AIEcology)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisFloraAups, SystemID.AIEcology)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisLinks, SystemID.AIEcology)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisExchanges, SystemID.AIEcology)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisTelemetryRing, SystemID.AIEcology)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisCounters, SystemID.AIEcology)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisScannerVfx, SystemID.AIEcology)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisOxygenEmitters, SystemID.AIEcology)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisAdherence, SystemID.AIEcology)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisSeeds, SystemID.AIEcology)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisAcousticTaps, SystemID.AIEcology)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisTuning, SystemID.AIEcology)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisFloraHashBucketHeads, SystemID.AIEcology)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisFloraHashNext, SystemID.AIEcology)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisMockBoids, SystemID.AIEcology)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSymbiosisMockFish, SystemID.AIEcology)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuAmbientEntities, SystemID.AIEcology)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuAmbientAups, SystemID.AIEcology)) return false;
+                locked++;
 
-            _jobLocksHeld = true;
-            return true;
+                _jobLocksHeld = true;
+                ownershipTransferred = true;
+                return true;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                    UnlockLockedJobBuffers(vault, locked);
+            }
         }
 
         private void UnlockJobBuffers()
@@ -1068,9 +1107,15 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             IDataVault vault = _dataVault;
-            if (vault != null)
-                UnlockLockedJobBuffers(vault, 18);
-            _jobLocksHeld = false;
+            try
+            {
+                if (vault != null)
+                    UnlockLockedJobBuffers(vault, 18);
+            }
+            finally
+            {
+                _jobLocksHeld = false;
+            }
         }
 
         private static void UnlockLockedJobBuffers(IDataVault vault, int locked)
@@ -1187,34 +1232,34 @@ namespace Hecton8.AI.Ecosystem
 
         private void ReleaseOwnedVaultHandles(IDataVault vault)
         {
-            ReleaseOwnedVaultHandle(vault, ref _floraHandle);
-            ReleaseOwnedVaultHandle(vault, ref _floraAupHandle);
-            ReleaseOwnedVaultHandle(vault, ref _linkHandle);
-            ReleaseOwnedVaultHandle(vault, ref _exchangeHandle);
-            ReleaseOwnedVaultHandle(vault, ref _telemetryHandle);
-            ReleaseOwnedVaultHandle(vault, ref _counterHandle);
+            ReleaseOwnedVaultHandle(vault, ref _floraHandle, BufferID.ShinobuSymbiosisFlora);
+            ReleaseOwnedVaultHandle(vault, ref _floraAupHandle, BufferID.ShinobuSymbiosisFloraAups);
+            ReleaseOwnedVaultHandle(vault, ref _linkHandle, BufferID.ShinobuSymbiosisLinks);
+            ReleaseOwnedVaultHandle(vault, ref _exchangeHandle, BufferID.ShinobuSymbiosisExchanges);
+            ReleaseOwnedVaultHandle(vault, ref _telemetryHandle, BufferID.ShinobuSymbiosisTelemetryRing);
+            ReleaseOwnedVaultHandle(vault, ref _counterHandle, BufferID.ShinobuSymbiosisCounters);
 #if UNITY_EDITOR
-            ReleaseOwnedVaultHandle(vault, ref _csvScratchHandle);
+            ReleaseOwnedVaultHandle(vault, ref _csvScratchHandle, BufferID.ShinobuSymbiosisCsvScratch);
 #endif
-            ReleaseOwnedVaultHandle(vault, ref _scannerVfxHandle);
-            ReleaseOwnedVaultHandle(vault, ref _oxygenEmitterHandle);
-            ReleaseOwnedVaultHandle(vault, ref _adherenceHandle);
-            ReleaseOwnedVaultHandle(vault, ref _seedHandle);
-            ReleaseOwnedVaultHandle(vault, ref _acousticTapHandle);
-            ReleaseOwnedVaultHandle(vault, ref _tuningHandle);
-            ReleaseOwnedVaultHandle(vault, ref _floraBucketHeadHandle);
-            ReleaseOwnedVaultHandle(vault, ref _floraBucketNextHandle);
-            ReleaseOwnedVaultHandle(vault, ref _mockBoidHandle);
-            ReleaseOwnedVaultHandle(vault, ref _legacyScratchHandle);
-            ReleaseOwnedVaultHandle(vault, ref _mockFishHandle);
+            ReleaseOwnedVaultHandle(vault, ref _scannerVfxHandle, BufferID.ShinobuSymbiosisScannerVfx);
+            ReleaseOwnedVaultHandle(vault, ref _oxygenEmitterHandle, BufferID.ShinobuSymbiosisOxygenEmitters);
+            ReleaseOwnedVaultHandle(vault, ref _adherenceHandle, BufferID.ShinobuSymbiosisAdherence);
+            ReleaseOwnedVaultHandle(vault, ref _seedHandle, BufferID.ShinobuSymbiosisSeeds);
+            ReleaseOwnedVaultHandle(vault, ref _acousticTapHandle, BufferID.ShinobuSymbiosisAcousticTaps);
+            ReleaseOwnedVaultHandle(vault, ref _tuningHandle, BufferID.ShinobuSymbiosisTuning);
+            ReleaseOwnedVaultHandle(vault, ref _floraBucketHeadHandle, BufferID.ShinobuSymbiosisFloraHashBucketHeads);
+            ReleaseOwnedVaultHandle(vault, ref _floraBucketNextHandle, BufferID.ShinobuSymbiosisFloraHashNext);
+            ReleaseOwnedVaultHandle(vault, ref _mockBoidHandle, BufferID.ShinobuSymbiosisMockBoids);
+            ReleaseOwnedVaultHandle(vault, ref _legacyScratchHandle, BufferID.ShinobuSymbiosisLegacyScratch);
+            ReleaseOwnedVaultHandle(vault, ref _mockFishHandle, BufferID.ShinobuSymbiosisMockFish);
 
             if (_ownsAmbientEntityHandle)
-                ReleaseOwnedVaultHandle(vault, ref _ambientEntityHandle);
+                ReleaseOwnedVaultHandle(vault, ref _ambientEntityHandle, BufferID.ShinobuAmbientEntities);
             else
                 _ambientEntityHandle = default;
 
             if (_ownsAmbientAupHandle)
-                ReleaseOwnedVaultHandle(vault, ref _ambientAupHandle);
+                ReleaseOwnedVaultHandle(vault, ref _ambientAupHandle, BufferID.ShinobuAmbientAups);
             else
                 _ambientAupHandle = default;
 
@@ -1223,13 +1268,13 @@ namespace Hecton8.AI.Ecosystem
             _ownsAmbientAupHandle = false;
         }
 
-        private static void ReleaseOwnedVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseOwnedVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId)
             where T : struct
         {
-            if (vault != null &&
-                handle.BufferID != 0u &&
-                handle.Generation != 0u &&
-                handle.SystemID == (uint)SystemID.AIEcology)
+            if (vault != null && IsOwnedVaultHandle(in handle, expectedBufferId))
             {
                 vault.ReleaseBuffer(in handle);
             }

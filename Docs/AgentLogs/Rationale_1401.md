@@ -468,3 +468,75 @@ Rejected Alternatives: Treating the 06:10 compile as compliant proof was rejecte
 Scalability potential: Tooling-only protection. Runtime low/middle/high/ultra routes unchanged. This preserves workstation throughput for parallel agents and prevents accidental build load on weak CPUs.
 
 Hardware Impact: Prevented a build under active compiler contention. No runtime frame impact.
+
+## Decision - MapMagic iOS Texture Format API/Quality Drift 2026-05-28 20:28+04
+
+Problem: Follow-up vendor audit found `Assets/MapMagic/Tools/Extensions/Texture2DExtensions.cs:350` returning `TextureFormat.PVRTC_RGBA4` for iOS inside a helper explicitly documented as selecting high-quality compressed formats. Unity 6's platform texture table lists iOS RGBA high-quality as ASTC 4x4, and this project targets `iOSTargetOSVersionString: 15.0`; Unity's documented ASTC exception is Apple A7-era hardware, which cannot run iOS 15.
+
+Solution: Replaced the iOS return with `TextureFormat.ASTC_4x4`, matching the adjacent tvOS branch and the Unity 6 high-quality path. Added `Docs/AgentLogs/VendorTextureFormatAudit_1401.json`, which records line 350, MapMagic PVRTC token count 0, ProjectSettings iOS target 15.0, and a static forbidden-token scan of the modified `AutoFormat` range. Extended `Tools/Run_Guarded_Vendor_Compile_1401.ps1` to include `Den.Tools`, `Den.Tools.Editor`, `MapMagic`, `MapMagic.Editor`, and `MapMagic.Settings` so the changed source can be covered by a future guarded compile.
+
+Rejected Alternatives: Leaving PVRTC was rejected because it contradicts the helper's high-quality contract and carries square-texture limitations in Unity's texture-format reference. Bulk replacing all `TextureFormat` usage was rejected because Unity APIs still require `TextureFormat` for `Texture2D` construction and texture conversion paths. Patching MeshBaker PVRTC mapping was rejected because current target compile logs for MeshBaker are clean and those branches translate existing texture/importer formats rather than selecting this project's active high-quality iOS default.
+
+Scalability potential: Low/Middle iOS target stays on a single compressed texture format supported by the project's iOS 15 floor; High/Ultra gets the intended ASTC 4x4 visual quality. No binary `isLowEnd` switch or physical simulation was added. The change is a format-selection correction, not gameplay truth or runtime fidelity policy.
+
+Hardware Impact: Runtime frame cost is 0 us/frame. Texture memory/build output may shift from PVRTC RGBA4 0.5 MB per 1024 texture to ASTC 4x4 1.0 MB per 1024 texture per Unity's reference table; this is an intentional high-quality iOS editor/build choice, not a hot-frame cost. Post-patch compile proof is blocked: `Docs/AgentLogs/Build_1401_Attempt_20260528_202641_BLOCKED_BY_CONTENTION.json` sampled CPU 100 percent with active `dotnet` PID 31912 and launched no builds.
+
+## Decision - Candice Legacy SQLite Dead Allocation Cleanup 2026-05-28 20:35+04
+
+Problem: The default Candice SQLite provider is disabled and allocation-free by static scan, but the opt-in legacy branch still had one `List<string> columns = new List<string>();` allocation inside `ConvDataToWeapon()` that was never used. It would become noise if a platform owner explicitly enables `CANDICE_LEGACY_MONO_SQLITE`.
+
+Solution: Removed the unused list allocation only. Regenerated `Docs/AgentLogs/CandicePluginImporterAudit_1401.json`; it now records `disabledProviderClassLine=522`, active default-branch SQLite compile references 0, and `legacyUnusedColumnListAllocCount=0`.
+
+Rejected Alternatives: Rewriting the whole legacy data reader loop was rejected because the legacy branch is quarantined behind an explicit symbol and still depends on platform SQLite proof. Returning fresh lists from the disabled branch was rejected because it would break the zero-GC default bridge. Deleting legacy SQLite files was rejected because plugin removal was not assigned.
+
+Scalability potential: Low/Middle/High/Ultra default runtime remains fail-closed and flat-cost. If a future platform deliberately enables legacy SQLite, it avoids one useless managed list allocation per conversion but still requires separate SQLite platform proof.
+
+Hardware Impact: Default runtime impact is 0 us/frame. Legacy opt-in path removes one unused managed allocation per `ConvDataToWeapon()` call. Post-patch compile proof is blocked: `Docs/AgentLogs/Build_1401_Attempt_20260528_203453_BLOCKED_BY_CONTENTION.json` sampled CPU 68 percent with active `dotnet` PID 38224 and launched no builds.
+
+## Decision - MapMagic Runtime Editor Leakage Guard 2026-05-28 20:51+04
+
+Problem: Follow-up runtime-source scan of MapMagic found `Assets/MapMagic/Tools/ThreadManager/ThreadManager.cs` importing `UnityEditor` in a non-Editor assembly source file. The same scan found `ScriptableAssetsExtensions` object-selector reflection helpers that resolve `UnityEditor.ObjectSelector` outside an explicit editor guard and can null-crash if called in a player. `MapMagicObject.Update()` also forced `Debug.developerConsoleVisible = true` from a hot runtime method.
+
+Solution: Guarded `ThreadManager.cs:3` with `UNITY_EDITOR`. Wrapped `GetObjectSelector`, `GetObjectSelectorId`, and `GetObjectSelectorObject` editor logic with player fallbacks (`null`, `-1`, `null`) at `ScriptableAssetsExtensions.cs:98`, `:112`, and `:126`. Kept the developer console write at `MapMagicObject.cs:141` behind `UNITY_EDITOR || DEVELOPMENT_BUILD`. Regenerated `Docs/AgentLogs/VendorRuntimeEditorLeakage_1401.json`; unguarded editor symbol count is 0 across the scanned runtime vendor roots including MapMagic.
+
+Rejected Alternatives: Moving Den.Tools or MapMagic files into new asmdefs was rejected because it would churn package layout and could break generated project reference shape while Unity has not regenerated asmdefs. Throwing in player object-selector helpers was rejected because editor UI helpers should fail closed if accidentally called in a player.
+
+Scalability potential: Low/Middle/High/Ultra player builds avoid editor binding and avoid release-player console side effects. No terrain generation fidelity route, gameplay truth route, or binary quality switch was added.
+
+Hardware Impact: Runtime hot-path token scan remains 0 `new` reference allocations, 0 `string.Format`, 0 `.ToString()`, 0 LINQ, and 0 `foreach` for the patched `MapMagicObject.Update()` range. Estimated release-player frame impact on i3/MX350 is removal of a debug console property write per MapMagic `Update`; profiler proof remains absent.
+
+## Decision - Guarded Compile Timeout Artifact 2026-05-28 20:51+04
+
+Problem: Guarded wrapper invocation `20260528_204206` passed its contention gate and produced Amplify runtime/editor logs, but the caller timed out before the wrapper wrote a final SUMMARY artifact. Without a forensic artifact this would look like missing evidence instead of partial evidence.
+
+Solution: Added `Docs/AgentLogs/Build_1401_Attempt_20260528_204206_TIMEOUT.json` and patched `Tools/Run_Guarded_Vendor_Compile_1401.ps1` to write a STARTED JSON artifact immediately after the preflight gate passes. The latest guarded wrapper invocation after all patches wrote `Docs/AgentLogs/Build_1401_Attempt_20260528_205116_BLOCKED_BY_CONTENTION.json`: CPU 70 percent, compiler process count 0, blocked by CPU gate, attempts array empty.
+
+Rejected Alternatives: Treating the two Amplify logs as a complete compile pass was rejected because Den.Tools/MapMagic/Technie/Candice/MasterAudio projects were not proven by that timed-out invocation. Running direct `dotnet build` was rejected by the resource-throttling rule.
+
+Scalability potential: Tooling-only. It protects shared agent throughput and weak CPUs from accidental compile spam.
+
+Hardware Impact: Prevented a build while CPU was above the allowed threshold. Runtime frame impact is 0 us/frame.
+
+## Decision - Candice Runtime Hot/Event Debt Pass 2026-05-28 21:29+04
+
+Problem: Follow-up audit found that the SQLite/API bridge domain still had Candice runtime debt in adjacent vendor paths: detection allocated Overlap arrays/dictionaries/lists, combat allocated SphereCast/CircleCast result arrays and coroutine wait objects through controller attack paths, projectile/spawner paths used hot Destroy/Instantiate patterns, Possessor.Update() did scene search/Array.Resize/Instantiate, and CandiceAIController.GameResources incorrectly returned the enemy list.
+
+Solution: Replaced detection/combat queries with bounded reusable buffers and non-alloc Unity physics overloads. Moved non-animation attack delays into scalar timers owned by CandiceAIController.Update(). Added cold bounded pools for Candice projectiles/enemies/spawn FX and switched projectile/death lifetime to scheduled SetActive(false). Replaced damage SendMessage with direct TryGetComponent calls. Fixed GameResources to use its own list and copied detection results with indexed loops and capacity guards. Added Docs/AgentLogs/CandiceRuntimeHotPathAudit_1401.json.
+
+Rejected Alternatives: Leaving Destroy in Candice death was rejected because it invalidated the enemy pool. A full first-party GlobalDataVault rewrite was rejected as domain overreach; this is third-party vendor quarantine, not authoritative gameplay state ownership. Binary isLowEnd switches were rejected; bounded buffers/pools provide continuous capacity control without changing truth routes.
+
+Scalability potential: Low tier gets fixed maximum buffers and no per-attack/per-scan managed churn; middle tier keeps the same behavior with fewer frame spikes; high/ultra tiers retain existing visuals and can spend saved CPU/GC budget elsewhere. No physical simulation was added; this is a cheap object/data lifetime fake, not realism work.
+
+Hardware Impact: Static proof only. Expected i3/MX350 effect is removal of per-scan arrays/dictionaries, per-attack coroutine allocations, projectile/spawn instantiate/destroy churn, and SendMessage reflection dispatch. Microseconds are unmeasured because Unity/Profiler proof is absent. Latest compile gate blocked at CPU 96 percent before build: Docs/AgentLogs/Build_1401_Attempt_20260528_212933_BLOCKED_BY_CONTENTION.json.
+
+## Decision - Candice Animation/VFX Hot Event Continuation 2026-05-28 21:47+04
+
+Problem: The previous Candice hot-path pass did not cover `CandiceAnimationManager` and `CandicePlayerOverrides`. A fresh full-package token scan found runtime `StartCoroutine`, `Instantiate`, `Destroy`, `FindWithTag`, `foreach`, and per-ranged-attack `new GameObject()` in animation/VFX/player override paths. Removing the healthbar scene search also exposed `CandiceUI.UpdateHealthUI()` as a null-crash risk.
+
+Solution: Converted Candice VFX playback to a cold `Transform[]` slot table plus `float[]` disable schedule in `CandiceAnimationManager`; runtime paths now activate/deactivate existing child VFX with indexed loops. Replaced `StartCoroutine(GenericCombo)` with scalar combo scheduling processed from `Animate()`. Removed `FindWithTag` healthbar fallback and made `CandiceUI.UpdateHealthUI()` fail closed with `TryGetComponent`. Reworked `CandicePlayerOverrides` so the attack target is created only in cold `PrepareAttackTarget()` and hot ranged override methods fail closed if startup did not prepare it.
+
+Rejected Alternatives: Keeping clone/destroy VFX was rejected because it keeps managed and engine object churn in animation events. A full first-party VFX pool or `GlobalDataVault` rewrite was rejected as domain overreach; this is a third-party vendor quarantine fix. Lazy hot fallback allocation in `GetAttackTarget()` was rejected because it would preserve per-event allocation under missing setup. Binary low/high quality branches were rejected; bounded slots and scalar timers give a stable baseline across tiers.
+
+Scalability potential: Low tier gets no clone/destroy spikes and bounded VFX slot iteration. Middle tier keeps visual parity with cheaper event handling. High/Ultra can spend saved CPU/GC budget on existing first-party visuals; no new physical simulation or gameplay truth route was added.
+
+Hardware Impact: Static proof only. `Docs/AgentLogs/CandiceRuntimeHotPathAudit_1401.json` now scans 61 hot/event ranges and reports newRef=0, string.Format=0, ToString=0, LINQ=0, foreach=0, Instantiate=0, Destroy=0, StartCoroutine=0, SendMessage=0. Microseconds are unmeasured because Unity/Profiler proof is absent. Latest compile gate blocked before build at CPU 54 percent with active dotnet PID 43164: `Docs/AgentLogs/Build_1401_Attempt_20260528_214633_BLOCKED_BY_CONTENTION.json`.

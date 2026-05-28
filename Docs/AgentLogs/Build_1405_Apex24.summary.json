@@ -1,0 +1,28 @@
+﻿{
+    "timestampUtc":  "2026-05-28T11:33:07.0689610Z",
+    "status":  "BLOCKED_BY_CONTENTION",
+    "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+    "cpuLoadSamplesPercent":  [
+                                  73,
+                                  100
+                              ],
+    "cpuLoadMaxPercent":  100,
+    "compilerProcessCount":  2,
+    "compilerProcesses":  [
+                              {
+                                  "ProcessName":  "dotnet",
+                                  "CPU":  59.3125,
+                                  "StartTimeLocal":  "2026-05-28T15:23:29+04:00",
+                                  "Id":  60556
+                              },
+                              {
+                                  "ProcessName":  "dotnet",
+                                  "CPU":  157.328125,
+                                  "StartTimeLocal":  "2026-05-28T15:30:26+04:00",
+                                  "Id":  6088
+                              }
+                          ],
+    "launched":  false,
+    "reason":  "BLOCKED_BY_CONTENTION",
+    "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
+}

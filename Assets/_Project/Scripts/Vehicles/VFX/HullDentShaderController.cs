@@ -119,8 +119,8 @@ namespace Hecton8.Vehicles.VFX
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            ReleaseVaultBuffer(previousService as IDataVault ?? _dataVault, ref _hullDentsHandle, ref _ownsHullDentsBuffer);
-            _dataVault = currentService as IDataVault;
+            ReleaseVaultBuffer(previousService is IDataVault previousVault ? previousVault : _dataVault, ref _hullDentsHandle, ref _ownsHullDentsBuffer);
+            _dataVault = currentService is IDataVault currentVault ? currentVault : null;
             ClearLocalDentBuffer();
             EnsureHullDentsBuffer();
             SyncDentBufferFromVault();
@@ -582,7 +582,7 @@ namespace Hecton8.Vehicles.VFX
                 return false;
             }
 
-            if (IsVaultHandleCreated(in _hullDentsHandle) &&
+            if (IsHullDentsHandle(in _hullDentsHandle) &&
                 vault.TryResolveHandle(in _hullDentsHandle, out NativeArray<float4> currentDents) &&
                 currentDents.IsCreated &&
                 currentDents.Length >= MaxHullDents)
@@ -592,6 +592,7 @@ namespace Hecton8.Vehicles.VFX
 
             ClearHullDentsDescriptor();
             if (vault.TryGetGenerationHandle(BufferID.HullDents, out VaultGenerationHandle<float4> existing) &&
+                IsHullDentsHandle(in existing) &&
                 vault.TryResolveHandle(in existing, out NativeArray<float4> existingDents) &&
                 existingDents.IsCreated &&
                 existingDents.Length >= MaxHullDents)
@@ -609,7 +610,7 @@ namespace Hecton8.Vehicles.VFX
                 MaxHullDents,
                 SystemID.Vfx,
                 NativeArrayOptions.ClearMemory);
-            if (!IsVaultHandleCreated(in acquired) ||
+            if (!IsHullDentsHandle(in acquired) ||
                 !vault.TryResolveHandle(in acquired, out NativeArray<float4> acquiredDents) ||
                 !acquiredDents.IsCreated ||
                 acquiredDents.Length < MaxHullDents)
@@ -634,7 +635,7 @@ namespace Hecton8.Vehicles.VFX
             if (allowEnsure && !EnsureHullDentsHandle(vault))
                 return false;
 
-            if (!IsVaultHandleCreated(in _hullDentsHandle))
+            if (!IsHullDentsHandle(in _hullDentsHandle))
                 return false;
 
             if (!vault.TryResolveHandle(in _hullDentsHandle, out dents) ||
@@ -661,9 +662,11 @@ namespace Hecton8.Vehicles.VFX
             ReleaseVaultBuffer(_dataVault, ref _hullDentsHandle, ref _ownsHullDentsBuffer);
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsHullDentsHandle(in VaultGenerationHandle<float4> handle)
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == unchecked((uint)(int)BufferID.HullDents) &&
+                   handle.SystemID == (uint)SystemID.Vfx &&
+                   handle.Generation != 0u;
         }
 
         private static void ReleaseVaultBuffer<T>(
@@ -671,8 +674,14 @@ namespace Hecton8.Vehicles.VFX
             ref VaultGenerationHandle<T> handle,
             ref bool ownsBuffer) where T : struct
         {
-            if (ownsBuffer && vault != null && IsVaultHandleCreated(in handle))
+            if (ownsBuffer &&
+                vault != null &&
+                handle.BufferID == unchecked((uint)(int)BufferID.HullDents) &&
+                handle.SystemID == (uint)SystemID.Vfx &&
+                handle.Generation != 0u)
+            {
                 vault.ReleaseBuffer(in handle);
+            }
 
             handle = default;
             ownsBuffer = false;

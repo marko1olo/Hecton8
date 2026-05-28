@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -202,6 +203,7 @@ namespace Hecton8.Gameplay
         private const float Epsilon = 0.0001f;
         private const int MaxDamageSignalsPerSolve = 128;
         private const int LowQualityDamageSignalsPerSolve = 16;
+        internal const int MaxRicochetsPerTrajectory = 3;
         private const uint FaultTelemetryFlag = 1u << 0;
         private const uint OverBudgetTelemetryFlag = 1u << 1;
         private const uint DumpedTelemetryFlag = 1u << 2;
@@ -700,7 +702,7 @@ namespace Hecton8.Gameplay
                 if (!TryResolveCurrentRuntimeOriginDouble3(out double3 presentationOriginAup))
                     presentationOriginAup = double3.zero;
 
-                int signalEmitBudget = ResolveDamageSignalBudget(quality);
+                int signalEmitBudget = ComputeDamageSignalBudget(quality);
 
                 ClearCounter(counters, frame, quality, activeBufferId, primitiveCount);
                 BallisticIntersectionJob intersectionJob = new BallisticIntersectionJob
@@ -927,7 +929,7 @@ namespace Hecton8.Gameplay
                         return false;
 
                     int bytesRead = 0;
-                    using (FileStream stream = new FileStream(csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+                    using (FileStream stream = File.Open(csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
                     {
                         while (bytesRead < scratch.Length)
                         {
@@ -1255,36 +1257,51 @@ namespace Hecton8.Gameplay
             {
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 string dumpPath = Path.Combine(projectRoot, "Docs", "AgentLogs", "Dump_BALLISTICS_SURGEON.bin");
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                using (FileStream stream = File.Open(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
-                    writer.Write(SourceHash);
-                    writer.Write((uint)TelemetryRingLength);
+                    Span<byte> header = stackalloc byte[8];
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), SourceHash);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(4, 4), (uint)TelemetryRingLength);
+                    stream.Write(header);
+
+                    Span<byte> entryBytes = stackalloc byte[48];
                     int count = math.min(telemetry.Length, TelemetryRingLength);
                     for (int i = 0; i < count; i++)
                     {
                         BallisticsTelemetryEntry entry = telemetry[i];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.TrajectoriesProcessed);
-                        writer.Write(entry.HitCount);
-                        writer.Write(entry.RicochetCount);
-                        writer.Write(entry.NanGuardCount);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.SolveMicroseconds);
-                        writer.Write(entry.GlobalQualityWeight);
-                        writer.Write(entry.PrimitiveCount);
-                        writer.Write(entry.SignalCount);
-                        writer.Write(entry.RejectedCount);
-                        writer.Write(entry.ActiveTrajectoryBufferId);
+                        WriteBallisticsTelemetryEntry(entryBytes, entry);
+                        stream.Write(entryBytes);
                     }
                 }
             }
-            catch (Exception ex)
+            catch (IOException)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogWarning("[BallisticsRuntime] Telemetry dump failed: " + ex.GetType().Name);
-#endif
             }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+
+        private static void WriteBallisticsTelemetryEntry(Span<byte> entryBytes, in BallisticsTelemetryEntry entry)
+        {
+            entryBytes.Clear();
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(0, 4), entry.Frame);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(4, 4), entry.TrajectoriesProcessed);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(8, 4), entry.HitCount);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(12, 4), entry.RicochetCount);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(16, 4), entry.NanGuardCount);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(20, 4), entry.Flags);
+            WriteFloatLittleEndian(entryBytes.Slice(24, 4), entry.SolveMicroseconds);
+            WriteFloatLittleEndian(entryBytes.Slice(28, 4), entry.GlobalQualityWeight);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(32, 4), entry.PrimitiveCount);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(36, 4), entry.SignalCount);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(40, 4), entry.RejectedCount);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(44, 4), entry.ActiveTrajectoryBufferId);
+        }
+
+        private static void WriteFloatLittleEndian(Span<byte> destination, float value)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(destination, math.asuint(value));
         }
 
         private static void SeedDefaultTuning()
@@ -1589,7 +1606,7 @@ namespace Hecton8.Gameplay
             return SanitizeQualityWeight(HomeostasisBrain.GlobalQualityWeight);
         }
 
-        private static int ResolveDamageSignalBudget(float quality)
+        private static int ComputeDamageSignalBudget(float quality)
         {
             float smoothed = SmoothQualityWeight(quality);
             return math.clamp(
@@ -1947,7 +1964,7 @@ namespace Hecton8.Gameplay
             }
 
             float quality = BallisticsRuntime.SmoothQualityWeight(GlobalQualityWeight);
-            int maxRicochets = ResolveRicochetBudget(quality);
+            int maxRicochets = ComputeRicochetBudget(quality);
             int primitiveCount = math.min(PrimitiveCount, Primitives.Length);
             byte* primitivePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(Primitives);
             float* penetrationPtr = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(PenetrationLut);
@@ -2181,9 +2198,12 @@ namespace Hecton8.Gameplay
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int ResolveRicochetBudget(float quality)
+        private static int ComputeRicochetBudget(float quality)
         {
-            return math.clamp((int)math.floor(math.lerp(0.05f, 3.95f, quality)), 0, 3);
+            return math.clamp(
+                (int)math.floor(math.lerp(0.05f, BallisticsRuntime.MaxRicochetsPerTrajectory + 0.95f, quality)),
+                0,
+                BallisticsRuntime.MaxRicochetsPerTrajectory);
         }
     }
 

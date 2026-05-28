@@ -178,7 +178,7 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                TextureDesc compositeDesc = new TextureDesc(sourceDesc);
+                TextureDesc compositeDesc = sourceDesc;
                 compositeDesc.name = "_HectonDryVolumeComposite";
                 compositeDesc.clearBuffer = false;
                 compositeDesc.depthBufferBits = DepthBits.None;
@@ -293,7 +293,7 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                TextureDesc compositeDesc = new TextureDesc(sourceDesc);
+                TextureDesc compositeDesc = sourceDesc;
                 compositeDesc.name = "_HectonUnderwaterNoirResolve";
                 compositeDesc.clearBuffer = false;
                 compositeDesc.depthBufferBits = DepthBits.None;

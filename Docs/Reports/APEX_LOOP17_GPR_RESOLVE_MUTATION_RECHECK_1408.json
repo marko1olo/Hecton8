@@ -1,0 +1,149 @@
+﻿{
+    "agentId":  "1408",
+    "domain":  "Echelon 3 / World vegetation residency and flow-field async execution",
+    "taskCount":  20,
+    "generatedLocal":  "2026-05-28T19:22:00+04:00",
+    "loop":  17,
+    "status":  "STATIC_PASS_BUILD_BLOCKED_BY_ACTIVE_HECTON8_DOTNET",
+    "promptExtraction":  {
+                             "source":  "Docs/Tasks/CURRENT_BATCH.md",
+                             "bytes":  20163,
+                             "taskLines":  20
+                         },
+    "runtimePatch":  [
+                         {
+                             "path":  "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+                             "change":  "Updated GPR upload call site from TryResolveGprPingWriteBuffer to TryAcquireGprPingWriteBuffer.",
+                             "line":  918
+                         },
+                         {
+                             "path":  "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+                             "change":  "Renamed mutating upload-buffer selector to TryAcquireGprPingWriteBuffer; behavior unchanged; _gprUploadBufferIndex still flips only inside an acquire/write path.",
+                             "line":  1555
+                         },
+                         {
+                             "path":  "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs",
+                             "change":  "Added static contract proving the old TryResolve name is absent and the mutating acquire helper is explicit.",
+                             "line":  256
+                         }
+                     ],
+    "scans":  {
+                  "assignedSyncTokens":  ".Run/.Complete/WaitForCompletion/SyncHeightmap scan over assigned runtime files returned zero matches (rg exit 1).",
+                  "readAccessorFieldMutation":  "READ_ACCESSOR_FIELD_MUTATION_MATCHES=0 after including TryResolve/TryGet/Get/Resolve/Read/TryRead declarations and compound field mutations.",
+                  "zeroGcMethodCounts":  [
+                                             {
+                                                 "start":  1555,
+                                                 "toString":  0,
+                                                 "foreachCount":  0,
+                                                 "referenceNew":  0,
+                                                 "method":  "TryAcquireGprPingWriteBuffer",
+                                                 "waitForCompletion":  0,
+                                                 "rawComplete":  0,
+                                                 "linqLike":  0,
+                                                 "rawRun":  0,
+                                                 "newTotal":  0,
+                                                 "end":  1566,
+                                                 "path":  "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+                                                 "stringFormat":  0
+                                             },
+                                             {
+                                                 "start":  891,
+                                                 "toString":  0,
+                                                 "foreachCount":  0,
+                                                 "referenceNew":  0,
+                                                 "method":  "CommitCompletedScan",
+                                                 "waitForCompletion":  0,
+                                                 "rawComplete":  0,
+                                                 "linqLike":  0,
+                                                 "rawRun":  0,
+                                                 "newTotal":  2,
+                                                 "end":  942,
+                                                 "path":  "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+                                                 "stringFormat":  0,
+                                                 "newLines":  "Bounds and Vector3 value-type constructions only"
+                                             },
+                                             {
+                                                 "start":  776,
+                                                 "toString":  0,
+                                                 "foreachCount":  0,
+                                                 "referenceNew":  0,
+                                                 "method":  "ScheduleRadarJob",
+                                                 "waitForCompletion":  0,
+                                                 "rawComplete":  0,
+                                                 "linqLike":  0,
+                                                 "rawRun":  0,
+                                                 "newTotal":  8,
+                                                 "end":  863,
+                                                 "path":  "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+                                                 "stringFormat":  0,
+                                                 "newLines":  "GroundRadarRaymarchJob and NativeSlice\u003cT\u003e unmanaged/value constructions only"
+                                             },
+                                             {
+                                                 "start":  865,
+                                                 "toString":  0,
+                                                 "foreachCount":  0,
+                                                 "referenceNew":  0,
+                                                 "method":  "CompleteRadarJob",
+                                                 "waitForCompletion":  0,
+                                                 "rawComplete":  0,
+                                                 "linqLike":  0,
+                                                 "rawRun":  0,
+                                                 "newTotal":  0,
+                                                 "end":  889,
+                                                 "path":  "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+                                                 "stringFormat":  0
+                                             }
+                                         ],
+                  "gprResolveName":  "TryResolveGprPingWriteBuffer scan returns only the Editor test negative assertion; runtime source has zero old-name matches.",
+                  "falsePositiveClassification":  [
+                                                      {
+                                                          "classification":  "returns fixed-map struct enumerator; no reference allocation in hot path",
+                                                          "method":  "GetEnumerator"
+                                                      },
+                                                      {
+                                                          "classification":  "new uint4 value struct for deterministic math hashing",
+                                                          "method":  "ResolveDeterministicVatPhase01"
+                                                      },
+                                                      {
+                                                          "classification":  "new Vector4 / RuntimeDescriptor value types only",
+                                                          "method":  "ResolveFallbackFloraDescriptor"
+                                                      }
+                                                  ]
+              },
+    "dataSovereignty":  {
+                            "writeLockSites":  "GroundPenetratingRadarRuntime.cs:726-745 inside TryPublishRadarPendingJob",
+                            "securedExistingBufferIds":  [
+                                                             "GroundRadarHits",
+                                                             "GroundRadarSignalStrength",
+                                                             "GroundRadarAgeSeconds",
+                                                             "GroundRadarOreTypes",
+                                                             "GroundRadarPingGpu",
+                                                             "GroundRadarCounters",
+                                                             "GroundRadarMaxSignalStrength"
+                                                         ],
+                            "migratedToGlobalDataVault":  false,
+                            "newBufferIdsAdded":  [
+
+                                                  ],
+                            "finallyReleaseProof":  "GroundPenetratingRadarRuntime.cs:757-772 releases every acquired GPR write lock in finally",
+                            "mutationRoute":  "GPR ping upload buffer selection is a write/acquire route, not read accessor; no DataVault write lock is held while worker job runs."
+                        },
+    "scalability":  {
+                        "binaryLowEndScan":  "No isLowEnd/_MATH_LOD_LOW binary switch was added.",
+                        "scalar":  "Ground radar ray count and raymarch steps continue to use ReadGlobalQualityWeight01/HomeostasisBrain.GlobalQualityWeight at GroundPenetratingRadarRuntime.cs:813-835.",
+                        "cinematicCheat":  "GPR remains a staged visual scan/ping upload path; no physical ore simulation or blocking terrain sync was introduced."
+                    },
+    "buildThrottle":  {
+                          "secondCpuSamplePercent":  60,
+                          "firstCpuSamplePercent":  60,
+                          "buildLaunched":  false,
+                          "reason":  "CPU \u003e50 and existing Hecton8.slnx dotnet build active; no second build launched.",
+                          "dumpPath":  "Docs/AgentLogs/Dump_1408_BUILD_BLOCKED_LOOP17_20260528.txt",
+                          "activeCompiler":  {
+                                                 "commandLine":  "dotnet build Hecton8.slnx -nologo -maxcpucount:1 -v:minimal",
+                                                 "pid":  68208,
+                                                 "cpuSecondsAfterWait":  248.78125,
+                                                 "process":  "dotnet"
+                                             }
+                      }
+}

@@ -1,9 +1,9 @@
 {
     "agent":  "1415",
-    "generatedUtc":  "2026-05-28T10:02:04Z",
+    "generatedUtc":  "2026-05-28T11:42:40Z",
     "file":  "Assets/_Project/Scripts/Editor/TelemetryLayoutValidator1415.cs",
-    "expectedRows":  40,
-    "specRows":  40,
+    "expectedRows":  42,
+    "specRows":  42,
     "usesUnsafeUtilitySizeOfGeneric":  true,
     "usesUnsafeUtilityGetFieldOffset":  true,
     "throwsFatalArchitectureException":  true,
@@ -11,9 +11,12 @@
     "malformedNewlineCharLiteralCount":  0,
     "braceBalance":  0,
     "jobAdmissionSpecLine":  21,
-    "reentryVfxSpecLine":  37,
-    "uberNoirSpecLine":  52,
-    "validatorSha256":  "eaea8e033c5dfa2ac3210da6a3e49f31e045d26277d8136000f8934e5e6c651c",
+    "macroDatabaseSpecLine":  22,
+    "chunkResidencySpecLine":  23,
+    "liveTelemetryRecordSpecLine":  24,
+    "reentryVfxSpecLine":  40,
+    "uberNoirSpecLine":  55,
+    "validatorSha256":  "4c9e0f2fcf1131769372df24cbad8420c04badf4b1d525e2bfa8d2fef9f6bf01",
     "failureCount":  0,
-    "residualRisk":  "STATIC_SOURCE only; Unity Editor/domain reload validator execution is still pending until CPU/build gate allows compiler/editor proof."
+    "residualRisk":  "STATIC_SOURCE only; Unity Editor/domain reload validator execution is pending until CPU/build gate allows compiler/editor proof."
 }

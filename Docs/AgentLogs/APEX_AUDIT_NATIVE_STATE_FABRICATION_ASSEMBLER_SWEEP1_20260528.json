@@ -1,0 +1,86 @@
+{
+  "agent_id": "AUDIT_NATIVE_STATE",
+  "artifact": "APEX_AUDIT_NATIVE_STATE_FABRICATION_ASSEMBLER_SWEEP1_20260528",
+  "timestamp_local": "2026-05-28T20:39:00+04:00",
+  "scope": "FabricationAssemblerRuntime DataVault descriptor sovereignty",
+  "modified_files": [
+    "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs"
+  ],
+  "unchanged_contract_files_referenced": [
+    "Assets/_Project/Scripts/Core/Memory/H8Memory.cs"
+  ],
+  "git_status_before_patch": "clean for Assets/_Project/Scripts/FabricationAssemblerRuntime.cs",
+  "diff_numstat": {
+    "insertions": 71,
+    "deletions": 58,
+    "file": "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs"
+  },
+  "problem": "Fabrication assembler accepted generic nonzero VaultGenerationHandle descriptors for construction-owned fabrication lanes and direct-cast DataVault hot-swap callbacks. Same-owner descriptors could be reused, read, write-locked, or released without proving the expected BufferID.",
+  "solution": "Pattern-match DataVault hot-swap services. Add HasFabricationHandle requiring exact BufferID, SystemID.Construction, and nonzero generation before read, write-lock, and release. Add HasScalabilityHandle for external read-only ShinobuScalabilityState owned by SystemID.GraphicsScalability.",
+  "buffer_ids_secured": [
+    {"name": "ShinobuFabricationJobs", "value": 71140, "owner": "SystemID.Construction"},
+    {"name": "ShinobuFabricationRuntime", "value": 71141, "owner": "SystemID.Construction"},
+    {"name": "ShinobuFabricationGpuPayload", "value": 71142, "owner": "SystemID.Construction"},
+    {"name": "ShinobuFabricationTelemetryRing", "value": 71143, "owner": "SystemID.Construction"},
+    {"name": "ShinobuFabricationTuning", "value": 71145, "owner": "SystemID.Construction"},
+    {"name": "ShinobuFabricationTimingLookup", "value": 71146, "owner": "SystemID.Construction"},
+    {"name": "ShinobuFabricationCsvScratch", "value": 71147, "owner": "SystemID.Construction", "conditional": "UNITY_EDITOR"},
+    {"name": "ShinobuScalabilityState", "value": 70481, "owner": "SystemID.GraphicsScalability", "access": "read-only external quality signal"}
+  ],
+  "source_anchors": {
+    "hot_swap_pattern_match": "831-837",
+    "owned_handle_predicate": "846-851",
+    "external_scalability_predicate": "853-858",
+    "read_gate_sites": ["297-299", "395-397", "446-447", "479-481", "515-517", "555-556", "596-597", "978-983", "1043-1045", "1098-1100", "1202"],
+    "write_lock_gate_sites": ["648", "682", "686", "707", "894"],
+    "write_lock_release_sites": ["663", "688", "720", "722", "723", "904"],
+    "release_exact_owned_handles": "911-933",
+    "quality_weight_route": ["1288-1309", "1580-1595"]
+  },
+  "zero_gc_diff_scan": {
+    "command": "git diff -U0 -- Assets/_Project/Scripts/FabricationAssemblerRuntime.cs | rg new|string.Format|.ToString|LINQ|foreach",
+    "matches": 0,
+    "stderr": "LF will be replaced by CRLF warning only"
+  },
+  "layout_diff_scan": {
+    "command": "git diff -U0 -- Assets/_Project/Scripts/FabricationAssemblerRuntime.cs | rg StructLayout|FieldOffset|SizeOf|OffsetOf|sizeof",
+    "matches": 0,
+    "stderr": "LF will be replaced by CRLF warning only"
+  },
+  "bad_pattern_scan": {
+    "command": "rg currentService as IDataVault|previousService as IDataVault|HasHandle(|IsHandleCreated(|IsVaultHandleCreated|handle.BufferID != 0u|handle.BufferID == 0u|OwnerSystemID|TryOpenArray(in|TryOpenReadArray(in|TryOpenWriteArray(in Assets/_Project/Scripts/FabricationAssemblerRuntime.cs",
+    "matches": 0
+  },
+  "diff_check": {
+    "command": "git diff --check -- Assets/_Project/Scripts/FabricationAssemblerRuntime.cs",
+    "exit_code": 0,
+    "stdout": "LF will be replaced by CRLF warning only"
+  },
+  "data_sovereignty": {
+    "try_acquire_write_lock_added": false,
+    "try_acquire_write_lock_helper": "TryOpenWriteArray now rejects non-exact fabrication handles before vault.TryAcquireWriteLock.",
+    "release_proof": "Callers already release write locks in finally or immediate failure paths: TrySetTuning finally releases tuning; CSV ingest releases csv scratch on timing lock failure and releases tuning/timing/csv scratch in finally.",
+    "new_finally_blocks": 0
+  },
+  "continuous_scalability": {
+    "quality_route": "ResolveGlobalQualityWeight reads exact external ShinobuScalabilityState or falls back to HomeostasisBrain.GlobalQualityWeight.",
+    "low_middle_high_ultra": "Visual upload count and stride remain continuous quality functions; low skips more uploads, middle/high interpolate, ultra can upload the full active payload count.",
+    "cinematic_cheat": "Fabrication remains shader payload/upload driven rather than a physical assembly simulation."
+  },
+  "compilation_resource_throttling": {
+    "dotnet_build_invoked_by_this_patch": false,
+    "cpu_sample_before_compile_decision_percent": 100,
+    "active_compiler_processes": [
+      {"pid": 1252, "process": "dotnet", "cpu_seconds": 30.4375, "start_time_local": "2026-05-28T20:37:38+04:00"}
+    ],
+    "decision": "No build, Unity import, Play Mode, profiler, GCMonitor, or fresh native ledger was launched because CPU was above 50 percent and a dotnet process was active."
+  },
+  "proof_level": "STATIC_SOURCE_ONLY",
+  "not_proven": [
+    "No C# compile verdict after this patch.",
+    "No Unity import verdict.",
+    "No Play Mode or profiler proof.",
+    "No runtime GC allocation sample.",
+    "No fresh all-scripts Roslyn native ledger after this patch."
+  ]
+}

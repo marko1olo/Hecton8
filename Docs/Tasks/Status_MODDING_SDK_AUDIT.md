@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Domain: Echelon 1 mod/API cold isolation, SDK package contracts, HectonEventBus boundary
-Status: STATIC_PASS_SCHEMA_88 / SDK_HUB_ASYNC_VALIDATOR_ADDED / HYGIENE_PASS / DOTNET_DEFERRED_RESOURCE_GATE / UNITY_NOT_RUN_RESOURCE_GATE
+Status: STATIC_PASS_SCHEMA_98 / AUTHORING_SNIPPET_APPLY_ADDED / REVIEW_ZIP_PROVED / HYGIENE_PASS / DOTNET_BUILD_DEFERRED_CPU_GATE / UNITY_MCP_NOT_AVAILABLE
 
 ## Mandates Applied
 
@@ -917,3 +917,210 @@ Evidence:
 - PASS: touched-file trailing whitespace scan and editor C# ASCII scan.
 - DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because build/resource gate found CPU `91`, then CPU `95` after a delayed retry; no active `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild` process was present and no `Temp/UnityLockfile` was present.
 - NOT RUN: Unity batchmode compile was not launched because CPU was above the project gate.
+
+## Pass 65 - Schema 89 Workbench Required-File List Parity
+
+- [x] Task 300: Audit Workbench starter health against the actual copied starter validator. DOD practice: compared `ExternalStarterKitWorkbenchWindow.RequiredStarterFiles` with `ModdingSDK/ExternalStarterKit/Tools/validate_structure.ps1` required files. Rejected alternative: trust the Workbench health count because the direct validator button exists. Runtime us estimate: 0 us/frame, editor-only.
+- [x] Task 301: Align Workbench required-file health with the validator contract. DOD practice: replaced stale `Schemas/h8table.schema.json` and `Schemas/h8loc.schema.json` health entries with `Schemas/settings_table.schema.json`, `Schemas/locale.schema.json`, `Schemas/assets.schema.json`, and missing README/tool folders required by the validator. Rejected alternative: rename files back to older schema names. Runtime us estimate: 0.
+- [x] Task 302: Extend schema/docs/static proof to schema 89. DOD practice: `Signal_Schema.json`, `Validate_Mod_API_Static.ps1`, runtime playbook, README, API spec, authoring plan, product blueprint, and starter file contract now record Workbench required-file list parity with the no-Unity validator. Rejected alternative: UI-only correction with no regression gate. Runtime us estimate: 0.
+- [x] Task 303: Verify public starter/static/hygiene gates. DOD practice: project static validator PASS at schema 89, schema JSON parse PASS, starter root `validate` PASS, starter root `prepare` PASS, stale schema-88 scan PASS, stale schema filename scan shows old names only inside negative validator assertions, scoped `git diff --check` PASS with line-ending warnings only, trailing whitespace PASS, non-ASCII scan PASS. Rejected alternative: report the list update without running copied-starter commands. Runtime us estimate: 0.
+- [x] Task 304: Obey compile/resource gate. DOD practice: sampled CPU/process/Unity state before build decision. Rejected alternative: launch `dotnet build` while CPU was 100 and active `csc.exe`/`dotnet.exe` were running. Runtime us estimate: 0.
+
+Evidence:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `89`, `ExternalStarterKitWorkbenchRequiredFileListMatchesValidator=True`.
+- PASS: `Signal_Schema.json` parsed with `schemaRevision=89`, `starterWorkbenchRequiredFileListMatchesValidator=True`, and last static validation snapshot `externalStarterKitWorkbenchRequiredFileListMatchesValidator=True`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action validate` -> `PASS HECTON-8 external starter structure`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action prepare` -> structure/review pass and `PASS HECTON-8 starter prepared: com.example.starter`.
+- PASS: `Reports/review_manifest.json` parsed with schema `hecton8.external_review_manifest.v1`, root id `com.example.starter`, `25` hashed files, `47352` total bytes, and `h8mod.ps1` included.
+- PASS: stale schema-88 scan found no stale current revision text in touched modding docs/source.
+- PASS: stale old schema filename scan found `h8table.schema.json` and `h8loc.schema.json` only in the static validator's negative Workbench-source assertions.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan and non-ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because build/resource gate found CPU `100`, active `csc.exe` PID `12916`, and active `dotnet.exe` PID `42716`; no `Temp/UnityLockfile` was present.
+- NOT RUN: Unity batchmode compile was not launched because CPU was above the project gate and active build processes were present.
+
+## Pass 66 - Schema 90 SDK Tool Failure Error UI
+
+- [x] Task 305: Audit SDK tool-result severity UX. DOD practice: traced `ModdingSdkHubWindow` and `ExternalStarterKitWorkbenchWindow` summaries after async process completion and found nonzero tool exits rendered as `MessageType.Info`. Rejected alternative: rely on stderr text alone and make random authors infer failure state from plain info boxes. Runtime us estimate: 0 us/frame, editor-only.
+- [x] Task 306: Add explicit failure-state UI to Hub and Workbench. DOD practice: SDK Hub records `_lastValidatorFailed`, Workbench records `_toolSummaryIsError`, and both render nonzero process exits or launch/missing-tool failures as `MessageType.Error`. Rejected alternative: duplicate validator logic in C# or introduce a second tool-result contract. Runtime us estimate: 0.
+- [x] Task 307: Extend schema/docs/static proof to schema 90. DOD practice: `Signal_Schema.json`, `Validate_Mod_API_Static.ps1`, README, API spec, runtime playbook, SDK authoring plan, product blueprint, and external starter file contract now record failed validator/tool error UI. Rejected alternative: source-only UI fix without drift gate. Runtime us estimate: 0.
+- [x] Task 308: Verify public starter/static/hygiene gates. DOD practice: project static validator PASS at schema 90, schema JSON parse PASS, starter root `validate` PASS, starter root `prepare` PASS, source evidence scan PASS, stale revision scan found only hash/meta false positives, scoped `git diff --check` PASS with line-ending warnings only, trailing whitespace PASS, non-ASCII scan PASS. Rejected alternative: report the UI severity fix without exercising copied starter tools. Runtime us estimate: 0.
+- [x] Task 309: Compile after resource gate allowed it. DOD practice: sampled CPU/process/Unity gate first, then ran one `dotnet build Assembly-CSharp.csproj -v:minimal` only when CPU was `49.05`, no active `dotnet/csc/VBCSCompiler/MSBuild`, and no Unity lockfile existed. Rejected alternative: skip compile after touching C# or launch build under contention. Runtime us estimate: 0.
+
+Evidence:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `90`, `ModdingSdkHubShowsValidatorFailuresAsErrors=True`, `ExternalStarterKitWorkbenchShowsToolFailuresAsErrors=True`.
+- PASS: `Signal_Schema.json` parsed with `schemaRevision=90`, `hubShowsValidatorFailuresAsErrors=True`, `starterWorkbenchShowsToolFailuresAsErrors=True`, and matching last static validation snapshot flags.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action validate` -> `PASS HECTON-8 external starter structure`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action prepare` -> structure/review pass and `PASS HECTON-8 starter prepared: com.example.starter`.
+- PASS: source scan found `_lastValidatorFailed`, `_toolSummaryIsError`, `MessageType.Error`, and `exitCode != 0` in the two SDK Editor windows.
+- PASS: stale `89` scan found only review-manifest SHA/byte substrings and the `.meta` GUID, not stale schema text.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan and non-ASCII scan.
+- PASS: `dotnet build Assembly-CSharp.csproj -v:minimal` -> `Assembly-CSharp.dll`, `0 Warning(s)`, `0 Error(s)`.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session; source/static/CLI/dotnet proof only.
+
+## Pass 67 - Schema 91 Workbench Graph Contract Preview
+
+- [x] Task 310: Audit graph authoring UX after Workbench tool severity. DOD practice: compared `ExternalStarterKitWorkbenchWindow` graph routes against `Tools/validate_structure.ps1` and found the Workbench could open the graph/list opcodes but could not show current graph validity before running tools. Rejected alternative: force random authors to edit raw JSON and discover duplicate IDs, invalid opcodes, or budget drift only after validator execution. Runtime us estimate: 0 us/frame, editor-only.
+- [x] Task 311: Add graph contract preview to the Workbench. DOD practice: added an Editor-only `Graph Contract Preview` panel that parses `Graphs/main.h8graph.json`, loads `Reference/allowed_opcodes.csv`, compares `MaxEnvelopesPerFrame` to `mod.h8manifest.json` budget, caps preview at `256` nodes, `1 MB` graph/CSV files, and `512` opcode rows, and reports runtime flag, node count, duplicate IDs, missing fields, invalid opcodes, and budget drift. Rejected alternative: reimplement full package validation as a second contract; this is only a preview over the copied validator-owned files. Runtime us estimate: 0.
+- [x] Task 312: Extend schema/docs/static proof to schema 91. DOD practice: `Signal_Schema.json`, `Validate_Mod_API_Static.ps1`, README, API spec, runtime playbook, SDK authoring plan, product blueprint, and external starter file contract now record `ExternalStarterKitWorkbenchShowsGraphContractPreview`. Rejected alternative: UI-only improvement without a drift gate. Runtime us estimate: 0.
+- [x] Task 313: Verify public starter/static/hygiene gates. DOD practice: project static validator PASS at schema 91, schema JSON parse PASS, starter root `validate` PASS, starter root `prepare` PASS, source evidence scan PASS, stale schema-90 scan PASS, scoped `git diff --check` PASS with line-ending warnings only, trailing whitespace PASS, non-ASCII PASS. Rejected alternative: report the preview without proving copied starter tools still pass. Runtime us estimate: 0.
+- [x] Task 314: Obey compile/resource gate. DOD practice: sampled CPU/process/Unity state before build decision. Rejected alternative: launch `dotnet build` while CPU samples were `71` then `96` with active `dotnet.exe`/`csc.exe` processes. Runtime us estimate: 0.
+
+Evidence:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `91`, `ExternalStarterKitWorkbenchShowsGraphContractPreview=True`.
+- PASS: `Signal_Schema.json` parsed with `schemaRevision=91`, `starterWorkbenchShowsGraphContractPreview=True`, and last static validation snapshot `externalStarterKitWorkbenchShowsGraphContractPreview=True`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action validate` -> `PASS HECTON-8 external starter structure`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action prepare` -> structure/review pass and `PASS HECTON-8 starter prepared: com.example.starter`.
+- PASS: source scan found `Graph Contract Preview`, `LoadGraphContractPreview`, `MaxGraphPreviewNodes`, invalid opcode text, duplicate node ID text, and budget-drift text.
+- PASS: stale schema-90 scan found no stale current revision text in touched modding docs/source.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan and non-ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because build/resource gate found CPU `71` with active `dotnet.exe` PID `6088`, then CPU `96` with active `csc.exe` PID `38600` and `dotnet.exe` PID `59612`; no Unity lockfile.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session; source/static/CLI proof only.
+
+## Pass 72 - Schema 96 Capability Matrix And Public Author Route
+
+- [x] Task 335: Audit current public modder route after settings/locale validation. DOD practice: traced Workbench, root launcher, starter README, graph/settings/locale/content manifests, review package, runtime boundary docs, and Signal schema; found that the system was safer than powerful, but did not answer "what can I mod" in one authoritative place. Rejected alternative: promise managed DLL/Harmony/BepInEx/loose asset loading before runtime owner/proof exists. Runtime us estimate: 0 us/frame, editor/offline only.
+- [x] Task 336: Add public capability guide and no-Unity capability route. DOD practice: added `Docs/capabilities.md` to the starter template, exposed `h8mod.ps1 -Action capabilities`, and made checked-in/generated validators require key capability-guide text. Rejected alternative: leave capability explanation only in project docs that random external authors may never open. Runtime us estimate: 0.
+- [x] Task 337: Integrate Capability Matrix into the Unity Workbench and generator. DOD practice: `ExternalStarterKitWorkbenchWindow` now shows supported authoring surfaces, declared manifest capability count, allowed opcode counts, budgets, missing files, and forbidden runtime rights; `ModdingSdkHubWindow` now generates the guide, Docs folder, launcher route, and validator parity. Rejected alternative: add a static Markdown file without integrated Workbench visibility. Runtime us estimate: 0.
+- [x] Task 338: Extend schema/docs/static proof to schema 96. DOD practice: `Signal_Schema.json`, `Validate_Mod_API_Static.ps1`, Runtime Playbook, README, API spec, authoring plan, product blueprint, starter file contract, starter README, and tool README now record Capability Matrix, capability guide generation, validator checks, and root launcher route. Rejected alternative: source-only UX change with stale public contract docs. Runtime us estimate: 0.
+- [x] Task 339: Verify starter/static/hygiene gates and obey compile gate. DOD practice: starter validate PASS, capabilities CLI PASS, starter submission PASS, project static validator PASS at schema 96, review manifest and zip include `Docs/capabilities.md`, stale schema-95 scan PASS, scoped `git diff --check` PASS with line-ending warnings only, JSON parse PASS, trailing whitespace PASS, editor C# ASCII PASS, and `dotnet build` launched only after CPU dropped to 33 with no compiler processes and no Unity lock. Rejected alternative: run compile while CPU was 100. Runtime us estimate: 0.
+
+Evidence:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action validate` -> `PASS HECTON-8 external starter structure`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action capabilities` -> printed `# HECTON-8 Mod Capability Matrix` with supported/blocked modding rights.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action submission` -> structure/review/prepare pass and `PASS HECTON-8 submission package: Generated/com.example.starter_submission.zip`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `96`, `ExternalStarterKitWorkbenchShowsCapabilityMatrix=True`, `ExternalStarterKitWritesCapabilityGuide=True`, `ExternalStarterKitValidatorChecksCapabilityGuide=True`, `ExternalStarterKitRootLauncherSupportsCapabilities=True`.
+- PASS: `Signal_Schema.json` parsed with `schemaRevision=96`, `starterWorkbenchShowsCapabilityMatrix=True`, and `externalStarterKitWritesCapabilityGuide=True`.
+- PASS: review manifest parsed with `28` hashed files, `73424` total bytes, `Docs/capabilities.md` included, and no `Generated/` or `Reports/` source entries.
+- PASS: submission zip inspection found `29` entries, `Docs/capabilities.md`, `Reports/review_manifest.json`, and no `Generated/*` entry.
+- PASS: stale schema-95 text scan found no stale current revision text in touched modding docs/starter Markdown.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan, editor C# ASCII scan, and JSON parse scan.
+- PASS: `dotnet build Assembly-CSharp.csproj -v:minimal`; launched only after resource gate allowed it: CPU `33`, no active `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild`, no `Temp/UnityLockfile`; result `0 Warning(s)`, `0 Error(s)`.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session; source/static/CLI/dotnet proof only.
+
+## Pass 68 - Schema 92 Graph Node Snippet Helper
+
+- [x] Task 315: Audit graph authoring after preview. DOD practice: found that the Workbench could report graph errors, but a random external modder still had to hand-author new node JSON with exact `Id`, `Opcode`, `Enabled`, and `Parameters` shape. Rejected alternative: accept raw JSON hand-editing as the main authoring route. Runtime us estimate: 0 us/frame, offline authoring only.
+- [x] Task 316: Add no-Unity graph node snippet tool. DOD practice: added `Tools/create_graph_node_snippet.ps1`, validates canonical node IDs, resolves opcode aliases/hex values from `Reference/allowed_opcodes.csv`, writes only under `Generated/`, supports text/JSON output, and never mutates `Graphs/main.h8graph.json`. Rejected alternative: direct graph mutation that could erase unknown fields or reorder author data. Runtime us estimate: 0.
+- [x] Task 317: Integrate snippet creation into Workbench, root launcher, and generator. DOD practice: `ExternalStarterKitWorkbenchWindow` now exposes Node Id/Opcode fields plus generate/open buttons; `h8mod.ps1` exposes `node-snippet`; `ModdingSdkHubWindow` writes the tool and launcher route into refreshed starter kits. Rejected alternative: add only the checked-in tool and let generated kits drift. Runtime us estimate: 0.
+- [x] Task 318: Extend schema/docs/static proof to schema 92. DOD practice: `Signal_Schema.json`, `Validate_Mod_API_Static.ps1`, runtime playbook, README, API spec, authoring plan, product blueprint, and external starter file contract now record graph node snippet generation and root launcher support. Rejected alternative: source-only SDK helper without drift gates. Runtime us estimate: 0.
+- [x] Task 319: Verify public starter/static/hygiene gates and obey compile gate. DOD practice: snippet tool text/JSON/invalid-opcode probes PASS through static validation, copied starter validation PASS, stale schema-91 scan PASS, scoped `git diff --check` PASS, touched-file trailing whitespace PASS, review manifest parses with 26 files, and build gate sampled before compile decision. Rejected alternative: launch `dotnet build` while CPU was 98.64 percent and active `csc.exe`/`dotnet.exe` were running. Runtime us estimate: 0.
+
+Evidence:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `92`, `ExternalStarterKitWorkbenchGeneratesGraphNodeSnippet=True`, `ExternalStarterKitWritesGraphNodeSnippetTool=True`, `ExternalStarterKitGraphNodeSnippetToolPasses=True`, `ExternalStarterKitGraphNodeSnippetToolSupportsJson=True`, `ExternalStarterKitRootLauncherSupportsGraphNodeSnippet=True`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action validate` -> `PASS HECTON-8 external starter structure`.
+- PASS: `Reports/review_manifest.json` parsed with schema `hecton8.external_review_manifest.v1`, `26` hashed files, and `55170` total bytes.
+- PASS: stale schema-91 scan found no stale current revision text in touched modding docs/source.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because build/resource gate found CPU `98.64`, active `csc.exe` PID `29640`, and active `dotnet.exe` PID `23460`; no `Temp/UnityLockfile` was present.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session; source/static/CLI proof only.
+
+## Pass 69 - Schema 93 Submission Package Handoff
+
+- [x] Task 320: Audit external starter handoff after graph snippet tooling. DOD practice: traced the current loader boundary and confirmed loose starter folders are not honest runtime install artifacts under envelope-only policy. Rejected alternative: add a direct `Mods/` install button that would imply runtime support the loader does not provide. Runtime us estimate: 0.
+- [x] Task 321: Add no-Unity submission package builder. DOD practice: added `Tools/build_submission_package.ps1`; it runs prepare, validates review manifest schema/runtime, packages reviewed starter sources plus `Reports/review_manifest.json` into `Generated/<mod-id>_submission.zip`, rejects unsafe output paths, excludes review-listed `Generated/` and `Reports/` source inputs, and explicitly loads both compression assemblies for Windows PowerShell compatibility. Rejected alternative: zip the folder blindly, which would include generated outputs or stale reports. Runtime us estimate: 0.
+- [x] Task 322: Integrate submission route into the root launcher, Workbench, SDK Hub generator, and required-file gates. DOD practice: `h8mod.ps1 -Action submission`, Workbench `Build Submission Package`, generator output, checked-in validator required files, and generated validator required files now agree. Rejected alternative: checked-in template only, leaving newly generated kits stale. Runtime us estimate: 0.
+- [x] Task 323: Extend schema/docs/static proof to schema 93. DOD practice: `Signal_Schema.json`, `Validate_Mod_API_Static.ps1`, Runtime Playbook, README, API spec, authoring plan, product blueprint, and external starter contract now record submission package support and root launcher routing. Rejected alternative: source-only tool addition with no drift gate. Runtime us estimate: 0.
+- [x] Task 324: Verify public starter/static/hygiene gates and obey compile gate. DOD practice: starter validate PASS, starter submission PASS, zip entry inspection PASS, project static validator PASS at schema 93, review manifest parses with 27 files and submission tool hash, scoped `git diff --check` PASS, touched-file trailing whitespace PASS, editor C# ASCII PASS, stale schema-92 scan PASS aside from SHA/meta numeric substrings, build gate sampled twice. Rejected alternative: claim compile proof while CPU stayed above the project threshold. Runtime us estimate: 0.
+
+Evidence:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action validate` -> `PASS HECTON-8 external starter structure`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action submission` -> structure/review/prepare pass and `PASS HECTON-8 submission package: Generated/com.example.starter_submission.zip`.
+- PASS: submission zip inspection found `mod.json`, `mod.h8manifest.json`, `Tools/build_submission_package.ps1`, and `Reports/review_manifest.json`; no `Generated/*` entry was packaged.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `93`, `ExternalStarterKitWorkbenchBuildsSubmissionPackage=True`, `ExternalStarterKitWritesSubmissionPackageTool=True`, `ExternalStarterKitSubmissionPackageToolPasses=True`, `ExternalStarterKitSubmissionPackageIncludesReviewManifest=True`, `ExternalStarterKitRootLauncherSupportsSubmissionPackage=True`.
+- PASS: `Reports/review_manifest.json` parsed with schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, `27` hashed files, `62294` total bytes, `Tools/build_submission_package.ps1` included, and `Generated/`/`Reports/` excluded.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan and editor C# ASCII scan.
+- PASS: stale schema-92 scan found no stale current revision text; remaining `92` hits were SHA/meta/numeric substrings.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because build/resource gate found CPU `100`, then CPU `66` after a delayed retry; no active `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild` process and no `Temp/UnityLockfile` were present.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session; source/static/CLI proof only.
+
+## Pass 70 - Schema 94 Submission Package Status And Atomic Handoff
+
+- [x] Task 325: Audit submission package handoff after schema 93. DOD practice: traced Workbench, root launcher, submission packer, generated starter script, docs, and static schema; found the author could build a zip but could not see current zip path/freshness in the Workbench, and the packer could delete the previous zip before a replacement was fully installed. Rejected alternative: leave handoff discovery to raw folder browsing and accept previous-zip loss during failed replacement. Runtime us estimate: 0.
+- [x] Task 326: Add Workbench submission status and direct handoff routes. DOD practice: `ExternalStarterKitWorkbenchWindow` now loads newest `Generated/*_submission.zip`, compares it against `Reports/review_manifest.json`, shows path/bytes/write time/freshness, opens the current zip, and reveals the Generated folder when no zip exists. Rejected alternative: add another README command without integrated status. Runtime us estimate: 0, Editor-only.
+- [x] Task 327: Make submission replacement preserve the previous package. DOD practice: checked-in and generated `Tools/build_submission_package.ps1` now write a temp zip first, move the previous zip to a `.previous` backup only during final replacement, restore it on replacement failure, and clean temp/backup outputs. Rejected alternative: remove the old zip before new archive creation or before replacement proof. Runtime us estimate: 0, offline CLI only.
+- [x] Task 328: Extend schema/docs/static proof to schema 94. DOD practice: `Signal_Schema.json`, `Validate_Mod_API_Static.ps1`, Runtime Playbook, README, API spec, authoring plan, product blueprint, starter contract, and starter README/tool README now record Workbench submission package status plus previous-zip preservation. Rejected alternative: source-only SDK UX fix without a drift gate. Runtime us estimate: 0.
+- [x] Task 329: Verify starter/static/hygiene gates and obey compile gate. DOD practice: starter validate PASS, starter submission PASS, zip inspection PASS, schema JSON parse PASS, project static validator PASS at schema 94, review manifest parse PASS, scoped `git diff --check` PASS, trailing whitespace PASS, editor C# ASCII PASS, stale schema-93 scan PASS, build gate sampled. Rejected alternative: launch build while CPU and compiler processes were already active. Runtime us estimate: 0.
+
+Evidence:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action validate` -> `PASS HECTON-8 external starter structure`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action submission` -> structure/review/prepare pass and `PASS HECTON-8 submission package: Generated/com.example.starter_submission.zip`.
+- PASS: submission zip inspection found `28` entries, `mod.json`, `mod.h8manifest.json`, `Tools/build_submission_package.ps1`, `Reports/review_manifest.json`, and no `Generated/*` entry.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `94`, `ExternalStarterKitWorkbenchShowsSubmissionPackageStatus=True`, `ExternalStarterKitSubmissionPackagePreservesPreviousOutputUntilSuccess=True`.
+- PASS: `Signal_Schema.json` parsed with `schemaRevision=94`, `starterWorkbenchShowsSubmissionPackageStatus=True`, and `externalStarterKitSubmissionPackagePreservesPreviousOutputUntilSuccess=True`.
+- PASS: `Reports/review_manifest.json` parsed with schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, `27` hashed files, `63955` total bytes, `Tools/build_submission_package.ps1` included, and `Generated/`/`Reports/` excluded.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan, editor C# ASCII scan, and stale schema-93 text scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because build/resource gate found CPU `100` with active `csc.exe` PID `41544` and `dotnet.exe` PID `43740`, then CPU `80` with active `dotnet.exe` PID `62104`; no `Temp/UnityLockfile` was present.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session; source/static/CLI proof only.
+
+## Pass 71 - Schema 95 Authoring Data Preview And Validation
+
+- [x] Task 330: Audit starter settings/locale authoring after submission handoff. DOD practice: compared `Tables/settings.h8table.json`, `Locales/en.h8loc.json`, Workbench preview state, checked-in validator, generated validator, and JSON Schemas; found shallow validation and no integrated settings/locale status before handoff. Rejected alternative: leave settings and locale as raw JSON until a future full editor exists. Runtime us estimate: 0 us/frame, editor/offline only.
+- [x] Task 331: Harden settings and locale validator contracts. DOD practice: checked-in and generated `Tools/validate_structure.ps1` now enforce settings schema, row array cap, canonical row IDs, duplicate IDs, supported lower-case kinds, required/default type matching, locale schema, locale code, string key canonical form, non-empty values, and string count cap. Rejected alternative: rely only on JSON parseability or VS Code schema hints. Runtime us estimate: 0.
+- [x] Task 332: Add Workbench Authoring Data Preview. DOD practice: `ExternalStarterKitWorkbenchWindow` now shows settings row count/invalid IDs/duplicate IDs/invalid kinds and locale code/string key/value issues with bounded file and row/string caps. Rejected alternative: duplicate full CLI validation in C#; the panel is a preview and the PowerShell validator remains no-Unity authority. Runtime us estimate: 0.
+- [x] Task 333: Extend schema/docs/static proof to schema 95. DOD practice: `Signal_Schema.json`, `Validate_Mod_API_Static.ps1`, Runtime Playbook, README, API spec, authoring plan, product blueprint, starter file contract, starter README, and tool README now record authoring data preview and settings/locale validation. Rejected alternative: source-only UX fix with stale public SDK docs. Runtime us estimate: 0.
+- [x] Task 334: Verify starter/static/hygiene gates and obey compile gate. DOD practice: starter validate PASS, starter submission PASS, project static validator PASS at schema 95 with negative settings/locale probes, schema JSON parse PASS, review zip inspection PASS, scoped `git diff --check` PASS with line-ending warnings only, trailing whitespace PASS, editor C# ASCII PASS, stale schema-94 text scan PASS, build gate blocked under CPU/process contention first, then allowed one `dotnet build` at CPU 44.53 with no compiler processes and no Unity lock; build PASS with 0 warnings and 0 errors. Rejected alternative: launch `dotnet build` while CPU was 100 percent and active `dotnet.exe` processes were present. Runtime us estimate: 0.
+
+Evidence:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action validate` -> `PASS HECTON-8 external starter structure`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action submission` -> structure/review/prepare pass and `PASS HECTON-8 submission package: Generated/com.example.starter_submission.zip`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `95`, `ExternalStarterKitWorkbenchShowsAuthoringDataPreview=True`, `ExternalStarterKitValidatorChecksSettingsAndLocaleContracts=True`.
+- PASS: negative static probes rejected invalid settings row ID/kind and invalid locale code/key/value.
+- PASS: `Signal_Schema.json`, `settings_table.schema.json`, `locale.schema.json`, and `Reports/review_manifest.json` parsed as JSON.
+- PASS: submission zip inspection found `28` entries, `mod.json`, `mod.h8manifest.json`, `Schemas/settings_table.schema.json`, `Schemas/locale.schema.json`, `Reports/review_manifest.json`, and no `Generated/*` entry.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan, editor C# ASCII scan, and stale schema-94 text scan.
+- PASS: `dotnet build Assembly-CSharp.csproj -v:minimal` launched only after resource gate allowed it: CPU `44.53`, no active `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild`, no `Temp/UnityLockfile`; result `0 Warning(s)`, `0 Error(s)`.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session; source/static/CLI proof only.
+
+## Pass 73 - Schema 97 Settings And Locale Snippet Authoring
+
+- [x] Task 340: Audit post-capability settings/locale modder creation route. DOD practice: compared Workbench, root `h8mod.ps1`, checked-in starter tools, SDK Hub generator, local validator, schema, runtime playbook, and starter docs; found settings/locale were visible and validated, but still required raw hand-authored JSON for new rows/entries. Rejected alternative: leave random external authors to type table/locale object shapes manually. Runtime us estimate: 0 us/frame, editor/offline only.
+- [x] Task 341: Add no-Unity settings and locale snippet helpers. DOD practice: added `Tools/create_settings_row_snippet.ps1` and `Tools/create_locale_entry_snippet.ps1`; both validate canonical IDs/keys, reject reserved path segments, restrict output to `Generated/`, support text and JSON output, and do not mutate `Tables/settings.h8table.json` or `Locales/en.h8loc.json`. Rejected alternative: direct table/locale mutation that could destroy unknown fields or author ordering. Runtime us estimate: 0.
+- [x] Task 342: Integrate authoring snippets into Workbench, root launcher, and generator. DOD practice: `ExternalStarterKitWorkbenchWindow` now has an `Authoring Snippets` panel with generate/open/tool routes; `h8mod.ps1` exposes `setting-snippet` and `locale-snippet`; `ModdingSdkHubWindow` writes the same scripts, launcher routes, docs, and validator requirements into refreshed starter kits. Rejected alternative: checked-in starter-only patch that would drift from generated kits. Runtime us estimate: 0.
+- [x] Task 343: Extend schema/docs/static proof to schema 97. DOD practice: `Signal_Schema.json`, `Validate_Mod_API_Static.ps1`, Runtime Playbook, README, API spec, authoring plan, product blueprint, external starter file contract, starter README, capability guide, and tools README now record authoring snippet support and static drift gates. Rejected alternative: UI/tool-only feature with no schema proof. Runtime us estimate: 0.
+- [x] Task 344: Verify starter/static/hygiene gates and obey compile gate. DOD practice: PowerShell parser PASS for changed scripts, root launcher settings/locale snippets PASS, direct JSON snippet probes PASS, invalid id/default/key/value probes fail closed, starter validate PASS, starter submission PASS, static validator PASS at schema 97 after fixing a Workbench safety-text contract marker, review manifest and zip inspection PASS, stale schema-96 scan PASS, scoped `git diff --check` PASS with line-ending warnings only, touched-file trailing whitespace PASS, editor C# ASCII PASS, and build gate sampled twice. Rejected alternative: launch `dotnet build` while CPU was above the project threshold and a `dotnet.exe` process was active. Runtime us estimate: 0.
+
+Evidence:
+- PASS: PowerShell parser scan for `h8mod.ps1`, `create_settings_row_snippet.ps1`, `create_locale_entry_snippet.ps1`, `validate_structure.ps1`, and `Validate_Mod_API_Static.ps1`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action setting-snippet` -> `PASS HECTON-8 settings row snippet written`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action locale-snippet` -> `PASS HECTON-8 locale entry snippet written`.
+- PASS: direct JSON probes emitted `hecton8.settings_row_snippet.v1` and `hecton8.locale_entry_snippet.v1`, runtime `envelope-only`, and `Generated/` outputs.
+- PASS: negative probes reject invalid settings default, invalid settings ID, invalid locale key, and empty locale value.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action validate` -> `PASS HECTON-8 external starter structure`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action submission` -> structure/review/prepare pass and `PASS HECTON-8 submission package: Generated/com.example.starter_submission.zip`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `97`, `ExternalStarterKitWorkbenchGeneratesAuthoringSnippets=True`, settings/locale snippet tool/root launcher flags true.
+- PASS: review manifest parsed with schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, `30` hashed files, `89173` total bytes, settings/locale snippet tools included, and `Generated/`/`Reports/` excluded.
+- PASS: submission zip inspection found `31` entries, `mod.json`, `mod.h8manifest.json`, `Reports/review_manifest.json`, `Tools/create_settings_row_snippet.ps1`, `Tools/create_locale_entry_snippet.ps1`, and no `Generated/*` entry.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan, editor C# ASCII scan, and stale schema-96 scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because build/resource gate found CPU `99`, then CPU `60` with active `dotnet.exe` PID `35512`; no `Temp/UnityLockfile` was present.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session; source/static/CLI proof only.
+
+## Pass 74 - Schema 98 Bounded Settings And Locale Apply UX
+
+- [x] Task 345: Audit settings/locale snippet usability after schema 97. DOD practice: traced Workbench, root launcher, starter scripts, SDK Hub generator, docs, schema, review manifest, and static validator; found generation existed but random authors still had to manually splice JSON into table/locale files. Rejected alternative: keep copy/paste as the primary workflow. Runtime us estimate: 0 us/frame, editor/offline only.
+- [x] Task 346: Add bounded no-Unity settings and locale apply helpers. DOD practice: added `Tools/apply_settings_row_snippet.ps1` and `Tools/apply_locale_entry_snippet.ps1`; they accept Generated snippets, reject unsafe paths, strip snippet-only notes, reject duplicates unless `-Replace` is explicit, write through temp files, call the local validator with throw-mode, and restore the previous file on validation failure. Rejected alternative: blind JSON append or overwrite without rollback. Runtime us estimate: 0.
+- [x] Task 347: Integrate apply route into Workbench, root launcher, generator, and starter validation. DOD practice: Workbench now exposes Apply Setting/Locale Snippet buttons and opens target files/tools; `h8mod.ps1` exposes `apply-setting-snippet` and `apply-locale-snippet`; SDK Hub generator writes the same routes; local validator requires the new tools and capability guide text. Rejected alternative: checked-in starter-only patch that would drift from generated kits. Runtime us estimate: 0.
+- [x] Task 348: Extend schema/docs/static proof to schema 98. DOD practice: `Signal_Schema.json`, `Validate_Mod_API_Static.ps1`, Runtime Playbook, README, API spec, authoring plan, product blueprint, starter file contract, starter README/tool README/capability guide now record bounded settings/locale apply support. Rejected alternative: UI/tool change without drift gates. Runtime us estimate: 0.
+- [x] Task 349: Verify starter/static/hygiene gates and obey compile gate. DOD practice: PowerShell parser PASS, JSON parse PASS, temp-copy apply probes PASS, starter validate PASS, starter submission PASS, review manifest and zip contain apply tools and exclude `Generated/`, static validator PASS at schema 98, scoped `git diff --check` PASS, trailing whitespace PASS, editor C# ASCII PASS, stale schema-97 scan PASS, build gate sampled twice. Rejected alternative: launch `dotnet build` while CPU stayed above 50 percent. Runtime us estimate: 0.
+
+Evidence:
+- PASS: PowerShell parser scan for changed starter scripts and `Docs/Modding/Validate_Mod_API_Static.ps1`.
+- PASS: temp-copy settings/locale apply probe generated snippets, applied them through `h8mod.ps1`, and revalidated the copied starter kit.
+- PASS: direct JSON apply probe emitted `hecton8.settings_row_apply.v1` and `hecton8.locale_entry_apply.v1` without validator text polluting JSON output.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action validate` -> `PASS HECTON-8 external starter structure`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action submission` -> structure/review/prepare pass and `PASS HECTON-8 submission package: Generated/com.example.starter_submission.zip`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `98`, apply helper/workbench/root launcher/static proof flags true.
+- PASS: review manifest parsed with schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, `32` hashed files, apply tools included, and `Generated/` excluded.
+- PASS: submission zip inspection found `33` entries, `Tools/apply_settings_row_snippet.ps1`, `Tools/apply_locale_entry_snippet.ps1`, `Reports/review_manifest.json`, and no `Generated/*` entry.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan, editor C# ASCII scan, and stale schema-97 scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because build/resource gate found CPU `100.00`, then `63.70`; no active `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild` process and no `Temp/UnityLockfile` were present.
+- NOT RUN: Unity MCP/Editor console verification because Unity MCP tools are not available in this session; source/static/CLI proof only.

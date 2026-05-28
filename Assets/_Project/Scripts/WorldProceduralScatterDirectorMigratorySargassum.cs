@@ -116,6 +116,7 @@ namespace Hecton8.World
         {
             private IDataVault _vault;
             private VaultGenerationHandle<T> _handle;
+            private BufferID _bufferId;
 
             public bool IsCreated => TryResolve(out NativeArray<T> buffer) && buffer.IsCreated;
 
@@ -135,17 +136,18 @@ namespace Hecton8.World
                 }
             }
 
-            public void Bind(IDataVault vault, in VaultGenerationHandle<T> handle)
+            public void Bind(IDataVault vault, in VaultGenerationHandle<T> handle, BufferID bufferId)
             {
                 _vault = vault;
                 _handle = handle;
+                _bufferId = bufferId;
             }
 
             public bool TryResolve(out NativeArray<T> buffer)
             {
                 buffer = default;
                 return _vault != null &&
-                       IsHandleCreated(in _handle) &&
+                       IsMigratorySargassumHandle(in _handle, _bufferId) &&
                        _vault.TryResolveHandle(in _handle, out buffer) &&
                        buffer.IsCreated;
             }
@@ -153,7 +155,9 @@ namespace Hecton8.World
             public bool TryAcquireWriteLock(SystemID owner, out NativeArray<T> buffer)
             {
                 buffer = default;
-                if (_vault == null || !IsHandleCreated(in _handle))
+                if (_vault == null ||
+                    owner != SystemID.WorldSargassum ||
+                    !IsMigratorySargassumHandle(in _handle, _bufferId))
                     return false;
 
                 if (!_vault.TryAcquireWriteLock(in _handle, owner, out buffer))
@@ -169,17 +173,22 @@ namespace Hecton8.World
 
             public void ReleaseWriteLock(SystemID owner)
             {
-                if (_vault != null && IsHandleCreated(in _handle))
+                if (_vault != null &&
+                    owner == SystemID.WorldSargassum &&
+                    IsMigratorySargassumHandle(in _handle, _bufferId))
+                {
                     _vault.ReleaseWriteLock(in _handle, owner);
+                }
             }
 
             public void ReleaseBuffer()
             {
-                if (_vault != null && IsHandleCreated(in _handle))
+                if (_vault != null && IsMigratorySargassumHandle(in _handle, _bufferId))
                     _vault.ReleaseBuffer(in _handle);
 
                 _vault = null;
                 _handle = default;
+                _bufferId = default;
             }
 
             private NativeArray<T> Resolve()
@@ -387,22 +396,26 @@ namespace Hecton8.World
                 MaxMigratorySargassumIslandCount,
                 SystemID.WorldSargassum,
                 NativeArrayOptions.ClearMemory);
-            if (!IsHandleCreated(in handle) ||
+            if (!IsMigratorySargassumHandle(in handle, bufferId) ||
                 !vault.TryResolveHandle(in handle, out NativeArray<T> buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < MaxMigratorySargassumIslandCount)
             {
+                if (IsMigratorySargassumHandle(in handle, bufferId))
+                    vault.ReleaseBuffer(in handle);
                 return false;
             }
 
-            target.Bind(vault, in handle);
+            target.Bind(vault, in handle, bufferId);
             return true;
         }
 
-        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle)
+        private static bool IsMigratorySargassumHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
             where T : struct
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)SystemID.WorldSargassum &&
+                   handle.Generation != 0u;
         }
 
         private void ReleaseMigratorySargassumVaultBuffers()
@@ -607,18 +620,39 @@ namespace Hecton8.World
         {
             islands = default;
             flowSamples = default;
-            if (!_migratorySargassumIslands.TryAcquireWriteLock(SystemID.WorldSargassum, out islands))
-                return false;
 
-            if (!_migratorySargassumFlowSamples.TryAcquireWriteLock(SystemID.WorldSargassum, out flowSamples))
+            bool islandsLocked = false;
+            bool flowSamplesLocked = false;
+            try
             {
-                _migratorySargassumIslands.ReleaseWriteLock(SystemID.WorldSargassum);
-                islands = default;
-                return false;
-            }
+                if (!_migratorySargassumIslands.TryAcquireWriteLock(SystemID.WorldSargassum, out islands))
+                    return false;
 
-            _migratorySargassumJobBuffersLocked = true;
-            return true;
+                islandsLocked = true;
+
+                if (!_migratorySargassumFlowSamples.TryAcquireWriteLock(SystemID.WorldSargassum, out flowSamples))
+                    return false;
+
+                flowSamplesLocked = true;
+                _migratorySargassumJobBuffersLocked = true;
+                islandsLocked = false;
+                flowSamplesLocked = false;
+                return true;
+            }
+            finally
+            {
+                if (!_migratorySargassumJobBuffersLocked)
+                {
+                    if (flowSamplesLocked)
+                        _migratorySargassumFlowSamples.ReleaseWriteLock(SystemID.WorldSargassum);
+
+                    if (islandsLocked)
+                        _migratorySargassumIslands.ReleaseWriteLock(SystemID.WorldSargassum);
+
+                    islands = default;
+                    flowSamples = default;
+                }
+            }
         }
 
         private void ReleaseMigratorySargassumJobBufferLocks()
@@ -626,9 +660,15 @@ namespace Hecton8.World
             if (!_migratorySargassumJobBuffersLocked)
                 return;
 
-            _migratorySargassumFlowSamples.ReleaseWriteLock(SystemID.WorldSargassum);
-            _migratorySargassumIslands.ReleaseWriteLock(SystemID.WorldSargassum);
-            _migratorySargassumJobBuffersLocked = false;
+            try
+            {
+                _migratorySargassumFlowSamples.ReleaseWriteLock(SystemID.WorldSargassum);
+            }
+            finally
+            {
+                _migratorySargassumIslands.ReleaseWriteLock(SystemID.WorldSargassum);
+                _migratorySargassumJobBuffersLocked = false;
+            }
         }
 
         private void ScheduleMigratorySargassumJob(float now)

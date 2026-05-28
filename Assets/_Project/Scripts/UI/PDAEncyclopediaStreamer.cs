@@ -282,7 +282,7 @@ namespace Hecton8.UI
         private void Awake()
         {
             if (bodyText == null)
-                bodyText = GetComponent<TMP_Text>();
+                TryGetComponent(out bodyText);
 
             EnsureCanvasSplit();
         }

@@ -22,11 +22,13 @@ namespace Hecton8.Construction
     {
         private const SystemID OwnerSystem = SystemID.Construction;
         private const float SlowTickStepSeconds = 0.1f;
-        private const int FixedDrainageDeltaPassCount = 2;
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1306_Construction_SumpPump.bin";
+        private const int MinDrainageDeltaPassCount = 1;
+        private const int MaxDrainageDeltaPassCount = 4;
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1421_FluidLogistics.bin";
         private const uint RuntimeHash = 0x53333430u;
         private const ulong DumpMagic = 0x00384E4F54434548UL;
         private const uint DumpVersion = 1u;
+        private const ulong DrainageVaultMutationGuardMask = 0x00000000FFFFF2FFUL;
 
         private static readonly int s_DrainagePipeEdgeFlowId = Shader.PropertyToID("_H8DrainagePipeEdgeFlow");
         private static readonly int s_DrainagePipeEdgeCountId = Shader.PropertyToID("_H8DrainagePipeEdgeCount");
@@ -96,7 +98,7 @@ namespace Hecton8.Construction
         private AutoResetEvent _dumpSignal;
         private byte[] _dumpBytes;
         private string _dumpPath;
-        private ulong _lockedBufferMask;
+        private ulong _activeVaultGuardMask;
         private long _solverScheduleTimestamp;
         private uint _frameIndex;
         private int _dumpByteCount;
@@ -258,7 +260,7 @@ namespace Hecton8.Construction
                 CompleteMockSeedForTeardown();
                 CompleteScheduledSolverForTeardown();
                 UnlockJobBuffers();
-                BindDataVaultForLifecycle(currentService as IDataVault);
+                BindDataVaultForLifecycle(currentService is IDataVault currentVault ? currentVault : null);
                 _buffersReady = _vault != null && TryInitializeBuffers();
                 if (_buffersReady && generateMockOnEnable)
                     GenerateMockDrainageNetwork();
@@ -310,7 +312,7 @@ namespace Hecton8.Construction
 
             float quality = ResolveGlobalQualityWeight();
             _solveAccumulator = math.min(1f, _solveAccumulator + SlowTickStepSeconds);
-            float cadence = ResolveAuthoritySolveCadenceSeconds();
+            float cadence = ResolveSolveCadenceSeconds(quality);
             if (_solveAccumulator + 0.00001f < cadence)
                 return;
 
@@ -374,7 +376,7 @@ namespace Hecton8.Construction
 
             try
             {
-                if (!TryBorrowMutable(in _profilesHandle, out NativeArray<PipeProfileDTO> profiles))
+                if (!TryBorrowMutable(in _profilesHandle, SumpPumpDrainageBufferIds.PipeProfiles, out NativeArray<PipeProfileDTO> profiles))
                     return false;
                 return SumpPumpPipeGridValidation.TryParsePipeProfilesCsv(csvBytes, profiles, out profileCount);
             }
@@ -401,15 +403,15 @@ namespace Hecton8.Construction
             bool scheduled = false;
             try
             {
-                if (!TryBorrowMutable(in _pumpNodesHandle, out NativeArray<DrainageNodeDTO> pumps) ||
-                    !TryBorrowMutable(in _pipeEdgesHandle, out NativeArray<PipeEdgeDTO> edges) ||
-                    !TryBorrowMutable(in _nodeAupHandle, out NativeArray<double3> nodeAup) ||
-                    !TryBorrowMutable(in _pumpRoomIndicesHandle, out NativeArray<int> roomIndices) ||
-                    !TryBorrowMutable(in _powerPotentialHandle, out NativeArray<float> power) ||
-                    !TryBorrowMutable(in _pumpBaseMaxRateHandle, out NativeArray<float> baseRates) ||
-                    !TryBorrowMutable(in _pumpPowerNodeHashesHandle, out NativeArray<uint> powerNodeHashes) ||
-                    !TryBorrowMutable(in _countersHandle, out NativeArray<int> counters) ||
-                    !TryBorrowMutable(in _tuningHandle, out NativeArray<DrainageTuningDTO> tuning) ||
+                if (!TryBorrowMutable(in _pumpNodesHandle, SumpPumpDrainageBufferIds.PumpNodes, out NativeArray<DrainageNodeDTO> pumps) ||
+                    !TryBorrowMutable(in _pipeEdgesHandle, SumpPumpDrainageBufferIds.PipeEdges, out NativeArray<PipeEdgeDTO> edges) ||
+                    !TryBorrowMutable(in _nodeAupHandle, SumpPumpDrainageBufferIds.NodeAup, out NativeArray<double3> nodeAup) ||
+                    !TryBorrowMutable(in _pumpRoomIndicesHandle, SumpPumpDrainageBufferIds.PumpRoomIndices, out NativeArray<int> roomIndices) ||
+                    !TryBorrowMutable(in _powerPotentialHandle, SumpPumpDrainageBufferIds.PowerPotential, out NativeArray<float> power) ||
+                    !TryBorrowMutable(in _pumpBaseMaxRateHandle, SumpPumpDrainageBufferIds.PumpBaseMaxRate, out NativeArray<float> baseRates) ||
+                    !TryBorrowMutable(in _pumpPowerNodeHashesHandle, SumpPumpDrainageBufferIds.PumpPowerNodeHashes, out NativeArray<uint> powerNodeHashes) ||
+                    !TryBorrowMutable(in _countersHandle, SumpPumpDrainageBufferIds.Counters, out NativeArray<int> counters) ||
+                    !TryBorrowMutable(in _tuningHandle, SumpPumpDrainageBufferIds.Tuning, out NativeArray<DrainageTuningDTO> tuning) ||
                     !pumps.IsCreated || !edges.IsCreated || !nodeAup.IsCreated || !roomIndices.IsCreated || !power.IsCreated || !baseRates.IsCreated || !powerNodeHashes.IsCreated || !counters.IsCreated || !tuning.IsCreated)
                 {
                     return;
@@ -501,16 +503,20 @@ namespace Hecton8.Construction
             return true;
         }
 
-        private bool TryBorrowMutable<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        private bool TryBorrowMutable<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId, out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
-            return _vault != null && _vault.TryResolveHandle(in handle, out buffer);
+            return _vault != null &&
+                   IsDrainageVaultHandle(in handle, expectedBufferId) &&
+                   _vault.TryResolveHandle(in handle, out buffer);
         }
 
-        private bool TryRead<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        private bool TryRead<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId, out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
-            return _vault != null && _vault.TryReadHandle(in handle, out buffer);
+            return _vault != null &&
+                   IsDrainageVaultHandle(in handle, expectedBufferId) &&
+                   _vault.TryReadHandle(in handle, out buffer);
         }
 
         private bool ValidateOwnedBuffers()
@@ -518,37 +524,39 @@ namespace Hecton8.Construction
             int safeNodes = math.max(1, nodeCapacity);
             int safeEdges = math.max(1, edgeCapacity);
             int safeRoomLocks = math.max(safeNodes, HabitatFluidIncursionConstants.MaxCompartments);
-            return HasResolvedBuffer(in _pumpNodesHandle, safeNodes) &&
-                   HasResolvedBuffer(in _pipeEdgesHandle, safeEdges) &&
-                   HasResolvedBuffer(in _nodeAupHandle, safeNodes) &&
-                   HasResolvedBuffer(in _pumpRoomIndicesHandle, safeNodes) &&
-                   HasResolvedBuffer(in _csrOffsetsHandle, safeNodes + 1) &&
-                   HasResolvedBuffer(in _csrDestinationsHandle, safeEdges) &&
-                   HasResolvedBuffer(in _csrConductanceHandle, safeEdges) &&
-                   HasResolvedBuffer(in _csrFlowHandle, safeEdges) &&
-                   HasResolvedBuffer(in _csrFlatEdgeIndexHandle, safeEdges) &&
-                   HasResolvedBuffer(in _csrWriteCursorHandle, safeNodes) &&
-                   HasResolvedBuffer(in _pressureFrontHandle, safeNodes) &&
-                   HasResolvedBuffer(in _pressureBackHandle, safeNodes) &&
-                   HasResolvedBuffer(in _powerPotentialHandle, safeNodes) &&
-                   HasResolvedBuffer(in _pumpBaseMaxRateHandle, safeNodes) &&
-                   HasResolvedBuffer(in _pumpPowerNodeHashesHandle, safeNodes) &&
-                   HasResolvedBuffer(in _pumpRemainderHandle, safeNodes) &&
-                   HasResolvedBuffer(in _pumpMassErrorHandle, safeNodes) &&
-                   HasResolvedBuffer(in _roomDrainLocksHandle, safeRoomLocks) &&
-                   HasResolvedBuffer(in _tuningHandle, 1) &&
-                   HasResolvedBuffer(in _telemetryHandle, SumpPumpPipeGridConstants.TelemetryFrameCount) &&
-                   HasResolvedBuffer(in _telemetryCursorHandle, 1) &&
-                   HasResolvedBuffer(in _countersHandle, SumpPumpPipeGridConstants.CounterCount) &&
-                   HasResolvedBuffer(in _profilesHandle, SumpPumpPipeGridConstants.MaxPipeProfiles) &&
-                   HasResolvedBuffer(in _csvScratchHandle, SumpPumpPipeGridConstants.CsvScratchBytes) &&
-                   HasResolvedBuffer(in _frameSummaryHandle, 1) &&
-                   HasResolvedBuffer(in _flowGpuHandle, safeEdges);
+            return HasResolvedBuffer(in _pumpNodesHandle, SumpPumpDrainageBufferIds.PumpNodes, safeNodes) &&
+                   HasResolvedBuffer(in _pipeEdgesHandle, SumpPumpDrainageBufferIds.PipeEdges, safeEdges) &&
+                   HasResolvedBuffer(in _nodeAupHandle, SumpPumpDrainageBufferIds.NodeAup, safeNodes) &&
+                   HasResolvedBuffer(in _pumpRoomIndicesHandle, SumpPumpDrainageBufferIds.PumpRoomIndices, safeNodes) &&
+                   HasResolvedBuffer(in _csrOffsetsHandle, SumpPumpDrainageBufferIds.CsrOffsets, safeNodes + 1) &&
+                   HasResolvedBuffer(in _csrDestinationsHandle, SumpPumpDrainageBufferIds.CsrDestinations, safeEdges) &&
+                   HasResolvedBuffer(in _csrConductanceHandle, SumpPumpDrainageBufferIds.CsrConductance, safeEdges) &&
+                   HasResolvedBuffer(in _csrFlowHandle, SumpPumpDrainageBufferIds.CsrFlow, safeEdges) &&
+                   HasResolvedBuffer(in _csrFlatEdgeIndexHandle, SumpPumpDrainageBufferIds.CsrFlatEdgeIndex, safeEdges) &&
+                   HasResolvedBuffer(in _csrWriteCursorHandle, SumpPumpDrainageBufferIds.CsrWriteCursor, safeNodes) &&
+                   HasResolvedBuffer(in _pressureFrontHandle, SumpPumpDrainageBufferIds.PressureFront, safeNodes) &&
+                   HasResolvedBuffer(in _pressureBackHandle, SumpPumpDrainageBufferIds.PressureBack, safeNodes) &&
+                   HasResolvedBuffer(in _powerPotentialHandle, SumpPumpDrainageBufferIds.PowerPotential, safeNodes) &&
+                   HasResolvedBuffer(in _pumpBaseMaxRateHandle, SumpPumpDrainageBufferIds.PumpBaseMaxRate, safeNodes) &&
+                   HasResolvedBuffer(in _pumpPowerNodeHashesHandle, SumpPumpDrainageBufferIds.PumpPowerNodeHashes, safeNodes) &&
+                   HasResolvedBuffer(in _pumpRemainderHandle, SumpPumpDrainageBufferIds.PumpRemainder, safeNodes) &&
+                   HasResolvedBuffer(in _pumpMassErrorHandle, SumpPumpDrainageBufferIds.PumpMassError, safeNodes) &&
+                   HasResolvedBuffer(in _roomDrainLocksHandle, SumpPumpDrainageBufferIds.RoomDrainLocks, safeRoomLocks) &&
+                   HasResolvedBuffer(in _tuningHandle, SumpPumpDrainageBufferIds.Tuning, 1) &&
+                   HasResolvedBuffer(in _telemetryHandle, SumpPumpDrainageBufferIds.TelemetryRing, SumpPumpPipeGridConstants.TelemetryFrameCount) &&
+                   HasResolvedBuffer(in _telemetryCursorHandle, SumpPumpDrainageBufferIds.TelemetryCursor, 1) &&
+                   HasResolvedBuffer(in _countersHandle, SumpPumpDrainageBufferIds.Counters, SumpPumpPipeGridConstants.CounterCount) &&
+                   HasResolvedBuffer(in _profilesHandle, SumpPumpDrainageBufferIds.PipeProfiles, SumpPumpPipeGridConstants.MaxPipeProfiles) &&
+                   HasResolvedBuffer(in _csvScratchHandle, SumpPumpDrainageBufferIds.CsvScratch, SumpPumpPipeGridConstants.CsvScratchBytes) &&
+                   HasResolvedBuffer(in _frameSummaryHandle, SumpPumpDrainageBufferIds.FrameSummary, 1) &&
+                   HasResolvedBuffer(in _flowGpuHandle, SumpPumpDrainageBufferIds.FlowGpu, safeEdges);
         }
 
-        private bool HasResolvedBuffer<T>(in VaultGenerationHandle<T> handle, int minLength) where T : struct
+        private bool HasResolvedBuffer<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId, int minLength) where T : struct
         {
-            if (_vault == null || handle.BufferID == 0u || minLength <= 0)
+            if (_vault == null ||
+                minLength <= 0 ||
+                !IsDrainageVaultHandle(in handle, expectedBufferId))
                 return false;
 
             return _vault.TryReadHandle(in handle, out NativeArray<T> buffer) &&
@@ -556,35 +564,43 @@ namespace Hecton8.Construction
                    buffer.Length >= minLength;
         }
 
+        private static bool IsDrainageVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)OwnerSystem &&
+                   handle.Generation != 0u;
+        }
+
         private void ScheduleDrainageSolve(float deltaTime, float quality)
         {
             if (!TryLockJobBuffers())
                 return;
 
-            if (!TryBorrowMutable(in _pumpNodesHandle, out NativeArray<DrainageNodeDTO> pumps) ||
-                !TryBorrowMutable(in _pipeEdgesHandle, out NativeArray<PipeEdgeDTO> edges) ||
-                !TryBorrowMutable(in _nodeAupHandle, out NativeArray<double3> nodeAup) ||
-                !TryBorrowMutable(in _pumpRoomIndicesHandle, out NativeArray<int> roomIndices) ||
-                !TryBorrowMutable(in _csrOffsetsHandle, out NativeArray<int> csrOffsets) ||
-                !TryBorrowMutable(in _csrDestinationsHandle, out NativeArray<int> csrDestinations) ||
-                !TryBorrowMutable(in _csrConductanceHandle, out NativeArray<float> csrConductance) ||
-                !TryBorrowMutable(in _csrFlowHandle, out NativeArray<float> csrFlow) ||
-                !TryBorrowMutable(in _csrFlatEdgeIndexHandle, out NativeArray<int> csrFlatEdgeIndex) ||
-                !TryBorrowMutable(in _csrWriteCursorHandle, out NativeArray<int> csrWriteCursor) ||
-                !TryBorrowMutable(in _pressureFrontHandle, out NativeArray<float> pressureFront) ||
-                !TryBorrowMutable(in _pressureBackHandle, out NativeArray<float> pressureBack) ||
-                !TryBorrowMutable(in _powerPotentialHandle, out NativeArray<float> powerPotential) ||
-                !TryBorrowMutable(in _pumpBaseMaxRateHandle, out NativeArray<float> pumpBaseMaxRate) ||
-                !TryBorrowMutable(in _pumpPowerNodeHashesHandle, out NativeArray<uint> pumpPowerNodeHashes) ||
-                !TryBorrowMutable(in _pumpRemainderHandle, out NativeArray<float> pumpRemainder) ||
-                !TryBorrowMutable(in _pumpMassErrorHandle, out NativeArray<float> pumpMassError) ||
-                !TryBorrowMutable(in _roomDrainLocksHandle, out NativeArray<DrainageRoomDrainLock64> roomDrainLocks) ||
-                !TryBorrowMutable(in _tuningHandle, out NativeArray<DrainageTuningDTO> tuning) ||
-                !TryBorrowMutable(in _telemetryHandle, out NativeArray<DrainageTelemetryEntry> telemetry) ||
-                !TryBorrowMutable(in _telemetryCursorHandle, out NativeArray<int> telemetryCursor) ||
-                !TryBorrowMutable(in _countersHandle, out NativeArray<int> counters) ||
-                !TryBorrowMutable(in _frameSummaryHandle, out NativeArray<DrainageTelemetryEntry> frameSummary) ||
-                !TryBorrowMutable(in _flowGpuHandle, out NativeArray<DrainagePipeFlowGpuDTO> flowGpu) ||
+            if (!TryBorrowMutable(in _pumpNodesHandle, SumpPumpDrainageBufferIds.PumpNodes, out NativeArray<DrainageNodeDTO> pumps) ||
+                !TryBorrowMutable(in _pipeEdgesHandle, SumpPumpDrainageBufferIds.PipeEdges, out NativeArray<PipeEdgeDTO> edges) ||
+                !TryBorrowMutable(in _nodeAupHandle, SumpPumpDrainageBufferIds.NodeAup, out NativeArray<double3> nodeAup) ||
+                !TryBorrowMutable(in _pumpRoomIndicesHandle, SumpPumpDrainageBufferIds.PumpRoomIndices, out NativeArray<int> roomIndices) ||
+                !TryBorrowMutable(in _csrOffsetsHandle, SumpPumpDrainageBufferIds.CsrOffsets, out NativeArray<int> csrOffsets) ||
+                !TryBorrowMutable(in _csrDestinationsHandle, SumpPumpDrainageBufferIds.CsrDestinations, out NativeArray<int> csrDestinations) ||
+                !TryBorrowMutable(in _csrConductanceHandle, SumpPumpDrainageBufferIds.CsrConductance, out NativeArray<float> csrConductance) ||
+                !TryBorrowMutable(in _csrFlowHandle, SumpPumpDrainageBufferIds.CsrFlow, out NativeArray<float> csrFlow) ||
+                !TryBorrowMutable(in _csrFlatEdgeIndexHandle, SumpPumpDrainageBufferIds.CsrFlatEdgeIndex, out NativeArray<int> csrFlatEdgeIndex) ||
+                !TryBorrowMutable(in _csrWriteCursorHandle, SumpPumpDrainageBufferIds.CsrWriteCursor, out NativeArray<int> csrWriteCursor) ||
+                !TryBorrowMutable(in _pressureFrontHandle, SumpPumpDrainageBufferIds.PressureFront, out NativeArray<float> pressureFront) ||
+                !TryBorrowMutable(in _pressureBackHandle, SumpPumpDrainageBufferIds.PressureBack, out NativeArray<float> pressureBack) ||
+                !TryBorrowMutable(in _powerPotentialHandle, SumpPumpDrainageBufferIds.PowerPotential, out NativeArray<float> powerPotential) ||
+                !TryBorrowMutable(in _pumpBaseMaxRateHandle, SumpPumpDrainageBufferIds.PumpBaseMaxRate, out NativeArray<float> pumpBaseMaxRate) ||
+                !TryBorrowMutable(in _pumpPowerNodeHashesHandle, SumpPumpDrainageBufferIds.PumpPowerNodeHashes, out NativeArray<uint> pumpPowerNodeHashes) ||
+                !TryBorrowMutable(in _pumpRemainderHandle, SumpPumpDrainageBufferIds.PumpRemainder, out NativeArray<float> pumpRemainder) ||
+                !TryBorrowMutable(in _pumpMassErrorHandle, SumpPumpDrainageBufferIds.PumpMassError, out NativeArray<float> pumpMassError) ||
+                !TryBorrowMutable(in _roomDrainLocksHandle, SumpPumpDrainageBufferIds.RoomDrainLocks, out NativeArray<DrainageRoomDrainLock64> roomDrainLocks) ||
+                !TryBorrowMutable(in _tuningHandle, SumpPumpDrainageBufferIds.Tuning, out NativeArray<DrainageTuningDTO> tuning) ||
+                !TryBorrowMutable(in _telemetryHandle, SumpPumpDrainageBufferIds.TelemetryRing, out NativeArray<DrainageTelemetryEntry> telemetry) ||
+                !TryBorrowMutable(in _telemetryCursorHandle, SumpPumpDrainageBufferIds.TelemetryCursor, out NativeArray<int> telemetryCursor) ||
+                !TryBorrowMutable(in _countersHandle, SumpPumpDrainageBufferIds.Counters, out NativeArray<int> counters) ||
+                !TryBorrowMutable(in _frameSummaryHandle, SumpPumpDrainageBufferIds.FrameSummary, out NativeArray<DrainageTelemetryEntry> frameSummary) ||
+                !TryBorrowMutable(in _flowGpuHandle, SumpPumpDrainageBufferIds.FlowGpu, out NativeArray<DrainagePipeFlowGpuDTO> flowGpu) ||
                 !pumps.IsCreated || !edges.IsCreated || !nodeAup.IsCreated || !roomIndices.IsCreated ||
                 !csrOffsets.IsCreated || !csrDestinations.IsCreated || !csrConductance.IsCreated ||
                 !csrFlow.IsCreated || !csrFlatEdgeIndex.IsCreated || !csrWriteCursor.IsCreated ||
@@ -598,33 +614,34 @@ namespace Hecton8.Construction
 
             int nodeCount = ResolveNodeCount(counters);
             int edgeCount = ResolveEdgeCount(counters);
-            uint telemetryFlags = SumpDrainageTelemetryFlags.None;
-            bool hasFluidFront = TryLockAndReadExistingBuffer(BufferID.ShinobuFluidCompartmentFront, 20, out NativeArray<FluidCompartmentDTO> fluidFront);
-            bool hasFluidBack = TryLockAndBorrowMutableExistingBuffer(BufferID.ShinobuFluidCompartmentBack, 21, out NativeArray<FluidCompartmentDTO> fluidBack);
-            bool hasPowerNodes = TryLockAndReadExistingBuffer(Hecton8.Power.PowerGridBufferIds.Nodes, 24, out NativeArray<Hecton8.Power.PowerNodeDTO> powerNodes);
-            bool hasPowerPotential = TryLockAndReadExistingBuffer(Hecton8.Power.PowerGridBufferIds.PotentialFront, 25, out NativeArray<float> powerPotentialFront);
-            int compartmentCount = hasFluidFront && hasFluidBack ? math.min(fluidFront.Length, fluidBack.Length) : 0;
-            if (compartmentCount <= 0)
+            bool scheduled = false;
+            bool hasPendingJob = false;
+            JobHandle pendingJob = default;
+            try
             {
-                telemetryFlags |= SumpDrainageTelemetryFlags.MissingFluidVault;
-                UnlockTrackedBuffer(BufferID.ShinobuFluidCompartmentBack, 21);
-                UnlockTrackedBuffer(BufferID.ShinobuFluidCompartmentFront, 20);
-            }
-            if (!hasPowerNodes || !hasPowerPotential)
-            {
-                telemetryFlags |= SumpDrainageTelemetryFlags.MissingPowerVault;
-                UnlockTrackedBuffer(Hecton8.Power.PowerGridBufferIds.PotentialFront, 25);
-                UnlockTrackedBuffer(Hecton8.Power.PowerGridBufferIds.Nodes, 24);
-                powerNodes = default;
-                powerPotentialFront = default;
-            }
+                uint telemetryFlags = SumpDrainageTelemetryFlags.None;
+                bool hasFluidFront = TryGuardAndReadExistingBuffer(BufferID.ShinobuFluidCompartmentFront, out NativeArray<FluidCompartmentDTO> fluidFront);
+                bool hasFluidBack = TryGuardAndBorrowMutableExistingBuffer(BufferID.ShinobuFluidCompartmentBack, out NativeArray<FluidCompartmentDTO> fluidBack);
+                bool hasPowerNodes = TryGuardAndReadExistingBuffer(Hecton8.Power.PowerGridBufferIds.Nodes, out NativeArray<Hecton8.Power.PowerNodeDTO> powerNodes);
+                bool hasPowerPotential = TryGuardAndReadExistingBuffer(Hecton8.Power.PowerGridBufferIds.PotentialFront, out NativeArray<float> powerPotentialFront);
+                int compartmentCount = hasFluidFront && hasFluidBack ? math.min(fluidFront.Length, fluidBack.Length) : 0;
+                if (compartmentCount <= 0)
+                {
+                    telemetryFlags |= SumpDrainageTelemetryFlags.MissingFluidVault;
+                }
+                if (!hasPowerNodes || !hasPowerPotential)
+                {
+                    telemetryFlags |= SumpDrainageTelemetryFlags.MissingPowerVault;
+                    powerNodes = default;
+                    powerPotentialFront = default;
+                }
 
-            ResetFrameCounters(counters, nodeCount, edgeCount);
-            DrainageTuningDTO activeTuning = RefreshTuning(tuning, deltaTime, quality, nodeCount, edgeCount);
-            int deltaPassCount = FixedDrainageDeltaPassCount;
-            counters[SumpPumpPipeGridConstants.CounterDeltaPassCount] = deltaPassCount;
-            DrainageNodeDTO* pumpPtr = (DrainageNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(pumps);
-            JobHandle dependency = default;
+                ResetFrameCounters(counters, nodeCount, edgeCount);
+                DrainageTuningDTO activeTuning = RefreshTuning(tuning, deltaTime, quality, nodeCount, edgeCount);
+                int deltaPassCount = ResolveDrainageDeltaPassCount(quality);
+                counters[SumpPumpPipeGridConstants.CounterDeltaPassCount] = deltaPassCount;
+                DrainageNodeDTO* pumpPtr = (DrainageNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(pumps);
+                JobHandle dependency = default;
 
             if (_topologyDirty)
             {
@@ -643,9 +660,11 @@ namespace Hecton8.Construction
                     EdgeCount = edgeCount,
                     BasePipeConductance = activeTuning.BasePipeConductance
                 };
-                dependency = buildJob.Schedule(dependency);
-                _topologyDirty = false;
-            }
+                    dependency = buildJob.Schedule(dependency);
+                    pendingJob = dependency;
+                    hasPendingJob = true;
+                    _topologyDirty = false;
+                }
 
             NativeArray<float> pressureRead = _pressureFrontIsA ? pressureFront : pressureBack;
             NativeArray<float> pressureWrite = _pressureFrontIsA ? pressureBack : pressureFront;
@@ -662,8 +681,10 @@ namespace Hecton8.Construction
                 MaxPumpThroughputM3PerSecond = activeTuning.MaxPumpThroughputM3PerSecond
             };
             dependency = powerJob.Schedule(nodeCount, 64, dependency);
+            pendingJob = dependency;
+            hasPendingJob = true;
 
-            for (int passIndex = 0; passIndex < FixedDrainageDeltaPassCount; passIndex++)
+            for (int passIndex = 0; passIndex < deltaPassCount; passIndex++)
             {
                 EvaluatePipePressureDeltaPassJob pressureJob = new EvaluatePipePressureDeltaPassJob
                 {
@@ -681,6 +702,8 @@ namespace Hecton8.Construction
                     GravityResistanceScalar = activeTuning.GravityResistanceScalar
                 };
                 dependency = pressureJob.Schedule(nodeCount, 64, dependency);
+                pendingJob = dependency;
+                hasPendingJob = true;
                 NativeArray<float> swap = pressureRead;
                 pressureRead = pressureWrite;
                 pressureWrite = swap;
@@ -701,6 +724,8 @@ namespace Hecton8.Construction
                 VisualFlowGain = activeTuning.VisualFlowGain
             };
             dependency = flowJob.Schedule(nodeCount, 64, dependency);
+            pendingJob = dependency;
+            hasPendingJob = true;
 
             if (compartmentCount > 0)
             {
@@ -710,6 +735,8 @@ namespace Hecton8.Construction
                     Count = compartmentCount
                 };
                 dependency = clearLocksJob.Schedule(compartmentCount, 64, dependency);
+                pendingJob = dependency;
+                hasPendingJob = true;
 
                 ExecuteWaterEvacuationJob evacuateJob = new ExecuteWaterEvacuationJob
                 {
@@ -727,6 +754,8 @@ namespace Hecton8.Construction
                     MassQuantumM3 = activeTuning.MassQuantumM3
                 };
                 dependency = evacuateJob.Schedule(nodeCount, 64, dependency);
+                pendingJob = dependency;
+                hasPendingJob = true;
             }
 
             DrainageTelemetryRecorderJob telemetryJob = new DrainageTelemetryRecorderJob
@@ -747,13 +776,27 @@ namespace Hecton8.Construction
                 PumpPowerDrawWatts = activeTuning.PumpPowerDraw,
                 InputFlags = telemetryFlags
             };
-            _solverHandle = telemetryJob.Schedule(dependency);
-            H8Memory.RegisterActiveJob(OwnerSystem, _solverHandle);
-            _solverScheduled = true;
-            _pressureFrontIsA = nextFrontIsA;
-            _solverScheduleTimestamp = Stopwatch.GetTimestamp();
-            _flowUploadDirty = true;
-            _frameIndex++;
+                _solverHandle = telemetryJob.Schedule(dependency);
+                pendingJob = _solverHandle;
+                hasPendingJob = true;
+                H8Memory.RegisterActiveJob(OwnerSystem, _solverHandle);
+                _solverScheduled = true;
+                _pressureFrontIsA = nextFrontIsA;
+                _solverScheduleTimestamp = Stopwatch.GetTimestamp();
+                _flowUploadDirty = true;
+                _frameIndex++;
+                scheduled = true;
+            }
+            finally
+            {
+                if (!scheduled)
+                {
+                    if (hasPendingJob)
+                        DispatcherJobFence.TryComplete(ref pendingJob, forceComplete: true);
+
+                    UnlockJobBuffers();
+                }
+            }
         }
 
         private bool TryFinalizeScheduledSolverNoWait()
@@ -811,132 +854,57 @@ namespace Hecton8.Construction
 
         private bool TryLockJobBuffers()
         {
-            _lockedBufferMask = 0UL;
-            return TryLock(SumpPumpDrainageBufferIds.PumpNodes, 0) &&
-                   TryLock(SumpPumpDrainageBufferIds.PipeEdges, 1) &&
-                   TryLock(SumpPumpDrainageBufferIds.NodeAup, 2) &&
-                   TryLock(SumpPumpDrainageBufferIds.PumpRoomIndices, 3) &&
-                   TryLock(SumpPumpDrainageBufferIds.CsrOffsets, 4) &&
-                   TryLock(SumpPumpDrainageBufferIds.CsrDestinations, 5) &&
-                   TryLock(SumpPumpDrainageBufferIds.CsrConductance, 6) &&
-                   TryLock(SumpPumpDrainageBufferIds.CsrFlow, 7) &&
-                   TryLock(SumpPumpDrainageBufferIds.CsrFlatEdgeIndex, 8) &&
-                   TryLock(SumpPumpDrainageBufferIds.CsrWriteCursor, 9) &&
-                   TryLock(SumpPumpDrainageBufferIds.PressureFront, 10) &&
-                   TryLock(SumpPumpDrainageBufferIds.PressureBack, 11) &&
-                   TryLock(SumpPumpDrainageBufferIds.PowerPotential, 12) &&
-                   TryLock(SumpPumpDrainageBufferIds.PumpBaseMaxRate, 26) &&
-                   TryLock(SumpPumpDrainageBufferIds.PumpPowerNodeHashes, 27) &&
-                   TryLock(SumpPumpDrainageBufferIds.PumpRemainder, 13) &&
-                   TryLock(SumpPumpDrainageBufferIds.Tuning, 14) &&
-                   TryLock(SumpPumpDrainageBufferIds.TelemetryRing, 15) &&
-                   TryLock(SumpPumpDrainageBufferIds.TelemetryCursor, 16) &&
-                   TryLock(SumpPumpDrainageBufferIds.Counters, 17) &&
-                   TryLock(SumpPumpDrainageBufferIds.FrameSummary, 18) &&
-                   TryLock(SumpPumpDrainageBufferIds.FlowGpu, 19) &&
-                   TryLock(SumpPumpDrainageBufferIds.PumpMassError, 22) &&
-                   TryLock(SumpPumpDrainageBufferIds.RoomDrainLocks, 23);
+            if (_activeVaultGuardMask != 0UL)
+                return true;
+
+            if (_vault == null || !_vault.TryAcquireMutationGuard(DrainageVaultMutationGuardMask))
+                return false;
+
+            _activeVaultGuardMask = DrainageVaultMutationGuardMask;
+            return true;
         }
 
         private bool TryLockTelemetryWriteBuffers()
         {
-            _lockedBufferMask = 0UL;
-            return TryLock(SumpPumpDrainageBufferIds.FrameSummary, 18) &&
-                   TryLock(SumpPumpDrainageBufferIds.TelemetryCursor, 16) &&
-                   TryLock(SumpPumpDrainageBufferIds.TelemetryRing, 15);
+            return TryLockJobBuffers();
         }
 
-        private bool TryLock(BufferID bufferId, int bit)
-        {
-            if (_vault != null && _vault.TryLockBuffer(bufferId, OwnerSystem))
-            {
-                _lockedBufferMask |= 1UL << bit;
-                return true;
-            }
-
-            UnlockJobBuffers();
-            return false;
-        }
-
-        private bool TryLockAndBorrowMutableExistingBuffer<T>(BufferID bufferId, int bit, out NativeArray<T> buffer) where T : struct
+        private bool TryGuardAndBorrowMutableExistingBuffer<T>(BufferID bufferId, out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
-            if (_vault == null || !_vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle))
+            if (_vault == null ||
+                _activeVaultGuardMask == 0UL ||
+                !_vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle))
                 return false;
 
-            if (!_vault.TryLockBuffer(bufferId, OwnerSystem))
-                return false;
-
-            _lockedBufferMask |= 1UL << bit;
             if (_vault.TryResolveHandle(in handle, out buffer) && buffer.IsCreated)
                 return true;
 
-            UnlockTrackedBuffer(bufferId, bit);
             buffer = default;
             return false;
         }
 
-        private bool TryLockAndReadExistingBuffer<T>(BufferID bufferId, int bit, out NativeArray<T> buffer) where T : struct
+        private bool TryGuardAndReadExistingBuffer<T>(BufferID bufferId, out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
-            if (_vault == null || !_vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle))
+            if (_vault == null ||
+                _activeVaultGuardMask == 0UL ||
+                !_vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> handle))
                 return false;
 
-            if (!_vault.TryLockBuffer(bufferId, OwnerSystem))
-                return false;
-
-            _lockedBufferMask |= 1UL << bit;
             if (_vault.TryReadHandle(in handle, out buffer) && buffer.IsCreated)
                 return true;
 
-            UnlockTrackedBuffer(bufferId, bit);
             buffer = default;
             return false;
         }
 
         private void UnlockJobBuffers()
         {
-            UnlockIf(Hecton8.Power.PowerGridBufferIds.PotentialFront, 25);
-            UnlockIf(Hecton8.Power.PowerGridBufferIds.Nodes, 24);
-            UnlockIf(BufferID.ShinobuFluidCompartmentBack, 21);
-            UnlockIf(BufferID.ShinobuFluidCompartmentFront, 20);
-            UnlockIf(SumpPumpDrainageBufferIds.RoomDrainLocks, 23);
-            UnlockIf(SumpPumpDrainageBufferIds.PumpMassError, 22);
-            UnlockIf(SumpPumpDrainageBufferIds.FlowGpu, 19);
-            UnlockIf(SumpPumpDrainageBufferIds.FrameSummary, 18);
-            UnlockIf(SumpPumpDrainageBufferIds.Counters, 17);
-            UnlockIf(SumpPumpDrainageBufferIds.TelemetryCursor, 16);
-            UnlockIf(SumpPumpDrainageBufferIds.TelemetryRing, 15);
-            UnlockIf(SumpPumpDrainageBufferIds.Tuning, 14);
-            UnlockIf(SumpPumpDrainageBufferIds.PumpRemainder, 13);
-            UnlockIf(SumpPumpDrainageBufferIds.PumpPowerNodeHashes, 27);
-            UnlockIf(SumpPumpDrainageBufferIds.PumpBaseMaxRate, 26);
-            UnlockIf(SumpPumpDrainageBufferIds.PowerPotential, 12);
-            UnlockIf(SumpPumpDrainageBufferIds.PressureBack, 11);
-            UnlockIf(SumpPumpDrainageBufferIds.PressureFront, 10);
-            UnlockIf(SumpPumpDrainageBufferIds.CsrWriteCursor, 9);
-            UnlockIf(SumpPumpDrainageBufferIds.CsrFlatEdgeIndex, 8);
-            UnlockIf(SumpPumpDrainageBufferIds.CsrFlow, 7);
-            UnlockIf(SumpPumpDrainageBufferIds.CsrConductance, 6);
-            UnlockIf(SumpPumpDrainageBufferIds.CsrDestinations, 5);
-            UnlockIf(SumpPumpDrainageBufferIds.CsrOffsets, 4);
-            UnlockIf(SumpPumpDrainageBufferIds.PumpRoomIndices, 3);
-            UnlockIf(SumpPumpDrainageBufferIds.NodeAup, 2);
-            UnlockIf(SumpPumpDrainageBufferIds.PipeEdges, 1);
-            UnlockIf(SumpPumpDrainageBufferIds.PumpNodes, 0);
-            _lockedBufferMask = 0UL;
-        }
-
-        private void UnlockTrackedBuffer(BufferID bufferId, int bit)
-        {
-            UnlockIf(bufferId, bit);
-            _lockedBufferMask &= ~(1UL << bit);
-        }
-
-        private void UnlockIf(BufferID bufferId, int bit)
-        {
-            if ((_lockedBufferMask & (1UL << bit)) != 0UL)
-                _vault?.TryUnlockBuffer(bufferId, OwnerSystem);
+            ulong guardMask = _activeVaultGuardMask;
+            if (guardMask != 0UL)
+                _vault?.ReleaseMutationGuard(guardMask);
+            _activeVaultGuardMask = 0UL;
         }
 
         private void ResetFrameCounters(NativeArray<int> counters, int nodeCount, int edgeCount)
@@ -957,7 +925,7 @@ namespace Hecton8.Construction
             tuning.DeltaTimeSeconds = math.max(0f, deltaTime);
             tuning.NodeCount = (ushort)math.min(ushort.MaxValue, math.max(0, nodeCount));
             tuning.EdgeCount = (ushort)math.min(ushort.MaxValue, math.max(0, edgeCount));
-            tuning.DeltaPassCount = FixedDrainageDeltaPassCount;
+            tuning.DeltaPassCount = (ushort)ResolveDrainageDeltaPassCount(quality);
             tuningArray[0] = tuning;
             return tuning;
         }
@@ -969,7 +937,7 @@ namespace Hecton8.Construction
 
             try
             {
-                if (!TryBorrowMutable(in _tuningHandle, out NativeArray<DrainageTuningDTO> tuning) ||
+                if (!TryBorrowMutable(in _tuningHandle, SumpPumpDrainageBufferIds.Tuning, out NativeArray<DrainageTuningDTO> tuning) ||
                     !tuning.IsCreated ||
                     tuning.Length <= 0)
                     return;
@@ -1044,9 +1012,12 @@ namespace Hecton8.Construction
             return math.lerp(0.5f, 0.1f, thermalCurve) + lowPowerHold;
         }
 
-        private static float ResolveAuthoritySolveCadenceSeconds()
+        private static int ResolveDrainageDeltaPassCount(float quality)
         {
-            return ResolveSolveCadenceSeconds(SumpPumpPipeGridConstants.AuthoritativeQualityWeight);
+            float q = math.saturate(math.isfinite(quality) ? quality : SumpPumpPipeGridConstants.AuthoritativeQualityWeight);
+            float curve = math.smoothstep(0f, 1f, q);
+            int passCount = (int)math.round(math.lerp((float)MinDrainageDeltaPassCount, MaxDrainageDeltaPassCount, curve));
+            return math.clamp(passCount, MinDrainageDeltaPassCount, MaxDrainageDeltaPassCount);
         }
 
         private static float ResolveGlobalQualityWeight()
@@ -1071,7 +1042,7 @@ namespace Hecton8.Construction
 
         private void StampSolverWallTime(uint solverWallMicroseconds)
         {
-            if (TryBorrowMutable(in _frameSummaryHandle, out NativeArray<DrainageTelemetryEntry> summary) &&
+            if (TryBorrowMutable(in _frameSummaryHandle, SumpPumpDrainageBufferIds.FrameSummary, out NativeArray<DrainageTelemetryEntry> summary) &&
                 summary.IsCreated &&
                 summary.Length > 0)
             {
@@ -1083,8 +1054,8 @@ namespace Hecton8.Construction
                 summary[0] = entry;
             }
 
-            if (!TryBorrowMutable(in _telemetryCursorHandle, out NativeArray<int> cursor) ||
-                !TryBorrowMutable(in _telemetryHandle, out NativeArray<DrainageTelemetryEntry> telemetry) ||
+            if (!TryBorrowMutable(in _telemetryCursorHandle, SumpPumpDrainageBufferIds.TelemetryCursor, out NativeArray<int> cursor) ||
+                !TryBorrowMutable(in _telemetryHandle, SumpPumpDrainageBufferIds.TelemetryRing, out NativeArray<DrainageTelemetryEntry> telemetry) ||
                 !cursor.IsCreated ||
                 !telemetry.IsCreated ||
                 cursor.Length <= 0 ||
@@ -1113,9 +1084,9 @@ namespace Hecton8.Construction
 
             try
             {
-                if (!TryBorrowMutable(in _frameSummaryHandle, out NativeArray<DrainageTelemetryEntry> summary) ||
-                    !TryBorrowMutable(in _telemetryCursorHandle, out NativeArray<int> cursor) ||
-                    !TryBorrowMutable(in _telemetryHandle, out NativeArray<DrainageTelemetryEntry> telemetry) ||
+                if (!TryBorrowMutable(in _frameSummaryHandle, SumpPumpDrainageBufferIds.FrameSummary, out NativeArray<DrainageTelemetryEntry> summary) ||
+                    !TryBorrowMutable(in _telemetryCursorHandle, SumpPumpDrainageBufferIds.TelemetryCursor, out NativeArray<int> cursor) ||
+                    !TryBorrowMutable(in _telemetryHandle, SumpPumpDrainageBufferIds.TelemetryRing, out NativeArray<DrainageTelemetryEntry> telemetry) ||
                     !summary.IsCreated ||
                     summary.Length <= 0 ||
                     !cursor.IsCreated ||
@@ -1162,7 +1133,7 @@ namespace Hecton8.Construction
 
         private DrainageTelemetryEntry ReadFrameSummary()
         {
-            return TryRead(in _frameSummaryHandle, out NativeArray<DrainageTelemetryEntry> summary) &&
+            return TryRead(in _frameSummaryHandle, SumpPumpDrainageBufferIds.FrameSummary, out NativeArray<DrainageTelemetryEntry> summary) &&
                    summary.IsCreated &&
                    summary.Length > 0
                 ? summary[0]
@@ -1188,7 +1159,7 @@ namespace Hecton8.Construction
             if (target == null || target.Length <= 0 || !_buffersReady || _solverScheduled)
                 return false;
 
-            if (!TryRead(in _telemetryHandle, out NativeArray<DrainageTelemetryEntry> telemetry) ||
+            if (!TryRead(in _telemetryHandle, SumpPumpDrainageBufferIds.TelemetryRing, out NativeArray<DrainageTelemetryEntry> telemetry) ||
                 !telemetry.IsCreated ||
                 telemetry.Length <= 0)
                 return false;
@@ -1208,7 +1179,7 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            if (!TryRead(in _tuningHandle, out NativeArray<DrainageTuningDTO> tuningArray) ||
+            if (!TryRead(in _tuningHandle, SumpPumpDrainageBufferIds.Tuning, out NativeArray<DrainageTuningDTO> tuningArray) ||
                 !tuningArray.IsCreated ||
                 tuningArray.Length <= 0)
             {
@@ -1232,7 +1203,7 @@ namespace Hecton8.Construction
 
             try
             {
-                if (!TryBorrowMutable(in _tuningHandle, out NativeArray<DrainageTuningDTO> tuningArray) ||
+                if (!TryBorrowMutable(in _tuningHandle, SumpPumpDrainageBufferIds.Tuning, out NativeArray<DrainageTuningDTO> tuningArray) ||
                     !tuningArray.IsCreated ||
                     tuningArray.Length <= 0)
                     return false;
@@ -1249,12 +1220,12 @@ namespace Hecton8.Construction
 
         private void ClearRuntimeScalarBuffers()
         {
-            TryBorrowMutable(in _pumpNodesHandle, out NativeArray<DrainageNodeDTO> pumps);
-            TryBorrowMutable(in _pressureFrontHandle, out NativeArray<float> pressureFront);
-            TryBorrowMutable(in _pressureBackHandle, out NativeArray<float> pressureBack);
-            TryBorrowMutable(in _pumpRemainderHandle, out NativeArray<float> remainder);
-            TryBorrowMutable(in _pumpMassErrorHandle, out NativeArray<float> massError);
-            TryBorrowMutable(in _roomDrainLocksHandle, out NativeArray<DrainageRoomDrainLock64> roomLocks);
+            TryBorrowMutable(in _pumpNodesHandle, SumpPumpDrainageBufferIds.PumpNodes, out NativeArray<DrainageNodeDTO> pumps);
+            TryBorrowMutable(in _pressureFrontHandle, SumpPumpDrainageBufferIds.PressureFront, out NativeArray<float> pressureFront);
+            TryBorrowMutable(in _pressureBackHandle, SumpPumpDrainageBufferIds.PressureBack, out NativeArray<float> pressureBack);
+            TryBorrowMutable(in _pumpRemainderHandle, SumpPumpDrainageBufferIds.PumpRemainder, out NativeArray<float> remainder);
+            TryBorrowMutable(in _pumpMassErrorHandle, SumpPumpDrainageBufferIds.PumpMassError, out NativeArray<float> massError);
+            TryBorrowMutable(in _roomDrainLocksHandle, SumpPumpDrainageBufferIds.RoomDrainLocks, out NativeArray<DrainageRoomDrainLock64> roomLocks);
             for (int i = 0; i < nodeCapacity; i++)
             {
                 float seededPressure = pumps.IsCreated && i < pumps.Length
@@ -1279,7 +1250,7 @@ namespace Hecton8.Construction
 
         private void UploadFlowVisuals()
         {
-            TryRead(in _countersHandle, out NativeArray<int> counters);
+            TryRead(in _countersHandle, SumpPumpDrainageBufferIds.Counters, out NativeArray<int> counters);
             int validEdges = counters.IsCreated && counters.Length > SumpPumpPipeGridConstants.CounterValidCsrEdges
                 ? counters[SumpPumpPipeGridConstants.CounterValidCsrEdges]
                 : edgeCapacity;
@@ -1291,7 +1262,7 @@ namespace Hecton8.Construction
 
         private void UploadStructuredFlowBuffer(int validEdges)
         {
-            if (!TryRead(in _flowGpuHandle, out NativeArray<DrainagePipeFlowGpuDTO> flowGpu) ||
+            if (!TryRead(in _flowGpuHandle, SumpPumpDrainageBufferIds.FlowGpu, out NativeArray<DrainagePipeFlowGpuDTO> flowGpu) ||
                 !flowGpu.IsCreated)
                 return;
 
@@ -1320,9 +1291,9 @@ namespace Hecton8.Construction
 
         private void PublishConnectionSplineNodeFlow()
         {
-            if (!TryRead(in _csrOffsetsHandle, out NativeArray<int> offsets) ||
-                !TryRead(in _csrFlowHandle, out NativeArray<float> flows) ||
-                !TryRead(in _countersHandle, out NativeArray<int> counters) ||
+            if (!TryRead(in _csrOffsetsHandle, SumpPumpDrainageBufferIds.CsrOffsets, out NativeArray<int> offsets) ||
+                !TryRead(in _csrFlowHandle, SumpPumpDrainageBufferIds.CsrFlow, out NativeArray<float> flows) ||
+                !TryRead(in _countersHandle, SumpPumpDrainageBufferIds.Counters, out NativeArray<int> counters) ||
                 !offsets.IsCreated ||
                 !flows.IsCreated ||
                 !counters.IsCreated)
@@ -1349,7 +1320,7 @@ namespace Hecton8.Construction
 
         private DrainageTuningDTO ReadTuningOrDefault()
         {
-            return TryRead(in _tuningHandle, out NativeArray<DrainageTuningDTO> tuning) &&
+            return TryRead(in _tuningHandle, SumpPumpDrainageBufferIds.Tuning, out NativeArray<DrainageTuningDTO> tuning) &&
                    tuning.IsCreated &&
                    tuning.Length > 0
                 ? SanitizeTuning(tuning[0])
@@ -1421,42 +1392,40 @@ namespace Hecton8.Construction
                 return;
             }
 
-            ReleaseOwnedHandle(ref _flowGpuHandle);
-            ReleaseOwnedHandle(ref _frameSummaryHandle);
-            ReleaseOwnedHandle(ref _csvScratchHandle);
-            ReleaseOwnedHandle(ref _profilesHandle);
-            ReleaseOwnedHandle(ref _countersHandle);
-            ReleaseOwnedHandle(ref _telemetryCursorHandle);
-            ReleaseOwnedHandle(ref _telemetryHandle);
-            ReleaseOwnedHandle(ref _tuningHandle);
-            ReleaseOwnedHandle(ref _roomDrainLocksHandle);
-            ReleaseOwnedHandle(ref _pumpMassErrorHandle);
-            ReleaseOwnedHandle(ref _pumpRemainderHandle);
-            ReleaseOwnedHandle(ref _pumpPowerNodeHashesHandle);
-            ReleaseOwnedHandle(ref _pumpBaseMaxRateHandle);
-            ReleaseOwnedHandle(ref _powerPotentialHandle);
-            ReleaseOwnedHandle(ref _pressureBackHandle);
-            ReleaseOwnedHandle(ref _pressureFrontHandle);
-            ReleaseOwnedHandle(ref _csrWriteCursorHandle);
-            ReleaseOwnedHandle(ref _csrFlatEdgeIndexHandle);
-            ReleaseOwnedHandle(ref _csrFlowHandle);
-            ReleaseOwnedHandle(ref _csrConductanceHandle);
-            ReleaseOwnedHandle(ref _csrDestinationsHandle);
-            ReleaseOwnedHandle(ref _csrOffsetsHandle);
-            ReleaseOwnedHandle(ref _pumpRoomIndicesHandle);
-            ReleaseOwnedHandle(ref _nodeAupHandle);
-            ReleaseOwnedHandle(ref _pipeEdgesHandle);
-            ReleaseOwnedHandle(ref _pumpNodesHandle);
+            ReleaseOwnedHandle(ref _flowGpuHandle, SumpPumpDrainageBufferIds.FlowGpu);
+            ReleaseOwnedHandle(ref _frameSummaryHandle, SumpPumpDrainageBufferIds.FrameSummary);
+            ReleaseOwnedHandle(ref _csvScratchHandle, SumpPumpDrainageBufferIds.CsvScratch);
+            ReleaseOwnedHandle(ref _profilesHandle, SumpPumpDrainageBufferIds.PipeProfiles);
+            ReleaseOwnedHandle(ref _countersHandle, SumpPumpDrainageBufferIds.Counters);
+            ReleaseOwnedHandle(ref _telemetryCursorHandle, SumpPumpDrainageBufferIds.TelemetryCursor);
+            ReleaseOwnedHandle(ref _telemetryHandle, SumpPumpDrainageBufferIds.TelemetryRing);
+            ReleaseOwnedHandle(ref _tuningHandle, SumpPumpDrainageBufferIds.Tuning);
+            ReleaseOwnedHandle(ref _roomDrainLocksHandle, SumpPumpDrainageBufferIds.RoomDrainLocks);
+            ReleaseOwnedHandle(ref _pumpMassErrorHandle, SumpPumpDrainageBufferIds.PumpMassError);
+            ReleaseOwnedHandle(ref _pumpRemainderHandle, SumpPumpDrainageBufferIds.PumpRemainder);
+            ReleaseOwnedHandle(ref _pumpPowerNodeHashesHandle, SumpPumpDrainageBufferIds.PumpPowerNodeHashes);
+            ReleaseOwnedHandle(ref _pumpBaseMaxRateHandle, SumpPumpDrainageBufferIds.PumpBaseMaxRate);
+            ReleaseOwnedHandle(ref _powerPotentialHandle, SumpPumpDrainageBufferIds.PowerPotential);
+            ReleaseOwnedHandle(ref _pressureBackHandle, SumpPumpDrainageBufferIds.PressureBack);
+            ReleaseOwnedHandle(ref _pressureFrontHandle, SumpPumpDrainageBufferIds.PressureFront);
+            ReleaseOwnedHandle(ref _csrWriteCursorHandle, SumpPumpDrainageBufferIds.CsrWriteCursor);
+            ReleaseOwnedHandle(ref _csrFlatEdgeIndexHandle, SumpPumpDrainageBufferIds.CsrFlatEdgeIndex);
+            ReleaseOwnedHandle(ref _csrFlowHandle, SumpPumpDrainageBufferIds.CsrFlow);
+            ReleaseOwnedHandle(ref _csrConductanceHandle, SumpPumpDrainageBufferIds.CsrConductance);
+            ReleaseOwnedHandle(ref _csrDestinationsHandle, SumpPumpDrainageBufferIds.CsrDestinations);
+            ReleaseOwnedHandle(ref _csrOffsetsHandle, SumpPumpDrainageBufferIds.CsrOffsets);
+            ReleaseOwnedHandle(ref _pumpRoomIndicesHandle, SumpPumpDrainageBufferIds.PumpRoomIndices);
+            ReleaseOwnedHandle(ref _nodeAupHandle, SumpPumpDrainageBufferIds.NodeAup);
+            ReleaseOwnedHandle(ref _pipeEdgesHandle, SumpPumpDrainageBufferIds.PipeEdges);
+            ReleaseOwnedHandle(ref _pumpNodesHandle, SumpPumpDrainageBufferIds.PumpNodes);
             ResetHandles();
             ResetRuntimeStateForVaultRelease();
         }
 
-        private void ReleaseOwnedHandle<T>(ref VaultGenerationHandle<T> handle)
+        private void ReleaseOwnedHandle<T>(ref VaultGenerationHandle<T> handle, BufferID expectedBufferId)
             where T : struct
         {
-            if (handle.BufferID != 0u &&
-                handle.Generation != 0u &&
-                handle.SystemID == (uint)OwnerSystem)
+            if (IsDrainageVaultHandle(in handle, expectedBufferId))
             {
                 _vault.ReleaseBuffer(in handle);
             }
@@ -1468,7 +1437,7 @@ namespace Hecton8.Construction
         {
             _solverHandle = default;
             _mockSeedHandle = default;
-            _lockedBufferMask = 0UL;
+            _activeVaultGuardMask = 0UL;
             _solverScheduleTimestamp = 0L;
             _frameIndex = 0u;
             _flowBufferWriteIndex = 0;
@@ -1519,7 +1488,7 @@ namespace Hecton8.Construction
             if (_blackBoxDumped)
                 return;
 
-            if (!TryRead(in _telemetryHandle, out NativeArray<DrainageTelemetryEntry> telemetry) ||
+            if (!TryRead(in _telemetryHandle, SumpPumpDrainageBufferIds.TelemetryRing, out NativeArray<DrainageTelemetryEntry> telemetry) ||
                 !telemetry.IsCreated ||
                 telemetry.Length <= 0 ||
                 _dumpBytes == null ||
@@ -1528,12 +1497,12 @@ namespace Hecton8.Construction
 
             try
             {
-                TryRead(in _telemetryCursorHandle, out NativeArray<int> telemetryCursor);
+                TryRead(in _telemetryCursorHandle, SumpPumpDrainageBufferIds.TelemetryCursor, out NativeArray<int> telemetryCursor);
                 int capacity = math.min(telemetry.Length, SumpPumpPipeGridConstants.TelemetryFrameCount);
                 int writeCount = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? math.max(0, telemetryCursor[0]) : capacity;
                 int validCount = math.min(capacity, writeCount);
                 int oldestIndex = capacity > 0 && writeCount > capacity ? writeCount % capacity : 0;
-                uint aggregateFlags = 0u;
+                uint aggregateFlags = SumpDrainageTelemetryFlags.DumpedBlackBox;
                 for (int i = 0; i < validCount; i++)
                     aggregateFlags |= telemetry[(oldestIndex + i) % capacity].Flags;
 
@@ -1723,12 +1692,12 @@ namespace Hecton8.Construction
 
             NativeArray<float> pressure;
             bool hasPressure = _pressureFrontIsA
-                ? TryRead(in _pressureFrontHandle, out pressure)
-                : TryRead(in _pressureBackHandle, out pressure);
-            if (!TryRead(in _pumpNodesHandle, out NativeArray<DrainageNodeDTO> nodes) ||
-                !TryRead(in _pipeEdgesHandle, out NativeArray<PipeEdgeDTO> edges) ||
-                !TryRead(in _nodeAupHandle, out NativeArray<double3> aup) ||
-                !TryRead(in _countersHandle, out NativeArray<int> counters) ||
+                ? TryRead(in _pressureFrontHandle, SumpPumpDrainageBufferIds.PressureFront, out pressure)
+                : TryRead(in _pressureBackHandle, SumpPumpDrainageBufferIds.PressureBack, out pressure);
+            if (!TryRead(in _pumpNodesHandle, SumpPumpDrainageBufferIds.PumpNodes, out NativeArray<DrainageNodeDTO> nodes) ||
+                !TryRead(in _pipeEdgesHandle, SumpPumpDrainageBufferIds.PipeEdges, out NativeArray<PipeEdgeDTO> edges) ||
+                !TryRead(in _nodeAupHandle, SumpPumpDrainageBufferIds.NodeAup, out NativeArray<double3> aup) ||
+                !TryRead(in _countersHandle, SumpPumpDrainageBufferIds.Counters, out NativeArray<int> counters) ||
                 !hasPressure ||
                 !nodes.IsCreated ||
                 !edges.IsCreated ||
@@ -1780,11 +1749,11 @@ namespace Hecton8.Construction
 
             NativeArray<float> pressure;
             bool hasPressure = _pressureFrontIsA
-                ? TryRead(in _pressureFrontHandle, out pressure)
-                : TryRead(in _pressureBackHandle, out pressure);
-            if (!TryRead(in _pipeEdgesHandle, out NativeArray<PipeEdgeDTO> edges) ||
-                !TryRead(in _nodeAupHandle, out NativeArray<double3> aup) ||
-                !TryRead(in _countersHandle, out NativeArray<int> counters) ||
+                ? TryRead(in _pressureFrontHandle, SumpPumpDrainageBufferIds.PressureFront, out pressure)
+                : TryRead(in _pressureBackHandle, SumpPumpDrainageBufferIds.PressureBack, out pressure);
+            if (!TryRead(in _pipeEdgesHandle, SumpPumpDrainageBufferIds.PipeEdges, out NativeArray<PipeEdgeDTO> edges) ||
+                !TryRead(in _nodeAupHandle, SumpPumpDrainageBufferIds.NodeAup, out NativeArray<double3> aup) ||
+                !TryRead(in _countersHandle, SumpPumpDrainageBufferIds.Counters, out NativeArray<int> counters) ||
                 !hasPressure ||
                 !edges.IsCreated ||
                 !aup.IsCreated ||

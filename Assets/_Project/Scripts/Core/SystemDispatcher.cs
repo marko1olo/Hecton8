@@ -1518,6 +1518,17 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Removes a deferred late-frame owner from its dispatcher lane without routing through the registry.
+        /// Use only when a late-frame owner must retire itself from the dispatcher-owned swap window.
+        /// </summary>
+        /// <param name="item">Late-frame owner.</param>
+        /// <param name="layer">Priority lane.</param>
+        internal static void UnregisterLateFrameTickableDirect(ILateFrameTickable item, PriorityLayer layer)
+        {
+            Unregister(item, layer);
+        }
+
+        /// <summary>
         /// Unregisters a post-fixed-step owner from a fixed priority lane.
         /// </summary>
         /// <param name="item">Post-fixed owner.</param>
@@ -5183,7 +5194,7 @@ namespace Hecton8.Core
                         for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
                         {
                             IUpdatable updatable = lane.GetAt(itemIndex);
-                            if (!_foveatedSimulationManager.TryResolveTick(updatable, deltaTime, out float effectiveDeltaTime))
+                            if (!_foveatedSimulationManager.TryAdvanceTick(updatable, deltaTime, out float effectiveDeltaTime))
                                 continue;
 
                             updatable.Tick(effectiveDeltaTime);

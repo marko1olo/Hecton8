@@ -862,7 +862,7 @@ namespace Hecton8.Core
                 IDataVault vault = _dataVault;
                 if (vault != null)
                 {
-                    AupOriginShiftCoordinator.EnsureRuntimeState(vault, out _);
+                    AupOriginShiftCoordinator.OpenOrAcquireRuntimeStateForOwnerRoute(vault, out _);
                     vault.LockAllocationsForAupShift(nextShiftSequence);
                     vaultAllocationLockActive = true;
                 }
@@ -887,6 +887,11 @@ namespace Hecton8.Core
 
                 ApplyOriginShiftToCachedRootTransforms(shiftOffset);
                 await AwaitTransformShiftJobAsync(aupRebaseHandle, cancellationToken);
+                if (vault != null)
+                {
+                    AupOriginShiftCoordinator.ReleaseScheduledRebaseLocks(vault, in aupScheduleInfo);
+                    aupScheduleInfo.Flags = 0;
+                }
 
                 aupRebaseElapsedMs = (System.Diagnostics.Stopwatch.GetTimestamp() - aupRebaseStartTicks) *
                     1000.0d /
@@ -955,6 +960,7 @@ namespace Hecton8.Core
                 if (vaultAllocationLockActive)
                 {
                     IDataVault vault = _dataVault;
+                    AupOriginShiftCoordinator.ReleaseScheduledRebaseLocks(vault, in aupScheduleInfo);
                     vault?.UnlockAllocationsAfterAupShift(nextShiftSequence);
                 }
 

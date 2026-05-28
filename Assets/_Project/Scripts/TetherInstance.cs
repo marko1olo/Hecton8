@@ -3666,15 +3666,14 @@ namespace Hecton8.Physics
                     return;
                 }
 
-                bool useStraightLineFake = ShouldUseLowTierTautLineVisualFake(qualityTier);
+                float curveWeight01 = ResolveTautLineVisualCurveWeight(qualityTier);
                 float3 start = _verletPositions[0];
                 float3 end = _verletPositions[_verletPositions.Length - 1];
                 float invLast = math.rcp(math.max(1, _visualSegmentPositions.Length - 1));
                 for (int i = 0; i < _visualSegmentPositions.Length; i++)
                 {
-                    float3 localPoint = useStraightLineFake
-                        ? math.lerp(start, end, i * invLast)
-                        : _verletPositions[i];
+                    float3 straightPoint = math.lerp(start, end, i * invLast);
+                    float3 localPoint = math.lerp(straightPoint, _verletPositions[i], curveWeight01);
                     _visualSegmentPositions[i] = SanitizeFinite(localPoint + _verletSolverOrigin);
                 }
 
@@ -3715,11 +3714,15 @@ namespace Hecton8.Physics
             return GeometryUtility.TestPlanesAABB(frustumPlanes, _visualBounds);
         }
 
-        private bool ShouldUseLowTierTautLineVisualFake(HectonQualityTier qualityTier)
+        private float ResolveTautLineVisualCurveWeight(HectonQualityTier qualityTier)
         {
             float qualityWeight = ResolveTetherQualityWeight(qualityTier);
             float collapseWeight = math.saturate((0.35f - qualityWeight) * math.rcp(0.35f));
-            return collapseWeight > 0f && math.max(_tension01, _stress01) >= LowTierTautLineVisualThreshold01;
+            float loadWeight = SmoothRange01(
+                LowTierTautLineVisualThreshold01 - 0.08f,
+                LowTierTautLineVisualThreshold01,
+                math.max(_tension01, _stress01));
+            return math.saturate(1f - collapseWeight * loadWeight);
         }
 
         private static int ResolveVerletIterationCount(HectonQualityTier qualityTier, int tuningOverride)
@@ -3763,26 +3766,23 @@ namespace Hecton8.Physics
             if (math.isfinite(globalWeight))
                 return math.saturate(globalWeight);
 
-            switch (TetherManager.SanitizeQualityTier(qualityTier))
-            {
-                case HectonQualityTier.Mid:
-                    return 0.55f;
-                case HectonQualityTier.High:
-                    return 0.78f;
-                case HectonQualityTier.Ultra:
-                    return 1f;
-                case HectonQualityTier.Low:
-                case HectonQualityTier.Mx350:
-                case HectonQualityTier.Unknown:
-                default:
-                    return 0.2f;
-            }
+            float tierOrdinal = math.clamp((int)TetherManager.SanitizeQualityTier(qualityTier), (int)HectonQualityTier.Low, (int)HectonQualityTier.Ultra);
+            return math.saturate((tierOrdinal - (int)HectonQualityTier.Low) * math.rcp((int)HectonQualityTier.Ultra - (int)HectonQualityTier.Low));
         }
 
         private static float Smooth01(float value)
         {
             float x = math.saturate(value);
             return x * x * (3f - 2f * x);
+        }
+
+        private static float SmoothRange01(float min, float max, float value)
+        {
+            float width = max - min;
+            if (!math.isfinite(width) || math.abs(width) <= 0.000001f)
+                return value >= max ? 1f : 0f;
+
+            return Smooth01((value - min) / width);
         }
 
         private void RecalculateDampingCoefficient()

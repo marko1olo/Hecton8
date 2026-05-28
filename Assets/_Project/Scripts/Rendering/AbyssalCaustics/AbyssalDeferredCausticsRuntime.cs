@@ -364,18 +364,21 @@ namespace Hecton8.Rendering
                     in _csvScratchHandle,
                     BufferID.ShinobuCausticsCsvScratch,
                     AbyssalCausticsConstants.CsvScratchBytes,
-                    out NativeArray<byte> csvScratch) ||
-                !TryAcquireVaultWriteBuffer(
+                    out NativeArray<byte> csvScratch))
+            {
+                return false;
+            }
+
+            scratchLocked = true;
+            if (!TryAcquireVaultWriteBuffer(
                     in _profilesHandle,
                     BufferID.ShinobuCausticsProfiles,
                     AbyssalCausticsConstants.ProfileCapacity,
                     out NativeArray<CausticsLightingProfileDTO> profiles))
             {
-                ReleaseVaultWriteBuffer(in _csvScratchHandle, BufferID.ShinobuCausticsCsvScratch);
                 return false;
             }
 
-            scratchLocked = true;
             profilesLocked = true;
             try
             {
@@ -1446,14 +1449,23 @@ namespace Hecton8.Rendering
                 return false;
             }
 
-            if (!buffer.IsCreated || buffer.Length < requiredLength)
+            bool releaseOnExit = true;
+            try
             {
-                vault.ReleaseWriteLock(in handle, OwnerSystemId);
-                buffer = default;
-                return false;
-            }
+                if (!buffer.IsCreated || buffer.Length < requiredLength)
+                {
+                    buffer = default;
+                    return false;
+                }
 
-            return true;
+                releaseOnExit = false;
+                return true;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                    vault.ReleaseWriteLock(in handle, OwnerSystemId);
+            }
         }
 
         private void ReleaseVaultWriteBuffer<T>(

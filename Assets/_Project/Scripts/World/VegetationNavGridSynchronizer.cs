@@ -2101,8 +2101,6 @@ namespace Hecton8.World
             }
 
             uint flags = 0u;
-            if (_lastAbyssalPathPortalLookAhead <= LowTierAbyssalPathPortalLookAhead)
-                flags |= 1u;
             if (outputCount <= 0)
                 flags |= 2u;
             if (!finite)

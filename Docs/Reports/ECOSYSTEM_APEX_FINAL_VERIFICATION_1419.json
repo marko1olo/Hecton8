@@ -1,403 +1,332 @@
 ﻿{
-    "reportKind":  "ECOSYSTEM_APEX_FINAL_VERIFICATION_1419",
-    "agentId":  1419,
-    "role":  "ECOSYSTEM_SPATIAL_GRID_AND_SWARM_AUDITOR",
+    "agent_id":  "1419",
+    "generated_at_local":  "2026-05-28T20:08:50.9387499+04:00",
+    "status":  "LOOP_12_STATIC_PASS_BUILD_BLOCKED_BY_CONTENTION_AND_PRIOR_MSB4006_PROJECT_GRAPH_FAILURE",
     "domain":  "Echelon 3 / Ecosystem spatial hash + GPU swarm data exchange",
-    "generatedUtc":  "2026-05-28T10:10:21.0658960Z",
-    "evidenceClass":  "STATIC_SOURCE_ONLY_BUILD_AND_RUNTIME_PENDING",
-    "promptTaskCount":  20,
-    "status":  "APEX_STATIC_PASS_AFTER_LOOP10_WITH_COMPILE_RUNTIME_PENDING",
-    "buildGate":  {
-                      "timestampUtc":  "2026-05-28T10:10:21.0658960Z",
-                      "cpuLoadPercent":  100,
-                      "compilerProcessCount":  1,
-                      "compilerProcesses":  [
-                                                {
-                                                    "id":  10444,
-                                                    "processName":  "dotnet",
-                                                    "cpu":  27.421875,
-                                                    "startTime":  "2026-05-28T14:10:06+04:00"
-                                                }
-                                            ],
-                      "dotnetBuildInvoked":  false,
-                      "blockReason":  "Compilation Resource Throttling gate failed: CPU was 100% and active dotnet process 10444 was present; dotnet build was not invoked."
-                  },
-    "scans":  {
-                  "gitDiffCheck":  {
-                                       "exitCode":  0,
-                                       "result":  "PASS",
-                                       "note":  "Only LF-to-CRLF working-copy warnings were emitted."
-                                   },
-                  "directFaunaGeneticsMutableScan":  {
-                                                         "command":  "rg -n \"_faunaGeneticsTuning\\[0\\]|_faunaGeneticsProfiles\\.Resolve\\(|_faunaGeneticsCsvScratch\\.Resolve\\(\" Assets/_Project/Scripts/World/EcosystemDirector.cs",
-                                                         "exitCode":  1,
-                                                         "matches":  0,
-                                                         "result":  "PASS"
-                                                     },
-                  "scopedForbiddenTextScan":  {
-                                                  "command":  "rg -n \"\\.SetData\\(|UploadNativeArraySetData|string\\.Format|\\.ToString\\(|foreach\\s*\\(|\\.Where\\(|\\.Select\\(|\\.ToList\\(|\\.Any\\(|\\.FirstOrDefault\\(\" \u003cscoped files\u003e",
-                                                  "exitCode":  1,
-                                                  "result":  "NO_MATCHES",
-                                                  "foreach":  0,
-                                                  "stringFormat":  0,
-                                                  "toString":  0,
-                                                  "linqQuery":  0,
-                                                  "setData":  0
-                                              },
-                  "targetedLoop9RangeScan":  {
-                                                 "ranges":  [
-                                                                "EcosystemDirector.cs:4124-4264 FaunaGenetics cold reload and scratch FileStream read",
-                                                                "EcosystemDirector.cs:7802-7824 CompileHeadlessFaunaGenome runtime read-only genetics",
-                                                                "FaunaGenome64.cs:361-399 ResolveProfile overloads"
-                                                            ],
-                                                 "forbidden":  {
-                                                                   "foreach":  0,
-                                                                   "stringFormat":  0,
-                                                                   "toString":  0,
-                                                                   "linqQueries":  0,
-                                                                   "setData":  0
-                                                               },
-                                                 "newExpressions":  {
-                                                                        "hotReferenceNew":  0,
-                                                                        "coldReferenceNew":  2,
-                                                                        "refOrValueStructNew":  3
-                                                                    },
-                                                 "newExpressionLines":  [
-                                                                            "EcosystemDirector.cs:4153 FileInfo cold/editor CSV route",
-                                                                            "EcosystemDirector.cs:4197 ReadOnlySpan\u003cbyte\u003e ref struct over locked scratch buffer",
-                                                                            "EcosystemDirector.cs:4238 FileStream cold/editor CSV route",
-                                                                            "EcosystemDirector.cs:4250 Span\u003cbyte\u003e ref struct over locked scratch buffer",
-                                                                            "EcosystemDirector.cs:7806 double3 value-type sector center"
-                                                                        ]
-                                             },
-                  "compoundAcquireContextScan":  {
-                                                     "command":  "rg -n \u0027TryLock.*JobBuffers...|TryAcquireWriteLock...\u0027 \u003cscoped ecosystem/spatial/swarm files\u003e",
-                                                     "exitCode":  1,
-                                                     "matches":  0,
-                                                     "result":  "PASS"
-                                                 },
-                  "persistentNativeOwnerFieldScan":  {
-                                                         "scopedRegexMatches":  0,
-                                                         "result":  "PASS"
-                                                     },
-                  "managedGpuUploadBridgeScan":  {
-                                                     "uploadNativeArraySetDataMatches":  0,
-                                                     "graphicsBufferSetDataMatches":  0,
-                                                     "result":  "PASS"
-                                                 },
-                  "binaryLowEndSwitchScan":  {
-                                                 "command":  "rg -n \"isLowEnd|lowEnd|LowEnd\" \u003cscoped ecosystem files\u003e",
-                                                 "matches":  0,
-                                                 "result":  "PASS"
-                                             },
-                  "loop10IndexWrapperScan":  {
-                                                 "command":  "rg -n \u0027TryFindIndexEntry\\(_(sector|biomass)IndexEntries|TryUpsertIndexEntry\\(_(sector|biomass)IndexEntries|ClearIndexEntries\\(_(sector|biomass)IndexEntries|ResolveIndexProbeStart|private static .*VaultBufferView\u003cEcosystemIndexEntry\u003e\u0027 Assets/_Project/Scripts/World/EcosystemDirector.cs",
-                                                 "exitCode":  1,
-                                                 "matches":  0,
-                                                 "result":  "PASS"
-                                             },
-                  "loop10RangeScan":  {
-                                          "ranges":  [
-                                                         "EcosystemDirector.cs:547-632 IndexEntry helpers",
-                                                         "EcosystemDirector.cs:2217-2336 Restore explicit views",
-                                                         "EcosystemDirector.cs:5274-5329 Macro diffusion/attraction index views",
-                                                         "EcosystemDirector.cs:6237-6322 Apex overlap split lock",
-                                                         "EcosystemDirector.cs:6664-6828 Hibernation sync and resolve/create slots",
-                                                         "EcosystemDirector.cs:7556-7585 Biomass clear index view",
-                                                         "EcosystemDirector.cs:8047-8067 Index bucket/probe"
-                                                     ],
-                                          "forbidden":  {
-                                                            "foreach":  0,
-                                                            "stringFormat":  0,
-                                                            "toString":  0,
-                                                            "linqQueries":  0,
-                                                            "setData":  0,
-                                                            "referenceNew":  0
-                                                        },
-                                          "result":  "PASS"
-                                      },
-                  "broadReferenceNewAcknowledgement":  {
-                                                           "scopedMatches":  12,
-                                                           "classification":  "static preallocated arrays in WorldSpatialHashGrid and one cold Sargassum deep-biolum array; no Loop 10 modified hot-path reference new matches",
-                                                           "result":  "ACKNOWLEDGED_NOT_HOT_PATH"
-                                                       }
-              },
-    "dataSovereignty":  {
-                            "bufferIdConstants":  [
-                                                      {
-                                                          "name":  "SystemID.WorldSpatialHash",
-                                                          "numeric":  163,
-                                                          "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
-                                                          "line":  44
-                                                      },
-                                                      {
-                                                          "name":  "BufferID.SargassumThreatGridUpload",
-                                                          "numeric":  116,
-                                                          "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
-                                                          "line":  238
-                                                      },
-                                                      {
-                                                          "name":  "BufferID.WorldSpatialAcousticDensityMap",
-                                                          "numeric":  1419042,
-                                                          "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
-                                                          "line":  243
-                                                      },
-                                                      {
-                                                          "name":  "BufferID.EcosystemFaunaGeneticsTelemetry",
-                                                          "numeric":  70510,
-                                                          "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
-                                                          "line":  440
-                                                      },
-                                                      {
-                                                          "name":  "BufferID.EcosystemFaunaGeneticsTuning",
-                                                          "numeric":  70511,
-                                                          "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
-                                                          "line":  441
-                                                      },
-                                                      {
-                                                          "name":  "BufferID.EcosystemFaunaGeneticsProfiles",
-                                                          "numeric":  70512,
-                                                          "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
-                                                          "line":  442
-                                                      },
-                                                      {
-                                                          "name":  "BufferID.EcosystemFaunaGeneticsCsvScratch",
-                                                          "numeric":  70513,
-                                                          "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
-                                                          "line":  443
-                                                      },
-                                                      {
-                                                          "name":  "BufferID.ShinobuEcosystemDumpSnapshot",
-                                                          "numeric":  70476,
-                                                          "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
-                                                          "line":  1198
-                                                      }
-                                                  ],
-                            "writeLockProof":  [
-                                                   {
-                                                       "buffer":  "EcosystemFaunaGeneticsTuning initialization",
-                                                       "acquire":  "EcosystemDirector.cs:4124",
-                                                       "release":  "EcosystemDirector.cs:4133",
-                                                       "releaseDiscipline":  "finally"
-                                                   },
-                                                   {
-                                                       "buffer":  "EcosystemFaunaGeneticsCsvScratch CSV reload",
-                                                       "acquire":  "EcosystemDirector.cs:4167",
-                                                       "release":  "EcosystemDirector.cs:4215",
-                                                       "releaseDiscipline":  "finally"
-                                                   },
-                                                   {
-                                                       "buffer":  "EcosystemFaunaGeneticsProfiles CSV reload",
-                                                       "acquire":  "EcosystemDirector.cs:4180",
-                                                       "release":  "EcosystemDirector.cs:4213",
-                                                       "releaseDiscipline":  "finally"
-                                                   },
-                                                   {
-                                                       "buffer":  "EcosystemFaunaGeneticsTuning CSV reload",
-                                                       "acquire":  "EcosystemDirector.cs:4184",
-                                                       "release":  "EcosystemDirector.cs:4211",
-                                                       "releaseDiscipline":  "finally"
-                                                   },
-                                                   {
-                                                       "buffer":  "SargassumThreatGridUpload",
-                                                       "acquire":  "SargassumMicroFaunaBoids.cs:3104",
-                                                       "release":  "SargassumMicroFaunaBoids.cs:3131",
-                                                       "releaseDiscipline":  "finally"
-                                                   },
-                                                   {
-                                                       "buffer":  "WorldSpatialAcousticDensityMap upload",
-                                                       "acquire":  "WorldSpatialHashGrid.cs:1382",
-                                                       "release":  "WorldSpatialHashGrid.cs:1413",
-                                                       "releaseDiscipline":  "finally"
-                                                   },
-                                                   {
-                                                       "buffer":  "WorldSpatialAcousticDensityMap clear",
-                                                       "acquire":  "WorldSpatialHashGrid.cs:1806",
-                                                       "release":  "WorldSpatialHashGrid.cs:1820",
-                                                       "releaseDiscipline":  "finally"
-                                                   },
-                                                   {
-                                                       "buffer":  "WorldSpatialAcousticDensityMap build",
-                                                       "acquire":  "WorldSpatialHashGrid.cs:2129",
-                                                       "release":  "WorldSpatialHashGrid.cs:2152",
-                                                       "releaseDiscipline":  "finally"
-                                                   },
-                                                   {
-                                                       "buffer":  "EcosystemSaveSnapshotSectors",
-                                                       "acquire":  "EcosystemDirector.cs:2151",
-                                                       "release":  "EcosystemDirector.cs:2193",
-                                                       "releaseDiscipline":  "finally"
-                                                   },
-                                                   {
-                                                       "buffer":  "EcosystemSaveSnapshotBiomassRuns",
-                                                       "acquire":  "EcosystemDirector.cs:7245",
-                                                       "release":  "EcosystemDirector.cs:7329",
-                                                       "releaseDiscipline":  "finally"
-                                                   },
-                                                   {
-                                                       "buffer":  "EcosystemFaunaGeneticsTelemetry",
-                                                       "acquire":  "EcosystemDirector.cs:5937",
-                                                       "release":  "EcosystemDirector.cs:6008",
-                                                       "releaseDiscipline":  "finally"
-                                                   },
-                                                   {
-                                                       "buffer":  "FloraPredatorAupUpload",
-                                                       "acquire":  "EcosystemDirector.cs:6381",
-                                                       "release":  "EcosystemDirector.cs:6423",
-                                                       "releaseDiscipline":  "finally"
-                                                   },
-                                                   {
-                                                       "buffer":  "PendingBiomassImpacts",
-                                                       "acquire":  "EcosystemDirector.cs:6844,6883,7469",
-                                                       "release":  "EcosystemDirector.cs:6868,6903,7504",
-                                                       "releaseDiscipline":  "finally"
-                                                   },
-                                                   {
-                                                       "buffer":  "MacroMutation scratch lanes",
-                                                       "acquire":  "EcosystemDirector.cs:7542,7550,7558,7566",
-                                                       "release":  "EcosystemDirector.cs:7622,7624,7626,7628",
-                                                       "releaseDiscipline":  "finally reverse order"
-                                                   },
-                                                   {
-                                                       "buffer":  "HeadlessMutation scratch lanes",
-                                                       "acquire":  "EcosystemDirector.cs:7654,7658,7662,7666",
-                                                       "release":  "EcosystemDirector.cs:7715,7717,7719,7721",
-                                                       "releaseDiscipline":  "finally reverse order"
-                                                   },
-                                                   {
-                                                       "buffer":  "Sector index entry mutation route",
-                                                       "acquire":  "TryLockSectorSolveJobBuffers before EcosystemDirector.cs:2217/2312/6699",
-                                                       "release":  "UnlockSectorSolveJobBuffers finally at EcosystemDirector.cs:2234/2337 and caller finally blocks",
-                                                       "releaseDiscipline":  "held-lock guard plus finally"
-                                                   },
-                                                   {
-                                                       "buffer":  "Biomass index entry mutation route",
-                                                       "acquire":  "TryLockMacroSwarmTravelJobBuffers/TryLockSectorSolveJobBuffers before EcosystemDirector.cs:5279/5313/6769/7561",
-                                                       "release":  "UnlockMacroSwarmTravelJobBuffers/UnlockSectorSolveJobBuffers caller finally blocks",
-                                                       "releaseDiscipline":  "held-lock guard plus finally"
-                                                   }
-                                               ],
-                            "readOnlyProof":  [
-                                                  "EcosystemDirector.cs:7816 reads fauna genetics tuning through TryResolveReadOnly in runtime CompileHeadlessFaunaGenome",
-                                                  "EcosystemDirector.cs:7822 reads fauna genetics profiles through TryResolveReadOnly in runtime CompileHeadlessFaunaGenome",
-                                                  "FaunaGenome64.cs:380 adds ResolveProfile(NativeArray\u003cFaunaGeneticsProfileDTO\u003e.ReadOnly, uint)",
-                                                  "EcosystemDirector.cs:2201 GetSaveSnapshotArray returns TryResolveReadOnly plus recordCount",
-                                                  "EcosystemDirector.cs:2214 GetBiomassSaveSnapshotArray returns TryResolveReadOnly plus recordCount",
-                                                  "EcosystemDirector.cs:5866/6102/6142/7131 dump rings through TryResolveReadOnly before FileStream fault write",
-                                                  "SaveManager.cs:3562 consumes GetSaveSnapshotArray(out ecosystemRecordCount), then copies exactly ecosystemRecordCount records",
-                                                  "EcosystemDirector.cs:6668 SyncHibernatedFaunaPopulationRecords resolves _sectorFrontStates through TryResolveReadOnly before registry reconciliation."
-                                              ]
-                        },
-    "layoutProof":  {
-                        "sizeAssertions":  [
-                                               "ShinobuEcosystemBalancer.cs:4281 BoidMatrixDTO=64",
-                                               "ShinobuEcosystemBalancer.cs:4282 BoidCustomDataDTO=16",
-                                               "ShinobuEcosystemBalancer.cs:4285 FlockingThreatDTO=32",
-                                               "ShinobuEcosystemBalancer.cs:4292 EcosystemTelemetryEntry=64",
-                                               "ShinobuEcosystemBalancer.cs:4298 SpatialGridEntryDTO=16",
-                                               "ShinobuEcosystemBalancer.cs:4299 SpatialGridBucketRangeDTO=32",
-                                               "SargassumMicroFaunaBoids.cs:82 BoidData explicit size=32"
-                                           ],
-                        "offsetAssertions":  [
-                                                 "FlockingThreatDTO offsets 0,12,16,20,24,28 at ShinobuEcosystemBalancer.cs:4318-4323",
-                                                 "BoidMatrixDTO offsets 0,16,32,48 at ShinobuEcosystemBalancer.cs:4356-4359",
-                                                 "BoidCustomDataDTO offsets 0,4,8,12 at ShinobuEcosystemBalancer.cs:4360-4363",
-                                                 "EcosystemTelemetryEntry offsets 0..62 at ShinobuEcosystemBalancer.cs:4410-4426",
-                                                 "SpatialGridEntryDTO offsets 0,0,4,8,8 at ShinobuEcosystemBalancer.cs:4427-4431",
-                                                 "SpatialGridBucketRangeDTO offsets 0,4,8,12,16,20,24,28 at ShinobuEcosystemBalancer.cs:4432-4439",
-                                                 "BoidData offsets Position=0 Velocity=12 Panic=24 StateFlags=28 at SargassumMicroFaunaBoids.cs:90-97"
-                                             ]
-                    },
-    "gpuUploadProof":  {
-                           "mappedWrites":  [
-                                                "ShinobuEcosystemBalancer.cs:2585/2589 LockBufferForWrite BoidMatrixDTO plus UnsafeUtility.MemCpy",
-                                                "ShinobuEcosystemBalancer.cs:3944/3948 LockBufferForWrite BoidMatrixDTO plus UnsafeUtility.MemCpy",
-                                                "ShinobuEcosystemBalancer.cs:3959/3963 LockBufferForWrite BoidCustomDataDTO plus UnsafeUtility.MemCpy",
-                                                "SargassumMicroFaunaBoids.cs:4962 LockBufferForWrite\u003cfloat4\u003e predator AUP fallback",
-                                                "SargassumMicroFaunaBoids.cs:6137 LockBufferForWrite\u003cBoidData\u003e single-boid update",
-                                                "SargassumMicroFaunaBoids.cs:7628 LockBufferForWrite\u003cGraphicsBuffer.IndirectDrawIndexedArgs\u003e indirect args"
-                                            ],
-                           "nativeUploads":  [
-                                                 "SargassumMicroFaunaBoids.cs:3121 uploads Vault-locked threatGridUpload NativeArray",
-                                                 "WorldSpatialHashGrid.cs:1396 uploads Vault-locked acoustic density map into Texture3D pixel data"
-                                             ],
-                           "setDataMatchesInScopedFiles":  0
-                       },
+    "task_count":  20,
+    "modified_files":  [
+                           "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+                           "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+                           "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs"
+                       ],
+    "source_sha256":  {
+                          "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs":  "17B39FD0E587D26C7ACC353B80C46E8BF79F17E3DFDA1EE379F68CB0F7D8DE4F",
+                          "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs":  "EA900B672B9936BB9053AD624C816F6C4F24A33FE39A943F0C9BE434F1DC0E74",
+                          "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs":  "52DDDE7FD8A66C67F91FDBCF7B895A86EA9FA2D8558AC2D56979D4A4DD550032"
+                      },
+    "zero_gc_hot_path_audit":  {
+                                   "scanner":  "PowerShell regex range scan plus manual new-type classification",
+                                   "hot_path_reference_type_new":  0,
+                                   "hot_path_foreach":  0,
+                                   "hot_path_string_format":  0,
+                                   "hot_path_to_string":  0,
+                                   "hot_path_linq":  0,
+                                   "hot_path_set_data":  0,
+                                   "hot_path_string_concat":  0,
+                                   "ranges":  [
+                                                  {
+                                                      "name":  "NativeRingBuffer.PushOverwrite",
+                                                      "file":  "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+                                                      "lines":  "178-211",
+                                                      "new_raw":  0,
+                                                      "reference_new":  0,
+                                                      "foreach":  0,
+                                                      "string_format":  0,
+                                                      "to_string":  0,
+                                                      "linq":  0,
+                                                      "set_data":  0,
+                                                      "string_concat":  0
+                                                  },
+                                                  {
+                                                      "name":  "BuildLeviathanData",
+                                                      "file":  "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+                                                      "lines":  "4098-4140",
+                                                      "new_raw":  0,
+                                                      "reference_new":  0,
+                                                      "foreach":  0,
+                                                      "string_format":  0,
+                                                      "to_string":  0,
+                                                      "linq":  0,
+                                                      "set_data":  0,
+                                                      "string_concat":  0
+                                                  },
+                                                  {
+                                                      "name":  "TrySampleLeviathanPath overloads",
+                                                      "file":  "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+                                                      "lines":  "4194-4268",
+                                                      "new_raw":  0,
+                                                      "reference_new":  0,
+                                                      "foreach":  0,
+                                                      "string_format":  0,
+                                                      "to_string":  0,
+                                                      "linq":  0,
+                                                      "set_data":  0,
+                                                      "string_concat":  0
+                                                  },
+                                                  {
+                                                      "name":  "Leviathan pose/course",
+                                                      "file":  "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+                                                      "lines":  "4270-4344",
+                                                      "new_raw":  1,
+                                                      "reference_new":  0,
+                                                      "new_classification":  "Vector3 value type only",
+                                                      "foreach":  0,
+                                                      "string_format":  0,
+                                                      "to_string":  0,
+                                                      "linq":  0,
+                                                      "set_data":  0,
+                                                      "string_concat":  0
+                                                  },
+                                                  {
+                                                      "name":  "BuildLeviathanSpawnSet",
+                                                      "file":  "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+                                                      "lines":  "4346-4419",
+                                                      "new_raw":  5,
+                                                      "reference_new":  0,
+                                                      "new_classification":  "Vector3, Bounds, BoidData value types only",
+                                                      "foreach":  0,
+                                                      "string_format":  0,
+                                                      "to_string":  0,
+                                                      "linq":  0,
+                                                      "set_data":  0,
+                                                      "string_concat":  0
+                                                  },
+                                                  {
+                                                      "name":  "ConsumeSimulationStep",
+                                                      "file":  "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+                                                      "lines":  "7841-7875",
+                                                      "new_raw":  0,
+                                                      "reference_new":  0,
+                                                      "foreach":  0,
+                                                      "string_format":  0,
+                                                      "to_string":  0,
+                                                      "linq":  0,
+                                                      "set_data":  0,
+                                                      "string_concat":  0
+                                                  },
+                                                  {
+                                                      "name":  "FrostTick pre-schedule",
+                                                      "file":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+                                                      "lines":  "275-452",
+                                                      "new_raw":  6,
+                                                      "reference_new":  0,
+                                                      "new_classification":  "Burst job structs only",
+                                                      "foreach":  0,
+                                                      "string_format":  0,
+                                                      "to_string":  0,
+                                                      "linq":  0,
+                                                      "set_data":  0,
+                                                      "string_concat":  0
+                                                  },
+                                                  {
+                                                      "name":  "EnsureVaultState cold bootstrap",
+                                                      "file":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+                                                      "lines":  "523-653",
+                                                      "new_raw":  2,
+                                                      "reference_new":  0,
+                                                      "new_classification":  "Burst init job structs only; cold bootstrap",
+                                                      "foreach":  0,
+                                                      "string_format":  0,
+                                                      "to_string":  0,
+                                                      "linq":  0,
+                                                      "set_data":  0,
+                                                      "string_concat":  0
+                                                  },
+                                                  {
+                                                      "name":  "DrainCarrionDeathSignalSnapshot",
+                                                      "file":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+                                                      "lines":  "355-462",
+                                                      "new_raw":  1,
+                                                      "reference_new":  0,
+                                                      "new_classification":  "CarrionDeathSignalDTO value type only",
+                                                      "foreach":  0,
+                                                      "string_format":  0,
+                                                      "to_string":  0,
+                                                      "linq":  0,
+                                                      "set_data":  0,
+                                                      "string_concat":  0
+                                                  }
+                                              ],
+                                   "cold_non_hot_allocations_acknowledged":  [
+                                                                                 {
+                                                                                     "name":  "DumpTelemetry cold fault",
+                                                                                     "file":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+                                                                                     "lines":  "1082-1135",
+                                                                                     "new_raw":  2,
+                                                                                     "reference_new":  1,
+                                                                                     "reference_classification":  "FileStream only on fault dump path",
+                                                                                     "foreach":  0,
+                                                                                     "linq":  0,
+                                                                                     "set_data":  0
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "TryLoadProfilesCsvCold editor cold",
+                                                                                     "file":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+                                                                                     "lines":  "1138-1232",
+                                                                                     "new_raw":  3,
+                                                                                     "reference_new":  1,
+                                                                                     "reference_classification":  "FileStream only on editor CSV reload path",
+                                                                                     "foreach":  0,
+                                                                                     "linq":  0,
+                                                                                     "set_data":  0
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "GenerateMockMassExtinctionCold",
+                                                                                     "file":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+                                                                                     "lines":  "190-233",
+                                                                                     "new_raw":  1,
+                                                                                     "reference_new":  0,
+                                                                                     "reference_classification":  "Burst job struct only; cold harness",
+                                                                                     "foreach":  0,
+                                                                                     "linq":  0,
+                                                                                     "set_data":  0
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "EnsureCarrionVaultState cold bootstrap",
+                                                                                     "file":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+                                                                                     "lines":  "235-353",
+                                                                                     "new_raw":  1,
+                                                                                     "reference_new":  0,
+                                                                                     "reference_classification":  "Burst init job struct only; cold bootstrap",
+                                                                                     "foreach":  0,
+                                                                                     "linq":  0,
+                                                                                     "set_data":  0
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "DumpCarrionTelemetry cold fault",
+                                                                                     "file":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+                                                                                     "lines":  "702-755",
+                                                                                     "new_raw":  2,
+                                                                                     "reference_new":  1,
+                                                                                     "reference_classification":  "FileStream only on fault dump path",
+                                                                                     "foreach":  0,
+                                                                                     "linq":  0,
+                                                                                     "set_data":  0
+                                                                                 },
+                                                                                 {
+                                                                                     "name":  "TryLoadCarrionProfilesCsvCold editor cold",
+                                                                                     "file":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+                                                                                     "lines":  "758-852",
+                                                                                     "new_raw":  3,
+                                                                                     "reference_new":  1,
+                                                                                     "reference_classification":  "FileStream only on editor CSV reload path",
+                                                                                     "foreach":  0,
+                                                                                     "linq":  0,
+                                                                                     "set_data":  0
+                                                                                 }
+                                                                             ],
+                                   "broad_scoped_forbidden_token_scan":  "rg found 0 matches for SetData/UploadNativeArraySetData/foreach/string.Format/.ToString/LINQ/isLowEnd in the 3 scoped files after Loop 12"
+                               },
+    "data_sovereignty":  {
+                             "sargassum":  {
+                                               "secured_buffer_ids":  [
+                                                                          "SargassumInactiveSwarmRing",
+                                                                          "SargassumInactiveSwarmCenterRing",
+                                                                          "SargassumLeviathanNodeFront",
+                                                                          "SargassumLeviathanNodeBack",
+                                                                          "SargassumFoveatedSimulationFront"
+                                                                      ],
+                                               "write_lock_lines":  [
+                                                                        "NativeRingBuffer.PushOverwrite 178-211",
+                                                                        "TryAcquireSargassumWriteLock helper 9043-9092"
+                                                                    ],
+                                               "read_only_lines":  [
+                                                                       "BuildLeviathanData 4098-4140",
+                                                                       "TrySampleLeviathanPath 4194-4268",
+                                                                       "TryResolveLeviathanHeadPose 4270-4313",
+                                                                       "TryResolveLeviathanCourseVelocity 4315-4344",
+                                                                       "BuildLeviathanSpawnSet 4346-4419",
+                                                                       "ConsumeSimulationStep 7841-7875",
+                                                                       "TryReadOnlySargassumVaultArray 9100-9133"
+                                                                   ],
+                                               "finally_proof":  "35 TryAcquireSargassumWriteLock references and 35 ReleaseSargassumWriteLock references; direct NativeRingBuffer write lock releases in finally lines 202-206; helper rollback releases failed acquisitions in finally."
+                                           },
+                             "nutrient":  {
+                                              "secured_buffer_ids":  [
+                                                                         "ShinobuNutrientDriftCellFront",
+                                                                         "ShinobuNutrientDriftCellBack",
+                                                                         "ShinobuNutrientDriftFlowField",
+                                                                         "ShinobuNutrientDriftInjection",
+                                                                         "ShinobuNutrientDriftSources",
+                                                                         "ShinobuNutrientDriftSourceCount",
+                                                                         "ShinobuNutrientDriftTuning",
+                                                                         "ShinobuNutrientDriftTelemetryRing",
+                                                                         "ShinobuNutrientDriftTelemetryCursor",
+                                                                         "ShinobuNutrientDriftDensityUpload",
+                                                                         "ShinobuNutrientDriftGridHeader",
+                                                                         "ShinobuNutrientDriftProfiles",
+                                                                         "ShinobuNutrientDriftCsvScratch",
+                                                                         "ShinobuNutrientDriftFaultFlags"
+                                                                     ],
+                                              "write_lock_lines":  [
+                                                                       "TryWriteTuning 143/167",
+                                                                       "EnsureVaultState profile lock 567/632 and job-buffer unlock 634",
+                                                                       "TryLoadProfilesCsvCold scratch/profile locks 1165/1175 and releases 1227/1229"
+                                                                   ],
+                                              "read_only_lines":  [
+                                                                      "TryOpenReadVaultBuffer now uses TryReadOnlyHandle at 1280-1299",
+                                                                      "DumpTelemetry reads telemetry read-only at 1082-1135"
+                                                                  ],
+                                              "finally_proof":  "TryAcquireWriteLock count 4 equals ReleaseWriteLock count 4; TryLockBuffer count 12 equals TryUnlockBuffer count 12; OpenOrAcquireVaultBuffer removed."
+                                          },
+                             "carrion":  {
+                                             "secured_buffer_ids":  [
+                                                                        "ShinobuCarrionStates",
+                                                                        "ShinobuCarrionDeathIngress",
+                                                                        "ShinobuCarrionRuntimeCounters",
+                                                                        "ShinobuCarrionTuning",
+                                                                        "ShinobuCarrionTelemetryRing",
+                                                                        "ShinobuCarrionAttractionRecords",
+                                                                        "ShinobuCarrionProfiles",
+                                                                        "ShinobuCarrionCsvScratch",
+                                                                        "ShinobuCarrionFaunaStates",
+                                                                        "ShinobuCarrionFaultFlags"
+                                                                    ],
+                                             "write_lock_lines":  [
+                                                                      "TryWriteCarrionTuning 100/122",
+                                                                      "GenerateMockMassExtinctionCold carrion job lock 202/231",
+                                                                      "EnsureCarrionVaultState carrion job lock 267/343",
+                                                                      "DrainCarrionDeathSignalSnapshot locks 378/392 releases 458/460",
+                                                                      "TryLoadCarrionProfilesCsvCold locks 785/795 releases 847/849"
+                                                                  ],
+                                             "read_only_lines":  [
+                                                                     "Public TryReadCarrion* accessors use NativeArray\u003cT\u003e.ReadOnly at 78/134/152/169",
+                                                                     "DrainCarrionDeathSignalSnapshot tuning read-only at 376",
+                                                                     "DumpCarrionTelemetry read-only at 702-755"
+                                                                 ],
+                                             "finally_proof":  "TryAcquireWriteLock count 5 equals ReleaseWriteLock count 5; TryLockBuffer count 9 equals TryUnlockBuffer count 9."
+                                         }
+                         },
+    "gpu_upload":  {
+                       "proof":  "Scoped files contain 0 SetData and 0 UploadNativeArraySetData matches; Sargassum GPU paths remain GraphicsBufferUploadUtility.UploadNativeArray / LockBufferForWrite based.",
+                       "cinematic_cheat":  "Leviathan/body motion remains cheap spline + sinusoidal visual fake; no physical organism solver added."
+                   },
     "scalability":  {
-                        "scalar":  "HomeostasisBrain.GlobalQualityWeight",
-                        "binarySwitchScan":  "rg -n \"isLowEnd|LowEnd|lowEnd\" in scoped ecosystem files returned no matches.",
-                        "continuousLines":  [
-                                                "EcosystemDirector.cs:5755-5779 resolves/smoothsteps HomeostasisBrain.GlobalQualityWeight and encodes quality byte",
-                                                "SargassumMicroFaunaBoids.cs:6874-6883 resolves quality byte for swarm signal payload",
-                                                "FaunaGenome64.cs:558/595 stores and saturates GlobalQualityWeight in explicit tuning DTO",
-                                                "ShinobuEcosystemBalancer.cs:5135/5138/5150/5173/5177/5254/5283/5339 scales cone thresholds, neighbor budget, mock flow, swirl, panic decay, probe count, cell radius, and Reynolds blend"
-                                            ],
-                        "tiers":  {
-                                      "low":  "reduced cadence/probe budget/capacity, same DTO ownership",
-                                      "middle":  "normal spatial and flocking budgets",
-                                      "high":  "higher visual density and neighbor detail",
-                                      "ultra":  "visual overkill through extra flow/curl/reynolds presentation work without changing gameplay truth"
-                                  },
-                        "cinematicCheatProtocol":  "Fish evasion and apex pressure remain cheap visual/vector-field steering and GPU payload scaling, not per-fish physical predator micro-simulation."
+                        "global_quality_weight":  "NutrientDriftRuntime resolves continuous HomeostasisBrain.GlobalQualityWeight through ResolveGlobalQualityWeight and maps it to ActiveAxis/ActiveCellCount; Sargassum keeps continuous hibernation/LOD decisions and does not introduce isLowEnd switches.",
+                        "binary_low_end_switch_scan":  "0 matches for isLowEnd/lowEnd/LowEnd in scoped files."
                     },
-    "fixedThisLoop":  [
-                          "SyncHibernatedFaunaPopulationRecords now reads _sectorFrontStates through TryResolveReadOnly and clamps sync budget to the read-only view length.",
-                          "Removed the VaultBufferView\u003cEcosystemIndexEntry\u003e helper overloads that hid mutable Resolve calls; index operations now consume explicit NativeArray views.",
-                          "Unified mutable and read-only index entry probing through ResolveIndexBucket/ResolveIndexProbe; deleted ResolveIndexProbeStart to prevent divergent hash routes.",
-                          "ResolveOrCreateSectorSlot now fails closed unless sector solve buffers are locked; ResolveOrCreateBiomassCellSlot now fails closed unless sector or macro-swarm buffers are locked.",
-                          "RestoreFromLoadedRecords, macro diffusion/attraction, and ClearBiomassRuntimeState now resolve index-entry views explicitly inside lock-held windows.",
-                          "ScheduleApexTerritoryOverlap no longer uses a compound || TryLock guard; hitCount validation and lock acquisition are split."
-                      ],
-    "residualRisks":  [
-                          {
-                              "severity":  "PENDING_COMPILE",
-                              "issue":  "No final dotnet build was executed.",
-                              "reason":  "Latest gate sample at 2026-05-28T10:10:21.0658960Z had CPU 100% and active dotnet process 10444; CPU and process gates both forbade invoking dotnet build."
-                          },
-                          {
-                              "severity":  "PENDING_RUNTIME_PROFILER",
-                              "issue":  "No Unity runtime/Profiler/GC allocation sample was produced.",
-                              "reason":  "Compilation and Unity test execution remain blocked by host contention gate."
-                          },
-                          {
-                              "severity":  "ACKNOWLEDGED_COLD_ALLOCATION",
-                              "issue":  "Cold/static managed allocations remain outside Loop 10 hot paths.",
-                              "reason":  "Broad scan finds static preallocated arrays in WorldSpatialHashGrid and one cold Sargassum deep-biolum array; targeted Loop 10 modified ranges have referenceNew=0."
-                          },
-                          {
-                              "severity":  "NO_CRASH_DUMP_GENERATED",
-                              "issue":  "Docs/AgentLogs/Dump_1419_EcosystemSwarm.bin was not produced in this turn.",
-                              "reason":  "No crash/NaN path was triggered; configured dump route remains the forensic path on fault."
-                          }
-                      ],
-    "modifiedFileHashes":  [
-                               {
-                                   "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
-                                   "sha256":  "16E4DA2E5148BBAD8F4ABC9B524E97151F1B5080A15EDA7C6AB544BA81618BE4"
-                               },
-                               {
-                                   "path":  "Assets/_Project/Scripts/World/EcosystemDirector.cs",
-                                   "sha256":  "ED62C18A8ECCF5AED09450EC571CF36AEBC3FE44BCE2FD5D01D2854FA8D7276F"
-                               },
-                               {
-                                   "path":  "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
-                                   "sha256":  "8751239B8A7873CB8ED38FEE65C87690E24449427B6D20B4F83F9F6B9E2CF60D"
-                               },
-                               {
-                                   "path":  "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-                                   "sha256":  "5C5CA4986C4BE479D5CC90FD6A015060E3514A124ED83026EA4AB96C0734991C"
-                               },
-                               {
-                                   "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
-                                   "sha256":  "A5B8B8992EC343698363FCC6FAE9862607A8E579397CC9610B2316C39D674DFC"
-                               },
-                               {
-                                   "path":  "Assets/_Project/Scripts/Ecosystem/FaunaGenome64.cs",
-                                   "sha256":  "0A9744CCFE50EDCFAAB92C22BF6F8BD2CC66E828C55589F38A49F71787425D21"
-                               },
-                               {
-                                   "path":  "Assets/_Project/Scripts/SaveManager.cs",
-                                   "sha256":  "74D85FA6DDB0D955691FEE99C30F5DB8D3EBE160BC6E3154690E82C3357228E5"
-                               }
-                           ]
+    "compilation":  {
+                        "loop12_cpu_sample_local":  "2026-05-28T20:03:48.2927113+04:00",
+                        "cpu_load_percent":  100,
+                        "active_compiler_processes":  [
+                                                          "csc pid 21340 CPU 136.09375 start 2026-05-28 20:02:57",
+                                                          "dotnet pid 28668 CPU 31.421875 start 2026-05-28 20:02:32"
+                                                      ],
+                        "dotnet_build_invoked_loop12":  false,
+                        "reason":  "Compilation Resource Throttling: CPU \u003e 50 and active csc/dotnet processes. Last legal build already failed before C# typecheck with MSB4006 project graph circular dependency.",
+                        "previous_build_dump":  "Docs/AgentLogs/Dump_1419_BuildFailure_20260528T151125Z.txt",
+                        "previous_build_dump_sha256":  "0A29677ACA5BAD143C6275353DB1FC337C21BFC029611DECCABF5C8BE15BCC8C",
+                        "final_documentation_pass_recheck":  {
+                                                                 "sample_local":  "2026-05-28T20:17:28.7828391+04:00",
+                                                                 "cpu_load_percent":  83,
+                                                                 "active_compiler_processes":  [
+                                                                                                   "dotnet pid 65020 CPU 379.734375 start 2026-05-28 20:09:44"
+                                                                                               ],
+                                                                 "dotnet_build_invoked":  false,
+                                                                 "reason":  "Compilation Resource Throttling: CPU > 50 and active dotnet process."
+                                                             }
+                    },
+    "residual_risk":  [
+                          "No Unity runtime profiler proof in this loop. Compile/type proof remains unavailable because the last legal build failed in MSBuild project graph before C# diagnostics and Loop 12 build gate was blocked by CPU/compiler contention."
+                      ]
 }

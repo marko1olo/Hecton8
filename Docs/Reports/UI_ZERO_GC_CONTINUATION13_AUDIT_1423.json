@@ -1,0 +1,161 @@
+{
+  "agent_id": "1423",
+  "status": "PENDING VERIFICATION",
+  "generated_at": "2026-05-28T19:12:00+04:00",
+  "domain": "ECHELON 8 PRESENTATION AND UX / Zero-GC Subtitles (Babel), VWS",
+  "continuation": 13,
+  "assignment_source": {
+    "current_batch_contains_agent_prompt_1423": true,
+    "prompt_line": 2139,
+    "prompt_sha256": "9C307765413C5548CA5CD5D2CEE58C7E415CC93819BA21AA3C264488E260C8A6",
+    "prompt_length_chars": 20627,
+    "prompt_task_count": 20
+  },
+  "files_changed_or_audited": {
+    "Assets/_Project/Scripts/LocRegistry.cs": "1038B5AB64E79EF263C67E875EA3540DB9B9EF4B47577131A0BCC5D6BB322086",
+    "Assets/_Project/Scripts/SpatialAudioManager.cs": "D1D234EDFAED5C907C17251BB7BAE5674CE6714243FB87FA3EB0A43CB5F7E400",
+    "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs": "DAACC585E4780C83A33117D1EFFA366BC4D3E713494907F7C3DA908338B9F2B1",
+    "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs": "DB908E439AA625C17DB331AD1F057BC083082EECA2A3081AEFBC2052B79E5B7B"
+  },
+  "continuation13_change": {
+    "problem": "After the caption payload became hash-only, AudioCaptionEvents still delivered payloads through a managed IAudioCaptionEventListener object callback array. That route did not carry strings, but it left a managed listener surface in the VWS/UI caption hot path.",
+    "solution": "Removed IAudioCaptionEventListener, ListenerSlot, _listeners, Register(listener), Unregister(listener), and Dispatch(callback). AudioCaptionOverlay now registers as an integer-counted pull consumer only after UI and late-frame ticking are active, then drains fixed-ring payloads through ConsumeNextPendingCaption during LateFrameTick.",
+    "changed_paths": [
+      "Assets/_Project/Scripts/SpatialAudioManager.cs",
+      "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs",
+      "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs"
+    ],
+    "exact_line_evidence": {
+      "register_consumer": "Assets/_Project/Scripts/SpatialAudioManager.cs:12012",
+      "unregister_consumer": "Assets/_Project/Scripts/SpatialAudioManager.cs:12022",
+      "dispatcher_compat_flush_no_callback": "Assets/_Project/Scripts/SpatialAudioManager.cs:12032",
+      "pull_consume_api": "Assets/_Project/Scripts/SpatialAudioManager.cs:12039",
+      "queue_accepts_only_active_consumer": "Assets/_Project/Scripts/SpatialAudioManager.cs:12127",
+      "bounded_drop_guard": "Assets/_Project/Scripts/SpatialAudioManager.cs:12211",
+      "stack_request_builder": "Assets/_Project/Scripts/SpatialAudioManager.cs:12224",
+      "caption_writer_uses_caller_buffer": "Assets/_Project/Scripts/SpatialAudioManager.cs:12321",
+      "overlay_late_tick": "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs:1643",
+      "overlay_pull_drain": "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs:1686",
+      "overlay_consume_call": "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs:1694",
+      "overlay_consumer_register_helper": "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs:2148",
+      "overlay_consumer_unregister_helper": "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs:2157",
+      "source_regression_pull_consumer": "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs:250"
+    }
+  },
+  "static_scan": {
+    "runtime_files_scanned": [
+      "Assets/_Project/Scripts/SpatialAudioManager.cs",
+      "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs",
+      "Assets/_Project/Scripts/LocRegistry.cs"
+    ],
+    "forbidden_patterns": [
+      "string.Format",
+      ".ToString(",
+      "TMP_Text.text assignment",
+      "new string",
+      "StringBuilder",
+      "Array.Resize",
+      "foreach",
+      "interpolation",
+      "LocRegistry.TryWriteVisualSpanFromUtf8(captionHashId",
+      "request.CaptionText",
+      ".CaptionText",
+      "private const string *CaptionText",
+      "LocHash.Compute(*CaptionText)"
+    ],
+    "forbidden_hits": 0,
+    "audio_caption_events_block_counts": {
+      "IAudioCaptionEventListener": 0,
+      "ListenerSlot": 0,
+      "_listeners": 0,
+      "OnAudioCaptionRequested": 0,
+      "private_static_void_Dispatch_in_AudioCaptionPayload": 0,
+      "AudioCaptionEvents_Register_this": 0,
+      "AudioCaptionEvents_Unregister_this": 0,
+      "string_Format": 0,
+      "ToString_call": 0,
+      "foreach": 0,
+      "StringBuilder": 0,
+      "Array_Resize": 0,
+      "new_string": 0
+    },
+    "audio_caption_overlay_class_counts": {
+      "IAudioCaptionEventListener": 0,
+      "ListenerSlot": 0,
+      "_listeners": 0,
+      "OnAudioCaptionRequested": 0,
+      "AudioCaptionEvents_Register_this": 0,
+      "AudioCaptionEvents_Unregister_this": 0,
+      "string_Format": 0,
+      "ToString_call": 0,
+      "foreach": 0,
+      "StringBuilder": 0,
+      "Array_Resize": 0,
+      "new_string": 0
+    },
+    "hot_method_counts": {
+      "ConsumeNextPendingCaption_reference_type_new": 0,
+      "ConsumeNextPendingCaption_string_Format": 0,
+      "ConsumeNextPendingCaption_ToString": 0,
+      "ConsumeNextPendingCaption_foreach": 0,
+      "DrainPendingCaptionRequests_reference_type_new": 0,
+      "DrainPendingCaptionRequests_budget_consume_call": 1,
+      "TryBuildCaptionRequest_new_AudioCaptionRequest_struct": 2,
+      "TryBuildCaptionRequest_reference_type_new": 0
+    },
+    "git_diff_check": "exit 0; CRLF normalization warnings only"
+  },
+  "bounded_cursor_and_queue_proof": {
+    "ring_capacity": 32,
+    "enqueue_index_bound": "writeIndex = (head + count) % array.Length; count is accepted only while pending + next < 32, so writeIndex is always 0..31.",
+    "consume_index_bound": "ConsumeNextPendingCaption reads _pendingEvents[_pendingEventHead] only when _pendingEventCount > 0; head advances by modulo _pendingEvents.Length.",
+    "drop_bound": "DropQueuedCaptionPayloads first returns if both counts are zero; otherwise Array.Clear touches the two fixed 32-entry rings and resets heads/counts.",
+    "caption_text_bound": "TryWriteCaptionText writes into caller Span<char>; fallback displayLength=min(fallback.Length,destination.Length), loop writes only i < displayLength, and ellipsis requires displayLength >= 3.",
+    "known_utf8_writer_bound": "LocRegistry.TryWriteKnownLocalizedSpanFromUtf8 delegates to DecodeUtf8VisualSpan with the already-resolved ReadOnlySpan<byte>; DecodeUtf8VisualSpan bounds charCursor by maxGlyphs=min(destination.Length, MaxDecodedGlyphs)."
+  },
+  "data_sovereignty": {
+    "new_global_data_vault_migrations_in_continuation13": 0,
+    "buffer_ids_secured_by_prior_1423_work": [
+      "15070550 SubtitleCueStateBufferId",
+      "15070551 SubtitleCueTelemetryBufferId",
+      "15070552 UIOptimizationTelemetryBufferId"
+    ],
+    "write_lock_evidence": {
+      "try_acquire_write_lock": "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:618",
+      "ui_optimization_failure_release_finally": "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:637",
+      "subtitle_hot_write_release_finally": [
+        "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:459",
+        "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:846",
+        "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:960",
+        "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:1064"
+      ]
+    }
+  },
+  "cinematic_and_scalability": {
+    "cinematic_cheat": "No physical simulation was added. The fix is a cheap visual-delivery route: hash payload -> fixed ring -> overlay pull -> caller-owned char buffer -> TMP SetCharArray.",
+    "continuous_scalability": "No binary isLowEnd/LowEnd branch was added. Existing GlobalQualityWeight routes remain the quality control: BabelSubtitleSyncRuntime.ResolveCanvasDirtyBudget at line 700, LocRegistry.ResolveGlobalQualityWeight at line 2821, BabelRichTextLodPolicy.ShouldStrip/ShouldEnableTmpRichTextParsing at lines 14 and 21.",
+    "binary_switch_scan": "No new isLowEnd/LowEnd branch in changed files."
+  },
+  "build_throttle": {
+    "continuation13_build_launched": false,
+    "cpu_sample_percent": 100,
+    "active_dotnet_csc_vbcscompiler": [
+      "dotnet PID 18776 CPU 34.421875 StartTime 2026-05-28 19:06:49"
+    ],
+    "reason": "CPU > 50 and active dotnet process exists; dotnet build was not launched.",
+    "previous_build_failure_dump": "Docs/AgentLogs/Dump_1423_CONT9_BUILD_FAILURE.txt",
+    "previous_build_failure_dump_sha256": "9CBEE6CDC1A63242D46CEB23F7029637F1857AF5F0DC063F1DAEB46C59B64273"
+  },
+  "verification_truth": {
+    "project_build_passed": false,
+    "runtime_profiler_gc_bytes": null,
+    "editor_tests_executed": false,
+    "reason": "No build/test/profiler run after continuation13 because CPU/build contention violates the project throttle. Static source-regression tests were updated but not executed."
+  },
+  "residual_faults": [
+    "Fixed English caption literals still back TryResolveCaptionTextSpan until spatial-audio captions are authored in Babel.",
+    "Runtime 0B GC remains unmeasured because no passing build/profiler run exists."
+  ],
+  "report_path": "Docs/Reports/UI_ZERO_GC_CONTINUATION13_AUDIT_1423.json",
+  "report_kind": "UI_ZERO_GC_CONTINUATION13_AUDIT_1423"
+}

@@ -110,7 +110,7 @@ namespace Hecton8.Inventory
             JobHandle disposeHandle = dependency;
             bool hasDependency = !dependency.IsCompleted;
             if (!hasDependency)
-                dependency.Complete();
+                DispatcherJobFence.TryFinalizeCompleted(ref disposeHandle);
 
             DisposeNativeArray(ref _cellAnchorIndices, ref disposeHandle, ref hasDependency);
             DisposeNativeArray(ref _anchorHashIds, ref disposeHandle, ref hasDependency);

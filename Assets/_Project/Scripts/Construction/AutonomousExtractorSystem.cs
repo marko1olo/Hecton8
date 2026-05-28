@@ -221,7 +221,9 @@ namespace Hecton8.Construction
             {
                 CompleteScheduledJobForTeardown();
                 ReleaseJobBufferLocks();
-                RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
+                IDataVault currentVault = currentService is IDataVault nextVault ? nextVault : null;
+                IDataVault previousVault = previousService is IDataVault oldVault ? oldVault : null;
+                RebindDataVaultForLifecycle(currentVault, previousVault);
                 if (isActiveAndEnabled)
                     EnsureVaultCapacity(MaxModuleCapacity);
                 return;
@@ -904,26 +906,24 @@ namespace Hecton8.Construction
 
         private void ReleaseVaultBuffers(IDataVault vault)
         {
-            ReleaseVaultBuffer(vault, ref _completedCycleCountsHandle);
-            ReleaseVaultBuffer(vault, ref _bufferedUnitCountsHandle);
-            ReleaseVaultBuffer(vault, ref _bufferedItemHashIdsHandle);
-            ReleaseVaultBuffer(vault, ref _cycleTimersHandle);
-            ReleaseVaultBuffer(vault, ref _jobResultsHandle);
-            ReleaseVaultBuffer(vault, ref _jobInputsHandle);
+            ReleaseVaultBuffer(vault, CompletedCycleCountsBufferId, ref _completedCycleCountsHandle);
+            ReleaseVaultBuffer(vault, BufferedUnitCountsBufferId, ref _bufferedUnitCountsHandle);
+            ReleaseVaultBuffer(vault, BufferedItemHashIdsBufferId, ref _bufferedItemHashIdsHandle);
+            ReleaseVaultBuffer(vault, CycleTimersBufferId, ref _cycleTimersHandle);
+            ReleaseVaultBuffer(vault, JobResultsBufferId, ref _jobResultsHandle);
+            ReleaseVaultBuffer(vault, JobInputsBufferId, ref _jobInputsHandle);
 
             if (ReferenceEquals(_dataVault, vault))
                 _dataVault = null;
         }
 
-        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        private static void ReleaseVaultBuffer<T>(
+            IDataVault vault,
+            BufferID expectedBufferId,
+            ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (vault != null &&
-                handle.BufferID != 0u &&
-                handle.Generation != 0u &&
-                handle.SystemID == (uint)VaultOwnerSystemId)
-            {
+            if (vault != null && IsExactVaultHandle(in handle, expectedBufferId))
                 vault.ReleaseBuffer(in handle);
-            }
 
             handle = default;
         }

@@ -70,6 +70,7 @@ namespace Hecton8.Graphics.VR
         private static FoveatedRenderCommander s_activeCommander;
         private static bool s_questRuntimeClassified;
         private static bool s_quest2ClassRuntime;
+        private static bool s_questFamilyClassRuntime;
         private static bool s_telemetryLayoutChecked;
         private static bool s_telemetryLayoutValid;
 
@@ -91,7 +92,7 @@ namespace Hecton8.Graphics.VR
         private bool lockQuest2HighFoveation = true;
 
         [SerializeField]
-        [Tooltip("Disables foveation while cameras that render UI layers are drawing.")]
+        [Tooltip("Disables gaze-tracked foveation while cameras that render UI layers are drawing. Fixed Quest foveation stays stable across camera stacks.")]
         private bool failClosedForUiCameras = true;
 
         [SerializeField]
@@ -209,6 +210,7 @@ namespace Hecton8.Graphics.VR
             s_activeCommander = null;
             s_questRuntimeClassified = false;
             s_quest2ClassRuntime = false;
+            s_questFamilyClassRuntime = false;
             s_telemetryLayoutChecked = false;
             s_telemetryLayoutValid = false;
         }
@@ -324,6 +326,17 @@ namespace Hecton8.Graphics.VR
         {
             if (!ReferenceEquals(s_activeCommander, this) || !failClosedForUiCameras)
                 return;
+
+            if (_targetMode != FoveatedRenderMode.GazeTracked)
+            {
+                if (_uiSuppressionActive)
+                {
+                    _uiSuppressionActive = false;
+                    _lastFlags = (ushort)(_lastFlags & ~FlagUiSuppressed);
+                }
+
+                return;
+            }
 
             Camera renderCamera = GlobalRenderContext.CurrentCamera;
             if (renderCamera == null)
@@ -477,8 +490,10 @@ namespace Hecton8.Graphics.VR
             bool xrActive = XRSettings.enabled && XRSettings.isDeviceActive;
             FoveatedRenderingCaps caps = SystemInfo.foveatedRenderingCaps;
             bool capsSupported = caps != FoveatedRenderingCaps.None;
-            bool quest2Runtime = IsQuest2Runtime(out bool questClassificationPending);
-            bool questFamilyRuntime = Application.platform == RuntimePlatform.Android && IsQuestFamilyDevice();
+            RefreshQuestRuntimeClass(
+                out bool quest2Runtime,
+                out bool questFamilyRuntime,
+                out bool questClassificationPending);
             float qualityWeight01 = RefreshGlobalQualityWeight01();
             bool thermalPressure =
                 _thermalSeverity >= (byte)HardwareThermalSeverity.Throttling ||
@@ -1207,15 +1222,24 @@ namespace Hecton8.Graphics.VR
                 return false;
             }
 
-            if (!vault.IsCompactionFenceActive && telemetry.IsCreated && telemetry.Length >= TelemetryCapacity)
+            bool releaseOnExit = true;
+            try
             {
-                _telemetryVaultGeneration = _telemetryHandle.Generation;
-                return true;
-            }
+                if (!vault.IsCompactionFenceActive && telemetry.IsCreated && telemetry.Length >= TelemetryCapacity)
+                {
+                    _telemetryVaultGeneration = _telemetryHandle.Generation;
+                    releaseOnExit = false;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in _telemetryHandle, SystemID.GraphicsScalability);
-            telemetry = default;
-            return false;
+                telemetry = default;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                    vault.ReleaseWriteLock(in _telemetryHandle, SystemID.GraphicsScalability);
+            }
         }
 
         private void ReleaseTelemetryWriteBuffer()
@@ -1420,16 +1444,22 @@ namespace Hecton8.Graphics.VR
             return false;
         }
 
-        private static bool IsQuest2Runtime(out bool classificationPending)
+        private static void RefreshQuestRuntimeClass(
+            out bool quest2Runtime,
+            out bool questFamilyRuntime,
+            out bool classificationPending)
         {
             classificationPending = false;
+            quest2Runtime = false;
+            questFamilyRuntime = false;
             bool xrActive = HectonXRRuntimeState.IsXRActive || XRSettings.enabled || XRSettings.isDeviceActive;
             if (!xrActive || Application.platform != RuntimePlatform.Android)
-                return false;
+                return;
 
             EnsureQuestRuntimeClassification();
             classificationPending = !s_questRuntimeClassified;
-            return s_quest2ClassRuntime;
+            quest2Runtime = s_quest2ClassRuntime;
+            questFamilyRuntime = s_questFamilyClassRuntime;
         }
 
         private static void EnsureQuestRuntimeClassification()
@@ -1452,7 +1482,8 @@ namespace Hecton8.Graphics.VR
                 ContainsToken(XRSettings.loadedDeviceName, "Quest 2") ||
                 ContainsToken(SystemInfo.deviceModel, "Oculus Quest") ||
                 ContainsToken(XRSettings.loadedDeviceName, "Oculus Quest");
-            bool questFamilyDevice = IsQuestFamilyDevice();
+            bool questFamilyDevice = HasQuestFamilyDeviceToken();
+            s_questFamilyClassRuntime = questFamilyDevice || quest3OrPro || quest2Token;
             bool questMemoryGate =
                 QuestVulkanRuntimePolicy.SystemMemoryMegabytes > 0 &&
                 QuestVulkanRuntimePolicy.SystemMemoryMegabytes < QuestVulkanRuntimePolicy.QuestMemoryGateMegabytes &&
@@ -1473,14 +1504,22 @@ namespace Hecton8.Graphics.VR
                 return;
             }
 
+            if (questFamilyDevice)
+            {
+                s_quest2ClassRuntime = false;
+                s_questRuntimeClassified = true;
+                return;
+            }
+
             if (hasLoadedDeviceName && !questFamilyDevice)
             {
+                s_questFamilyClassRuntime = false;
                 s_quest2ClassRuntime = false;
                 s_questRuntimeClassified = true;
             }
         }
 
-        private static bool IsQuestFamilyDevice()
+        private static bool HasQuestFamilyDeviceToken()
         {
             return ContainsToken(SystemInfo.deviceModel, "Quest") ||
                    ContainsToken(SystemInfo.deviceName, "Quest") ||

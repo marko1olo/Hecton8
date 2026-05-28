@@ -18,9 +18,35 @@
       "LastVaultFaultBufferId",
       "LastVaultFaultFrame"
     ],
-    "tryAcquireWriteLockStaticSites": 19,
+    "tryAcquireWriteLockStaticSites": 1,
+    "tryAcquireVaultWriteCallSites": 19,
+    "tryAcquireVaultWriteMatchesIncludingDefinition": 20,
+    "tryLockBufferStaticSites": 1,
+    "tryUnlockBufferStaticSites": 7,
     "finallyStaticSites": 22,
-    "readOnlyAccessorsUseTryReadOnlyHandle": true
+    "readOnlyAccessorsUseTryReadOnlyHandle": true,
+    "adjacentKinematicGyroAudit": {
+      "files": [
+        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs"
+      ],
+      "legacyTryReadHandleMatchesAfterPatch": 0,
+      "readOnlyHelper": "TryReadOnlyVaultHandle<T>",
+      "groupedSimulationLockCleanup": "LockSimulationBuffers now releases failed partial acquisitions from finally.",
+      "groupedGyroLockCleanup": "TryLockGyroBuffers now releases failed partial acquisitions from finally.",
+      "configSnapshotJobRoute": "SubmarineKinematicConfig is mutated under a short VehiclesPhysics writer lock, copied to frameConfig, released before scheduling, and consumed by CalculateAddedMassTensorJob/Submarine6DIntegratorJob as a by-value DTO."
+    },
+    "adjacentAutopilotAudit": {
+      "file": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+      "legacyTryReadHandleMatchesAfterPatch": 0,
+      "rawTryLockBufferMatchesAfterPatch": 0,
+      "rawTryUnlockBufferMatchesAfterPatch": 0,
+      "readOnlyHelper": "TryReadAutopilotVaultBuffer<T> returns NativeArray<T>.ReadOnly via IDataVault.TryReadOnlyHandle.",
+      "writeLockHelper": "TryAcquireAutopilotVaultWrite<T> uses IDataVault.TryAcquireWriteLock and invalid-view cleanup in finally.",
+      "groupedInitializationLockCleanup": "LockInitializationBuffers releases failed partial acquisitions from finally through UnlockBuffers.",
+      "groupedSolverLockCleanup": "LockSolverBuffers releases failed partial acquisitions from finally through UnlockBuffers.",
+      "qualityRoute": "ResolveAutopilotQualityWeight reads MathLodRuntimeConfig.TryReadLatestConfig first, then HomeostasisBrain.GlobalQualityWeight; authored tuning quality is clamped by ResolveAutopilotResolvedQuality."
+    }
   },
   "dtoLayoutProof": {
     "BallastTankDTO": 32,
@@ -35,26 +61,83 @@
   },
   "lineProof": {
     "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs": {
-      "pidFaultOffsets": [74, 76, 77],
-      "pidDumpPath": 357,
-      "tryAcquireVaultWriteHelper": [3241, 3265, 3286, 3290],
-      "releaseVaultWriteHelper": [3296, 3306],
-      "ballastSolverPartialAcquireFinally": [3117, 3130, 3134, 3166, 3170],
-      "readOnlyHelpers": [3012, 3051, 3060, 3069, 3108, 3593],
-      "mutableLockedHelpers": [3021, 3036, 3078, 3093, 3574],
-      "mutatingReadOnlyRefreshHelpers": [1038, 1042, 1046, 2361, 3617, 3638, 3646],
-      "roomReadOnlyMigration": [233, 235, 2535, 2558, 3221, 3231, 3326, 3351, 3398, 3402, 3422, 3456, 3494, 3498],
-      "ballastPendingReadGuard": [1882, 2663],
-      "jobCompletionFinallyBlocks": [1664, 1697, 2397, 2448, 2580, 2605]
+      "pidFaultOffsets": [75, 77, 78],
+      "pidDumpPath": 385,
+      "tryAcquireVaultWriteHelper": [3440, 3464, 3485, 3489],
+      "releaseVaultWriteHelper": [3495, 3505],
+      "ballastSolverPartialAcquireFinally": [3337, 3341, 3345, 3349, 3353, 3365, 3369, 3371, 3373, 3375, 3377],
+      "readOnlyHelpers": [3211, 3250, 3259, 3268, 3307, 3518, 3816, 3840],
+      "mutableLockedHelpers": [3220, 3235, 3277, 3292, 3885],
+      "mutatingReadOnlyRefreshHelpers": [1127, 1131, 1135, 2553, 3840, 3862, 3871],
+      "roomReadOnlyMigration": [253, 254, 255, 274, 278, 281, 283, 3538, 3551, 3564, 3613, 3630, 3633, 3657, 3727, 3732, 3747],
+      "externalReadOnlyOwnerRelaxation": [3510, 3630, 3633, 3657, 3808, 3816, 3822, 3849, 3858, 3936],
+      "shinobu332ExternalReadOnlyCachedRoute": [2553, 3518, 3816],
+      "ballastPendingReadGuard": [1971, 1972, 2862, 2863],
+      "jobCompletionFinallyBlocks": [1748, 1764, 2604, 2620, 2774, 2807],
+      "lateFrameFeedbackRoute": [694, 806, 835, 840, 2278, 2297, 2304, 2311, 2318],
+      "tailHeavyVisualSignalDeferral": [2377, 2401, 2405, 2411],
+      "maelstromJobCopyRoute": [116, 117, 197, 206, 2530, 2531],
+      "pidNonFatalFlagRouting": [372, 379, 2617, 2620],
+      "ballastTuningPostLockRoute": [1511, 1554, 1567],
+      "csvProfileWriteLockRoute": [1261, 1266, 1267, 1278, 1280, 1287, 1289, 1321, 1324, 1326]
     },
     "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs": {
       "globalQualityWeightOffsets": [114, 162, 178],
-      "activeSampleBudgetOffset": 120,
+      "activeSampleBudgetOffset": 148,
       "layoutValidatorOffsetCheck": 243,
       "activeSampleBudgetConsumption": [589, 591, 594, 600, 608, 616, 683, 708]
     },
     "Assets/_Project/Scripts/Core/Memory/H8Memory.cs": {
-      "submarineBufferIds": [144, 145, 146, 147, 2111, 2112, 2113, 2114, 2115, 2116, 2117, 2118]
+      "submarineBufferIds": [144, 145, 146, 147, 148, 2098, 2111, 2112, 2113, 2114, 2115, 2116, 2117, 2118]
+    },
+    "Assets/_Project/Scripts/Physics/Vehicles/Editor/SubmarineNavigationLayoutValidator1420.cs": {
+      "pidTelemetryFrameOffsetCheck": 73,
+      "pidTelemetryStateHashOffsetCheck": 74,
+      "pidTelemetryFlagsOffsetCheck": 75,
+      "pidTelemetryFaultOffsetChecks": [76, 77, 78, 79]
+    },
+    "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs": {
+      "tryReadOnlyVaultHandleHelper": 592,
+      "tryAcquireVaultWriteLockHelper": [599, 608, 616, 620],
+      "configWriterLockShortSnapshot": [96, 248, 256, 257, 269, 299, 1166, 1167, 1199, 1218, 1231],
+      "lateFrameStateReadOnly": 341,
+      "bootConfigReadOnly": [673, 674],
+      "publicAddedMassReadOnly": 830,
+      "publicHydrodynamicsTelemetryReadOnly": 871,
+      "externalDamageStateReadOnly": 1011,
+      "lockSimulationBuffersFinally": [1076, 1084, 1096, 1105, 1109, 1110],
+      "blackboxStateReadOnly": 1887,
+      "signalBridgeConfigReadOnly": 2073
+    },
+    "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs": {
+      "tryLockGyroBuffersFinally": [227, 232, 238, 246, 249],
+      "gyroFaultTelemetryReadOnly": 383,
+      "gyroTuningReadOnly": 426,
+      "latestGyroTelemetryReadOnly": 479,
+      "gyroForcePacketEditorReadOnly": [493, 494],
+      "gyroVisualReadOnly": 511,
+      "gyroCounterReadOnly": 520
+    },
+    "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs": {
+      "addedMassConfigByValueField": 1298,
+      "addedMassConfigByValueRead": 1319,
+      "integratorConfigByValueField": 1584,
+      "integratorConfigByValueRead": 1629,
+      "staleConfigArrayMatchesAfterPatch": 0
+    },
+    "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs": {
+      "autopilotBufferIds": [66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 77, 79],
+      "sharedKinematicBufferId": "BufferID.SubmarineKinematicStates at Assets/_Project/Scripts/Core/Memory/H8Memory.cs:913",
+      "tryAcquireAutopilotVaultWriteHelper": [1977, 1997, 2010, 2014],
+      "tryReadOnlyHelper": [2020, 2033],
+      "releaseAutopilotVaultWriteHelper": [2038, 2044],
+      "directWriteRoutesWithFinally": [1593, 1610, 1624, 1640, 1678, 1687, 1696, 1730, 1796, 1811, 2092, 2098, 2104, 2110, 2116, 2123, 2546, 2555],
+      "groupedInitializationLockFinally": [2350, 2357, 2372, 2375],
+      "groupedSolverLockFinally": [2379, 2386, 2404, 2407],
+      "unlockBuffersReleaseRoutes": [2426, 2434, 2435, 2436, 2437, 2438, 2439, 2440, 2441, 2442, 2443, 2444, 2445],
+      "readOnlyPublicRoutes": [1747, 1761, 1779, 1780, 2454, 2455, 2474, 2479, 2818],
+      "runtimeQualityRoutes": [1564, 1751, 1807, 2204, 2249, 2279, 2871, 2911, 2916, 2923, 2925, 2928, 2933],
+      "mathLodConsumption": [566, 567, 583, 594, 686, 699, 764, 817, 826, 833, 839, 1049, 1115]
     }
   },
   "blackBox": {
@@ -79,13 +162,21 @@
     "qualityCache": "SubmarineAutoLevelBallastController.ReadCachedGlobalQualityWeight",
     "mathLodRoute": "ResolveBallastActiveSampleBudget(float quality) maps continuous 0..1 quality to a maximum 1..4 analytic buoyancy sample budget",
     "jobConsumption": "CalculateBuoyancyForceJob consumes SubmarineBallastFluidSampleDTO.ActiveSampleBudget, skips unavailable bow/stern/beam sample math, and fractionally weights the next sample from GlobalQualityWeight",
+    "lateFrameFeedbackRoute": "Dynamic flood acoustic/haptic/tail-heavy bubble/fluid impulse feedback queues in FixedTick and flushes in LateFrameTick; late-frame tick registration occurs once during RegisterRuntime, not from the hot queue methods.",
+    "maelstromJobLifetimeRoute": "SchedulePidJob copies at most two WhirlpoolFlow structs from IAnalyticalFlowReadModel before scheduling SubmarineAutoLevelPidJob; the job no longer stores an external NativeArray<WhirlpoolFlow>.ReadOnly view.",
+    "pidNonFatalFlagRoute": "PidTelemetryFlagDerivativeDisabled is telemetry-only: CompletePidJob now blocks force output only on PidTelemetryFlagInvalidOutput or PidTelemetryFlagCriticalFlood, and dumps only PidTelemetryDumpFaultMask.",
+    "csvProfileWriteLockRoute": "Editor-cold ballast CSV profile import writes CsvScratch and Profiles through TryAcquireVaultWrite and releases both descriptors from finally.",
+    "autopilotQualityRoute": "SubmarineAutopilotSdfNavigator resolves runtime cadence, feeler count, SDF step count, SDF interpolation, SDF gradient sampling, and flow interpolation from a continuous quality scalar sourced from MathLodRuntimeConfig/HomeostasisBrain.GlobalQualityWeight; no binary isLowEnd switch was introduced.",
+    "autopilotCinematicCheatRoute": "Autopilot still uses a compact mock SDF plus sampled/analytic flow field, not a heavier physical hydrodynamics simulation. Low quality keeps fewer feelers, one SDF step, nearest flow sampling, and lower solver cadence; high/ultra spends the budget on more feelers, more SDF steps, gradient normals, interpolation, and per-frame solve cadence.",
     "binaryDeviceSwitchesIntroduced": 0
   },
   "readAccessorPurityProof": {
     "externalReadbacks": [
       "BallastFill01",
       "SHINOBU_332 gyro suppression",
-      "Dynamic flood room inputs pinned for scheduled job lifetime"
+      "Dynamic flood room inputs pinned for scheduled job lifetime",
+      "SubmarineDynamicsRuntime LateFrame/telemetry/editor readbacks",
+      "SubmarineDynamicsRuntime_Gyroscopes tuning/telemetry/visual readbacks"
     ],
     "readOnlyRoutes": [
       "TryReadBallastFillReadOnly",
@@ -98,13 +189,25 @@
       "RoomLocalAUPs",
       "Shinobu332GyroCounters"
     ],
+    "adjacentKinematicGyroReadOnlyRoutes": [
+      "TryReadOnlyVaultHandle",
+      "TryReadLatestHydrodynamicsTelemetry",
+      "TryReadGyroTuning",
+      "TryReadLatestGyroTelemetry",
+      "TryReadGyroForcePacketEditorView",
+      "SyncGyroVisualBuffer",
+      "DumpBlackBoxIfFaulted",
+      "TryReadConfigForSignalBridge"
+    ],
     "mutatingRefreshRoutes": [
       "TryRefreshExistingReadOnlyVaultBuffer"
     ],
     "pinnedJobReadRoutes": [
       "TryAcquireFloodRoomInputAliases",
       "TryAcquirePinnedReadOnlyVaultBuffer",
-      "ReleaseFloodRoomInputVaultLocks"
+      "ReleaseFloodRoomInputVaultLocks",
+      "IsVaultHandleForBuffer",
+      "SubmarineDynamicsRuntime frameConfig by-value job DTO route"
     ],
     "mutableResolveRoutes": [
       "TryResolvePidOutputLocked",
@@ -115,15 +218,129 @@
     "mutableResolveRequiresHeldLock": true
   },
   "verification": {
-    "gitDiffCheck": "clean except repository LF-to-CRLF warning",
-    "braceBalance": "balanced for modified C# files",
-    "hotPathForbiddenPatternScan": "case-sensitive scan found 0 new Native*, Allocator.Persistent, LINQ .Where/.Select/.ToList/.ToArray, foreach, string.Format, .ToString, interpolated strings, or literal string concatenation matches in modified hot files; reference-type new sites are cold CSV/dump paths only",
-    "fullBuild": "stale-after-source-edit: latest C# source changed after the previous runtime build because dynamic flood room inputs were pinned with TryLockBuffer/TryUnlockBuffer and ballast tank readbacks were guarded while the ballast solver writer job is pending; final recheck blocked by CPU 94.19% with 0 compiler processes"
+    "gitDiffCheck": "clean for current modified C# targets except repository LF-to-CRLF warnings",
+    "braceBalance": "balanced for current modified C# files: SubmarineAutoLevelBallastController.cs 384/384, SubmarineBallastBuoyancyContracts.cs 55/55, SubmarineDynamicsRuntime.cs 201/201, SubmarineDynamicsRuntime_Gyroscopes.cs 69/69, SubmarineAutopilotSdfNavigator.cs 251/251, SubmarineDynamicsContracts.cs 145/145, SubmarineNavigationLayoutValidator1420.cs 10/10, SubmarineNavigationStressHarness1420.cs 28/28",
+    "hotPathForbiddenPatternScan": "case-sensitive whole-file scan of SubmarineAutoLevelBallastController.cs, SubmarineDynamicsRuntime.cs, SubmarineDynamicsRuntime_Gyroscopes.cs, SubmarineAutopilotSdfNavigator.cs, and SubmarineDynamicsContracts.cs found: new Native*=0, Allocator.Persistent=0, foreach=0, string.Format=0, .ToString=0, LINQ .Where/.Select/.ToList/.ToArray=0, interpolated strings=0, binary isLowEnd/LowEnd switches=0.",
+    "promptRefresh": "Docs/Tasks/CURRENT_BATCH.md was extracted with attribute-tolerant regex <AGENT_PROMPT ... id=\"1420\" ...>; task count remains 20; prompt SHA-256 1DE5D02CB34FFF94EFD1F1631A59C0617DF08FD8FE703E520BF1280241ACFD83.",
+    "fullBuild": "current source after config snapshot patch was not built. First gate sampled CPU_AVG=64.45 with compiler processes none, exceeding the >50% no-build rule. Final recheck sampled CPU_AVG=50.87 with active dotnet:68208, also closed. Last earlier targeted evidence build before this patch passed: dotnet build Hecton8.Core.csproj --no-restore -v:minimal /clp:ErrorsOnly, 0 warnings, 0 errors, elapsed 00:03:16.61, dump Docs/AgentLogs/Dump_1420_Build_after_read_pin_split_20260528.txt.",
+    "compilationResourceThrottling": "compliant: no build launched for the current source because first CPU_AVG=64.45 exceeded the rule and final recheck was CPU_AVG=50.87 with active dotnet:68208. Previous successful build gate was CPU_AVG=44.75 with compiler processes none; no full rebuild was launched.",
+    "residualRisks": [
+      "Unity Editor/PlayMode/Profiler proof absent in this session",
+      "current source after the config snapshot patch has static proof only; targeted build was skipped under CPU gates CPU_AVG=64.45 and final CPU_AVG=50.87 with active dotnet:68208",
+      "TrySpendPumpPower remains inside the tank/command write-lock window because IPowerGridService exposes TryQueueWirelessToolDrain only; no reserve/cancel contract exists, so moving it outside the lock could spend energy without a committed command write"
+    ],
+    "externalCompileFailures": []
+  },
+  "apexFinalVerification": {
+    "currentPass": "Iteration 23",
+    "buildGate": {
+      "initialCpuSampleBeforeNoOutputBuild": "CPU_AVG=30.88; COMPILERS=none",
+      "finalCpuSampleBeforeEvidenceBuild": "CPU_AVG=44.75; COMPILERS=none",
+      "successfulBuildCommand": "dotnet build Hecton8.Core.csproj --no-restore -v:minimal /clp:ErrorsOnly",
+      "successfulBuildResult": "0 Warning(s), 0 Error(s), Time Elapsed 00:03:16.61",
+      "successfulBuildDump": "Docs/AgentLogs/Dump_1420_Build_after_read_pin_split_20260528.txt",
+      "successfulBuildDumpSha256": "F48E36D7A4FE914D4470C52261259ADF2B4D3C7CA62E8911A657B9D89AA37F22",
+      "currentSourceAfterConfigSnapshotCpuGate": "first gate CPU_AVG=64.45, COMPILERS=none; final recheck CPU_AVG=50.87 with active dotnet:68208; build skipped because CPU/process gate stayed closed."
+    },
+    "zeroGcScanCurrent": {
+      "files": [
+        "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+        "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+        "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs"
+      ],
+      "newNative": 0,
+      "allocatorPersistent": 0,
+      "foreach": 0,
+      "stringFormat": 0,
+      "toStringCalls": 0,
+      "linqWhereSelectToListToArray": 0,
+      "interpolatedStrings": 0,
+      "binaryLowEndSwitches": 0
+    },
+    "currentReadPinLineProof": {
+      "ballastCommandsReadPin": {
+        "field": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:490",
+        "solverAcquire": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:3338",
+        "solverPinHeld": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:3359",
+        "failureUnlock": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:3377",
+        "completionUnlock": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:3399",
+        "helper": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:3711",
+        "tryResolveUnderPin": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs:3754"
+      },
+      "simulationReadPins": {
+        "maskConstants": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:37",
+        "helper": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:630",
+        "tryLockBuffer": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:649",
+        "failureUnlock": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:668",
+        "releaseHelper": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:681",
+        "handleCheck": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:693",
+        "hullPinAcquire": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:1156",
+        "tuningPinAcquire": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:1158",
+        "dragLutPinAcquire": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:1160",
+        "releasePins": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:1202"
+      },
+      "configSnapshotByValue": {
+        "lockStateField": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:96",
+        "configLengthGuard": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:248",
+        "frameSnapshot": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:256",
+        "earlyWriterRelease": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:257",
+        "addedMassJobConfigAssignment": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:269",
+        "integratorJobConfigAssignment": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:299",
+        "writerAcquire": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:1166",
+        "writerMark": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:1167",
+        "markHelper": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:1199",
+        "unlockRoute": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:1218",
+        "releaseHelper": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs:1231",
+        "addedMassJobField": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs:1298",
+        "addedMassJobRead": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs:1319",
+        "integratorJobField": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs:1584",
+        "integratorJobRead": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs:1629",
+        "staleConfigsArrayMatches": 0
+      },
+      "gyroReadPin": {
+        "field": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs:43",
+        "acquire": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs:231",
+        "mark": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs:252",
+        "release": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs:265"
+      },
+      "autopilotReadPins": {
+        "masks": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:1464",
+        "pinHelper": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:2038",
+        "tryLockBuffer": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:2058",
+        "failureUnlock": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:2072",
+        "releaseHelper": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:2087",
+        "tuningShortWrite": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:2240",
+        "initializationKinematicPin": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:2427",
+        "solverKinematicPin": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:2454",
+        "solverWaypointPin": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:2458",
+        "solverSdfFlowProfilePins": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:2462",
+        "unlockReadPins": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:2525",
+        "readOnlyUnsafePointers": "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:2292"
+      }
+    },
+    "bufferIdsSecuredThisPass": [
+      "SubmarineBallastBufferIds.Commands",
+      "BufferID.Shinobu251HullProfiles",
+      "BufferID.Shinobu251AddedMassTuning",
+      "BufferID.SubmarineKinematicDragLut",
+      "BufferID.SubmarineKinematicConfig",
+      "BufferID.Shinobu332SubmarineGyros",
+      "BufferID.SubmarineKinematicStates",
+      "SubmarineAutopilotVaultRoute.AutopilotWaypoints",
+      "SubmarineAutopilotVaultRoute.AutopilotMockSdf",
+      "SubmarineAutopilotVaultRoute.AutopilotFlowSamples",
+      "SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles"
+    ]
   },
   "modifiedCSharpSha256": {
-    "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs": "894040D6A344DF6BAA00385F617E27196548612CA890C37631373A9DE90A3E46",
+    "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs": "58B0F5AE4C1B8CAF44010EB5FF1C50AC8BC0C6244908E7356E361CCF26C6E7E3",
     "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs": "3E2EF0153F09656ACA4C33BB09DB54FD12240AADC3679E4BCCE03A61FCDF3FB9",
-    "Assets/_Project/Scripts/Physics/Vehicles/Editor/SubmarineNavigationLayoutValidator1420.cs": "2B068D232589D8648075C8AD00B242C64A0780323FB0BD1B658BA53DDDE5CABA",
+    "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs": "E01F2FE2E15DE7C6682489B18BEB7CC4D996622B142DEFEE81344B2D6973B801",
+    "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs": "0DFAC4EB2D825C804B5092864154FE72C30644A75DE9AB6B5C4558EDD2351478",
+    "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs": "C8F2068A7BB486BCAA434DC262C6BC46A9F30DD5BE3062F029403F2557DA2E3C",
+    "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs": "953772C2292E6151388D02C428FCABAC6B87774F87F8DAA6156224D5C73A3BFA",
+    "Assets/_Project/Scripts/Physics/Vehicles/Editor/SubmarineNavigationLayoutValidator1420.cs": "7F0E981728A16534814CCB75EEEE94453C0B010E583702DF61FD198BDAD63A86",
     "Assets/_Project/Scripts/Physics/Vehicles/Editor/SubmarineNavigationStressHarness1420.cs": "95B36E09DD3D62A276BA021D69E9559573EC0FD8B7C8D26B14731527F21BD168"
   }
 }

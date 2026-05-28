@@ -172,7 +172,7 @@ namespace Hecton8.VFX.Parasites
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                RebindDataVaultForLifecycle(currentService as IDataVault);
+                RebindDataVaultForLifecycle(currentService is IDataVault currentVault ? currentVault : null);
                 return;
             }
 

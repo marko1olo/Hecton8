@@ -241,7 +241,7 @@ namespace Hecton8.Narrative
                     TryRegisterSaveParticipant();
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
-                    RebindDataVaultCold(currentService as IDataVault, ensureBuffers: true);
+                    RebindDataVaultCold(currentService is IDataVault currentVault ? currentVault : null, ensureBuffers: true);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _registered = false;
@@ -834,7 +834,7 @@ namespace Hecton8.Narrative
             }
             finally
             {
-                ReleaseVaultWrite(in _queuedLogHashesHandle);
+                ReleaseVaultWrite(in _queuedLogHashesHandle, BufferID.AudioLogPlaybackQueue);
             }
         }
 
@@ -909,7 +909,7 @@ namespace Hecton8.Narrative
                 }
                 finally
                 {
-                    ReleaseVaultWrite(in _queuedLogHashesHandle);
+                    ReleaseVaultWrite(in _queuedLogHashesHandle, BufferID.AudioLogPlaybackQueue);
                 }
             }
         }
@@ -945,7 +945,7 @@ namespace Hecton8.Narrative
                 }
                 finally
                 {
-                    ReleaseVaultWrite(in _queuedLogHashesHandle);
+                    ReleaseVaultWrite(in _queuedLogHashesHandle, BufferID.AudioLogPlaybackQueue);
                 }
             }
 
@@ -978,7 +978,7 @@ namespace Hecton8.Narrative
             if (vault == null)
                 return;
 
-            if (IsVaultHandleCreated(in handle) &&
+            if (IsAudioLogVaultHandle(in handle, bufferId) &&
                 vault.TryResolveHandle(in handle, out NativeArray<T> buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)
@@ -991,11 +991,11 @@ namespace Hecton8.Narrative
 
         private void ReleaseVaultBuffers(IDataVault vault)
         {
-            ReleaseVaultHandle(vault, ref _queuedLogHashesHandle);
-            ReleaseVaultHandle(vault, ref _encryptedFragmentLogHashesHandle);
-            ReleaseVaultHandle(vault, ref _encryptedFragmentRecoveredBitsHandle);
-            ReleaseVaultHandle(vault, ref _telemetryRingHandle);
-            ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
+            ReleaseVaultHandle(vault, ref _queuedLogHashesHandle, BufferID.AudioLogPlaybackQueue);
+            ReleaseVaultHandle(vault, ref _encryptedFragmentLogHashesHandle, BufferID.AudioLogEncryptedFragmentHashes);
+            ReleaseVaultHandle(vault, ref _encryptedFragmentRecoveredBitsHandle, BufferID.AudioLogEncryptedFragmentRecoveredBits);
+            ReleaseVaultHandle(vault, ref _telemetryRingHandle, BufferID.AudioLogTelemetryRing);
+            ReleaseVaultHandle(vault, ref _telemetryCursorHandle, BufferID.AudioLogTelemetryCursor);
             _queueCount = 0;
             _playbackQueueReadIndex = 0;
             _playbackQueueWriteIndex = 0;
@@ -1003,27 +1003,30 @@ namespace Hecton8.Narrative
             ClearQueuedLogHashes();
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
         {
-            if (vault != null && IsVaultHandleCreated(in handle))
+            if (vault != null && IsAudioLogVaultHandle(in handle, bufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsAudioLogVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)OwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private bool TryReadVaultBuffer<T>(
             in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
             int requiredLength,
             out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             IDataVault vault = _dataVault;
-            if (vault == null || !IsVaultHandleCreated(in handle))
+            if (vault == null || !IsAudioLogVaultHandle(in handle, bufferId))
                 return false;
 
             if (!vault.TryReadOnlyHandle(in handle, out buffer))
@@ -1041,7 +1044,7 @@ namespace Hecton8.Narrative
         {
             buffer = default;
             IDataVault vault = _dataVault;
-            if (vault == null || !IsVaultHandleCreated(in handle))
+            if (vault == null || !IsAudioLogVaultHandle(in handle, bufferId))
             {
                 _vaultResolutionFailureCount++;
                 RecordVaultTelemetry(fallbackFlag | VaultFallbackMissingVault, bufferId);
@@ -1067,17 +1070,18 @@ namespace Hecton8.Narrative
             return true;
         }
 
-        private void ReleaseVaultWrite<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private void ReleaseVaultWrite<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
         {
-            _dataVault?.ReleaseWriteLock(in handle, OwnerSystemId);
+            if (_dataVault != null && IsAudioLogVaultHandle(in handle, bufferId))
+                _dataVault.ReleaseWriteLock(in handle, OwnerSystemId);
         }
 
         private bool TryReadEncryptedFragmentState(
             out NativeArray<uint>.ReadOnly hashes,
             out NativeArray<uint>.ReadOnly recoveredBits)
         {
-            bool hasHashes = TryReadVaultBuffer(in _encryptedFragmentLogHashesHandle, EncryptedFragmentStateCapacity, out hashes);
-            bool hasBits = TryReadVaultBuffer(in _encryptedFragmentRecoveredBitsHandle, EncryptedFragmentStateCapacity, out recoveredBits);
+            bool hasHashes = TryReadVaultBuffer(in _encryptedFragmentLogHashesHandle, BufferID.AudioLogEncryptedFragmentHashes, EncryptedFragmentStateCapacity, out hashes);
+            bool hasBits = TryReadVaultBuffer(in _encryptedFragmentRecoveredBitsHandle, BufferID.AudioLogEncryptedFragmentRecoveredBits, EncryptedFragmentStateCapacity, out recoveredBits);
             return hasHashes && hasBits;
         }
 
@@ -1093,15 +1097,15 @@ namespace Hecton8.Narrative
             if (TryAcquireVaultWrite(in _encryptedFragmentRecoveredBitsHandle, BufferID.AudioLogEncryptedFragmentRecoveredBits, EncryptedFragmentStateCapacity, VaultFallbackEncryptedBits, out recoveredBits))
                 return true;
 
-            ReleaseVaultWrite(in _encryptedFragmentLogHashesHandle);
+            ReleaseVaultWrite(in _encryptedFragmentLogHashesHandle, BufferID.AudioLogEncryptedFragmentHashes);
             hashes = default;
             return false;
         }
 
         private void ReleaseEncryptedFragmentWriteLocks()
         {
-            ReleaseVaultWrite(in _encryptedFragmentRecoveredBitsHandle);
-            ReleaseVaultWrite(in _encryptedFragmentLogHashesHandle);
+            ReleaseVaultWrite(in _encryptedFragmentRecoveredBitsHandle, BufferID.AudioLogEncryptedFragmentRecoveredBits);
+            ReleaseVaultWrite(in _encryptedFragmentLogHashesHandle, BufferID.AudioLogEncryptedFragmentHashes);
         }
 
         private void ClearEncryptedFragmentState()
@@ -1189,8 +1193,8 @@ namespace Hecton8.Narrative
         {
             IDataVault vault = _dataVault;
             if (vault == null ||
-                !IsVaultHandleCreated(in _telemetryRingHandle) ||
-                !IsVaultHandleCreated(in _telemetryCursorHandle))
+                !IsAudioLogVaultHandle(in _telemetryRingHandle, BufferID.AudioLogTelemetryRing) ||
+                !IsAudioLogVaultHandle(in _telemetryCursorHandle, BufferID.AudioLogTelemetryCursor))
             {
                 return;
             }

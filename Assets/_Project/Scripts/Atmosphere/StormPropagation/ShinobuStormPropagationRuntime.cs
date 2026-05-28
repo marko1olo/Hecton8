@@ -64,7 +64,6 @@ namespace Hecton8.Atmosphere
 #if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
 #endif
-        private VaultGenerationHandle<byte> _dumpScratchHandle;
         private VaultGenerationHandle<float4> _flowScalarHandle;
         private VaultGenerationHandle<float4> _audioScalarHandle;
         private VaultGenerationHandle<float4> _biolumScalarHandle;
@@ -88,6 +87,7 @@ namespace Hecton8.Atmosphere
         private int _registeredLate;
         private int _registeredHotSwap;
         private int _registeredOriginShift;
+        private byte[] _dumpManagedScratch;
         private bool _vaultReady;
         private bool _attenuationScheduled;
         private bool _mockScheduled;
@@ -445,8 +445,7 @@ namespace Hecton8.Atmosphere
             if (_csvScratchHandle.BufferID == 0u)
                 _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.ShinobuStormPropagationCsvScratch, ShinobuStormPropagationConstants.CsvScratchBytes, OwnerSystem, NativeArrayOptions.ClearMemory);
 #endif
-            if (_dumpScratchHandle.BufferID == 0u)
-                _dumpScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.ShinobuStormPropagationDumpScratch, ShinobuStormPropagationConstants.DumpScratchBytes, OwnerSystem, NativeArrayOptions.ClearMemory);
+            EnsureDumpManagedScratchCold();
             if (_flowScalarHandle.BufferID == 0u)
                 _flowScalarHandle = vault.EnsureGenerationHandle<float4>(BufferID.ShinobuStormPropagationFlowScalar, 1, OwnerSystem, NativeArrayOptions.ClearMemory);
             if (_audioScalarHandle.BufferID == 0u)
@@ -503,7 +502,6 @@ namespace Hecton8.Atmosphere
 #if UNITY_EDITOR
             _csvScratchHandle = default;
 #endif
-            _dumpScratchHandle = default;
             _flowScalarHandle = default;
             _audioScalarHandle = default;
             _biolumScalarHandle = default;
@@ -525,13 +523,21 @@ namespace Hecton8.Atmosphere
 #if UNITY_EDITOR
             ReleaseOwnedVaultHandle(vault, ref _csvScratchHandle, BufferID.ShinobuStormPropagationCsvScratch);
 #endif
-            ReleaseOwnedVaultHandle(vault, ref _dumpScratchHandle, BufferID.ShinobuStormPropagationDumpScratch);
             ReleaseOwnedVaultHandle(vault, ref _flowScalarHandle, BufferID.ShinobuStormPropagationFlowScalar);
             ReleaseOwnedVaultHandle(vault, ref _audioScalarHandle, BufferID.ShinobuStormPropagationAudioScalar);
             ReleaseOwnedVaultHandle(vault, ref _biolumScalarHandle, BufferID.ShinobuStormPropagationBiolumScalar);
             ReleaseOwnedVaultHandle(vault, ref _fogScalarHandle, BufferID.ShinobuStormPropagationFogScalar);
             _vaultReady = false;
             _impactProfilesLoaded = false;
+        }
+
+        private void EnsureDumpManagedScratchCold()
+        {
+            if (_dumpManagedScratch == null ||
+                _dumpManagedScratch.Length < ShinobuStormPropagationConstants.DumpScratchBytes)
+            {
+                _dumpManagedScratch = new byte[ShinobuStormPropagationConstants.DumpScratchBytes]; // COLD ALLOC: byte[19232] - post-lock storm telemetry dump staging - owner: ShinobuStormPropagationRuntime
+            }
         }
 
         private static void ReleaseOwnedVaultHandle<T>(
@@ -1035,109 +1041,139 @@ namespace Hecton8.Atmosphere
                 return false;
             }
 
-            bool telemetryLocked = false;
-            bool cursorLocked = false;
-            bool scratchLocked = false;
-            if (!_vault.TryLockBuffer(BufferID.ShinobuStormPropagationTelemetryRing, OwnerSystem))
+            byte[] scratch = _dumpManagedScratch;
+            if (scratch == null ||
+                scratch.Length < ShinobuStormPropagationConstants.DumpScratchBytes)
+            {
+                return false;
+            }
+
+            if (!TryCopyTelemetryDumpSnapshot(reasonFlags, stateHash, scratch, out int byteCount))
                 return false;
 
-            telemetryLocked = true;
+            return TryWriteTelemetryDumpSnapshotCold(scratch, byteCount);
+        }
+
+        private bool TryCopyTelemetryDumpSnapshot(uint reasonFlags, uint stateHash, byte[] scratch, out int byteCount)
+        {
+            byteCount = 0;
+            bool cursorLocked = false;
             try
             {
                 if (!_vault.TryLockBuffer(BufferID.ShinobuStormPropagationTelemetryCursor, OwnerSystem))
                     return false;
 
                 cursorLocked = true;
-                if (!_vault.TryLockBuffer(BufferID.ShinobuStormPropagationDumpScratch, OwnerSystem))
-                    return false;
-
-                scratchLocked = true;
-                if (!Resolve(in _telemetryHandle, out NativeArray<StormPropagationTelemetryEntry> telemetry) ||
-                    !Resolve(in _telemetryCursorHandle, out NativeArray<int> cursor) ||
-                    !Resolve(in _dumpScratchHandle, out NativeArray<byte> scratch) ||
-                    telemetry.Length <= 0 ||
+                if (!Resolve(in _telemetryCursorHandle, out NativeArray<int> cursor) ||
                     cursor.Length <= 0 ||
                     scratch.Length < ShinobuStormPropagationConstants.DumpScratchBytes)
                 {
                     return false;
                 }
 
-                StormPropagationDumpHeader header = new StormPropagationDumpHeader
-                {
-                    Magic = ShinobuStormPropagationConstants.DumpMagic,
-                    ReasonFlags = reasonFlags,
-                    WriteCursor = ShinobuStormPropagationNative.ReadElement(cursor, 0),
-                    EntryCount = math.min(telemetry.Length, ShinobuStormPropagationConstants.TelemetryFrameCount),
-                    EntryStrideBytes = ShinobuStormPropagationConstants.TelemetryEntryStrideBytes,
-                    SourceHash = ShinobuStormPropagationConstants.SourceHash,
-                    StateHash = stateHash,
-                    Reserved = 0u
-                };
+                int writeCursor = ShinobuStormPropagationNative.ReadElement(cursor, 0);
+                cursorLocked = false;
+                _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTelemetryCursor, OwnerSystem);
 
-                void* scratchPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-                void* headerPtr = UnsafeUtility.AddressOf(ref header);
-                UnsafeUtility.MemCpy(scratchPtr, headerPtr, UnsafeUtility.SizeOf<StormPropagationDumpHeader>());
-                void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                int writeCursor = ((header.WriteCursor % header.EntryCount) + header.EntryCount) % header.EntryCount;
-                StormPropagationTelemetryEntry newestCandidate = ShinobuStormPropagationNative.ReadElement(telemetry, writeCursor);
-                int oldestIndex = newestCandidate.Frame != 0u ? writeCursor : 0;
-                byte* dumpEntryPtr = (byte*)scratchPtr + UnsafeUtility.SizeOf<StormPropagationDumpHeader>();
-                for (int i = 0; i < header.EntryCount; i++)
-                {
-                    int sourceIndex = (oldestIndex + i) % header.EntryCount;
-                    UnsafeUtility.MemCpy(
-                        dumpEntryPtr + (i * ShinobuStormPropagationConstants.TelemetryEntryStrideBytes),
-                        (byte*)telemetryPtr + (sourceIndex * ShinobuStormPropagationConstants.TelemetryEntryStrideBytes),
-                        ShinobuStormPropagationConstants.TelemetryEntryStrideBytes);
-                }
-
+                bool telemetryLocked = false;
                 try
                 {
-                    string root = BuildProjectRootPathCold();
-                    if (string.IsNullOrEmpty(root))
+                    if (!_vault.TryLockBuffer(BufferID.ShinobuStormPropagationTelemetryRing, OwnerSystem))
                         return false;
 
-                    string path = Path.Combine(root, DumpRelativePath);
-                    string directory = Path.GetDirectoryName(path);
-                    if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                        Directory.CreateDirectory(directory);
-
-                    int byteCount = UnsafeUtility.SizeOf<StormPropagationDumpHeader>() + header.EntryCount * ShinobuStormPropagationConstants.TelemetryEntryStrideBytes;
-                    string tempPath = path + ".tmp";
-                    string backupPath = path + ".bak";
-                    using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                    telemetryLocked = true;
+                    if (!Resolve(in _telemetryHandle, out NativeArray<StormPropagationTelemetryEntry> telemetry) ||
+                        telemetry.Length <= 0 ||
+                        scratch.Length < ShinobuStormPropagationConstants.DumpScratchBytes)
                     {
-                        stream.Write(new ReadOnlySpan<byte>(scratchPtr, byteCount));
-                    }
-
-                    if (new FileInfo(tempPath).Length != byteCount)
-                    {
-                        File.Delete(tempPath);
                         return false;
                     }
 
-                    if (File.Exists(path))
-                        File.Replace(tempPath, path, backupPath, true);
-                    else
-                        File.Move(tempPath, path);
-                }
-                catch (IOException)
-                {
-                    return false;
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    return false;
-                }
+                    StormPropagationDumpHeader header = default;
+                    header.Magic = ShinobuStormPropagationConstants.DumpMagic;
+                    header.ReasonFlags = reasonFlags;
+                    header.WriteCursor = writeCursor;
+                    header.EntryCount = math.min(telemetry.Length, ShinobuStormPropagationConstants.TelemetryFrameCount);
+                    header.EntryStrideBytes = ShinobuStormPropagationConstants.TelemetryEntryStrideBytes;
+                    header.SourceHash = ShinobuStormPropagationConstants.SourceHash;
+                    header.StateHash = stateHash;
+                    header.Reserved = 0u;
 
-                return true;
+                    fixed (byte* scratchPtr = scratch)
+                    {
+                        void* headerPtr = UnsafeUtility.AddressOf(ref header);
+                        UnsafeUtility.MemCpy(scratchPtr, headerPtr, UnsafeUtility.SizeOf<StormPropagationDumpHeader>());
+                        void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+                        int safeWriteCursor = ((header.WriteCursor % header.EntryCount) + header.EntryCount) % header.EntryCount;
+                        StormPropagationTelemetryEntry newestCandidate = ShinobuStormPropagationNative.ReadElement(telemetry, safeWriteCursor);
+                        int oldestIndex = newestCandidate.Frame != 0u ? safeWriteCursor : 0;
+                        byte* dumpEntryPtr = scratchPtr + UnsafeUtility.SizeOf<StormPropagationDumpHeader>();
+                        for (int i = 0; i < header.EntryCount; i++)
+                        {
+                            int sourceIndex = (oldestIndex + i) % header.EntryCount;
+                            UnsafeUtility.MemCpy(
+                                dumpEntryPtr + (i * ShinobuStormPropagationConstants.TelemetryEntryStrideBytes),
+                                (byte*)telemetryPtr + (sourceIndex * ShinobuStormPropagationConstants.TelemetryEntryStrideBytes),
+                                ShinobuStormPropagationConstants.TelemetryEntryStrideBytes);
+                        }
+                    }
+
+                    byteCount = UnsafeUtility.SizeOf<StormPropagationDumpHeader>() + header.EntryCount * ShinobuStormPropagationConstants.TelemetryEntryStrideBytes;
+                    return true;
+                }
+                finally
+                {
+                    if (telemetryLocked)
+                        _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTelemetryRing, OwnerSystem);
+                }
             }
             finally
             {
-                if (scratchLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationDumpScratch, OwnerSystem);
                 if (cursorLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTelemetryCursor, OwnerSystem);
-                if (telemetryLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTelemetryRing, OwnerSystem);
             }
+        }
+
+        private static bool TryWriteTelemetryDumpSnapshotCold(byte[] scratch, int byteCount)
+        {
+            try
+            {
+                string root = BuildProjectRootPathCold();
+                if (string.IsNullOrEmpty(root))
+                    return false;
+
+                string path = Path.Combine(root, DumpRelativePath);
+                string directory = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                    Directory.CreateDirectory(directory);
+
+                string tempPath = path + ".tmp";
+                string backupPath = path + ".bak";
+                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.Read))
+                {
+                    stream.Write(scratch, 0, byteCount);
+                }
+
+                if (new FileInfo(tempPath).Length != byteCount)
+                {
+                    File.Delete(tempPath);
+                    return false;
+                }
+
+                if (File.Exists(path))
+                    File.Replace(tempPath, path, backupPath, true);
+                else
+                    File.Move(tempPath, path);
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private float SampleGlobalQualityWeightForTick()

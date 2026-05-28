@@ -89,6 +89,7 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("return QueueDeferredWriterRelease(bufferKey, offsetBytes, ResolveActiveLockBit((BufferID)bufferKey), 0)", blockRelease);
             StringAssert.Contains("if (kind == DeferredReleaseKindWriter)", queue);
             StringAssert.Contains("Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate, 1, 0)", queue);
+            StringAssert.Contains("finally", queue);
             StringAssert.Contains("Volatile.Write(ref _deferredReleaseEnqueueGate, 0)", queue);
             StringAssert.Contains("pending->Kind == DeferredReleaseKindWriter", queue);
             Assert.IsFalse(queue.Contains("pending->Kind == kind"));
@@ -156,6 +157,89 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void SystemDispatcher_DeferredArenaGrowthUsesCachedPostSimulationPath()
+        {
+            string dispatcher = ReadProjectFile("Assets/_Project/Scripts/Core/SystemDispatcher.cs");
+            string postSimulation = ExtractMethod(dispatcher, "private void RunMasterPostSimulationPhase");
+            string processDeferred = ExtractMethod(dispatcher, "private void ProcessDeferredArenaGrowthPostSimulation");
+
+            Assert.Less(
+                postSimulation.IndexOf("system.PostSimulationTick(in timing)", StringComparison.Ordinal),
+                postSimulation.IndexOf("ProcessDeferredArenaGrowthPostSimulation()", StringComparison.Ordinal));
+            StringAssert.Contains("IDataVault dataVault = _dataVault;", processDeferred);
+            StringAssert.Contains("TryResolveCachedDataVault(out dataVault)", processDeferred);
+            StringAssert.Contains("_dataVault = dataVault;", processDeferred);
+            StringAssert.Contains("globalDataVault.ProcessDeferredArenaGrowth();", processDeferred);
+            Assert.IsFalse(processDeferred.Contains("GlobalRegistry.Get"));
+            Assert.IsFalse(processDeferred.Contains("GetComponent"));
+        }
+
+        [Test]
+        public void GlobalDataVault_WriteLockMutationGatesStayFlatAndFinallyReleased()
+        {
+            string vault = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs");
+            string acquire = ExtractMethod(vault, "public bool TryAcquireWriteLock<T>");
+            string release = ExtractMethod(vault, "public bool ReleaseWriteLock<T>");
+            string queue = ExtractMethod(vault, "private bool QueueDeferredRelease");
+
+            Assert.AreEqual(1, CountOccurrences(acquire, "TryEnterBlockMutationGate()"));
+            StringAssert.Contains("finally", acquire);
+            StringAssert.Contains("ReleaseBlockMutationGate();", acquire);
+            Assert.IsFalse(acquire.Contains("TryEnterReleaseMutationGate()"));
+
+            Assert.AreEqual(1, CountOccurrences(release, "TryEnterReleaseMutationGate()"));
+            StringAssert.Contains("return QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID)", release);
+            StringAssert.Contains("finally", release);
+            StringAssert.Contains("ReleaseBlockMutationGate();", release);
+            Assert.IsFalse(release.Contains("TryEnterBlockMutationGate()"));
+
+            StringAssert.Contains("enqueueGateAcquired = Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate, 1, 0) == 0", queue);
+            Assert.IsFalse(queue.Contains("Thread.SpinWait"));
+            Assert.IsFalse(queue.Contains("while (Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate"));
+            StringAssert.Contains("finally", queue);
+            StringAssert.Contains("Volatile.Write(ref _deferredReleaseEnqueueGate, 0)", queue);
+        }
+
+        [Test]
+        public void GlobalDataVault_ArenaGrowthPreflightsTailMetadataBeforeRawReallocate()
+        {
+            string h8Memory = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/H8Memory.cs");
+            string vault = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs");
+            string growForBytes = ExtractMethod(vault, "private bool TryGrowArenaForBytes");
+            string growArena = ExtractMethod(vault, "private bool TryGrowArena(");
+            string prepare = ExtractMethod(vault, "private bool TryPrepareArenaGrowthTailMetadata");
+            string extend = ExtractMethod(vault, "private bool ExtendFreeTail");
+            string reserveSlot = ExtractMethod(h8Memory, "internal static bool TryReserveBlockDescriptorSlot");
+            string reserveSlotNoLock = ExtractMethod(h8Memory, "private static bool TryReserveBlockDescriptorSlotNoLock");
+            string releaseSlot = ExtractMethod(h8Memory, "internal static void ReleaseReservedBlockDescriptor");
+            string commitSlot = ExtractMethod(h8Memory, "internal static bool TryCommitReservedBlockDescriptor");
+            string registerThreadSafe = ExtractMethod(h8Memory, "private static int RegisterBlockDescriptorThreadSafe");
+            string updateDescriptor = ExtractMethod(h8Memory, "internal static bool TryUpdateBlockDescriptor");
+
+            Assert.IsFalse(growForBytes.Contains("_blocks[lastIndex].State != BlockStateFree && _blocks.Length >= _blocks.Capacity"));
+            StringAssert.Contains("return TryGrowArena(desiredBytes)", growForBytes);
+            Assert.Less(
+                growArena.IndexOf("if (!TryPrepareArenaGrowthTailMetadata(out reservedTailH8BlockIndex))", StringComparison.Ordinal),
+                growArena.IndexOf("H8Memory.ReallocateRaw", StringComparison.Ordinal));
+            StringAssert.Contains("H8Memory.TryReserveBlockDescriptorSlot(out reservedTailH8BlockIndex)", prepare);
+            StringAssert.Contains("H8Memory.ReleaseReservedBlockDescriptor(reservedTailH8BlockIndex)", growArena);
+            StringAssert.Contains("if (!TryEnterBlockDescriptorMutationGate())", reserveSlot);
+            StringAssert.Contains("ReleaseBlockDescriptorMutationGate();", reserveSlot);
+            StringAssert.Contains("BlockDescriptor reservation = default;", reserveSlotNoLock);
+            StringAssert.Contains("TryReserveReusableBlockDescriptorSlot(in reservation, out index)", reserveSlotNoLock);
+            StringAssert.Contains("EnsureBlockDescriptorCapacity(newCapacity)", reserveSlotNoLock);
+            StringAssert.Contains("descriptor.State != (byte)H8BlockState.Reserved", releaseSlot);
+            StringAssert.Contains("current.State != (byte)H8BlockState.Reserved", commitSlot);
+            StringAssert.Contains("if (committed.Generation < nextGeneration)", commitSlot);
+            StringAssert.Contains("return RegisterBlockDescriptorNoInit(in descriptor)", registerThreadSafe);
+            StringAssert.Contains("if (!TryEnterBlockDescriptorMutationGate())", updateDescriptor);
+            Assert.IsFalse(h8Memory.Contains("Thread.SpinWait"));
+            Assert.IsFalse(extend.Contains("new VaultArenaBlock"));
+            StringAssert.Contains("VaultArenaBlock freeTail = default;", extend);
+            StringAssert.Contains("H8Memory.TryCommitReservedBlockDescriptor(descriptorIndex, BuildDescriptor(in freeTail))", extend);
+        }
+
+        [Test]
         public void NativeMemorySentinel_FatalLeakAssertion_IdentifiesLeakedBuffer()
         {
             NativeMemorySentinel.ResetForSubsystemReload();
@@ -187,6 +271,60 @@ namespace Hecton8.Tests.Editor
             }
         }
 
+        [Test]
+        public void NativeMemorySentinel_RegisterPathUsesFixedStringStorage()
+        {
+            string sentinel = ReadProjectFile("Assets/_Project/Scripts/Core/NativeMemorySentinel.cs");
+            string register = ExtractMethod(sentinel, "private static int RegisterPointer(");
+            string persistent = ExtractMethod(sentinel, "private static void TrackPersistentReallocation");
+            string findPersistent = ExtractMethod(sentinel, "private static int FindPersistentReallocationRecord");
+
+            Assert.IsFalse(register.Contains("new NativeAllocationRecord"));
+            Assert.IsFalse(persistent.Contains("new PersistentReallocationRecord"));
+            Assert.IsFalse(register.Contains("string.Equals(existing.Owner"));
+            Assert.IsFalse(findPersistent.Contains("string.Equals(record.Owner"));
+            Assert.IsFalse(sentinel.Contains("string StackTrace"));
+            Assert.IsFalse(sentinel.Contains("CaptureStackTrace"));
+            Assert.IsFalse(sentinel.Contains("StackTraceUtility.ExtractStackTrace"));
+            Assert.IsFalse(sentinel.Contains("public string Owner"));
+            Assert.IsFalse(sentinel.Contains("public string Label"));
+            Assert.IsFalse(sentinel.Contains("public bool LeakReported;"));
+            Assert.IsFalse(sentinel.Contains("public bool Reported;"));
+            StringAssert.Contains("[StructLayout(LayoutKind.Explicit, Size = 304)]", sentinel);
+            StringAssert.Contains("[StructLayout(LayoutKind.Explicit, Size = 288)]", sentinel);
+            StringAssert.Contains("[FieldOffset(0)] internal IntPtr Pointer", sentinel);
+            StringAssert.Contains("[FieldOffset(16)] public FixedString128Bytes Owner", sentinel);
+            StringAssert.Contains("[FieldOffset(144)] public FixedString128Bytes Label", sentinel);
+            StringAssert.Contains("[FieldOffset(293)] private byte _leakReported", sentinel);
+            StringAssert.Contains("[FieldOffset(280)] private byte _reported", sentinel);
+            StringAssert.Contains("public FixedString128Bytes Owner", sentinel);
+            StringAssert.Contains("public FixedString128Bytes Label", sentinel);
+            StringAssert.Contains("NativeAllocationRecord record = default", register);
+            StringAssert.Contains("PersistentReallocationRecord freshRecord = default", persistent);
+            StringAssert.Contains("ToFixedString128(owner)", register);
+            StringAssert.Contains("FixedStringEquals(in existing.Owner, in ownerFixed)", register);
+            StringAssert.Contains("AppendFixedString(builder, in record.Owner)", sentinel);
+        }
+
+        [Test]
+        public void NativeMemorySentinel_DiagnosticRecordReadsUseMutationGate()
+        {
+            string sentinel = ReadProjectFile("Assets/_Project/Scripts/Core/NativeMemorySentinel.cs");
+            string snapshotCopy = ExtractMethod(sentinel, "internal static int CopySnapshotSources");
+            string fatalMessage = ExtractMethod(sentinel, "private static string BuildFatalLeakMessage");
+
+            StringAssert.Contains("EnterMutationGate();", snapshotCopy);
+            StringAssert.Contains("finally", snapshotCopy);
+            StringAssert.Contains("ExitMutationGate();", snapshotCopy);
+            Assert.IsFalse(snapshotCopy.Contains("new NativeAllocationSnapshotSource"));
+            StringAssert.Contains("NativeAllocationSnapshotSource snapshot = default;", snapshotCopy);
+
+            StringAssert.Contains("EnterMutationGate();", fatalMessage);
+            StringAssert.Contains("finally", fatalMessage);
+            StringAssert.Contains("ExitMutationGate();", fatalMessage);
+            StringAssert.Contains("builder.Append(_trackedBytes);", fatalMessage);
+        }
+
         private static void AssertMethodChecksFence(string source, string signature)
         {
             string block = ExtractMethod(source, signature);
@@ -199,6 +337,23 @@ namespace Hecton8.Tests.Editor
         private static string ReadProjectFile(string relativePath)
         {
             return File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), relativePath));
+        }
+
+        private static int CountOccurrences(string source, string value)
+        {
+            int count = 0;
+            int index = 0;
+            while (index < source.Length)
+            {
+                index = source.IndexOf(value, index, StringComparison.Ordinal);
+                if (index < 0)
+                    return count;
+
+                count++;
+                index += value.Length;
+            }
+
+            return count;
         }
 
         private static string ExtractMethod(string source, string signature)

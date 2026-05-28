@@ -1,0 +1,130 @@
+{
+  "agent_id": "UNKNOWN",
+  "domain": "Core / AUP Origin Shift",
+  "status": "PENDING_RUNTIME_VERIFICATION",
+  "evidence_class": "STATIC_SOURCE",
+  "date_local": "2026-05-28",
+  "source_files": [
+    {
+      "path": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs",
+      "sha256": "4FE8D7649224590D900F97E2C79B53E24FEC7831C30E750920C3B39316FAF04D"
+    },
+    {
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "sha256": "86C8B2CC51620AED9DFF22C522A168BD4A643F42053ABAD00D649F198A2E105F"
+    }
+  ],
+  "work_done": [
+    "Renamed the mutating AUP DataVault route from EnsureRuntimeState/TryResolveOrAcquire to OpenOrAcquireRuntimeStateForOwnerRoute/OpenOrAcquireVaultBufferForOwnerRoute.",
+    "Added TryResolveRuntimeState as a resolve-only route for frame and shift phases.",
+    "Moved TickPreSimulation, ScheduleVaultOriginRebase, RecordRebaseCompletion, and TryGetEditorSnapshot to the resolve-only route.",
+    "Updated HectonFloatingOrigin shift bootstrap to call OpenOrAcquireRuntimeStateForOwnerRoute before LockAllocationsForAupShift."
+  ],
+  "line_evidence": {
+    "owner_open_acquire_route": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:293",
+    "resolve_only_route": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:403",
+    "mutating_buffer_open_route": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:424",
+    "tick_presimulation_resolve_only": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:567",
+    "schedule_rebase_resolve_only": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:646",
+    "completion_resolve_only": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:736",
+    "editor_snapshot_resolve_only": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:811",
+    "shift_bootstrap_open_before_allocation_lock": "Assets/_Project/Scripts/HectonFloatingOrigin.cs:865",
+    "allocation_lock_existing_route": "Assets/_Project/Scripts/HectonFloatingOrigin.cs:866"
+  },
+  "zero_gc_scan": {
+    "scope": "added lines in AupOriginShiftCoordinator.cs and HectonFloatingOrigin.cs",
+    "added_lines": 42,
+    "reference_new_suspect": 0,
+    "string_Format": 0,
+    "dot_ToString": 0,
+    "linq_call_tokens": 0,
+    "foreach_tokens": 0,
+    "dot_Complete": 0,
+    "StartCoroutine": 0,
+    "FindObject": 0,
+    "GlobalRegistry_DataVault": 0,
+    "EnsureGenerationHandle": 0
+  },
+  "route_name_scan": {
+    "TryResolveOrAcquire_or_EnsureRuntimeState_in_touched_aup_files_exit_code": 1,
+    "OpenOrAcquireRuntimeStateForOwnerRoute_refs": [
+      "Assets/_Project/Scripts/HectonFloatingOrigin.cs:865",
+      "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:279",
+      "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:293",
+      "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:787",
+      "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:799",
+      "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:834"
+    ],
+    "TryResolveRuntimeState_refs": [
+      "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:403",
+      "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:567",
+      "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:646",
+      "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:736",
+      "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:811"
+    ]
+  },
+  "data_sovereignty": {
+    "migrated_fields_to_GlobalDataVault": false,
+    "buffer_ids_touched_by_route_contract": [
+      { "name": "MockStatesBuffer", "value": 73030, "line": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:253" },
+      { "name": "MockVelocitiesBuffer", "value": 73031, "line": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:254" },
+      { "name": "MockHistoricalPointsBuffer", "value": 73032, "line": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:255" },
+      { "name": "TelemetryRingBuffer", "value": 73033, "line": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:256" },
+      { "name": "RuntimeStateBuffer", "value": 73034, "line": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:257" },
+      { "name": "MockCameraBuffer", "value": 73035, "line": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:258" },
+      { "name": "CsvScratchBuffer", "value": 73036, "line": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:259" },
+      { "name": "CounterBuffer", "value": 73037, "line": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:260" }
+    ],
+    "TryAcquireWriteLock_added_in_this_pass": 0,
+    "ReleaseWriteLock_added_in_this_pass": 0,
+    "reason": "This pass split owner allocation from resolve-only frame routes. It did not add AUP writer locks because scheduled rebase jobs and async completion need a separate pin/write-lease pass to avoid releasing fences before JobHandle completion.",
+    "residual_risk": "AUP direct NativeArray writes still need a dedicated DataVault writer-lock/job-pin pass. Existing allocation relocation guard remains HectonFloatingOrigin.cs:866."
+  },
+  "struct_layout_static_proof": [
+    { "struct": "AUP_StateDTO", "declared_size": 64, "size_multiple_of_8": true, "line": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:18", "field_offsets": "0 double3 GlobalPosition; 24 float3 LocalPosition; 36 uint SectorHash; 40 uint ShiftFrameId; 44 int3 LocalMillimeters; 56 uint FiniteFlags; 60 uint SourceSystemId" },
+    { "struct": "OriginShiftSignalDTO", "declared_size": 32, "size_multiple_of_8": true, "line": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:37", "field_offsets": "0 double3 ShiftDelta; 24 uint NewSectorHash; 28 uint _pad0" },
+    { "struct": "MockCameraAUP", "declared_size": 48, "size_multiple_of_8": true, "line": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:46", "field_offsets": "0 double3 GlobalPosition; 24 float3 LocalPosition; 36 uint SectorHash; 40 uint Flags; 44 uint _pad0" },
+    { "struct": "AupOriginShiftRuntimeState", "declared_size": 120, "size_multiple_of_8": true, "line": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:101", "field_offsets": "0 double3 PendingTimeSliceShiftDelta; 24 float RebaseLimitMeters; 28 float SectorSizeMeters; 32 int BatchSize; 36 int ActiveEntityCount; 40 int ActiveHistoricalCount; 44 int IsOriginShiftPending; 48 int ManualRebaseRequested; 52 int TimeSliceStartIndex; 56 int TimeSliceActive; 60 uint RebaseCount; 64 uint LastSectorHash; 68 uint CsvSourceHash; 72 uint Flags; 76 float LastComputeTimeMs; 80 int LastEntitiesShifted; 84 int LastHistoricalPointsShifted; 88 int LastNonFiniteCount; 92 int CsvRevision; 96 uint PendingTimeSliceSectorHash; 100 int LastHotEntitiesShifted; 104 uint LastShiftSequence; 108 uint PendingTimeSliceShiftSequence; 112 int HistoricalTimeSliceStartIndex; 116 uint _pad0" },
+    { "struct": "AupOriginShiftTelemetryEntry", "declared_size": 128, "size_multiple_of_8": true, "line": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:132", "field_offsets": "0 double3 ShiftDelta; 24 double3 TotalUniverseOffset; 48 uint Frame; 52 uint RebaseCount; 56 uint ShiftSequence; 60 uint SectorHash; 64 int EntitiesShifted; 68 int HistoricalPointsShifted; 72 int BatchStartIndex; 76 int BatchCount; 80 int NonFiniteCount; 84 float RebaseComputeTimeMs; 88 float SystemHealthIndex01; 92 uint Flags; 96 float3 CameraLocalPosition; 108 uint CameraSectorHash; 112 uint PositionHash; 116 int HotEntitiesShifted; 120 ulong _pad1" },
+    { "struct": "AupPaddedAtomicCounter", "declared_size": 64, "size_multiple_of_8": true, "line": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:157", "field_offsets": "0 int NonFiniteCount; 4 uint _pad0; 8..56 ulong padding lanes" }
+  ],
+  "continuous_scalability": {
+    "GlobalQualityWeight_used": true,
+    "line_evidence": [
+      "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:641",
+      "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:642",
+      "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:918",
+      "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:1013",
+      "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:1015"
+    ],
+    "binary_isLowEnd_switch_added": false,
+    "physical_simulation_added": false,
+    "cinematic_cheat": "No new simulation was added. Existing AUP time-slice scaling remains data/math-only and continuous."
+  },
+  "compile_resource_throttling": {
+    "cpu_percent_before_build_decision": 87.5,
+    "active_compiler_processes": [
+      { "process": "dotnet", "pid": 37700, "cpu": 34.96875 },
+      { "process": "dotnet", "pid": 67192, "cpu": 32.578125 }
+    ],
+    "dotnet_build_invocations": 0,
+    "decision": "build skipped by project rule: CPU > 50% and active dotnet processes"
+  },
+  "static_integrity": {
+    "git_diff_check_exit": 0,
+    "brace_counts": [
+      { "file": "AupOriginShiftCoordinator.cs", "open": 134, "close": 134 },
+      { "file": "HectonFloatingOrigin.cs", "open": 229, "close": 229 }
+    ]
+  },
+  "runtime_verification": {
+    "unity_import": false,
+    "unity_console": false,
+    "play_mode": false,
+    "profiler": false,
+    "gc_monitor": false,
+    "player_build": false,
+    "device_run": false,
+    "dump_artifact": "not produced"
+  }
+}

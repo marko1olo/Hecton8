@@ -1,0 +1,126 @@
+﻿{
+    "agentId":  "1410",
+    "domain":  "Echelon 1 Core Infrastructure / Tick Dispatcher \u0026 Time Dilation",
+    "taskCount":  20,
+    "generatedAt":  "2026-05-28T18:44:32.4765270+04:00",
+    "status":  "PENDING_CLI_COMPILE_TIMEOUT",
+    "evidenceClass":  "STATIC_SOURCE_PLUS_CLI_TIMEOUT",
+    "recheck":  "APEX_RECHECK9",
+    "latestFixes":  [
+                        {
+                            "lines":  "40-58, 118, 540-659",
+                            "change":  "Replaced managed AudioClip pending payload with explicit 32-byte ActionAudioRequest; backend audio only in FlushQueuedActionAudio from LateFrameTick; added continuous GlobalQualityWeight volume scalar.",
+                            "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs"
+                        },
+                        {
+                            "lines":  "156-157, 295",
+                            "change":  "Added authored uint UseAudioEventId route for SpatialAudioManager audio-event table IDs.",
+                            "file":  "Assets/_Project/Scripts/ItemData.cs"
+                        },
+                        {
+                            "lines":  "80-90",
+                            "change":  "Added TryConsumeWithoutAudio so delayed player action truth does not invoke PlayStatic2D.",
+                            "file":  "Assets/_Project/Scripts/Gameplay/ConsumableItem.cs"
+                        }
+                    ],
+    "zeroGcSummary":  {
+                          "stringFormatTotal":  0,
+                          "backendCallsInNonFlushMethods":  0,
+                          "toStringTotal":  0,
+                          "foreachTotal":  0,
+                          "artifact":  "Docs/Reports/DISPATCHER_RECHECK9_ZERO_GC_1410.json",
+                          "valueTypeNewTotal":  1,
+                          "referenceNewTotal":  0,
+                          "linqTotal":  0,
+                          "methodBodiesScanned":  13
+                      },
+    "routeSummary":  {
+                         "playerActionBackendLines":  "QueueAudioEvent line 609, PlayAtPoint line 615, both in FlushQueuedActionAudio",
+                         "binaryLowEndSwitchMatches":  0,
+                         "artifact":  "Docs/Reports/DISPATCHER_RECHECK9_TARGETED_ROUTE_SCAN_1410.json",
+                         "backendCallsOutsidePlayerActionFlush":  0,
+                         "staleManagedPendingAudioClipMatches":  0
+                     },
+    "structLayoutProof":  {
+                              "ActionAudioRequest":  "Size 32 bytes. Offsets: Position 0..11, EventId 12..15, ItemHash 16..19, ClipKind 20, Dirty 21, Reserved0 22..23, Reserved1 24..27, Reserved2 28..31. 32 % 8 = 0. No managed refs, no bool.",
+                              "CoreAudioEvent":  "Existing explicit-layout readonly struct Size 32, offsets in Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs lines 1377-1398."
+                          },
+    "dataSovereignty":  {
+                            "existingSpectrumBuffersFromPriorProof":  [
+                                                                          "AupDiscoveryGridBufferId=(BufferID)71030",
+                                                                          "ActiveSonarGeoTelemetryRingBufferId=(BufferID)71031"
+                                                                      ],
+                            "newGlobalDataVaultBuffersIntroduced":  0,
+                            "lockFinallyProof":  "No new TryAcquireWriteLock in recheck9. Prior Spectrum locks remain documented in recheck8/recheck7 reports.",
+                            "migratedFieldsToGlobalDataVault":  false,
+                            "bufferIdsSecured":  [
+                                                     "None in recheck9"
+                                                 ],
+                            "writeLocksAdded":  0
+                        },
+    "cinematicCheatAndScalability":  {
+                                         "cheapFake":  "Action feedback remains one-frame-late audio presentation, not simulation or physics. No extra physical model added.",
+                                         "high":  "Authored UseAudioEventId route allows richer SpatialAudioManager table selection without gameplay truth changes.",
+                                         "ultra":  "Audio layer can map IDs to richer clips/mix processing in presentation lane only.",
+                                         "low":  "Generic/action audio is quietened and table-event route can be dropped by audio service queue backpressure.",
+                                         "middle":  "Normal late-frame SpatialAudio playback.",
+                                         "continuousQuality":  "ResolveActionAudioPresentationVolume reads HomeostasisBrain.GlobalQualityWeight and lerps volume 0.75..1.0; no isLowEnd/LowEnd/lowEnd tokens in targeted route scan."
+                                     },
+    "compilation":  {
+                        "rerunInvoked":  false,
+                        "currentCpuAveragePercent":  73,
+                        "residualRisk":  "No CLI compile success/failure artifact; static scans and diff checks are current proof, syntax remains PENDING CLI_COMPILE.",
+                        "preBuildCpuAveragePercent":  36,
+                        "command":  "dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
+                        "artifact":  "Docs/Reports/DISPATCHER_BUILD_GATE_1410.json",
+                        "currentActiveCompilerProcessCount":  0,
+                        "preBuildActiveCompilerProcessCount":  0,
+                        "cleanup":  "Stopped remnant dotnet build PIDs 17856 and 34600 after confirming both command lines were the invoked Hecton8.slnx build.",
+                        "result":  "TIMEOUT_NO_COMPILE_VERDICT",
+                        "exitCode":  124
+                    },
+    "sourceFileHashes":  [
+                             {
+                                 "path":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                                 "sha256":  "c6ce0d0dcbf401128aafe6371f63239401fd51c05751089486a1dad8a897f62c"
+                             },
+                             {
+                                 "path":  "Assets/_Project/Scripts/ItemData.cs",
+                                 "sha256":  "54f399bc71fea2c9835c86c4c2031a373923ac43e52412b334840abd6c6c094d"
+                             },
+                             {
+                                 "path":  "Assets/_Project/Scripts/Gameplay/ConsumableItem.cs",
+                                 "sha256":  "bd7902698b4735eddac5ca13937983b15835f019d76baeb8974b39b7e023e8f3"
+                             },
+                             {
+                                 "path":  "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs",
+                                 "sha256":  "35de06fda18ad19cdc655608370e3c0abe2f1de92facb74b9299f07077a3372b"
+                             },
+                             {
+                                 "path":  "Assets/_Project/Scripts/Gameplay/EndingSystem.cs",
+                                 "sha256":  "c05381124afae980433ec520f7f09e1dd583d1e3cd025f0cea33b02864f61b63"
+                             },
+                             {
+                                 "path":  "Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs",
+                                 "sha256":  "453062ac1eb5219e886391de1b4c8e814cc2dc1e7849087ae71f6bc1709fd758"
+                             },
+                             {
+                                 "path":  "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+                                 "sha256":  "963229af129e384556b6bb42ffd36364fd9db19ff5cef3dad9df050cb0dc289f"
+                             },
+                             {
+                                 "path":  "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+                                 "sha256":  "58b0f5ae4c1b8caf44010eb5ff1c50ac8bc0c6244908e7356e361ccf26c6e7e3"
+                             }
+                         ],
+    "residualFaults":  [
+                           "CLI compile verdict is absent because the single allowed final build timed out after 300000 ms. This is not a green build.",
+                           "Static text scan is not runtime GC/profiler proof. Evidence class remains STATIC_SOURCE unless a Unity profiler/GCMonitor artifact is produced.",
+                           "ConsumableItem.TryConsume retains a legacy PlayStatic2D branch for non-PlayerAction callers; rg found no current ConsumableItem.TryConsume call sites outside a comment, but future callers must use TryConsumeWithoutAudio or a late-frame audio route."
+                       ],
+    "artifacts":  [
+                      "Docs/Reports/DISPATCHER_RECHECK9_ZERO_GC_1410.json",
+                      "Docs/Reports/DISPATCHER_RECHECK9_TARGETED_ROUTE_SCAN_1410.json",
+                      "Docs/Reports/DISPATCHER_BUILD_GATE_1410.json"
+                  ]
+}

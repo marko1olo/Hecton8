@@ -1,0 +1,167 @@
+﻿{
+  "schema": "hecton8.apex_verification.v1",
+  "agent_id": "UNKNOWN",
+  "domain": "Core / Input PAL adjacent / DataVault route contracts",
+  "timestamp_local": "2026-05-28T18:54:18+04:00",
+  "status": "PENDING_RUNTIME_VERIFICATION",
+  "verdict": "STATIC_CONTRACT_FIX_ONLY",
+  "summary": "Renamed a private mutating Input DataVault open/acquire helper from TryResolveOrAcquireInputBuffer<T> to OpenOrAcquireInputBufferForOwnerRoute<T>, and updated all local owner-route call sites. The code path still opens/acquires buffers through EnsureGenerationHandle<T>, but the name no longer violates the read-accessor purity doctrine.",
+  "modified_files": [
+    {
+      "path": "Assets/_Project/Scripts/Core/InputDispatcher.cs",
+      "sha256": "E8196DA9E38B2AD893A03C5867596B0C09CF67879FA33A00F9AA14B402C61450",
+      "added_lines": 14,
+      "removed_lines": 14
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs",
+      "sha256": "FBE414B7CD6036146EAA299447E6689E68A2C7CF5AC19082ED841DBC11F06B03",
+      "added_lines": 7,
+      "removed_lines": 7
+    }
+  ],
+  "line_evidence": {
+    "old_route_removed": {
+      "command": "rg -n \"TryResolveOrAcquireInputBuffer\" Assets/_Project/Scripts/Core/InputDispatcher.cs Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs",
+      "result": "NO_MATCH_EXIT_1"
+    },
+    "new_route_references": [
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:407",
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:413",
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:419",
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:425",
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:431",
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:437",
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:445",
+      "Assets/_Project/Scripts/Core/InputDispatcher.cs:864",
+      "Assets/_Project/Scripts/Core/InputDispatcher.cs:870",
+      "Assets/_Project/Scripts/Core/InputDispatcher.cs:876",
+      "Assets/_Project/Scripts/Core/InputDispatcher.cs:882",
+      "Assets/_Project/Scripts/Core/InputDispatcher.cs:888",
+      "Assets/_Project/Scripts/Core/InputDispatcher.cs:894",
+      "Assets/_Project/Scripts/Core/InputDispatcher.cs:900",
+      "Assets/_Project/Scripts/Core/InputDispatcher.cs:906",
+      "Assets/_Project/Scripts/Core/InputDispatcher.cs:912",
+      "Assets/_Project/Scripts/Core/InputDispatcher.cs:918",
+      "Assets/_Project/Scripts/Core/InputDispatcher.cs:924",
+      "Assets/_Project/Scripts/Core/InputDispatcher.cs:932",
+      "Assets/_Project/Scripts/Core/InputDispatcher.cs:992",
+      "Assets/_Project/Scripts/Core/InputDispatcher.cs:2726"
+    ],
+    "mutating_operation_location": "Assets/_Project/Scripts/Core/InputDispatcher.cs:1006 calls vault.EnsureGenerationHandle<T>; this is why the route must not be named TryResolve*.",
+    "owner_routes_using_helper": [
+      "Assets/_Project/Scripts/Core/InputDispatcher.cs:840 EnsureDeterministicInputNativeBuffers",
+      "Assets/_Project/Scripts/Core/InputDispatcher.cs:2720 EnsureXRNativeBuffers",
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:400 EnsureHapticSynthesisNativeBuffers"
+    ]
+  },
+  "zero_gc_static_scan": {
+    "scan_basis": "git diff -U0 added lines for the two modified source files",
+    "added_lines": 21,
+    "reference_type_new_suspects": 0,
+    "string_format": 0,
+    "dot_to_string_calls": 0,
+    "linq_call_tokens": 0,
+    "foreach_tokens": 0,
+    "job_complete_calls": 0,
+    "ensure_generation_handle_added_lines": 0,
+    "global_registry_added_lines": 0,
+    "old_route_added_lines": 0,
+    "new_route_added_lines": 21
+  },
+  "data_sovereignty": {
+    "migrated_fields_to_global_data_vault": false,
+    "new_buffer_ids": [],
+    "existing_buffer_ids_touched_by_route_name": [
+      "ShinobuInputCurrentDto",
+      "ShinobuInputJournalRing",
+      "ShinobuPredictedInputRing",
+      "ShinobuPredictedInputAupTargets",
+      "ShinobuInputStateBridgeRing",
+      "ShinobuInputButtonMaskWindow",
+      "ShinobuInputBlockMask",
+      "ShinobuInputProfile",
+      "ShinobuInputTelemetryRing",
+      "ShinobuInputReplaySnapshot",
+      "ShinobuInputHapticCommands",
+      "ShinobuInputCsvScratch",
+      "ShinobuInputXRInputStates",
+      "ShinobuHapticSynthesisPulses",
+      "ShinobuHapticSynthesisFinalPulse",
+      "ShinobuHapticSynthesisMockImpulses",
+      "ShinobuHapticSynthesisTelemetryRing",
+      "ShinobuHapticSynthesisProfileTable",
+      "ShinobuHapticSynthesisTuning",
+      "ShinobuHapticSynthesisCsvScratch"
+    ],
+    "try_acquire_write_lock_added": 0,
+    "release_write_lock_added": 0,
+    "finally_added": 0,
+    "lock_finally_proof": "Not applicable to this pass. The pass did not add or modify a DataVault write path; it renamed a private open/acquire route so it is not presented as a read/resolve accessor."
+  },
+  "cinematic_cheat_and_scalability": {
+    "new_physical_simulation": false,
+    "cinematic_cheat_needed": false,
+    "binary_low_end_switch_added": false,
+    "is_low_end_token_hits_in_modified_files": 0,
+    "global_quality_weight_existing_evidence": [
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:133",
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:136",
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:178",
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:189",
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:289",
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:292",
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:334",
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:345",
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:514",
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:587",
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:588"
+    ],
+    "scaling_claim": "No new scaling behavior was introduced. Existing haptic synthesis still consumes HomeostasisBrain.GlobalQualityWeight as a continuous scalar; this pass only fixes route naming so owner/open behavior is explicit."
+  },
+  "static_integrity": {
+    "brace_counts": [
+      {
+        "file": "Assets/_Project/Scripts/Core/InputDispatcher.cs",
+        "opens": 339,
+        "closes": 339,
+        "balanced": true
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs",
+        "opens": 51,
+        "closes": 51,
+        "balanced": true
+      }
+    ],
+    "git_diff_check": {
+      "exit_code": 0,
+      "warnings": [
+        "LF will be replaced by CRLF the next time Git touches the two modified source files"
+      ]
+    }
+  },
+  "compilation_resource_throttling": {
+    "cpu_sample_percent_before_final_compile_decision": 51.7,
+    "active_dotnet_processes": [],
+    "active_csc_or_vbcscompiler_processes": [],
+    "dotnet_build_invocations": 0,
+    "reason_build_not_launched": "CPU sample exceeded the AGENTS.md 50% limit. The user also said global compile errors are owned by another agent."
+  },
+  "runtime_verification": {
+    "unity_import": false,
+    "unity_console_check": false,
+    "play_mode": false,
+    "profiler_or_gc_monitor": false,
+    "player_build": false,
+    "device_run": false,
+    "crash_dump_path": "Docs/AgentLogs/Dump_UNKNOWN_INPUT_ROUTE_NAMING_PASS.bin",
+    "crash_dump_exists": false
+  },
+  "concurrency_boundary": {
+    "other_agents_active": true,
+    "unrelated_dirty_reports_observed": true,
+    "dirty_files_ignored": "Multiple Docs/Reports 14xx artifacts are dirty/untracked. This pass did not modify them.",
+    "compile_wall_not_fixed": "Per user instruction, project-wide compilation errors are not fixed by this pass."
+  }
+}

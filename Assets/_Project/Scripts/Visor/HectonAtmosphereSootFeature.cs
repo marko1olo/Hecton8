@@ -48,24 +48,14 @@ namespace Hecton8.Visor
             [Range(0.05f, 1f)] public float maximumRadius = 0.82f;
         }
 
-        private readonly struct RuntimeState
+        private struct RuntimeState
         {
-            public RuntimeState(float intensity, float radius, float ditherStrength, float darkenStrength, Vector2 center, float aspect)
-            {
-                Intensity = intensity;
-                Radius = radius;
-                DitherStrength = ditherStrength;
-                DarkenStrength = darkenStrength;
-                Center = center;
-                Aspect = aspect;
-            }
-
-            public readonly float Intensity;
-            public readonly float Radius;
-            public readonly float DitherStrength;
-            public readonly float DarkenStrength;
-            public readonly Vector2 Center;
-            public readonly float Aspect;
+            public float Intensity;
+            public float Radius;
+            public float DitherStrength;
+            public float DarkenStrength;
+            public Vector2 Center;
+            public float Aspect;
         }
 
         private sealed class SootPass : ScriptableRenderPass
@@ -109,6 +99,11 @@ namespace Hecton8.Visor
                 return EnsureSootGlobalsBuffer();
             }
 
+            public bool HasPreparedResources()
+            {
+                return HasSootGlobalsBuffer();
+            }
+
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
                 if (_settings == null || _material == null || _runtimeState.Intensity <= ActiveSootIntensityEpsilon)
@@ -126,6 +121,8 @@ namespace Hecton8.Visor
                 {
                     return;
                 }
+                if (cameraData.renderType != CameraRenderType.Base)
+                    return;
 
                 TextureHandle sourceTexture = resourceData.activeColorTexture;
                 if (!sourceTexture.IsValid())
@@ -137,7 +134,7 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                TextureDesc destinationDesc = new TextureDesc(sourceDesc);
+                TextureDesc destinationDesc = sourceDesc;
                 destinationDesc.name = "_HectonAtmosphereSootOverlay";
                 destinationDesc.clearBuffer = false;
                 destinationDesc.depthBufferBits = DepthBits.None;
@@ -424,6 +421,11 @@ namespace Hecton8.Visor
 
             if (renderingData.cameraData.cameraType != CameraType.Game)
                 return;
+            if (renderingData.cameraData.renderType != CameraRenderType.Base)
+                return;
+
+            if (!_pass.HasPreparedResources())
+                return;
 
             Camera renderCamera = renderingData.cameraData.camera;
             if (!TryBuildRuntimeState(renderCamera, settings, out RuntimeState runtimeState))
@@ -483,16 +485,35 @@ namespace Hecton8.Visor
             if (ditherStrength <= 0f && darkenStrength <= 0f)
                 return false;
 
+            float qualityCurve01 = ResolveSootQualityCurve01();
+            radius = math.clamp(radius * math.lerp(0.68f, 1f, qualityCurve01), MinimumSootRadius, maximumRadius);
+            ditherStrength = math.saturate(ditherStrength * math.lerp(0.55f, 1f, qualityCurve01));
+            darkenStrength = math.saturate(darkenStrength * math.lerp(0.75f, 1.08f, qualityCurve01));
+            if (ditherStrength <= 0f && darkenStrength <= 0f)
+                return false;
+
             Vector4 sootCenter = s_runtimeSootCenter;
             float aspect = math.max(1f, renderCamera.pixelWidth / math.max(1f, (float)renderCamera.pixelHeight));
-            runtimeState = new RuntimeState(
-                intensity,
-                radius,
-                ditherStrength,
-                darkenStrength,
-                new Vector2(sootCenter.x, sootCenter.y),
-                aspect);
+            runtimeState.Intensity = intensity;
+            runtimeState.Radius = radius;
+            runtimeState.DitherStrength = ditherStrength;
+            runtimeState.DarkenStrength = darkenStrength;
+            runtimeState.Center.x = sootCenter.x;
+            runtimeState.Center.y = sootCenter.y;
+            runtimeState.Aspect = aspect;
             return true;
+        }
+
+        private static float ResolveSootQualityCurve01()
+        {
+            float quality01 = ResolveGlobalQualityWeight01();
+            return quality01 * quality01 * (3f - 2f * quality01);
+        }
+
+        private static float ResolveGlobalQualityWeight01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.select(math.saturate(quality), 1f, !math.isfinite(quality));
         }
 
         private void TryRegisterHotSwapListener()

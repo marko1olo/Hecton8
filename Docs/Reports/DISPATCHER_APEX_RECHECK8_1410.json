@@ -1,0 +1,112 @@
+﻿{
+    "agentId":  1410,
+    "domain":  "Echelon 1 Core Infrastructure / Tick Dispatcher \u0026 Time Dilation",
+    "generatedUtc":  "2026-05-28T14:11:40.2281572Z",
+    "status":  "STATIC_APEX_RECHECK8_COMPLETE_BUILD_BLOCKED_BY_CPU_OR_COMPILER_CONTENTION",
+    "prompt":  {
+                   "taskCount":  20,
+                   "extractedPromptSha256":  "0b9a8ce8c5a3357c00d0fddd6690f8ad43328e74d4f8186e9d8bc431c503209f"
+               },
+    "fixes":  [
+                  {
+                      "file":  "Assets/_Project/Scripts/AtlasSignal/Atlas6DirectiveSystem.cs",
+                      "summary":  "SlowTick/collaborator/scarcity notifications now stage fixed-char pending notification payloads; NotificationEvents registration/push only in LateFrameTick flush.",
+                      "lines":  "789, 929, 942, 972, 990-1055, 1077, 1280, 1350, 1356"
+                  },
+                  {
+                      "file":  "Assets/_Project/Scripts/Gameplay/EndingSystem.cs",
+                      "summary":  "Core-reached/execution notifications and _AtlasSignalStrength shader global stage into owner fields; Shader.SetGlobalFloat only in FlushQueuedAtlasSignalStrength from LateFrameTick.",
+                      "lines":  "700, 820, 832, 863, 872-956, 931, 1234, 1246, 1262, 1264"
+                  },
+                  {
+                      "file":  "Assets/_Project/Scripts/Gameplay/FirstHourDirector.cs",
+                      "summary":  "First-hour guidance/reminder notifications stage fixed-char pending payloads and flush in LateFrameTick.",
+                      "lines":  "675, 895, 919, 959-1007, 1029, 1249, 1713, 1723, 1739, 1960"
+                  },
+                  {
+                      "file":  "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+                      "summary":  "SlowTick stale-volume queue saturation no longer calls FlushPendingDespawns; it publishes numeric telemetry and lets LateFrameTick own despawn/material reset.",
+                      "lines":  "94, 195, 366-370, 377, 507, 550, 638"
+                  },
+                  {
+                      "file":  "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+                      "summary":  "PostFixedTick PID hull-stress no longer calls IAudioService.QueueHullStressSignal directly; it stages HullStressSignal and FlushDynamicFloodFeedback raises procedural audio from LateFrameTick.",
+                      "lines":  "694, 2278, 2327, 2632, 2647, 2672, 2675"
+                  },
+                  {
+                      "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                      "summary":  "Tick completion/cancel action audio no longer calls IAudioService.PlayAtPoint; action audio stages clip+position and drains in LateFrameTick. Consumable effect path uses no-audio consumable route.",
+                      "lines":  "34, 98-100, 154, 296-298, 498, 546, 554, 557-584, 620"
+                  },
+                  {
+                      "file":  "Assets/_Project/Scripts/Gameplay/ConsumableItem.cs",
+                      "summary":  "Added TryConsumeWithoutAudio so delayed action completion can apply consumable truth without direct PlayStatic2D.",
+                      "lines":  "80-90"
+                  }
+              ],
+    "verification":  {
+                         "zeroGcReport":  "Docs/Reports/DISPATCHER_RECHECK8_ZERO_GC_1410.json",
+                         "zeroGcTotals":  {
+                                              "methods":  30,
+                                              "missing":  0,
+                                              "newReferenceTypes":  0,
+                                              "newValueTypes":  1,
+                                              "stringFormat":  0,
+                                              "toString":  0,
+                                              "linq":  0,
+                                              "foreach":  0
+                                          },
+                         "targetedBackendRouteReport":  "Docs/Reports/DISPATCHER_RECHECK8_TARGETED_BACKEND_ROUTE_SCAN_1410.json",
+                         "targetedBackendRouteTotals":  {
+                                                            "filesScanned":  14,
+                                                            "methodsScanned":  1277,
+                                                            "rootsScanned":  24,
+                                                            "forbiddenBackendFindings":  0,
+                                                            "elapsedMicroseconds":  6830259
+                                                        },
+                         "diffCheck":  "git diff --check exit 0; only LF-\u003eCRLF warnings.",
+                         "directTokenNotes":  [
+                                                  "PlayerActionController audioService.PlayAtPoint remains only at FlushQueuedActionAudio line 577, reached from LateFrameTick line 296.",
+                                                  "EndingSystem Shader.SetGlobalFloat remains only at FlushQueuedAtlasSignalStrength line 931, reached from LateFrameTick line 872.",
+                                                  "HectonVoxelStreamingBridge material SetFloat remains in late-frame/cold pool paths; QueueVolumeDespawn no longer flushes from SlowTick on overflow."
+                                              ]
+                     },
+    "dataVault":  {
+                      "newGlobalDataVaultBuffers":  0,
+                      "existingSpectrumBuffers":  [
+                                                      "AupDiscoveryGridBufferId=(BufferID)71030",
+                                                      "ActiveSonarGeoTelemetryRingBufferId=(BufferID)71031"
+                                                  ],
+                      "lockProof":  "No new DataVault locks introduced by recheck8. Existing Spectrum TryAcquireWriteLock/finally proof remains from recheck7."
+                  },
+    "scalability":  {
+                        "binaryLowEndSwitchesAdded":  0,
+                        "globalQualityWeightUsage":  "Existing voxel fade visual-sync path keeps continuous HomeostasisBrain.GlobalQualityWeight blend; recheck8 did not alter gameplay truth or add low-end binary switches.",
+                        "cinematicCheat":  "Notifications/audio/shader/material updates are presentation fakes deferred one frame; no physical simulation was added."
+                    },
+    "buildGate":  {
+                      "generatedUtc":  "2026-05-28T14:11:40.0299865Z",
+                      "cpuLoadPercent":  100,
+                      "activeCompilerProcesses":  [
+                                                      {
+                                                          "Id":  18300,
+                                                          "ProcessName":  "csc",
+                                                          "CPU":  149.453125,
+                                                          "StartTime":  "\/Date(1779977443698)\/"
+                                                      },
+                                                      {
+                                                          "Id":  31496,
+                                                          "ProcessName":  "dotnet",
+                                                          "CPU":  445.640625,
+                                                          "StartTime":  "\/Date(1779977020438)\/"
+                                                      }
+                                                  ],
+                      "dotnetBuildInvoked":  false,
+                      "decision":  "BLOCKED_BY_CPU_OR_COMPILER_CONTENTION",
+                      "rule":  "No dotnet build when CPU \u003e 50 or dotnet/csc/VBCSCompiler active."
+                  },
+    "knownLimitations":  [
+                             "One attempted whole-tree callgraph scan timed out after 180000 ms. Evidence report therefore uses targeted recheck over all files touched in recheck8 plus the previously discovered residual files.",
+                             "PlayerActionController pending audio stores an existing authored AudioClip reference to preserve item.useSound. This is zero heap allocation by token scan, but it is not an unmanaged DTO/DataVault payload."
+                         ]
+}

@@ -17,80 +17,32 @@ using UnityEngine.UI;
 
 namespace Hecton8.UI
 {
-    internal interface IAcousticEcholocationBarkListener
-    {
-        void OnStorageCapacityExceededBark();
-    }
-
     internal static class AcousticEcholocationBarkEvents
     {
-        private const int ListenerCapacity = 4;
-        private static readonly ListenerSlot[] s_listeners = new ListenerSlot[ListenerCapacity]; // COLD ALLOC: ListenerSlot[4] - HUD bark listener registry - owner: AcousticEcholocationBarkEvents
-        private static int s_listenerCount;
+        private const int PendingStorageBarkCapacity = 8;
+        private static int s_pendingStorageCapacityExceeded;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            for (int i = 0; i < ListenerCapacity; i++)
-                s_listeners[i].Clear();
-
-            s_listenerCount = 0;
-        }
-
-        public static void Register(IAcousticEcholocationBarkListener listener)
-        {
-            if (listener == null)
-                return;
-
-            for (int i = 0; i < s_listenerCount; i++)
-            {
-                if (ReferenceEquals(s_listeners[i].Listener, listener))
-                    return;
-            }
-
-            if (s_listenerCount >= ListenerCapacity)
-                return;
-
-            s_listeners[s_listenerCount].Listener = listener;
-            s_listenerCount++;
-        }
-
-        public static void Unregister(IAcousticEcholocationBarkListener listener)
-        {
-            if (listener == null)
-                return;
-
-            for (int i = 0; i < s_listenerCount; i++)
-            {
-                if (!ReferenceEquals(s_listeners[i].Listener, listener))
-                    continue;
-
-                int last = s_listenerCount - 1;
-                s_listeners[i] = s_listeners[last];
-                s_listeners[last].Clear();
-                s_listenerCount = last;
-                return;
-            }
+            s_pendingStorageCapacityExceeded = 0;
         }
 
         public static void RaiseStorageCapacityExceeded()
         {
-            for (int i = 0; i < s_listenerCount; i++)
-            {
-                IAcousticEcholocationBarkListener listener = s_listeners[i].Listener;
-                if (listener != null)
-                    listener.OnStorageCapacityExceededBark();
-            }
+            if (s_pendingStorageCapacityExceeded >= PendingStorageBarkCapacity)
+                return;
+
+            s_pendingStorageCapacityExceeded++;
         }
 
-        private struct ListenerSlot
+        public static bool ConsumeStorageCapacityExceeded()
         {
-            public IAcousticEcholocationBarkListener Listener;
+            if (s_pendingStorageCapacityExceeded <= 0)
+                return false;
 
-            public void Clear()
-            {
-                Listener = null;
-            }
+            s_pendingStorageCapacityExceeded--;
+            return true;
         }
     }
 
@@ -145,7 +97,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Acoustic Echolocation Translator")]
-    public sealed class AcousticEcholocationTranslator : MonoBehaviour, ILateFrameTickable, ISonarPulseEventListener, ISonarPingEventListener, ISonarSnapshotEventListener, ILocalizationLanguageChangedListener, IAcousticEcholocationBarkListener, IGlobalRegistryHotSwapListener
+    public sealed class AcousticEcholocationTranslator : MonoBehaviour, ILateFrameTickable, ISonarPulseEventListener, ISonarPingEventListener, ISonarSnapshotEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private enum ContactClassification : byte
         {
@@ -243,7 +195,6 @@ namespace Hecton8.UI
             SpectrumEvents.RegisterSonarPulseListener(this);
             SpectrumEvents.RegisterSonarPingListener(this);
             SpectrumEvents.RegisterSonarSnapshotListener(this);
-            AcousticEcholocationBarkEvents.Register(this);
         }
 
         private void OnDisable()
@@ -252,7 +203,6 @@ namespace Hecton8.UI
             SpectrumEvents.UnregisterSonarPulseListener(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
             SpectrumEvents.UnregisterSonarSnapshotListener(this);
-            AcousticEcholocationBarkEvents.Unregister(this);
             TryUnregisterHotSwapListener();
             _pendingSnapshotPulseCount = 0;
             _lastPhysicsEventSnapshotGeneration = 0;
@@ -269,7 +219,6 @@ namespace Hecton8.UI
             SpectrumEvents.UnregisterSonarPulseListener(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
             SpectrumEvents.UnregisterSonarSnapshotListener(this);
-            AcousticEcholocationBarkEvents.Unregister(this);
             TryUnregisterHotSwapListener();
             _pendingSnapshotPulseCount = 0;
             _lastPhysicsEventSnapshotGeneration = 0;
@@ -280,6 +229,7 @@ namespace Hecton8.UI
         public void LateFrameTick()
         {
             DrainPhysicsEventPayloads();
+            DrainStorageCapacityExceededBarks();
 
             float dt = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             if (_group == null)
@@ -423,7 +373,19 @@ namespace Hecton8.UI
             _lastRenderedDistanceMeters = int.MinValue;
         }
 
-        void IAcousticEcholocationBarkListener.OnStorageCapacityExceededBark()
+        private void DrainStorageCapacityExceededBarks()
+        {
+            if (!AcousticEcholocationBarkEvents.ConsumeStorageCapacityExceeded())
+                return;
+
+            while (AcousticEcholocationBarkEvents.ConsumeStorageCapacityExceeded())
+            {
+            }
+
+            ShowStorageCapacityExceededBark();
+        }
+
+        private void ShowStorageCapacityExceededBark()
         {
             ResolveAcousticOwners();
             EnsureUiBuilt();
@@ -1509,7 +1471,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Audio Caption Overlay")]
-    public sealed class AudioCaptionOverlay : MonoBehaviour, ILateFrameTickable, IAudioCaptionEventListener, IGlobalRegistryHotSwapListener
+    public sealed class AudioCaptionOverlay : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int SlotCount = 8;
         private const float DefaultDuration = 1.65f;
@@ -1575,6 +1537,7 @@ namespace Hecton8.UI
         private bool _tickRegistered;
         private bool _uiBuilt;
         private bool _hotSwapListenerRegistered;
+        private bool _captionConsumerRegistered;
         // COLD ALLOC: CaptionSlot[8] — pooled spatial audio caption slots — owner: AudioCaptionOverlay
         private readonly CaptionSlot[] _slots = new CaptionSlot[SlotCount];
 
@@ -1585,12 +1548,12 @@ namespace Hecton8.UI
             TryRegisterHotSwapListener();
             EnsureUiBuilt(allowComponentFallback: true);
             RegisterToTickManager();
-            AudioCaptionEvents.Register(this);
+            TryRegisterCaptionConsumer();
         }
 
         private void OnDisable()
         {
-            AudioCaptionEvents.Unregister(this);
+            TryUnregisterCaptionConsumer();
             TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
             HideAllSlots();
@@ -1601,7 +1564,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
-            AudioCaptionEvents.Unregister(this);
+            TryUnregisterCaptionConsumer();
             TryUnregisterHotSwapListener();
             UnregisterFromTickManager();
         }
@@ -1618,14 +1581,17 @@ namespace Hecton8.UI
                 {
                     if (currentService == null)
                     {
+                        TryUnregisterCaptionConsumer();
                         _tickRegistered = false;
                         return;
                     }
 
                     if (isActiveAndEnabled)
                     {
+                        TryUnregisterCaptionConsumer();
                         UnregisterFromTickManager();
                         RegisterToTickManager();
+                        TryRegisterCaptionConsumer();
                     }
                 }
                 return;
@@ -1641,7 +1607,11 @@ namespace Hecton8.UI
             float dt = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             if (!_uiBuilt)
             {
-                return;
+                EnsureUiBuilt(allowComponentFallback: true);
+                if (!_uiBuilt)
+                    return;
+
+                TryRegisterCaptionConsumer();
             }
 
             if (_viewTransform == null)
@@ -1669,16 +1639,23 @@ namespace Hecton8.UI
                 activeCount++;
             }
 
+            DrainPendingCaptionRequests();
+
             if (activeCount <= 0)
                 return;
         }
 
-        /// <summary>
-        /// Receives deferred spatial-audio caption requests.
-        /// </summary>
-        public void OnAudioCaptionRequested(AudioCaptionRequest request)
+        private void DrainPendingCaptionRequests()
         {
-            HandleCaptionRequested(request);
+            int scanBudget = AudioCaptionEvents.PendingCount;
+            while (scanBudget-- > 0 && AudioCaptionEvents.PendingCount > 0)
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (AudioCaptionEvents.ConsumeNextPendingCaption(out AudioCaptionRequest request))
+                    HandleCaptionRequested(request);
+            }
         }
 
         private void HandleCaptionRequested(AudioCaptionRequest request)
@@ -1698,15 +1675,33 @@ namespace Hecton8.UI
             slot.HasWorldAup = true;
             slot.LastAnchoredPosition = CaptionHiddenPosition;
             slot.LastAlpha = -1f;
-            string captionText = request.CaptionText;
             if (slot.Label != null &&
                 slot.TextBuffer != null &&
-                !SlotTextMatches(ref slot, captionText, out int displayLength, out uint displayHash))
+                AudioCaptionEvents.TryWriteCaptionText(
+                    request.CaptionHashId,
+                    slot.TextBuffer.AsSpan(),
+                    out int displayLength,
+                    out int sourceLength,
+                    out bool localized))
             {
-                WriteCaptionToBuffer(captionText, slot.TextBuffer, displayLength);
-                slot.Label.SetCharArray(slot.TextBuffer, 0, displayLength);
-                slot.TextLength = displayLength;
-                slot.TextHash = displayHash;
+                uint displayHash = ComputeCaptionDisplayHash(slot.TextBuffer, displayLength);
+                if (slot.TextLength != displayLength || slot.TextHash != displayHash)
+                {
+                    slot.Label.SetCharArray(slot.TextBuffer, 0, displayLength);
+                    slot.TextLength = displayLength;
+                    slot.TextHash = displayHash;
+                }
+
+                if (!localized && sourceLength > displayLength)
+                {
+                    BabelSubtitleSyncRuntime.RecordUIOptimizationFailure(
+                        request.CaptionHashId,
+                        UIOptimizationFailureCode.TextBufferOverflow,
+                        sourceLength,
+                        displayLength,
+                        slot.TextBuffer.Length,
+                        0u);
+                }
             }
 
             if (slot.Group != null)
@@ -2084,65 +2079,16 @@ namespace Hecton8.UI
             slot.HasWorldAup = false;
         }
 
-        private static bool SlotTextMatches(ref CaptionSlot slot, string captionText, out int displayLength, out uint displayHash)
-        {
-            displayLength = ResolveCaptionDisplayLength(captionText, slot.TextBuffer);
-            bool truncated = IsCaptionTruncated(captionText, displayLength, slot.TextBuffer);
-            displayHash = ComputeCaptionDisplayHash(captionText, displayLength, truncated);
-
-            if (slot.TextLength != displayLength || slot.TextHash != displayHash)
-                return false;
-
-            for (int i = 0; i < displayLength; i++)
-            {
-                if (slot.TextBuffer[i] != ResolveCaptionDisplayChar(captionText, i, displayLength, truncated))
-                    return false;
-            }
-
-            return true;
-        }
-
-        private static int ResolveCaptionDisplayLength(string captionText, char[] destination)
-        {
-            if (string.IsNullOrEmpty(captionText) || destination == null || destination.Length == 0)
-                return 0;
-
-            return math.min(captionText.Length, destination.Length);
-        }
-
-        private static bool IsCaptionTruncated(string captionText, int displayLength, char[] destination)
-        {
-            return captionText != null &&
-                   destination != null &&
-                   captionText.Length > destination.Length &&
-                   displayLength >= 3;
-        }
-
-        private static void WriteCaptionToBuffer(string captionText, char[] destination, int displayLength)
-        {
-            bool truncated = IsCaptionTruncated(captionText, displayLength, destination);
-            for (int i = 0; i < displayLength; i++)
-                destination[i] = ResolveCaptionDisplayChar(captionText, i, displayLength, truncated);
-        }
-
-        private static uint ComputeCaptionDisplayHash(string captionText, int displayLength, bool truncated)
+        private static uint ComputeCaptionDisplayHash(char[] captionText, int displayLength)
         {
             uint hash = CaptionHashSeed;
             for (int i = 0; i < displayLength; i++)
             {
-                hash ^= ResolveCaptionDisplayChar(captionText, i, displayLength, truncated);
+                hash ^= captionText[i];
                 hash *= CaptionHashPrime;
             }
 
             return hash;
-        }
-
-        private static char ResolveCaptionDisplayChar(string captionText, int index, int displayLength, bool truncated)
-        {
-            if (truncated && index >= displayLength - 3)
-                return '.';
-
-            return captionText[index];
         }
 
         private void CacheRegistryServicesCold()
@@ -2159,6 +2105,24 @@ namespace Hecton8.UI
                 return;
 
             _tickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryRegisterCaptionConsumer()
+        {
+            if (_captionConsumerRegistered || !_uiBuilt || !_tickRegistered || !Application.isPlaying)
+                return;
+
+            AudioCaptionEvents.RegisterConsumer();
+            _captionConsumerRegistered = true;
+        }
+
+        private void TryUnregisterCaptionConsumer()
+        {
+            if (!_captionConsumerRegistered)
+                return;
+
+            AudioCaptionEvents.UnregisterConsumer();
+            _captionConsumerRegistered = false;
         }
 
         private void UnregisterFromTickManager()

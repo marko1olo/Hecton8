@@ -44,6 +44,9 @@ namespace Hecton8.Visor
                 if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)
                     return;
 
+                if (cameraData.renderType != CameraRenderType.Base)
+                    return;
+
                 IFluidAdvectionRenderGraphDispatchSource engine = _engine;
                 if (engine == null ||
                     !engine.TryClaimFluidAdvectionRenderGraphPayload(out FluidAdvectionRenderGraphPayload payload) ||
@@ -128,6 +131,9 @@ namespace Hecton8.Visor
 
             CameraType cameraType = renderingData.cameraData.cameraType;
             if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)
+                return;
+
+            if (renderingData.cameraData.renderType != CameraRenderType.Base)
                 return;
 
             _pass.Setup(engine);

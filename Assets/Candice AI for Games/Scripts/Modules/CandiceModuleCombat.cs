@@ -6,6 +6,17 @@ namespace CandiceAIforGames.AI
 {
     public class CandiceModuleCombat: CandiceBaseModule
     {
+        private const int MaxDamageHits = 64;
+        // COLD ALLOC: RaycastHit[64] - bounded 3D damage query scratch - owner: CandiceModuleCombat
+        private static readonly RaycastHit[] DamageHits = new RaycastHit[MaxDamageHits];
+        // COLD ALLOC: RaycastHit2D[64] - bounded 2D damage query scratch - owner: CandiceModuleCombat
+        private static readonly RaycastHit2D[] DamageHits2D = new RaycastHit2D[MaxDamageHits];
+        private static ContactFilter2D Damage2DFilter = ContactFilter2D.noFilter;
+        private const int MaxProjectilePool = 16;
+        // COLD ALLOC: GameObject[16] - bounded ranged attack projectile pool - owner: CandiceModuleCombat
+        private readonly GameObject[] projectilePool = new GameObject[MaxProjectilePool];
+        private GameObject projectilePoolPrefab;
+
         Transform transform;
         public Action<bool> attackCompleteCallback;
         public CandiceModuleCombat(Transform transform, Action<bool> _attackCompleteCallback,string moduleName = "CandiceModuleCombat"):base(moduleName) {
@@ -23,21 +34,30 @@ namespace CandiceAIforGames.AI
             //Output      : none
             //
 
-            RaycastHit[] hits;
-            hits = Physics.SphereCastAll(transform.position, attackRange, transform.forward);//Send a shere cast to see if it hits anything
-            foreach (RaycastHit hit in hits)//for each object hit by the spherecast
+            int hitCount = Physics.SphereCastNonAlloc(transform.position, attackRange, transform.forward, DamageHits, attackRange);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (hitCount == DamageHits.Length)
             {
-                bool isHittable = false;
-                if (tags.Contains(hit.transform.gameObject.tag))
-                    isHittable = true;
+                Debug.LogWarning("Candice damage hit buffer saturated. Increase MaxDamageHits.");
+            }
+#endif
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit hit = DamageHits[i];
+                if (hit.transform == null)
+                {
+                    continue;
+                }
+
+                GameObject hitObject = hit.transform.gameObject;
                 //if the object is hittable
-                if (isHittable)
+                if (MatchesAnyTag(hitObject, tags))
                 {
                     float distance = Vector3.Distance(transform.position, hit.transform.position);
                     float angle = Vector3.Angle(hit.transform.position - transform.position, transform.forward);
                     if (angle <= damageAngle / 2 && distance <= attackRange)//If the object is within the attack range and within the damage angle.
                     {
-                        hit.transform.gameObject.SendMessage("CandiceReceiveDamage", damage);//send the damage to the hit object. The hit object needs to have a script with the method CandiceReceiveDamage(float damage);
+                        ApplyDamage(hitObject, damage);
                     }
                 }
             }
@@ -46,20 +66,29 @@ namespace CandiceAIforGames.AI
 
         public void DealDamage2D(float damage, float attackRange, float damageAngle, List<string> tags)
         {
-            RaycastHit2D[] hits;
-            hits = Physics2D.CircleCastAll(new Vector2(transform.position.x, transform.position.y), attackRange, transform.up);//Send a shere cast to see if it hits anything
-            foreach (RaycastHit2D hit in hits)//for each object hit by the spherecast
+            int hitCount = Physics2D.CircleCast(new Vector2(transform.position.x, transform.position.y), attackRange, transform.up, Damage2DFilter, DamageHits2D, attackRange);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (hitCount == DamageHits2D.Length)
             {
-                bool isHittable = false;
-                if (tags.Contains(hit.transform.gameObject.tag))
-                    isHittable = true;
+                Debug.LogWarning("Candice 2D damage hit buffer saturated. Increase MaxDamageHits.");
+            }
+#endif
+            for (int i = 0; i < hitCount; i++)
+            {
+                RaycastHit2D hit = DamageHits2D[i];
+                if (hit.transform == null)
+                {
+                    continue;
+                }
+
+                GameObject hitObject = hit.transform.gameObject;
                 //if the object is hittable
-                if (isHittable)
+                if (MatchesAnyTag(hitObject, tags))
                 {
                     float distance = Vector3.Distance(transform.position, hit.transform.position);
                     if (distance <= attackRange)//If the object is within the attack range and within the damage angle.
                     {
-                        hit.transform.gameObject.SendMessage("CandiceReceiveDamage", damage);//send the damage to the hit object. The hit object needs to have a script with the method CandiceReceiveDamage(float damage);
+                        ApplyDamage(hitObject, damage);
                     }
                 }
             }
@@ -75,7 +104,23 @@ namespace CandiceAIforGames.AI
             yield return new WaitForSecondsRealtime(time);
             DealDamage2D(damage, attackRange, damageAngle, tags);
         }
-        public IEnumerator FireProjectile(GameObject attackTarget, GameObject attackProjectile,Transform spawnPosition,float time)
+        public void PrepareProjectilePool(GameObject attackProjectile, Transform spawnPosition)
+        {
+            if (attackProjectile == null || spawnPosition == null || projectilePoolPrefab != null)
+            {
+                return;
+            }
+
+            projectilePoolPrefab = attackProjectile;
+            for (int i = 0; i < projectilePool.Length; i++)
+            {
+                GameObject projectile = UnityEngine.Object.Instantiate(attackProjectile, spawnPosition.position, Quaternion.identity);
+                projectile.SetActive(false);
+                projectilePool[i] = projectile;
+            }
+        }
+
+        public void FireProjectile(GameObject attackTarget, GameObject attackProjectile,Transform spawnPosition)
         {
             //
             //Method Name : void AttackRange()
@@ -84,12 +129,28 @@ namespace CandiceAIforGames.AI
             //Input       : none
             //Output      : none
             //
-            yield return new WaitForSecondsRealtime(time);
-            if (attackTarget != null)
+            if (attackTarget == null || attackProjectile == null || spawnPosition == null)
             {
-                GameObject projectile = UnityEngine.Object.Instantiate(attackProjectile, spawnPosition.position, Quaternion.identity);
-                CandiceProjectile ai = projectile.GetComponent<CandiceProjectile>();
-                ai.Fire(attackTarget);
+                attackCompleteCallback(true);
+                return;
+            }
+
+            if (!ReferenceEquals(projectilePoolPrefab, attackProjectile))
+            {
+                attackCompleteCallback(true);
+                return;
+            }
+
+            GameObject projectile = GetInactiveProjectile();
+            if (projectile != null)
+            {
+                projectile.transform.position = spawnPosition.position;
+                projectile.transform.rotation = spawnPosition.rotation;
+                projectile.SetActive(true);
+                if (projectile.TryGetComponent(out CandiceProjectile ai))
+                {
+                    ai.Fire(attackTarget);
+                }
             }
             attackCompleteCallback(true);
         }
@@ -116,6 +177,58 @@ namespace CandiceAIforGames.AI
             return currentHP;
             //if (CandiceConfig.enableDebug)
             //Debug.Log("Hit with: " + damage + " damage. New Health: " + HitPoints);
+        }
+
+        private static bool MatchesAnyTag(GameObject hitObject, List<string> tags)
+        {
+            if (hitObject == null || tags == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < tags.Count; i++)
+            {
+                string tag = tags[i];
+                if (!string.IsNullOrEmpty(tag) && hitObject.CompareTag(tag))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private GameObject GetInactiveProjectile()
+        {
+            for (int i = 0; i < projectilePool.Length; i++)
+            {
+                GameObject projectile = projectilePool[i];
+                if (projectile != null && !projectile.activeSelf)
+                {
+                    return projectile;
+                }
+            }
+
+            return null;
+        }
+
+        private static void ApplyDamage(GameObject hitObject, float damage)
+        {
+            if (hitObject == null)
+            {
+                return;
+            }
+
+            if (hitObject.TryGetComponent(out CandiceAIController aiController))
+            {
+                aiController.CandiceReceiveDamage(damage);
+                return;
+            }
+
+            if (hitObject.TryGetComponent(out global::BasicPlayerController playerController))
+            {
+                playerController.CandiceReceiveDamage(damage);
+            }
         }
 
         

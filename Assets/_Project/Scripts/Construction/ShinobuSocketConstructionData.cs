@@ -523,7 +523,7 @@ namespace Hecton8.Construction
             s_BuilderGhostIndirectArgsHandle = EnsureVaultHandle(vault, BuilderGhostIndirectArgsBufferId, 1, ref s_BuilderGhostIndirectArgsHandle);
 
             if (resetCounters &&
-                TryAcquireWriteLane(vault, in s_CountersHandle, out NativeArray<int> counters))
+                TryAcquireWriteLane(vault, in s_CountersHandle, BufferID.ConstructionSocketCounters, out NativeArray<int> counters))
             {
                 try
                 {
@@ -531,11 +531,11 @@ namespace Hecton8.Construction
                 }
                 finally
                 {
-                    vault.ReleaseWriteLock(in s_CountersHandle, SystemID.Construction);
+                    ReleaseSocketWrite(vault, in s_CountersHandle, BufferID.ConstructionSocketCounters);
                 }
             }
 
-            if (TryAcquireWriteLane(vault, in s_TuningHandle, out NativeArray<ConstructionSocketTuningDTO> tuningBuffer))
+            if (TryAcquireWriteLane(vault, in s_TuningHandle, BufferID.ConstructionSocketTuning, out NativeArray<ConstructionSocketTuningDTO> tuningBuffer))
             {
                 try
                 {
@@ -543,7 +543,7 @@ namespace Hecton8.Construction
                 }
                 finally
                 {
-                    vault.ReleaseWriteLock(in s_TuningHandle, SystemID.Construction);
+                    ReleaseSocketWrite(vault, in s_TuningHandle, BufferID.ConstructionSocketTuning);
                 }
             }
 
@@ -591,25 +591,25 @@ namespace Hecton8.Construction
             if (vault == null)
                 return false;
 
-            return vault.TryReadHandle(in s_SocketStatesHandle, out views.SocketStates) &&
-                   vault.TryReadHandle(in s_SocketAupHandle, out views.SocketAups) &&
-                   vault.TryReadHandle(in s_GhostSocketStatesHandle, out views.GhostSocketStates) &&
-                   vault.TryReadHandle(in s_GhostSocketAupHandle, out views.GhostSocketAups) &&
-                   vault.TryReadHandle(in s_GhostPreviewHandle, out views.GhostPreviews) &&
-                   vault.TryReadHandle(in s_SocketCsrRangesHandle, out views.SocketCsrRanges) &&
-                   vault.TryReadHandle(in s_SocketCsrTargetIndicesHandle, out views.SocketCsrTargetIndices) &&
-                   vault.TryReadHandle(in s_SnapResultsHandle, out views.SnapResults) &&
-                   vault.TryReadHandle(in s_TelemetryHandle, out views.Telemetry) &&
-                   vault.TryReadHandle(in s_TuningHandle, out views.Tuning) &&
-                   vault.TryReadHandle(in s_ModuleHandle, out views.Modules) &&
-                   vault.TryReadHandle(in s_CountersHandle, out views.Counters) &&
-                   vault.TryReadHandle(in s_BoundsHandle, out views.Bounds) &&
-                   vault.TryReadHandle(in s_ConnectionsHandle, out views.Connections) &&
-                   vault.TryReadHandle(in s_BuilderGhostStateHandle, out views.BuilderGhostStates) &&
-                   vault.TryReadHandle(in s_BuilderGhostVisualHandle, out views.BuilderGhostVisuals) &&
-                   vault.TryReadHandle(in s_HolographyTelemetryHandle, out views.HolographyTelemetry) &&
-                   vault.TryReadHandle(in s_BuilderGhostSdfSamplesHandle, out views.BuilderGhostSdfSamples) &&
-                   vault.TryReadHandle(in s_BuilderGhostIndirectArgsHandle, out views.BuilderGhostIndirectArgs);
+            return TryReadSocketBuffer(vault, in s_SocketStatesHandle, BufferID.ConstructionSocketStates, out views.SocketStates) &&
+                   TryReadSocketBuffer(vault, in s_SocketAupHandle, BufferID.ConstructionSocketAup, out views.SocketAups) &&
+                   TryReadSocketBuffer(vault, in s_GhostSocketStatesHandle, BufferID.ConstructionGhostSocketStates, out views.GhostSocketStates) &&
+                   TryReadSocketBuffer(vault, in s_GhostSocketAupHandle, BufferID.ConstructionGhostSocketAup, out views.GhostSocketAups) &&
+                   TryReadSocketBuffer(vault, in s_GhostPreviewHandle, GhostPreviewBufferId, out views.GhostPreviews) &&
+                   TryReadSocketBuffer(vault, in s_SocketCsrRangesHandle, SocketCsrRangesBufferId, out views.SocketCsrRanges) &&
+                   TryReadSocketBuffer(vault, in s_SocketCsrTargetIndicesHandle, SocketCsrTargetIndicesBufferId, out views.SocketCsrTargetIndices) &&
+                   TryReadSocketBuffer(vault, in s_SnapResultsHandle, BufferID.ConstructionSocketSnapResults, out views.SnapResults) &&
+                   TryReadSocketBuffer(vault, in s_TelemetryHandle, BufferID.ConstructionSocketTelemetry, out views.Telemetry) &&
+                   TryReadSocketBuffer(vault, in s_TuningHandle, BufferID.ConstructionSocketTuning, out views.Tuning) &&
+                   TryReadSocketBuffer(vault, in s_ModuleHandle, BufferID.ConstructionSocketModules, out views.Modules) &&
+                   TryReadSocketBuffer(vault, in s_CountersHandle, BufferID.ConstructionSocketCounters, out views.Counters) &&
+                   TryReadSocketBuffer(vault, in s_BoundsHandle, BufferID.ConstructionSocketBounds, out views.Bounds) &&
+                   TryReadSocketBuffer(vault, in s_ConnectionsHandle, BufferID.ConstructionSocketConnections, out views.Connections) &&
+                   TryReadSocketBuffer(vault, in s_BuilderGhostStateHandle, BuilderGhostStateBufferId, out views.BuilderGhostStates) &&
+                   TryReadSocketBuffer(vault, in s_BuilderGhostVisualHandle, BuilderGhostVisualBufferId, out views.BuilderGhostVisuals) &&
+                   TryReadSocketBuffer(vault, in s_HolographyTelemetryHandle, BuilderGhostTelemetryBufferId, out views.HolographyTelemetry) &&
+                   TryReadSocketBuffer(vault, in s_BuilderGhostSdfSamplesHandle, BuilderGhostSdfSamplesBufferId, out views.BuilderGhostSdfSamples) &&
+                   TryReadSocketBuffer(vault, in s_BuilderGhostIndirectArgsHandle, BuilderGhostIndirectArgsBufferId, out views.BuilderGhostIndirectArgs);
         }
 
         public static bool TryBeginModuleReadFence()
@@ -695,22 +695,22 @@ namespace Hecton8.Construction
                 bool csrTargetIndicesLocked = false;
                 try
                 {
-                    if (!TryAcquireWriteLane(vault, in s_ModuleHandle, out NativeArray<ConstructionSocketModuleDTO> modules))
+                    if (!TryAcquireWriteLane(vault, in s_ModuleHandle, BufferID.ConstructionSocketModules, out NativeArray<ConstructionSocketModuleDTO> modules))
                         return false;
                     modulesLocked = true;
-                    if (!TryAcquireWriteLane(vault, in s_SocketStatesHandle, out NativeArray<SocketStateDTO> sockets))
+                    if (!TryAcquireWriteLane(vault, in s_SocketStatesHandle, BufferID.ConstructionSocketStates, out NativeArray<SocketStateDTO> sockets))
                         return false;
                     socketsLocked = true;
-                    if (!TryAcquireWriteLane(vault, in s_SocketAupHandle, out NativeArray<double3> socketAups))
+                    if (!TryAcquireWriteLane(vault, in s_SocketAupHandle, BufferID.ConstructionSocketAup, out NativeArray<double3> socketAups))
                         return false;
                     socketAupsLocked = true;
-                    if (!TryAcquireWriteLane(vault, in s_CountersHandle, out NativeArray<int> counters))
+                    if (!TryAcquireWriteLane(vault, in s_CountersHandle, BufferID.ConstructionSocketCounters, out NativeArray<int> counters))
                         return false;
                     countersLocked = true;
-                    if (!TryAcquireWriteLane(vault, in s_SocketCsrRangesHandle, out NativeArray<int2> csrRanges))
+                    if (!TryAcquireWriteLane(vault, in s_SocketCsrRangesHandle, SocketCsrRangesBufferId, out NativeArray<int2> csrRanges))
                         return false;
                     csrRangesLocked = true;
-                    if (!TryAcquireWriteLane(vault, in s_SocketCsrTargetIndicesHandle, out NativeArray<int> csrTargetIndices))
+                    if (!TryAcquireWriteLane(vault, in s_SocketCsrTargetIndicesHandle, SocketCsrTargetIndicesBufferId, out NativeArray<int> csrTargetIndices))
                         return false;
                     csrTargetIndicesLocked = true;
 
@@ -858,6 +858,7 @@ namespace Hecton8.Construction
         private static bool ShouldResetCounterLane(IDataVault vault)
         {
             if (!vault.TryGetGenerationHandle<int>(BufferID.ConstructionSocketCounters, out VaultGenerationHandle<int> existingHandle) ||
+                !IsSocketVaultHandle(in existingHandle, BufferID.ConstructionSocketCounters) ||
                 !vault.TryReadHandle(in existingHandle, out NativeArray<int> counters) ||
                 !counters.IsCreated ||
                 counters.Length <= CounterMagicIndex)
@@ -892,11 +893,12 @@ namespace Hecton8.Construction
         private static bool TryAcquireWriteLane<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
             if (vault == null ||
-                handle.BufferID == 0u ||
+                !IsSocketVaultHandle(in handle, bufferId) ||
                 !vault.TryAcquireWriteLock(in handle, SystemID.Construction, out buffer))
             {
                 return false;
@@ -905,7 +907,7 @@ namespace Hecton8.Construction
             if (buffer.IsCreated)
                 return true;
 
-            vault.ReleaseWriteLock(in handle, SystemID.Construction);
+            ReleaseSocketWrite(vault, in handle, bufferId);
             buffer = default;
             return false;
         }
@@ -923,17 +925,17 @@ namespace Hecton8.Construction
                 return;
 
             if (csrTargetIndicesLocked)
-                vault.ReleaseWriteLock(in s_SocketCsrTargetIndicesHandle, SystemID.Construction);
+                ReleaseSocketWrite(vault, in s_SocketCsrTargetIndicesHandle, SocketCsrTargetIndicesBufferId);
             if (csrRangesLocked)
-                vault.ReleaseWriteLock(in s_SocketCsrRangesHandle, SystemID.Construction);
+                ReleaseSocketWrite(vault, in s_SocketCsrRangesHandle, SocketCsrRangesBufferId);
             if (countersLocked)
-                vault.ReleaseWriteLock(in s_CountersHandle, SystemID.Construction);
+                ReleaseSocketWrite(vault, in s_CountersHandle, BufferID.ConstructionSocketCounters);
             if (socketAupsLocked)
-                vault.ReleaseWriteLock(in s_SocketAupHandle, SystemID.Construction);
+                ReleaseSocketWrite(vault, in s_SocketAupHandle, BufferID.ConstructionSocketAup);
             if (socketsLocked)
-                vault.ReleaseWriteLock(in s_SocketStatesHandle, SystemID.Construction);
+                ReleaseSocketWrite(vault, in s_SocketStatesHandle, BufferID.ConstructionSocketStates);
             if (modulesLocked)
-                vault.ReleaseWriteLock(in s_ModuleHandle, SystemID.Construction);
+                ReleaseSocketWrite(vault, in s_ModuleHandle, BufferID.ConstructionSocketModules);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1290,7 +1292,7 @@ namespace Hecton8.Construction
             int requiredLength,
             ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (handle.BufferID != 0u &&
+            if (IsSocketVaultHandle(in handle, bufferId) &&
                 vault.TryReadHandle(in handle, out NativeArray<T> existing) &&
                 existing.IsCreated &&
                 existing.Length >= requiredLength)
@@ -1303,6 +1305,35 @@ namespace Hecton8.Construction
                 math.max(1, requiredLength),
                 SystemID.Construction,
                 NativeArrayOptions.UninitializedMemory);
+        }
+
+        private static bool TryReadSocketBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   IsSocketVaultHandle(in handle, bufferId) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
+        private static void ReleaseSocketWrite<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            if (vault != null && IsSocketVaultHandle(in handle, bufferId))
+                vault.ReleaseWriteLock(in handle, SystemID.Construction);
+        }
+
+        private static bool IsSocketVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)SystemID.Construction &&
+                   handle.Generation != 0u;
         }
     }
 }

@@ -10,8 +10,8 @@
                      "RequiredAPIVersion":  2,
                      "ModPriority":  0
                  },
-    "FileCount":  25,
-    "TotalBytes":  47352,
+    "FileCount":  32,
+    "TotalBytes":  114218,
     "Limits":  {
                    "MaxFiles":  256,
                    "MaxFileBytes":  4194304,
@@ -34,14 +34,19 @@
                       "Sha256":  "b8d3655db98835a70aa14db6e5ea57e139b0fffd71698e45efb759f9b3c800c9"
                   },
                   {
+                      "Path":  "Docs/capabilities.md",
+                      "Bytes":  3783,
+                      "Sha256":  "b3e8957257fe72ceebd3921a9ed8d70e5f9df3430d178940097b5515123c3fe0"
+                  },
+                  {
                       "Path":  "Graphs/main.h8graph.json",
                       "Bytes":  284,
                       "Sha256":  "47f94f9ca298da001f6e83ab3374ff5a74a80997d09da2bb02f2ebf2e7ba7748"
                   },
                   {
                       "Path":  "h8mod.ps1",
-                      "Bytes":  4546,
-                      "Sha256":  "de8e80caac3fca62d5707b4f73e8e174000cf5ccb8990f3d1df9ca305eeee045"
+                      "Bytes":  10625,
+                      "Sha256":  "3b985003bc0c67058da79baaeea4e1c7bad7817b7d01dbec56f725a057258022"
                   },
                   {
                       "Path":  "Locales/en.h8loc.json",
@@ -60,8 +65,8 @@
                   },
                   {
                       "Path":  "README.md",
-                      "Bytes":  4063,
-                      "Sha256":  "896c3c3a5fd5f50ce8c39c39dc0d50d8fd0dc8cab451e99b1e009c317ff3c0fd"
+                      "Bytes":  6586,
+                      "Sha256":  "420209bcc9bdbd65c4c554e1ebc647321a13d856dc39791583bcf38d98528bce"
                   },
                   {
                       "Path":  "Reference/allowed_opcodes.csv",
@@ -95,8 +100,8 @@
                   },
                   {
                       "Path":  "Schemas/locale.schema.json",
-                      "Bytes":  488,
-                      "Sha256":  "72acb467c704c66ff94919bd18a00a355feaf7028e7141edf2e6b8c41d561c00"
+                      "Bytes":  623,
+                      "Sha256":  "1747d96fcf3c7fa2f723afcde74538def490743dd60bccf7cad7cdbe0e376d64"
                   },
                   {
                       "Path":  "Schemas/runtime.mod.schema.json",
@@ -105,8 +110,8 @@
                   },
                   {
                       "Path":  "Schemas/settings_table.schema.json",
-                      "Bytes":  660,
-                      "Sha256":  "38a7917762e5443ed743b334c27bd2b716fd07bed7bbf78c091d3741ee497696"
+                      "Bytes":  1176,
+                      "Sha256":  "acee2a480396e117b262f64d8efdee5e4e8d8371995f2d15ab6d831d73ee3b90"
                   },
                   {
                       "Path":  "Tables/settings.h8table.json",
@@ -114,9 +119,39 @@
                       "Sha256":  "069e7de8160b3a5c206404c3fa3d59aa31cb802db382be33999243a37923c473"
                   },
                   {
+                      "Path":  "Tools/apply_locale_entry_snippet.ps1",
+                      "Bytes":  8420,
+                      "Sha256":  "332b3ed585ae324c1dd227857d9d6c675438d39bc952bb4c6015f3657a4164a0"
+                  },
+                  {
+                      "Path":  "Tools/apply_settings_row_snippet.ps1",
+                      "Bytes":  12467,
+                      "Sha256":  "fdd5286ed11577b8753e42063f19bd0db64effbfa99a154be4558cd40570fc57"
+                  },
+                  {
                       "Path":  "Tools/build_review_manifest.ps1",
                       "Bytes":  4250,
                       "Sha256":  "9722d761cf437589a1ec64cb2ccef378060e41d1c59cd87aa2cb05ff46d3ad23"
+                  },
+                  {
+                      "Path":  "Tools/build_submission_package.ps1",
+                      "Bytes":  7000,
+                      "Sha256":  "c312c6050ef79073222c267748d3b641c7f616f5f95dbc1330dac804b9762ad4"
+                  },
+                  {
+                      "Path":  "Tools/create_graph_node_snippet.ps1",
+                      "Bytes":  6032,
+                      "Sha256":  "202ad6948d28977b9d9528d67f0b803fc79d410dc8454df36030b5a7d33f04e4"
+                  },
+                  {
+                      "Path":  "Tools/create_locale_entry_snippet.ps1",
+                      "Bytes":  4912,
+                      "Sha256":  "545785bb4ba5041db861b87241cebc95c147e2087865f1b494e24d5bfd68cc16"
+                  },
+                  {
+                      "Path":  "Tools/create_settings_row_snippet.ps1",
+                      "Bytes":  6708,
+                      "Sha256":  "726d66c6cdc0aeb3e9d08262e43a1e94592f540e153f962f334eace47b509994"
                   },
                   {
                       "Path":  "Tools/list_allowed_opcodes.ps1",
@@ -130,8 +165,8 @@
                   },
                   {
                       "Path":  "Tools/README.md",
-                      "Bytes":  3342,
-                      "Sha256":  "2e880af4b002e2a69c2af3b37712bcfb53b04bc1c307d980f915db53815a1ead"
+                      "Bytes":  6980,
+                      "Sha256":  "2688ac8ba6bffa6f6beb6e49d3926a9d80abc135d103e9c008207de1f9baf351"
                   },
                   {
                       "Path":  "Tools/set_mod_identity.ps1",
@@ -140,8 +175,8 @@
                   },
                   {
                       "Path":  "Tools/validate_structure.ps1",
-                      "Bytes":  11476,
-                      "Sha256":  "ea990805a418e0e7ba091ec0bf2d9da59262344324452d3cf0da4b80fe5ff795"
+                      "Bytes":  16129,
+                      "Sha256":  "02f366c76625cf7bb9765f0cd2de954c8744997698e66a7658e92a42df5510cf"
                   }
               ]
 }

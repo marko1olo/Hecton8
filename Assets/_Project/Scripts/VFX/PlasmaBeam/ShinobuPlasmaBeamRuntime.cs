@@ -476,7 +476,7 @@ namespace Hecton8.VFX.PlasmaBeam
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            IDataVault nextVault = currentService as IDataVault;
+            IDataVault nextVault = currentService is IDataVault currentVault ? currentVault : null;
             RebindDataVaultForLifecycle(nextVault);
         }
 

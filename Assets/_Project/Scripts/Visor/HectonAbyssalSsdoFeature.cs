@@ -204,7 +204,7 @@ namespace Hecton8.Visor
                 int ssdoWidth = math.max(1, (int)(sourceDesc.width * renderScale + 0.5f));
                 int ssdoHeight = math.max(1, (int)(sourceDesc.height * renderScale + 0.5f));
 
-                TextureDesc occlusionDesc = new TextureDesc(sourceDesc);
+                TextureDesc occlusionDesc = sourceDesc;
                 occlusionDesc.name = "_HectonAbyssalSSDO";
                 occlusionDesc.width = ssdoWidth;
                 occlusionDesc.height = ssdoHeight;
@@ -217,10 +217,10 @@ namespace Hecton8.Visor
                 occlusionDesc.useMipMap = false;
                 occlusionDesc.autoGenerateMips = false;
 
-                TextureDesc blurDesc = new TextureDesc(occlusionDesc);
+                TextureDesc blurDesc = occlusionDesc;
                 blurDesc.name = "_HectonAbyssalSSDOBLur";
 
-                TextureDesc compositeDesc = new TextureDesc(sourceDesc);
+                TextureDesc compositeDesc = sourceDesc;
                 compositeDesc.name = "_HectonAbyssalSSDOComposite";
                 compositeDesc.clearBuffer = false;
                 compositeDesc.depthBufferBits = DepthBits.None;

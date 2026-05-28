@@ -1,0 +1,127 @@
+{
+  "agent_id": "1422",
+  "role": "POWER_GRID_JACOBI_SOLVER_HARDENER",
+  "domain": "Echelon 6 Habitat & Vehicles / Power Grid (Jacobi Solver)",
+  "status": "implemented_static_verified_powergrid_scratch_migrated_build_blocked_pending_unity_verification",
+  "source_prompt": "Docs/Tasks/CURRENT_BATCH.md::<AGENT_PROMPT id=\"1422\" role=\"POWER_GRID_JACOBI_SOLVER_HARDENER\">",
+  "primary_runtime_paths": [
+    {
+      "file": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs",
+      "job_or_scope": "EvaluateGraphJob.ApplyTwoPassPowerDeltaPropagation",
+      "matrix_layout": "CSR-like sparse graph via NodeEdgeOffsets, EdgeDestinations, EdgeConductance, EdgeFlow, PotentialFront, PotentialBack, NodeLoad, NodeGeneration, NodeSourcePotential",
+      "implemented_iteration_limit": "round(lerp(2, 8, saturate(select(1, GlobalQualityWeight, isfinite(GlobalQualityWeight))))) at LogisticsNetworkGraph.cs:1107-1109",
+      "implemented_convergence_epsilon": "lerp(0.075, 0.003, q) with residual early exit at LogisticsNetworkGraph.cs:1130",
+      "implemented_quality_use": "GlobalQualityWeight scales iteration cap, residual epsilon, distribution gain, equalization gain, and adaptive node budget",
+      "implemented_inner_loop": "neighbor traversal masks validity/rupture/isolation/conductance into liveConductance via math.select at LogisticsNetworkGraph.cs:1318",
+      "remaining_risk": "Unity/Burst/profiler execution proof is absent because build gate is blocked by CPU contention"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
+      "job_or_scope": "PowerVoltageSolverJob",
+      "matrix_layout": "CSR sparse graph via NodeEdgeOffsets, EdgeDestinations, EdgeConductance, FrontPotential, BackPotential, DemandRate, PowerNodeDTO*",
+      "current_iteration_limit": "single relaxation pass per scheduled execution",
+      "current_convergence_epsilon": "MinimumConductance=0.000001f, used as conductance cutoff; no solver residual stop",
+      "current_quality_use": "GlobalQualityWeight drives smoothing factor between 0.24 and 0.92",
+      "current_inner_loop_risk": "neighbor traversal already uses math.select for most masks; remaining branch risk is lower than LogisticsNetworkGraph runtime solver",
+      "required_hardening": "preserved DTO/vault contract and ABI; job is currently definition-only by rg scan, so active runtime hardening is in LogisticsNetworkGraph"
+    },
+    {
+      "file": "Assets/_Project/Scripts/PowerGridManager.cs",
+      "job_or_scope": "Jacobi vault bootstrap and public read access",
+      "matrix_layout": "owns PowerGridVaultHandles and calls PowerGridVaultRuntime.EnsureCoreBuffers",
+      "current_iteration_limit": "none; manager does not execute Jacobi math",
+      "current_convergence_epsilon": "none",
+      "current_quality_use": "ResolveMathLodQualityWeight delegates to MathLodRuntimeConfig or PowerSolverConvergenceMath.AuthoritativeQualityWeight",
+      "current_inner_loop_risk": "none in manager",
+      "required_hardening": "keep manager cold; no hot GlobalRegistry polling"
+    },
+    {
+      "file": "Assets/_Project/Scripts/PowerGrid.cs",
+      "job_or_scope": "ThermalSharePassJob and battery dispatch scratch buffers",
+      "matrix_layout": "thermal CSR scratch moved to per-grid DataVault generation handles: temperature front/back, heat injection, hull sink, edge offsets, destinations, conductance",
+      "implemented_buffer_route": "PowerGridScratchBufferBase 731700 + grid Id * 16 + local offsets 0..8",
+      "implemented_locking": "thermal snapshot/schedule and battery dispatch acquire generation write locks and release them in finally",
+      "implemented_inner_loop": "thermal neighbor and hull-sink branches converted to math.select/masked conductance in the Burst job",
+      "remaining_risk": "static verified only; compile/profiler proof absent while CPU gate is closed"
+    }
+  ],
+  "dto_layouts": {
+    "PowerNodeDTO": {
+      "size_bytes": 32,
+      "alignment_status": "explicit layout, multiple of 8",
+      "offsets": {
+        "NodeHash": 0,
+        "Potential": 4,
+        "MaxCapacity": 8,
+        "CurrentStorage": 12,
+        "Flags": 16,
+        "InternalResistance": 20,
+        "_pad0": 24
+      }
+    },
+    "PowerGridEdgeDTO": {
+      "size_bytes": 32,
+      "alignment_status": "explicit layout, multiple of 8",
+      "offsets": {
+        "SourceIndex": 0,
+        "DestinationIndex": 4,
+        "Resistance": 8,
+        "MaxFlow": 12,
+        "Flags": 16,
+        "_pad0": 20
+      }
+    },
+    "PowerTelemetryEntry": {
+      "size_bytes": 64,
+      "alignment_status": "explicit layout, multiple of 8",
+      "ring_capacity": 300,
+      "offsets": {
+        "FrameIndex": 0,
+        "StateHash": 4,
+        "ReasonFlags": 8,
+        "NodeCount": 12,
+        "EdgeCount": 16,
+        "RuntimeEdgeCount": 20,
+        "SolveStartNode": 24,
+        "SolveNodeCount": 28,
+        "TotalGeneration": 32,
+        "TotalConsumption": 36,
+        "SupplyRatio": 40,
+        "AveragePotential": 44,
+        "MinPotential": 48,
+        "MaxPotential": 52,
+        "BrownoutCount": 56,
+        "SolverMicroseconds": 60,
+        "SolverIterationCount": 56,
+        "SolverMaxIterations": 60
+      }
+    }
+  },
+  "scalability_mapping_target": {
+    "low": {
+      "quality_range": "0.0..0.25",
+      "solver_intent": "fewest bounded iterations, loose residual epsilon, stable voltage field over visual exactness"
+    },
+    "middle": {
+      "quality_range": "0.25..0.6",
+      "solver_intent": "moderate iterations, tighter epsilon, stable brownout propagation"
+    },
+    "high": {
+      "quality_range": "0.6..0.85",
+      "solver_intent": "higher iteration budget, sharper loop equalization"
+    },
+    "ultra": {
+      "quality_range": "0.85..1.0",
+      "solver_intent": "maximum bounded iterations and strict epsilon, spend saved cycles on visible voltage fidelity"
+    }
+  },
+  "telemetry_gap": {
+    "existing_ring": "PowerTelemetryEntry[300] via PowerGridBufferIds.TelemetryRing",
+    "implemented_dump_path": "Docs/AgentLogs/Dump_1422_PowerGrid.bin",
+    "implemented_state": "solver telemetry counter records active cap, completed iterations, residual epsilon bits, residual bits, cap flag, and divergence flag; PowerGrid scratch thermal/battery buffers now use DataVault generation handles"
+  },
+  "verification_policy": {
+    "build": "defer dotnet build until final verification and only when csc.exe is absent and CPU load is <=50%",
+    "static_first": "use rg/static inspection for NativeArray signatures, lock coverage, DTO layout constants, and hot-loop allocation scan"
+  }
+}

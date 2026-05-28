@@ -1,0 +1,94 @@
+{
+  "agent_id": "1424",
+  "domain": "ECHELON 9 / QA Watchdog Bot",
+  "status": "apex_route_metric_followup_static_not_playmode_executed",
+  "runtime_file": "Assets/_Project/Scripts/QA/QA_WatchdogBot.cs",
+  "editor_fuzzer_file": "Assets/_Project/Scripts/QA/Editor/QAWatchdogGcAllocationFuzzer1424.cs",
+  "asmdef_file": "Assets/_Project/Scripts/QA/Hecton8.QA.asmdef",
+  "csv_output": "Docs/Reports/QA_WATCHDOG_ENDURANCE_REPORT_1424.csv",
+  "blackbox_dump": "Docs/AgentLogs/Dump_1424.bin",
+  "profiler_ledger": "Docs/Reports/QA_WATCHDOG_PROFILER_COUNTERS_1424.json",
+  "scene_route": {
+    "bootstrap": "00_BOOTSTRAP",
+    "menu": "01_MAIN_MENU",
+    "target_world": "02_HECTON_WORLD",
+    "observed_code_reality": "MainMenuController newGameTargetSceneName currently points to 01_ORBIT; watchdog resolves MainMenuController with a preallocated 512-root traversal scratch, calls StartGame(string.Empty) directly, records MenuResolveAttempts, then uses SceneRuntimeService fallback to 02_HECTON_WORLD if the route lands in orbit or times out."
+  },
+  "configuration": {
+    "target_distance_m": 10000,
+    "metric_capacity_frames": 36000,
+    "blackbox_capacity_frames": 300,
+    "p95_window_frames": 2048,
+    "p95_budget_ms": 16.67,
+    "frame_spike_us": 25000,
+    "frame_spike_consecutive_samples": 3,
+    "gc_alloc_fail_bytes": 0,
+    "vram_target_mb": 1600,
+    "vram_hard_mb": 1800,
+    "defrag_cadence_seconds": 60,
+    "no_kcc_velocity_fail_seconds": 30,
+    "scene_route_timeout_seconds": 40,
+    "global_quality_weight": "HomeostasisBrain.GlobalQualityWeight sampled to _resolvedQualityWeight01; continuously scales route perturbation amplitude only, never truth thresholds, ownership, or DTO layout"
+  },
+  "apex_reaudit": {
+    "datavault_lock_fix": "WriteMetricHot and WriteBlackBoxHot release writer locks from finally blocks after TryAcquireWriteLock.",
+    "menu_route_fix": "Object.FindObjectsByType<MonoBehaviour> and MethodInfo.Invoke were removed from the menu route; MainMenuController.StartGame(string.Empty) is direct.",
+    "apex_followup_fix": "Black-box field was renamed from MenuReflectionAttempts to MenuResolveAttempts without changing FieldOffset(48); menu root scratch capacity increased from 64 to 512 to prevent List growth on larger menu scenes; terminal NativeMemorySentinel reflection args are preallocated.",
+    "apex_route_metric_followup": "Scene-name reads were removed from the hot route and replaced with buildIndex checks based on EditorBuildSettings order: 01_MAIN_MENU=1, 01_ORBIT=2, 02_HECTON_WORLD=3. Profiler frame-time fallback now uses the validated FastTick delta instead of UnityEngine.Time. Late metric flags reuse cached KCC/player-state freshness from IntegrateDistanceHot and only call Profiler.GetAllocatedMemoryForGraphicsDriver when the Gfx Used Memory recorder is invalid.",
+    "hot_path_scan_spans": {
+      "FastTickRouteAndSimulation": "Assets/_Project/Scripts/QA/QA_WatchdogBot.cs lines 436-1021",
+      "SimulationHot": "Assets/_Project/Scripts/QA/QA_WatchdogBot.cs lines 631-1021",
+      "LateMetric": "Assets/_Project/Scripts/QA/QA_WatchdogBot.cs lines 755-1021"
+    },
+    "scan_counts": {
+      "FastTickRouteAndSimulation": { "new_reference_regex": 0, "string_Format": 0, "ToString": 0, "foreach": 0, "linq_materializers": 0, "scene_name_read": 0, "scene_search": 0, "unity_time": 0, "file_io": 0, "debug_log": 0 },
+      "SimulationHot": { "new_reference_regex": 0, "string_Format": 0, "ToString": 0, "foreach": 0, "linq_materializers": 0, "scene_name_read": 0, "scene_search": 0, "unity_time": 0, "file_io": 0, "debug_log": 0 },
+      "LateMetric": { "new_reference_regex": 0, "string_Format": 0, "ToString": 0, "foreach": 0, "linq_materializers": 0, "scene_name_read": 0, "scene_search": 0, "unity_time": 0, "file_io": 0, "debug_log": 0 }
+    }
+  },
+  "struct_layout": {
+    "QAWatchdogFrameMetric1424": {
+      "size_bytes": 32,
+      "multiple_of_8": true,
+      "offsets": "Frame:0/u32, FrameTimeMicroseconds:4/u16, Batches:6/u16, GcAllocBytes:8/u32, VramMegabytes:12/u16, SetPassCalls:14/u16, AupX:16/f32, AupY:20/f32, AupZ:24/f32, Flags:28/u16, State:30/u16"
+    },
+    "QAWatchdogBlackBoxEntry1424": {
+      "size_bytes": 64,
+      "multiple_of_8": true,
+      "offsets": "Frame:0/u32, FrameTimeMicroseconds:4/u16, Batches:6/u16, GcAllocBytes:8/u32, VramMegabytes:12/u16, SetPassCalls:14/u16, AupX:16/f32, AupY:20/f32, AupZ:24/f32, Flags:28/u16, State:30/u16, FailReason:32/u32, ConsecutiveSpikeFrames:36/u32, DistanceMeters:40/f32, RollingP95Milliseconds:44/f32, MenuResolveAttempts:48/u32, SceneFallbackAttempts:52/u32, VaultWriteFailures:56/u32, DefragRequests:60/u32"
+    }
+  },
+  "profiler_counters": [
+    "CPU Total Frame Time",
+    "GC Allocated In Frame",
+    "Gfx Used Memory",
+    "Batches Count",
+    "SetPass Calls Count"
+  ],
+  "zero_gc_hot_path_contract": [
+    "ProfilerRecorder instances are created only in BeginRunCold.",
+    "LateFrameTick calls SampleMetricHot, WriteMetricHot, WriteBlackBoxHot, and EvaluateMetricHot.",
+    "Lines 755-1021 were statically inspected: no reference-style new, string.Format, ToString, foreach, LINQ materializers, scene-name read, scene search, UnityEngine.Time read, file IO, or Debug.Log exists in the metric extraction loop.",
+    "Lines 436-1021 were statically inspected for route, simulation input, metric writes, and black-box writes: no reference-style new, string.Format, ToString, foreach, LINQ materializers, scene-name reads, scene-search APIs, UnityEngine.Time reads, file IO, or Debug.Log.",
+    "Per-frame sampling writes QAWatchdogFrameMetric1424 value types into fixed DataVault buffers or fixed fallback arrays.",
+    "CSV, JSON, reflection, and NativeMemorySentinel validation execute only after completion or failure."
+  ],
+  "fuzzer_test": {
+    "fixture": "QAWatchdogGcAllocationFuzzer1424",
+    "hostile_allocation": "new byte[1024] in Update",
+    "expected_watchdog_failure": "GcAlloc",
+    "verification_status": "fixture implemented; contaminated PlayMode run not executed because final CPU gate was 68 percent, above the 50 percent build limit"
+  },
+  "build_gate": {
+    "status": "blocked_by_contention",
+    "cpu_load_percent": 100,
+    "active_compiler_process": "dotnet pid 51008",
+    "compile_success_claimed": false,
+    "playmode_success_claimed": false
+  },
+  "sha256": {
+    "Assets/_Project/Scripts/QA/QA_WatchdogBot.cs": "EB0F44E9043804053A3ACF53DD74DAEBA13F258B11C2EF49E8E9D31F2F82EC4B",
+    "Assets/_Project/Scripts/QA/Editor/QAWatchdogGcAllocationFuzzer1424.cs": "8687C8D34309A3E6EE31A031C79E5CDBDB5C0AAF52858B21A8BD596637F5E4D2",
+    "Assets/_Project/Scripts/QA/Hecton8.QA.asmdef": "1FE52E499FE42F502A499DFE3D42763CDB234B835B446C84CDDDF88B994B45BB"
+  }
+}

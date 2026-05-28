@@ -14,7 +14,8 @@ namespace CandiceAIforGames.AI
     //class to handle player animation overrides that interact with CandiceAI system    
     public class CandicePlayerOverrides
     {
-        GameObject AttackTarget = new GameObject();
+        private GameObject attackTarget;
+        private Camera attackCamera;
         //original scale of the root parent gameObject should always be 1
         public Vector3 originalScale = new Vector3(1f, 1f, 1f);
         public float boostedScale = 2f;
@@ -23,31 +24,68 @@ namespace CandiceAIforGames.AI
         public float projectileMoveSpeed = 3000f;
         public float projectileBoostedMoveSpeed = 5000f;
 
+        public void PrepareAttackTarget(Transform owner)
+        {
+            if (attackTarget == null)
+            {
+                // COLD ALLOC: persistent attack target created during Candice animation startup, reused by player ranged overrides.
+                attackTarget = new GameObject("CandicePlayerAttackTarget");
+                attackTarget.hideFlags = HideFlags.DontSave;
+            }
+
+            if (owner != null && attackTarget.transform.parent != owner)
+            {
+                attackTarget.transform.SetParent(owner, false);
+            }
+
+            if (attackCamera == null)
+            {
+                attackCamera = Camera.main;
+            }
+
+            attackTarget.SetActive(false);
+        }
+
         //PATRAN_CANDICEAI IS SHORT FOR (PLAYER ATTACK RANGED USING CANDICEAI)
         //this uses the candice ai projectile to performed a ranged attack. It requires that CandiceAIController script be also attached to Player.
         public void PATRAN_CANDICEAI(CandiceAIController player)
         {
+            if (player == null)
+            {
+                return;
+            }
+
             //get mouse position from input
             Vector3 mousePos = Input.mousePosition;
-            GameObject AttackTarget = new GameObject();
-            if (mousePos != null)
+            GameObject currentAttackTarget = GetAttackTarget();
+            if (currentAttackTarget == null)
+            {
+                return;
+            }
+
+            Camera currentCamera = attackCamera != null ? attackCamera : Camera.main;
+            if (currentAttackTarget != null && currentCamera != null)
             {
                 //buffer mouse position z
                 mousePos.z = bufferMousePositionz;
                 //create new attack target from reticule position
-                AttackTarget.transform.position = Camera.main.ScreenToWorldPoint(mousePos);
+                currentAttackTarget.transform.position = currentCamera.ScreenToWorldPoint(mousePos);
+                currentAttackTarget.SetActive(true);
             }
 
-            if (player != null)
+            if (player.projectile != null)
             {
                 //adjust projectile scale (scale is always 1 on normal projectile)
                 player.projectile.gameObject.transform.localScale = OriginalScale(player);
 
                 //adjust projectile move speed
-                player.projectile.gameObject.GetComponent<CandiceProjectile>().moveSpeed = projectileMoveSpeed;
+                if (player.projectile.TryGetComponent(out CandiceProjectile projectile))
+                {
+                    projectile.moveSpeed = projectileMoveSpeed;
+                }
 
                 //assign newly created attack target to player
-                player.AttackTarget = AttackTarget;
+                player.AttackTarget = currentAttackTarget;
 
                 //perform ranged attack using CandiceAIController (player must have a CandiceAIController script attached wtih a projectile prefab attached at a minimum for this to work)
                 player.AttackRanged();
@@ -58,28 +96,41 @@ namespace CandiceAIforGames.AI
         //this uses the candice ai projectile to performed a ranged attack. It requires that CandiceAIController script be also attached to Player.
         public void PATRAN_BOOSTED_CANDICEAI(CandiceAIController player)
         {
+            if (player == null)
+            {
+                return;
+            }
+
             //get mouse position from input
             Vector3 mousePos = Input.mousePosition;
-            GameObject AttackTarget = new GameObject();
-            if (mousePos != null) {
+            GameObject currentAttackTarget = GetAttackTarget();
+            if (currentAttackTarget == null)
+            {
+                return;
+            }
+
+            Camera currentCamera = attackCamera != null ? attackCamera : Camera.main;
+            if (currentAttackTarget != null && currentCamera != null) {
                 //buffer mouse position z
                 mousePos.z = bufferMousePositionz;
                 //create new attack target from reticule position
-                if (Camera.main != null) {
-                    AttackTarget.transform.position = Camera.main.ScreenToWorldPoint(mousePos);
-                }
+                currentAttackTarget.transform.position = currentCamera.ScreenToWorldPoint(mousePos);
+                currentAttackTarget.SetActive(true);
                 
             }
 
-            if (player != null) {
+            if (player.projectile != null) {
                 //adjust projectile scale
                 player.projectile.gameObject.transform.localScale = new Vector3(boostedScale, boostedScale, boostedScale);
 
                 //adjust projectile move speed
-                player.projectile.gameObject.GetComponent<CandiceProjectile>().moveSpeed = projectileBoostedMoveSpeed;
+                if (player.projectile.TryGetComponent(out CandiceProjectile projectile))
+                {
+                    projectile.moveSpeed = projectileBoostedMoveSpeed;
+                }
 
                 //assign newly created attack target to player
-                player.AttackTarget = AttackTarget;
+                player.AttackTarget = currentAttackTarget;
 
                 //perform ranged attack using CandiceAIController (player must have a CandiceAIController script attached wtih a projectile prefab attached at a minimum for this to work)
                 player.AttackRanged();
@@ -88,8 +139,16 @@ namespace CandiceAIforGames.AI
 
         //returns original projectile scale
         public Vector3 OriginalScale(CandiceAIController original) {
-            originalScale = original.projectile.gameObject.transform.localScale;
+            if (original != null && original.projectile != null)
+            {
+                originalScale = original.projectile.gameObject.transform.localScale;
+            }
             return originalScale;
+        }
+
+        private GameObject GetAttackTarget()
+        {
+            return attackTarget;
         }
     }
 }

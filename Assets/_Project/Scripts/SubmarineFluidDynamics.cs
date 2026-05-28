@@ -37,6 +37,7 @@ namespace Hecton8.Physics
     public sealed class SubmarineFluidDynamics : MonoBehaviour,
         IFixedTickable,
         IPostFixedTickable,
+        ILateFrameTickable,
         IOriginShiftListener,
         IGlobalRegistryHotSwapListener,
         IWaterHeatInjectionService,
@@ -685,6 +686,7 @@ namespace Hecton8.Physics
         private IAtmosphereReadModel _atmosphereRuntime;
         private byte _cachedFloodStateMathLod = AuthoritativeFloodStateMathLod;
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _registeredOriginShiftListener;
         private bool _registeredHotSwapListener;
         private bool _vaultNativeRefreshRequested;
@@ -759,7 +761,6 @@ namespace Hecton8.Physics
         private ISubmarineHullBreachReadModel _structuralBreachReadModel;
         private IHectonOceanKinematics _oceanKinematics;
         private IBrineFluidDensityReadModel _resourceDistributionRuntime;
-        private IVocalWarningSystem _vocalWarningSystem;
         private readonly List<MonoBehaviour> _componentSearchBuffer = new List<MonoBehaviour>(4); // COLD ALLOC: List<MonoBehaviour>[4] - Unity GetComponents scratch, not runtime authority - owner: SubmarineFluidDynamics
         private readonly List<LogisticsPipeNode> _pipeBindingBuffer = new List<LogisticsPipeNode>(16); // COLD ALLOC: List<LogisticsPipeNode>[16] - Unity GetComponentsInChildren scratch, not runtime authority - owner: SubmarineFluidDynamics
         // COLD ALLOC: SpatialQueryHit[16] - WorldSpatialHashGrid managed-array API scratch, not runtime authority - owner: SubmarineFluidDynamics
@@ -807,6 +808,22 @@ namespace Hecton8.Physics
         private bool _isBrineSubmerged;
         private bool _wasBrineSubmerged;
         private float _brineSubmersionTime;
+        private bool _pendingBrineHullAcousticDirty;
+        private AcousticPingSignal _pendingBrineHullAcoustic;
+        private bool _pendingCavitationFeedbackDirty;
+        private CavitationFeedbackRequest _pendingCavitationFeedback;
+
+        private struct CavitationFeedbackRequest
+        {
+            public SignalAudioEvent AudioEvent;
+            public float LowFrequencyIntensity;
+            public float HighFrequencyIntensity;
+            public float DurationSeconds;
+            public float PulseFrequencyHz;
+            public byte Priority;
+            public byte MotorMask;
+            public bool HasAudioEvent;
+        }
 
         [StructLayout(LayoutKind.Explicit, Size = 160)]
         private struct HydroKinematicJobInput
@@ -1394,6 +1411,15 @@ namespace Hecton8.Physics
         }
 
         /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            FlushQueuedCavitationFeedback();
+            FlushQueuedBrineHullFeedback();
+            if (!_pendingCavitationFeedbackDirty && !_pendingBrineHullAcousticDirty)
+                TryUnregisterLateFrameTickable();
+        }
+
+        /// <inheritdoc />
         public void OnGlobalRegistryServiceReplaced(
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
@@ -1439,12 +1465,6 @@ namespace Hecton8.Physics
             if (serviceSlot == GlobalRegistryServiceSlot.ResourceDistributionRuntime)
             {
                 _resourceDistributionRuntime = currentService as IBrineFluidDensityReadModel;
-                return;
-            }
-
-            if (serviceSlot == GlobalRegistryServiceSlot.VocalWarningRuntime)
-            {
-                _vocalWarningSystem = currentService as IVocalWarningSystem;
                 return;
             }
 
@@ -1624,15 +1644,19 @@ namespace Hecton8.Physics
             _ballastBlowTimer = math.max(0.05f, math.isfinite(durationSeconds) ? durationSeconds : ballastBlowDurationSeconds);
             _targetBuoyancyBias01 = 1f;
 
-            if (_vocalWarningSystem != null)
+            uint sourceId = _rigidbody != null ? unchecked((uint)EntityId.ToULong(_rigidbody.GetEntityId())) : 0u;
+            VocalWarningSignal warningSignal = default;
+            warningSignal.WarningHash = VocalWarningHashes.FromWarningId((byte)VocalWarningId.CrushDepth);
+            warningSignal.SourceId = sourceId;
+            warningSignal.Severity01 = 0.85f;
+            warningSignal.CooldownSeconds = 0.6f;
+            warningSignal.Priority = (byte)VocalWarningId.CrushDepth;
+            warningSignal.Flags = VocalWarningSignalFlags.HabitatIntegrityCompromised;
+            if (!SignalBus<VocalWarningSignal>.TryPushTracked(
+                    in warningSignal,
+                    ref s_x001DirectSignalPushDropCount_SubmarineFluidDynamics))
             {
-                uint sourceId = _rigidbody != null ? unchecked((uint)EntityId.ToULong(_rigidbody.GetEntityId())) : 0u;
-                _vocalWarningSystem.TryQueueWarning(
-                    (byte)VocalWarningId.CrushDepth,
-                    0.85f,
-                    0.6f,
-                    VocalWarningSignalFlags.HabitatIntegrityCompromised,
-                    sourceId);
+                _droppedSignalCount++;
             }
 
             return true;
@@ -2056,9 +2080,6 @@ namespace Hecton8.Physics
             if (_resourceDistributionRuntime == null)
                 _resourceDistributionRuntime = GlobalRegistry.BrineFluidDensity;
 
-            if (_vocalWarningSystem == null || IsUnityObjectInvalid(_vocalWarningSystem))
-                _vocalWarningSystem = GlobalRegistry.VocalWarnings;
-
             IDataVault registryDataVault = GlobalRegistry.DataVault;
             if (!ReferenceEquals(_dataVault, registryDataVault))
             {
@@ -2480,6 +2501,14 @@ namespace Hecton8.Physics
             _registered = true;
         }
 
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_registeredLateFrame || !Application.isPlaying)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+        }
+
         private void TryRegisterFluidSimulationService()
         {
             if (_fluidSimulationRegistered || _fluidMathCore == null || !Application.isPlaying)
@@ -2509,11 +2538,28 @@ namespace Hecton8.Physics
         private void TryUnregister()
         {
             if (!_registered)
+            {
+                TryUnregisterLateFrameTickable();
                 return;
+            }
 
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
+            TryUnregisterLateFrameTickable();
             _registered = false;
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = false;
+            _pendingBrineHullAcousticDirty = false;
+            _pendingBrineHullAcoustic = default;
+            _pendingCavitationFeedbackDirty = false;
+            _pendingCavitationFeedback = default;
         }
 
         private void TryUnregisterFluidSimulationService()
@@ -2995,16 +3041,14 @@ namespace Hecton8.Physics
                 return;
 
             float intensity = math.saturate(1f - (speedMetersPerSecond * math.rcp(math.max(0.01f, cavitationStallSpeedMetersPerSecond))));
-            bool hapticAccepted = ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
-                intensity * 0.55f,
-                intensity * 0.25f,
-                0.18f,
-                24f,
-                ToolHapticsRuntime.PriorityCritical,
-                0b0011);
-
-            bool audioAccepted = false;
             Vector3 source = _rigidbody != null ? _rigidbody.worldCenterOfMass : (_cachedTransform != null ? _cachedTransform.position : Vector3.zero);
+            CavitationFeedbackRequest request = default;
+            request.LowFrequencyIntensity = intensity * 0.55f;
+            request.HighFrequencyIntensity = intensity * 0.25f;
+            request.DurationSeconds = 0.18f;
+            request.PulseFrequencyHz = 24f;
+            request.Priority = ToolHapticsRuntime.PriorityCritical;
+            request.MotorMask = 0b0011;
             if (IsFiniteVector(source))
             {
                 AudioPingTriggerPayload payload = new AudioPingTriggerPayload(
@@ -3016,19 +3060,12 @@ namespace Hecton8.Physics
                     1f,
                     3200f,
                     ProceduralAudioPingKindMechanicalWhirr);
-                SignalAudioEvent audioEvent = SignalAudioEvent.FromAudioPing(in payload);
-                audioAccepted = SignalBus<SignalAudioEvent>.TryPushTracked(in audioEvent, ref s_x001DirectSignalPushDropCount_SubmarineFluidDynamics);
+                request.AudioEvent = SignalAudioEvent.FromAudioPing(in payload);
+                request.HasAudioEvent = true;
             }
 
-            if (hapticAccepted || audioAccepted)
-            {
-                _cavitationCooldownTimer = math.max(cavitationCooldownSeconds, fixedDeltaTime);
-            }
-            else
-            {
-                IncrementDroppedSignalCount();
-                _cavitationCooldownTimer = math.max(fixedDeltaTime, 0.01f);
-            }
+            QueueCavitationFeedback(in request);
+            _cavitationCooldownTimer = math.max(cavitationCooldownSeconds, fixedDeltaTime);
         }
 
         private void IncrementDroppedSignalCount()
@@ -4475,8 +4512,56 @@ namespace Hecton8.Physics
             signal.SourceId = SubmarineFluidDynamicsContextHash;
             signal.Channel = BrineLayerConstants.AcousticThickFluidChannel;
             signal.Flags = _isBrineSubmerged ? BrineLayerConstants.EnteredFlag : BrineLayerConstants.ExitedFlag;
-            if (!SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_SubmarineFluidDynamics))
+            QueueBrineHullAcoustic(in signal);
+        }
+
+        private void QueueBrineHullAcoustic(in AcousticPingSignal signal)
+        {
+            _pendingBrineHullAcoustic = signal;
+            _pendingBrineHullAcousticDirty = true;
+            TryRegisterLateFrameTickable();
+        }
+
+        private void QueueCavitationFeedback(in CavitationFeedbackRequest request)
+        {
+            _pendingCavitationFeedback = request;
+            _pendingCavitationFeedbackDirty = true;
+            TryRegisterLateFrameTickable();
+        }
+
+        private void FlushQueuedCavitationFeedback()
+        {
+            if (!_pendingCavitationFeedbackDirty)
+                return;
+
+            CavitationFeedbackRequest request = _pendingCavitationFeedback;
+            _pendingCavitationFeedback = default;
+            _pendingCavitationFeedbackDirty = false;
+
+            bool hapticAccepted = ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
+                request.LowFrequencyIntensity,
+                request.HighFrequencyIntensity,
+                request.DurationSeconds,
+                request.PulseFrequencyHz,
+                request.Priority,
+                request.MotorMask);
+
+            bool audioAccepted = request.HasAudioEvent &&
+                SignalBus<SignalAudioEvent>.TryPushTracked(in request.AudioEvent, ref s_x001DirectSignalPushDropCount_SubmarineFluidDynamics);
+
+            if (!hapticAccepted && !audioAccepted)
                 IncrementDroppedSignalCount();
+        }
+
+        private void FlushQueuedBrineHullFeedback()
+        {
+            if (!_pendingBrineHullAcousticDirty)
+                return;
+
+            _pendingBrineHullAcousticDirty = false;
+            if (!SignalBus<AcousticPingSignal>.TryPushTracked(in _pendingBrineHullAcoustic, ref s_x001DirectSignalPushDropCount_SubmarineFluidDynamics))
+                IncrementDroppedSignalCount();
+            _pendingBrineHullAcoustic = default;
         }
 
         private void ResetBrineHullState()
@@ -4484,6 +4569,10 @@ namespace Hecton8.Physics
             _isBrineSubmerged = false;
             _wasBrineSubmerged = false;
             _brineSubmersionTime = 0f;
+            _pendingBrineHullAcousticDirty = false;
+            _pendingBrineHullAcoustic = default;
+            _pendingCavitationFeedbackDirty = false;
+            _pendingCavitationFeedback = default;
         }
 
         private void ApplyAddedMassDamping()
@@ -5474,7 +5563,6 @@ namespace Hecton8.Physics
             _thermodynamicsService = null;
             _atmosphereRuntime = null;
             _resourceDistributionRuntime = null;
-            _vocalWarningSystem = null;
         }
 
         private static bool IsUnityObjectInvalid(object context)

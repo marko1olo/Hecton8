@@ -81,8 +81,6 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
             #pragma multi_compile_fog
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile _ LOD_FADE_CROSSFADE
-            #pragma multi_compile _ _MATH_LOD_LOW
-            #pragma shader_feature_local _QUALITY_MX350 _QUALITY_HIGH
             #pragma skip_variants _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -359,7 +357,6 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
 
             half ResolveBiolumTouchRipple(float3 positionWS)
             {
-            #if !defined(_MATH_LOD_LOW)
                 if (!all(isfinite(positionWS)))
                     return 0.0h;
 
@@ -390,9 +387,6 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
                 }
 
                 return rippleEnergy;
-            #else
-                return 0.0h;
-            #endif
             }
 
             Varyings Vert(Attributes input)
@@ -440,11 +434,8 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
                 half age = saturate(input.color.b);
                 float3 samplePositionWS = input.positionWS;
                 half4 maskSample = SampleFloraDominantAxis(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), samplePositionWS, baseNormalWS);
-                #if defined(_QUALITY_HIGH)
                 half parallaxQualityWeight = HectonCoralSmoothRange01(0.55h, 0.95h, HectonCoralGlobalQualityWeight());
                 samplePositionWS -= viewDirWS * ((maskSample.b - 0.5h) * _HeightScale * parallaxQualityWeight);
-                maskSample = SampleFloraDominantAxis(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), samplePositionWS, baseNormalWS);
-                #endif
 
                 half3 baseTex = SampleFloraDominantAxis(TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap), samplePositionWS, baseNormalWS).rgb;
                 // NOTE: baseNormalWS already declared at L229 - no redeclaration.

@@ -2,7 +2,7 @@
     "agent":  "1405",
     "role":  "MOBILE_GPU_COMPUTE_SHADER_THREAD_GROUP_SIZER",
     "status":  "PENDING VERIFICATION",
-    "generatedUtc":  "2026-05-28T10:31:05.4963545Z",
+    "generatedUtc":  "2026-05-28T13:13:38.7112009Z",
     "taskCount":  20,
     "targetDirectories":  [
                               "Assets/Crest/Crest/Shaders",
@@ -124,6 +124,106 @@
                                                  39,
                                                  45,
                                                  48
+                                             ],
+                                "groupshared":  "None"
+                            },
+                            {
+                                "file":  "Assets/Crest/Crest/Shaders/Resources/ClearToBlack.compute",
+                                "change":  "APEX23: legacy texture-array clear now receives physical target width/height/depth and rejects dispatch-tail lanes before RWTexture2DArray write.",
+                                "keyLines":  [
+                                                 10,
+                                                 11,
+                                                 12,
+                                                 17,
+                                                 22
+                                             ],
+                                "groupshared":  "None"
+                            },
+                            {
+                                "file":  "Assets/Crest/Crest/Shaders/Resources/ShapeCombine.compute",
+                                "change":  "APEX24: compute combine kernel now rejects physical texture tail lanes before UAV writes and clamps bilinear RWTexture2DArray neighbour coordinates before +1 samples.",
+                                "keyLines":  [
+                                                 66,
+                                                 67,
+                                                 68,
+                                                 69,
+                                                 76,
+                                                 94
+                                             ],
+                                "groupshared":  "None; no GroupMemoryBarrierWithGroupSync path changed."
+                            },
+                            {
+                                "file":  "Assets/Crest/Crest/Shaders/Resources/UpdateDynWaves.compute",
+                                "change":  "APEX24: persistent dynamic-wave sim now reads physical source dimensions as uint, rejects id.x/y/z tails, converts dimensions to float only after guard, and tightens source-slice check to \u003c depthFloat.",
+                                "keyLines":  [
+                                                 39,
+                                                 45,
+                                                 50,
+                                                 52,
+                                                 59,
+                                                 64,
+                                                 111
+                                             ],
+                                "groupshared":  "None; no barriers."
+                            },
+                            {
+                                "file":  "Assets/Crest/Crest/Shaders/Resources/UpdateFoam.compute",
+                                "change":  "APEX24: foam sim now reads physical source dimensions as uint, rejects id.x/y/z tails before samples/writes, and uses depthFloat for source-slice clamping.",
+                                "keyLines":  [
+                                                 33,
+                                                 39,
+                                                 44,
+                                                 46,
+                                                 49,
+                                                 51,
+                                                 72
+                                             ],
+                                "groupshared":  "None; no barriers."
+                            },
+                            {
+                                "file":  "Assets/Crest/Crest/Shaders/Resources/Gerstner.compute",
+                                "change":  "APEX24: Gerstner wave generation now reads physical output dimensions and rejects x/y/cascade tails plus non-positive texture resolution before structured-buffer reads and UAV writes.",
+                                "keyLines":  [
+                                                 99,
+                                                 102,
+                                                 104
+                                             ],
+                                "groupshared":  "None; Gerstner kernel has no group-shared barrier path."
+                            },
+                            {
+                                "file":  "Assets/Crest/Crest/Shaders/Resources/FFT/FFTBake.compute",
+                                "change":  "APEX25: FFT bake compute shader now queries physical input/output dimensions, rejects zero dimensions, negative _MinSlice, dispatch-tail x/y lanes, source x overflow, and source slice overflow before sampling Texture2DArray or writing RWTexture2D.",
+                                "keyLines":  [
+                                                 18,
+                                                 19,
+                                                 20,
+                                                 21,
+                                                 22,
+                                                 24,
+                                                 25,
+                                                 28,
+                                                 33,
+                                                 39,
+                                                 40,
+                                                 46
+                                             ],
+                                "groupshared":  "None"
+                            },
+                            {
+                                "file":  "Assets/Crest/Crest/Shaders/Resources/FFT/FFTSpectrum.compute",
+                                "change":  "APEX26: SpectrumInitalize and SpectrumUpdate now query physical Texture2DArray dimensions and return before tail reads/writes; cascade wavelength filter precedence is explicitly parenthesized so the largest cascade keeps all wavelengths.",
+                                "keyLines":  [
+                                                 121,
+                                                 123,
+                                                 129,
+                                                 148,
+                                                 150,
+                                                 227,
+                                                 232,
+                                                 237,
+                                                 242,
+                                                 244,
+                                                 254
                                              ],
                                 "groupshared":  "None"
                             }
@@ -261,6 +361,127 @@
                                                 1019
                                             ],
                                "change":  "Detail dispatch binds physical source capacities and optional healthy/dry noise texture flag; synchronous Matrix4x4 GetData helper is editor/development-build only and guards non-positive instanceCount before allocation; release detail storage uses deterministic CPU bake with physical array guards, world-corner seed parity, density gate, terrainNormalEffect, negative-count fail-closed return, and indexed cell iteration. APEX21 converts detail remove/offset compute paths to indexed prototype-slot traversal with bounds/null guards, clamps merge copy counts to destination capacity, and removes foreach from modified runtime modification paths. Cold persistent detail storage still allocates Matrix4x4[]/Dictionary/ComputeBuffer and is not claimed Zero-GC."
+                           },
+                           {
+                               "file":  "Assets/Crest/Crest/Scripts/Helpers/TextureArrayHelpers.cs",
+                               "keyLines":  [
+                                                20,
+                                                21,
+                                                22,
+                                                49,
+                                                60,
+                                                61,
+                                                62,
+                                                63,
+                                                68,
+                                                69,
+                                                75,
+                                                76,
+                                                77,
+                                                79,
+                                                81,
+                                                82,
+                                                83
+                                            ],
+                               "change":  "APEX23: ClearToBlack fails closed on null/non-positive targets or invalid kernel, dispatches from dst.width/dst.height/dst.volumeDepth with integer ceil group counts, and binds physical dimensions for shader tail guard."
+                           },
+                           {
+                               "file":  "Assets/Crest/Crest/Scripts/Shapes/ShapeGerstner.cs",
+                               "keyLines":  [
+                                                355,
+                                                362,
+                                                363,
+                                                364,
+                                                365,
+                                                371,
+                                                372,
+                                                381
+                                            ],
+                               "change":  "APEX24: UpdateGenerateWaves now fails closed on null/non-positive wave buffers, derives dispatch groups from _waveBuffers.width/_waveBuffers.height using integer ceil math, and dispatches physical cascade count."
+                           },
+                           {
+                               "file":  "Assets/Crest/Crest/Scripts/LodData/LodDataMgrAnimWaves.cs",
+                               "keyLines":  [
+                                                346,
+                                                349,
+                                                357,
+                                                358,
+                                                362,
+                                                363,
+                                                423,
+                                                426,
+                                                427,
+                                                428
+                                            ],
+                               "change":  "APEX24: CombinePassCompute caches DataTexture once, fails closed on null/non-positive physical dimensions, uses integer ceil group counts, and removes LodDataResolution floor dispatch."
+                           },
+                           {
+                               "file":  "Assets/Crest/Crest/Scripts/LodData/LodDataMgrPersistent.cs",
+                               "keyLines":  [
+                                                175,
+                                                176,
+                                                177,
+                                                178,
+                                                189,
+                                                190,
+                                                192,
+                                                193,
+                                                194,
+                                                195
+                                            ],
+                               "change":  "APEX24: persistent sim dispatch now derives width/height/depth from current RenderTexture, clamps CurrentLodCount to physical volumeDepth, skips invalid targets, and uses ceil groups."
+                           },
+                           {
+                               "file":  "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTBaker.cs",
+                               "keyLines":  [
+                                                77,
+                                                78,
+                                                84,
+                                                85,
+                                                93,
+                                                98,
+                                                100,
+                                                103,
+                                                112,
+                                                113,
+                                                131,
+                                                153,
+                                                160,
+                                                164,
+                                                165,
+                                                168,
+                                                170
+                                            ],
+                               "change":  "APEX25: editor FFT bake now rejects invalid resolution/LOD/frame count and missing compute shader, dispatches FFTBake by physical RenderTexture dimensions using integer ceil groups, and releases CommandBuffer/temporary textures in finally. This is editor-only cold bake code and is not claimed Zero-GC."
+                           },
+                           {
+                               "file":  "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs",
+                               "keyLines":  [
+                                                24,
+                                                25,
+                                                95,
+                                                97,
+                                                132,
+                                                250,
+                                                257,
+                                                265,
+                                                273,
+                                                299,
+                                                330,
+                                                481,
+                                                486,
+                                                495,
+                                                502
+                                            ],
+                               "change":  "APEX27: FFT runtime resolution is clamped to supported 16..512 power-of-two range before hashing/constructor reuse; missing FFT compute resources fail closed; DispatchFFT rejects unsupported resolution before kernelOffset math, preventing invalid kernel indexes beyond the SIZE=512 shader variants."
+                           },
+                           {
+                               "file":  "Assets/Crest/Crest/Scripts/Shapes/FFT/ShapeFFT.cs",
+                               "keyLines":  [
+                                                59,
+                                                60
+                                            ],
+                               "change":  "APEX27: ShapeFFT inspector/runtime validation now caps MaximumResolution at FFTCompute.MAX_SUPPORTED_RESOLUTION instead of int.MaxValue, matching the available FFTCompute.compute kernels."
                            }
                        ],
     "algorithmProof":  {
@@ -736,6 +957,93 @@
                                                                        },
                                                    "evidenceClass":  "STATIC_SOURCE",
                                                    "note":  "APEX22 adds Manager XR args hot range to APEX21 scan; TreeManager instanceCount \u003c= 0 guard is cold setup and not claimed hot Zero-GC."
+                                               },
+                        "apex23HotRangeScan":  {
+                                                   "range":  "Assets/Crest/Crest/Scripts/Helpers/TextureArrayHelpers.cs:47-85",
+                                                   "lines":  39,
+                                                   "newReference":  0,
+                                                   "stringFormat":  0,
+                                                   "toString":  0,
+                                                   "foreach":  0,
+                                                   "linq":  0,
+                                                   "command":  "single-range PowerShell regex scan over ClearToBlack method"
+                                               },
+                        "apex24HotRangeScan":  {
+                                                   "evidenceClass":  "STATIC_SOURCE_TEXT_RANGE_SCAN",
+                                                   "ranges":  [
+                                                                  {
+                                                                      "toString":  0,
+                                                                      "path":  "Assets/Crest/Crest/Scripts/Shapes/ShapeGerstner.cs",
+                                                                      "newReference":  0,
+                                                                      "stringFormat":  0,
+                                                                      "foreach":  0,
+                                                                      "startLine":  355,
+                                                                      "lines":  27,
+                                                                      "endLine":  381,
+                                                                      "linq":  0
+                                                                  },
+                                                                  {
+                                                                      "toString":  0,
+                                                                      "path":  "Assets/Crest/Crest/Scripts/LodData/LodDataMgrAnimWaves.cs",
+                                                                      "newReference":  0,
+                                                                      "stringFormat":  0,
+                                                                      "foreach":  0,
+                                                                      "startLine":  346,
+                                                                      "lines":  85,
+                                                                      "endLine":  430,
+                                                                      "linq":  0
+                                                                  },
+                                                                  {
+                                                                      "toString":  0,
+                                                                      "path":  "Assets/Crest/Crest/Scripts/LodData/LodDataMgrPersistent.cs",
+                                                                      "newReference":  0,
+                                                                      "stringFormat":  0,
+                                                                      "foreach":  0,
+                                                                      "startLine":  175,
+                                                                      "lines":  21,
+                                                                      "endLine":  195,
+                                                                      "linq":  0
+                                                                  }
+                                                              ],
+                                                   "totalLines":  133,
+                                                   "forbiddenCounts":  {
+                                                                           "toString":  0,
+                                                                           "newReference":  0,
+                                                                           "stringFormat":  0,
+                                                                           "foreach":  0,
+                                                                           "linq":  0
+                                                                       },
+                                                   "command":  "PowerShell regex scan over APEX24 modified hot dispatch windows",
+                                                   "caveat":  "STATIC_SOURCE only; Unity Profiler/GCMonitor not executed."
+                                               },
+                        "apex26HotRangeScan":  {
+                                                   "evidenceClass":  "STATIC_SOURCE_TEXT_RANGE_SCAN",
+                                                   "range":  "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs:397-438",
+                                                   "lines":  42,
+                                                   "newTokens":  1,
+                                                   "newReference":  0,
+                                                   "valueTypeNewDisclosure":  "new Vector2 at FFTCompute.cs:410 is UnityEngine.Vector2 struct construction; no managed reference allocation is introduced by APEX26.",
+                                                   "stringFormat":  0,
+                                                   "toString":  0,
+                                                   "foreach":  0,
+                                                   "linq":  0
+                                               },
+                        "apex27HotRangeScan":  {
+                                                   "evidenceClass":  "STATIC_SOURCE_TEXT_RANGE_SCAN",
+                                                   "ranges":  [
+                                                                  "FFTCompute.cs:20-100",
+                                                                  "FFTCompute.cs:123-138",
+                                                                  "FFTCompute.cs:244-278",
+                                                                  "FFTCompute.cs:287-306",
+                                                                  "FFTCompute.cs:470-502"
+                                                              ],
+                                                   "lines":  185,
+                                                   "newReference":  0,
+                                                   "stringFormat":  0,
+                                                   "toString":  0,
+                                                   "foreach":  0,
+                                                   "linq":  0,
+                                                   "note":  "Covers APEX27 supported-resolution clamp, null shader guard, post-init fail-closed return, and DispatchFFT supported-resolution guard. Cold pre-existing texture/dictionary allocations outside this scan are not claimed hot Zero-GC."
                                                }
                     },
     "dataSovereignty":  {
@@ -787,17 +1095,27 @@
                                                "TryAcquireWriteLock":  0,
                                                "ReleaseWriteLock":  0,
                                                "conclusion":  "N/A: APEX21 changed vendor ComputeBuffer/ComputeShader guard logic and editor static tests only; no GlobalDataVault migration or write lock acquired."
+                                           },
+                            "apex24Scan":  {
+                                               "GlobalDataVault":  0,
+                                               "BufferID":  0,
+                                               "TryAcquireWriteLock":  0,
+                                               "ReleaseWriteLock":  0,
+                                               "HomeostasisBrain":  0,
+                                               "GlobalQualityWeight":  0,
+                                               "binaryQualitySwitchTokens":  0,
+                                               "conclusion":  "N/A: APEX24 changed Crest vendor dispatch dimensions and shader tail guards only; no GlobalDataVault migration or write lock acquired."
                                            }
                         },
     "cinematicCheatAndScalability":  {
                                          "physicalSimulationAdded":  false,
-                                         "cheatUsed":  "Occupancy-width reduction, scalar uniform binding, fail-closed source/output capacity guards, debug-readback stripping, deterministic CPU detail bake hash fallback, and optional noise texture sampling gate only. Valid vendor visuals are preserved; invalid metadata fails closed.",
+                                         "cheatUsed":  "Occupancy-width reduction, scalar uniform binding, fail-closed source/output capacity guards, debug-readback stripping, deterministic CPU detail bake hash fallback, optional noise texture sampling gate, and APEX24 Crest physical-dimension tail rejection/clamped texture-neighbour sampling only. Valid vendor visuals are preserved; invalid metadata fails closed.",
                                          "globalQualityWeightIntegration":  "NOT ADDED / EXPLICITLY NOT CLAIMED: modified Crest/GPUInstancer vendor files contain no HomeostasisBrain.GlobalQualityWeight references. Reason: shader numthreads and dispatch group math are static contracts; continuous quality must scale workload/cadence/density from a first-party owner route, not desynchronize C# dispatch dimensions from HLSL numthreads. No binary isLowEnd branch was introduced.",
                                          "binaryLowEndSwitchesIntroduced":  false,
-                                         "lowMiddleHighUltra":  "Low: legal 128/256 caps, scalar uniforms, fail-closed tails/source capacities. Middle: preserved output with safer occupancy. High: preserved density/resolution. Ultra: first-party quality owners can spend saved stability budget on density/cadence; no illegal group width is reintroduced."
+                                         "lowMiddleHighUltra":  "Low: legal 128/256 caps, scalar uniforms, physical-dimension ceil dispatch, fail-closed tails/source capacities. Middle: preserved output with safer occupancy and non-multiple texture safety. High: preserved density/resolution. Ultra: first-party quality owners can spend saved stability budget on density/cadence; no illegal group width is reintroduced."
                                      },
     "compilation":  {
-                        "dotnetBuild":  "SUCCEEDED_CLI_COMPILE",
+                        "dotnetBuild":  "APEX27_BLOCKED_BY_CONTENTION_AFTER_APEX26_GREEN",
                         "prePatchAttempt":  {
                                                 "preflightPath":  "Docs/AgentLogs/Build_1405_Preflight.json",
                                                 "summaryPath":  "Docs/AgentLogs/Build_1405_Final.summary.json",
@@ -812,13 +1130,13 @@
                                                "observedCpuLoadPercent":  49,
                                                "compilerProcessCount":  0
                                            },
-                        "rule":  "APEX19 build launched once after preflight CPU samples [1,23,18] and zero active dotnet/csc/VBCSCompiler processes.",
+                        "rule":  "APEX27 did not launch dotnet build: CPU samples [93,71,53,79,99] and active compiler processes were observed. Last successful CLI compile remains APEX26.",
                         "actualBuildAttempt":  {
                                                    "launched":  false,
                                                    "reason":  "BLOCKED_BY_CONTENTION",
-                                                   "cpuLoadPercent":  71,
-                                                   "compilerProcessCount":  0,
-                                                   "preflightPath":  "Docs/AgentLogs/Build_1405_Actual_Preflight.json"
+                                                   "cpuLoadPercent":  99,
+                                                   "compilerProcessCount":  3,
+                                                   "preflightPath":  "Docs/AgentLogs/Build_1405_Apex27.summary.json"
                                                },
                         "apex2Preflight":  {
                                                "launched":  false,
@@ -1183,12 +1501,130 @@
                                        "launched":  false,
                                        "artifact":  "Docs/AgentLogs/Build_1405_Apex22.summary.json",
                                        "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
-                                   }
+                                   },
+                        "apex23Build":  {
+                                            "timestampUtc":  "2026-05-28T11:00:13.0688114Z",
+                                            "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                            "preflightCpuSamplesPercent":  [
+                                                                               48
+                                                                           ],
+                                            "preflightCompilerProcessCount":  0,
+                                            "launched":  true,
+                                            "exitCode":  0,
+                                            "warnings":  0,
+                                            "errors":  0,
+                                            "elapsed":  "00:00:26.64",
+                                            "outputAssembly":  "Temp/CodexBuild/Assembly-CSharp/Assembly-CSharp.dll",
+                                            "summaryPath":  "Docs/AgentLogs/Build_1405_Apex23.summary.json",
+                                            "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
+                                        },
+                        "apex24Preflight":  {
+                                                "timestampUtc":  "2026-05-28T11:33:07.0689610Z",
+                                                "status":  "BLOCKED_BY_CONTENTION",
+                                                "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                                "cpuLoadSamplesPercent":  [
+                                                                              73,
+                                                                              100
+                                                                          ],
+                                                "cpuLoadMaxPercent":  100,
+                                                "compilerProcessCount":  2,
+                                                "compilerProcesses":  [
+                                                                          {
+                                                                              "ProcessName":  "dotnet",
+                                                                              "CPU":  59.3125,
+                                                                              "StartTimeLocal":  "2026-05-28T15:23:29+04:00",
+                                                                              "Id":  60556
+                                                                          },
+                                                                          {
+                                                                              "ProcessName":  "dotnet",
+                                                                              "CPU":  157.328125,
+                                                                              "StartTimeLocal":  "2026-05-28T15:30:26+04:00",
+                                                                              "Id":  6088
+                                                                          }
+                                                                      ],
+                                                "launched":  false,
+                                                "reason":  "BLOCKED_BY_CONTENTION",
+                                                "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
+                                            },
+                        "apex25Preflight":  {
+                                                "timestampUtc":  "2026-05-28T11:55:41.6326623Z",
+                                                "status":  "BLOCKED_BY_CONTENTION",
+                                                "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                                "cpuLoadSamplesPercent":  [
+                                                                              88,
+                                                                              88
+                                                                          ],
+                                                "cpuLoadMaxPercent":  88,
+                                                "compilerProcessCount":  2,
+                                                "compilerProcesses":  [
+                                                                          {
+                                                                              "ProcessName":  "dotnet",
+                                                                              "CPU":  340.765625,
+                                                                              "StartTimeLocal":  "2026-05-28T15:48:46+04:00",
+                                                                              "Id":  50672
+                                                                          },
+                                                                          {
+                                                                              "ProcessName":  "VBCSCompiler",
+                                                                              "CPU":  44.15625,
+                                                                              "StartTimeLocal":  "2026-05-28T15:50:41+04:00",
+                                                                              "Id":  28580
+                                                                          }
+                                                                      ],
+                                                "launched":  false,
+                                                "reason":  "BLOCKED_BY_CONTENTION",
+                                                "summaryPath":  "Docs/AgentLogs/Build_1405_Apex25.summary.json",
+                                                "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
+                                            },
+                        "apex26Build":  {
+                                            "timestampUtc":  "2026-05-28T12:13:32.0025242Z",
+                                            "status":  "SUCCEEDED",
+                                            "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                            "preflightCpuSamplesPercent":  [
+                                                                               23
+                                                                           ],
+                                            "preflightCompilerProcessCount":  0,
+                                            "launched":  true,
+                                            "exitCode":  0,
+                                            "warnings":  0,
+                                            "errors":  0,
+                                            "elapsed":  "00:00:19.95",
+                                            "outputAssembly":  "Temp/CodexBuild/Assembly-CSharp/Assembly-CSharp.dll",
+                                            "summaryPath":  "Docs/AgentLogs/Build_1405_Apex26.summary.json",
+                                            "summarySha256":  "932c6bc8f9bf010896b023a48678d9b26d407d58eb70b362f6daad1a33c5c825",
+                                            "rule":  "Build launched once only because CPU \u003c= 50 and no dotnet/csc/VBCSCompiler processes were active."
+                                        },
+                        "apex27Preflight":  {
+                                                "timestampUtc":  "2026-05-28T13:09:57.9815870Z",
+                                                "status":  "BLOCKED_BY_CONTENTION",
+                                                "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                                "cpuLoadSamplesPercent":  [
+                                                                              93,
+                                                                              71,
+                                                                              53,
+                                                                              79,
+                                                                              99
+                                                                          ],
+                                                "cpuLoadMaxPercent":  93,
+                                                "compilerProcessCount":  1,
+                                                "compilerProcesses":  [
+                                                                          "dotnet pid 11928 CPU 42.9375 StartTime 2026-05-28T17:07:25+04:00",
+                                                                          "dotnet pid 15860 CPU 15.546875 StartTime 2026-05-28T17:12:43+04:00",
+                                                                          "dotnet pid 21428 CPU 39.859375 StartTime 2026-05-28T17:17:22+04:00",
+                                                                          "dotnet pid 21428 CPU 327.171875 StartTime 2026-05-28T17:17:22+04:00",
+                                                                          "csc pid 36376 CPU 95.828125 StartTime 2026-05-28T17:29:38+04:00",
+                                                                          "dotnet pid 37700 CPU 63.4375 StartTime 2026-05-28T17:29:20+04:00",
+                                                                          "dotnet pid 67192 CPU 34.09375 StartTime 2026-05-28T17:29:10+04:00"
+                                                                      ],
+                                                "launched":  false,
+                                                "summaryPath":  "Docs/AgentLogs/Build_1405_Apex27.summary.json",
+                                                "summarySha256":  "a98be4d985cf8e9e5a053b247c237152375d98a5a30a9ba88d4a99faf135b22d",
+                                                "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
+                                            }
                     },
     "tests":  {
                   "file":  "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs",
-                  "added":  "Crest512FftTwoElementsPerThread_MatchesSingleElementReference; TwoDimensionalFrameCountMultiplier_UsesLongDenominator; SetDataPartialKernel_UsesExplicitSourceAndDestinationCapacityGuards; BufferToTextureKernel_UsesCapacityAndIntegerIndexGuards; RuntimeCullingDispatch_ClampsLogicalInstanceCountToBufferCapacity; RuntimeSubmitPaths_ClampAppendTextureAndArgsCapacity with APEX14 cross-fade append full-capacity guard assertions; RenderedAmountGpuReadback_IsDebugBuildOnly; GrassInstantiationKernel_GuardsSourceBufferCapacities; ArgsBufferDoubleInstanceCount_GuardsPhysicalArgsBufferLength; InterlockedCapacityOverflow_RollsBackCounterBeforeReturn; DetailInstanceBake_AvoidsSynchronousGpuReadbackInReleaseRoute with no foreach in the modified route; CpuDetailFallback_UsesDeterministicShaderStyleRandomAndDensityGate with negative-count fail-closed proof; ReduceTextureDispatch_ClampsMipDimensionsBeforeDispatch; APEX19 DetailInstanceBake_AvoidsSynchronousGpuReadbackInReleaseRoute now asserts the editor/development helper rejects instanceCount \u003c= 0 before new Matrix4x4[instanceCount]; GrassInstantiationKernel_GuardsSourceBufferCapacities now asserts hasHealthyDryNoiseTexture optional sample gate and deterministic randomScale fallback; DetailComputeBake_UsesPhysicalDetailMapCapacity; CpuCopyHelpers_ClampSourceAndDestinationCapacityBeforeDispatch; DetailRuntimeModificationPaths_UseIndexedPrototypeSlotsAndFailClosedDispatch; APEX22 ArgsBufferDoubleInstanceCount_GuardsPhysicalArgsBufferLength now asserts safeArgsEntryCount and no stale GetComputeThreadGroupCount(count) dispatch; static unsafe-pattern scan asserts no stale count/==0 matches in Crest/GPUInstancer domain",
-                  "execution":  "PENDING VERIFICATION: Unity EditMode tests were not executed after APEX22 because build/test gate sampled CPU 77 with active csc pid 11072 and dotnet pid 43068. APEX19 CLI C# compile succeeded before APEX20/APEX21/APEX22 edits."
+                  "added":  "Crest512FftTwoElementsPerThread_MatchesSingleElementReference; TwoDimensionalFrameCountMultiplier_UsesLongDenominator; SetDataPartialKernel_UsesExplicitSourceAndDestinationCapacityGuards; BufferToTextureKernel_UsesCapacityAndIntegerIndexGuards; RuntimeCullingDispatch_ClampsLogicalInstanceCountToBufferCapacity; RuntimeSubmitPaths_ClampAppendTextureAndArgsCapacity with APEX14 cross-fade append full-capacity guard assertions; RenderedAmountGpuReadback_IsDebugBuildOnly; GrassInstantiationKernel_GuardsSourceBufferCapacities; ArgsBufferDoubleInstanceCount_GuardsPhysicalArgsBufferLength; InterlockedCapacityOverflow_RollsBackCounterBeforeReturn; DetailInstanceBake_AvoidsSynchronousGpuReadbackInReleaseRoute with no foreach in the modified route; CpuDetailFallback_UsesDeterministicShaderStyleRandomAndDensityGate with negative-count fail-closed proof; ReduceTextureDispatch_ClampsMipDimensionsBeforeDispatch; APEX19 DetailInstanceBake_AvoidsSynchronousGpuReadbackInReleaseRoute now asserts the editor/development helper rejects instanceCount \u003c= 0 before new Matrix4x4[instanceCount]; GrassInstantiationKernel_GuardsSourceBufferCapacities now asserts hasHealthyDryNoiseTexture optional sample gate and deterministic randomScale fallback; DetailComputeBake_UsesPhysicalDetailMapCapacity; CpuCopyHelpers_ClampSourceAndDestinationCapacityBeforeDispatch; DetailRuntimeModificationPaths_UseIndexedPrototypeSlotsAndFailClosedDispatch; APEX22 ArgsBufferDoubleInstanceCount_GuardsPhysicalArgsBufferLength now asserts safeArgsEntryCount and no stale GetComputeThreadGroupCount(count) dispatch; static unsafe-pattern scan asserts no stale count/==0 matches in Crest/GPUInstancer domain; CrestLegacyClearToBlack_UsesPhysicalTextureDimensionsAndTailGuard; CrestRuntimeDispatches_UsePhysicalDimensionsAndShaderTailGuards; CrestFftSpectrum_UsesCeilDispatchAndShaderTailGuard; APEX27 CrestFftSpectrum_UsesCeilDispatchAndShaderTailGuard now asserts FFT supported-resolution clamp, null shader fail-closed route, and ShapeFFT max cap.",
+                  "execution":  "APEX27 static source test assertions were added but not executed in Unity Test Runner. C# build was not launched after APEX27 because CPU samples were [93,71,53,79,99] and compiler pids 11928/15860/21428/36376/37700/67192 were active during preflight checks. Last successful CLI compile remains APEX26."
               },
     "verificationLimits":  [
                                "No Unity shader import run",
@@ -1221,7 +1657,26 @@
                              "Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs":  "a7ca67d4ba7e6c4f89b698a2f550afd56e9f86de33db96c2182ebdb14f2e634a",
                              "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs":  "eff409a10dd8998b4b1214e2ef7998f26ecaac3ce915dfa5938e28a63f0a7c5f",
                              "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs":  "6da746313c9478e203c8f90d77dcf6f726f9f0d97c40f01638da7adc731ee514",
-                             "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs":  "2a3adfda70413fa9cc082866174fd1008ec6cc5e508257c2c53e20e91df4ed7d"
+                             "Assets/Crest/Crest/Shaders/Resources/ClearToBlack.compute":  "3110d2b4402d1b8f0e587639765ad09dc4248429c7c52629ecec4825112acf84",
+                             "Assets/Crest/Crest/Scripts/Helpers/TextureArrayHelpers.cs":  "8d1fd2e7bc0937db9572d8f0fdfc3e847530a9172dd3746fd8c9e9649d507b25",
+                             "Docs/AgentLogs/Build_1405_Apex23.summary.json":  "f5a2785d5ab5345507275dbd9343d7727eca56f7de2b74ca4e63ed4da45e9976",
+                             "Assets/Crest/Crest/Scripts/Shapes/ShapeGerstner.cs":  "5d34bdec6a50118693dce21a8d298ba621ef30d818f71724248e845d819a643b",
+                             "Assets/Crest/Crest/Scripts/LodData/LodDataMgrAnimWaves.cs":  "b90e6fb6c072f6773cca26bcf86fa178c338bd855b13ff34ef4d27f968bc0106",
+                             "Assets/Crest/Crest/Scripts/LodData/LodDataMgrPersistent.cs":  "02ce6f2b0d5888d53637f7b977d9560044c98bc032e66dd9ffb159dc1e77719f",
+                             "Assets/Crest/Crest/Shaders/Resources/ShapeCombine.compute":  "3acb671d6ab6bc9f0298661a2315d572cafe585c79cb8f962fd99c9ba9ffb360",
+                             "Assets/Crest/Crest/Shaders/Resources/UpdateDynWaves.compute":  "df5350bc49f410886e36dcd5f8b6f96df657b9022d039bc2cdc38daf85180a08",
+                             "Assets/Crest/Crest/Shaders/Resources/UpdateFoam.compute":  "0b95ca2ccc790e1d6c6c0a53ca852f4f49106f0f6a1a2c808fafaff6acb3215f",
+                             "Assets/Crest/Crest/Shaders/Resources/Gerstner.compute":  "cd38b2b67a47ba8ef7a925d5d9e720f89e437b32fad887d4af98f5fbf56ab88c",
+                             "Docs/AgentLogs/Build_1405_Apex24.summary.json":  "2d9391117e0756e6ef551f1a02bdcfd9120a089a9027ae45f5d25bb5d512bfdb",
+                             "Assets/Crest/Crest/Shaders/Resources/FFT/FFTBake.compute":  "29ec79821615ecd39600741b6f0d30293ff772abeaf5f4d802b2b289e6260152",
+                            "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTBaker.cs":  "179378f83e8e68c243d9f29c86657a486dbcfdc2461882e7dc5d6284586081e1",
+                             "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs":  "956f3c5f13988ac82c809780d3484c2efa129c2df1a26ae76cb78fe5246c8ab8",
+                             "Docs/AgentLogs/Build_1405_Apex25.summary.json":  "7242471c9c6ded94feeadbd62742d04bd3ec45e984abcb10d268504f7172bb47",
+                             "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs":  "aa17d3cb1223f11e909d96c48891de6c95331512f6fd2b333a61a2513830e8be",
+                             "Assets/Crest/Crest/Shaders/Resources/FFT/FFTSpectrum.compute":  "9930527ec4ae93721ea113ff988493ed68bed9e83ae8bc3f3ee8366db4511fd0",
+                             "Docs/AgentLogs/Build_1405_Apex26.summary.json":  "932c6bc8f9bf010896b023a48678d9b26d407d58eb70b362f6daad1a33c5c825",
+                             "Assets/Crest/Crest/Scripts/Shapes/FFT/ShapeFFT.cs":  "92adcd4e04b2b7321d46c3ae1fc1c8c1b7a0cc2463dffbd0e3aae8133443b42e",
+                            "Docs/AgentLogs/Build_1405_Apex27.summary.json":  "a98be4d985cf8e9e5a053b247c237152375d98a5a30a9ba88d4a99faf135b22d"
                          },
     "apex6PolishFindings":  {
                                 "grassHeightMapBounds":  "FIXED: CSInstancedRenderingGrassInstantiationKernel.compute no longer contains raw heightMapData[heightIndex + 1]; base/right/top/rightTop height-map reads are fail-closed via FixBounds after dimension casts.",
@@ -1347,7 +1802,26 @@
                                                        "pattern":  "GetComputeThreadGroupCount(count), new ComputeBuffer(detailMapSize*detailMapSize), bufferSize == 0, instanceCount == 0, DataVault/quality switch tokens",
                                                        "result":  "NO_MATCH",
                                                        "command":  "rg -n \"GetComputeThreadGroupCount\\\\(count\\\\), 1, 1\\\\);|new ComputeBuffer\\\\(detailMapSize \\\\* detailMapSize|bufferSize == 0|instanceCount == 0|GlobalDataVault|BufferID|TryAcquireWriteLock|ReleaseWriteLock|HomeostasisBrain|GlobalQualityWeight|isLowEnd|LowEnd|HighEnd|Ultra\" Assets/GPUInstancer Assets/Crest -g \"*.cs\" -g \"*.compute\" -g \"*.hlsl\" -S"
-                                                   }
+                                                   },
+                       "apex23LegacyClearScan":  {
+                                                     "stalePattern":  "OceanRenderer.Instance.LodDataResolution / LodDataMgr.THREAD_GROUP_SIZE_X/Y inside TextureArrayHelpers.ClearToBlack",
+                                                     "result":  "NO_MATCH",
+                                                     "proof":  "rg output contains only new _CrestClearWidth/_Height/_Depth and groupsX/groupsY evidence; stale floor dispatch pattern absent",
+                                                     "oversizedPatternResult":  "NO_MATCH for [numthreads(512|1024), TX/TY/GPUI_THREADS 512/1024, and stale legacy clear floor dispatch across Crest/GPUInstancer"
+                                                 },
+                       "apex26FftSpectrumScan":  {
+                                                     "staleFftSpectrumFloorDispatch":  "NO_MATCH for _resolution / 8 in FFTCompute InitializeSpectrum/UpdateSpectrum dispatch windows",
+                                                     "oversizedThreadGroups":  "NO_MATCH for literal [numthreads(512|1024)] or TX/TY/GPUI_THREADS 512/1024 across Crest/GPUInstancer shader domain",
+                                                     "hlslBalance":  "FFTSpectrum.compute braces 19/19, parens 105/105, brackets 9/9",
+                                                     "dataSovereigntyAndQualityTokens":  "NO_MATCH in APEX26 touched files for GlobalDataVault, BufferID, TryAcquireWriteLock, ReleaseWriteLock, HomeostasisBrain, GlobalQualityWeight, isLowEnd/LowEnd"
+                                                 },
+                       "apex27FftResolutionClampScan":  {
+                                                            "staleMaxResolution":  "NO_MATCH for ShapeFFT MaximumResolution =\u003e int.MaxValue",
+                                                            "unsupportedResolutionClamp":  "Line proof FFTCompute.cs:24/25/250-265/273/330/481 and ShapeFFT.cs:60",
+                                                            "staleFftSpectrumFloorDispatch":  "NO_MATCH for executable _resolution / 8 dispatch in FFTCompute spectrum paths; only ShapeFFT comment and static test negative assertions remain.",
+                                                            "dataSovereigntyAndQualityTokens":  "NO_MATCH in APEX27 touched files for GlobalDataVault, BufferID, TryAcquireWriteLock, ReleaseWriteLock, HomeostasisBrain, GlobalQualityWeight, isLowEnd/LowEnd",
+                                                            "diffCheck":  "git diff --check returned exit 0 with LF-\u003eCRLF warnings only"
+                                                        }
                    },
     "apex13PolishFindings":  {
                                  "appendBufferCapacity":  "FIXED: visibility dispatch count is clamped by every target LOD append buffer count before AppendStructuredBuffer writes are issued.",
@@ -1426,5 +1900,163 @@
                                  "unsafePatternScan":  "NO_MATCH for stale GetComputeThreadGroupCount(count), bufferSize == 0, instanceCount == 0, oversized detailMap ComputeBuffer allocation, DataVault/quality tokens across Crest/GPUInstancer code.",
                                  "zeroGcEvidence":  "APEX22 hot-range scan: 1074 lines, newReference=0, string.Format=0, .ToString=0, foreach=0, LINQ=0.",
                                  "build":  "BLOCKED_BY_CONTENTION: CPU 77 with active csc pid 11072 and dotnet pid 43068. No dotnet build launched."
+                             },
+    "apex23PolishFindings":  {
+                                 "crestLegacyClearToBlack":  "FIXED: legacy clear path no longer uses OceanRenderer.Instance.LodDataResolution floor division; it dispatches from physical dst dimensions with ceil coverage and shader-side tail return.",
+                                 "zeroGcEvidence":  "TextureArrayHelpers.cs:47-85 static scan: 39 lines, newReference=0, string.Format=0, .ToString=0, foreach=0, LINQ=0.",
+                                 "build":  "SUCCEEDED: preflight CPU 48, compiler process count 0; dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal completed with 0 warnings and 0 errors in 00:00:26.64.",
+                                 "evidence":  "Lines: TextureArrayHelpers.cs:20-22/49/60-69/75-83; ClearToBlack.compute:10-17/22; ComputeDispatchSizingEditTests.cs:377-399.",
+                                 "residualRisk":  "PENDING VERIFICATION: Unity shader import, EditMode test execution, player runtime, profiler/GCMonitor, and RenderDoc/GPU capture were not run."
+                             },
+    "apex24PolishFindings":  {
+                                 "status":  "PENDING VERIFICATION",
+                                 "whatWasWrong":  "Crest Gerstner, animated-wave combine, and persistent sim dispatch paths still trusted LodDataResolution/exact multiples or physical texture parity, while ShapeCombine/UpdateDynWaves/UpdateFoam/Gerstner lacked physical-dimension tail guards for ceil dispatch and non-multiple RenderTexture dimensions.",
+                                 "whatWasDone":  [
+                                                     "ShapeGerstner.UpdateGenerateWaves now dispatches by _waveBuffers physical width/height using integer ceil groups and rejects invalid buffers.",
+                                                     "LodDataMgrAnimWaves.CombinePassCompute now dispatches by DataTexture physical width/height using integer ceil groups.",
+                                                     "LodDataMgrPersistent sim dispatch now dispatches by current target physical dimensions and clamps z dispatch to volumeDepth.",
+                                                     "ShapeCombine.compute clamps RWTexture2DArray bilinear neighbour coordinates and rejects tail lanes before UAV write.",
+                                                     "UpdateDynWaves.compute, UpdateFoam.compute, and Gerstner.compute reject physical texture tail lanes before source reads and target writes."
+                                                 ],
+                                 "evidence":  [
+                                                  "stale floor-dispatch rg scan: no matches in the three patched C# files",
+                                                  "oversized numthreads/macro scan: no matches in Crest/GPUInstancer",
+                                                  "shader brace/paren/bracket balance: all four patched compute files balanced",
+                                                  "APEX24 hot-range Zero-GC scan: 133 lines, all forbidden counts 0",
+                                                  "DataVault/quality-token scan over patched files: no matches"
+                                              ],
+                                 "build":  {
+                                               "cpuLoadSamplesPercent":  [
+                                                                             73,
+                                                                             100
+                                                                         ],
+                                               "status":  "BLOCKED_BY_CONTENTION",
+                                               "compilerProcessCount":  2,
+                                               "artifact":  "Docs/AgentLogs/Build_1405_Apex24.summary.json",
+                                               "compilerProcesses":  [
+                                                                         "dotnet pid 60556 CPU 59.3125",
+                                                                         "dotnet pid 6088 CPU 157.328125"
+                                                                     ]
+                                           },
+                                 "residualRisk":  "Unity shader import, EditMode test execution, PlayMode/profiler/GCMonitor, RenderDoc/GPU capture, and target-device validation remain PENDING VERIFICATION."
+                             },
+    "apex25PolishFindings":  {
+                                 "status":  "PENDING VERIFICATION",
+                                 "whatWasWrong":  "Crest editor FFT baker still used bakedWaves.width / 8 and bakedWaves.height / 8 floor dispatch, while FFTBake.compute wrote _OutDisplacements[id.xy] and sampled _InFFTWaves without physical output tail, source x, negative _MinSlice, or source slice guards. The same editor bake allocated a CommandBuffer and temporary textures without finally cleanup.",
+                                 "whatWasDone":  [
+                                                     "FFTBaker.BakeFFT now rejects invalid fftWaves/resolution/lodCount/frameCount and missing FFT bake compute shader before dispatch setup.",
+                                                     "FFTBaker.BakeFFT now computes groupsX/groupsY as (physical dimension + 7) / 8 and dispatches with those ceil groups.",
+                                                     "FFTBaker.BakeFFT now releases CommandBuffer and temporary RenderTexture/Texture2D in a finally block, clearing RenderTexture.active if it still points at the bake target.",
+                                                     "FFTBake.compute now queries fftWidth/fftHeight/fftDepth/outWidth/outHeight and returns before invalid Texture2DArray sample or RWTexture2D write."
+                                                 ],
+                                 "evidence":  [
+                                                  "stale FFT bake floor-dispatch rg scan in FFTBaker.cs: no matches for bakedWaves.width / 8 or bakedWaves.height / 8",
+                                                  "HLSL brace/paren/bracket balance for FFTBake.compute: 5/5 braces, 10/10 parens, 3/3 brackets",
+                                                  "APEX24 production hot-range Zero-GC scan re-run: 133 lines, new=0, string.Format=0, .ToString=0, foreach=0, LINQ=0",
+                                                  "APEX25 editor-only cold BakeFFT disclosure scan lines 77-178: new hits at 93/97/100/109/137 and LINQ hits at 150/174/178; this path is not runtime hot and is not claimed Zero-GC",
+                                                  "DataVault/quality-token scan over APEX25 touched files: no matches"
+                                              ],
+                                 "build":  {
+                                               "status":  "BLOCKED_BY_CONTENTION",
+                                               "cpuLoadSamplesPercent":  [
+                                                                             88,
+                                                                             88
+                                                                         ],
+                                               "compilerProcessCount":  2,
+                                               "compilerProcesses":  [
+                                                                         "dotnet pid 50672 CPU 340.765625",
+                                                                         "VBCSCompiler pid 28580 CPU 44.15625"
+                                                                     ],
+                                               "artifact":  "Docs/AgentLogs/Build_1405_Apex25.summary.json"
+                                           },
+                                 "residualRisk":  "Unity shader import, EditMode execution, PlayMode/profiler/GCMonitor, RenderDoc/GPU capture, target-device validation, and current C# compilation after APEX25 remain PENDING VERIFICATION."
+                             },
+    "apex26PolishFindings":  {
+                                 "status":  "PENDING VERIFICATION",
+                                 "whatWasWrong":  "Crest FFT spectrum runtime dispatch used _resolution / 8 floor groups, while FFTSpectrum.compute read/wrote Texture2DArray IDs before physical dimension guards. SpectrumInitalize also used an \u0026\u0026/|| filter without explicit parentheses, so maxCoord \u003e= WAVE_SAMPLE_FACTOR could affect the largest cascade contrary to the comment.",
+                                 "whatWasDone":  [
+                                                     "FFTCompute.InitializeSpectrum and UpdateSpectrum now reject _resolution \u003c= 0 and dispatch with ceil groups from ((long)_resolution + 7) / 8.",
+                                                     "FFTSpectrum.compute SpectrumInitalize now queries _ResultInit dimensions and returns before any tail write/read or invalid _Size math.",
+                                                     "FFTSpectrum.compute SpectrumUpdate now queries _Init0 and all three output Texture2DArray dimensions and returns before any input read or output write.",
+                                                     "The cascade wavelength filter is parenthesized as id.z \u003c depth-1 \u0026\u0026 (low || high), preserving largest-cascade full wavelength coverage."
+                                                 ],
+                                 "zeroGcEvidence":  "FFTCompute.cs:397-438 scan: lines=42, newTokens=1, newReference=0, string.Format=0, .ToString=0, foreach=0, LINQ=0. The single new token is pre-existing/new value-type Vector2 construction.",
+                                 "dataSovereignty":  "No GlobalDataVault migration. BufferID constants=0. TryAcquireWriteLock=0. ReleaseWriteLock=0. finally lock release=N/A because no lock is acquired.",
+                                 "scalability":  "No binary quality switch and no GlobalQualityWeight misuse. APEX26 is static bounds correctness; FFT resolution/cadence quality scaling remains with first-party quality owners.",
+                                 "cinematicCheat":  "No physical simulation was expanded. The fix preserves existing FFT math and only prevents invalid lanes; it rejects over-engineered simulation changes.",
+                                 "evidence":  [
+                                                  "rg stale _resolution / 8 scan in FFTCompute.cs: no matches",
+                                                  "FFTSpectrum.compute line proof: 121/123/129/148/150/227/232/237/242/244/254",
+                                                  "HLSL balance: braces 19/19, parens 105/105, brackets 9/9",
+                                                  "DataVault/quality token scan over touched APEX26 files: no matches",
+                                                  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal: 0 warnings, 0 errors, elapsed 00:00:19.95"
+                                              ],
+                                 "build":  {
+                                               "timestampUtc":  "2026-05-28T12:13:32.0025242Z",
+                                               "status":  "SUCCEEDED",
+                                               "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                               "preflightCpuSamplesPercent":  [
+                                                                                  23
+                                                                              ],
+                                               "preflightCompilerProcessCount":  0,
+                                               "launched":  true,
+                                               "exitCode":  0,
+                                               "warnings":  0,
+                                               "errors":  0,
+                                               "elapsed":  "00:00:19.95",
+                                               "outputAssembly":  "Temp/CodexBuild/Assembly-CSharp/Assembly-CSharp.dll",
+                                               "summaryPath":  "Docs/AgentLogs/Build_1405_Apex26.summary.json",
+                                               "summarySha256":  "932c6bc8f9bf010896b023a48678d9b26d407d58eb70b362f6daad1a33c5c825",
+                                               "rule":  "Build launched once only because CPU \u003c= 50 and no dotnet/csc/VBCSCompiler processes were active."
+                                           },
+                                 "residualRisk":  "Unity shader import, Unity EditMode execution, PlayMode/profiler/GCMonitor, RenderDoc/GPU capture, and target-device validation remain PENDING VERIFICATION."
+                             },
+    "apex27PolishFindings":  {
+                                 "status":  "PENDING VERIFICATION",
+                                 "whatWasWrong":  "ShapeFFT.MaximumResolution allowed int.MaxValue even though FFTCompute.compute declares FFT kernels only through SIZE=512. A _resolution of 1024 would produce kernelOffset 14 in DispatchFFT, but the shader kernel index range ends at the 512 y-pass, so runtime could address an invalid compute kernel. Runtime FFT resource loading also had no null fail-closed route after Resources.Load.",
+                                 "whatWasDone":  [
+                                                     "FFTCompute now exposes MIN_SUPPORTED_RESOLUTION=16 and MAX_SUPPORTED_RESOLUTION=512.",
+                                                     "GenerateDisplacements and OnGenerationDataUpdated clamp resolution to the supported power-of-two range before hashing/reusing generators.",
+                                                     "FFTCompute constructor stores the clamped resolution and asserts supported power-of-two input.",
+                                                     "InitializeTextures returns before FindKernel/texture setup when FFTSpectrum or FFTCompute resources are missing, and GenerateDisplacementsInternal returns before dispatch if initialization failed.",
+                                                     "DispatchFFT returns before kernelOffset math when _resolution is unsupported.",
+                                                     "ShapeFFT.MaximumResolution now returns FFTCompute.MAX_SUPPORTED_RESOLUTION."
+                                                 ],
+                                 "zeroGcEvidence":  "APEX27 hot scan over FFTCompute supported-resolution/null-resource/dispatch guard windows: lines=185, newReference=0, string.Format=0, .ToString=0, foreach=0, LINQ=0.",
+                                 "dataSovereignty":  "No GlobalDataVault migration. BufferID constants=0. TryAcquireWriteLock=0. ReleaseWriteLock=0. finally lock release=N/A because no lock is acquired.",
+                                 "scalability":  "No binary quality switch and no GlobalQualityWeight misuse. Resolution cap is a shader-kernel contract; continuous visual scaling must happen in first-party quality owners before selecting FFT resolution.",
+                                 "cinematicCheat":  "No physical simulation was expanded. Invalid \u003e512 FFT requests are clamped to the highest supported visual path rather than attempting unsupported runtime kernel generation.",
+                                 "evidence":  [
+                                                  "ShapeFFT MaximumResolution int.MaxValue scan: no matches",
+                                                  "line proof FFTCompute.cs:24/25/95/97/132/250/257/265/273/299/330/481/486/495/502",
+                                                  "line proof ShapeFFT.cs:59-60",
+                                                  "DataVault/quality token scan over APEX27 touched files: no matches",
+                                                  "git diff --check for APEX27 touched files: exit 0 with LF-\u003eCRLF warnings only"
+                                              ],
+                                 "build":  {
+                                               "timestampUtc":  "2026-05-28T13:09:57.9815870Z",
+                                               "status":  "BLOCKED_BY_CONTENTION",
+                                               "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                               "cpuLoadSamplesPercent":  [
+                                                                             93,
+                                                                             71
+                                                                         ],
+                                               "cpuLoadMaxPercent":  93,
+                                               "compilerProcessCount":  1,
+                                               "compilerProcesses":  [
+                                                                         "dotnet pid 11928 CPU 42.9375 StartTime 2026-05-28T17:07:25+04:00",
+                                                                         "dotnet pid 15860 CPU 15.546875 StartTime 2026-05-28T17:12:43+04:00",
+                                                                         "dotnet pid 21428 CPU 39.859375 StartTime 2026-05-28T17:17:22+04:00",
+                                                                         "dotnet pid 21428 CPU 327.171875 StartTime 2026-05-28T17:17:22+04:00",
+                                                                         "csc pid 36376 CPU 95.828125 StartTime 2026-05-28T17:29:38+04:00",
+                                                                         "dotnet pid 37700 CPU 63.4375 StartTime 2026-05-28T17:29:20+04:00",
+                                                                         "dotnet pid 67192 CPU 34.09375 StartTime 2026-05-28T17:29:10+04:00"
+                                                                     ],
+                                               "launched":  false,
+                                               "summaryPath":  "Docs/AgentLogs/Build_1405_Apex27.summary.json",
+                                               "summarySha256":  "a98be4d985cf8e9e5a053b247c237152375d98a5a30a9ba88d4a99faf135b22d",
+                                               "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
+                                           },
+                                 "residualRisk":  "C# compile after APEX27 is blocked by CPU/compiler contention; Unity shader import, Unity EditMode execution, PlayMode/profiler/GCMonitor, RenderDoc/GPU capture, and target-device validation remain PENDING VERIFICATION."
                              }
 }

@@ -198,6 +198,7 @@ namespace Hecton8.Tools
 
             if (!ReadBoundVaultBuffer(
                     vault,
+                    BufferID.WfcDoorCutProgress01,
                     WfcOutpostPersistenceConstants.CellCount,
                     ref _cutProgressHandle,
                     out cutProgress01))
@@ -207,6 +208,7 @@ namespace Hecton8.Tools
 
             if (!ReadBoundVaultBuffer(
                     vault,
+                    BufferID.WfcLaserCutBlackBox,
                     BlackBoxFrameCount,
                     ref _blackBoxHandle,
                     out blackBox))
@@ -222,6 +224,7 @@ namespace Hecton8.Tools
 
         private static bool ReadBoundVaultBuffer<T>(
             IDataVault vault,
+            BufferID bufferId,
             int requiredLength,
             ref VaultGenerationHandle<T> handle,
             out NativeArray<T> buffer)
@@ -229,7 +232,7 @@ namespace Hecton8.Tools
         {
             buffer = default;
             return vault != null &&
-                   IsVaultHandleCreated(in handle) &&
+                   IsWfcVaultHandle(in handle, bufferId) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
@@ -247,7 +250,7 @@ namespace Hecton8.Tools
             if (vault == null)
                 return false;
 
-            if (IsVaultHandleCreated(in handle) &&
+            if (IsWfcVaultHandle(in handle, bufferId) &&
                 vault.TryResolveHandle(in handle, out buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)
@@ -255,10 +258,13 @@ namespace Hecton8.Tools
                 return true;
             }
 
-            if (IsVaultHandleCreated(in handle))
+            if (IsWfcVaultHandle(in handle, bufferId))
             {
-                if (handle.SystemID == (uint)SystemID.GameplayTools)
-                    vault.ReleaseBuffer(in handle);
+                vault.ReleaseBuffer(in handle);
+                handle = default;
+            }
+            else
+            {
                 handle = default;
             }
 
@@ -267,11 +273,13 @@ namespace Hecton8.Tools
                 requiredLength,
                 SystemID.GameplayTools,
                 NativeArrayOptions.ClearMemory);
-            if (!IsVaultHandleCreated(in acquired) ||
+            if (!IsWfcVaultHandle(in acquired, bufferId) ||
                 !vault.TryResolveHandle(in acquired, out buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
+                if (IsWfcVaultHandle(in acquired, bufferId))
+                    vault.ReleaseBuffer(in acquired);
                 return false;
             }
 
@@ -279,9 +287,11 @@ namespace Hecton8.Tools
             return true;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsWfcVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)SystemID.GameplayTools &&
+                   handle.Generation != 0u;
         }
 
         private static void ClearVaultHandles()
@@ -295,20 +305,19 @@ namespace Hecton8.Tools
             if (vault == null)
                 return;
 
-            ReleaseVaultHandle(vault, ref _cutProgressHandle);
-            ReleaseVaultHandle(vault, ref _blackBoxHandle);
+            ReleaseVaultHandle(vault, BufferID.WfcDoorCutProgress01, ref _cutProgressHandle);
+            ReleaseVaultHandle(vault, BufferID.WfcLaserCutBlackBox, ref _blackBoxHandle);
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        private static void ReleaseVaultHandle<T>(IDataVault vault, BufferID expectedBufferId, ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (!IsVaultHandleCreated(in handle))
+            if (!IsWfcVaultHandle(in handle, expectedBufferId))
             {
                 handle = default;
                 return;
             }
 
-            if (handle.SystemID == (uint)SystemID.GameplayTools)
-                vault.ReleaseBuffer(in handle);
+            vault.ReleaseBuffer(in handle);
             handle = default;
         }
 

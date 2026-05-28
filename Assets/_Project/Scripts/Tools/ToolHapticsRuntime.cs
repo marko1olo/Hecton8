@@ -528,7 +528,7 @@ namespace Hecton8.Tools
             if (vault == null)
                 return false;
 
-            if (IsVaultHandleCreated(in handle) &&
+            if (IsToolHapticHandle(in handle, bufferId) &&
                 vault.TryResolveHandle(in handle, out buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= BufferCapacity)
@@ -539,16 +539,22 @@ namespace Hecton8.Tools
             if (!allowCreate)
                 return false;
 
+            if (IsToolHapticHandle(in handle, bufferId))
+                vault.ReleaseBuffer(in handle);
+            handle = default;
+
             VaultGenerationHandle<HapticCommand> acquired = vault.EnsureGenerationHandle<HapticCommand>(
                 bufferId,
                 BufferCapacity,
                 SystemID.GameplayTools,
                 NativeArrayOptions.ClearMemory);
-            if (!IsVaultHandleCreated(in acquired) ||
+            if (!IsToolHapticHandle(in acquired, bufferId) ||
                 !vault.TryResolveHandle(in acquired, out buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < BufferCapacity)
             {
+                if (IsToolHapticHandle(in acquired, bufferId))
+                    vault.ReleaseBuffer(in acquired);
                 return false;
             }
 
@@ -561,9 +567,11 @@ namespace Hecton8.Tools
             return _dataVault;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsToolHapticHandle(in VaultGenerationHandle<HapticCommand> handle, BufferID expectedBufferId)
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)SystemID.GameplayTools &&
+                   handle.Generation != 0u;
         }
 
         private void EnsureBuffers()
@@ -587,14 +595,17 @@ namespace Hecton8.Tools
             if (vault == null)
                 return;
 
-            ReleaseVaultHandle(vault, ref _frontBufferHandle);
-            ReleaseVaultHandle(vault, ref _backBufferHandle);
+            ReleaseVaultHandle(vault, BufferID.ToolHapticFrontCommands, ref _frontBufferHandle);
+            ReleaseVaultHandle(vault, BufferID.ToolHapticBackCommands, ref _backBufferHandle);
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        private static void ReleaseVaultHandle(IDataVault vault, BufferID expectedBufferId, ref VaultGenerationHandle<HapticCommand> handle)
         {
-            if (!IsVaultHandleCreated(in handle))
+            if (!IsToolHapticHandle(in handle, expectedBufferId))
+            {
+                handle = default;
                 return;
+            }
 
             vault.ReleaseBuffer(in handle);
             handle = default;
@@ -858,7 +869,7 @@ namespace Hecton8.Tools
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.DataVault:
-                    RebindDataVault(currentService as IDataVault);
+                    RebindDataVault(currentService is IDataVault currentVault ? currentVault : null);
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;

@@ -21,6 +21,7 @@ namespace Hecton8.Core
     {
         private static int s_x001MemorySentinelRuntimeSignalPushDropCount;
         private const uint SystemHash = 0x53483733u; // SH73
+        private const uint PostSimulationSystemHash = 0x5348374Fu; // SH7O
         private const int MaxTargets = 8;
         private const int RollbackByteCapacity = 8192;
         private const int CsvScratchCapacity = 4096;
@@ -86,13 +87,16 @@ namespace Hecton8.Core
         private VaultGenerationHandle<MemorySentinelAupSnapshotDTO> _aupSnapshotHandle;
         private VaultGenerationHandle<byte> _csvScratchHandle;
         private FixedList128Bytes<BufferID> _lockedBuffers;
+        private SimulationPhaseSystem _simulationPhase;
+        private PostSimulationPhaseSystem _postSimulationPhase;
         private JobHandle _validationHandle;
         private long _validationScheduleTimestamp;
         private int _targetCount;
         private int _lastTelemetryIndex;
         private uint _lastBytesHashed;
         private uint _lastTelemetryFlags;
-        private bool _registeredDispatcher;
+        private bool _registeredSimulationDispatcher;
+        private bool _registeredPostSimulationDispatcher;
         private bool _jobPending;
         private bool _stateMemoryCleared;
         private bool _runtimeDefaultsWritten;
@@ -135,9 +139,7 @@ namespace Hecton8.Core
             RefreshVaultDependencyCold();
             ConfigureSignalLanes();
             TryRegisterHotSwapListener();
-
-            if (!_registeredDispatcher && GlobalRegistry.TryRegisterDispatcherSystem(this))
-                _registeredDispatcher = true;
+            RegisterDispatcherPhases();
         }
 
         private void OnDisable()
@@ -145,12 +147,7 @@ namespace Hecton8.Core
             CompleteValidationJob(forceComplete: true);
             UnlockTargetBuffers();
             TryUnregisterHotSwapListener();
-
-            if (_registeredDispatcher)
-            {
-                GlobalRegistry.UnregisterDispatcherSystem(this);
-                _registeredDispatcher = false;
-            }
+            UnregisterDispatcherPhases();
 
             if (ReferenceEquals(s_active, this))
                 s_active = null;
@@ -161,7 +158,7 @@ namespace Hecton8.Core
 
         public uint GetSystemIdHash() => SystemHash;
 
-        public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.VisualSync;
+        public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.Simulation;
 
         public byte GetBucketId() => byte.MaxValue;
 
@@ -178,28 +175,23 @@ namespace Hecton8.Core
             in DispatcherJobContext context,
             JobHandle dependsOn)
         {
-            return dependsOn;
-        }
-
-        public void PostSimulationTick(in DispatcherTimingDTO timing)
-        {
-        }
-
-        public void VisualSyncTick(in DispatcherTimingDTO timing)
-        {
             IDataVault vault = ResolveVault();
-            if (vault == null || !TryResolveVaultBuffers(vault))
-                return;
+            if (vault == null)
+                return dependsOn;
 
-            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+            uint frame = context.Frame;
             if (!CompleteValidationJob(forceComplete: false))
             {
-                RecordTelemetry(vault, frame, 0u, 0u, 0u, 0u, TelemetryFlagJobBusy, 0f);
-                return;
+                if (TryResolveVaultBuffers(vault))
+                    RecordTelemetry(vault, frame, 0u, 0u, 0u, 0u, TelemetryFlagJobBusy, 0f);
+                return JobHandle.CombineDependencies(dependsOn, _validationHandle);
             }
 
+            if (!TryResolveVaultBuffers(vault))
+                return dependsOn;
+
             if (!TryResolveRequired(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<MemorySentinelRuntimeStateDTO> runtimeArray))
-                return;
+                return dependsOn;
             MemorySentinelRuntimeStateDTO runtime = OpenRuntimeStateForOwner(runtimeArray);
             ApplyModdedGameMaskSignals(runtimeArray, ref runtime);
             float quality = ResolveGlobalQualityWeight(ref runtime);
@@ -217,12 +209,12 @@ namespace Hecton8.Core
                 !TryResolveRequired(vault, in _resultsHandle, MaxTargets, out NativeArray<MemorySentinelResultDTO> results) ||
                 !TryResolveRequired(vault, in _rollbackHandle, RollbackByteCapacity, out NativeArray<byte> rollback))
             {
-                return;
+                return dependsOn;
             }
             RefreshTargetsForOwner(vault, states, targets, rollback, frame, cadenceFrames, runtime.ModdedGameMask);
 
             if (_targetCount <= 0 || !LockTargetBuffers(vault, targets, _targetCount))
-                return;
+                return dependsOn;
 
             _validationHandle = new MemorySentinelValidationJob
             {
@@ -233,12 +225,27 @@ namespace Hecton8.Core
                 DesyncWriterBudget = SignalBus<MemoryDesyncSignal>.ParallelWriterBudget,
                 Frame = frame,
                 GlobalQualityWeight = quality
-            }.Schedule(_targetCount, DefaultTargetBatch);
+            }.Schedule(_targetCount, DefaultTargetBatch, dependsOn);
 
             _validationScheduleTimestamp = Stopwatch.GetTimestamp();
             _jobPending = true;
             _forceValidationNextFrame = false;
-            JobHandle.ScheduleBatchedJobs();
+            H8Memory.RegisterActiveJob(OwnerSystemId, _validationHandle);
+            return _validationHandle;
+        }
+
+        public void PostSimulationTick(in DispatcherTimingDTO timing)
+        {
+            if (!_jobPending)
+                return;
+
+            IDataVault vault = ResolveVault();
+            if (!CompleteValidationJob(forceComplete: false) && vault != null && TryResolveVaultBuffers(vault))
+                RecordTelemetry(vault, timing.FrameId, 0u, 0u, 0u, 0u, TelemetryFlagJobBusy, 0f);
+        }
+
+        public void VisualSyncTick(in DispatcherTimingDTO timing)
+        {
         }
 
         public static bool TryGetTunerSnapshot(out MemorySentinelTunerSnapshotDTO snapshot)
@@ -444,6 +451,51 @@ namespace Hecton8.Core
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _registeredHotSwapListener = false;
+        }
+
+        private void RegisterDispatcherPhases()
+        {
+            if (_simulationPhase == null)
+                _simulationPhase = new SimulationPhaseSystem(this);
+            if (_postSimulationPhase == null)
+                _postSimulationPhase = new PostSimulationPhaseSystem(this);
+
+            if (!_registeredSimulationDispatcher)
+            {
+                if (!GlobalRegistry.TryRegisterDispatcherSystem(_simulationPhase))
+                    return;
+                _registeredSimulationDispatcher = true;
+            }
+
+            if (_registeredPostSimulationDispatcher)
+                return;
+
+            if (GlobalRegistry.TryRegisterDispatcherSystem(_postSimulationPhase))
+            {
+                _registeredPostSimulationDispatcher = true;
+                return;
+            }
+
+            if (_registeredSimulationDispatcher)
+            {
+                GlobalRegistry.UnregisterDispatcherSystem(_simulationPhase);
+                _registeredSimulationDispatcher = false;
+            }
+        }
+
+        private void UnregisterDispatcherPhases()
+        {
+            if (_registeredPostSimulationDispatcher)
+            {
+                GlobalRegistry.UnregisterDispatcherSystem(_postSimulationPhase);
+                _registeredPostSimulationDispatcher = false;
+            }
+
+            if (_registeredSimulationDispatcher)
+            {
+                GlobalRegistry.UnregisterDispatcherSystem(_simulationPhase);
+                _registeredSimulationDispatcher = false;
+            }
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1884,6 +1936,91 @@ namespace Hecton8.Core
 
             long ticks = Stopwatch.GetTimestamp() - startTimestamp;
             return (float)(ticks * 1000.0 / Stopwatch.Frequency);
+        }
+
+        private sealed class SimulationPhaseSystem : IDispatcherSystem, IDispatcherFenceDomainProvider
+        {
+            private readonly MemorySentinelRuntime _owner;
+
+            public SimulationPhaseSystem(MemorySentinelRuntime owner)
+            {
+                _owner = owner;
+            }
+
+            public uint GetSystemIdHash() => SystemHash;
+
+            public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.Simulation;
+
+            public byte GetBucketId() => byte.MaxValue;
+
+            public int GetDependencyCount() => 0;
+
+            public uint GetDependencyHash(int dependencyIndex) => 0u;
+
+            public DispatcherFenceDomain GetFenceDomain() => DispatcherFenceDomain.Simulation;
+
+            public void PreSimulationTick(in DispatcherTimingDTO timing)
+            {
+            }
+
+            public JobHandle ScheduleSimulation(
+                in DispatcherTimingDTO timing,
+                in DispatcherJobContext context,
+                JobHandle dependsOn)
+            {
+                return _owner != null
+                    ? _owner.ScheduleSimulation(in timing, in context, dependsOn)
+                    : dependsOn;
+            }
+
+            public void PostSimulationTick(in DispatcherTimingDTO timing)
+            {
+            }
+
+            public void VisualSyncTick(in DispatcherTimingDTO timing)
+            {
+            }
+        }
+
+        private sealed class PostSimulationPhaseSystem : IDispatcherSystem
+        {
+            private readonly MemorySentinelRuntime _owner;
+
+            public PostSimulationPhaseSystem(MemorySentinelRuntime owner)
+            {
+                _owner = owner;
+            }
+
+            public uint GetSystemIdHash() => PostSimulationSystemHash;
+
+            public DispatcherPhase GetDispatcherPhase() => DispatcherPhase.PostSimulation;
+
+            public byte GetBucketId() => byte.MaxValue;
+
+            public int GetDependencyCount() => 0;
+
+            public uint GetDependencyHash(int dependencyIndex) => 0u;
+
+            public void PreSimulationTick(in DispatcherTimingDTO timing)
+            {
+            }
+
+            public JobHandle ScheduleSimulation(
+                in DispatcherTimingDTO timing,
+                in DispatcherJobContext context,
+                JobHandle dependsOn)
+            {
+                return dependsOn;
+            }
+
+            public void PostSimulationTick(in DispatcherTimingDTO timing)
+            {
+                _owner?.PostSimulationTick(in timing);
+            }
+
+            public void VisualSyncTick(in DispatcherTimingDTO timing)
+            {
+            }
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 32)]

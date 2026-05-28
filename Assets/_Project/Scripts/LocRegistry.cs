@@ -476,7 +476,6 @@ namespace Hecton.Localization
     public static class LocRegistry
     {
         private static int s_x001LocRegistrySignalPushDropCount;
-        private const string MissingKeyLiteral = "[ERR_MISSING_KEY]";
         private const int MaxDecodedGlyphs = 4096;
         private const int DecodeBufferSlotCount = 16;
         private const int DecodeBufferSlotMask = DecodeBufferSlotCount - 1;
@@ -500,7 +499,10 @@ namespace Hecton.Localization
         private static readonly uint _emergencyMockErrorHash = unchecked((uint)LocHash.Compute("ERROR"));
 
         // COLD ALLOC: char[17] — static missing localization literal — owner: LocRegistry
-        private static readonly char[] _missingKeyChars = MissingKeyLiteral.ToCharArray();
+        private static readonly char[] _missingKeyChars =
+        {
+            '[', 'E', 'R', 'R', '_', 'M', 'I', 'S', 'S', 'I', 'N', 'G', '_', 'K', 'E', 'Y', ']'
+        };
         private static readonly char[][] _decodeBufferRing = CreateDecodeBufferRing();
         private const int ErrorUtf8Length = 5;
 
@@ -662,30 +664,46 @@ namespace Hecton.Localization
                 return false;
             }
 
-            void* destination = NativeArrayUnsafeUtility.GetUnsafePtr(_stagedLocaleBytes);
-            if (destination == null)
+            bool keepStageLock = false;
+            try
             {
-                vault.TryUnlockBuffer(BabelStagedLocaleBufferId, SystemID.UI);
-                ReleaseBabelVaultHandle(vault, ref _stagedLocaleBytesHandle);
-                _stagedLocaleBytes = default;
-                RecordTelemetry(0u, 0, sourceByteLength, BabelTelemetryFlags.AsyncStageRejected);
-                return false;
+                void* destination = NativeArrayUnsafeUtility.GetUnsafePtr(_stagedLocaleBytes);
+                if (destination == null)
+                {
+                    RecordTelemetry(0u, 0, sourceByteLength, BabelTelemetryFlags.AsyncStageRejected);
+                    return false;
+                }
+
+                uint nextStageGeneration = _stagedLocaleGeneration + 1u;
+                stage.Destination = (IntPtr)destination;
+                stage.ByteLength = paddedByteLength;
+                stage.Generation = nextStageGeneration;
+                stage.BufferId = (int)BabelStagedLocaleBufferId;
+                stage.Language = (ushort)language;
+                stage.SourceByteLength = sourceByteLength;
+                RecordTelemetry(0u, paddedByteLength, sourceByteLength, BabelTelemetryFlags.AsyncStageBegin);
+
+                _stagedLocaleVault = vault;
+                _stagedLocaleByteLength = paddedByteLength;
+                _stagedLocaleSourceByteLength = sourceByteLength;
+                _stagedLocaleGeneration = nextStageGeneration;
+                _stagedLocaleLocked = true;
+                keepStageLock = true;
+                return true;
             }
-
-            _stagedLocaleVault = vault;
-            _stagedLocaleByteLength = paddedByteLength;
-            _stagedLocaleSourceByteLength = sourceByteLength;
-            _stagedLocaleGeneration++;
-            _stagedLocaleLocked = true;
-
-            stage.Destination = (IntPtr)destination;
-            stage.ByteLength = paddedByteLength;
-            stage.Generation = _stagedLocaleGeneration;
-            stage.BufferId = (int)BabelStagedLocaleBufferId;
-            stage.Language = (ushort)language;
-            stage.SourceByteLength = sourceByteLength;
-            RecordTelemetry(0u, paddedByteLength, sourceByteLength, BabelTelemetryFlags.AsyncStageBegin);
-            return true;
+            finally
+            {
+                if (!keepStageLock)
+                {
+                    vault.TryUnlockBuffer(BabelStagedLocaleBufferId, SystemID.UI);
+                    ReleaseBabelVaultHandle(vault, ref _stagedLocaleBytesHandle);
+                    _stagedLocaleLocked = false;
+                    _stagedLocaleVault = null;
+                    _stagedLocaleBytes = default;
+                    _stagedLocaleByteLength = 0;
+                    _stagedLocaleSourceByteLength = 0;
+                }
+            }
         }
 
         /// <summary>
@@ -716,90 +734,90 @@ namespace Hecton.Localization
                 return false;
             }
 
-            if (!TryResolveBabelBuffer(
-                    _stagedLocaleVault,
-                    ref _stagedLocaleBytesHandle,
-                    BabelStagedLocaleBufferId,
-                    _stagedLocaleByteLength,
-                    out NativeArray<byte> staged))
+            try
             {
-                AbortBabelDictionaryStage();
-                RecordTelemetry(0u, 0, stage.ByteLength, BabelTelemetryFlags.AsyncCommitRejected);
-                return false;
-            }
-
-            byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(staged);
-            if (basePtr == null ||
-                !TryValidateBabelDictionary(basePtr, _stagedLocaleByteLength, _stagedLocaleSourceByteLength, out H8BabelDictionaryHeader header))
-            {
-                DumpTelemetryForCorruption(0u, new int2(0, _stagedLocaleByteLength));
-                AbortBabelDictionaryStage();
-                return false;
-            }
-
-            int entryCount = (int)header.EntryCount;
-            byte* indexBase = basePtr + header.IndexOffset;
-            for (int i = 0; i < entryCount; i++)
-            {
-                H8BabelDictionaryEntry entry = UnsafeUtility.ReadArrayElement<H8BabelDictionaryEntry>(indexBase, i);
-                if (!IsValidBabelEntry(in entry, in header, _stagedLocaleSourceByteLength))
+                if (!TryResolveBabelBuffer(
+                        _stagedLocaleVault,
+                        ref _stagedLocaleBytesHandle,
+                        BabelStagedLocaleBufferId,
+                        _stagedLocaleByteLength,
+                        out NativeArray<byte> staged))
                 {
-                    DumpTelemetryForCorruption(entry.Hash, new int2((int)entry.Offset, (int)entry.Length));
-                    AbortBabelDictionaryStage();
+                    RecordTelemetry(0u, 0, stage.ByteLength, BabelTelemetryFlags.AsyncCommitRejected);
                     return false;
                 }
-            }
 
-            DisposeUtf8State();
-            AcquireUtf8IndexBuffer(math.max(1, entryCount));
-            if (!_utf8Index.IsCreated || _utf8Index.Length < math.max(1, entryCount))
-            {
-                GenerateEmergencyMockLocale();
-                AbortBabelDictionaryStage();
-                return false;
-            }
-
-            int dataBytes = (int)(header.FileByteLength - header.DataOffset);
-            AcquireUtf8ByteBuffer(math.max(1, dataBytes));
-            if (!_utf8Bytes.IsCreated || _utf8Bytes.Length < math.max(1, dataBytes))
-            {
-                DisposeUtf8State();
-                GenerateEmergencyMockLocale();
-                AbortBabelDictionaryStage();
-                return false;
-            }
-
-            if (dataBytes > 0)
-            {
-                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(_utf8Bytes);
-                UnsafeUtility.MemCpy(destination, basePtr + header.DataOffset, dataBytes);
-            }
-
-            uint previousHash = 0u;
-            for (int i = 0; i < entryCount; i++)
-            {
-                H8BabelDictionaryEntry entry = UnsafeUtility.ReadArrayElement<H8BabelDictionaryEntry>(indexBase, i);
-                int localOffset = (int)(entry.Offset - header.DataOffset);
-                if ((i > 0 && entry.Hash <= previousHash) ||
-                    !TryWriteUtf8Index(i, entry.Hash, localOffset, (int)entry.Length))
+                byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(staged);
+                if (basePtr == null ||
+                    !TryValidateBabelDictionary(basePtr, _stagedLocaleByteLength, _stagedLocaleSourceByteLength, out H8BabelDictionaryHeader header))
                 {
-                    DumpTelemetryForCorruption(entry.Hash, new int2(localOffset, (int)entry.Length));
+                    DumpTelemetryForCorruption(0u, new int2(0, _stagedLocaleByteLength));
+                    return false;
+                }
+
+                int entryCount = (int)header.EntryCount;
+                byte* indexBase = basePtr + header.IndexOffset;
+                for (int i = 0; i < entryCount; i++)
+                {
+                    H8BabelDictionaryEntry entry = UnsafeUtility.ReadArrayElement<H8BabelDictionaryEntry>(indexBase, i);
+                    if (!IsValidBabelEntry(in entry, in header, _stagedLocaleSourceByteLength))
+                    {
+                        DumpTelemetryForCorruption(entry.Hash, new int2((int)entry.Offset, (int)entry.Length));
+                        return false;
+                    }
+                }
+
+                DisposeUtf8State();
+                AcquireUtf8IndexBuffer(math.max(1, entryCount));
+                if (!_utf8Index.IsCreated || _utf8Index.Length < math.max(1, entryCount))
+                {
+                    GenerateEmergencyMockLocale();
+                    return false;
+                }
+
+                int dataBytes = (int)(header.FileByteLength - header.DataOffset);
+                AcquireUtf8ByteBuffer(math.max(1, dataBytes));
+                if (!_utf8Bytes.IsCreated || _utf8Bytes.Length < math.max(1, dataBytes))
+                {
                     DisposeUtf8State();
                     GenerateEmergencyMockLocale();
-                    AbortBabelDictionaryStage();
                     return false;
                 }
 
-                previousHash = entry.Hash;
-            }
+                if (dataBytes > 0)
+                {
+                    byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(_utf8Bytes);
+                    UnsafeUtility.MemCpy(destination, basePtr + header.DataOffset, dataBytes);
+                }
 
-            _utf8IndexLength = entryCount;
-            _utf8ByteLength = dataBytes;
-            _activeLanguage = (GameLanguage)stage.Language;
-            RecordTelemetry(0u, dataBytes, entryCount, BabelTelemetryFlags.AsyncBinarySwap);
-            PublishLanguageChangedSignal(_activeLanguage);
-            AbortBabelDictionaryStage();
-            return true;
+                uint previousHash = 0u;
+                for (int i = 0; i < entryCount; i++)
+                {
+                    H8BabelDictionaryEntry entry = UnsafeUtility.ReadArrayElement<H8BabelDictionaryEntry>(indexBase, i);
+                    int localOffset = (int)(entry.Offset - header.DataOffset);
+                    if ((i > 0 && entry.Hash <= previousHash) ||
+                        !TryWriteUtf8Index(i, entry.Hash, localOffset, (int)entry.Length))
+                    {
+                        DumpTelemetryForCorruption(entry.Hash, new int2(localOffset, (int)entry.Length));
+                        DisposeUtf8State();
+                        GenerateEmergencyMockLocale();
+                        return false;
+                    }
+
+                    previousHash = entry.Hash;
+                }
+
+                _utf8IndexLength = entryCount;
+                _utf8ByteLength = dataBytes;
+                _activeLanguage = (GameLanguage)stage.Language;
+                RecordTelemetry(0u, dataBytes, entryCount, BabelTelemetryFlags.AsyncBinarySwap);
+                PublishLanguageChangedSignal(_activeLanguage);
+                return true;
+            }
+            finally
+            {
+                AbortBabelDictionaryStage();
+            }
         }
 
         /// <summary>
@@ -1066,6 +1084,45 @@ namespace Hecton.Localization
         {
             bool found = TrackLocalizedSpanLookupForDecode(keyHash, out ReadOnlySpan<byte> utf8Bytes);
             return DecodeUtf8VisualSpan(keyHash, found, utf8Bytes, destination, out length, formatArgs, stripRichText);
+        }
+
+        /// <summary>
+        /// Decode an already-resolved localized UTF-8 entry into caller-owned storage.
+        /// </summary>
+        public static bool TryWriteKnownLocalizedSpanFromUtf8(
+            uint keyHash,
+            ReadOnlySpan<byte> utf8Bytes,
+            Span<char> destination,
+            out int length,
+            bool stripRichText = false)
+        {
+            return TryWriteKnownLocalizedSpanFromUtf8(
+                keyHash,
+                utf8Bytes,
+                destination,
+                out length,
+                default,
+                stripRichText);
+        }
+
+        /// <summary>
+        /// Decode an already-resolved localized UTF-8 entry and patch ^0..^3 numeric placeholders.
+        /// </summary>
+        public static bool TryWriteKnownLocalizedSpanFromUtf8(
+            uint keyHash,
+            ReadOnlySpan<byte> utf8Bytes,
+            Span<char> destination,
+            out int length,
+            BabelFormatArgs formatArgs,
+            bool stripRichText = false)
+        {
+            if (utf8Bytes.Length <= 0)
+            {
+                length = 0;
+                return false;
+            }
+
+            return DecodeUtf8VisualSpan(keyHash, true, utf8Bytes, destination, out length, formatArgs, stripRichText);
         }
 
         /// <summary>
@@ -1614,7 +1671,6 @@ namespace Hecton.Localization
 
             int bytesRead;
             bool scratchLocked = false;
-            bool keepScratchLocked = false;
             bool mutationGuarded = false;
             try
             {
@@ -1654,15 +1710,6 @@ namespace Hecton.Localization
 
                     bytesRead += chunk;
                 }
-
-                if (_babelVault != null)
-                {
-                    mutationGuarded = _babelVault.TryAcquireMutationGuard(BabelOverrideMutationGuardMask);
-                    if (!mutationGuarded)
-                        return false;
-                }
-
-                keepScratchLocked = true;
             }
             catch (IOException)
             {
@@ -1678,8 +1725,15 @@ namespace Hecton.Localization
             }
             finally
             {
-                if (scratchLocked && !keepScratchLocked && _babelVault != null)
+                if (scratchLocked && _babelVault != null)
                     _babelVault.TryUnlockBuffer(BabelOverrideCsvScratchBufferId, SystemID.UI);
+            }
+
+            if (_babelVault != null)
+            {
+                mutationGuarded = _babelVault.TryAcquireMutationGuard(BabelOverrideMutationGuardMask);
+                if (!mutationGuarded)
+                    return false;
             }
 
             int cursor = 0;
@@ -1730,8 +1784,6 @@ namespace Hecton.Localization
             {
                 if (mutationGuarded && _babelVault != null)
                     _babelVault.ReleaseMutationGuard(BabelOverrideMutationGuardMask);
-                if (scratchLocked && _babelVault != null)
-                    _babelVault.TryUnlockBuffer(BabelOverrideCsvScratchBufferId, SystemID.UI);
             }
 
             if (applied > 0 || rejected > 0)

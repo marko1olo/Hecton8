@@ -92,15 +92,10 @@ namespace Hecton8.Core
         }
 
         private const int ServiceSlotMaskWordCount = 4;
-        private const string MathLodLowKeyword = "_MATH_LOD_LOW";
-        private const string MathLodHighKeyword = "_MATH_LOD_HIGH";
         private const int MathPrecisionTransitionFrameCount = 60;
         private const int MathPrecisionBlendScale = 1000;
         private const uint SystemKillSwitchBitsSignalSourceHash = HectonSignalLaneContract.SystemKillSwitchBitsSignalStableHash;
         public const uint SystemKillSwitchLane4VfxMask = 1u << 4;
-        public const uint TransientScalabilityThermalPressureMask = 1u << 0;
-        public const uint TransientScalabilityPlatformPressureMask = 1u << 1;
-        public const uint TransientScalabilityBatteryPressureMask = 1u << 2;
         private static readonly int _mathLodLowBlendId = Shader.PropertyToID("_H8MathLodLowBlend");
         // COLD ALLOC: long[4] - requested service-slot bitset for ghost-service detection - owner: GlobalRegistry
         private static readonly long[] _requestedServiceSlotMask = new long[ServiceSlotMaskWordCount];
@@ -631,7 +626,6 @@ namespace Hecton8.Core
         private static IOutpostGenerationService _outpostGenerationRuntime;
         private static HectonHardwareProfile _hardwareProfile;
         private static int _scalabilityTierOverride = -1;
-        private static int _transientLowScalabilityOverrideMask;
         private static bool _hasHardwareProfile;
         private static bool _dispatcherRegistrationErrorLogged;
         private static bool _inputFallbackWarningPublished;
@@ -2429,18 +2423,6 @@ namespace Hecton8.Core
             Volatile.Write(ref _mathPrecisionShaderDirty, 0);
             int clampedBlendMilli = Volatile.Read(ref _pendingMathPrecisionShaderLowBlendMilli);
             Shader.SetGlobalFloat(_mathLodLowBlendId, clampedBlendMilli * 0.001f);
-
-            MathPrecisionLevel level = (MathPrecisionLevel)Volatile.Read(ref _pendingMathPrecisionShaderLevel);
-            bool lowPrecision = level == MathPrecisionLevel.Low;
-            if (lowPrecision)
-            {
-                Shader.EnableKeyword(MathLodLowKeyword);
-                Shader.DisableKeyword(MathLodHighKeyword);
-                return;
-            }
-
-            Shader.DisableKeyword(MathLodLowKeyword);
-            Shader.EnableKeyword(MathLodHighKeyword);
         }
 
         /// <summary>
@@ -2451,9 +2433,6 @@ namespace Hecton8.Core
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                if (Volatile.Read(ref _transientLowScalabilityOverrideMask) != 0)
-                    return HectonQualityTier.Mx350;
-
                 int overrideTier = Volatile.Read(ref _scalabilityTierOverride);
                 return overrideTier >= 0 ? (HectonQualityTier)overrideTier : QualityTier;
             }
@@ -2609,7 +2588,6 @@ namespace Hecton8.Core
             _pendingMathPrecisionShaderLowBlendMilli = MathPrecisionBlendScale;
             _mathPrecisionShaderDirty = 0;
             Volatile.Write(ref _systemKillSwitchMask, 0);
-            Volatile.Write(ref _transientLowScalabilityOverrideMask, 0);
             _currentDomain = (int)Domain.Unknown;
             _currentDomainOwner = null;
             ApplyMathPrecisionShaderState(MathPrecisionLevel.Low, MathPrecisionBlendScale);
@@ -2806,7 +2784,6 @@ namespace Hecton8.Core
             _prologueSequenceRuntime = null;
             _hardwareProfile = default;
             _scalabilityTierOverride = -1;
-            _transientLowScalabilityOverrideMask = 0;
             _hasHardwareProfile = false;
             _dispatcherRegistrationErrorLogged = false;
             _inputFallbackWarningPublished = false;
@@ -2889,54 +2866,8 @@ namespace Hecton8.Core
             SetMathPrecisionLevelImmediate(ResolveEffectiveMathPrecisionLevel());
         }
 
-        /// <summary>
-        /// Applies or releases a temporary low-tier pressure lease without mutating user or boot hardware profile choices.
-        /// </summary>
-        public static void SetTransientLowScalabilityOverride(uint reasonMask, bool enabled)
-        {
-            if (reasonMask == 0u)
-                return;
-
-            int bitMask = unchecked((int)reasonMask);
-            int observed;
-            int next;
-            byte previousProfileByte;
-            do
-            {
-                observed = Volatile.Read(ref _transientLowScalabilityOverrideMask);
-                next = enabled ? observed | bitMask : observed & ~bitMask;
-                if (next == observed)
-                    return;
-
-                previousProfileByte = ResolveEffectiveScalabilityTierProfileByte(observed);
-            }
-            while (Interlocked.CompareExchange(ref _transientLowScalabilityOverrideMask, next, observed) != observed);
-
-            SetMathPrecisionLevelImmediate(ResolveEffectiveMathPrecisionLevel());
-            byte currentProfileByte = ResolveEffectiveScalabilityTierProfileByte(next);
-            if (currentProfileByte != previousProfileByte)
-                PublishScalabilityChangedEvent(previousProfileByte, currentProfileByte);
-        }
-
-        private static byte ResolveEffectiveScalabilityTierProfileByte(int transientLowMask)
-        {
-            if (transientLowMask != 0)
-                return ScalabilityTierProfiles.LowMx350;
-
-            int overrideTier = Volatile.Read(ref _scalabilityTierOverride);
-            if (overrideTier >= 0)
-                return ScalabilityTierRuntime.FromQualityTier((HectonQualityTier)overrideTier);
-
-            return _hasHardwareProfile
-                ? ScalabilityTierRuntime.FromQualityTier(_hardwareProfile.QualityTier)
-                : ScalabilityTierProfiles.LowMx350;
-        }
-
         private static MathPrecisionLevel ResolveEffectiveMathPrecisionLevel()
         {
-            if (Volatile.Read(ref _transientLowScalabilityOverrideMask) != 0)
-                return MathPrecisionLevel.Low;
-
             int overrideTier = Volatile.Read(ref _scalabilityTierOverride);
             if (overrideTier >= 0)
             {

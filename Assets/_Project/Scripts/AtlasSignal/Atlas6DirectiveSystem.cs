@@ -786,9 +786,11 @@ namespace Hecton8.AtlasSignal
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-80)]
-    public sealed class Atlas6DirectiveSystem : MonoBehaviour, ISaveable, ISlowTickable, INarrativeEventListener, IAtlas6EventListener, IAtlas6DirectiveCommandSink, IGlobalRegistryHotSwapListener
+    public sealed class Atlas6DirectiveSystem : MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, INarrativeEventListener, IAtlas6EventListener, IAtlas6DirectiveCommandSink, IGlobalRegistryHotSwapListener
     {
         private const int MinimumRevealStageForDirectiveIdentity = 3;
+        private const int PendingNotificationCapacity = 4;
+        private const int PendingNotificationCharCapacity = 512;
         private const string SignalIdentityDiscoveryId = "atlas6_signal_identified";
         private const string SignalFullyDecodedDiscoveryId = "atlas6_signal_fully_decoded";
         private const string TerminalSectorDiscoveryId = "atlas6_terminal_sector3";
@@ -832,6 +834,7 @@ namespace Hecton8.AtlasSignal
         private int  _barterTransactionCount;
         private bool _directiveConflictTriggered;
         private bool _registered;
+        private bool _lateFrameRegistered;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
         private bool _saveRegistered;
@@ -845,6 +848,26 @@ namespace Hecton8.AtlasSignal
         private uint _latestScarcityDirectiveQuestHash;
         private uint _latestScarcityDirectiveResourceHash;
         private readonly char[] _scarcityDirectiveTitleBuffer = new char[ScarcityDirectiveTitleCapacity];
+        private PendingNotificationRequest _pendingNotification0;
+        private PendingNotificationRequest _pendingNotification1;
+        private PendingNotificationRequest _pendingNotification2;
+        private PendingNotificationRequest _pendingNotification3;
+        private byte _pendingNotificationCount;
+
+        private unsafe struct PendingNotificationRequest
+        {
+            public ushort Length;
+            public byte Severity;
+            public byte IsDirty;
+            public fixed char Characters[PendingNotificationCharCapacity];
+
+            public void Clear()
+            {
+                Length = 0;
+                Severity = 0;
+                IsDirty = 0;
+            }
+        }
 
         // ----------------------------------------------------------
         //  ISaveable
@@ -903,6 +926,7 @@ namespace Hecton8.AtlasSignal
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterLateFrameTick();
             TryUnregisterService();
             TryUnregisterHotSwapListener();
             ClearAtlasDependencies();
@@ -915,6 +939,7 @@ namespace Hecton8.AtlasSignal
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterLateFrameTick();
             TryUnregisterService();
             TryUnregisterHotSwapListener();
             TryUnregisterSaveParticipant();
@@ -944,9 +969,11 @@ namespace Hecton8.AtlasSignal
                 _playerStatus != Atlas6PlayerStatus.Threat)
             {
                 SetStatus(Atlas6PlayerStatus.Anomaly);
-                NotificationEvents.TryPushWarning(ResolveLocalizedSpan(
-                    LocalizationKeys.ATLAS6_ANOMALY_DETECTED,
-                    "ATLAS-6: UNIDENTIFIED BIOLOGICAL AGENT DETECTED. ANALYSIS..."));
+                QueueNotification(
+                    ResolveLocalizedSpan(
+                        LocalizationKeys.ATLAS6_ANOMALY_DETECTED,
+                        "ATLAS-6: UNIDENTIFIED BIOLOGICAL AGENT DETECTED. ANALYSIS..."),
+                    NotificationEventSeverity.Warning);
             }
 
             // Directive conflict: living human detected.
@@ -958,6 +985,13 @@ namespace Hecton8.AtlasSignal
 
                 LogDirectiveConflict();
             }
+        }
+
+        public void LateFrameTick()
+        {
+            FlushQueuedNotifications();
+            if (_pendingNotificationCount == 0)
+                TryUnregisterLateFrameTick();
         }
 
         private void TryRegister()
@@ -975,6 +1009,114 @@ namespace Hecton8.AtlasSignal
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
             _registered = false;
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameRegistered = false;
+            }
+
+            ClearQueuedNotifications();
+        }
+
+        private unsafe bool QueueNotification(ReadOnlySpan<char> message, NotificationEventSeverity severity)
+        {
+            if (message.IsEmpty || message.Length > PendingNotificationCharCapacity)
+                return false;
+            if (_pendingNotificationCount >= PendingNotificationCapacity)
+                return false;
+
+            ref PendingNotificationRequest request = ref GetPendingNotificationSlot(_pendingNotificationCount);
+            fixed (char* destination = request.Characters)
+            {
+                for (int i = 0; i < message.Length; i++)
+                    destination[i] = message[i];
+            }
+
+            request.Length = (ushort)message.Length;
+            request.Severity = (byte)severity;
+            request.IsDirty = 1;
+            _pendingNotificationCount++;
+            TryRegisterLateFrameTick();
+            return true;
+        }
+
+        private unsafe void FlushQueuedNotifications()
+        {
+            int count = _pendingNotificationCount;
+            _pendingNotificationCount = 0;
+
+            for (int i = 0; i < count; i++)
+            {
+                ref PendingNotificationRequest request = ref GetPendingNotificationSlot(i);
+                if (request.IsDirty == 0 || request.Length == 0)
+                {
+                    request.Clear();
+                    continue;
+                }
+
+                ushort length = request.Length;
+                byte severity = request.Severity;
+                request.Clear();
+
+                fixed (char* characters = request.Characters)
+                {
+                    ReadOnlySpan<char> message =
+                        System.Runtime.InteropServices.MemoryMarshal.CreateReadOnlySpan(ref characters[0], length);
+                    uint messageHash = NotificationEvents.RegisterMessage(message);
+                    if (messageHash == 0u)
+                        continue;
+
+                    if (severity == (byte)NotificationEventSeverity.Warning)
+                    {
+                        NotificationEvents.TryPushRegisteredWarning(messageHash);
+                        continue;
+                    }
+
+                    if (severity == (byte)NotificationEventSeverity.Critical)
+                    {
+                        NotificationEvents.TryPushRegisteredCritical(messageHash);
+                        continue;
+                    }
+
+                    NotificationEvents.TryPushRegisteredInfo(messageHash);
+                }
+            }
+        }
+
+        private void ClearQueuedNotifications()
+        {
+            _pendingNotificationCount = 0;
+            _pendingNotification0.Clear();
+            _pendingNotification1.Clear();
+            _pendingNotification2.Clear();
+            _pendingNotification3.Clear();
+        }
+
+        private ref PendingNotificationRequest GetPendingNotificationSlot(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return ref _pendingNotification0;
+                case 1:
+                    return ref _pendingNotification1;
+                case 2:
+                    return ref _pendingNotification2;
+                default:
+                    return ref _pendingNotification3;
+            }
         }
 
         private bool TryRegisterService()
@@ -1037,8 +1179,13 @@ namespace Hecton8.AtlasSignal
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _registered = false;
+                    _lateFrameRegistered = false;
                     if (currentService != null && isActiveAndEnabled)
+                    {
                         TryRegister();
+                        if (_pendingNotificationCount > 0)
+                            TryRegisterLateFrameTick();
+                    }
                     break;
             }
         }
@@ -1130,9 +1277,11 @@ namespace Hecton8.AtlasSignal
                 _playerStatus != Atlas6PlayerStatus.Threat)
             {
                 SetStatus(Atlas6PlayerStatus.Collaborator);
-                NotificationEvents.TryPushInfo(ResolveLocalizedSpan(
-                    LocalizationKeys.ATLAS6_COLLABORATOR_STATUS,
-                    "ATLAS-6: UTILITARIAN CALCULATION - EXCHANGE EFFICIENT. STATUS: COLLABORATOR."));
+                QueueNotification(
+                    ResolveLocalizedSpan(
+                        LocalizationKeys.ATLAS6_COLLABORATOR_STATUS,
+                        "ATLAS-6: UTILITARIAN CALCULATION - EXCHANGE EFFICIENT. STATUS: COLLABORATOR."),
+                    NotificationEventSeverity.Info);
             }
         }
 
@@ -1198,16 +1347,13 @@ namespace Hecton8.AtlasSignal
                     out _)
                 && titleLength > 0)
             {
-                uint messageHash = NotificationEvents.RegisterMessage(
-                    _scarcityDirectiveTitleBuffer.AsSpan(0, math.min(titleLength, _scarcityDirectiveTitleBuffer.Length)));
-                if (messageHash != 0u)
-                {
-                    NotificationEvents.TryPushRegisteredWarning(messageHash);
+                if (QueueNotification(
+                        _scarcityDirectiveTitleBuffer.AsSpan(0, math.min(titleLength, _scarcityDirectiveTitleBuffer.Length)),
+                        NotificationEventSeverity.Warning))
                     return;
-                }
             }
 
-            NotificationEvents.TryPushWarning(ScarcityDirectiveFallbackWarning.AsSpan());
+            QueueNotification(ScarcityDirectiveFallbackWarning.AsSpan(), NotificationEventSeverity.Warning);
         }
 
         private bool CanAdoptAtlasStatusFromDiscovery(uint discoveryHash)

@@ -124,7 +124,7 @@ namespace Hecton8.Visor
                 if (!UpdateStochasticSsrGlobals(_settings, sourceDesc.width, sourceDesc.height))
                     return;
 
-                TextureDesc maskDesc = new TextureDesc(sourceDesc);
+                TextureDesc maskDesc = sourceDesc;
                 maskDesc.name = "_HectonStochasticSsrMask";
                 int maskShift = FrameTimeWatchdog.CurrentMathLodMode == MathLodMode.Low ? 2 : 1;
                 maskDesc.width = math.max(1, sourceDesc.width >> maskShift);
@@ -138,7 +138,7 @@ namespace Hecton8.Visor
                 maskDesc.useMipMap = false;
                 maskDesc.autoGenerateMips = false;
 
-                TextureDesc destinationDesc = new TextureDesc(sourceDesc);
+                TextureDesc destinationDesc = sourceDesc;
                 destinationDesc.name = "_HectonReflectionSheenComposite";
                 destinationDesc.clearBuffer = false;
                 destinationDesc.depthBufferBits = DepthBits.None;

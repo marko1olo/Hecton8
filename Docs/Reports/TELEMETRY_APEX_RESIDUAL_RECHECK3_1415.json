@@ -1,0 +1,259 @@
+{
+    "agent":  "1415",
+    "generatedUtc":  "2026-05-28T10:37:53Z",
+    "purpose":  "APEX residual recheck after validator expansion and literal non-64 telemetry scan.",
+    "prompt":  {
+                   "source":  "Docs/Tasks/CURRENT_BATCH.md",
+                   "taskCount":  20,
+                   "sha256":  "b922c32c7f14ef7844c5f6bfa20bcdeb1e370a8c02d21641c43739f7c96780b0",
+                   "lineStart":  1346,
+                   "lineEnd":  1434
+               },
+    "mandatesRead":  [
+                         "DATA_Runtime_Struct_Layout_ARM64.txt",
+                         "DBG_Telemetry_Crash_Reporting_PostMortem.txt",
+                         "OPT_Zero_GC_Policy_AllocFree_Mandate.txt",
+                         "OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt"
+                     ],
+    "validator":  {
+                      "file":  "Assets/_Project/Scripts/Editor/TelemetryLayoutValidator1415.cs",
+                      "specRows":  41,
+                      "macroDatabaseSpecLine":  22,
+                      "jobAdmissionSpecLine":  21,
+                      "chunkResidencySpecLine":  null,
+                      "malformedNewlineLiteralCount":  0,
+                      "sourceSha256":  "c9effd00979c1a64f5227639c8ef030cedda5c8c4ed9f17aeecfe7c62ef73eff"
+                  },
+    "macroDatabaseBlackBox":  {
+                                  "contractFile":  "Assets/_Project/Scripts/Core/Contracts/MacroDatabaseContracts.cs",
+                                  "contractSha256":  "d60ac75fbfe202c99d8826169b179f0f2a78bf09d7f9d14fd1586a959ba188e9",
+                                  "serviceFile":  "Assets/_Project/Scripts/Core/Database/H8MacroDatabaseService.cs",
+                                  "serviceSha256":  "29844c512c7529ae0ca8461b6ccd10076e8afc14d0ab8bd017062dbd850e072e",
+                                  "bufferId":  "BufferID.SaveMacroDatabaseBlackBox",
+                                  "owner":  "SystemID.SavePersistence",
+                                  "layoutProof":  {
+                                                      "sizeBytes":  64,
+                                                      "fields":  [
+                                                                     "PlayerSectorHash:0..7",
+                                                                     "RootNodeOffset:8..15",
+                                                                     "CacheBytes:16..23",
+                                                                     "DeadBytes:24..31",
+                                                                     "CacheEntries:32..35",
+                                                                     "PageFaults:36..39",
+                                                                     "PageFaultsTotal:40..43",
+                                                                     "HydratedSectors:44..47",
+                                                                     "EvictedSectors:48..51",
+                                                                     "LastCompactionStallMicroseconds:52..55",
+                                                                     "FrameIndex:56..59",
+                                                                     "Tier:60",
+                                                                     "CompactionState:61",
+                                                                     "Flags:62",
+                                                                     "_pad0:63"
+                                                                 ],
+                                                      "explicitPaddingBytes":  1
+                                                  },
+                                  "lineEvidence":  {
+                                                       "structDeclaration":  212,
+                                                       "sizeAttribute":  211,
+                                                       "bufferIdEnsure":  2409,
+                                                       "writeLockRecord":  2136,
+                                                       "releaseRecord":  2174,
+                                                       "clearLock":  2849,
+                                                       "clearRelease":  2861
+                                                   },
+                                  "hotForbiddenCounts":  {
+                                                             "newKeyword":  0,
+                                                             "stringFormat":  0,
+                                                             "toString":  0,
+                                                             "linq":  0,
+                                                             "foreachLoop":  0
+                                                         }
+                              },
+    "residualLiteralStructScan":  {
+                                      "non64LiteralStructCount":  30,
+                                      "under64TelemetryOrBlackBoxCount":  0,
+                                      "size72TelemetryOrBlackBoxCount":  1,
+                                      "oversizeTelemetryOrBlackBoxCount":  30,
+                                      "under64TelemetryOrBlackBoxHits":  [
+
+                                                                         ],
+                                      "size72TelemetryOrBlackBoxHits":  [
+                                                                            {
+                                                                                "file":  "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+                                                                                "line":  140,
+                                                                                "name":  "ChunkResidencyTelemetryEntry",
+                                                                                "sizeBytes":  72
+                                                                            }
+                                                                        ]
+                                  },
+    "remainingNon64SizeConstants":  [
+                                        {
+                                            "file":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
+                                            "line":  20,
+                                            "name":  "EntrySizeBytes",
+                                            "sizeBytes":  16
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+                                            "line":  42,
+                                            "name":  "DockTelemetryEntrySizeBytes",
+                                            "sizeBytes":  128
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Core/InputDispatcher.cs",
+                                            "line":  82,
+                                            "name":  "BufferedActionEntrySizeBytes",
+                                            "sizeBytes":  16
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                            "line":  474,
+                                            "name":  "MemoryDefragTelemetryEntrySizeBytes",
+                                            "sizeBytes":  128
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                            "line":  476,
+                                            "name":  "VaultMemoryBudgetEntrySizeBytes",
+                                            "sizeBytes":  32
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                            "line":  479,
+                                            "name":  "MacroDatabasePayloadCacheEntrySizeBytes",
+                                            "sizeBytes":  48
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+                                            "line":  558,
+                                            "name":  "CognitionMemoryEntrySizeBytes",
+                                            "sizeBytes":  24
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+                                            "line":  559,
+                                            "name":  "AcousticMemoryEntrySizeBytes",
+                                            "sizeBytes":  40
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+                                            "line":  1327,
+                                            "name":  "TelemetryEntrySizeBytes",
+                                            "sizeBytes":  96
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.cs",
+                                            "line":  174,
+                                            "name":  "BlackBoxDumpEntrySizeBytes",
+                                            "sizeBytes":  128
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Gameplay/Loot/Contracts/LootMagnetContracts.cs",
+                                            "line":  15,
+                                            "name":  "TelemetryEntrySizeBytes",
+                                            "sizeBytes":  128
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Narrative/LoreMmfEncyclopedia.cs",
+                                            "line":  26,
+                                            "name":  "EntrySizeBytes",
+                                            "sizeBytes":  24
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs",
+                                            "line":  41,
+                                            "name":  "BlackboxHeaderOffsetEntrySizeBytes",
+                                            "sizeBytes":  8
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/QA/Headless/Editor/HeadlessStressFractureBatchRunner.cs",
+                                            "line":  32,
+                                            "name":  "BlackboxHeaderOffsetEntrySizeBytes",
+                                            "sizeBytes":  8
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs",
+                                            "line":  25,
+                                            "name":  "LootTableEntrySizeBytes",
+                                            "sizeBytes":  16
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs",
+                                            "line":  30,
+                                            "name":  "TelemetryEntrySizeBytes",
+                                            "sizeBytes":  128
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Tools/LaserCutterDodRuntime.cs",
+                                            "line":  23,
+                                            "name":  "LaserCutTelemetryEntrySizeBytes",
+                                            "sizeBytes":  128
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Tools/WfcLaserCutRuntime.cs",
+                                            "line":  26,
+                                            "name":  "WfcTelemetryEntrySizeBytes",
+                                            "sizeBytes":  96
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/UI/Editor/BabelLocalizationManagerWindow.cs",
+                                            "line":  16,
+                                            "name":  "EntrySizeBytes",
+                                            "sizeBytes":  16
+                                        }
+                                    ],
+    "blockerExamples":  [
+                            {
+                                "name":  "ChunkResidencyTelemetryEntry",
+                                "file":  "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+                                "line":  141,
+                                "currentSizeBytes":  72,
+                                "usefulBytes":  66,
+                                "reason":  "Field-preserving 64-byte rewrite is impossible: ActiveImpostorCount occupies bytes 64..65 after required AUP/focus/state fields. Needs owner-domain split into 64-byte header plus secondary detail lane or explicit field removal decision.",
+                                "fieldProof":  [
+                                                   "FocusChunkId:0..7",
+                                                   "PlayerGridX:8..15",
+                                                   "PlayerGridY:16..23",
+                                                   "PlayerGridZ:24..31",
+                                                   "PlayerLocal(float3):32..43",
+                                                   "Frame:44..47",
+                                                   "Flags:48..51",
+                                                   "StateHash:52..55",
+                                                   "PendingLoads:56..57",
+                                                   "ResidentCount:58..59",
+                                                   "LoadingCount:60..61",
+                                                   "EvictingCount:62..63",
+                                                   "ActiveImpostorCount:64..65",
+                                                   "_pad0:66..67",
+                                                   "_pad1:68..71"
+                                               ]
+                            },
+                            {
+                                "name":  "MemoryDefragTelemetryEntry",
+                                "file":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                "line":  391,
+                                "currentSizeBytes":  128,
+                                "reason":  "Core defrag blackbox preserves multi-field vault generation, relocation, guard-mask, and fault metadata. Blind shrink would delete postmortem evidence; needs schema split, not lossy packing."
+                            }
+                        ],
+    "compilation":  {
+                        "dotnetBuildInvoked":  false,
+                        "reason":  "CPU \u003e 50 and active dotnet/VBCSCompiler processes at final recheck3 gate; build forbidden by Compilation Resource Throttling.",
+                        "cpuLoadPercentSample":  78,
+                        "activeCompilerProcesses":  [
+                                                        {
+                                                            "id":  51336,
+                                                            "processName":  "dotnet",
+                                                            "cpu":  391.875,
+                                                            "startTime":  "2026-05-28T14:35:42+04:00"
+                                                        },
+                                                        {
+                                                            "id":  4348,
+                                                            "processName":  "VBCSCompiler",
+                                                            "cpu":  58.09375,
+                                                            "startTime":  "2026-05-28T14:37:02+04:00"
+                                                        }
+                                                    ]
+                    },
+    "status":  "PENDING_COMPILER_AND_UNITY_VALIDATION"
+}

@@ -1,0 +1,78 @@
+{
+  "agent_id": 1421,
+  "role": "FLUID_PIPE_AND_SUMP_PUMP_LOGISTICS_OPTIMIZER",
+  "status": "PENDING_VERIFICATION",
+  "date": "2026-05-28",
+  "mandates_followed": [
+    "PHYS_Fluid_Incursion_Interior",
+    "LOGI_Energy_Networks_Power_Grid_Graph_Flow",
+    "OPT_Native_Memory_Collections_JobSystem_Protocol",
+    "DATA_Runtime_Struct_Layout_ARM64",
+    "DBG_Telemetry_Crash_Reporting_PostMortem",
+    "ARCH_Global_Registry_ServiceLocator_DI_Init",
+    "OPT_Zero_GC_Policy_AllocFree_Mandate",
+    "OPT_Cinematic_Cheat_Protocol_Visual_Fake_First"
+  ],
+  "domain": "ECHELON 6 Habitat & Vehicles / Pipe & Sump Pump Logistics + Fluid Incursion",
+  "graph_inventory": {
+    "sump_runtime": {
+      "owner": "SumpPumpPipeGridRuntime",
+      "source": "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
+      "storage": "GlobalDataVault handles for PumpNodes, PipeEdges, NodeAup, PumpRoomIndices, CsrOffsets, CsrDestinations, CsrConductance, CsrFlow, CsrFlatEdgeIndex, CsrWriteCursor",
+      "topology_rebuild": "BuildCsrPipeGraphJob scheduled only when _topologyDirty is true",
+      "hot_traversal": "EvaluatePipePressureDeltaPassJob and PipeEdgeFlowJob scan NodeEdgeOffsets[node]..NodeEdgeOffsets[node+1]",
+      "blackbox": "DrainageTelemetryEntry fixed 64-byte entries, 300-frame ring"
+    },
+    "base_flooding_bfs": {
+      "owner": "HabitatDirtyRegionRebuildJob",
+      "source": "Assets/_Project/Scripts/Construction/HabitatStressJobs.cs",
+      "storage": "EdgeOffsets, EdgeDestinations, TraversalQueue, VisitStamp, IslandIds",
+      "finding": "Already CSR plus fixed queue. No NativeList or NativeQueue in dirty region BFS."
+    },
+    "route_bfs": {
+      "owner": "LogisticsPipeRoutingKernel",
+      "source": "Assets/_Project/Scripts/Construction/LogisticsPipeRoutingKernel.cs",
+      "storage": "DataVault scratch EdgeOffsets, EdgeDestinations, Visited, Queue",
+      "finding": "Preallocated queue and visited arrays; tail overflow is fail-closed."
+    },
+    "adjacent_fluid_pipe_runtime": {
+      "owner": "FluidPipeGraphRuntime",
+      "source": "Assets/_Project/Scripts/Environment/Fluids/FluidPipeGraphRuntime.cs",
+      "storage": "Flat ConnectionSources and ConnectionDestinations arrays",
+      "finding": "Flat zero-GC edge scan, but not CSR. Not touched because current assigned sump/flood logistics route already has CSR ownership and rewrite risk exceeds evidence."
+    }
+  },
+  "lifecycle": [
+    "OnEnable binds DataVault and initializes generation handles.",
+    "TryInitializeBuffers materializes all node, edge, CSR, pressure, power, telemetry, and GPU flow buffers in the Vault.",
+    "GenerateMockDrainageNetwork seeds deterministic topology when requested.",
+    "SlowTick resolves GlobalQualityWeight and schedules drainage only after the quality-scaled cadence elapses.",
+    "ScheduleDrainageSolve locks Vault buffers, builds CSR if topology dirty, runs pump power, pressure relaxation passes, edge flow, optional water evacuation, and telemetry recorder jobs.",
+    "LateFrameTick finalizes completed jobs, records wall time, unlocks Vault buffers in finally, then uploads visual flow data."
+  ],
+  "bfs_deconstruction": {
+    "sump_solver": "Not BFS. It is CSR Jacobi-like pressure propagation over contiguous edge slices.",
+    "base_flood_dirty_region": "BFS head/tail loop over a fixed TraversalQueue; each node reads one contiguous CSR edge span.",
+    "queue_allocation_proof": "Static rg over sump, routing, and habitat dirty BFS sources found no NativeList, NativeQueue, Queue<T>, Dictionary, HashSet, LINQ, or foreach in the inspected hot graph files.",
+    "cache_locality_proof": "Offsets are node-index contiguous. For each source node, destination, conductance, flow, and flat edge index are linear in the same edge interval. Traversal is O(nodes + edges) with sequential reads/writes and no object graph chasing."
+  },
+  "dto_layout": {
+    "DrainageNodeDTO": "LayoutKind.Explicit Size=32, hot fields at offsets 0,4,8,12,16 with padding to 32.",
+    "PipeEdgeDTO": "LayoutKind.Explicit Size=32, source/destination/conductance/currentFlow/flags/hash fields at offsets 0..28.",
+    "DrainageTuningDTO": "LayoutKind.Explicit Size=80, DeltaPassCount at offset 48.",
+    "DrainageTelemetryEntry": "LayoutKind.Explicit Size=64.",
+    "DrainageDumpHeader": "LayoutKind.Explicit Size=64.",
+    "DrainageRoomDrainLock64": "LayoutKind.Explicit Size=64 cache-line lock row."
+  },
+  "planned_and_applied_corrections": [
+    "Replaced fixed authoritative cadence call with ResolveSolveCadenceSeconds(quality).",
+    "Replaced fixed two pressure passes with quality-driven ResolveDrainageDeltaPassCount(quality) range 1..4.",
+    "Changed sump blackbox dump route to Docs/AgentLogs/Dump_1421_FluidLogistics.bin.",
+    "Added editor stress harness for 10000 nodes and 30000 directed edges."
+  ],
+  "verification_status": {
+    "compile": "PENDING_VERIFICATION; dotnet build intentionally not launched.",
+    "unity_import": "PENDING_VERIFICATION; requires Unity Editor import/test runner.",
+    "profiler_gc": "PENDING_VERIFICATION; no GCMonitor artifact in this run."
+  }
+}

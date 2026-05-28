@@ -6363,7 +6363,7 @@ namespace Hecton8.Physics
             NativeMemorySentinel.UnregisterNativeArray(array);
             if (dependency.IsCompleted)
             {
-                dependency.Complete();
+                DispatcherJobFence.TryFinalizeCompleted(ref dependency);
                 array.Dispose();
             }
             else

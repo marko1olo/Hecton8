@@ -1798,6 +1798,9 @@ namespace Hecton8.Visor
         private float _pendingPassiveRadarAutoGain = 1f;
         private bool _abyssalAnchorReturnAudioDirty;
         private float _pendingAbyssalAnchorReturnResponse01;
+        private AcousticPingSignal _pendingActiveSonarAcousticSignal;
+        private float _pendingActiveSonarAcousticPulseTime;
+        private bool _pendingActiveSonarAcousticSignalDirty;
         private int _activeSonarGeoPingCount;
         private int _lastConsumedActiveSonarAcousticSequence;
         private int _activeSonarGeoTelemetryWriteIndex;
@@ -1968,6 +1971,7 @@ namespace Hecton8.Visor
             ClearSonarSnapshot();
             ClearAcousticMappingGlobals();
             ClearActiveSonarGeoGlobals();
+            ClearQueuedActiveSonarAcousticSignal();
             FlushQueuedSpectrumShaderGlobals();
             ClearCachedRegistryServices();
         }
@@ -1983,6 +1987,7 @@ namespace Hecton8.Visor
             SonarGridOverlay.ClearGlobals();
             ClearAcousticMappingGlobals();
             ClearActiveSonarGeoGlobals();
+            ClearQueuedActiveSonarAcousticSignal();
             FlushQueuedSpectrumShaderGlobals();
             DisposeAupDiscoveryGrid();
             DisposeActiveSonarGeoTelemetryRing();
@@ -2056,10 +2061,9 @@ namespace Hecton8.Visor
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            IDataVault oldVault = previousService as IDataVault ?? _dataVault;
-            ReleaseVaultBuffer(oldVault, ref _aupDiscoveryGridHandle);
-            ReleaseVaultBuffer(oldVault, ref _activeSonarGeoTelemetryRingHandle);
-            _dataVault = currentService as IDataVault;
+            IDataVault previousVault = previousService is IDataVault oldVault ? oldVault : null;
+            IDataVault nextVault = currentService is IDataVault dataVault ? dataVault : null;
+            BindDataVaultForLifecycle(nextVault, previousVault);
             EnsureAupDiscoveryGrid();
             EnsureActiveSonarGeoTelemetryRing();
         }
@@ -2083,7 +2087,7 @@ namespace Hecton8.Visor
 
         private void CacheRegistryServicesCold()
         {
-            _dataVault = GlobalRegistry.DataVault;
+            BindDataVaultForLifecycle(GlobalRegistry.DataVault, _dataVault);
             CacheAudioService(GlobalRegistry.Audio);
             CachePlayerRuntimeContext(GlobalRegistry.Player);
         }
@@ -2129,6 +2133,7 @@ namespace Hecton8.Visor
         public void LateFrameTick()
         {
             DrainPhysicsEventPayloads();
+            FlushQueuedActiveSonarAcousticSignal();
             RunSpectrumVisualTick(math.max(0f, SystemDispatcher.CurrentFrameDeltaTime));
             FlushQueuedSpectrumShaderGlobals();
             FlushQueuedSpectrumAudio();
@@ -2269,10 +2274,7 @@ namespace Hecton8.Visor
                 activeSonarSignal.SourceId = _ActiveSonarGeoSystemHash;
                 activeSonarSignal.Channel = AcousticPingSignal.ChannelActiveSonar;
                 activeSonarSignal.Flags = AcousticPingSignal.FlagActiveSonar;
-                SignalBus<AcousticPingSignal>.TryPushTracked(in activeSonarSignal, ref s_x001SpectrumSystemSignalPushDropCount);
-                SubmitActiveSonarGeoPing(in activeSonarSignal, pulseTime, 0f);
-                if (SignalBus<AcousticPingSignal>.TryGetLatest(out _, out int activeSonarSequence))
-                    _lastConsumedActiveSonarAcousticSequence = activeSonarSequence;
+                QueueActiveSonarAcousticSignal(in activeSonarSignal, pulseTime);
                 PublishActiveSonarPhysicsPing(playerPosition, pulseRadius, pulseIntensity, revealDurationSeconds);
                 Vector3 playerForward = ResolvePlayerForward();
                 PublishActiveSonarDangerImpulse(playerPosition, playerForward, pulseRadius, pulseIntensity);
@@ -2847,6 +2849,9 @@ namespace Hecton8.Visor
                 _pendingPassiveRadarRowsChanged = false;
                 _hasPublishedPassiveRadarPeak = true;
             }
+
+            if (_activeSonarGeoGlobalsDirty)
+                PublishActiveSonarGeoGlobals(true);
         }
 
         private void EnsureAupDiscoveryGrid()
@@ -2870,11 +2875,13 @@ namespace Hecton8.Visor
                 cellCount,
                 SpectrumVaultOwner,
                 NativeArrayOptions.ClearMemory);
+            if (!IsSpectrumVaultHandle(in _aupDiscoveryGridHandle, AupDiscoveryGridBufferId))
+                _aupDiscoveryGridHandle = default;
         }
 
         private void DisposeAupDiscoveryGrid()
         {
-            ReleaseVaultBuffer(_dataVault, ref _aupDiscoveryGridHandle);
+            ReleaseVaultBuffer(_dataVault, ref _aupDiscoveryGridHandle, AupDiscoveryGridBufferId);
             _aupDiscoveryGridWidthRuntime = 0;
             _aupDiscoveryGridHeightRuntime = 0;
             _aupDiscoveryCellSizeRuntime = 0f;
@@ -2885,7 +2892,7 @@ namespace Hecton8.Visor
             IDataVault vault = _dataVault;
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
-                _aupDiscoveryGridHandle.BufferID == 0u ||
+                !IsSpectrumVaultHandle(in _aupDiscoveryGridHandle, AupDiscoveryGridBufferId) ||
                 _aupDiscoveryGridWidthRuntime <= 0 ||
                 _aupDiscoveryGridHeightRuntime <= 0 ||
                 !vault.TryAcquireWriteLock(in _aupDiscoveryGridHandle, SpectrumVaultOwner, out NativeArray<uint> discoveryGrid))
@@ -2934,7 +2941,7 @@ namespace Hecton8.Visor
             IDataVault vault = _dataVault;
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
-                _aupDiscoveryGridHandle.BufferID == 0u ||
+                !IsSpectrumVaultHandle(in _aupDiscoveryGridHandle, AupDiscoveryGridBufferId) ||
                 _aupDiscoveryGridWidthRuntime <= 0 ||
                 _aupDiscoveryGridHeightRuntime <= 0 ||
                 !vault.TryAcquireWriteLock(in _aupDiscoveryGridHandle, SpectrumVaultOwner, out NativeArray<uint> discoveryGrid))
@@ -2986,8 +2993,20 @@ namespace Hecton8.Visor
             if (_dataVault != null)
                 return _dataVault;
 
-            _dataVault = GlobalRegistry.DataVault;
+            BindDataVaultForLifecycle(GlobalRegistry.DataVault, _dataVault);
             return _dataVault;
+        }
+
+        private void BindDataVaultForLifecycle(IDataVault nextVault, IDataVault previousVault)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            IDataVault releaseVault = _dataVault ?? previousVault;
+            ReleaseVaultBuffer(releaseVault, ref _aupDiscoveryGridHandle, AupDiscoveryGridBufferId);
+            ReleaseVaultBuffer(releaseVault, ref _activeSonarGeoTelemetryRingHandle, ActiveSonarGeoTelemetryRingBufferId);
+            _dataVault = nextVault;
+            _activeSonarGeoTelemetryWriteIndex = 0;
         }
 
         private bool TryReadAupDiscoveryGrid(out NativeArray<uint>.ReadOnly discoveryGrid)
@@ -2996,7 +3015,7 @@ namespace Hecton8.Visor
             IDataVault vault = _dataVault;
             return vault != null &&
                    !vault.IsCompactionFenceActive &&
-                   _aupDiscoveryGridHandle.BufferID != 0u &&
+                   IsSpectrumVaultHandle(in _aupDiscoveryGridHandle, AupDiscoveryGridBufferId) &&
                    vault.TryReadOnlyHandle(in _aupDiscoveryGridHandle, out discoveryGrid) &&
                    !vault.IsCompactionFenceActive &&
                    discoveryGrid.IsCreated;
@@ -3008,19 +3027,30 @@ namespace Hecton8.Visor
             IDataVault vault = _dataVault;
             return vault != null &&
                    !vault.IsCompactionFenceActive &&
-                   _activeSonarGeoTelemetryRingHandle.BufferID != 0u &&
+                   IsSpectrumVaultHandle(in _activeSonarGeoTelemetryRingHandle, ActiveSonarGeoTelemetryRingBufferId) &&
                    vault.TryReadOnlyHandle(in _activeSonarGeoTelemetryRingHandle, out telemetryRing) &&
                    !vault.IsCompactionFenceActive &&
                    telemetryRing.IsCreated;
         }
 
-        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId)
             where T : unmanaged
         {
-            if (vault != null && handle.BufferID != 0u)
+            if (vault != null && IsSpectrumVaultHandle(in handle, expectedBufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
+        }
+
+        private static bool IsSpectrumVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId)
+            where T : unmanaged
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)SpectrumVaultOwner &&
+                   handle.Generation != 0u;
         }
 
         private static int PositiveModulo(long value, int modulus)
@@ -3403,6 +3433,38 @@ namespace Hecton8.Visor
             SubmitActiveSonarGeoPing(in signal, now, 0f);
         }
 
+        private void QueueActiveSonarAcousticSignal(in AcousticPingSignal signal, float pulseTime)
+        {
+            _pendingActiveSonarAcousticSignal = signal;
+            _pendingActiveSonarAcousticPulseTime = pulseTime;
+            _pendingActiveSonarAcousticSignalDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void FlushQueuedActiveSonarAcousticSignal()
+        {
+            if (!_pendingActiveSonarAcousticSignalDirty)
+                return;
+
+            AcousticPingSignal signal = _pendingActiveSonarAcousticSignal;
+            float pulseTime = _pendingActiveSonarAcousticPulseTime;
+            _pendingActiveSonarAcousticSignal = default;
+            _pendingActiveSonarAcousticPulseTime = 0f;
+            _pendingActiveSonarAcousticSignalDirty = false;
+
+            bool pushed = SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref s_x001SpectrumSystemSignalPushDropCount);
+            SubmitActiveSonarGeoPing(in signal, pulseTime, 0f);
+            if (pushed && SignalBus<AcousticPingSignal>.TryGetLatest(out _, out int activeSonarSequence))
+                _lastConsumedActiveSonarAcousticSequence = activeSonarSequence;
+        }
+
+        private void ClearQueuedActiveSonarAcousticSignal()
+        {
+            _pendingActiveSonarAcousticSignal = default;
+            _pendingActiveSonarAcousticPulseTime = 0f;
+            _pendingActiveSonarAcousticSignalDirty = false;
+        }
+
         private void SubmitActiveSonarGeoPing(in AcousticPingSignal signal, float now, float audioDelaySeconds)
         {
             float intensity = math.saturate(signal.Intensity01);
@@ -3613,14 +3675,6 @@ namespace Hecton8.Visor
             }
 
             _activeSonarGeoGlobalsDirty = true;
-            Shader.SetGlobalVector(_ShaderActiveSonarCenterAup, Vector4.zero);
-            Shader.SetGlobalFloat(_ShaderActiveSonarRadius, 0f);
-            Shader.SetGlobalVectorArray(_ShaderActiveSonarCentersRadius, _activeSonarGeoCentersRadius);
-            Shader.SetGlobalVectorArray(_ShaderActiveSonarParams, _activeSonarGeoParams);
-            Shader.SetGlobalVector(_ShaderActiveSonarGeoParams, Vector4.zero);
-            _lastPublishedActiveSonarGeoCount = 0;
-            _lastPublishedActiveSonarGeoRadius = 0f;
-            _lastPublishedActiveSonarGeoState = Vector4.zero;
         }
 
         private void EnsureActiveSonarGeoTelemetryRing()
@@ -3637,13 +3691,15 @@ namespace Hecton8.Visor
                 ActiveSonarGeoTelemetryCapacity,
                 SpectrumVaultOwner,
                 NativeArrayOptions.ClearMemory);
+            if (!IsSpectrumVaultHandle(in _activeSonarGeoTelemetryRingHandle, ActiveSonarGeoTelemetryRingBufferId))
+                _activeSonarGeoTelemetryRingHandle = default;
         }
 
         private void DisposeActiveSonarGeoTelemetryRing()
         {
-            ReleaseVaultBuffer(_dataVault, ref _activeSonarGeoTelemetryRingHandle);
+            ReleaseVaultBuffer(_dataVault, ref _activeSonarGeoTelemetryRingHandle, ActiveSonarGeoTelemetryRingBufferId);
             _activeSonarGeoTelemetryWriteIndex = 0;
-            if (_aupDiscoveryGridHandle.BufferID == 0u)
+            if (!IsSpectrumVaultHandle(in _aupDiscoveryGridHandle, AupDiscoveryGridBufferId))
                 _dataVault = null;
         }
 
@@ -3652,7 +3708,7 @@ namespace Hecton8.Visor
             IDataVault vault = _dataVault;
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
-                _activeSonarGeoTelemetryRingHandle.BufferID == 0u ||
+                !IsSpectrumVaultHandle(in _activeSonarGeoTelemetryRingHandle, ActiveSonarGeoTelemetryRingBufferId) ||
                 !vault.TryAcquireWriteLock(in _activeSonarGeoTelemetryRingHandle, SpectrumVaultOwner, out NativeArray<ActiveSonarGeoTelemetryEntry> telemetryRing))
             {
                 return;

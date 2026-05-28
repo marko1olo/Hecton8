@@ -71,8 +71,8 @@ namespace Hecton8.Physics.Vehicles.Editor
             Require(telemetry.IsExplicitLayout, "SubmarinePidTelemetryEntry must use explicit layout.");
             Require(Marshal.SizeOf(telemetry) == 128, "SubmarinePidTelemetryEntry size must be 128.");
             ValidateOffset(telemetry, "Frame", 0);
+            ValidateOffset(telemetry, "StateHash", 4);
             ValidateOffset(telemetry, "Flags", 8);
-            ValidateOffset(telemetry, "StateHash", 12);
             ValidateOffset(telemetry, "CriticalFloodActive", 116);
             ValidateOffset(telemetry, "LastVaultFaultCode", 117);
             ValidateOffset(telemetry, "LastVaultFaultBufferId", 120);

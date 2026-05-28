@@ -1,0 +1,123 @@
+﻿{
+    "agent_id":  "1423",
+    "status":  "PENDING VERIFICATION",
+    "generated_at":  "2026-05-28T18:16:35.0430591+04:00",
+    "domain":  "ECHELON 8 PRESENTATION \u0026 UX / Zero-GC Subtitles (Babel), VWS",
+    "continuation":  11,
+    "assignment_source":  {
+                              "current_batch_contains_agent_prompt_1423":  true,
+                              "prompt_line":  2139,
+                              "prompt_sha256":  "9C307765413C5548CA5CD5D2CEE58C7E415CC93819BA21AA3C264488E260C8A6",
+                              "prompt_length_chars":  20627,
+                              "prompt_task_count":  20,
+                              "note":  "Re-extracted from Docs/Tasks/CURRENT_BATCH.md with UTF8 regex block; obsolete continuation10 note about missing prompt is superseded."
+                          },
+    "files_changed_or_audited":  {
+                                     "Assets/_Project/Scripts/SpatialAudioManager.cs":  "A22AFBBD667AF74E258D36559DEAC354DCD6D05F74478E177BEDE43B9F9CA080",
+                                     "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs":  "DEC296A28A48A260A454B5A5A7069DD33304B6CC5E6B219F57E2F6E0C48E459C",
+                                     "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs":  "885C193F4CA2752BDCF1C2266E3CA6AB86CFB3BD28B23B57192902587CB26BA8"
+                                 },
+    "continuation11_change":  {
+                                  "problem":  "AudioCaptionEvents payload rings were nullable/lazy and guarded by EnsureInitialized reachable from runtime registration/enqueue; the caption accept/dispatch guard still resolved only built-in English spans, so a Babel-only caption hash would be rejected before UI presentation.",
+                                  "solution":  "Preallocated fixed AudioCaptionPayload rings as static readonly cold-owned arrays, removed AudioCaptionEvents.EnsureInitialized, added Babel-first HasCaptionText, added TryWriteCaptionText(uint, Span\u003cchar\u003e, out int, out int, out bool), and changed AudioCaptionOverlay to write directly into slot.TextBuffer.AsSpan() before TMP SetCharArray.",
+                                  "changed_paths":  [
+                                                        "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                                                        "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs",
+                                                        "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs"
+                                                    ],
+                                  "exact_line_evidence":  {
+                                                              "preallocated_pending_payload_ring":  "Assets/_Project/Scripts/SpatialAudioManager.cs:11994",
+                                                              "preallocated_next_frame_payload_ring":  "Assets/_Project/Scripts/SpatialAudioManager.cs:11995",
+                                                              "babel_first_caption_presence_guard":  "Assets/_Project/Scripts/SpatialAudioManager.cs:12128-12139",
+                                                              "dispatch_guard":  "Assets/_Project/Scripts/SpatialAudioManager.cs:12222",
+                                                              "caption_writer":  "Assets/_Project/Scripts/SpatialAudioManager.cs:12357-12394",
+                                                              "overlay_writer_call":  "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs:1703-1728",
+                                                              "char_hash_from_existing_buffer":  "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs:2105-2115",
+                                                              "source_regressions":  "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs:224-258"
+                                                          }
+                              },
+    "static_scan":  {
+                        "changed_caption_hot_forbidden_patterns":  [
+                                                                       "string.Format",
+                                                                       ".ToString(",
+                                                                       "TMP_Text.text assignment",
+                                                                       "new string",
+                                                                       "StringBuilder",
+                                                                       "Array.Resize",
+                                                                       "foreach(",
+                                                                       "interpolation",
+                                                                       "public static string ResolveCaptionText",
+                                                                       "private const string *CaptionText",
+                                                                       "LocHash.Compute(*CaptionText)",
+                                                                       "old overlay TryResolveCaptionTextSpan bridge",
+                                                                       "SlotTextMatches span bridge"
+                                                                   ],
+                        "changed_caption_hot_forbidden_hits":  0,
+                        "audio_caption_events_method_counts":  {
+                                                                   "EnsureInitialized":  0,
+                                                                   "Enqueue_new_AudioCaptionPayload_array":  0,
+                                                                   "TryGetLocalizedSpan_captionHashId":  2,
+                                                                   "TryWriteVisualSpanFromUtf8_captionHashId":  1,
+                                                                   "Dispatch_HasCaptionText_guard":  1
+                                                               },
+                        "overlay_handle_method_counts":  {
+                                                             "TryWriteCaptionText":  1,
+                                                             "SlotTextBuffer_AsSpan":  1,
+                                                             "SetCharArray_slot_buffer":  1,
+                                                             "TryResolveCaptionTextSpan":  0,
+                                                             "RequestCaptionText":  0,
+                                                             "string_Format":  0,
+                                                             "ToString_call":  0,
+                                                             "foreach_loop":  0
+                                                         },
+                        "scan_commands":  [
+                                              "Select-String changed runtime files with case-sensitive forbidden pattern array: no output.",
+                                              "PowerShell method-block regex count over AudioCaptionEvents and HandleCaptionRequested."
+                                          ]
+                    },
+    "bounded_cursor_proof":  {
+                                 "caption_writer_precondition":  "TryWriteCaptionText returns false when captionHashId == 0 or destination.Length \u003c= 0.",
+                                 "fallback_display_length":  "displayLength = min(fallbackText.Length, destination.Length).",
+                                 "fallback_loop_bound":  "for i in [0, displayLength): i \u003c displayLength \u003c= destination.Length, therefore destination[i] is inside the caller-owned buffer.",
+                                 "ellipsis_bound":  "Fallback ellipsis writes only when fallbackText.Length \u003e destination.Length and displayLength \u003e= 3; indices displayLength-3..displayLength-1 are non-negative and still \u003c destination.Length.",
+                                 "localized_route":  "Localized text is decoded by LocRegistry.TryWriteVisualSpanFromUtf8 into the same caller-owned Span\u003cchar\u003e; existing LocRegistry fail-closed truncation and UIOptimizationTelemetry handle localized overflow."
+                             },
+    "data_sovereignty":  {
+                             "new_global_data_vault_migrations_in_continuation11":  0,
+                             "existing_buffer_ids_secured_by_prior_1423_work":  [
+                                                                                    "15070550 SubtitleTelemetryBufferId",
+                                                                                    "15070551 SubtitleCueMirrorBufferId",
+                                                                                    "15070552 UIOptimizationTelemetryBufferId"
+                                                                                ],
+                             "continuation11_lock_changes":  "None. The patch uses existing LocRegistry/BabelSubtitleSyncRuntime telemetry routes; no new DataVault ownership was added.",
+                             "fallback_overflow_telemetry_call":  "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs:1720-1727 calls BabelSubtitleSyncRuntime.RecordUIOptimizationFailure with TextBufferOverflow for non-localized fallback truncation."
+                         },
+    "cinematic_and_scalability":  {
+                                      "cinematic_cheat":  "No physical simulation added. Spatial caption presentation remains a cheap semantic hash plus fixed text buffer overlay.",
+                                      "continuous_scalability":  "No binary isLowEnd/LowEnd branch added. Existing GlobalQualityWeight-driven rich-text/canvas policies remain the quality route; this patch changes ownership/allocation only.",
+                                      "binary_switch_scan":  "No new isLowEnd/LowEnd branch in changed files."
+                                  },
+    "build_throttle":  {
+                           "continuation11_build_launched":  false,
+                           "cpu_sample_percent":  77,
+                           "active_dotnet_csc_vbcscompiler":  [
+                                                                  "dotnet PID 31496 CPU 510.46875 StartTime 2026-05-28 18:03:40"
+                                                              ],
+                           "reason":  "CPU \u003e 50 and an active dotnet process exists; dotnet build was not launched. Latest allowed build still fails out-of-domain in ModularEquipmentEngine.cs.",
+                           "previous_build_failure_dump":  "Docs/AgentLogs/Dump_1423_CONT9_BUILD_FAILURE.txt",
+                           "previous_build_failure_dump_sha256":  "9CBEE6CDC1A63242D46CEB23F7029637F1857AF5F0DC063F1DAEB46C59B64273"
+                       },
+    "verification_truth":  {
+                               "project_build_passed":  false,
+                               "runtime_profiler_gc_bytes":  null,
+                               "editor_tests_executed":  false,
+                               "reason":  "No build/test/profiler run after continuation11 because CPU/build contention violates the project throttle."
+                           },
+    "residual_faults":  [
+                            "AudioCaptionEvents still uses a managed listener interface. Migrating this to SignalBus\u003cT\u003e needs a route-card/green review because it is a cross-domain audio/UI event contract change.",
+                            "Fixed English caption literals still back TryResolveCaptionTextSpan for built-in fallback until these spatial-audio captions are authored in the real Babel table.",
+                            "Legacy LocRegistry compatibility APIs and SubtitleManager managed/cold compatibility surfaces remain documented from prior loops."
+                        ],
+    "report_path":  "Docs/Reports/UI_ZERO_GC_CONTINUATION11_AUDIT_1423.json",
+    "report_kind":  "UI_ZERO_GC_CONTINUATION11_AUDIT_1423"
+}

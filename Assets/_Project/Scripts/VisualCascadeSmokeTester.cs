@@ -77,7 +77,7 @@ namespace Hecton8.Dev
             if (VolumetricShadowStepCapMx350 >= 16)
                 return Fail("volumetric-shadow-step-cap");
 
-            if (!ValidateRetinaModeSeparation())
+            if (!ValidateRetinaContinuousQualityBudget())
                 return Fail("retina-chromatic-distortion-conflict");
 
             if (causticsBytes != CausticsResolution * CausticsResolution * CausticsR8BytesPerPixel)
@@ -91,16 +91,17 @@ namespace Hecton8.Dev
             return true;
         }
 
-        private static bool ValidateRetinaModeSeparation()
+        private static bool ValidateRetinaContinuousQualityBudget()
         {
-            HectonRetinaDistortionFeature.RetinaOffsetBudget mx350Budget =
-                HectonRetinaDistortionFeature.ResolveRetinaOffsetBudget(0.0038f, 0.014f, 1f, Mx350GraphicsMemoryCeilingMb);
-            HectonRetinaDistortionFeature.RetinaOffsetBudget highBudget =
-                HectonRetinaDistortionFeature.ResolveRetinaOffsetBudget(0.0038f, 0.014f, 1f, Mx350GraphicsMemoryCeilingMb + 1024);
+            float mx350Weight = HectonRetinaDistortionFeature.ResolveRetinaVisualQualityWeight(Mx350GraphicsMemoryCeilingMb);
+            float midWeight = HectonRetinaDistortionFeature.ResolveRetinaVisualQualityWeight(Mx350GraphicsMemoryCeilingMb + 1024);
+            float highWeight = HectonRetinaDistortionFeature.ResolveRetinaVisualQualityWeight(Mx350GraphicsMemoryCeilingMb + 4096);
+            HectonRetinaDistortionFeature.RetinaOffsetBudget fullBudget =
+                HectonRetinaDistortionFeature.ResolveRetinaOffsetBudget(0.0038f, 0.014f, 1f);
 
-            bool mx350Separated = mx350Budget.ChromaticOffset > 0f && mx350Budget.DistortionOffset <= 0f;
-            bool highSeparated = highBudget.ChromaticOffset <= 0f && highBudget.DistortionOffset > 0f;
-            return mx350Separated && highSeparated;
+            bool weightRamp = mx350Weight > 0f && mx350Weight < midWeight && midWeight < highWeight && highWeight <= 1f;
+            bool fullBudgetPresent = fullBudget.ChromaticOffset > 0f && fullBudget.DistortionOffset > 0f;
+            return weightRamp && fullBudgetPresent;
         }
 
         private static long EstimateCausticsR8Bytes()

@@ -104,6 +104,10 @@ namespace Hecton8.Core.Contracts
             float frameTimeEwmaMs,
             byte pressureLevel,
             byte flags);
+        void SetPlatformPressureRenderScale(
+            bool active,
+            float minimumRenderScale,
+            float targetRenderScale);
         void ClearSystemOverrideRenderScale();
     }
 

@@ -22,6 +22,7 @@ using Hecton8.Items;
 using Hecton8.Power;
 using Hecton8.Tools;
 using System;
+using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
@@ -61,7 +62,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Gameplay/Battery Charger")]
-    public sealed class BatteryCharger : MonoBehaviour, IPowerComponent, IInteractable, IInteractableTextProvider, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public sealed class BatteryCharger : MonoBehaviour, IPowerComponent, IInteractable, IInteractableTextProvider, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener, ILateFrameTickable
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -139,6 +140,18 @@ namespace Hecton8.Gameplay
         private const string DefaultSwapBatteryText = "Swap Battery";
         private const uint InvalidInventorySlotStartIndex = 0u;
         private const int InteractTextBufferCapacity = 96;
+        private const byte ChargerAudioClipNone = 0;
+        private const byte ChargerAudioClipInsert = 1;
+
+        [StructLayout(LayoutKind.Explicit, Size = 16)]
+        private struct ChargerAudioRequest
+        {
+            [FieldOffset(0)] public Vector3 Position;
+            [FieldOffset(12)] public byte ClipKind;
+            [FieldOffset(13)] public byte Dirty;
+            [FieldOffset(14)] public ushort Reserved0;
+        }
+
         private readonly char[] _cachedInteractTextBuffer = new char[InteractTextBufferCapacity];
         private readonly char[] _cachedSwapBatteryTextBuffer = new char[InteractTextBufferCapacity];
         private int _cachedInteractTextLength;
@@ -148,6 +161,8 @@ namespace Hecton8.Gameplay
         private PlayerToolManager _cachedToolManager;
         private PlayerInventory _cachedPlayerInventory;
         private bool _hotSwapListenerRegistered;
+        private bool _registeredLateFrame;
+        private ChargerAudioRequest _pendingChargerAudio;
         // COLD ALLOC: PlayerInventory.CraftReservation[1] - inventory-owner reservation fence for charger insert handoff - owner: BatteryCharger
         private readonly PlayerInventory.CraftReservation[] _inventoryReservationScratch = new PlayerInventory.CraftReservation[1];
 
@@ -547,19 +562,31 @@ namespace Hecton8.Gameplay
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
-            _registered = RegisterLogisticsLinks();
+            if (!_registered)
+                _registered = RegisterLogisticsLinks();
+
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
+            if (_registered)
+            {
+                UnregisterLogisticsLinks();
+                _registered = false;
+            }
 
-            UnregisterLogisticsLinks();
-            _registered = false;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
+
+            ClearQueuedChargerAudio();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -571,6 +598,11 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void SlowTick()
         {
+        }
+
+        public void LateFrameTick()
+        {
+            FlushQueuedChargerAudio();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -598,17 +630,55 @@ namespace Hecton8.Gameplay
             slots[slotIndex].batteryItem = battery;
             slots[slotIndex].currentCharge = currentCharge;
 
-            // Play insert sound
-            IAudioService audio = _cachedAudioService;
-            if (insertSound != null && audio != null)
-            {
-                audio.PlayAtPoint(insertSound, _cachedTransform.position);
-            }
+            if (insertSound != null)
+                QueueChargerAudio(ChargerAudioClipInsert, _cachedTransform != null ? _cachedTransform.position : transform.position);
 
             OnBatteryInserted?.Invoke(slotIndex);
             UpdateSlotIndicator(slotIndex);
 
             return true;
+        }
+
+        private void QueueChargerAudio(byte clipKind, Vector3 position)
+        {
+            _pendingChargerAudio.Position = position;
+            _pendingChargerAudio.ClipKind = clipKind;
+            _pendingChargerAudio.Dirty = 1;
+            _pendingChargerAudio.Reserved0 = 0;
+        }
+
+        private void FlushQueuedChargerAudio()
+        {
+            if (_pendingChargerAudio.Dirty == 0)
+                return;
+
+            ChargerAudioRequest request = _pendingChargerAudio;
+            _pendingChargerAudio = default;
+
+            IAudioService audio = _cachedAudioService;
+            if (audio == null)
+                return;
+
+            AudioClip clip = ResolveChargerAudioClip(request.ClipKind);
+            if (clip != null)
+                audio.PlayAtPoint(clip, request.Position, ResolveChargerAudioVolume(), 1f);
+        }
+
+        private void ClearQueuedChargerAudio()
+        {
+            _pendingChargerAudio = default;
+        }
+
+        private AudioClip ResolveChargerAudioClip(byte clipKind)
+        {
+            return clipKind == ChargerAudioClipInsert ? insertSound : null;
+        }
+
+        private static float ResolveChargerAudioVolume()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            quality = math.saturate(math.isfinite(quality) ? quality : 1f);
+            return math.lerp(0.7f, 1f, quality);
         }
 
         /// <summary>

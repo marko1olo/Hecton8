@@ -350,6 +350,7 @@ namespace Hecton8.Construction
             BindValidationVault(vault);
             if (vault == null ||
                 !vault.TryGetGenerationHandle<ConstructionValidationSettingsDTO>(BufferID.ConstructionBuilderTuning, out VaultGenerationHandle<ConstructionValidationSettingsDTO> handle) ||
+                !IsValidationVaultHandle(in handle, BufferID.ConstructionBuilderTuning) ||
                 !vault.TryReadHandle(in handle, out NativeArray<ConstructionValidationSettingsDTO> buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length <= 0)
@@ -650,6 +651,7 @@ namespace Hecton8.Construction
             if (vault == null ||
                 !TryReadValidationBuffer(
                     vault,
+                    BufferID.ConstructionBuilderTelemetry,
                     in s_TelemetryHandle,
                     1,
                     out NativeArray<ConstructionTelemetryEntry> telemetryBuffer))
@@ -735,7 +737,12 @@ namespace Hecton8.Construction
             occupancyTable = default;
             BindValidationVault(vault);
             if (vault == null ||
-                !TryReadValidationBuffer(vault, in s_OccupancyHandle, 1, out NativeArray<BaseModuleOccupancyDTO> mutableOccupancyTable))
+                !TryReadValidationBuffer(
+                    vault,
+                    BufferID.ConstructionBuilderOccupancy,
+                    in s_OccupancyHandle,
+                    1,
+                    out NativeArray<BaseModuleOccupancyDTO> mutableOccupancyTable))
                 return false;
 
             occupancyTable = mutableOccupancyTable.AsReadOnly();
@@ -771,7 +778,7 @@ namespace Hecton8.Construction
             out NativeArray<T> buffer) where T : struct
         {
             BindValidationVault(vault);
-            if (TryReadValidationBuffer(vault, in handle, requiredLength, out buffer))
+            if (TryReadValidationBuffer(vault, bufferId, in handle, requiredLength, out buffer))
                 return true;
 
             if (!EnsureValidationHandle(vault, bufferId, requiredLength, options, ref handle))
@@ -780,7 +787,7 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            return TryReadValidationBuffer(vault, in handle, requiredLength, out buffer);
+            return TryReadValidationBuffer(vault, bufferId, in handle, requiredLength, out buffer);
         }
 
         private static bool EnsureValidationHandle<T>(
@@ -791,7 +798,7 @@ namespace Hecton8.Construction
             ref VaultGenerationHandle<T> handle) where T : struct
         {
             BindValidationVault(vault);
-            if (TryReadValidationBuffer(vault, in handle, requiredLength, out _))
+            if (TryReadValidationBuffer(vault, bufferId, in handle, requiredLength, out _))
                 return true;
 
             if (vault == null)
@@ -803,7 +810,8 @@ namespace Hecton8.Construction
                 SystemID.Construction,
                 options);
 
-            return TryReadValidationBuffer(vault, in handle, requiredLength, out _);
+            return IsValidationVaultHandle(in handle, bufferId) &&
+                   TryReadValidationBuffer(vault, bufferId, in handle, requiredLength, out _);
         }
 
         private static bool TryAcquireValidationWriteBuffer<T>(
@@ -819,23 +827,34 @@ namespace Hecton8.Construction
             if (!EnsureValidationHandle(vault, bufferId, requiredLength, options, ref handle))
                 return false;
 
-            bool locked = vault != null && vault.TryAcquireWriteLock(in handle, SystemID.Construction, out buffer);
-            if (!locked ||
-                !buffer.IsCreated ||
-                buffer.Length < math.max(1, requiredLength))
-            {
-                if (locked)
-                    vault.ReleaseWriteLock(in handle, SystemID.Construction);
-
-                buffer = default;
+            if (vault == null ||
+                !IsValidationVaultHandle(in handle, bufferId) ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.Construction, out buffer))
                 return false;
-            }
 
-            return true;
+            bool releaseOnFailure = true;
+            try
+            {
+                if (!buffer.IsCreated ||
+                    buffer.Length < math.max(1, requiredLength))
+                    return false;
+
+                releaseOnFailure = false;
+                return true;
+            }
+            finally
+            {
+                if (releaseOnFailure)
+                {
+                    vault.ReleaseWriteLock(in handle, SystemID.Construction);
+                    buffer = default;
+                }
+            }
         }
 
         private static bool TryReadValidationBuffer<T>(
             IDataVault vault,
+            BufferID bufferId,
             in VaultGenerationHandle<T> handle,
             int requiredLength,
             out NativeArray<T> buffer) where T : struct
@@ -843,7 +862,7 @@ namespace Hecton8.Construction
             buffer = default;
             BindValidationVault(vault);
             return vault != null &&
-                   handle.BufferID != 0u &&
+                   IsValidationVaultHandle(in handle, bufferId) &&
                    vault.TryReadHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= math.max(1, requiredLength);
@@ -863,10 +882,10 @@ namespace Hecton8.Construction
         {
             if (vault != null)
             {
-                ReleaseValidationBuffer(vault, ref s_OccupancyHandle);
-                ReleaseValidationBuffer(vault, ref s_BoundsOverrideHandle);
-                ReleaseValidationBuffer(vault, ref s_TelemetryHandle);
-                ReleaseValidationBuffer(vault, ref s_TuningHandle);
+                ReleaseValidationBuffer(vault, BufferID.ConstructionBuilderOccupancy, ref s_OccupancyHandle);
+                ReleaseValidationBuffer(vault, BufferID.ConstructionBuilderBounds, ref s_BoundsOverrideHandle);
+                ReleaseValidationBuffer(vault, BufferID.ConstructionBuilderTelemetry, ref s_TelemetryHandle);
+                ReleaseValidationBuffer(vault, BufferID.ConstructionBuilderTuning, ref s_TuningHandle);
                 return;
             }
 
@@ -875,12 +894,22 @@ namespace Hecton8.Construction
 
         private static void ReleaseValidationBuffer<T>(
             IDataVault vault,
+            BufferID bufferId,
             ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (handle.BufferID != 0u && handle.Generation != 0u)
+            if (IsValidationVaultHandle(in handle, bufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
+        }
+
+        private static bool IsValidationVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)SystemID.Construction &&
+                   handle.Generation != 0u;
         }
 
         private static void ResetValidationVaultHandles()

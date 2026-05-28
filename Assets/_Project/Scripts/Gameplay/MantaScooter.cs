@@ -163,6 +163,7 @@ namespace Hecton8.Gameplay
         private bool _headlightClearGlobalsDirty;
         private bool _hudPresentationDirty;
         private bool _registeredLateFrame;
+        private bool _unregisterLateFrameAfterHeadlightClear;
         private bool _isActive;
         private bool _isMoving;
         private float _driveThrottleCurrent;
@@ -428,7 +429,8 @@ namespace Hecton8.Gameplay
             ResetHudStateCache();
             CacheHeadlightDefaults();
             RegisterHeadlightShadowBudget();
-            ClearHeadlightGlobalsImmediate();
+            ClearHeadlightGlobals();
+            _unregisterLateFrameAfterHeadlightClear = true;
             UpdateBatteryVisuals();
             UpdatePowerIndicator();
         }
@@ -439,10 +441,10 @@ namespace Hecton8.Gameplay
             SyncMantaChargeMirrorFromCentral();
             DeactivateScooter();
             RestoreHeadlightDefaults();
-            ClearHeadlightGlobalsImmediate();
+            ClearHeadlightGlobals();
+            _unregisterLateFrameAfterHeadlightClear = true;
             UnregisterHeadlightShadowBudget();
             UnregisterFromTick();
-            UnregisterFromLateFrame();
             ResetHudStateCache();
             ClearDamageReceivers();
             base.OnDespawn();
@@ -465,9 +467,9 @@ namespace Hecton8.Gameplay
             SyncMantaChargeMirrorFromCentral();
             DeactivateScooter();
             RestoreHeadlightDefaults();
-            ClearHeadlightGlobalsImmediate();
+            ClearHeadlightGlobals();
             UnregisterFromTick();
-            UnregisterFromLateFrame();
+            _unregisterLateFrameAfterHeadlightClear = true;
             _debugActivationState = ActivationStateUnequipped;
             ResetHudStateCache();
             base.OnUnequip();
@@ -665,6 +667,15 @@ namespace Hecton8.Gameplay
             {
                 _hudPresentationDirty = false;
                 UpdateHUD();
+            }
+
+            if (_unregisterLateFrameAfterHeadlightClear &&
+                !_headlightClearGlobalsDirty &&
+                !_headlightPresentationDirty &&
+                !_hudPresentationDirty)
+            {
+                _unregisterLateFrameAfterHeadlightClear = false;
+                UnregisterFromLateFrame();
             }
         }
 
@@ -2460,6 +2471,7 @@ namespace Hecton8.Gameplay
             _headlightClearGlobalsDirty = false;
             _headlightPresentationDirty = false;
             _hudPresentationDirty = false;
+            _unregisterLateFrameAfterHeadlightClear = false;
             _headlightPresentationDeltaTime = 0f;
         }
 

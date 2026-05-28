@@ -121,63 +121,25 @@ namespace Hecton8.Visor
             [Range(0.125f, 0.5f)] public float lensMaskRenderScale = 0.25f;
         }
 
-        private readonly struct RuntimeState
+        private struct RuntimeState
         {
-            public RuntimeState(
-                float wetness,
-                float hullStress,
-                Vector3 localVelocity,
-                float ambientLight01,
-                float effectIntensity,
-                float rainIntensity,
-                float thermalMotionCull01,
-                float waterDensitySignal01,
-                float homeostasisFallback01,
-                float qualityPressure01,
-                float visualOverkill01,
-                float qualityWeight01,
-                Vector4 diegeticLensState,
-                Vector4 diegeticLensParams0,
-                Vector4 diegeticLensParams1,
-                Vector4 diegeticLensParams2,
-                uint telemetryFlags)
-            {
-                Wetness = wetness;
-                HullStress = hullStress;
-                LocalVelocity = localVelocity;
-                AmbientLight01 = ambientLight01;
-                EffectIntensity = effectIntensity;
-                RainIntensity = rainIntensity;
-                ThermalMotionCull01 = thermalMotionCull01;
-                WaterDensitySignal01 = waterDensitySignal01;
-                HomeostasisFallback01 = homeostasisFallback01;
-                QualityPressure01 = qualityPressure01;
-                VisualOverkill01 = visualOverkill01;
-                QualityWeight01 = qualityWeight01;
-                DiegeticLensState = diegeticLensState;
-                DiegeticLensParams0 = diegeticLensParams0;
-                DiegeticLensParams1 = diegeticLensParams1;
-                DiegeticLensParams2 = diegeticLensParams2;
-                TelemetryFlags = telemetryFlags;
-            }
-
-            public readonly float Wetness;
-            public readonly float HullStress;
-            public readonly Vector3 LocalVelocity;
-            public readonly float AmbientLight01;
-            public readonly float EffectIntensity;
-            public readonly float RainIntensity;
-            public readonly float ThermalMotionCull01;
-            public readonly float WaterDensitySignal01;
-            public readonly float HomeostasisFallback01;
-            public readonly float QualityPressure01;
-            public readonly float VisualOverkill01;
-            public readonly float QualityWeight01;
-            public readonly Vector4 DiegeticLensState;
-            public readonly Vector4 DiegeticLensParams0;
-            public readonly Vector4 DiegeticLensParams1;
-            public readonly Vector4 DiegeticLensParams2;
-            public readonly uint TelemetryFlags;
+            public float Wetness;
+            public float HullStress;
+            public Vector3 LocalVelocity;
+            public float AmbientLight01;
+            public float EffectIntensity;
+            public float RainIntensity;
+            public float ThermalMotionCull01;
+            public float WaterDensitySignal01;
+            public float HomeostasisFallback01;
+            public float QualityPressure01;
+            public float VisualOverkill01;
+            public float QualityWeight01;
+            public Vector4 DiegeticLensState;
+            public Vector4 DiegeticLensParams0;
+            public Vector4 DiegeticLensParams1;
+            public Vector4 DiegeticLensParams2;
+            public uint TelemetryFlags;
         }
 
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
@@ -338,7 +300,7 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                TextureDesc destinationDesc = new TextureDesc(sourceDesc);
+                TextureDesc destinationDesc = sourceDesc;
                 destinationDesc.name = "_HectonVisorFluidDistortion";
                 destinationDesc.clearBuffer = false;
                 destinationDesc.depthBufferBits = DepthBits.None;
@@ -1117,24 +1079,24 @@ namespace Hecton8.Visor
             float qualityPressure01 = math.saturate(math.max(math.max(qualityPressureFromWeight01, hardwareQualityPressure01), lensQualityPressure01));
             float homeostasisFallback01 = math.saturate(math.max(qualityPressure01, stressFallback01));
             float visualOverkill01 = ResolveVisualOverkill01(settings, qualityPressure01, globalQualityWeight);
-            runtimeState = new RuntimeState(
-                wetness,
-                hullStress,
-                localVelocity,
-                ambientLight01,
-                effectIntensity,
-                rainIntensity,
-                thermalMotionCull01,
-                waterDensitySignal01,
-                homeostasisFallback01,
-                qualityPressure01,
-                visualOverkill01,
-                globalQualityWeight,
-                sanitizedLensState,
-                sanitizedLensParams0,
-                sanitizedLensParams1,
-                sanitizedLensParams2,
-                telemetryFlags);
+            runtimeState = default;
+            runtimeState.Wetness = wetness;
+            runtimeState.HullStress = hullStress;
+            runtimeState.LocalVelocity = localVelocity;
+            runtimeState.AmbientLight01 = ambientLight01;
+            runtimeState.EffectIntensity = effectIntensity;
+            runtimeState.RainIntensity = rainIntensity;
+            runtimeState.ThermalMotionCull01 = thermalMotionCull01;
+            runtimeState.WaterDensitySignal01 = waterDensitySignal01;
+            runtimeState.HomeostasisFallback01 = homeostasisFallback01;
+            runtimeState.QualityPressure01 = qualityPressure01;
+            runtimeState.VisualOverkill01 = visualOverkill01;
+            runtimeState.QualityWeight01 = globalQualityWeight;
+            runtimeState.DiegeticLensState = sanitizedLensState;
+            runtimeState.DiegeticLensParams0 = sanitizedLensParams0;
+            runtimeState.DiegeticLensParams1 = sanitizedLensParams1;
+            runtimeState.DiegeticLensParams2 = sanitizedLensParams2;
+            runtimeState.TelemetryFlags = telemetryFlags;
             return true;
         }
 

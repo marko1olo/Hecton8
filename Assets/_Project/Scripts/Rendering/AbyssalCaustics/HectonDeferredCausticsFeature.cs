@@ -60,15 +60,17 @@ namespace Hecton8.Rendering
                 if (!Application.isPlaying || _settings == null || _material == null)
                     return;
 
-                if (!AbyssalDeferredCausticsRuntime.TryGetActiveConstantBuffer(out GraphicsBuffer constantBuffer, out _))
-                    return;
-
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
                 if (resourceData.isActiveTargetBackBuffer)
                     return;
 
                 UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
                 if (IsUnsupportedCameraType(cameraData.cameraType))
+                    return;
+                if (cameraData.renderType != CameraRenderType.Base)
+                    return;
+
+                if (!AbyssalDeferredCausticsRuntime.TryGetActiveConstantBuffer(out GraphicsBuffer constantBuffer, out _))
                     return;
 
                 TextureHandle sourceTexture = resourceData.activeColorTexture;
@@ -77,7 +79,7 @@ namespace Hecton8.Rendering
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                TextureDesc destinationDesc = new TextureDesc(sourceDesc);
+                TextureDesc destinationDesc = sourceDesc;
                 destinationDesc.name = "_HectonDeferredCausticsComposite";
                 destinationDesc.clearBuffer = false;
                 destinationDesc.depthBufferBits = DepthBits.None;
@@ -161,6 +163,11 @@ namespace Hecton8.Rendering
                 return;
 
             if (IsUnsupportedCameraType(renderingData.cameraData.cameraType))
+                return;
+            if (renderingData.cameraData.renderType != CameraRenderType.Base)
+                return;
+
+            if (!AbyssalDeferredCausticsRuntime.TryGetActiveConstantBuffer(out _, out _))
                 return;
 
             _pass.Setup(settings, _material);

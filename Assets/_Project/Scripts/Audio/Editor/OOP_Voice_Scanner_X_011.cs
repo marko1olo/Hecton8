@@ -72,17 +72,20 @@ namespace Hecton8.Audio.Editor
             string vwsPath = Path.Combine(projectRoot, "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs");
             string subtitlePath = Path.Combine(projectRoot, "Assets/_Project/Scripts/UI/SubtitleManager.cs");
             string babelPath = Path.Combine(projectRoot, "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs");
+            string subtitleSignalPath = Path.Combine(projectRoot, "Assets/_Project/Scripts/Core/Contracts/Signals/SubtitleCueSignal.cs");
             string vwsText = File.Exists(vwsPath) ? File.ReadAllText(vwsPath) : string.Empty;
             string subtitleText = File.Exists(subtitlePath) ? File.ReadAllText(subtitlePath) : string.Empty;
             string babelText = File.Exists(babelPath) ? File.ReadAllText(babelPath) : string.Empty;
+            string subtitleSignalText = File.Exists(subtitleSignalPath) ? File.ReadAllText(subtitleSignalPath) : string.Empty;
 
             result.PriorityWordImplemented =
                 vwsText.IndexOf("VwsPriorityWord", StringComparison.Ordinal) >= 0 &&
                 vwsText.IndexOf("VocalWarningPriorityWordOps", StringComparison.Ordinal) >= 0 &&
                 vwsText.IndexOf("NativeMinHeap", StringComparison.Ordinal) < 0;
             result.SubtitleSignal64Bytes =
-                babelText.IndexOf("public struct SubtitleCueSignal", StringComparison.Ordinal) >= 0 &&
-                babelText.IndexOf("StructLayout(LayoutKind.Explicit, Size = 64)", StringComparison.Ordinal) >= 0 &&
+                subtitleSignalText.IndexOf("public struct SubtitleCueSignal", StringComparison.Ordinal) >= 0 &&
+                subtitleSignalText.IndexOf("StructLayout(LayoutKind.Explicit, Size = 64)", StringComparison.Ordinal) >= 0 &&
+                babelText.IndexOf("public struct SubtitleCueSignal", StringComparison.Ordinal) < 0 &&
                 babelText.IndexOf("UnsafeUtility.SizeOf<SubtitleCueSignal>() == 64", StringComparison.Ordinal) >= 0;
             result.StringQueueRemoved =
                 subtitleText.IndexOf("SubtitleRequest", StringComparison.Ordinal) < 0 &&

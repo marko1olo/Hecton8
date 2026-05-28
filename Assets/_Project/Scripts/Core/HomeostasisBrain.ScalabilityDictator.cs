@@ -210,7 +210,7 @@ namespace Hecton8.Core
         private const string ScalabilityH8DumpFileName = "Dump_SCALABILITY_DICTATOR.h8dump";
         private const string ScalabilityCsvFileName = "scalability_curves.csv";
 
-        private static readonly int _mathLodLowScalarId = Shader.PropertyToID("_MATH_LOD_LOW");
+        private static readonly int _mathLodLowScalarId = Shader.PropertyToID("_HectonMathLodLowWeight");
         private static readonly int _cullingMultiplierId = Shader.PropertyToID("_H8CullingMultiplier");
         private static readonly int _globalQualityWeightId = Shader.PropertyToID("_GlobalQualityWeight");
         private static readonly int _h8GlobalQualityWeightId = Shader.PropertyToID("_H8GlobalQualityWeight");
@@ -239,7 +239,7 @@ namespace Hecton8.Core
         private static bool _visualOverkillActive;
         private static int _visualOverkillCounter;
         private static bool _forceVisualOverkillOverride;
-        private static bool _mathLodLowLeaseActive;
+        private static bool _mathLodLowScalarActive;
         private static bool _mathLodLowScalarWritten;
         private static float _lastMathLodLowScalar;
         private static bool _mockHeavyLoadActive;
@@ -281,6 +281,7 @@ namespace Hecton8.Core
         private static float _qualityPidPreviousError;
         private static int _scalabilityTelemetryCursor;
         private static int _scalabilityTelemetrySampleCount;
+        private static bool _mockTerrainSamplerBufferLocked;
 
         /// <summary>Current culling multiplier written by the dictator.</summary>
         public static float CullingMultiplier => SanitizeCullingMultiplier(_cullingMultiplier);
@@ -329,7 +330,7 @@ namespace Hecton8.Core
             _visualOverkillActive = false;
             _visualOverkillCounter = 0;
             _forceVisualOverkillOverride = false;
-            _mathLodLowLeaseActive = false;
+            _mathLodLowScalarActive = false;
             _mathLodLowScalarWritten = false;
             _lastMathLodLowScalar = ForcedQualityWeightDisabled;
             _mockHeavyLoadActive = false;
@@ -399,15 +400,15 @@ namespace Hecton8.Core
                 MemClearIfCreated(terrainStatus);
 
 #if UNITY_EDITOR
-            if (TryResolveCsvScratch(out NativeArray<byte> csvScratch))
+            if (OpenOrAcquireCsvScratchForOwnerRoute(out NativeArray<byte> csvScratch))
                 MemClearIfCreated(csvScratch);
 #endif
-            if (TryResolveScalabilityTelemetry(out NativeArray<ScalabilityTelemetryEntry> telemetry))
+            if (OpenOrAcquireScalabilityTelemetryForOwnerRoute(out NativeArray<ScalabilityTelemetryEntry> telemetry))
                 MemClearIfCreated(telemetry);
             GenerateEmergencyMockProfiles();
             Shader.SetGlobalFloat(_cullingMultiplierId, 1f);
             PublishQualityShaderGlobalsImmediate(true);
-            SetMathLodLowLease(ResolveHardwareConstraintPressure01() >= HardwareConstraintFlagThreshold01);
+            SetMathLodLowScalarActive(ResolveHardwareConstraintPressure01() >= HardwareConstraintFlagThreshold01);
             FlushVisualSyncShaderState();
         }
 
@@ -417,6 +418,7 @@ namespace Hecton8.Core
             {
                 DispatcherJobFence.TryComplete(ref _mockTerrainSamplerJobHandle, forceComplete: true);
                 _mockTerrainSamplerJobPending = false;
+                ReleaseMockTerrainSamplerJobBufferLock(_dataVault);
             }
 
             if (_gcFrozenByDictator)
@@ -425,9 +427,6 @@ namespace Hecton8.Core
                 _gcFrozenByDictator = false;
                 _gcFreezeFramesRemaining = 0;
             }
-
-            if (_mathLodLowLeaseActive)
-                GlobalRegistry.SetTransientLowScalabilityOverride(GlobalRegistry.TransientScalabilityPlatformPressureMask, false);
 
             IDynamicResolutionRuntime drsRuntime = _dynamicResolutionRuntime;
             if (drsRuntime != null && drsRuntime.IsSystemOverrideActive)
@@ -442,6 +441,7 @@ namespace Hecton8.Core
             _pendingMathLodLowScalar = 0f;
             _pendingCullingMultiplier = 1f;
             _pendingGlobalQualityWeight = 1f;
+            ReleaseMockTerrainSamplerJobBufferLock(_dataVault);
             ReleaseScalabilityDictatorVaultHandles(_dataVault);
             _systemHealthDtoHandle = default;
             _scalabilityStateHandle = default;
@@ -474,8 +474,10 @@ namespace Hecton8.Core
             {
                 DispatcherJobFence.TryComplete(ref _mockTerrainSamplerJobHandle, forceComplete: true);
                 _mockTerrainSamplerJobPending = false;
+                ReleaseMockTerrainSamplerJobBufferLock(releaseVault);
             }
 
+            ReleaseMockTerrainSamplerJobBufferLock(releaseVault);
             ReleaseScalabilityDictatorVaultHandles(releaseVault);
             _systemHealthDtoHandle = default;
             _scalabilityStateHandle = default;
@@ -811,7 +813,7 @@ namespace Hecton8.Core
 
             ApplyVisualOverkillPolicy(systemHealth, ref targetMask);
             ApplyGarbageCollectorPolicy(safeFrameMs, ref targetMask);
-            SetMathLodLowLease(mathLodLow);
+            SetMathLodLowScalarActive(mathLodLow);
             UpdateCullingMultiplier(math.lerp(1f, SanitizeLowCullingMultiplier(_lowCullingMultiplier), ResolveMathLodLowWeight()));
             UpdateRegistryKillMask(targetMask);
             WriteDictatorState(frame, safeFrameMs, vramPressure01, thermalIndex, targetMask);
@@ -923,14 +925,11 @@ namespace Hecton8.Core
 #endif
         }
 
-        private static void SetMathLodLowLease(bool enabled)
+        private static void SetMathLodLowScalarActive(bool enabled)
         {
-            if (_mathLodLowLeaseActive != enabled)
+            if (_mathLodLowScalarActive != enabled)
             {
-                _mathLodLowLeaseActive = enabled;
-                GlobalRegistry.SetTransientLowScalabilityOverride(
-                    GlobalRegistry.TransientScalabilityPlatformPressureMask,
-                    enabled);
+                _mathLodLowScalarActive = enabled;
                 RefreshMathLodLowScalar();
                 return;
             }
@@ -1121,37 +1120,53 @@ namespace Hecton8.Core
             ulong activeMask)
         {
             IDataVault vault = _dataVault;
-            if (!EnsureScalabilityStateHandles(vault))
-            {
+            uint foldedMask = FoldMaskToUInt(activeMask);
+            float safeFrameMs = SanitizePositiveFrameMs(frameMs);
+            float safeVramPressure01 = SanitizePressure01(vramPressure01, 1f);
+            float safeThermalIndex = SanitizePressure01(thermalIndex, 1f);
+            if (!TryAcquireWriteView(vault, in _systemHealthDtoHandle, DictatorSingletonLength, out NativeArray<SystemHealthDTO> healthArray))
                 return;
+
+            try
+            {
+                SystemHealthDTO health = healthArray[0];
+                health.FrameTimeMs = safeFrameMs;
+                health.VramPressure = safeVramPressure01;
+                health.ThermalIndex = safeThermalIndex;
+                health.ActiveThrottlesMask = foldedMask;
+                healthArray[0] = health;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _systemHealthDtoHandle, SystemID.HardwareHomeostasis);
             }
 
-            if (!TryResolveScalabilityStateViews(vault, out NativeArray<SystemHealthDTO> healthArray, out NativeArray<ScalabilityStateDTO> stateArray))
+            UpdateGlobalQualityState(safeFrameMs, safeVramPressure01, safeThermalIndex);
+            if (!TryAcquireWriteView(vault, in _scalabilityStateHandle, DictatorSingletonLength, out NativeArray<ScalabilityStateDTO> stateArray))
                 return;
 
-            uint foldedMask = FoldMaskToUInt(activeMask);
-            SystemHealthDTO health = healthArray[0];
-            health.FrameTimeMs = SanitizePositiveFrameMs(frameMs);
-            health.VramPressure = SanitizePressure01(vramPressure01, 1f);
-            health.ThermalIndex = SanitizePressure01(thermalIndex, 1f);
-            health.ActiveThrottlesMask = foldedMask;
-            healthArray[0] = health;
+            try
+            {
+                ScalabilityStateDTO state = stateArray[0];
+                state.GlobalQualityWeight = _globalQualityWeight;
+                state.FractionalTimeSlice = _fractionalTimeSlice;
+                state.VramPressure = safeVramPressure01;
+                state.ThermalIndex = safeThermalIndex;
+                stateArray[0] = state;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _scalabilityStateHandle, SystemID.HardwareHomeostasis);
+            }
 
-            UpdateGlobalQualityState(frameMs, health.VramPressure, health.ThermalIndex);
-            ScalabilityStateDTO state = stateArray[0];
-            state.GlobalQualityWeight = _globalQualityWeight;
-            state.FractionalTimeSlice = _fractionalTimeSlice;
-            state.VramPressure = health.VramPressure;
-            state.ThermalIndex = health.ThermalIndex;
-            stateArray[0] = state;
             if (MathLodRuntimeConfig.PublishConfig(
                     vault,
                     unchecked((uint)frame),
                     _globalQualityWeight,
                     _fractionalTimeSlice,
-                    health.FrameTimeMs,
-                    health.VramPressure,
-                    health.ThermalIndex,
+                    safeFrameMs,
+                    safeVramPressure01,
+                    safeThermalIndex,
                     foldedMask != 0u ? MathLodRuntimeConfig.ConfigFlagExternalPressure : 0u,
                     out uint mathLodFaultFlags) &&
                 mathLodFaultFlags != 0u)
@@ -1159,9 +1174,9 @@ namespace Hecton8.Core
                 MathLodRuntimeConfig.TryDumpOnFault(null);
             }
 
-            RecordScalabilityTelemetry(health.FrameTimeMs, health.VramPressure, foldedMask);
+            RecordScalabilityTelemetry(safeFrameMs, safeVramPressure01, foldedMask);
             RefreshMathLodLowScalar();
-            ApplyDictatorRenderScale(frameMs, health.ThermalIndex);
+            ApplyDictatorRenderScale(safeFrameMs, safeThermalIndex);
             PublishQualityShaderGlobals(false);
         }
 
@@ -1214,9 +1229,6 @@ namespace Hecton8.Core
         {
             signal = default;
             IDataVault vault = _dataVault;
-            if (!EnsureMockHeavyLoadHandle(vault))
-                return false;
-
             if (!TryResolveMockHeavyLoadView(vault, out NativeArray<MockHeavyLoadSignal> signals))
                 return false;
 
@@ -1240,12 +1252,34 @@ namespace Hecton8.Core
                    state.Length >= DictatorSingletonLength;
         }
 
+        private static bool TryReadScalabilityStateViews(
+            IDataVault vault,
+            out NativeArray<SystemHealthDTO>.ReadOnly health,
+            out NativeArray<ScalabilityStateDTO>.ReadOnly state)
+        {
+            health = default;
+            state = default;
+            return vault != null &&
+                   vault.TryReadOnlyHandle(in _systemHealthDtoHandle, out health) &&
+                   vault.TryReadOnlyHandle(in _scalabilityStateHandle, out state) &&
+                   health.Length >= DictatorSingletonLength &&
+                   state.Length >= DictatorSingletonLength;
+        }
+
         private static bool TryResolveScalabilityTuningView(IDataVault vault, out NativeArray<ScalabilityTuningDTO> tuning)
         {
             tuning = default;
             return vault != null &&
                    vault.TryResolveHandle(in _scalabilityTuningHandle, out tuning) &&
                    tuning.IsCreated &&
+                   tuning.Length >= DictatorSingletonLength;
+        }
+
+        private static bool TryReadScalabilityTuningView(IDataVault vault, out NativeArray<ScalabilityTuningDTO>.ReadOnly tuning)
+        {
+            tuning = default;
+            return vault != null &&
+                   vault.TryReadOnlyHandle(in _scalabilityTuningHandle, out tuning) &&
                    tuning.Length >= DictatorSingletonLength;
         }
 
@@ -1267,9 +1301,17 @@ namespace Hecton8.Core
                    terrainSampler.Length >= DictatorSingletonLength;
         }
 
+        private static bool TryReadMockTerrainSamplerStatusView(IDataVault vault, out NativeArray<MockTerrainSamplerStatus>.ReadOnly terrainSampler)
+        {
+            terrainSampler = default;
+            return vault != null &&
+                   vault.TryReadOnlyHandle(in _mockTerrainSamplerStatusHandle, out terrainSampler) &&
+                   terrainSampler.Length >= DictatorSingletonLength;
+        }
+
         private static bool EnsureScalabilityStateHandles(IDataVault vault)
         {
-            if (!TryResolveOrAcquire(
+            if (!OpenOrAcquireVaultBufferForOwnerRoute(
                     vault,
                     ref _systemHealthDtoHandle,
                     BufferID.ShinobuScalabilitySystemHealth,
@@ -1281,7 +1323,7 @@ namespace Hecton8.Core
                 return false;
             }
 
-            if (!TryResolveOrAcquire(
+            if (!OpenOrAcquireVaultBufferForOwnerRoute(
                     vault,
                     ref _scalabilityStateHandle,
                     BufferID.ShinobuScalabilityState,
@@ -1302,7 +1344,7 @@ namespace Hecton8.Core
 
         private static bool EnsureScalabilityTuningHandle(IDataVault vault)
         {
-            if (!TryResolveOrAcquire(
+            if (!OpenOrAcquireVaultBufferForOwnerRoute(
                     vault,
                     ref _scalabilityTuningHandle,
                     BufferID.ShinobuScalabilityTunerState,
@@ -1346,7 +1388,7 @@ namespace Hecton8.Core
 
         private static bool EnsureMockHeavyLoadHandle(IDataVault vault)
         {
-            if (!TryResolveOrAcquire(
+            if (!OpenOrAcquireVaultBufferForOwnerRoute(
                     vault,
                     ref _mockHeavyLoadHandle,
                     BufferID.ShinobuScalabilityMockHeavyLoad,
@@ -1365,7 +1407,7 @@ namespace Hecton8.Core
 
         private static bool EnsureMockTerrainSamplerStatusHandle(IDataVault vault)
         {
-            if (!TryResolveOrAcquire(
+            if (!OpenOrAcquireVaultBufferForOwnerRoute(
                     vault,
                     ref _mockTerrainSamplerStatusHandle,
                     BufferID.ShinobuScalabilityMockScatterDensity,
@@ -1385,11 +1427,7 @@ namespace Hecton8.Core
         private static bool TryResolveMockTerrainSamplerStatus(out NativeArray<MockTerrainSamplerStatus> terrainSampler)
         {
             terrainSampler = default;
-            IDataVault vault = _dataVault;
-            if (!EnsureMockTerrainSamplerStatusHandle(vault))
-                return false;
-
-            return TryResolveMockTerrainSamplerStatusView(vault, out terrainSampler);
+            return TryResolveMockTerrainSamplerStatusView(_dataVault, out terrainSampler);
         }
 
         private static bool TryResolveCsvScratch(out NativeArray<byte> csvScratch)
@@ -1402,7 +1440,26 @@ namespace Hecton8.Core
             if (vault == null)
                 return false;
 
-            if (!TryResolveOrAcquire(
+            if (_csvScratchHandle.BufferID == 0u || _csvScratchHandle.Generation == 0u)
+                return false;
+
+            return vault.TryResolveHandle(in _csvScratchHandle, out csvScratch) &&
+                   csvScratch.IsCreated &&
+                   csvScratch.Length >= ScalabilityCsvScratchBytes;
+#endif
+        }
+
+        private static bool OpenOrAcquireCsvScratchForOwnerRoute(out NativeArray<byte> csvScratch)
+        {
+            csvScratch = default;
+#if !UNITY_EDITOR
+            return false;
+#else
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            if (!OpenOrAcquireVaultBufferForOwnerRoute(
                     vault,
                     ref _csvScratchHandle,
                     BufferID.ShinobuScalabilityCsvScratch,
@@ -1423,7 +1480,7 @@ namespace Hecton8.Core
 
         private static bool EnsureScalabilityTelemetryHandle(IDataVault vault)
         {
-            if (!TryResolveOrAcquire(
+            if (!OpenOrAcquireVaultBufferForOwnerRoute(
                     vault,
                     ref _scalabilityTelemetryHandle,
                     BufferID.ShinobuScalabilityOscilloscope,
@@ -1449,7 +1506,9 @@ namespace Hecton8.Core
         {
             telemetry = default;
             IDataVault vault = _dataVault;
-            if (!EnsureScalabilityTelemetryHandle(vault))
+            if (vault == null ||
+                _scalabilityTelemetryHandle.BufferID == 0u ||
+                _scalabilityTelemetryHandle.Generation == 0u)
                 return false;
 
             return vault.TryResolveHandle(in _scalabilityTelemetryHandle, out telemetry) &&
@@ -1457,41 +1516,78 @@ namespace Hecton8.Core
                    telemetry.Length >= ScalabilityTelemetryCapacity;
         }
 
+        private static bool OpenOrAcquireScalabilityTelemetryForOwnerRoute(out NativeArray<ScalabilityTelemetryEntry> telemetry)
+        {
+            telemetry = default;
+            IDataVault vault = _dataVault;
+            return EnsureScalabilityTelemetryHandle(vault) &&
+                   vault.TryResolveHandle(in _scalabilityTelemetryHandle, out telemetry) &&
+                   telemetry.IsCreated &&
+                   telemetry.Length >= ScalabilityTelemetryCapacity;
+        }
+
         private static void RecordScalabilityTelemetry(float rawFrameMs, float vramPressure01, uint flags)
         {
             IDataVault vault = _dataVault;
-            if (!EnsureScalabilityTelemetryHandle(vault))
-                return;
-
-            int index = _scalabilityTelemetryCursor;
-            if ((uint)index >= ScalabilityTelemetryCapacity)
-                index = 0;
-
-            float safeRawFrameMs = SanitizePositiveFrameMs(rawFrameMs);
-            float smoothedFrameMs = _fpsEwma > 0f
-                ? 1000f * math.rcp(math.max(1f, _fpsEwma))
-                : safeRawFrameMs;
-            if (!vault.TryResolveHandle(in _scalabilityTelemetryHandle, out NativeArray<ScalabilityTelemetryEntry> telemetry) ||
-                !telemetry.IsCreated ||
-                telemetry.Length < ScalabilityTelemetryCapacity)
+            if (!TryAcquireWriteView(vault, in _scalabilityTelemetryHandle, ScalabilityTelemetryCapacity, out NativeArray<ScalabilityTelemetryEntry> telemetry))
             {
                 return;
             }
 
-            ScalabilityTelemetryEntry entry = telemetry[index];
-            entry.Timestamp = unchecked((ulong)_lastStopwatchTimestamp);
-            entry.RawFrameMs = safeRawFrameMs;
-            entry.SmoothedFrameMs = math.isfinite(smoothedFrameMs) && smoothedFrameMs > 0f ? smoothedFrameMs : safeRawFrameMs;
-            entry.GlobalQualityWeight = SanitizeQualityWeight01(_globalQualityWeight, 0f);
-            entry.VramPressure = SanitizePressure01(vramPressure01, 1f);
-            entry.Flags = flags;
-            entry._pad0 = 0u;
-            telemetry[index] = entry;
+            try
+            {
+                int index = _scalabilityTelemetryCursor;
+                if ((uint)index >= ScalabilityTelemetryCapacity)
+                    index = 0;
 
-            index++;
-            _scalabilityTelemetryCursor = index >= ScalabilityTelemetryCapacity ? 0 : index;
-            if (_scalabilityTelemetrySampleCount < ScalabilityTelemetryCapacity)
-                _scalabilityTelemetrySampleCount++;
+                float safeRawFrameMs = SanitizePositiveFrameMs(rawFrameMs);
+                float smoothedFrameMs = _fpsEwma > 0f
+                    ? 1000f * math.rcp(math.max(1f, _fpsEwma))
+                    : safeRawFrameMs;
+
+                ScalabilityTelemetryEntry entry = telemetry[index];
+                entry.Timestamp = unchecked((ulong)_lastStopwatchTimestamp);
+                entry.RawFrameMs = safeRawFrameMs;
+                entry.SmoothedFrameMs = math.isfinite(smoothedFrameMs) && smoothedFrameMs > 0f ? smoothedFrameMs : safeRawFrameMs;
+                entry.GlobalQualityWeight = SanitizeQualityWeight01(_globalQualityWeight, 0f);
+                entry.VramPressure = SanitizePressure01(vramPressure01, 1f);
+                entry.Flags = flags;
+                entry._pad0 = 0u;
+                telemetry[index] = entry;
+
+                index++;
+                _scalabilityTelemetryCursor = index >= ScalabilityTelemetryCapacity ? 0 : index;
+                if (_scalabilityTelemetrySampleCount < ScalabilityTelemetryCapacity)
+                    _scalabilityTelemetrySampleCount++;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _scalabilityTelemetryHandle, SystemID.HardwareHomeostasis);
+            }
+        }
+
+        private static bool TryAcquireWriteView<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> view)
+            where T : struct
+        {
+            view = default;
+            if (vault == null ||
+                handle.BufferID == 0u ||
+                handle.Generation == 0u ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.HardwareHomeostasis, out view))
+            {
+                return false;
+            }
+
+            if (view.IsCreated && view.Length >= requiredLength)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, SystemID.HardwareHomeostasis);
+            view = default;
+            return false;
         }
 
         private static unsafe void MemClearIfCreated<T>(NativeArray<T> array) where T : struct
@@ -1542,7 +1638,35 @@ namespace Hecton8.Core
                 return;
             }
 
-            if (!TryResolveMockTerrainSamplerStatus(out NativeArray<MockTerrainSamplerStatus> terrainSampler))
+#if UNITY_EDITOR
+            IDataVault vault = _dataVault;
+            if (!TryAcquireWriteView(
+                    vault,
+                    in _mockTerrainSamplerStatusHandle,
+                    DictatorSingletonLength,
+                    out NativeArray<MockTerrainSamplerStatus> terrainSampler))
+            {
+                return;
+            }
+
+            try
+            {
+                MockTerrainSamplerStatusJob job = default;
+                job.Signal = terrainSampler;
+                job.GlobalQualityWeight = safeGlobalQualityWeight;
+                job.Frame = unchecked((uint)frame);
+                job.Execute();
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _mockTerrainSamplerStatusHandle, SystemID.HardwareHomeostasis);
+            }
+
+            _mockTerrainSamplerJobHandle = default;
+            _mockTerrainSamplerJobPending = false;
+#else
+            if (!TryResolveMockTerrainSamplerStatus(out NativeArray<MockTerrainSamplerStatus> terrainSampler) ||
+                !TryLockMockTerrainSamplerJobBuffer())
             {
                 return;
             }
@@ -1551,14 +1675,19 @@ namespace Hecton8.Core
             job.Signal = terrainSampler;
             job.GlobalQualityWeight = safeGlobalQualityWeight;
             job.Frame = unchecked((uint)frame);
-#if UNITY_EDITOR
-            job.Execute();
-            _mockTerrainSamplerJobHandle = default;
-            _mockTerrainSamplerJobPending = false;
-#else
-            _mockTerrainSamplerJobHandle = job.Schedule();
-            H8Memory.RegisterActiveJob(SystemID.HardwareHomeostasis, _mockTerrainSamplerJobHandle);
-            _mockTerrainSamplerJobPending = true;
+            bool scheduled = false;
+            try
+            {
+                _mockTerrainSamplerJobHandle = job.Schedule();
+                H8Memory.RegisterActiveJob(SystemID.HardwareHomeostasis, _mockTerrainSamplerJobHandle);
+                _mockTerrainSamplerJobPending = true;
+                scheduled = true;
+            }
+            finally
+            {
+                if (!scheduled)
+                    ReleaseMockTerrainSamplerJobBufferLock(_dataVault);
+            }
 #endif
             _lastMockTerrainScheduleFrame = frame;
             _lastMockTerrainQualityBucket = qualityBucket;
@@ -1572,6 +1701,31 @@ namespace Hecton8.Core
 
             DispatcherJobFence.TryFinalizeCompleted(ref _mockTerrainSamplerJobHandle);
             _mockTerrainSamplerJobPending = false;
+            ReleaseMockTerrainSamplerJobBufferLock(_dataVault);
+        }
+
+        private static bool TryLockMockTerrainSamplerJobBuffer()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || _mockTerrainSamplerBufferLocked)
+                return false;
+
+            if (!vault.TryLockBuffer(BufferID.ShinobuScalabilityMockScatterDensity, SystemID.HardwareHomeostasis))
+                return false;
+
+            _mockTerrainSamplerBufferLocked = true;
+            return true;
+        }
+
+        private static void ReleaseMockTerrainSamplerJobBufferLock(IDataVault vault)
+        {
+            if (!_mockTerrainSamplerBufferLocked)
+                return;
+
+            if (vault != null)
+                vault.TryUnlockBuffer(BufferID.ShinobuScalabilityMockScatterDensity, SystemID.HardwareHomeostasis);
+
+            _mockTerrainSamplerBufferLocked = false;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -2218,23 +2372,16 @@ namespace Hecton8.Core
         {
             tuning = default;
             IDataVault vault = _dataVault;
-            if (!EnsureScalabilityTuningHandle(vault))
-            {
-                return false;
-            }
-
-            if (!TryResolveScalabilityTuningView(vault, out NativeArray<ScalabilityTuningDTO> tuningArray))
+            if (!TryReadScalabilityTuningView(vault, out NativeArray<ScalabilityTuningDTO>.ReadOnly tuningArray))
             {
                 return false;
             }
 
             ScalabilityTuningDTO vaultTuning = tuningArray[0];
-            vaultTuning.TargetFrameMs = SanitizeTunerTargetFrameMs(vaultTuning.TargetFrameMs);
-            vaultTuning.EmergencyThreshold = SanitizeTunerEmergencyThreshold(vaultTuning.EmergencyThreshold);
-            vaultTuning.HysteresisReleaseFrames = SanitizeTunerHysteresisFrames(vaultTuning.HysteresisReleaseFrames);
-            vaultTuning.Flags = 0u;
-            tuningArray[0] = vaultTuning;
-            tuning = vaultTuning;
+            tuning.TargetFrameMs = SanitizeTunerTargetFrameMs(vaultTuning.TargetFrameMs);
+            tuning.EmergencyThreshold = SanitizeTunerEmergencyThreshold(vaultTuning.EmergencyThreshold);
+            tuning.HysteresisReleaseFrames = SanitizeTunerHysteresisFrames(vaultTuning.HysteresisReleaseFrames);
+            tuning.Flags = 0u;
             return true;
         }
 
@@ -2257,52 +2404,55 @@ namespace Hecton8.Core
         public static void SetMockHeavyLoadForTuner(float frameSpikeMs, float vramPressure01, bool enabled)
         {
             IDataVault vault = _dataVault;
-            if (!EnsureMockHeavyLoadHandle(vault))
+            if (!EnsureMockHeavyLoadHandle(vault) ||
+                !TryAcquireWriteView(vault, in _mockHeavyLoadHandle, DictatorSingletonLength, out NativeArray<MockHeavyLoadSignal> signalArray))
             {
                 return;
             }
 
-            if (!TryResolveMockHeavyLoadView(vault, out NativeArray<MockHeavyLoadSignal> signalArray))
+            try
             {
-                return;
-            }
+                MockHeavyLoadSignal signal = signalArray[0];
+                uint previousFlags = signal.Flags;
+                bool wasEnabled = (previousFlags & MockHeavyLoadSignal.FlagEnabled) != 0u;
+                if (!wasEnabled)
+                {
+                    if (frameSpikeMs < 0f && vramPressure01 >= 0f)
+                        signal.FrameSpikeMs = 0f;
+                    if (vramPressure01 < 0f && frameSpikeMs >= 0f)
+                        signal.VramPressure01 = 0f;
+                }
 
-            MockHeavyLoadSignal signal = signalArray[0];
-            uint previousFlags = signal.Flags;
-            bool wasEnabled = (previousFlags & MockHeavyLoadSignal.FlagEnabled) != 0u;
-            if (!wasEnabled)
-            {
-                if (frameSpikeMs < 0f && vramPressure01 >= 0f)
+                if (frameSpikeMs >= 0f)
+                    signal.FrameSpikeMs = math.isfinite(frameSpikeMs) ? math.max(0f, frameSpikeMs) : 0f;
+                if (vramPressure01 >= 0f)
+                    signal.VramPressure01 = math.isfinite(vramPressure01) ? math.saturate(vramPressure01) : 0f;
+                if (!math.isfinite(signal.FrameSpikeMs) || signal.FrameSpikeMs < 0f)
                     signal.FrameSpikeMs = 0f;
-                if (vramPressure01 < 0f && frameSpikeMs >= 0f)
+                if (!math.isfinite(signal.VramPressure01) || signal.VramPressure01 < 0f)
                     signal.VramPressure01 = 0f;
+                else
+                    signal.VramPressure01 = math.saturate(signal.VramPressure01);
+
+                bool explicitFullUpdate = frameSpikeMs >= 0f && vramPressure01 >= 0f;
+                if (enabled &&
+                    signal.FrameSpikeMs <= 0.0001f &&
+                    signal.VramPressure01 <= 0.0001f)
+                {
+                    signal.FrameSpikeMs = DefaultMockFrameSpikeMs;
+                }
+
+                bool hasSyntheticPressure = signal.FrameSpikeMs > 0.0001f || signal.VramPressure01 > 0.0001f;
+                if (enabled)
+                    signal.Flags = MockHeavyLoadSignal.FlagEnabled;
+                else if (explicitFullUpdate || !hasSyntheticPressure)
+                    signal.Flags = 0u;
+                signalArray[0] = signal;
             }
-
-            if (frameSpikeMs >= 0f)
-                signal.FrameSpikeMs = math.isfinite(frameSpikeMs) ? math.max(0f, frameSpikeMs) : 0f;
-            if (vramPressure01 >= 0f)
-                signal.VramPressure01 = math.isfinite(vramPressure01) ? math.saturate(vramPressure01) : 0f;
-            if (!math.isfinite(signal.FrameSpikeMs) || signal.FrameSpikeMs < 0f)
-                signal.FrameSpikeMs = 0f;
-            if (!math.isfinite(signal.VramPressure01) || signal.VramPressure01 < 0f)
-                signal.VramPressure01 = 0f;
-            else
-                signal.VramPressure01 = math.saturate(signal.VramPressure01);
-
-            bool explicitFullUpdate = frameSpikeMs >= 0f && vramPressure01 >= 0f;
-            if (enabled &&
-                signal.FrameSpikeMs <= 0.0001f &&
-                signal.VramPressure01 <= 0.0001f)
+            finally
             {
-                signal.FrameSpikeMs = DefaultMockFrameSpikeMs;
+                vault.ReleaseWriteLock(in _mockHeavyLoadHandle, SystemID.HardwareHomeostasis);
             }
-
-            bool hasSyntheticPressure = signal.FrameSpikeMs > 0.0001f || signal.VramPressure01 > 0.0001f;
-            if (enabled)
-                signal.Flags = MockHeavyLoadSignal.FlagEnabled;
-            else if (explicitFullUpdate || !hasSyntheticPressure)
-                signal.Flags = 0u;
-            signalArray[0] = signal;
         }
 
         /// <summary>
@@ -2321,29 +2471,24 @@ namespace Hecton8.Core
             health = default;
             state = default;
             IDataVault vault = _dataVault;
-            if (!EnsureScalabilityStateHandles(vault))
-            {
-                return false;
-            }
-
-            if (!TryResolveScalabilityStateViews(vault, out NativeArray<SystemHealthDTO> healthArray, out NativeArray<ScalabilityStateDTO> stateArray))
+            if (!TryReadScalabilityStateViews(
+                    vault,
+                    out NativeArray<SystemHealthDTO>.ReadOnly healthArray,
+                    out NativeArray<ScalabilityStateDTO>.ReadOnly stateArray))
             {
                 return false;
             }
 
             SystemHealthDTO vaultHealth = healthArray[0];
             ScalabilityStateDTO vaultState = stateArray[0];
-            vaultHealth.FrameTimeMs = SanitizePositiveFrameMs(vaultHealth.FrameTimeMs);
-            vaultHealth.VramPressure = SanitizePressure01(vaultHealth.VramPressure, 1f);
-            vaultHealth.ThermalIndex = SanitizePressure01(vaultHealth.ThermalIndex, 1f);
-            vaultState.GlobalQualityWeight = SanitizeQualityWeight01(vaultState.GlobalQualityWeight, GlobalQualityWeight);
-            vaultState.FractionalTimeSlice = ResolveFractionalTimeSliceFromWeight(vaultState.GlobalQualityWeight);
-            vaultState.VramPressure = vaultHealth.VramPressure;
-            vaultState.ThermalIndex = vaultHealth.ThermalIndex;
-            healthArray[0] = vaultHealth;
-            stateArray[0] = vaultState;
-            health = vaultHealth;
-            state = vaultState;
+            health.FrameTimeMs = SanitizePositiveFrameMs(vaultHealth.FrameTimeMs);
+            health.VramPressure = SanitizePressure01(vaultHealth.VramPressure, 1f);
+            health.ThermalIndex = SanitizePressure01(vaultHealth.ThermalIndex, 1f);
+            health.ActiveThrottlesMask = vaultHealth.ActiveThrottlesMask;
+            state.GlobalQualityWeight = SanitizeQualityWeight01(vaultState.GlobalQualityWeight, GlobalQualityWeight);
+            state.FractionalTimeSlice = ResolveFractionalTimeSliceFromWeight(state.GlobalQualityWeight);
+            state.VramPressure = health.VramPressure;
+            state.ThermalIndex = health.ThermalIndex;
             return true;
         }
 
@@ -2354,23 +2499,17 @@ namespace Hecton8.Core
         {
             status = default;
             IDataVault vault = _dataVault;
-            if (!EnsureMockTerrainSamplerStatusHandle(vault))
-            {
-                return false;
-            }
-
-            if (!TryResolveMockTerrainSamplerStatusView(vault, out NativeArray<MockTerrainSamplerStatus> statusArray))
+            if (!TryReadMockTerrainSamplerStatusView(vault, out NativeArray<MockTerrainSamplerStatus>.ReadOnly statusArray))
             {
                 return false;
             }
 
             MockTerrainSamplerStatus vaultStatus = statusArray[0];
             float weight = SanitizeQualityWeight01(vaultStatus.GlobalQualityWeight, GlobalQualityWeight);
-            vaultStatus.GlobalQualityWeight = weight;
-            vaultStatus.TrilinearSampleProbability01 = weight;
-            vaultStatus.SkippedTrilinearPercent01 = 1f - weight;
-            statusArray[0] = vaultStatus;
-            status = vaultStatus;
+            status.GlobalQualityWeight = weight;
+            status.TrilinearSampleProbability01 = weight;
+            status.SkippedTrilinearPercent01 = 1f - weight;
+            status.Frame = vaultStatus.Frame;
             return true;
         }
 

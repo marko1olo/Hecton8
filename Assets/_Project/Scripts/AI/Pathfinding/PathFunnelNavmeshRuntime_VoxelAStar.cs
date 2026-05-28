@@ -92,8 +92,8 @@ namespace Hecton8.AI.Pathfinding
         {
             if (!_voxelAStarColdBootstrapped ||
                 IsVoxelAStarJobActive() ||
-                !TryResolveVaultBuffer(in _voxelPathRequestsHandle, ResolveVoxelRequestCapacity(), out NativeArray<PathRequestDTO> requests) ||
-                !TryResolveVaultBuffer(in _voxelPathRingStateHandle, 1, out NativeArray<VoxelPathRingState> ringStateBuffer))
+                !TryResolveVaultBuffer(in _voxelPathRequestsHandle, BufferID.ShinobuVoxelPathRequests, ResolveVoxelRequestCapacity(), out NativeArray<PathRequestDTO> requests) ||
+                !TryResolveVaultBuffer(in _voxelPathRingStateHandle, BufferID.ShinobuVoxelPathRingState, 1, out NativeArray<VoxelPathRingState> ringStateBuffer))
             {
                 return false;
             }
@@ -115,7 +115,7 @@ namespace Hecton8.AI.Pathfinding
             }
 
             requests[ring.WriteCursor] = request;
-            if (TryResolveVaultBuffer(in _voxelPathResultsHandle, ResolveVoxelResultCapacity(), out NativeArray<PathResultDTO> results))
+            if (TryResolveVaultBuffer(in _voxelPathResultsHandle, BufferID.ShinobuVoxelPathResults, ResolveVoxelResultCapacity(), out NativeArray<PathResultDTO> results))
                 InvalidateTerminalVoxelPathResults(in request, results, _voxelAStarFrame);
 
             ring.WriteCursor = AdvanceRingCursor(ring.WriteCursor, capacity);
@@ -133,7 +133,7 @@ namespace Hecton8.AI.Pathfinding
             result = default;
             if (requesterEntityHash == 0u ||
                 IsVoxelAStarJobActive() ||
-                !TryReadVaultBuffer(in _voxelPathResultsHandle, ResolveVoxelResultCapacity(), out NativeArray<PathResultDTO> results))
+                !TryReadVaultBuffer(in _voxelPathResultsHandle, BufferID.ShinobuVoxelPathResults, ResolveVoxelResultCapacity(), out NativeArray<PathResultDTO> results))
             {
                 return false;
             }
@@ -172,7 +172,7 @@ namespace Hecton8.AI.Pathfinding
             if (count <= 0 || destination.Length < count)
                 return false;
             if (IsVoxelAStarJobActive() ||
-                !TryReadVaultBuffer(in _voxelPathWaypointsHandle, ResolveVoxelWaypointCapacity(), out NativeArray<VoxelPathWaypointDTO> waypoints))
+                !TryReadVaultBuffer(in _voxelPathWaypointsHandle, BufferID.ShinobuVoxelPathWaypoints, ResolveVoxelWaypointCapacity(), out NativeArray<VoxelPathWaypointDTO> waypoints))
             {
                 waypointCount = 0;
                 return false;
@@ -284,26 +284,39 @@ namespace Hecton8.AI.Pathfinding
             IDataVault vault = _dataVault;
             if (!_voxelAStarColdBootstrapped ||
                 vault == null ||
+                !IsOwnedVaultHandle(in _voxelPathSpeciesProfilesHandle, BufferID.ShinobuVoxelPathSpeciesProfiles) ||
                 !vault.TryAcquireWriteLock(in _voxelPathSpeciesProfilesHandle, SystemID.AIPathfinding, out NativeArray<VoxelPathingProfileDTO> profiles))
             {
                 return false;
             }
 
-            if (!vault.TryAcquireWriteLock(in _voxelPathSpeciesProfileCountHandle, SystemID.AIPathfinding, out NativeArray<int> profileCount))
+            bool countLocked = false;
+            bool parsed = false;
+            bool releasedCount = true;
+            bool releasedProfiles = true;
+            try
             {
-                vault.ReleaseWriteLock(in _voxelPathSpeciesProfilesHandle, SystemID.AIPathfinding);
-                return false;
+                if (!IsOwnedVaultHandle(in _voxelPathSpeciesProfileCountHandle, BufferID.ShinobuVoxelPathSpeciesProfileCount) ||
+                    !vault.TryAcquireWriteLock(in _voxelPathSpeciesProfileCountHandle, SystemID.AIPathfinding, out NativeArray<int> profileCount))
+                {
+                    return false;
+                }
+
+                countLocked = true;
+                parsed =
+                    profiles.IsCreated &&
+                    profiles.Length >= ResolveVoxelProfileCapacity() &&
+                    profileCount.IsCreated &&
+                    profileCount.Length >= 1 &&
+                    VoxelPathingProfileCsvParser.TryParse(csvBytes, profiles, profileCount, out flags);
+            }
+            finally
+            {
+                if (countLocked)
+                    releasedCount = vault.ReleaseWriteLock(in _voxelPathSpeciesProfileCountHandle, SystemID.AIPathfinding);
+                releasedProfiles = vault.ReleaseWriteLock(in _voxelPathSpeciesProfilesHandle, SystemID.AIPathfinding);
             }
 
-            bool parsed =
-                profiles.IsCreated &&
-                profiles.Length >= ResolveVoxelProfileCapacity() &&
-                profileCount.IsCreated &&
-                profileCount.Length >= 1 &&
-                VoxelPathingProfileCsvParser.TryParse(csvBytes, profiles, profileCount, out flags);
-
-            bool releasedCount = vault.ReleaseWriteLock(in _voxelPathSpeciesProfileCountHandle, SystemID.AIPathfinding);
-            bool releasedProfiles = vault.ReleaseWriteLock(in _voxelPathSpeciesProfilesHandle, SystemID.AIPathfinding);
             return parsed && releasedCount && releasedProfiles;
         }
 #endif
@@ -398,20 +411,20 @@ namespace Hecton8.AI.Pathfinding
                 return false;
 
             return
-                   TryResolveVaultBuffer(in _voxelPathRequestsHandle, ResolveVoxelRequestCapacity(), out requests) &&
-                   TryResolveVaultBuffer(in _voxelPathRingStateHandle, 1, out ringState) &&
-                   TryResolveVaultBuffer(in _voxelPathSolverStateHandle, 1, out solverState) &&
-                   TryResolveVaultBuffer(in _voxelPathNodesHandle, ResolveVoxelGridCellCapacity(), out nodes) &&
-                   TryResolveVaultBuffer(in _voxelPathOpenHeapHandle, ResolveVoxelGridCellCapacity(), out openHeap) &&
-                   TryResolveVaultBuffer(in _voxelPathHeapPositionsHandle, ResolveVoxelGridCellCapacity(), out heapPositions) &&
-                   TryResolveVaultBuffer(in _voxelPathRawPathHandle, ResolveVoxelRawPathCapacity(), out rawPath) &&
-                   TryResolveVaultBuffer(in _voxelPathClosedDebugHandle, ResolveVoxelGridCellCapacity() + 1, out closedDebug) &&
-                   TryResolveVaultBuffer(in _voxelPathWaypointsHandle, ResolveVoxelWaypointCapacity(), out waypoints) &&
-                   TryResolveVaultBuffer(in _voxelPathResultsHandle, ResolveVoxelResultCapacity(), out results) &&
-                   TryResolveVaultBuffer(in _voxelPathTelemetryHandle, VoxelAStarConstants.TelemetryFrames, out telemetry) &&
-                   TryResolveVaultBuffer(in _voxelPathTuningHandle, 1, out tuning) &&
-                   TryResolveVaultBuffer(in _voxelPathMockSdfHandle, ResolveVoxelGridCellCapacity(), out sdf) &&
-                   TryResolveVaultBuffer(in _voxelPathSdfHeaderHandle, 1, out header);
+                   TryResolveVaultBuffer(in _voxelPathRequestsHandle, BufferID.ShinobuVoxelPathRequests, ResolveVoxelRequestCapacity(), out requests) &&
+                   TryResolveVaultBuffer(in _voxelPathRingStateHandle, BufferID.ShinobuVoxelPathRingState, 1, out ringState) &&
+                   TryResolveVaultBuffer(in _voxelPathSolverStateHandle, BufferID.ShinobuVoxelPathSolverState, 1, out solverState) &&
+                   TryResolveVaultBuffer(in _voxelPathNodesHandle, BufferID.ShinobuVoxelPathNodes, ResolveVoxelGridCellCapacity(), out nodes) &&
+                   TryResolveVaultBuffer(in _voxelPathOpenHeapHandle, BufferID.ShinobuVoxelPathOpenHeap, ResolveVoxelGridCellCapacity(), out openHeap) &&
+                   TryResolveVaultBuffer(in _voxelPathHeapPositionsHandle, BufferID.ShinobuVoxelPathHeapPositions, ResolveVoxelGridCellCapacity(), out heapPositions) &&
+                   TryResolveVaultBuffer(in _voxelPathRawPathHandle, BufferID.ShinobuVoxelPathRawPath, ResolveVoxelRawPathCapacity(), out rawPath) &&
+                   TryResolveVaultBuffer(in _voxelPathClosedDebugHandle, BufferID.ShinobuVoxelPathClosedDebug, ResolveVoxelGridCellCapacity() + 1, out closedDebug) &&
+                   TryResolveVaultBuffer(in _voxelPathWaypointsHandle, BufferID.ShinobuVoxelPathWaypoints, ResolveVoxelWaypointCapacity(), out waypoints) &&
+                   TryResolveVaultBuffer(in _voxelPathResultsHandle, BufferID.ShinobuVoxelPathResults, ResolveVoxelResultCapacity(), out results) &&
+                   TryResolveVaultBuffer(in _voxelPathTelemetryHandle, BufferID.ShinobuVoxelPathTelemetryRing, VoxelAStarConstants.TelemetryFrames, out telemetry) &&
+                   TryResolveVaultBuffer(in _voxelPathTuningHandle, BufferID.ShinobuVoxelPathTuning, 1, out tuning) &&
+                   TryResolveVaultBuffer(in _voxelPathMockSdfHandle, BufferID.ShinobuVoxelPathMockSdf, ResolveVoxelGridCellCapacity(), out sdf) &&
+                   TryResolveVaultBuffer(in _voxelPathSdfHeaderHandle, BufferID.ShinobuVoxelPathSdfHeader, 1, out header);
         }
 
         private void FastTickVoxelAStar(float deltaTime)
@@ -523,7 +536,7 @@ namespace Hecton8.AI.Pathfinding
             if (IsVoxelAStarJobActive())
                 return;
 
-            if (!TryResolveVaultBuffer(in _voxelPathTelemetryHandle, VoxelAStarConstants.TelemetryFrames, out NativeArray<PathfindingTelemetryEntry> telemetry) ||
+            if (!TryResolveVaultBuffer(in _voxelPathTelemetryHandle, BufferID.ShinobuVoxelPathTelemetryRing, VoxelAStarConstants.TelemetryFrames, out NativeArray<PathfindingTelemetryEntry> telemetry) ||
                 telemetry.Length <= 0)
             {
                 return;
@@ -560,7 +573,7 @@ namespace Hecton8.AI.Pathfinding
 
         private void InitializeVoxelAStarColdState(int requestCapacity)
         {
-            if (TryResolveVaultBuffer(in _voxelPathRingStateHandle, 1, out NativeArray<VoxelPathRingState> ringStateBuffer))
+            if (TryResolveVaultBuffer(in _voxelPathRingStateHandle, BufferID.ShinobuVoxelPathRingState, 1, out NativeArray<VoxelPathRingState> ringStateBuffer))
             {
                 VoxelPathRingState ring = ringStateBuffer[0];
                 if (ring.Capacity <= 0)
@@ -577,7 +590,7 @@ namespace Hecton8.AI.Pathfinding
                 ringStateBuffer[0] = ring;
             }
 
-            if (TryResolveVaultBuffer(in _voxelPathTuningHandle, 1, out NativeArray<VoxelAStarTuningDTO> tuningBuffer))
+            if (TryResolveVaultBuffer(in _voxelPathTuningHandle, BufferID.ShinobuVoxelPathTuning, 1, out NativeArray<VoxelAStarTuningDTO> tuningBuffer))
             {
                 VoxelAStarTuningDTO tuning = tuningBuffer[0];
                 if (tuning.MinNodesExpandedPerFrame <= 0 ||
@@ -592,8 +605,8 @@ namespace Hecton8.AI.Pathfinding
 
         private void EnsureVoxelAStarMockSdfCold()
         {
-            if (!TryResolveVaultBuffer(in _voxelPathMockSdfHandle, ResolveVoxelGridCellCapacity(), out NativeArray<float> sdf) ||
-                !TryResolveVaultBuffer(in _voxelPathSdfHeaderHandle, 1, out NativeArray<VoxelSdfGridHeader> header))
+            if (!TryResolveVaultBuffer(in _voxelPathMockSdfHandle, BufferID.ShinobuVoxelPathMockSdf, ResolveVoxelGridCellCapacity(), out NativeArray<float> sdf) ||
+                !TryResolveVaultBuffer(in _voxelPathSdfHeaderHandle, BufferID.ShinobuVoxelPathSdfHeader, 1, out NativeArray<VoxelSdfGridHeader> header))
             {
                 return;
             }
@@ -650,11 +663,14 @@ namespace Hecton8.AI.Pathfinding
                 requiredLength,
                 SystemID.AIPathfinding,
                 options);
-            if (!IsVaultHandleCreated(in acquired) ||
+            if (!IsOwnedVaultHandle(in acquired, bufferId) ||
                 !vault.TryResolveHandle(in acquired, out buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
+                if (IsOwnedVaultHandle(in acquired, bufferId))
+                    vault.ReleaseBuffer(in acquired);
+
                 return false;
             }
 
@@ -667,25 +683,25 @@ namespace Hecton8.AI.Pathfinding
             if (vault == null)
                 return;
 
-            ReleaseVaultHandle(vault, ref _voxelPathRequestsHandle);
-            ReleaseVaultHandle(vault, ref _voxelPathRingStateHandle);
-            ReleaseVaultHandle(vault, ref _voxelPathSolverStateHandle);
-            ReleaseVaultHandle(vault, ref _voxelPathNodesHandle);
-            ReleaseVaultHandle(vault, ref _voxelPathOpenHeapHandle);
-            ReleaseVaultHandle(vault, ref _voxelPathHeapPositionsHandle);
-            ReleaseVaultHandle(vault, ref _voxelPathRawPathHandle);
-            ReleaseVaultHandle(vault, ref _voxelPathWaypointsHandle);
-            ReleaseVaultHandle(vault, ref _voxelPathResultsHandle);
-            ReleaseVaultHandle(vault, ref _voxelPathTelemetryHandle);
-            ReleaseVaultHandle(vault, ref _voxelPathTuningHandle);
-            ReleaseVaultHandle(vault, ref _voxelPathMockSdfHandle);
-            ReleaseVaultHandle(vault, ref _voxelPathSdfHeaderHandle);
-            ReleaseVaultHandle(vault, ref _voxelPathSpeciesProfilesHandle);
-            ReleaseVaultHandle(vault, ref _voxelPathSpeciesProfileCountHandle);
+            ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathRequests, ref _voxelPathRequestsHandle);
+            ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathRingState, ref _voxelPathRingStateHandle);
+            ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathSolverState, ref _voxelPathSolverStateHandle);
+            ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathNodes, ref _voxelPathNodesHandle);
+            ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathOpenHeap, ref _voxelPathOpenHeapHandle);
+            ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathHeapPositions, ref _voxelPathHeapPositionsHandle);
+            ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathRawPath, ref _voxelPathRawPathHandle);
+            ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathWaypoints, ref _voxelPathWaypointsHandle);
+            ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathResults, ref _voxelPathResultsHandle);
+            ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathTelemetryRing, ref _voxelPathTelemetryHandle);
+            ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathTuning, ref _voxelPathTuningHandle);
+            ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathMockSdf, ref _voxelPathMockSdfHandle);
+            ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathSdfHeader, ref _voxelPathSdfHeaderHandle);
+            ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathSpeciesProfiles, ref _voxelPathSpeciesProfilesHandle);
+            ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathSpeciesProfileCount, ref _voxelPathSpeciesProfileCountHandle);
 #if UNITY_EDITOR
-            ReleaseVaultHandle(vault, ref _voxelPathCsvScratchHandle);
+            ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathCsvScratch, ref _voxelPathCsvScratchHandle);
 #endif
-            ReleaseVaultHandle(vault, ref _voxelPathClosedDebugHandle);
+            ReleaseVaultHandle(vault, BufferID.ShinobuVoxelPathClosedDebug, ref _voxelPathClosedDebugHandle);
         }
 
         private void ClearVoxelAStarVaultHandles()
@@ -777,7 +793,7 @@ namespace Hecton8.AI.Pathfinding
         private void PatchVoxelAStarTelemetryMicros(long scheduleTicks)
         {
             if (scheduleTicks <= 0L ||
-                !TryResolveVaultBuffer(in _voxelPathTelemetryHandle, VoxelAStarConstants.TelemetryFrames, out NativeArray<PathfindingTelemetryEntry> telemetry) ||
+                !TryResolveVaultBuffer(in _voxelPathTelemetryHandle, BufferID.ShinobuVoxelPathTelemetryRing, VoxelAStarConstants.TelemetryFrames, out NativeArray<PathfindingTelemetryEntry> telemetry) ||
                 telemetry.Length <= 0)
             {
                 return;

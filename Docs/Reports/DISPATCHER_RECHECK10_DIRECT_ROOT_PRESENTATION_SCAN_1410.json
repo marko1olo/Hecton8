@@ -1,0 +1,13 @@
+﻿{
+    "agent":  "1410",
+    "report":  "DISPATCHER_RECHECK10_DIRECT_ROOT_PRESENTATION_SCAN_1410",
+    "evidenceClass":  "DIRECT_ROOT_TOKEN_SCAN",
+    "generatedUtc":  "2026-05-28T16:16:13.6092971Z",
+    "elapsedMicroseconds":  36925516,
+    "filesScanned":  1797,
+    "rootMethodsScanned":  1772,
+    "findingCount":  0,
+    "findings":  [
+
+                 ]
+}

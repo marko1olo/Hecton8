@@ -102,7 +102,18 @@ namespace Hecton8.Core
                 cameraData.requiresDepthTexture = true;
 
             if (UsesQuestVrMobileSurvivalPolicy)
+            {
+                if (cameraData.requiresColorOption != CameraOverrideOption.Off)
+                    cameraData.requiresColorOption = CameraOverrideOption.Off;
+
+                if (cameraData.requiresColorTexture)
+                    cameraData.requiresColorTexture = false;
+
+                if (cameraData.renderPostProcessing)
+                    cameraData.renderPostProcessing = false;
+
                 return;
+            }
 
             if (cameraData.requiresColorOption != CameraOverrideOption.On)
                 cameraData.requiresColorOption = CameraOverrideOption.On;

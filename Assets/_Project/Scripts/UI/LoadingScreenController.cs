@@ -32,12 +32,12 @@ namespace Hecton8.UI
             FadingOut
         }
 
-        private static readonly char[] LoadingChars = "Loading...".ToCharArray();
-        private static readonly char[] PagingSectorsChars = "Paging Sectors...".ToCharArray();
-        private static readonly char[] HydratingEntitiesChars = "Hydrating Entities...".ToCharArray();
-        private static readonly char[] BuildingNavGridChars = "Building NavGrid...".ToCharArray();
-        private static readonly char[] SafeAupSnapChars = "Securing AUP Position...".ToCharArray();
-        private static readonly char[] LoadCompleteChars = "Load Complete.".ToCharArray();
+        private static ReadOnlySpan<char> LoadingChars => "Loading...".AsSpan();
+        private static ReadOnlySpan<char> PagingSectorsChars => "Paging Sectors...".AsSpan();
+        private static ReadOnlySpan<char> HydratingEntitiesChars => "Hydrating Entities...".AsSpan();
+        private static ReadOnlySpan<char> BuildingNavGridChars => "Building NavGrid...".AsSpan();
+        private static ReadOnlySpan<char> SafeAupSnapChars => "Securing AUP Position...".AsSpan();
+        private static ReadOnlySpan<char> LoadCompleteChars => "Load Complete.".AsSpan();
 
         [Header("UI References")]
         [SerializeField, Tooltip("Main loading panel CanvasGroup")]
@@ -317,8 +317,8 @@ namespace Hecton8.UI
                 return;
 
             _currentPipelineStage = stage;
-            ResolvePipelineStageBuffer(stage, out char[] buffer, out int length);
-            UpdateStatus(buffer.AsSpan(0, length));
+            ResolvePipelineStageBuffer(stage, out ReadOnlySpan<char> buffer);
+            UpdateStatus(buffer);
         }
 
         /// <summary>
@@ -355,7 +355,7 @@ namespace Hecton8.UI
             return true;
         }
 
-        private static void ResolvePipelineStageBuffer(LoadingPipelineStage stage, out char[] buffer, out int length)
+        private static void ResolvePipelineStageBuffer(LoadingPipelineStage stage, out ReadOnlySpan<char> buffer)
         {
             switch (stage)
             {
@@ -378,8 +378,6 @@ namespace Hecton8.UI
                     buffer = LoadingChars;
                     break;
             }
-
-            length = buffer.Length;
         }
 
         private static int WritePercent(int percent, Span<char> buffer)

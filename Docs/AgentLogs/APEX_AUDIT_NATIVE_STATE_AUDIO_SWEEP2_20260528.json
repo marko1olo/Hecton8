@@ -1,0 +1,218 @@
+{
+  "agentId": "AUDIT_NATIVE_STATE",
+  "domain": "NativeArray/GlobalDataVault/MonoBehaviour lifecycle",
+  "createdAt": "2026-05-28T16:22:59.9398888+04:00",
+  "artifactPurpose": "Evidence for the bounded audio DataVault exact-owner sweep after PlayerCriticalProceduralAudioRenderer was included.",
+  "sourceFiles": [
+    "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
+    "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs",
+    "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+    "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs",
+    "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+    "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs",
+    "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs"
+  ],
+  "sourceDiffNumstat": {
+    "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs": {
+      "added": 46,
+      "deleted": 15
+    },
+    "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs": {
+      "added": 11,
+      "deleted": 3
+    },
+    "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs": {
+      "added": 305,
+      "deleted": 169,
+      "note": "Working tree diff includes pre-existing other-agent procedural ping and haptic queue edits in this file; this artifact only claims the DataVault exact-owner gates added by AUDIT_NATIVE_STATE."
+    },
+    "Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs": {
+      "added": 14,
+      "deleted": 10
+    },
+    "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs": {
+      "added": 65,
+      "deleted": 25
+    },
+    "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs": {
+      "added": 64,
+      "deleted": 46
+    },
+    "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs": {
+      "added": 36,
+      "deleted": 16
+    }
+  },
+  "sourceDiffStat": "7 files changed, 541 insertions(+), 284 deletions(-)",
+  "zeroGcDiffScan": {
+    "pattern": "added lines matching new reference construction, string.Format, .ToString(), LINQ query helpers, foreach, ToArray, or ToList",
+    "matches": 0,
+    "scope": "git diff -U0 over the seven source files"
+  },
+  "layoutDiffScan": {
+    "unsafeLayoutMatches": 0,
+    "unsafeLayoutPattern": "StructLayout | FieldOffset | UnsafeUtility.SizeOf | UnsafeUtility.GetFieldOffset",
+    "structKeywordMatches": 6,
+    "structKeywordNotes": [
+      "Five matches are generic constraints: where T : struct.",
+      "One match is the already-dirty other-agent StructuralStressHapticRequest value struct in PlayerCriticalProceduralAudioRenderer.cs.",
+      "No explicit layout, field offset, UnsafeUtility.SizeOf, or UnsafeUtility.GetFieldOffset line was added by this sweep."
+    ]
+  },
+  "audioFolderBadPatternScan": {
+    "pattern": "currentService as IDataVault | handle.BufferID != 0u | handle.BufferID == 0u | IsVaultHandleCreated | IsValidVaultHandle | OwnerSystemID",
+    "matches": 0,
+    "scope": "Assets/_Project/Scripts/Audio/**/*.cs"
+  },
+  "playerCriticalExactGateProof": {
+    "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+    "owner": "SystemID.AudioPlayerCritical",
+    "ownerPredicate": "IsPlayerCriticalVaultHandle requires expected BufferID, SystemID.AudioPlayerCritical, and non-zero generation.",
+    "ownerPredicateLine": 7354,
+    "resolveProof": "ResolveVaultBuffer validates the handle returned by EnsureGenerationHandle before TryResolveHandle.",
+    "resolveProofLines": [
+      7321,
+      7338,
+      7346
+    ],
+    "writeLockProof": [
+      {
+        "route": "QueuePrologueAudioTransition",
+        "exactCheckLine": 2707,
+        "releaseFinallyLine": 2733
+      },
+      {
+        "route": "TryAcquireAudioWriteBuffer shared helper",
+        "exactCheckLine": 7372,
+        "releaseOnFailureFinallyLine": 7429,
+        "normalReleaseRouteLine": 7439
+      },
+      {
+        "route": "RecordAudioSynthesisTelemetry",
+        "exactCheckLine": 11897,
+        "releaseFinallyLine": 11952
+      },
+      {
+        "route": "RecordGranularTelemetry",
+        "exactCheckLine": 11989,
+        "releaseFinallyLine": 12040
+      },
+      {
+        "route": "RecordPrologueTransitionTelemetry",
+        "exactCheckLine": 12078,
+        "releaseFinallyLine": 12130
+      }
+    ],
+    "readOnlyProofLines": [
+      2758,
+      2764,
+      7807,
+      7947,
+      9307,
+      9317,
+      9327
+    ],
+    "releaseProof": {
+      "helperLine": 7345,
+      "releaseCallRange": "8374-8422",
+      "description": "Every owned PlayerCritical handle is released with its expected BufferID."
+    },
+    "bufferIdsSecured": [
+      "BufferID.PlayerCriticalHullScratch",
+      "BufferID.PlayerCriticalSonarScratch",
+      "BufferID.PlayerCriticalImpactEchoScratch",
+      "BufferID.PlayerCriticalThrusterScratch",
+      "BufferID.PlayerCriticalHeartbeatScratch",
+      "BufferID.PlayerCriticalHeartbeatDuckScratch",
+      "BufferID.PlayerCriticalBubbleScratch",
+      "BufferID.PlayerCriticalMixScratch",
+      "BufferID.PlayerCriticalStereoMixScratch",
+      "BufferID.PlayerCriticalSonarEchoDelay",
+      "BufferID.PlayerCriticalPendingSonarEchoTapsA",
+      "BufferID.PlayerCriticalPendingSonarEchoTapsB",
+      "BufferID.PlayerCriticalWorkerSonarEchoTaps",
+      "BufferID.PlayerCriticalSonarEchoReadCursors",
+      "BufferID.PlayerCriticalSonarEchoFilterInput1",
+      "BufferID.PlayerCriticalSonarEchoFilterInput2",
+      "BufferID.PlayerCriticalSonarEchoFilterOutput1",
+      "BufferID.PlayerCriticalSonarEchoFilterOutput2",
+      "BufferID.PlayerCriticalSonarEchoCompositeCandidatesA",
+      "BufferID.PlayerCriticalSonarEchoCompositeCandidatesB",
+      "BufferID.PlayerCriticalSonarEchoCompositeGroups",
+      "BufferID.PlayerCriticalSonarEchoCompositeGroupCount",
+      "BufferID.PlayerCriticalSonarEcholocationHits",
+      "PlayerCriticalSonarEchoTapUploadRingBufferId = 70889",
+      "BufferID.PlayerCriticalImpactClangDelay",
+      "BufferID.PlayerCriticalThrusterCombDelay",
+      "BufferID.PlayerCriticalSabineReverbDelay",
+      "BufferID.PlayerCriticalCaveConvolutionImpulse",
+      "BufferID.PlayerCriticalCaveConvolutionDelay",
+      "BufferID.PlayerCriticalInteriorFdnDelay",
+      "BufferID.PlayerCriticalBinauralDelayRing",
+      "BufferID.PlayerCriticalBinauralShadowHistory",
+      "BufferID.PlayerCriticalLowPassInputHistory1",
+      "BufferID.PlayerCriticalLowPassInputHistory2",
+      "BufferID.PlayerCriticalLowPassOutputHistory1",
+      "BufferID.PlayerCriticalLowPassOutputHistory2",
+      "BufferID.PlayerCriticalMetallicGrainBank",
+      "BufferID.PlayerCriticalGranularVoiceActive",
+      "BufferID.PlayerCriticalGranularVoiceElapsed",
+      "BufferID.PlayerCriticalGranularVoiceLength",
+      "BufferID.PlayerCriticalGranularVoiceStart",
+      "BufferID.PlayerCriticalGranularVoiceSeed",
+      "BufferID.PlayerCriticalGranularVoiceCursor",
+      "BufferID.PlayerCriticalGranularVoicePlaybackRate",
+      "BufferID.PlayerCriticalGranularVoiceGain",
+      "BufferID.PlayerCriticalGranularTelemetryRing",
+      "BufferID.PlayerCriticalPrologueTransitionTelemetryRing",
+      "PlayerCriticalPrologueTransitionRingBufferId = 70890",
+      "PlayerCriticalAudioSynthesisTelemetryRingBufferId = 70891"
+    ]
+  },
+  "cinematicCheatAndScalability": {
+    "changedAlgorithms": false,
+    "qualityWeightStatus": "No gameplay, DSP, or visual algorithm was changed in this sweep. Existing continuous _cachedAudioQualityWeight01 / Homeostasis-derived audio quality behavior was preserved.",
+    "binarySwitchAudit": "No isLowEnd-style binary quality switch was added.",
+    "physicalSimulationAudit": "No new physical simulation was added. The changes are descriptor validation gates around existing DataVault operations."
+  },
+  "compilationResourceThrottling": {
+    "dotnetBuildLaunchedByThisSweep": false,
+    "samples": [
+      {
+        "cpuPercent": 57,
+        "compilerProcesses": "none visible",
+        "decision": "no build; CPU above 50"
+      },
+      {
+        "cpuPercent": 62,
+        "compilerProcesses": "none visible",
+        "decision": "no build; CPU above 50"
+      },
+      {
+        "cpuPercent": 39,
+        "compilerProcesses": "dotnet PID 23460 appeared before build launch",
+        "decision": "no build; compiler lane occupied"
+      },
+      {
+        "cpuPercent": 99,
+        "compilerProcesses": "dotnet PID 23460 and csc PID 29640 active",
+        "decision": "no build; CPU and compiler lane guard violated"
+      },
+      {
+        "cpuPercent": 70,
+        "compilerProcesses": "dotnet PID 59388 active",
+        "decision": "no build; external Hecton8.slnx build occupied compiler lane"
+      }
+    ],
+    "latestExternalCompilerCommand": "\"C:\\Program Files\\dotnet\\dotnet.exe\" build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
+    "previousExternalCompilerCommand": "\"C:\\Program Files\\dotnet\\dotnet.exe\" build Hecton8.Editor.csproj --no-restore -v:minimal /m:1",
+    "previousExternalCscCommand": "\"C:\\Program Files\\dotnet\\sdk\\10.0.202\\Roslyn\\bincore\\csc.exe\" /noconfig @C:\\Users\\danat\\AppData\\Local\\Temp\\MSBuildTempwyuk2m4x.r44\\tmpe517b53688a34d1a9feddd236ed4c4f9.rsp"
+  },
+  "proofGaps": [
+    "No dotnet build was launched by this sweep because build guard never allowed it.",
+    "No Unity import proof.",
+    "No Play Mode proof.",
+    "No profiler/GCMonitor proof.",
+    "No runtime crash or NaN was executed; no Dump_AUDIT_NATIVE_STATE.bin was produced."
+  ]
+}

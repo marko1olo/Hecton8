@@ -257,3 +257,11 @@ Solution: Split allocation from initialization. `EnsureWorldPagerCold()` is the 
 Rejected Alternatives: Keep the old warmup and explain it as cold; rejected because the APEX mandate asks for exact text-scan evidence. Allocate pager lazily from Tick if missing; rejected because it reintroduces a route-based managed allocation. Move pager into GlobalDataVault; rejected because the pager is a managed persistence bridge and not cross-domain native data.
 Scalability potential: Low devices avoid first-dehydration allocation spikes. Middle/High/Ultra keep identical page format, WAL behavior, checksum behavior, and visual systems; this is lifecycle hygiene, not a quality-tier switch.
 Hardware Impact: Measured runtime microseconds saved: 0. Expected i3/MX350 benefit is removing a first-use managed allocation hazard from the Tick dehydration route.
+
+## Decision 032 - WFC Grid Handle Validation Must Be Read-Only
+
+Problem: `TryEnsureWfcOutpostGridHandle` validated `BufferID.WfcOutpostGrid` with `TryResolveHandle`, which exposes a mutable `NativeArray<byte>` even though the route only checks existence and length. This weakened the Data Sovereignty proof after the writer routes had already been fenced.
+Solution: Replace validation with `TryReadOnlyHandle` and add an `IsValidWfcOutpostGrid(NativeArray<byte>.ReadOnly)` overload. Write mutations remain routed through `TryAcquireWfcOutpostGridWrite` and released in `finally` blocks.
+Rejected Alternatives: Keep mutable resolve because it was not writing; rejected because read accessors must be pure and should not acquire mutable aliases. Convert all WFC public APIs to read-only inputs; rejected because persistence and hydration routes intentionally mutate the caller-owned grid under writer locks.
+Scalability potential: Low devices get safer vault relocation behavior under memory pressure. Middle/High/Ultra keep identical WFC persistence behavior; no binary quality switch or visual simulation was introduced.
+Hardware Impact: Measured runtime microseconds saved: 0. Expected benefit is correctness under GlobalDataVault compaction/relocation, not frame-time reduction.

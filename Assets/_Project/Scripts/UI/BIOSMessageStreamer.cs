@@ -18,26 +18,26 @@ namespace Hecton8.UI
         private const int HistoryLineCapacity = 64;
         private const int PendingEntryCapacity = 12;
         private const float CharactersPerSecond = 96f;
-        private static readonly char[] s_okPrefix = "[OK] ".ToCharArray();
-        private static readonly char[] s_warnPrefix = "[WARN] ".ToCharArray();
-        private static readonly char[] s_failPrefix = "[FAIL] ".ToCharArray();
-        private static readonly char[] s_reactorStable = "REACTOR STABLE".ToCharArray();
-        private static readonly char[] s_lowBusPower = "LOW BUS POWER ".ToCharArray();
-        private static readonly char[] s_powerBusStable = "POWER BUS STABLE".ToCharArray();
-        private static readonly char[] s_oxygen = "OXYGEN ".ToCharArray();
-        private static readonly char[] s_lifeSupportStable = "LIFE SUPPORT STABLE".ToCharArray();
-        private static readonly char[] s_hullPressure = "HULL PRESS ".ToCharArray();
-        private static readonly char[] s_hullPressureNormal = "HULL PRESS NORMAL".ToCharArray();
-        private static readonly char[] s_kpa = "KPA".ToCharArray();
-        private static readonly char[] s_multiSystemFailure = "MULTI SYSTEM FAILURE".ToCharArray();
-        private static readonly char[] s_fatalHullImplosion = "FATAL HULL IMPLOSION".ToCharArray();
-        private static readonly char[] s_emergencyNominal = "EMERGENCY LEVEL NOMINAL".ToCharArray();
-        private static readonly char[] s_emergencyCaution = "EMERGENCY LEVEL CAUTION".ToCharArray();
-        private static readonly char[] s_emergencyDanger = "EMERGENCY LEVEL DANGER".ToCharArray();
-        private static readonly char[] s_emergencyEvacuate = "EMERGENCY LEVEL EVACUATE".ToCharArray();
-        private static readonly char[] s_stationKeepingArmed = "STATION KEEPING ARMED".ToCharArray();
-        private static readonly char[] s_stationKeepingReleased = "STATION KEEPING RELEASED".ToCharArray();
-        private static readonly char[] s_hostileDroneDetected = "HOSTILE DRONE DETECTED".ToCharArray();
+        private static ReadOnlySpan<char> OkPrefix => "[OK] ".AsSpan();
+        private static ReadOnlySpan<char> WarnPrefix => "[WARN] ".AsSpan();
+        private static ReadOnlySpan<char> FailPrefix => "[FAIL] ".AsSpan();
+        private static ReadOnlySpan<char> ReactorStable => "REACTOR STABLE".AsSpan();
+        private static ReadOnlySpan<char> LowBusPower => "LOW BUS POWER ".AsSpan();
+        private static ReadOnlySpan<char> PowerBusStable => "POWER BUS STABLE".AsSpan();
+        private static ReadOnlySpan<char> Oxygen => "OXYGEN ".AsSpan();
+        private static ReadOnlySpan<char> LifeSupportStable => "LIFE SUPPORT STABLE".AsSpan();
+        private static ReadOnlySpan<char> HullPressure => "HULL PRESS ".AsSpan();
+        private static ReadOnlySpan<char> HullPressureNormal => "HULL PRESS NORMAL".AsSpan();
+        private static ReadOnlySpan<char> Kpa => "KPA".AsSpan();
+        private static ReadOnlySpan<char> MultiSystemFailure => "MULTI SYSTEM FAILURE".AsSpan();
+        private static ReadOnlySpan<char> FatalHullImplosion => "FATAL HULL IMPLOSION".AsSpan();
+        private static ReadOnlySpan<char> EmergencyNominal => "EMERGENCY LEVEL NOMINAL".AsSpan();
+        private static ReadOnlySpan<char> EmergencyCaution => "EMERGENCY LEVEL CAUTION".AsSpan();
+        private static ReadOnlySpan<char> EmergencyDanger => "EMERGENCY LEVEL DANGER".AsSpan();
+        private static ReadOnlySpan<char> EmergencyEvacuate => "EMERGENCY LEVEL EVACUATE".AsSpan();
+        private static ReadOnlySpan<char> StationKeepingArmed => "STATION KEEPING ARMED".AsSpan();
+        private static ReadOnlySpan<char> StationKeepingReleased => "STATION KEEPING RELEASED".AsSpan();
+        private static ReadOnlySpan<char> HostileDroneDetected => "HOSTILE DRONE DETECTED".AsSpan();
         private struct PendingEntry
         {
             public HectonSubmarineOsLogCode Code;
@@ -311,77 +311,77 @@ namespace Hecton8.UI
             switch (code)
             {
                 case HectonSubmarineOsLogCode.LowPowerModeEngaged:
-                    cursor = AppendRange(destination, cursor, s_warnPrefix);
-                    cursor = AppendRange(destination, cursor, s_lowBusPower);
+                    cursor = AppendSpan(destination, cursor, WarnPrefix);
+                    cursor = AppendSpan(destination, cursor, LowBusPower);
                     cursor = AppendPercent(destination, cursor, snapshot.PowerNormalized);
                     cursor = AppendChar(destination, cursor, '%');
                     return cursor;
 
                 case HectonSubmarineOsLogCode.LowPowerModeCleared:
-                    cursor = AppendRange(destination, cursor, s_okPrefix);
-                    return AppendRange(destination, cursor, s_powerBusStable);
+                    cursor = AppendSpan(destination, cursor, OkPrefix);
+                    return AppendSpan(destination, cursor, PowerBusStable);
 
                 case HectonSubmarineOsLogCode.LifeSupportCritical:
-                    cursor = AppendRange(destination, cursor, s_failPrefix);
-                    cursor = AppendRange(destination, cursor, s_oxygen);
+                    cursor = AppendSpan(destination, cursor, FailPrefix);
+                    cursor = AppendSpan(destination, cursor, Oxygen);
                     cursor = AppendPercent(destination, cursor, snapshot.OxygenNormalized);
                     cursor = AppendChar(destination, cursor, '%');
                     return cursor;
 
                 case HectonSubmarineOsLogCode.LifeSupportStabilized:
-                    cursor = AppendRange(destination, cursor, s_okPrefix);
-                    return AppendRange(destination, cursor, s_lifeSupportStable);
+                    cursor = AppendSpan(destination, cursor, OkPrefix);
+                    return AppendSpan(destination, cursor, LifeSupportStable);
 
                 case HectonSubmarineOsLogCode.HullPressureHigh:
-                    cursor = AppendRange(destination, cursor, s_warnPrefix);
-                    cursor = AppendRange(destination, cursor, s_hullPressure);
+                    cursor = AppendSpan(destination, cursor, WarnPrefix);
+                    cursor = AppendSpan(destination, cursor, HullPressure);
                     cursor = AppendInt(destination, cursor, (int)math.round(snapshot.MaxPressureKPa));
-                    cursor = AppendRange(destination, cursor, s_kpa);
+                    cursor = AppendSpan(destination, cursor, Kpa);
                     return cursor;
 
                 case HectonSubmarineOsLogCode.HullPressureStabilized:
-                    cursor = AppendRange(destination, cursor, s_okPrefix);
-                    return AppendRange(destination, cursor, s_hullPressureNormal);
+                    cursor = AppendSpan(destination, cursor, OkPrefix);
+                    return AppendSpan(destination, cursor, HullPressureNormal);
 
                 case HectonSubmarineOsLogCode.MultiSystemFailure:
-                    cursor = AppendRange(destination, cursor, s_failPrefix);
-                    return AppendRange(destination, cursor, s_multiSystemFailure);
+                    cursor = AppendSpan(destination, cursor, FailPrefix);
+                    return AppendSpan(destination, cursor, MultiSystemFailure);
 
                 case HectonSubmarineOsLogCode.FatalImplosion:
-                    cursor = AppendRange(destination, cursor, s_failPrefix);
-                    return AppendRange(destination, cursor, s_fatalHullImplosion);
+                    cursor = AppendSpan(destination, cursor, FailPrefix);
+                    return AppendSpan(destination, cursor, FatalHullImplosion);
 
                 case HectonSubmarineOsLogCode.EmergencyLevelCaution:
-                    cursor = AppendRange(destination, cursor, s_warnPrefix);
-                    return AppendRange(destination, cursor, s_emergencyCaution);
+                    cursor = AppendSpan(destination, cursor, WarnPrefix);
+                    return AppendSpan(destination, cursor, EmergencyCaution);
 
                 case HectonSubmarineOsLogCode.EmergencyLevelDanger:
-                    cursor = AppendRange(destination, cursor, s_failPrefix);
-                    return AppendRange(destination, cursor, s_emergencyDanger);
+                    cursor = AppendSpan(destination, cursor, FailPrefix);
+                    return AppendSpan(destination, cursor, EmergencyDanger);
 
                 case HectonSubmarineOsLogCode.EmergencyLevelEvacuate:
-                    cursor = AppendRange(destination, cursor, s_failPrefix);
-                    return AppendRange(destination, cursor, s_emergencyEvacuate);
+                    cursor = AppendSpan(destination, cursor, FailPrefix);
+                    return AppendSpan(destination, cursor, EmergencyEvacuate);
 
                 case HectonSubmarineOsLogCode.StationKeepingArmed:
-                    cursor = AppendRange(destination, cursor, s_okPrefix);
-                    return AppendRange(destination, cursor, s_stationKeepingArmed);
+                    cursor = AppendSpan(destination, cursor, OkPrefix);
+                    return AppendSpan(destination, cursor, StationKeepingArmed);
 
                 case HectonSubmarineOsLogCode.StationKeepingReleased:
-                    cursor = AppendRange(destination, cursor, s_okPrefix);
-                    return AppendRange(destination, cursor, s_stationKeepingReleased);
+                    cursor = AppendSpan(destination, cursor, OkPrefix);
+                    return AppendSpan(destination, cursor, StationKeepingReleased);
 
                 case HectonSubmarineOsLogCode.HostileDroneDetected:
-                    cursor = AppendRange(destination, cursor, s_failPrefix);
-                    return AppendRange(destination, cursor, s_hostileDroneDetected);
+                    cursor = AppendSpan(destination, cursor, FailPrefix);
+                    return AppendSpan(destination, cursor, HostileDroneDetected);
 
                 case HectonSubmarineOsLogCode.EmergencyLevelNominal:
-                    cursor = AppendRange(destination, cursor, s_okPrefix);
-                    return AppendRange(destination, cursor, s_emergencyNominal);
+                    cursor = AppendSpan(destination, cursor, OkPrefix);
+                    return AppendSpan(destination, cursor, EmergencyNominal);
 
                 default:
-                    cursor = AppendRange(destination, cursor, s_okPrefix);
-                    return AppendRange(destination, cursor, s_reactorStable);
+                    cursor = AppendSpan(destination, cursor, OkPrefix);
+                    return AppendSpan(destination, cursor, ReactorStable);
             }
         }
 
@@ -463,6 +463,19 @@ namespace Hecton8.UI
         private static int AppendRange(char[] destination, int cursor, char[] source)
         {
             return AppendRange(destination, cursor, source, 0, source != null ? source.Length : 0);
+        }
+
+        private static int AppendSpan(char[] destination, int cursor, ReadOnlySpan<char> source)
+        {
+            if (destination == null || source.Length <= 0)
+                return cursor;
+
+            int safeCursor = math.clamp(cursor, 0, destination.Length);
+            int safeLength = math.min(source.Length, destination.Length - safeCursor);
+            for (int i = 0; i < safeLength; i++)
+                destination[safeCursor + i] = source[i];
+
+            return safeCursor + safeLength;
         }
 
         private static int AppendRange(char[] destination, int cursor, char[] source, int sourceOffset, int sourceLength)

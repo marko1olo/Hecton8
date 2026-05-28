@@ -7,6 +7,7 @@ namespace Hecton8.Core.Contracts
     public static class BulkheadContainmentIntentBus
     {
         public const int IntentCapacity = 256;
+        public const ulong IntentMutationGuardMask = 1UL << 62;
 
         private static IDataVault s_cachedVault;
         private static VaultGenerationHandle<BulkheadContainmentIntentDTO> s_intentsHandle;
@@ -168,18 +169,15 @@ namespace Hecton8.Core.Contracts
             controlRows = default;
             if (vault == null ||
                 !HasBoundHandles() ||
-                !vault.TryAcquireWriteLock(in s_intentsHandle, SystemID.Construction, out intents))
+                !vault.TryAcquireMutationGuard(IntentMutationGuardMask))
             {
                 return false;
             }
 
-            bool controlLocked = false;
             try
             {
-                if (!vault.TryAcquireWriteLock(in s_controlHandle, SystemID.Construction, out controlRows))
-                    return false;
-
-                controlLocked = true;
+                vault.TryResolveHandle(in s_intentsHandle, out intents);
+                vault.TryResolveHandle(in s_controlHandle, out controlRows);
                 if (intents.IsCreated &&
                     controlRows.IsCreated &&
                     intents.Length > 0 &&
@@ -192,11 +190,9 @@ namespace Hecton8.Core.Contracts
             }
             finally
             {
-                if (!controlLocked || !intents.IsCreated || !controlRows.IsCreated || intents.Length == 0 || controlRows.Length == 0)
+                if (!intents.IsCreated || !controlRows.IsCreated || intents.Length == 0 || controlRows.Length == 0)
                 {
-                    if (controlLocked)
-                        vault.ReleaseWriteLock(in s_controlHandle, SystemID.Construction);
-                    vault.ReleaseWriteLock(in s_intentsHandle, SystemID.Construction);
+                    vault.ReleaseMutationGuard(IntentMutationGuardMask);
                 }
             }
         }
@@ -206,8 +202,7 @@ namespace Hecton8.Core.Contracts
             if (vault == null || !HasBoundHandles())
                 return;
 
-            vault.ReleaseWriteLock(in s_controlHandle, SystemID.Construction);
-            vault.ReleaseWriteLock(in s_intentsHandle, SystemID.Construction);
+            vault.ReleaseMutationGuard(IntentMutationGuardMask);
         }
 
         private static bool HasBoundHandles()

@@ -42,8 +42,8 @@ namespace Hecton8.UI
 
         private enum State { Idle, WaitingForDelay, FadingIn, Visible, FadingOut }
 
-        private static readonly char[] UnknownTimestampChars = "UNKNOWN".ToCharArray();
-        private static readonly char[] ZeroPlaytimeChars = "00:00:00".ToCharArray();
+        private static ReadOnlySpan<char> UnknownTimestampChars => "UNKNOWN".AsSpan();
+        private static ReadOnlySpan<char> ZeroPlaytimeChars => "00:00:00".AsSpan();
 
         private State _state;
         private float _timer;
@@ -499,13 +499,13 @@ namespace Hecton8.UI
             }
             else
             {
-                cursor = AppendChars(buffer, cursor, UnknownTimestampChars, UnknownTimestampChars.Length);
+                cursor = AppendSpan(buffer, cursor, UnknownTimestampChars);
             }
 
             cursor = AppendChar(buffer, cursor, '\n');
             cursor = metadata != null
                 ? AppendPlaytime(buffer, cursor, metadata.PlayTimeSeconds)
-                : AppendChars(buffer, cursor, ZeroPlaytimeChars, ZeroPlaytimeChars.Length);
+                : AppendSpan(buffer, cursor, ZeroPlaytimeChars);
 
             if (!scene.IsEmpty)
             {

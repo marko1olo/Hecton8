@@ -384,7 +384,7 @@ namespace Hecton8.Construction
             s_DebugRayHandle = EnsureVaultHandle(vault, DebugRayBufferId, PylonCapacity, ref s_DebugRayHandle);
             s_IndirectArgsHandle = EnsureVaultHandle(vault, IndirectArgsBufferId, 1, ref s_IndirectArgsHandle);
 
-            if (!TryAcquireWriteLane(vault, in s_TelemetryCursorHandle, 1, out NativeArray<int> cursor))
+            if (!TryAcquireWriteLane(vault, in s_TelemetryCursorHandle, TelemetryCursorBufferId, 1, out NativeArray<int> cursor))
                 return false;
 
             try
@@ -398,10 +398,10 @@ namespace Hecton8.Construction
             }
             finally
             {
-                vault.ReleaseWriteLock(in s_TelemetryCursorHandle, SystemID.Construction);
+                    ReleaseFoundationWrite(vault, in s_TelemetryCursorHandle, TelemetryCursorBufferId);
             }
 
-            if (!TryAcquireWriteLane(vault, in s_TuningHandle, 1, out NativeArray<FoundationTuningDTO> tuning))
+            if (!TryAcquireWriteLane(vault, in s_TuningHandle, TuningBufferId, 1, out NativeArray<FoundationTuningDTO> tuning))
                 return false;
 
             try
@@ -410,10 +410,10 @@ namespace Hecton8.Construction
             }
             finally
             {
-                vault.ReleaseWriteLock(in s_TuningHandle, SystemID.Construction);
+                ReleaseFoundationWrite(vault, in s_TuningHandle, TuningBufferId);
             }
 
-            if (!TryAcquireWriteLane(vault, in s_SdfConfigHandle, 1, out NativeArray<FoundationSdfConfigDTO> config))
+            if (!TryAcquireWriteLane(vault, in s_SdfConfigHandle, SdfConfigBufferId, 1, out NativeArray<FoundationSdfConfigDTO> config))
                 return false;
 
             try
@@ -422,7 +422,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                vault.ReleaseWriteLock(in s_SdfConfigHandle, SystemID.Construction);
+                ReleaseFoundationWrite(vault, in s_SdfConfigHandle, SdfConfigBufferId);
             }
 
             return ValidateStructLayout();
@@ -471,21 +471,21 @@ namespace Hecton8.Construction
             if (vault == null)
                 return false;
 
-            return vault.TryReadHandle(in s_ModuleHandle, out views.Modules) &&
-                   vault.TryReadHandle(in s_PylonMatrixHandle, out views.PylonMatrices) &&
-                   vault.TryReadHandle(in s_PylonSurfaceHandle, out views.PylonSurfaces) &&
-                   vault.TryReadHandle(in s_PerModuleCounterHandle, out views.PerModuleCounters) &&
-                   vault.TryReadHandle(in s_FrameCounterHandle, out views.FrameCounters) &&
-                   vault.TryReadHandle(in s_TelemetryHandle, out views.Telemetry) &&
-                   vault.TryReadHandle(in s_TelemetryCursorHandle, out views.TelemetryCursor) &&
-                   vault.TryReadHandle(in s_TuningHandle, out views.Tuning) &&
-                   vault.TryReadHandle(in s_MockSdfDistanceHandle, out views.MockSdfDistances) &&
-                   vault.TryReadHandle(in s_SdfConfigHandle, out views.SdfConfig) &&
-                   vault.TryReadHandle(in s_RayOriginHandle, out views.RayOrigins) &&
-                   vault.TryReadHandle(in s_ProfileRangeHandle, out views.ProfileRanges) &&
-                   vault.TryReadHandle(in s_CsvScratchHandle, out views.CsvScratch) &&
-                   vault.TryReadHandle(in s_DebugRayHandle, out views.DebugRays) &&
-                   vault.TryReadHandle(in s_IndirectArgsHandle, out views.IndirectArgs);
+            return TryReadFoundationBuffer(vault, in s_ModuleHandle, ModuleBufferId, out views.Modules) &&
+                   TryReadFoundationBuffer(vault, in s_PylonMatrixHandle, PylonMatrixBufferId, out views.PylonMatrices) &&
+                   TryReadFoundationBuffer(vault, in s_PylonSurfaceHandle, PylonSurfaceBufferId, out views.PylonSurfaces) &&
+                   TryReadFoundationBuffer(vault, in s_PerModuleCounterHandle, PerModuleCounterBufferId, out views.PerModuleCounters) &&
+                   TryReadFoundationBuffer(vault, in s_FrameCounterHandle, FrameCounterBufferId, out views.FrameCounters) &&
+                   TryReadFoundationBuffer(vault, in s_TelemetryHandle, TelemetryBufferId, out views.Telemetry) &&
+                   TryReadFoundationBuffer(vault, in s_TelemetryCursorHandle, TelemetryCursorBufferId, out views.TelemetryCursor) &&
+                   TryReadFoundationBuffer(vault, in s_TuningHandle, TuningBufferId, out views.Tuning) &&
+                   TryReadFoundationBuffer(vault, in s_MockSdfDistanceHandle, MockSdfDistanceBufferId, out views.MockSdfDistances) &&
+                   TryReadFoundationBuffer(vault, in s_SdfConfigHandle, SdfConfigBufferId, out views.SdfConfig) &&
+                   TryReadFoundationBuffer(vault, in s_RayOriginHandle, RayOriginBufferId, out views.RayOrigins) &&
+                   TryReadFoundationBuffer(vault, in s_ProfileRangeHandle, ProfileRangeBufferId, out views.ProfileRanges) &&
+                   TryReadFoundationBuffer(vault, in s_CsvScratchHandle, CsvScratchBufferId, out views.CsvScratch) &&
+                   TryReadFoundationBuffer(vault, in s_DebugRayHandle, DebugRayBufferId, out views.DebugRays) &&
+                   TryReadFoundationBuffer(vault, in s_IndirectArgsHandle, IndirectArgsBufferId, out views.IndirectArgs);
         }
 
         public static FoundationTuningDTO CreateDefaultTuning(float quality)
@@ -562,7 +562,7 @@ namespace Hecton8.Construction
                 return false;
 
             InitializeVault(vault);
-            if (!TryAcquireWriteLane(vault, in s_TuningHandle, 1, out NativeArray<FoundationTuningDTO> tuning))
+            if (!TryAcquireWriteLane(vault, in s_TuningHandle, TuningBufferId, 1, out NativeArray<FoundationTuningDTO> tuning))
             {
                 return false;
             }
@@ -574,7 +574,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                vault.ReleaseWriteLock(in s_TuningHandle, SystemID.Construction);
+                ReleaseFoundationWrite(vault, in s_TuningHandle, TuningBufferId);
             }
         }
 
@@ -1065,7 +1065,7 @@ namespace Hecton8.Construction
             int requiredLength,
             ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (handle.BufferID != 0u &&
+            if (IsFoundationVaultHandle(in handle, bufferId) &&
                 vault.TryReadHandle(in handle, out NativeArray<T> existing) &&
                 existing.IsCreated &&
                 existing.Length >= requiredLength)
@@ -1083,12 +1083,13 @@ namespace Hecton8.Construction
         private static bool TryAcquireWriteLane<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
             int requiredLength,
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
             if (vault == null ||
-                handle.BufferID == 0u ||
+                !IsFoundationVaultHandle(in handle, bufferId) ||
                 !vault.TryAcquireWriteLock(in handle, SystemID.Construction, out buffer))
             {
                 return false;
@@ -1100,6 +1101,35 @@ namespace Hecton8.Construction
             vault.ReleaseWriteLock(in handle, SystemID.Construction);
             buffer = default;
             return false;
+        }
+
+        private static bool TryReadFoundationBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return vault != null &&
+                   IsFoundationVaultHandle(in handle, bufferId) &&
+                   vault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
+        private static void ReleaseFoundationWrite<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            if (vault != null && IsFoundationVaultHandle(in handle, bufferId))
+                vault.ReleaseWriteLock(in handle, SystemID.Construction);
+        }
+
+        private static bool IsFoundationVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)SystemID.Construction &&
+                   handle.Generation != 0u;
         }
 
 #if UNITY_EDITOR

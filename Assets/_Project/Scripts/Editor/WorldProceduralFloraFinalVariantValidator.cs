@@ -421,7 +421,7 @@ namespace Hecton8.EditorTools
                 if (WorldProceduralFloraMaterialAuthoring.TryGetShaderContractFailure(material, out shaderContractFailure))
                 {
                     issues.Add(
-                        $"{prefabPath}: {floraLabel} material '{material.name}' uses stale shader contract ({shaderContractFailure}). Required contract: `_QUALITY_MX350` enabled, `_QUALITY_HIGH` disabled, and positive `{WorldProceduralFloraMaterialAuthoring.NormalScaleProperty}`, `{WorldProceduralFloraMaterialAuthoring.TriplanarScaleProperty}`, `{WorldProceduralFloraMaterialAuthoring.TriplanarSharpnessProperty}`, `{WorldProceduralFloraMaterialAuthoring.CurvatureWetnessStrengthProperty}`, `{WorldProceduralFloraMaterialAuthoring.FresnelStrengthProperty}`, `{WorldProceduralFloraMaterialAuthoring.FresnelPowerProperty}`, `{WorldProceduralFloraMaterialAuthoring.HeightScaleProperty}`.");
+                        $"{prefabPath}: {floraLabel} material '{material.name}' uses stale shader contract ({shaderContractFailure}). Required contract: no `_QUALITY_MX350`/`_QUALITY_HIGH` keywords and positive `{WorldProceduralFloraMaterialAuthoring.NormalScaleProperty}`, `{WorldProceduralFloraMaterialAuthoring.TriplanarScaleProperty}`, `{WorldProceduralFloraMaterialAuthoring.TriplanarSharpnessProperty}`, `{WorldProceduralFloraMaterialAuthoring.CurvatureWetnessStrengthProperty}`, `{WorldProceduralFloraMaterialAuthoring.FresnelStrengthProperty}`, `{WorldProceduralFloraMaterialAuthoring.FresnelPowerProperty}`, `{WorldProceduralFloraMaterialAuthoring.HeightScaleProperty}`.");
                 }
             }
 

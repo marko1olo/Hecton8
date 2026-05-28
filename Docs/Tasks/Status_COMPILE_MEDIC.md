@@ -3,7 +3,7 @@
 Operational ID: COMPILE_MEDIC
 Domain: Echelon 9 / The Integrator (Compile Medic)
 Prompt source: User requested latest dotnet compile error/warning repair. No matching compile-medic `<AGENT_PROMPT>` exists in `Docs/Tasks/CURRENT_BATCH.md`.
-Status: COMPLETE - CURRENT NORMAL DOTNET TARGETS GREEN; STRICT WARNING AUDIT DEBT RECORDED
+Status: COMPLETE - FINAL TARGETED DOTNET TARGETS GREEN; STRICT WARNING AUDIT DEBT RECORDED; CREST SHADER IMPORT NEEDS UNITY EDITOR
 
 ## Mandates Read
 
@@ -74,3 +74,13 @@ Status: COMPLETE - CURRENT NORMAL DOTNET TARGETS GREEN; STRICT WARNING AUDIT DEB
 - [x] Re-check MapMagic/Crest C# boundaries | DOD: MapMagic runtime/editor and Crest runtime/editor build 0/0; no git diff under `Assets/MapMagic`, `Assets/Crest`, or `Assets/_Project/Scenes/02_HECTON_WORLD.unity` | estimate: 293000000 us
 - [x] Re-run global-system static smoke scans | DOD: `.Complete()` hits are editor/offline tools or owner disposal/fence helpers; `TryGetLatestCreated()` hits are editor/diagnostic/crash routes; scene searches are editor/authoring/tuner routes, not new runtime hot loops | estimate: 45000 us
 - [x] Record strict warning audit caveat | DOD: `HectonStrictWarningAudit=true` now proves `XRPass` errors gone but exposes 904 existing suppressed warnings; normal build warnings remain 0 | estimate: 6000 us
+
+## Loop 8
+
+- [x] Re-verify dirty parallel workspace after new build churn | DOD: waited for external `dotnet/csc` process to finish, then rebuilt `Hecton8.Core`; `BUILD_COMPILE_MEDIC_CORE_FINAL_AFTER_BUCKETER_20260528_1.log` is 0 warnings and 0 errors | estimate: 27210000 us
+- [x] Classify `ModuloSimulationBucketer` CS0103 report | DOD: current source contains `ReleaseRebalanceBufferPins`, Core rebuild proves the earlier `Hecton8.Editor` error was from an intermediate parallel file state; rejected editing a working method | estimate: 15000 us
+- [x] Verify editor compile route after empty redirected logs | DOD: file-logger `Hecton8.Editor` build succeeded 0 warnings and 0 errors; retained compact proof in `BUILD_COMPILE_MEDIC_HECTON8_EDITOR_FINAL_AFTER_BUCKETER_SUMMARY_20260528_1.log`; rejected trusting the empty redirected logs | estimate: 239910000 us
+- [x] Rebuild affected C# boundaries after Ballistics/Modular/Crest/Bucketer churn | DOD: `BUILD_COMPILE_MEDIC_TARGETED_FINAL_AFTER_BUCKETER_20260528_1.csv` records 9 targets, exit=0, warnings=0, errors=0 | estimate: 326500000 us
+- [x] Re-audit MapMagic, Crest, and scene boundary | DOD: `Assets/MapMagic` and `Assets/_Project/Scenes/02_HECTON_WORLD.unity` have no current diff; Crest has compute/C# safety diffs and its runtime/editor C# targets compile 0/0; shader/import validation remains Unity Editor-only | estimate: 35000 us
+- [x] Re-run strict Core audit | DOD: `BUILD_COMPILE_MEDIC_CORE_STRICT_AUDIT_AFTER_BUCKETER_20260528_1.log` has 0 errors and 904 unsuppressed warnings; warnings are dominated by Unity serialized-field/dead-event/obsolete API/source-DLL audit debt, not normal build warnings | estimate: 71840000 us
+- [x] Re-scan global-system violation patterns | DOD: edited/affected files add no hot `TryGetLatestCreated`, scene-search, or same-frame `.Complete()` route; observed repository hits remain editor/diagnostic/crash/owner-fence categories and require domain-owner cleanup if promoted to normal gate | estimate: 60000 us

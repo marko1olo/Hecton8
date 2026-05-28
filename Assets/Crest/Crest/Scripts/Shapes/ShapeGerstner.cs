@@ -354,14 +354,31 @@ namespace Crest
 
         void UpdateGenerateWaves(CommandBuffer buf)
         {
-            buf.SetComputeFloatParam(_shaderGerstner, sp_TextureRes, _waveBuffers.width);
+            if (_waveBuffers == null)
+            {
+                return;
+            }
+
+            int width = _waveBuffers.width;
+            int height = _waveBuffers.height;
+            int depth = _waveBuffers.volumeDepth;
+            int cascadeCount = _lastCascade - _firstCascade + 1;
+            if (width <= 0 || height <= 0 || depth <= 0 || cascadeCount <= 0)
+            {
+                return;
+            }
+
+            int groupsX = (width + LodDataMgr.THREAD_GROUP_SIZE_X - 1) / LodDataMgr.THREAD_GROUP_SIZE_X;
+            int groupsY = (height + LodDataMgr.THREAD_GROUP_SIZE_Y - 1) / LodDataMgr.THREAD_GROUP_SIZE_Y;
+
+            buf.SetComputeFloatParam(_shaderGerstner, sp_TextureRes, width);
             buf.SetComputeFloatParam(_shaderGerstner, OceanRenderer.sp_crestTime, OceanRenderer.Instance.CurrentTime);
             buf.SetComputeIntParam(_shaderGerstner, sp_FirstCascadeIndex, _firstCascade);
             buf.SetComputeBufferParam(_shaderGerstner, _krnlGerstner, sp_CascadeParams, _bufCascadeParams);
             buf.SetComputeBufferParam(_shaderGerstner, _krnlGerstner, sp_GerstnerWaveData, _bufWaveData);
             buf.SetComputeTextureParam(_shaderGerstner, _krnlGerstner, sp_WaveBuffer, _waveBuffers);
 
-            buf.DispatchCompute(_shaderGerstner, _krnlGerstner, _waveBuffers.width / LodDataMgr.THREAD_GROUP_SIZE_X, _waveBuffers.height / LodDataMgr.THREAD_GROUP_SIZE_Y, _lastCascade - _firstCascade + 1);
+            buf.DispatchCompute(_shaderGerstner, _krnlGerstner, groupsX, groupsY, cascadeCount);
         }
 
         /// <summary>

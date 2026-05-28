@@ -1,6 +1,6 @@
 ﻿{
     "agent":  "1414",
-    "status":  "APEX_STATIC_VERIFIED_BUILD_BLOCKED_BY_HOST_CONTENTION",
+    "status":  "APEX_STATIC_VERIFIED_DESCRIPTOR_GATE_ADDED_BUILD_THROTTLED",
     "date":  "2026-05-28",
     "prompt":  {
                    "path":  "Docs/Tasks/CURRENT_BATCH.md",
@@ -9,1111 +9,538 @@
                    "sha256":  "22323d22279e444c27790cf29585eacf5528bb19964887e38f8c1efb5dab014e"
                },
     "sourceHashes":  {
-                         "Assets/_Project/Scripts/Core/Memory/H8Memory.cs":  "16e4da2e5148bbad8f4abc9b524e97151f1b5080a15eda7c6ab544ba81618be4",
-                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs":  "b35073e0f7ad2e833767c0b3f6b3139a05942bd9b416bc77c8f373b9a3d74aac",
-                         "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs":  "d6cc77f5fb89f2cbde4147a7bd1364f9632aa8c6da3ce856c043138ecdd3c2cc",
-                         "Assets/_Project/Scripts/Core/SystemDispatcher.cs":  "d19dc4fedbb6b8dca919b2eefc4ecc4ec897ce6d786cedf64de82b974f3c612a",
-                         "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs":  "f92bebfd212a46cb09a023c7a349b934c1431b3b651c80161f3757b1d7857309"
+                         "Assets/_Project/Scripts/Core/Memory/H8Memory.cs":  "4e46da1fb3b8ae41d74540f9585f7571c28452659cbaf78237409eda23c71eed",
+                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs":  "1119a9198f1497a32e7b697d4a96143d916cf5036d06ed7b7ad0a410892e17b7",
+                         "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs":  "6b34411b3351031c1dbd16f842122a266ba54b75a5f7f117962bf24a7a8af64a",
+                         "Assets/_Project/Scripts/Core/SystemDispatcher.cs":  "ddaa490b5c808ec3c7bba98da2df0c4d69b4c7e5ac0d2e4509f5ab4fa6bd262d",
+                         "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs":  "b4a9c9bb3021f76f865f4ab6d3728d3fd28c80db738f15d7bb3c71fd52addfcd"
                      },
     "zeroGcHotPathScan":  {
-                              "scanner":  "PowerShell method-body text scan",
-                              "elapsedMicroseconds":  2883409,
-                              "terms":  [
-                                            "new ",
-                                            "string.Format",
-                                            ".ToString(",
-                                            "System.Linq",
-                                            "Enumerable.",
-                                            ".Select(",
-                                            ".Where(",
-                                            ".ToList(",
-                                            ".ToArray(",
-                                            "foreach"
-                                        ],
-                              "hotMethodsScanned":  22,
-                              "totalForbiddenTermHits":  0,
+                              "scanner":  "PowerShell method-body text scan; counts literal new-token text, string.Format, .ToString, foreach, LINQ query keywords, and common LINQ methods.",
+                              "elapsedMicroseconds":  601330,
+                              "totals":  {
+                                             "methods":  39,
+                                             "new_ref_text":  0,
+                                             "string_format":  0,
+                                             "tostring":  0,
+                                             "foreach":  0,
+                                             "linq_query":  0,
+                                             "linq_methods":  0
+                                         },
                               "results":  [
                                               {
                                                   "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
-                                                  "line":  2225,
-                                                  "signature":  "public static H8RawReallocationGuard Create",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
+                                                  "line":  2906,
+                                                  "signature":  "public static void* AllocateRaw( long bytes, int alignment, SystemID owner, Allocator allocator, bool clearMemory, H8AllocationFlags extraFlags = H8AllocationFlags.None) {",
+                                                  "length":  1373,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
                                               },
                                               {
                                                   "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
-                                                  "line":  2947,
-                                                  "signature":  "internal static void* ReallocateRaw",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
+                                                  "line":  2951,
+                                                  "signature":  "internal static void* ReallocateRaw( void* oldPointer, long oldBytes, long newBytes, int alignment, SystemID owner, Allocator allocator, bool clearExtendedBytes, in",
+                                                  "length":  2703,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                  "line":  4227,
+                                                  "signature":  "private static bool RegisterPointer( void* pointer, long bytes, int length, int stride, int alignment, SystemID owner, Allocator allocator, H8AllocationFlag",
+                                                  "length":  2801,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                  "line":  3191,
+                                                  "signature":  "internal static bool TryUpdateBlockDescriptor(int index, in BlockDescriptor descriptor) {",
+                                                  "length":  536,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                  "line":  3221,
+                                                  "signature":  "internal static bool TryReserveBlockDescriptorSlot(out int index) {",
+                                                  "length":  350,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                  "line":  3234,
+                                                  "signature":  "private static bool TryReserveBlockDescriptorSlotNoLock(out int index) {",
+                                                  "length":  1471,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                  "line":  3271,
+                                                  "signature":  "internal static void ReleaseReservedBlockDescriptor(int index) {",
+                                                  "length":  914,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                  "line":  3295,
+                                                  "signature":  "internal static bool TryCommitReservedBlockDescriptor(int index, in BlockDescriptor descriptor) {",
+                                                  "length":  995,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                  "line":  4471,
+                                                  "signature":  "private static int RegisterBlockDescriptorThreadSafe(in BlockDescriptor descriptor) {",
+                                                  "length":  366,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                  "line":  4484,
+                                                  "signature":  "private static int RegisterBlockDescriptorNoInit(in BlockDescriptor descriptor) {",
+                                                  "length":  1555,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                  "line":  4523,
+                                                  "signature":  "private static bool TryReserveReusableBlockDescriptorSlot(in BlockDescriptor reservation, out int index) {",
+                                                  "length":  739,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                  "line":  4418,
+                                                  "signature":  "private static void EnterBlockDescriptorMutationGate() {",
+                                                  "length":  320,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                  "line":  4425,
+                                                  "signature":  "private static void ReleaseBlockDescriptorMutationGate() {",
+                                                  "length":  211,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                  "line":  4553,
+                                                  "signature":  "private static void MarkBlockDescriptorFree(IntPtr basePointer, long offsetBytes) {",
+                                                  "length":  368,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                  "line":  4566,
+                                                  "signature":  "private static void MarkBlockDescriptorFreeNoLock(IntPtr basePointer, long offsetBytes) {",
+                                                  "length":  1087,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                  "line":  4591,
+                                                  "signature":  "private static void UpdateBlockDescriptorOwnerKey(IntPtr basePointer, long offsetBytes, int ownerKey) {",
+                                                  "length":  404,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                  "line":  4604,
+                                                  "signature":  "private static void UpdateBlockDescriptorOwnerKeyNoLock(IntPtr basePointer, long offsetBytes, int ownerKey) {",
+                                                  "length":  848,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
                                               },
                                               {
                                                   "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-                                                  "line":  1089,
-                                                  "signature":  "private bool TryEnsureVaultBuffer\u003cT\u003e",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
+                                                  "line":  1745,
+                                                  "signature":  "public bool TryAcquireWriteLock\u003cT\u003e(in VaultGenerationHandle\u003cT\u003e handle, SystemID systemID, out NativeArray\u003cT\u003e buffer) where T : struct {",
+                                                  "length":  5351,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
                                               },
                                               {
                                                   "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-                                                  "line":  1270,
-                                                  "signature":  "private bool TryAllocatePublishedBuffer\u003cT\u003e",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
+                                                  "line":  1905,
+                                                  "signature":  "public bool ReleaseWriteLock\u003cT\u003e(in VaultGenerationHandle\u003cT\u003e handle, SystemID systemID) where T : struct {",
+                                                  "length":  1932,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
                                               },
                                               {
                                                   "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-                                                  "line":  1725,
-                                                  "signature":  "public bool TryAcquireWriteLock\u003cT\u003e",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
+                                                  "line":  1961,
+                                                  "signature":  "private bool ReleaseWriterBlockLock(int bufferKey, long offsetBytes) {",
+                                                  "length":  582,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
                                               },
                                               {
                                                   "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-                                                  "line":  1868,
-                                                  "signature":  "public bool ReleaseWriteLock\u003cT\u003e",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
+                                                  "line":  2032,
+                                                  "signature":  "private bool QueueDeferredRelease( int bufferKey, long offsetBytes, int activeLockBit, int lockOwnerSystemId, byte kind) {",
+                                                  "length":  2725,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
                                               },
                                               {
                                                   "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-                                                  "line":  1923,
-                                                  "signature":  "private bool ReleaseWriterBlockLock",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
+                                                  "line":  2748,
+                                                  "signature":  "private bool TryAcquireBlockMutationGate() {",
+                                                  "length":  234,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
                                               },
                                               {
                                                   "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-                                                  "line":  1993,
-                                                  "signature":  "private bool QueueDeferredRelease",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
+                                                  "line":  2757,
+                                                  "signature":  "private bool TryEnterBlockMutationGate() {",
+                                                  "length":  659,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
                                               },
                                               {
                                                   "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-                                                  "line":  2119,
-                                                  "signature":  "private bool DrainDeferredWriterReleaseLocked",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
+                                                  "line":  2781,
+                                                  "signature":  "private bool TryEnterReleaseMutationGate() {",
+                                                  "length":  381,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
                                               },
                                               {
                                                   "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-                                                  "line":  2167,
-                                                  "signature":  "private bool DrainDeferredBufferPinReleaseLocked",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
+                                                  "line":  2798,
+                                                  "signature":  "private void ReleaseBlockMutationGate() {",
+                                                  "length":  156,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
                                               },
                                               {
                                                   "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-                                                  "line":  2595,
-                                                  "signature":  "public bool TryUnlockBuffer(BufferID bufferId, SystemID lockOwner)",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
+                                                  "line":  4969,
+                                                  "signature":  "private bool TryGrowArenaForBytes(long requiredContiguousBytes) {",
+                                                  "length":  2005,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
                                               },
                                               {
                                                   "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-                                                  "line":  3670,
-                                                  "signature":  "private bool TryReadFlatMetadata",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
+                                                  "line":  5020,
+                                                  "signature":  "private bool TryGrowArena(long newArenaBytes) {",
+                                                  "length":  4727,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
                                               },
                                               {
                                                   "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-                                                  "line":  3751,
-                                                  "signature":  "private uint ReadMetadataGeneration",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
+                                                  "line":  5133,
+                                                  "signature":  "public bool ProcessDeferredArenaGrowth() {",
+                                                  "length":  1173,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
                                               },
                                               {
                                                   "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-                                                  "line":  3766,
-                                                  "signature":  "private void WriteMetadataGeneration",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
+                                                  "line":  5166,
+                                                  "signature":  "private void QueueDeferredArenaGrowth(long requiredBytes) {",
+                                                  "length":  714,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
                                               },
                                               {
                                                   "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-                                                  "line":  3730,
-                                                  "signature":  "private void RemoveMetadata",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
+                                                  "line":  5185,
+                                                  "signature":  "private void ClearDeferredArenaGrowthIfSatisfied() {",
+                                                  "length":  473,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
                                               },
                                               {
                                                   "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-                                                  "line":  4904,
-                                                  "signature":  "private bool TryGrowArenaForBytes",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
+                                                  "line":  5214,
+                                                  "signature":  "private bool TryPrepareArenaGrowthTailMetadata(out int reservedTailH8BlockIndex) {",
+                                                  "length":  544,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
                                               },
                                               {
                                                   "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-                                                  "line":  4961,
-                                                  "signature":  "private bool TryGrowArena(",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
+                                                  "line":  5229,
+                                                  "signature":  "private bool ExtendFreeTail(long growBytes, int reservedTailH8BlockIndex) {",
+                                                  "length":  1733,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
                                               },
                                               {
-                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-                                                  "line":  5061,
-                                                  "signature":  "public bool ProcessDeferredArenaGrowth",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
-                                              },
-                                              {
-                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-                                                  "line":  5094,
-                                                  "signature":  "private void QueueDeferredArenaGrowth",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
-                                              },
-                                              {
-                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-                                                  "line":  5113,
-                                                  "signature":  "private void ClearDeferredArenaGrowthIfSatisfied",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
-                                              },
-                                              {
-                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-                                                  "line":  5127,
-                                                  "signature":  "private bool CanSatisfyContiguousFreeBlock",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
+                                                  "path":  "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+                                                  "line":  2840,
+                                                  "signature":  "private void RunMasterPostSimulationPhase(in DispatcherTimingDTO timing) {",
+                                                  "length":  2536,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
                                               },
                                               {
                                                   "path":  "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
                                                   "line":  2899,
-                                                  "signature":  "private void ProcessDeferredArenaGrowthPostSimulation",
-                                                  "counts":  [
-                                                                 {
-                                                                     "term":  "new ",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "string.Format",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToString(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "System.Linq",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "Enumerable.",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Select(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".Where(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToList(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  ".ToArray(",
-                                                                     "count":  0
-                                                                 },
-                                                                 {
-                                                                     "term":  "foreach",
-                                                                     "count":  0
-                                                                 }
-                                                             ]
+                                                  "signature":  "private void ProcessDeferredArenaGrowthPostSimulation() {",
+                                                  "length":  366,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs",
+                                                  "line":  509,
+                                                  "signature":  "public static int RegisterPointer( void* pointer, long bytes, string owner, string label, NativeAllocationLifetime lifetime) {",
+                                                  "length":  286,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs",
+                                                  "line":  519,
+                                                  "signature":  "private static int RegisterPointer( void* pointer, long bytes, string owner, string label, NativeAllocationLifetime lifetime, bool coalescePointerlessOwnerLabel) {",
+                                                  "length":  4644,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs",
+                                                  "line":  720,
+                                                  "signature":  "public static void Unregister(int id) {",
+                                                  "length":  500,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs",
+                                                  "line":  746,
+                                                  "signature":  "public static void Unregister(string owner, string label) {",
+                                                  "length":  1052,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs",
+                                                  "line":  190,
+                                                  "signature":  "internal static int CopySnapshotSources(NativeArray\u003cNativeAllocationSnapshotSource\u003e destination, uint excludedOwnerHash = 0u) {",
+                                                  "length":  1369,
+                                                  "new_ref_text":  0,
+                                                  "string_format":  0,
+                                                  "tostring":  0,
+                                                  "foreach":  0,
+                                                  "linq_query":  0,
+                                                  "linq_methods":  0
                                               }
                                           ]
                           },
-    "layoutProof":  {
-                        "struct":  "H8RawReallocationGuard",
-                        "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
-                        "line":  2212,
-                        "declaredSizeBytes":  16,
-                        "fields":  [
-                                       {
-                                           "name":  "CompactionFenceHeld",
-                                           "type":  "int",
-                                           "offset":  0,
-                                           "size":  4
-                                       },
-                                       {
-                                           "name":  "ActiveLockMask",
-                                           "type":  "uint",
-                                           "offset":  4,
-                                           "size":  4
-                                       },
-                                       {
-                                           "name":  "HasPinnedExternalViews",
-                                           "type":  "byte",
-                                           "offset":  8,
-                                           "size":  1
-                                       },
-                                       {
-                                           "name":  "Reserved0",
-                                           "type":  "byte",
-                                           "offset":  9,
-                                           "size":  1
-                                       },
-                                       {
-                                           "name":  "Reserved1",
-                                           "type":  "ushort",
-                                           "offset":  10,
-                                           "size":  2
-                                       },
-                                       {
-                                           "name":  "Signature",
-                                           "type":  "uint",
-                                           "offset":  12,
-                                           "size":  4
-                                       }
-                                   ],
-                        "math":  "4+4+1+1+2+4=16; explicit offsets 0,4,8,9,10,12 are non-overlapping; 16 % 8 == 0; managed references=0; runtime bool fields=0."
-                    },
+    "descriptorMutationGateProof":  {
+                                        "state":  "H8Memory BlockDescriptor mutation is serialized by _blockDescriptorMutationGate.",
+                                        "gateField":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:2418 _blockDescriptorMutationGate",
+                                        "acquire":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:4418 EnterBlockDescriptorMutationGate uses Interlocked.CompareExchange(ref _blockDescriptorMutationGate, 1, 0) and Thread.SpinWait(8).",
+                                        "release":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:4425 ReleaseBlockDescriptorMutationGate uses Thread.MemoryBarrier then Volatile.Write(..., 0).",
+                                        "guardedMutationSites":  [
+                                                                     "TryUpdateBlockDescriptor lines 3191-3205",
+                                                                     "TryReserveBlockDescriptorSlot lines 3221-3231 delegates to no-lock body only while gate held",
+                                                                     "ReleaseReservedBlockDescriptor lines 3271-3292",
+                                                                     "TryCommitReservedBlockDescriptor lines 3295-3317",
+                                                                     "EnsureTrackingCapacity descriptor capacity growth lines 4215-4222",
+                                                                     "RegisterBlockDescriptorThreadSafe lines 4471-4481",
+                                                                     "MarkBlockDescriptorFree lines 4553-4563",
+                                                                     "UpdateBlockDescriptorOwnerKey lines 4591-4601"
+                                                                 ],
+                                        "proof":  "At most one descriptor writer can hold the gate because CompareExchange changes 0 to 1 for only one contender. Every added descriptor writer releases in finally with Volatile.Write(0), after Thread.MemoryBarrier. Therefore reserve/commit/free/update writer sections cannot interleave on _blockDescriptors rows.",
+                                        "residualReadRisk":  "TryGetBlockDescriptor remains an ungated pure diagnostic read to honor no-state-mutation read-accessor doctrine; writer serialization is proven, 40-byte diagnostic read atomicity during concurrent mutation is not claimed."
+                                    },
+    "descriptorReservationProof":  {
+                                       "stateEnum":  [
+                                                         "H8BlockState.Free=0",
+                                                         "H8BlockState.Occupied=1",
+                                                         "H8BlockState.Reserved=2"
+                                                     ],
+                                       "reserveSites":  [
+                                                            "TryReserveBlockDescriptorSlotNoLock: default reservation, Bytes=-1, State=Reserved, concrete row reserved before arena raw relocation"
+                                                        ],
+                                       "commitSites":  [
+                                                           "TryCommitReservedBlockDescriptor requires current.State == Reserved and Bytes \u003c 0 before replacing row"
+                                                       ],
+                                       "releaseSites":  [
+                                                            "TryGrowArena finally releases uncommitted reserved descriptor through ReleaseReservedBlockDescriptor"
+                                                        ],
+                                       "preRelocationOrdering":  [
+                                                                     "TryPrepareArenaGrowthTailMetadata occurs before H8Memory.ReallocateRaw",
+                                                                     "ExtendFreeTail commits the reserved row after raw relocation succeeds"
+                                                                 ]
+                                   },
+    "interlockedRaceProof":  {
+                                 "deferredGrowthQueue":  "QueueDeferredArenaGrowth keeps a monotonic max target through CompareExchange.",
+                                 "deferredGrowthClear":  "ClearDeferredArenaGrowthIfSatisfied writes zero only when current still equals the observed satisfiable target.",
+                                 "descriptorGate":  "Descriptor gate CompareExchange(0-\u003e1) gives single-writer ownership; added descriptor writers release in finally with Volatile.Write(0)."
+                             },
     "dataSovereignty":  {
                             "migratedFieldsToGlobalDataVault":  false,
                             "securedSparseBufferIds":  [
@@ -1130,147 +557,163 @@
                                                                "line":  243
                                                            }
                                                        ],
-                            "tryAcquireWriteLockCompactionFenceChecks":  [
-                                                                             1728,
-                                                                             1741,
-                                                                             1773
-                                                                         ],
-                            "writeLockReleaseFinallySites":  [
-                                                                 {
-                                                                     "method":  "TryAcquireWriteLock\u003cT\u003e",
-                                                                     "line":  1857,
-                                                                     "releaseLine":  1859
-                                                                 },
-                                                                 {
-                                                                     "method":  "ReleaseWriteLock\u003cT\u003e",
-                                                                     "line":  1917,
-                                                                     "releaseLine":  1919
-                                                                 },
-                                                                 {
-                                                                     "method":  "ReleaseWriterBlockLock",
-                                                                     "line":  1935,
-                                                                     "releaseLine":  1937
-                                                                 },
-                                                                 {
-                                                                     "method":  "TryUnlockBuffer",
-                                                                     "line":  2647,
-                                                                     "releaseLine":  2649
-                                                                 },
-                                                                 {
-                                                                     "method":  "TryGrowArena",
-                                                                     "line":  5051,
-                                                                     "releaseLine":  5054
-                                                                 },
-                                                                 {
-                                                                     "method":  "TryAllocatePublishedBuffer\u003cT\u003e",
-                                                                     "line":  1357,
-                                                                     "releaseLine":  1373
-                                                                 }
-                                                             ],
-                            "sparseMetadataRoute":  "TryReadFlatMetadata uses flat array only when key \u003c _metadataByBufferId.Length, then falls back to _metadata.TryGetValue for sparse keys.",
-                            "sparseGenerationLedger":  "_metadataGenerationByBufferId records live and tombstone generations for sparse keys without expanding the flat metadata array."
+                            "tryAcquireWriteLockChecks":  [
+                                                              "compaction fence checked before metadata read",
+                                                              "compaction fence checked after active lock bit resolve",
+                                                              "compaction fence checked before block lookup/mutation gate"
+                                                          ],
+                            "finallyReleases":  [
+                                                    "TryAcquireWriteLock releases block mutation gate in finally",
+                                                    "ReleaseWriteLock releases block mutation gate in finally",
+                                                    "ReleaseWriterBlockLock releases block mutation gate in finally",
+                                                    "TryGrowArena releases reserved descriptor, block mutation gate, arena-growth flag, and compaction fence in finally",
+                                                    "H8Memory descriptor gate writers added in Loop 22 release through finally"
+                                                ]
                         },
-    "defectsFoundDuringThisPass":  [
-                                       {
-                                           "id":  "DEFERRED_BUFFER_PIN_DEDUP_LOST_RELEASE",
-                                           "fault":  "All-kind deferred-release de-duplication swallowed valid counted buffer-pin releases because TryLockBuffer allows multiple pins by the same owner through Reserved1++.",
-                                           "fix":  "QueueDeferredRelease now de-duplicates only DeferredReleaseKindWriter. Buffer-pin releases remain counted queue events.",
-                                           "proof":  [
-                                                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:2015",
-                                                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:2026",
-                                                         "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs:90",
-                                                         "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs:94"
-                                                     ]
-                                       },
-                                       {
-                                           "id":  "NEW_ALLOCATION_PUBLISH_ROLLBACK_GATE_RETRY",
-                                           "fault":  "A post-publish rollback helper reacquired the mutation gate after MarkExternalView failure, so rollback was not mathematically guaranteed under gate contention.",
-                                           "fix":  "New allocation publish moved into TryAllocatePublishedBuffer\u003cT\u003e, where allocation, clear, metadata publish, optional external-view mark, and rollback all execute under one mutation gate and release in finally.",
-                                           "proof":  [
-                                                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1270",
-                                                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1283",
-                                                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1347",
-                                                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1359",
-                                                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1373",
-                                                         "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs:99"
-                                                     ]
-                                       },
-                                       {
-                                           "id":  "NEW_ALLOCATION_SANITIZE_AFTER_PUBLISH",
-                                           "fault":  "New float payload sanitation occurred after metadata publication, leaving a small window where another resolver could observe un-sanitized newly allocated payload.",
-                                           "fix":  "TryAllocatePublishedBuffer\u003cT\u003e now runs SanitizeFinitePayload\u003cT\u003e before _buffers.TryAdd and TryAddMetadata.",
-                                           "proof":  [
-                                                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1313",
-                                                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1331",
-                                                         "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs:109"
-                                                     ]
-                                       }
-                                   ],
-    "deferredGrowthRaceProof":  {
-                                    "queue":  "QueueDeferredArenaGrowth starts at GlobalDataVault.cs:5094 and commits the Interlocked.CompareExchange max loop at GlobalDataVault.cs:5106.",
-                                    "clear":  "ClearDeferredArenaGrowthIfSatisfied starts at GlobalDataVault.cs:5113 and clears with Interlocked.CompareExchange(ref _deferredArenaGrowthBytes, 0L, observed) at GlobalDataVault.cs:5124 after CanSatisfyContiguousFreeBlock(observed).",
-                                    "proof":  "If a larger request wins before the maintenance reader observes, observed is larger. If it wins after observation, the zero-CAS fails because current != observed. If there is no racing writer, clear happens only when the observed target is already satisfiable."
+    "cinematicAndScalability":  {
+                                    "cinematicCheatProtocol":  "No physical simulation was added; fake-vs-sim tradeoff is not applicable to memory truth.",
+                                    "continuousScalability":  [
+                                                                  "SystemDispatcher reads HomeostasisBrain.GlobalQualityWeight as a continuous float",
+                                                                  "ResolveArenaCapacityLimit(byte scalabilityProfile) smoothsteps MinimumQualityArenaLimitBytes..MaximumQualityArenaLimitBytes",
+                                                                  "No binary isLowEnd switch added in 1414 domain"
+                                                              ],
+                                    "binarySwitchScan":  [
+                                                             {
+                                                                 "term":  "if(isLowEnd)",
+                                                                 "count":  0
+                                                             },
+                                                             {
+                                                                 "term":  "isLowEnd",
+                                                                 "count":  0
+                                                             },
+                                                             {
+                                                                 "term":  "lowEnd",
+                                                                 "count":  0
+                                                             },
+                                                             {
+                                                                 "term":  "LowEnd",
+                                                                 "count":  0
+                                                             },
+                                                             {
+                                                                 "term":  "MathLodMode.Low",
+                                                                 "count":  0
+                                                             },
+                                                             {
+                                                                 "term":  "MathPrecisionLevel.Low",
+                                                                 "count":  0
+                                                             },
+                                                             {
+                                                                 "term":  "switchTier",
+                                                                 "count":  0
+                                                             },
+                                                             {
+                                                                 "term":  "switchQuality",
+                                                                 "count":  0
+                                                             }
+                                                         ]
                                 },
-    "cinematicCheatAndScalability":  {
-                                         "physicalSimulationAdded":  false,
-                                         "cheapPath":  "Fail-closed deferred relocation, bounded writer de-duplication, counted pin-release queueing, and gate-owned rollback; no physical simulation added.",
-                                         "globalQualityRoute":  [
-                                                                    "HomeostasisBrain.GlobalQualityWeight is consumed during bootstrap quality resolution in SystemDispatcher.cs:1758 and runtime frame state routes.",
-                                                                    "GlobalDataVault.ResolveArenaCapacityLimit scales arena capacity continuously through GlobalDataVault.cs:4862 and GlobalDataVault.cs:4867, then clamps explicit limits at GlobalDataVault.cs:4887.",
-                                                                    "No binary if(isLowEnd) or tier switch was added in the modified allocator paths."
-                                                                ],
-                                         "binaryLowEndSwitchScan":  [
-                                                                        {
-                                                                            "term":  "isLowEnd",
-                                                                            "count":  0
-                                                                        },
-                                                                        {
-                                                                            "term":  "lowEnd",
-                                                                            "count":  0
-                                                                        },
-                                                                        {
-                                                                            "term":  "LowEnd",
-                                                                            "count":  0
-                                                                        },
-                                                                        {
-                                                                            "term":  "MathLodMode.Low",
-                                                                            "count":  0
-                                                                        },
-                                                                        {
-                                                                            "term":  "MathPrecisionLevel.Low",
-                                                                            "count":  0
-                                                                        },
-                                                                        {
-                                                                            "term":  "switchTier",
-                                                                            "count":  0
-                                                                        },
-                                                                        {
-                                                                            "term":  "switchQuality",
-                                                                            "count":  0
-                                                                        }
-                                                                    ]
-                                     },
-    "verification":  {
-                         "gitDiffCheck":  "PASS_WITH_CRLF_WARNINGS_ONLY",
-                         "editorTestsAdded":  [
-                                                  "GlobalDataVault_SparseBufferIdWriteLocksAvoidFlatArrayReject",
-                                                  "GlobalDataVault_DeferredReleaseAcceptanceAndDeduplicationStayContractSafe",
-                                                  "GlobalDataVault_NewAllocationPublishAndRollbackStayUnderOneMutationGate",
-                                                  "GlobalDataVault_SparseBufferIdGenerationSurvivesRelease",
-                                                  "GlobalDataVault_DeferredGrowthChecksBurstLocksOnce"
-                                              ],
-                         "editorTestsExecuted":  false,
-                         "buildExecuted":  false
-                     },
+    "unmanagedStructOffsetProof":  {
+                                       "h8RawReallocationGuard":  [
+                                                                      "explicit Size=16",
+                                                                      "CompactionFenceHeld@0",
+                                                                      "ActiveLockMask@4",
+                                                                      "HasPinnedExternalViews@8"
+                                                                  ],
+                                       "sentinelNativeAllocationRecord":  [
+                                                                              "explicit Size=304",
+                                                                              "Pointer@0",
+                                                                              "Bytes@8",
+                                                                              "Owner@16",
+                                                                              "Label@144",
+                                                                              "Id@272",
+                                                                              "_leakReported@293"
+                                                                          ],
+                                       "sentinelPersistentReallocationRecord":  [
+                                                                                    "explicit Size=288",
+                                                                                    "Owner@0",
+                                                                                    "Label@128",
+                                                                                    "LastBytes@256",
+                                                                                    "_reported@280"
+                                                                                ],
+                                       "vaultAbiValidation":  [
+                                                                  "ValidateDescriptorAbiOffsets",
+                                                                  "generation/buffer/slice offsets",
+                                                                  "relocation/telemetry/budget/block offsets",
+                                                                  "defrag telemetry offsets"
+                                                              ]
+                                   },
     "compilationThrottle":  {
-                                "dotnetBuildInvocationsThisPass":  0,
-                                "latestCpuLoadPercentage":  76,
-                                "latestActiveCompilerProcesses":  [],
-                                "decision":  "No dotnet build launched because CPU was above 50 percent. No dotnet/csc/VBCSCompiler processes were active in the latest sample."
+                                "buildSpam":  false,
+                                "total1414BuildAttempts":  2,
+                                "latestPreBuildCpuPercent":  25,
+                                "latestBuildResult":  "FAILED_BEFORE_CORE_CODE_MSBUILD_PROJECT_GRAPH",
+                                "latestBuildError":  "MSB4006 circular dependency in target graph involving ResolveProjectReferences [Unity.RenderPipelines.Universal.Runtime.csproj]",
+                                "loop22CompilerGateCpuPercent":  100,
+                                "loop22CompilerProcesses":  [
+                                                                {
+                                                                    "id":  65020,
+                                                                    "name":  "dotnet",
+                                                                    "cpu":  294.515625,
+                                                                    "startTime":  "\/Date(1779984584803)\/"
+                                                                }
+                                                            ],
+                                "loop22BuildDecision":  "NOT_RUN because CPU \u003e 50 despite no active compiler processes in this sample.",
+                                "finalPostReportCpuPercent":  100,
+                                "finalPostReportCompilerProcesses":  [
+                                                                         {
+                                                                             "ProcessId":  65020,
+                                                                             "Name":  "dotnet.exe",
+                                                                             "CommandLine":  "\"C:\\Program Files\\dotnet\\dotnet.exe\" build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
+                                                                             "CreationDate":  "\/Date(1779984584803)\/"
+                                                                         }
+                                                                     ],
+                                "finalPostReportBuildDecision":  "NOT_RUN; CPU remains \u003e 50 and an active dotnet build process exists."
                             },
-    "blackBoxAndDumpState":  {
-                                 "expectedDumpPath":  "Docs/AgentLogs/Dump_1414.bin",
-                                 "dump1414Exists":  false,
-                                 "reason":  "No runtime crash, NaN, or executed failing test occurred during this static pass; creating a synthetic dump would be false evidence."
-                             }
+    "verification":  {
+                         "scopedGitDiffCheck":  "PASS_WITH_CRLF_WARNINGS_ONLY for 1414-owned files",
+                         "fullGitDiffCheck":  "FAILED_UNRELATED Docs/Tasks/_1415_extracted_prompt.tmp.md trailing whitespace; not edited by 1414 in this pass.",
+                         "braceBalance":  "0 for H8Memory.cs, GlobalDataVault.cs, NativeMemorySentinel.cs, SystemDispatcher.cs, ArenaAllocatorSentinel1414EditTests.cs",
+                         "testsExecuted":  false,
+                         "dumpFiles":  "No Docs/AgentLogs/Dump_1414* crash/NaN dump generated in this pass.",
+                         "residualRisks":  [
+                                               "Full solution build is still not green because previous build failed in MSBuild project graph before core diagnostics.",
+                                               "Loop 22 compiler gate sampled CPU \u003e 50, so no new build was launched.",
+                                               "BuildFatalLeakMessage remains failure-only StringBuilder/.ToString allocation and is excluded from hot-path zero-GC totals.",
+                                               "TryGetBlockDescriptor remains a pure ungated diagnostic read; writer serialization is proven, diagnostic read atomicity is not claimed.",
+                                               "No Unity Editor, PlayMode, Burst Inspector, Profiler, GCMonitor, or device runtime proof was executed."
+                                           ]
+                     },
+    "failureOnlyAllocationScan":  {
+                                      "scanner":  "PowerShell method-body text scan; failure-only diagnostic path.",
+                                      "elapsedMicroseconds":  5759,
+                                      "totals":  {
+                                                     "methods":  1,
+                                                     "new_ref_text":  1,
+                                                     "string_format":  0,
+                                                     "tostring":  1,
+                                                     "foreach":  0,
+                                                     "linq_query":  0,
+                                                     "linq_methods":  0
+                                                 },
+                                      "results":  [
+                                                      {
+                                                          "path":  "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs",
+                                                          "line":  1030,
+                                                          "signature":  "private static string BuildFatalLeakMessage(string context, int activeCount) {",
+                                                          "length":  1356,
+                                                          "new_ref_text":  1,
+                                                          "string_format":  0,
+                                                          "tostring":  1,
+                                                          "foreach":  0,
+                                                          "linq_query":  0,
+                                                          "linq_methods":  0
+                                                      }
+                                                  ]
+                                  },
+    "whatChangedInLoop22":  [
+                                "Added _blockDescriptorMutationGate to serialize H8Memory BlockDescriptor writer helpers.",
+                                "Moved TryReserveBlockDescriptorSlot body into a no-lock helper executed only under the descriptor gate.",
+                                "Guarded register/update/reserve/commit/release/free/owner-key descriptor mutations with try/finally release.",
+                                "Updated static source test to prove the descriptor gate wrapper and no-lock reservation body."
+                            ]
 }

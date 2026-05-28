@@ -503,7 +503,6 @@ namespace CandiceAIforGames.Data
             Dictionary<object, object> obj = new Dictionary<object, object>();
             try
             {
-                List<string> columns = new List<string>();
                 for (int i = 0; i < sqlDr.FieldCount; i++)
                 {
                     string column = sqlDr.GetName(i);

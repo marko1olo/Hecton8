@@ -338,7 +338,7 @@ namespace Hecton8.Visor
                     });
                 }
 
-                TextureDesc compositeDesc = new TextureDesc(sourceDesc);
+                TextureDesc compositeDesc = sourceDesc;
                 compositeDesc.name = "_HectonBiolumSSGIComposite";
                 compositeDesc.clearBuffer = false;
                 compositeDesc.depthBufferBits = DepthBits.None;
@@ -383,7 +383,7 @@ namespace Hecton8.Visor
                 int sampleCount,
                 float intensity)
             {
-                TextureDesc compositeDesc = new TextureDesc(sourceDesc);
+                TextureDesc compositeDesc = sourceDesc;
                 compositeDesc.name = "_HectonBiolumSSGIProxyComposite";
                 compositeDesc.clearBuffer = false;
                 compositeDesc.depthBufferBits = DepthBits.None;

@@ -22,8 +22,8 @@ namespace Hecton8.UI
         private const float AutoResolveRetryInterval = 1f;
         private const string ModuleIndexTemplate = "MODULE {0}/{1}  //  BUILT {2}";
         private const int BuildCostDigestCapacity = 32;
-        private static readonly char[] TitleChars = "CONSTRUCTION STATUS".ToCharArray();
-        private static readonly char[] ModuleIndexTemplateChars = ModuleIndexTemplate.ToCharArray();
+        private static ReadOnlySpan<char> TitleChars => "CONSTRUCTION STATUS".AsSpan();
+        private static ReadOnlySpan<char> ModuleIndexTemplateChars => ModuleIndexTemplate.AsSpan();
         private static readonly Color PanelColor = new Color(0.03f, 0.1f, 0.12f, 0.66f);
         private static readonly Color RuleColor = new Color(0.2f, 0.86f, 0.96f, 0.38f);
         private static readonly Color TitleColor = new Color(0.52f, 0.97f, 0.95f, 0.96f);
@@ -423,7 +423,8 @@ namespace Hecton8.UI
 
             _title = CreateText("Title", _self, labelFont, 11f, FontStyles.Bold, TitleColor, TextAlignmentOptions.Left);
             Anchor(_title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(14f, -10f), new Vector2(-14f, 18f));
-            _title.SetCharArray(TitleChars, 0, TitleChars.Length);
+            int titleLength = CopyToBuffer(_indexBuffer, TitleChars);
+            SetBufferText(_title, _indexBuffer, titleLength);
 
             _moduleName = CreateText("ModuleName", _self, labelFont, 18f, FontStyles.Bold, ValueColor, TextAlignmentOptions.Left);
             Anchor(_moduleName.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(14f, -40f), new Vector2(-14f, 24f));
@@ -836,7 +837,7 @@ namespace Hecton8.UI
             if (label == null || destination == null)
                 return;
 
-            if (!LocNumericBuffer.TryWrite(ModuleIndexTemplateChars.AsSpan(), destination.AsSpan(), value0, value1, value2, out int length))
+            if (!LocNumericBuffer.TryWrite(ModuleIndexTemplateChars, destination.AsSpan(), value0, value1, value2, out int length))
             {
                 length = 0;
             }
@@ -866,6 +867,16 @@ namespace Hecton8.UI
 
             int length = math.min(value.Length, buffer.Length);
             value.AsSpan(0, length).CopyTo(buffer.AsSpan());
+            return length;
+        }
+
+        private static int CopyToBuffer(char[] buffer, ReadOnlySpan<char> value)
+        {
+            if (buffer == null || value.Length <= 0)
+                return 0;
+
+            int length = math.min(value.Length, buffer.Length);
+            value.Slice(0, length).CopyTo(buffer.AsSpan());
             return length;
         }
 

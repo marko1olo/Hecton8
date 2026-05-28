@@ -132,3 +132,108 @@ Solution: `ApplyMassDistribution` and `SumBallastFill` read tanks only when `_ba
 Rejected Alternatives: Forcing completion before mass distribution or assuming read-only access can coexist with the writer job. Forcing completion would break the no-hidden-complete rule.
 Scalability potential: Weak hardware keeps frame progress by using the last mirrored fill value. Stronger devices normally complete the job in the swap window and read fresh tanks next frame.
 Hardware Impact: No measured saving. The fix avoids a possible data race without adding allocations; fallback work is the same four-tank accumulation.
+
+## Decision 019: External Read-Only Handles Must Not Require VehiclesPhysics Ownership
+Problem: `LockstepStateValidator.MirrorRoomWaterLevelsToVault` can create `BufferID.RoomWaterLevels` under `SystemID.CoreDeterminism`. The submarine flood solver only consumes room buffers as pinned read-only job inputs, so requiring `handle.SystemID == VehiclesPhysics` on that route would fail closed on valid external snapshots and silently disable flood mass integration.
+Solution: Added `IsVaultHandleForBuffer<T>` and used it only for external read-only refresh/pin routes (`TryAcquirePinnedReadOnlyVaultBuffer` and `TryRefreshExistingReadOnlyVaultBuffer`). Mutable and write routes still require `IsVehiclesPhysicsVaultHandle<T>` and `TryAcquireWriteLock`.
+Rejected Alternatives: Accepting foreign handles for mutable/write routes, changing `GlobalDataVault` owner semantics, or patching `CoreDeterminism` ownership from this domain. Those would cross ownership boundaries without a route card.
+Scalability potential: Weak devices fail closed only on actual missing/contended room buffers; middle/high/ultra keep deterministic room truth and spend `GlobalQualityWeight` on analytical sample richness, not ownership divergence.
+Hardware Impact: Metadata check only: `BufferID + Generation` for external read-only routes. No allocations, no extra math, estimated sub-microsecond.
+
+## Decision 020: Late-Frame Feedback Registration Must Be Cold
+Problem: The current source contained a late-frame acoustic/haptic feedback queue, but the queue helpers attempted `TryRegisterLateFrameTickable()` from a path reached by `FixedTick`. That is a hot `GlobalRegistry` registration call and violates the registry-as-cold-DI rule.
+Solution: Register `ILateFrameTickable` once from `RegisterRuntime`, keep `QueueFloodStressAcoustic` and `QueueCriticalFloodHaptic` to pure pending-struct/dirty-flag writes, and flush `SignalBus` feedback from `LateFrameTick`.
+Rejected Alternatives: Direct `SignalBus` publish from the simulation phase, dynamic on-demand registry registration from flood feedback, or disabling feedback. Direct publish keeps phase coupling; dynamic registration hot-polls the registry.
+Scalability potential: Low devices pay two dirty-flag checks in `LateFrameTick`; middle/high/ultra keep one-frame-delayed cinematic feedback without altering ballast truth or BufferID ownership.
+Hardware Impact: Removes 3 hot `GlobalRegistry` registration calls from flood feedback. Estimated saving is sub-microsecond and unprofiled; proof is static scan `hot queue GlobalRegistry registration calls: 0`. Final JSON report SHA-256: `4DC098FEB8A1225F10F8E62419EFBF999D4CA96B495014782F9F80D99B4968AF`.
+
+## Decision 021: SHINOBU_332 Cached Read Must Respect External Ownership
+Problem: `RefreshShinobu332GyroRouteHandleCold` accepted `BufferID.Shinobu332GyroCounters` from an external owner, but `TryReadShinobu332GyroCountersCached` later used an owner-strict `VehiclesPhysics` read route. Valid gyro suppression snapshots could fail closed forever.
+Solution: Added `TryReadExternalReadOnlyVaultBuffer<T>` for cached external read-only handles. It validates `BufferID + Generation`, compaction fence, `TryReadOnlyHandle`, creation, and length, without accepting the handle for mutable/write routes.
+Rejected Alternatives: Weakening `IsVehiclesPhysicsVaultHandle` globally, polling `GlobalDataVault.TryGetLatestCreated()`, or creating a concrete dependency on SHINOBU_332 code. Those would break ownership boundaries.
+Scalability potential: Low/Middle/High/Ultra gameplay truth remains unchanged. External gyro suppression now degrades only on real missing/contended data, not owner mismatch.
+Hardware Impact: Metadata-only read check. Estimated sub-microsecond; no GC and no scene lookup.
+
+## Decision 022: Ballast Tuning Write Must Not Expand Tank/Command Lock Window
+Problem: `PrepareBallastCommands` wrote `SubmarineBallastTuningDTO` while both tank and command Vault write-locks were held. That nested a third Vault mutation inside the hottest ballast command path.
+Solution: Recorded the tank volume and a `wroteCommands` flag while tank/command locks were held, released both locks in `finally`, then called `WriteBallastTuning` afterward.
+Rejected Alternatives: Leaving nested locks because they were short, or deleting tuning writes. The former widens contention; the latter removes evidence for tuning/debug.
+Scalability potential: Weak devices see shorter lock windows under ballast command spam; stronger devices keep the same tuning telemetry and spend visual budget through `GlobalQualityWeight`.
+Hardware Impact: Removes one nested write-lock from the command window. Estimated sub-microsecond contention reduction; profiler proof absent.
+
+## Decision 023: PID Maelstrom Input Must Be Copied, Not Borrowed
+Problem: `SchedulePidJob` passed `NativeArray<WhirlpoolFlow>.ReadOnly` from `IAnalyticalFlowReadModel` into `SubmarineAutoLevelPidJob` without a pin/fence. The provider owns and rewrites that backing buffer.
+Solution: Copied at most two `WhirlpoolFlow` structs, matching `FluidAnalyticalContractConstants.MaxActiveMaelstromCount`, into blittable job fields `ActiveMaelstrom0/1`. The job samples those values directly.
+Rejected Alternatives: Forcing same-frame job completion, adding a new cross-domain pin contract from this domain, or ignoring the lifetime mismatch. Same-frame completion is a stall; new contract is outside the domain.
+Scalability potential: Low devices copy 0-2 structs and run the same cheap analytical fake; high/ultra keep maelstrom steering without unbounded fluid simulation.
+Hardware Impact: Copies at most 128 bytes before scheduling. Removes undefined lifetime risk with negligible CPU cost.
+
+## Decision 024: Visual Fluid Signals Belong In LateFrame
+Problem: Tail-heavy bubble and fluid impulse signals are visual-fluid/VFX lanes, but were pushed directly from the simulation path. That crossed phase ownership and could make VFX respond before the simulation frame was fully resolved.
+Solution: Added pending `BubbleSpawnSignal` and `FluidImpulseSignal` structs plus dirty flags. `EmitTailHeavyBubbleSignal` and `EmitTailHeavyFluidImpulse` only queue data; `FlushDynamicFloodFeedback` publishes from `LateFrameTick`.
+Rejected Alternatives: Simulating more physical bubbles, publishing immediately, or removing the feedback. The correct route is a one-frame visual fake: player belief through bubbles/impulse VFX, physics truth unchanged.
+Scalability potential: Low devices coalesce to one pending signal per LateFrame; middle/high/ultra retain richer visible feedback through existing SignalBus capacity, not extra physics.
+Hardware Impact: Adds two dirty-flag branches in LateFrame. Removes simulation-phase VFX publication; estimated sub-microsecond.
+
+## Decision 025: Nonfatal PID Telemetry Must Not Block Stabilization Or Dump IO
+Problem: `PidTelemetryFlagDerivativeDisabled` is a nonfatal load-shed flag, but `CompletePidJob` previously treated any nonzero flag as a reason to dump telemetry and refuse torque/maelstrom output.
+Solution: Added `PidTelemetryDumpFaultMask` and `PidTelemetryPidOutputForceBlockMask`. Dumps now occur only for fault flags; force output is blocked only by invalid PID output or critical flood.
+Rejected Alternatives: Clearing the derivative-disabled flag or keeping binary success/fail behavior. Clearing loses telemetry; binary behavior disables stabilization during stress.
+Scalability potential: Weak devices can shed derivative math under system stress while still applying P/I stabilization. High/ultra keep full derivative path when stress allows.
+Hardware Impact: Removes false dump IO trigger and preserves stabilizer torque. No profiler proof; static proof line route recorded in the report.
+
+## Decision 026: Final Build Proof Must Stay Honest
+Problem: The final CPU/compiler gate opened after the last source edits, so leaving the source as "not compiled due gate" was no longer valid evidence.
+Solution: Ran exactly one targeted build after CPU sampled `45.21%` and compiler processes were `none`. The build failed with `0 warnings / 57 errors` in external files: `PlayerCriticalProceduralAudioRenderer.cs` and `ModularEquipmentEngine.cs`. No 1420 submarine file appeared in the compiler output.
+Rejected Alternatives: Running another build, editing audio/equipment domains to force a green report, or claiming the submarine domain is fully compiled while the project compile wall remains.
+Scalability potential: No runtime behavior change. The report remains PENDING VERIFICATION until external compile walls and Unity Editor/PlayMode proof exist.
+Hardware Impact: One targeted build cost `00:01:06.77`. No rebuild spam. Final report SHA-256: `A3C740477F5A512C5615917B405DF1E46560285B3EC603E7AF4019AC2FA4D230`.
+
+## Decision 027: PID Telemetry Validator Must Match Runtime Offsets
+Problem: The editor layout validator checked private `SubmarinePidTelemetryEntry.StateHash` at offset 12, but the explicit runtime struct places `StateHash` at offset 4 and `Flags` at offset 8. That would make the validator reject the actual source layout during editor reload.
+Solution: Updated `SubmarineNavigationLayoutValidator1420.cs` to validate `Frame=0`, `StateHash=4`, `Flags=8`, and preserve the fault-field checks at `116/117/120/124`.
+Rejected Alternatives: Changing the runtime struct to match stale proof text, or deleting the private telemetry offset check. The runtime layout was already internally consistent and 128 bytes; the proof artifact was wrong.
+Scalability potential: No runtime cost. Low/Middle/High/Ultra devices keep identical telemetry bytes; editor proof now matches ARM64 offset facts.
+Hardware Impact: 0 us runtime. Editor reload avoids a false validation failure.
+
+## Decision 028: CSV Profile Import Is A Write Route
+Problem: `TryApplyBallastProfilesCsv` writes `CsvScratch` and `Profiles` buffers but used direct `TryLockBuffer` plus mutable resolve, outside the `TryAcquireVaultWrite` proof route. It is editor-cold, but it is still a Vault mutation path.
+Solution: Routed both `SubmarineBallastBufferIds.CsvScratch` and `SubmarineBallastBufferIds.Profiles` through `TryAcquireVaultWrite`, then released both with `ReleaseVaultWrite` from `finally`.
+Rejected Alternatives: Accepting the path as harmless because it is under `UNITY_EDITOR`, or using direct lock/unlock as a parallel convention. One mutation route is easier to audit and less likely to rot.
+Scalability potential: Runtime devices are unaffected because the path is editor-cold. Content authors can still tune ballast profiles without creating a second unmanaged ownership convention.
+Hardware Impact: 0 us player runtime. Editor import lock bookkeeping is metadata-only and below measurement relevance.
+
+## Decision 029: Current Source Build Is Gated Off, Not Green
+Problem: The latest source changed after the last targeted build attempt. A new compiler check was required for current-source proof, but the final CPU/compiler gate sampled `97.00%` with active `csc:57928` and `dotnet:14652`.
+Solution: Did not run `dotnet build`. Updated the report/status to mark current source as not compiled after the latest fixes, while preserving the last known targeted build failure evidence from external files.
+Rejected Alternatives: Building under >50% CPU, repeating builds to chase a green report, or editing external audio/equipment domains from the submarine agent.
+Scalability potential: No runtime behavior change. This preserves shared-agent hardware and keeps evidence honest.
+Hardware Impact: Avoided one targeted build on a saturated CPU. Final JSON report SHA-256: `A3FAE12B46E40EDAB3ACB5DCDFD7EF57FAD5F9FDFDED470FAB7A51E945565B92`.
+
+## Decision 030: Adjacent Kinematic/Gyro Read And Lock Discipline
+Problem: The adjacent submarine kinematics and gyroscopic stabilizer runtime still exposed readback paths through legacy mutable `TryReadHandle`, and grouped simulation/gyro buffer locking had no local `finally` proof for partial acquisition failure.
+Solution: Renamed the local read helper to `TryReadOnlyVaultHandle<T>` and routed dynamics/gyro public, visual, telemetry, damage, and signal-bridge reads through `IDataVault.TryReadOnlyHandle`. Wrapped invalid-view cleanup in `TryAcquireVaultWriteLock`, grouped simulation acquisition in `LockSimulationBuffers`, and grouped gyro acquisition in `TryLockGyroBuffers` with `finally` release paths.
+Rejected Alternatives: Leaving mutable readbacks because current call sites only read, or trusting the caller to clean up a failed grouped lock. The type surface and local lock block now prove the contract instead of relying on convention.
+Scalability potential: Low devices fail closed on Vault contention with immutable snapshots; middle/high/ultra keep the same gameplay truth and spend `GlobalQualityWeight` on telemetry stride/visual sync richness, not binary route switches.
+Hardware Impact: Read-only handle routing is metadata-equivalent to the previous read path. The extra `finally` boolean guards are sub-microsecond and only execute on grouped lock acquisition; they prevent writer-lock leakage under defrag contention. Final build was skipped honestly: CPU `77.76%`, compiler processes `none`, so the >50% gate remained closed. Final JSON report SHA-256: `F2467E16B982F7AD403510E1F6F9D07979E5C7AC5743765A86F0940EC3C36B17`.
+
+## Decision 031: Adjacent Autopilot Must Not Bypass Vault Locks Or Quality Scalar
+Problem: `SubmarineAutopilotSdfNavigator.cs` still had three domain defects: public/cold write routes used raw `TryLockBuffer`/mutable resolve instead of the agent write-lock helper, read routes returned mutable `NativeArray<T>` views, and runtime solver cadence/tuning forced `AuthoritativeQualityWeight` instead of the continuous global scalar.
+Solution: Added `TryAcquireAutopilotVaultWrite<T>` and `ReleaseAutopilotVaultWrite<T>`; routed target, profile-hash, route, tuning, cold-default, CSV, initialization, and solver mutations through `IDataVault.TryAcquireWriteLock`; converted observation helpers to `NativeArray<T>.ReadOnly` via `TryReadOnlyHandle`; wrapped grouped initialization/solver acquisitions in `finally`; and resolved runtime quality through `MathLodRuntimeConfig.TryReadLatestConfig` or `HomeostasisBrain.GlobalQualityWeight`.
+Rejected Alternatives: Keeping raw buffer locks as an autopilot exception, using binary `isLowEnd` switches, increasing physical hydrodynamics fidelity, or editing external audio/equipment compile blockers from this domain. The correct route is a cheap mock SDF/flow visual-navigation fake whose cost scales continuously.
+Scalability potential: Low uses cadence up to 12 frames, 5 feelers, one SDF step, nearest flow lookup, and cheap direction normals. Middle increases feelers/steps/interpolation gradually. High/Ultra runs toward 32 feelers, 12 SDF steps, SDF/flow interpolation, gradient normals, and per-frame solve cadence. BufferID identity, DTO layout, save identity, and authority route do not change with quality.
+Hardware Impact: Low-end silicon skips most SDF raymarch work and interpolation; exact microseconds not claimed because profiler/Unity was not run. Final build was skipped honestly: CPU `76.01%`, active compiler process `dotnet:31496`. Final JSON report SHA-256: `E9FE572DAB60249C9E47E7B0584B130D56E300799AD8A7B222EC55D92ED53F93`.
+
+## Decision 032: Scheduled Read-Only Vault Lanes Must Be Pins, Not Writers
+Problem: A final lock-semantics audit found several scheduled-job inputs held writer authority even though the jobs only read them: autopilot kinematic/waypoint/SDF/flow/profile lanes, ballast command rows, dynamics hull/tuning/drag LUT rows, and gyro tuning rows. This blocks legitimate owners and overstates mutation authority.
+Solution: Split writer locks from relocation read pins. `TryAcquirePinnedJobReadBuffer` pins ballast commands for `EvaluateBallastTanksJob`; `TryAcquireVaultReadPin` pins dynamics hull profiles, added-mass tuning, drag LUT, and gyro tuning; `TryPinAutopilotVaultRead` pins autopilot read-only scheduled inputs. Autopilot tuning is now a short write before scheduling, then released before the job receives the DTO by value.
+Rejected Alternatives: Keeping writer locks because they compile, switching to unpinned `TryReadOnlyHandle` for scheduled pointers, or building a heavier physical navigation simulation. Writer locks serialize unrelated owners; unpinned read-only handles are current-phase only and unsafe for job lifetime.
+Scalability potential: Low devices fail closed on contention without blocking cold tuning/profile writers longer than needed. Middle/high/ultra keep deterministic truth while spending `GlobalQualityWeight` on more feelers, SDF steps, interpolation, and visual feedback rather than binary device tiers.
+Hardware Impact: Adds bounded `TryLockBuffer/TryUnlockBuffer` metadata for read-only job inputs and removes unnecessary writer leases. CPU-gated targeted build passed with `0 Warning(s), 0 Error(s)` in `00:03:16.61`; final report SHA-256: `4FB6AEE1F2695ABF53FE5FBFD3D671B88061B3C594585EAE396C937AD8B0936C`.
+
+## Decision 033: Config Writer Lock Must End Before Scheduled Read Jobs
+Problem: `SubmarineDynamicsRuntime.FixedTick` still held `BufferID.SubmarineKinematicConfig` as a writer lease through the scheduled added-mass and integrator jobs, even though the jobs only needed a stable config snapshot after owner-phase `ConsumeSignals` mutated `configs[0]`.
+Solution: Keep the writer lock only through `ConsumeSignals`, copy `configs[0]` into `frameConfig`, release via `ReleaseSimulationConfigWriteLock`, and pass `SubmarineKinematicConfig Config` by value into `CalculateAddedMassTensorJob` and `Submarine6DIntegratorJob`.
+Rejected Alternatives: Using an unpinned `TryReadOnlyHandle` in scheduled jobs, holding the writer lease until job completion, or adding a heavier native copy buffer. The by-value DTO route removes job lifetime pointer ownership without adding heap/native allocation.
+Scalability potential: Low devices release the config lane before the scheduled hydro solve and fail closed on real contention. Middle/high/ultra keep deterministic config truth and spend `GlobalQualityWeight` on analytical sample richness, SDF feelers, interpolation, and visual feedback rather than locking global data longer.
+Hardware Impact: Removes one job-lifetime writer lock on `BufferID.SubmarineKinematicConfig`; adds one 128-ish byte unmanaged DTO copy per scheduled dynamics frame. Exact microseconds not claimed because Unity profiler was not run. Current build was skipped honestly: first CPU `64.45%`, compiler processes `none`; final recheck CPU `50.87%` with active `dotnet:68208`; gate stayed closed. Final JSON report SHA-256: `FD695291846037D799CEF20D03D301834052F6733DD99C39744DC02DB303E04B`.

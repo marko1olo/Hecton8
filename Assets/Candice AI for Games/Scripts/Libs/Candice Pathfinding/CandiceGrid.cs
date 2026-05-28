@@ -21,6 +21,8 @@ namespace CandiceAIforGames.AI.Pathfinding
         Dictionary<int, int> walkableRegionsDictionary = new Dictionary<int, int>();
         public Vector3 worldBottomLeft;
         public bool is3D = true;
+        // COLD ALLOC: RaycastHit[1] - grid terrain penalty probe scratch - owner: CandiceGrid
+        private static readonly RaycastHit[] TerrainPenaltyHits = new RaycastHit[1];
         private void Awake()
         {
             nodeDiameter = nodeRadius * 2;
@@ -72,9 +74,10 @@ namespace CandiceAIforGames.AI.Pathfinding
                     if(is3D)
                     {
                         ray = new Ray(worldPoint + Vector3.up * 50, Vector3.down);
-                        RaycastHit hit;
-                        if (Physics.Raycast(ray, out hit, 100, walkableMask))
+                        int hitCount = Physics.RaycastNonAlloc(ray, TerrainPenaltyHits, 100, walkableMask);
+                        if (hitCount > 0)
                         {
+                            RaycastHit hit = TerrainPenaltyHits[0];
                             walkableRegionsDictionary.TryGetValue(hit.collider.gameObject.layer, out movementPenalty);
                         }
                         if (!walkable)
@@ -85,7 +88,6 @@ namespace CandiceAIforGames.AI.Pathfinding
                         
                     else
                     {
-                        //ray = new Ray2D(worldPoint + Vector3.back * 50, Vector3.forward);
                         RaycastHit2D hit = Physics2D.Raycast(worldPoint + Vector3.up * 50, Vector3.down, 100, walkableMask);
                         if (hit)
                         {

@@ -141,13 +141,15 @@ namespace Hecton8.Visor
                 {
                     return;
                 }
+                if (cameraData.renderType != CameraRenderType.Base)
+                    return;
 
                 TextureHandle sourceTexture = resourceData.activeColorTexture;
                 if (!sourceTexture.IsValid())
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                TextureDesc destinationDesc = new TextureDesc(sourceDesc);
+                TextureDesc destinationDesc = sourceDesc;
                 destinationDesc.name = "_HectonDeepSeaNoirPost";
                 destinationDesc.clearBuffer = false;
                 destinationDesc.depthBufferBits = DepthBits.None;
@@ -407,9 +409,9 @@ namespace Hecton8.Visor
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.DataVault:
-                    ReleaseNoirVaultHandles(_dataVault);
-                    ReleaseReconstructionVaultHandles(_dataVault);
-                    _dataVault = currentService as IDataVault;
+                    IDataVault nextVault = currentService is IDataVault dataVault ? dataVault : null;
+                    IDataVault previousVault = previousService is IDataVault oldVault ? oldVault : null;
+                    BindUberDataVaultForLifecycle(nextVault, previousVault);
                     if (_dataVault != null)
                     {
                         if (settings != null && settings.deepSeaNoirUnifiedPass)
@@ -500,7 +502,7 @@ namespace Hecton8.Visor
 
         private void RefreshNoirCachedDependenciesCold()
         {
-            _dataVault = GlobalRegistry.DataVault;
+            BindUberDataVaultForLifecycle(GlobalRegistry.DataVault, _dataVault);
             _noirResolutionScaler = GlobalRegistry.ResolutionScaler;
             _noirPlayerContext = GlobalRegistry.Player;
             RefreshNoirPlayerContextCold();

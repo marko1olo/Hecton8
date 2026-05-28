@@ -298,8 +298,8 @@ namespace Hecton8.UI
                         RegisterToTickManager();
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
-                    ReleaseQueue(previousService as IDataVault ?? _dataVault);
-                    _dataVault = currentService as IDataVault;
+                    ReleaseQueue(previousService is IDataVault previousVault ? previousVault : _dataVault);
+                    _dataVault = currentService is IDataVault currentVault ? currentVault : null;
                     _queueCount = 0;
                     EnsureQueue();
                     break;
@@ -728,7 +728,7 @@ namespace Hecton8.UI
             if (vault == null)
                 return;
 
-            if (IsVaultHandleCreated(in _queueHandle) &&
+            if (IsHudQueueHandle(in _queueHandle) &&
                 vault.TryReadOnlyHandle(in _queueHandle, out NativeArray<NotificationRequest>.ReadOnly queue) &&
                 queue.IsCreated &&
                 queue.Length >= MaxNotificationQueueCapacity)
@@ -737,7 +737,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (IsVaultHandleCreated(in _queueHandle))
+            if (IsHudQueueHandle(in _queueHandle))
                 vault.ReleaseBuffer(in _queueHandle);
 
             _queueHandle = vault.EnsureGenerationHandle<NotificationRequest>(
@@ -746,7 +746,7 @@ namespace Hecton8.UI
                 VaultOwnerSystemId,
                 NativeArrayOptions.ClearMemory);
 
-            _queueCapacity = IsVaultHandleCreated(in _queueHandle) &&
+            _queueCapacity = IsHudQueueHandle(in _queueHandle) &&
                 vault.TryReadOnlyHandle(in _queueHandle, out queue) &&
                 queue.IsCreated
                     ? queue.Length
@@ -866,14 +866,14 @@ namespace Hecton8.UI
         {
             queue = default;
             IDataVault vault = _dataVault;
-            if (vault == null || !IsVaultHandleCreated(in _queueHandle))
+            if (vault == null || !IsHudQueueHandle(in _queueHandle))
             {
                 EnsureQueue();
                 vault = _dataVault;
             }
 
             if (vault == null ||
-                !IsVaultHandleCreated(in _queueHandle) ||
+                !IsHudQueueHandle(in _queueHandle) ||
                 !vault.TryAcquireWriteLock(in _queueHandle, VaultOwnerSystemId, out queue))
             {
                 return false;
@@ -889,7 +889,7 @@ namespace Hecton8.UI
         private void ReleaseQueueWrite()
         {
             IDataVault vault = _dataVault;
-            if (vault != null && IsVaultHandleCreated(in _queueHandle))
+            if (vault != null && IsHudQueueHandle(in _queueHandle))
                 vault.ReleaseWriteLock(in _queueHandle, VaultOwnerSystemId);
         }
 
@@ -903,7 +903,7 @@ namespace Hecton8.UI
 
         private void ReleaseQueue(IDataVault vault)
         {
-            if (vault != null && IsVaultHandleCreated(in _queueHandle))
+            if (vault != null && IsHudQueueHandle(in _queueHandle))
                 vault.ReleaseBuffer(in _queueHandle);
 
             _queueHandle = default;
@@ -911,9 +911,11 @@ namespace Hecton8.UI
             _queueCount = 0;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsHudQueueHandle(in VaultGenerationHandle<NotificationRequest> handle)
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == unchecked((uint)(int)QueueBufferId) &&
+                   handle.SystemID == (uint)VaultOwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private void EnsureBuilt()

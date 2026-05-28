@@ -531,7 +531,8 @@ namespace Hecton8.Visor
                     return;
 
                 case GlobalRegistryServiceSlot.DataVault:
-                    RebindDataVault(currentService as IDataVault);
+                    IDataVault nextVault = currentService is IDataVault dataVault ? dataVault : null;
+                    RebindDataVault(nextVault);
                     return;
 
                 case GlobalRegistryServiceSlot.Player:

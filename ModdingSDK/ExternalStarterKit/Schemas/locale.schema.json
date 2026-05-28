@@ -7,10 +7,12 @@
   "required": ["Schema", "Locale", "Strings"],
   "properties": {
     "Schema": { "const": "hecton8.locale.draft.v1" },
-    "Locale": { "type": "string", "minLength": 2 },
+    "Locale": { "type": "string", "pattern": "^[a-z]{2}(-[A-Z]{2})?$" },
     "Strings": {
       "type": "object",
-      "additionalProperties": { "type": "string" }
+      "maxProperties": 512,
+      "propertyNames": { "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$" },
+      "additionalProperties": { "type": "string", "minLength": 1 }
     }
   }
 }

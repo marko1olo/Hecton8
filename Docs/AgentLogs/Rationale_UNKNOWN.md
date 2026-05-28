@@ -2021,3 +2021,159 @@ Rejected Alternatives: Claiming `COMPLETE` was rejected because no Unity import,
 Scalability potential: Low, middle, high, and ultra behavior is unchanged by the verification artifact. The proof confirms the patch did not add binary quality switches or a new physical simulation and did not change the continuous `GlobalQualityWeight` route.
 
 Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is evidence integrity and preventing false completion status.
+
+## Decision 160 - Remove Foveated Persistent NativeArray Aliases Without Touching Dirty Core Owners
+
+Problem: `FoveatedSimulationManager` kept `11` persistent private `NativeArray<T>` fields for DataVault-backed buffers. It also allowed frame/job routes to reach DataVault open/acquire behavior through the old buffer helper. That breaks the Core native ownership rule: persistent handles may stay, but raw native views must be method-local and resolve-only in consumer phases.
+
+Solution: Replace persistent native array aliases with a method-scoped `FoveatedNativeBuffers` struct. Add `OpenOrAcquireNativeBuffersForOwnerRoute()` for registration and DataVault rebind phases. Make `BeginDispatcherFrame`, `ScheduleImportanceScoringJob`, `ApplyImportanceResults`, `WriteTelemetryFrame`, and dump read paths use `TryResolveNativeBuffers()` or `TryResolveTelemetryRing()` only. The mutating `EnsureGenerationHandle<T>()` calls now sit only inside `OpenOrAcquireVaultArray<T>()`, which is reached from named owner routes.
+
+Rejected Alternatives: Editing `GlobalDataVault.cs` to add writer-lock semantics was rejected because that file is dirty from other active agents and lock/fence behavior for scheduled job writes must be integrated, not guessed. Editing `SystemDispatcher.cs` or changing `IFoveatedDispatcher.TryResolveTick(...)` was rejected because the dispatcher file is dirty and the interface/caller change needs a coordinated pass. Keeping the aliases was rejected because a DataVault relocation or capacity change can leave stale native views behind.
+
+Scalability potential: Low-tier devices avoid hidden DataVault open/acquire work in frame routes and reduce stale-alias risk after Vault relocation. Middle, high, and ultra tiers keep the same continuous `GlobalQualityWeight` active/frozen distance scaling and the same visual cadence semantics. No binary low-end switch was introduced, and no physical simulation was added.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is route determinism and native lifetime safety. Build was not launched because CPU was `96.2%` and active `dotnet.exe` PID `43068` was present.
+
+## Decision 161 - Close Foveated Static Writer-Lock Proof Instead Of Reporting Around It
+
+Problem: The first foveated ownership pass still had `TryAcquireWriteLock=0`, so the APEX Data Sovereignty proof was objectively false. Score-position writes and telemetry-ring writes used resolved native views, and the scheduled importance job owned DataVault-backed pointers without explicit relocation pins.
+
+Solution: Add `TryAcquireWriteLock`/`ReleaseWriteLock` with `finally` for `FoveatedScorePositions` and `FoveatedTelemetryRing`. Add `TryLockBuffer` pins for job-owned BufferIDs `73220..73226` before scheduling and unlock them on completion, schedule failure, and native-buffer disposal. Keep `GlobalDataVault.cs` and `SystemDispatcher.cs` untouched because other agents are active there.
+
+Rejected Alternatives: Claiming "complete" from the previous alias cleanup was rejected because the lock count was `0`. Holding writer locks over the scheduled job was rejected because `GlobalDataVault` already exposes `TryLockBuffer` as the external job pointer pin. Running a build was rejected because CPU was `100%` with active `csc.exe` and `dotnet.exe`.
+
+Scalability potential: Low-tier devices get lower relocation/stale-pointer risk while foveated scoring jobs run. Middle, high, and ultra tiers keep the same continuous `HomeostasisBrain.GlobalQualityWeight` cadence route and no binary quality branch is added.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is correctness of DataVault write ownership and scheduled job pointer lifetime.
+
+## Decision 162 - Correct Foveated APEX Line Ranges After Declaration-Based Rescan
+
+Problem: The first post-compaction verification script matched early call sites before declarations for some methods. The source SHA was unchanged, but the JSON and Markdown reports still contained stale line ranges and an old dispose release line.
+
+Solution: Rerun the scan using method declaration matching, update both foveated report artifacts, and regenerate SHA-256 sidecars. `ScheduleImportanceScoringJob` records one value-type `new ImportanceScoringJob` struct and still records zero reference-type allocations.
+
+Rejected Alternatives: Keeping the older line ranges was rejected because the user requested exact evidence. Changing source code was rejected because the defect was report precision, not runtime behavior.
+
+Scalability potential: Low, middle, high, and ultra runtime behavior is unchanged. The benefit is evidence correctness for the existing continuous `GlobalQualityWeight` foveated route.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; documentation/evidence correction only.
+
+## Decision 163 - Rename Foveated Tick Mutation Out Of TryResolve
+
+Problem: `IFoveatedDispatcher.TryResolveTick()` mutated `_tickAccumulators` and `_lastTickDeltas`, but the Core doctrine says resolve/read-like accessors must not mutate global or cached runtime state.
+
+Solution: Rename the route to `TryAdvanceTick()` in the interface, `FoveatedSimulationManager` implementation, and the sole `SystemDispatcher` call site. Static source scan now reports `TryResolveTick=0` and `TryAdvanceTick=3`.
+
+Rejected Alternatives: Keeping the old name was rejected because it leaves a known rule violation in a hot dispatcher path. A broader dispatcher refactor was rejected because the smallest safe fix was a route-contract rename.
+
+Scalability potential: Low, middle, high, and ultra behavior is unchanged. The foveated cadence still scales continuously through the existing `GlobalQualityWeight` route; this fix improves predictability of the API contract.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is architecture correctness and lower future misuse risk.
+
+## Decision 164 - Purify ScalabilityDictator Read Routes And Pin Its Scheduled DataVault Job
+
+Problem: `HomeostasisBrain.ScalabilityDictator` still had read-like methods that could mutate or acquire DataVault storage. `TryReadMockHeavyLoad`, `TryResolveMockTerrainSamplerStatus`, `TryResolveCsvScratch`, and `TryResolveScalabilityTelemetry` could hide open/acquire behavior behind read/resolve names. Public `TryGetHardwareDictatorTuning`, `TryGetHardwareDictatorSnapshot`, and `TryGetMockTerrainSamplerStatus` wrote sanitized values back into DataVault. The mock terrain sampler job also wrote to a DataVault-backed `NativeArray` without a relocation pin.
+
+Solution: Keep DataVault open/acquire only in explicit owner routes: `OpenOrAcquireCsvScratchForOwnerRoute` and `OpenOrAcquireScalabilityTelemetryForOwnerRoute`. Convert public `TryGet*` facades to sanitized copy-out only and add read-only helper views backed by `TryReadOnlyHandle`. Route state, telemetry, editor terrain status, and mock-heavy-load writes through `TryAcquireWriteLock` with `finally` release. Pin the player mock terrain sampler job with `TryLockBuffer(BufferID.ShinobuScalabilityMockScatterDensity, SystemID.HardwareHomeostasis)` and release through `TryUnlockBuffer`.
+
+Rejected Alternatives: Leaving `Ensure*` inside `TryResolve*` was rejected because frame and tooling callers would keep accidental owner behavior. Removing the mock terrain sampler was rejected because it is a cheap proof signal for continuous quality scaling, not a heavy physical simulation. Running `dotnet build` was rejected because CPU was `100%` with active `dotnet.exe` and `VBCSCompiler.exe`, and the user assigned global compile repair to another agent.
+
+Scalability potential: Low-tier devices avoid first-use DataVault opens from frame pressure sampling and avoid unpinned scheduled writes. Middle/high/ultra behavior keeps the same continuous `GlobalQualityWeight`, stochastic decimation, render-scale, and MathLOD routes; no binary low-end switch was introduced.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is predictable ownership, lower stale-pointer risk, and cleaner read contracts under DataVault relocation.
+
+## Decision 165 - Lock Content Authority DataVault Writes And Remove Mutating TryResolve Names
+
+Problem: `ContentRuntimeServices.cs` still had mutating DataVault open/acquire paths behind read-looking names. Bundle reference mutation, pending-load mutation, and content telemetry writes used unsafe pointer views without explicit `TryAcquireWriteLock`/`ReleaseWriteLock` proof.
+
+Solution: Rename mutating routes to `OpenOrAcquire*Write*`, remove active `TryResolve*`/`TryResolveOrAcquire` mutating names, and route bundle refs, pending loads, and telemetry writes through DataVault write locks with `finally` releases. Keep the blackbox dump route resolve-existing only so diagnostic reads do not open/acquire buffers.
+
+Rejected Alternatives: Leaving the routes as private `TryResolve*` helpers was rejected because helper privacy does not remove the contract violation. Moving content authority buffers into another owner was rejected because ownership already belongs to `SystemID.ContentAuthority`. Running a full build was rejected because the guard sampled CPU `100%` with an active compiler/dotnet process and then CPU `57%` with active `dotnet.exe` PID `48280`.
+
+Scalability potential: Low-tier devices avoid hidden DataVault opens and unguarded native pointer writes in content visual sync and Addressables pressure paths. Middle, high, and ultra tiers keep the same content budgets, blackbox capacity, and visual feature budget DTOs; no binary quality switch or physical simulation was added.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is DataVault relocation safety, clearer owner routes, and lower stale-pointer risk in content authority memory.
+
+## Decision 166 - Split AUP Origin Owner Open From Frame Resolve
+
+Problem: `AupOriginShiftCoordinator` used `EnsureRuntimeState()` and `TryResolveOrAcquire<T>()` for a route that can create or grow DataVault buffers. `TickPreSimulation()`, `ScheduleVaultOriginRebase()`, `RecordRebaseCompletion()`, and `TryGetEditorSnapshot()` could call that route, so frame/shift/read-looking callers had a hidden open/acquire fallback.
+
+Solution: Rename the owner route to `OpenOrAcquireRuntimeStateForOwnerRoute()` and the buffer helper to `OpenOrAcquireVaultBufferForOwnerRoute<T>()`. Add `TryResolveRuntimeState()` as a resolve-only route that returns false unless the owner prewarm already populated generation handles. Move `TickPreSimulation()`, `ScheduleVaultOriginRebase()`, `RecordRebaseCompletion()`, and `TryGetEditorSnapshot()` to the resolve-only route. Keep `HectonFloatingOrigin.ShiftWorldAsync()` prewarming through `OpenOrAcquireRuntimeStateForOwnerRoute()` before the existing `LockAllocationsForAupShift()` call.
+
+Rejected Alternatives: Keeping `EnsureRuntimeState` was rejected because the name hides DataVault ownership mutation. Adding AUP writer locks in the same edit was rejected for this pass because the scheduled rebase jobs and async completion path require a separate pin/write-lease lifetime design; releasing locks before `JobHandle` completion would be worse than the current state. Editing dirty dispatcher/DataVault files was rejected because many agents are active.
+
+Scalability potential: Low-tier devices avoid hidden DataVault create/grow work in pre-simulation. Middle, high, and ultra tiers keep the same continuous `HomeostasisBrain.GlobalQualityWeight` batch sizing and time-sliced rebase behavior. No binary low-end switch or physical simulation was added.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is route determinism and lower risk of surprise DataVault ownership mutation during AUP frame/shift phases.
+
+## Decision 167 - Close AUP Writer-Lock And Scheduled Rebase Pin Proof
+
+Problem: After the AUP resolve/open split, `AupOriginShiftCoordinator` still wrote owner DataVault buffers through resolved `NativeArray<T>` views and scheduled jobs over DataVault-backed buffers without a local relocation pin proof. The previous report correctly marked this as residual.
+
+Solution: Add `TryAcquireWriteView()` over `IDataVault.TryAcquireWriteLock()` for owner AUP buffers and release every active write body through `finally`. Add scheduled rebase flags into `AupOriginShiftScheduleInfo.Flags`; pin scheduled buffers with `TryLockBuffer`, reopen them after pin acquisition, and release them through `ReleaseScheduledRebaseLocks()` after `AwaitTransformShiftJobAsync()` completes plus a second guarded release in `HectonFloatingOrigin` `finally`.
+
+Rejected Alternatives: Holding `TryAcquireWriteLock` across a scheduled `JobHandle` was rejected because writer locks are not the long-lived external pointer lease in this DataVault API. Editing `GlobalDataVault.cs` was rejected because the first-party pin API already exists and other agents are active in memory/Core files. Fixing current full-project compile errors was rejected because the user explicitly assigned global compile repair to another agent; the build log was captured instead.
+
+Scalability potential: Low-tier devices get lower stale-pointer and relocation risk during AUP origin shifts. Middle/high/ultra tiers keep the same continuous `HomeostasisBrain.GlobalQualityWeight` batch sizing and time-sliced rebase behavior. No binary `isLowEnd` switch, DTO layout change, save identity change, or physical simulation was introduced.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is deterministic DataVault ownership and safer scheduled AUP rebase memory lifetime. Build attempt was throttled (`CPU=31.2%`, no active compiler) but did not produce green proof because unrelated active files fail compilation.
+
+## Decision 168 - Rename Input DataVault Open/Acquire Route Out Of TryResolve
+
+Problem: `InputDispatcher.TryResolveOrAcquireInputBuffer<T>()` was a private helper, but it called `vault.EnsureGenerationHandle<T>()` and therefore could open/acquire DataVault storage. The Core doctrine says read/resolve-like accessors must not mutate ownership state, allocate/grow buffers, or hide owner behavior. The method name was misleading even if current callers were owner bootstrap routes.
+
+Solution: Rename the helper to `OpenOrAcquireInputBufferForOwnerRoute<T>()` and update deterministic input, XR input, and haptic synthesis owner call sites. The mutating behavior remains explicit and localized to owner/open routes; consumers still get handles/views through existing resolved state.
+
+Rejected Alternatives: Leaving the old private name was rejected because helper privacy does not remove the contract violation. Adding writer locks was rejected because this pass did not touch a DataVault write path. Running a build was rejected because the CPU sample was `51.7%`, above the 50% guard, and global compile errors are owned by another agent.
+
+Scalability potential: Low-tier devices avoid hidden first-use buffer open/acquire semantics being mistaken for a cheap read path. Middle, high, and ultra tiers keep the existing continuous haptic `HomeostasisBrain.GlobalQualityWeight` scaling; no binary low-end switch, DTO layout change, save identity change, or physical simulation was introduced.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is route clarity and lower risk of future frame-phase misuse of Input DataVault handles.
+
+## Decision 169 - Lock SimulationBucketer Writes And Pin Rebalance Job Buffers
+
+Problem: `ModuloSimulationBucketer` wrote several DataVault-backed `NativeArray` buffers through mutable resolve views and scheduled `LoadBalancingJob` over DataVault-backed buffers without local relocation pins. This exposed two risks: synchronous writes without DataVault writer-lock proof, and scheduled job pointers that could become invalid if the DataVault relocates or compacts the backing storage.
+
+Solution: Add `TryAcquireWriteView<T>()` / `ReleaseWriteView<T>()` for `SystemID.SimulationBucketer`, route synchronous writes through local bool + `finally` release, and pin job-owned rebalance buffers with `TryLockBuffer` before scheduling. Release pins through `ReleaseRebalanceBufferPins()` on schedule failure, job completion, and dispose. Also reject cost writes while rebalance is pending so sync updates do not race the job's read input.
+
+Rejected Alternatives: Holding writer locks for the whole scheduled job was rejected because the DataVault API already exposes buffer pins for long-lived external pointer ownership. Leaving direct resolved writes was rejected because it lacks writer-lock proof. Running a full build was rejected because CPU was `99.8%` with active `dotnet.exe` PIDs `10736` and `42644`, and compile-wall repair belongs to another agent.
+
+Scalability potential: Low-tier devices get safer bucketing state under DataVault relocation and fewer hidden races during pressure spikes. Middle/high/ultra tiers keep the existing continuous `_qualityWeight01` / `SmoothStep01` active-bucket and rebalance cadence behavior, including visual-overkill budget signaling. No binary `isLowEnd` branch, DTO layout change, save identity change, or physical simulation was introduced.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is deterministic DataVault write ownership and safer scheduled rebalance memory lifetime.
+
+## Decision 170 - Lock Job Admission DataVault Writes And Remove Mutable Resolve Views
+
+Problem: `BurstTokenBucketJobAdmissionService` owned `SystemID.JobAdmission` token-bucket state but wrote `JobAdmissionLaneBudgets`, `JobAdmissionBaseRefill`, `JobAdmissionJobHashes`, and `JobAdmissionEwmaCosts` through mutable `TryResolveHandle` views. Its fault telemetry snapshot also used mutable `Resolve*` helpers for a read-only diagnostic route. That violated the DataVault rule requiring explicit writer ownership and kept a read path capable of handing out mutable views.
+
+Solution: Add `TryAcquireWriteView<T>()` / `ReleaseWriteView<T>()` over `IDataVault.TryAcquireWriteLock()` for `SystemID.JobAdmission`. Route cold initialization, refill/sanitization, admission debit/critical debt, and cost EWMA update through writer locks with `finally` release. Replace fault snapshot mutable views with read-only handle helpers and remove the unused mutable `Resolve*` helpers entirely.
+
+Rejected Alternatives: Holding no writer lock because the service is the only intended writer was rejected because DataVault ownership must be proven in source, not assumed. Pinning buffers was rejected because this service does not schedule jobs over these buffers in this pass. Running `dotnet build` was rejected because CPU was `90.0%` with active `dotnet.exe` PID `28668` and `csc.exe` PID `21340`, and the user assigned broad compile-wall repair to another agent.
+
+Scalability potential: Low-tier devices get safer admission state under Vault relocation and predictable fail-closed behavior under pressure. Middle/high/ultra tiers keep the existing continuous `globalQualityWeight01` route through `SanitizeQualityWeight01`, `SmoothStep01`, and `math.lerp(SurvivalBudgetScalar, 1f, qualityCurve01)`. No binary `isLowEnd` branch, DTO layout change, save identity change, or physical simulation was introduced.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is deterministic DataVault write ownership and cleaner read-only diagnostics for the admission gate.
+
+## Decision 171 - Split Hardware Thermal Hot Write Locks From Owner Open Routes
+
+Problem: `HardwareThermalService.SampleAndApplyCold()` and `WriteBlackBox()` used helpers that could call `IDataVault.EnsureGenerationHandle<T>()` when handles were missing. Those methods are FrostTick/Tick-capable, so a missed prewarm or hot-swap edge could create/grow DataVault buffers from a hot route instead of failing closed.
+
+Solution: Add resolve-existing writer helpers `TryAcquireThermalSeverityWriteView()` and `TryAcquireThermalBlackBoxWriteView()` for the hot bodies. Rename the old open/acquire behavior to `OpenOrAcquireThermalSeverityWriteViewForOwnerRoute()` and `OpenOrAcquireThermalBlackBoxWriteViewForOwnerRoute()`, and keep it limited to `EnsureNativeState()`.
+
+Rejected Alternatives: Editing `GlobalRegistry.SetTransientLowScalabilityOverride(bool)` was rejected in this pass because `GlobalRegistry.cs` is a central dirty file and the binary thermal-pressure API requires a coordinated Homeostasis/Registry route. Deleting the cold prewarm was rejected because the service still owns `HardwareThermalSeverity` and `HardwareThermalBlackBox` telemetry lanes.
+
+Scalability potential: Low-tier devices now fail closed instead of risking first-use DataVault open/grow work in thermal sampling or blackbox writes. Middle, high, and ultra keep the existing thermal policy behavior; no new binary quality switch, DTO layout change, save identity change, authority route change, or physical simulation was introduced. Existing binary thermal override remains documented residual.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is route determinism, lower hot-path allocation/growth risk, and cleaner DataVault ownership under hot-swap/prewarm failures.
+
+## Decision 172 - Remove Clean-File Binary Platform Pressure Overrides
+
+Problem: `PlatformBatteryWatchdog` and `PlatformAdaptiveBudgetGovernor` still used binary transient-low scalability override callers for battery/platform pressure. That made clean platform-pressure code participate in the legacy low-tier override route instead of publishing continuous pressure and quality recommendations.
+
+Solution: Remove the target-file `GlobalRegistry.SetTransientLowScalabilityOverride` callers and cached override writer. Publish battery/platform pressure as 0..1000 scalar outputs. Compose platform recommendations with `HomeostasisBrain.GlobalQualityWeight` and `HomeostasisBrain.TargetRenderScale01`, then apply only presentation-level dynamic resolution pressure and optional-HUD/cadence recommendations.
+
+Rejected Alternatives: Editing `GlobalRegistry.cs`, `HomeostasisBrain.ScalabilityDictator.cs`, or `HardwareThermalService.cs` in this pass was rejected because those are dirty central files with concurrent agents active. Keeping the binary override until a central API exists was rejected for the clean battery/platform callers because a continuous local path could be implemented without touching the central files. Running `dotnet build` was rejected because final CPU was `100%` with active `dotnet` PID `57828`, and global compile-wall repair belongs to another agent.
+
+Scalability potential: Low devices get continuous pressure lowering of render-scale target, optional HUD effect weight, and FrostTick cadence without a global binary low-tier switch. Middle devices get partial pressure through `SmoothStep01`. High devices mostly pass through `HomeostasisBrain.GlobalQualityWeight`. Ultra devices remain unclamped unless telemetry pressure appears. No DTO layout, save identity, authority route, or physical simulation was changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is removing binary platform/battery low-tier policy from clean files while keeping a continuous local presentation-pressure route.

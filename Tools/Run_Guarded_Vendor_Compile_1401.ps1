@@ -6,6 +6,13 @@ param(
         'AmplifyImpostors.Editor',
         'TechniePhysicsCreator',
         'Technie.PhysicsCreator.Updater',
+        'Den.Tools',
+        'Den.Tools.Editor',
+        'MapMagic',
+        'MapMagic.Editor',
+        'MapMagic.MicroSplat',
+        'MapMagic.MicroSplat.Editor',
+        'MapMagic.Settings',
         'DarkTonic.MasterAudio.Runtime',
         'DarkTonic.MasterAudio.Examples',
         'DarkTonic.MasterAudio.Editor',
@@ -123,6 +130,9 @@ if ($DryRun) {
     exit 0
 }
 
+$startedPath = Join-Path $OutputDir ("Build_1401_Attempt_{0}_STARTED.json" -f $timestamp)
+$summary | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $startedPath -Encoding UTF8
+
 $attempts = New-Object System.Collections.Generic.List[object]
 foreach ($project in $projects) {
     if (-not $project.exists) {
@@ -150,7 +160,7 @@ foreach ($project in $projects) {
     $exitCode = $LASTEXITCODE
     $output | Set-Content -LiteralPath $logPath -Encoding UTF8
 
-    $diagnostics = Select-String -LiteralPath $logPath -Pattern 'Candice', 'Amplify', 'Technie', 'MasterAudio', 'RelationsInspector', 'CS0246', 'CS1061', 'CS0618', ': error ', ': warning ' -SimpleMatch
+    $diagnostics = Select-String -LiteralPath $logPath -Pattern 'Candice', 'Amplify', 'Technie', 'Den.Tools', 'MapMagic', 'MicroSplat', 'MasterAudio', 'RelationsInspector', 'CS0246', 'CS1061', 'CS0618', ': error ', ': warning ' -SimpleMatch
     $vendorDiagnostics = New-Object System.Collections.Generic.List[object]
     foreach ($d in $diagnostics) {
         $vendorDiagnostics.Add([pscustomobject]@{

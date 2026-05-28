@@ -108,6 +108,11 @@ namespace CandiceAIforGames.AI
         public IEnumerator GenericCombo(int attackNumber, float timing)
         {
             yield return new WaitForSeconds(timing);
+            TriggerGenericCombo(attackNumber);
+        }
+
+        public void TriggerGenericCombo(int attackNumber)
+        {
             switch (attackNumber) {
 
                 case 0:
@@ -124,7 +129,6 @@ namespace CandiceAIforGames.AI
                     break;
 
             }
-
         }
 
         //return this type

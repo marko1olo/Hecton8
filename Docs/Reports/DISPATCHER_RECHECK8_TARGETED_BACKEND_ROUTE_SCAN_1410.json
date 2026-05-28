@@ -1,0 +1,11 @@
+﻿{
+    "generatedUtc":  "2026-05-28T14:08:02.5402247Z",
+    "elapsedMicroseconds":  6830259,
+    "filesScanned":  14,
+    "methodsScanned":  1277,
+    "rootsScanned":  24,
+    "forbiddenBackendFindings":  0,
+    "findings":  [
+
+                 ]
+}

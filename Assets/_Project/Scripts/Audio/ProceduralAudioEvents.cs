@@ -938,7 +938,7 @@ namespace Hecton8.Audio
             if (vault == null)
                 return false;
 
-            if (!IsVaultHandleCreated(in _pendingAudioEventsHandle))
+            if (!IsAudioEventVaultHandle(in _pendingAudioEventsHandle, PendingAudioEventsBufferId))
             {
                 if (!allowAllocate || vault.IsAllocationLocked)
                 {
@@ -959,7 +959,7 @@ namespace Hecton8.Audio
                 }
             }
 
-            if (!IsVaultHandleCreated(in _nextFrameAudioEventsHandle))
+            if (!IsAudioEventVaultHandle(in _nextFrameAudioEventsHandle, NextFrameAudioEventsBufferId))
             {
                 if (!allowAllocate || vault.IsAllocationLocked)
                 {
@@ -1003,18 +1003,22 @@ namespace Hecton8.Audio
             return AreAudioEventViewsCreated();
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle)
+        private static bool IsAudioEventVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId)
             where T : struct
         {
-            return handle.BufferID != 0u;
+            return handle.BufferID == (uint)expectedBufferId &&
+                   handle.SystemID == (uint)VaultOwner &&
+                   handle.Generation != 0u;
         }
 
         private static bool AreAudioEventViewsCreated()
         {
             IDataVault vault = _dataVault;
             if (vault == null ||
-                !IsVaultHandleCreated(in _pendingAudioEventsHandle) ||
-                !IsVaultHandleCreated(in _nextFrameAudioEventsHandle))
+                !IsAudioEventVaultHandle(in _pendingAudioEventsHandle, PendingAudioEventsBufferId) ||
+                !IsAudioEventVaultHandle(in _nextFrameAudioEventsHandle, NextFrameAudioEventsBufferId))
             {
                 return false;
             }
@@ -1037,8 +1041,8 @@ namespace Hecton8.Audio
             views = default;
             vault = _dataVault;
             if (vault == null ||
-                !IsVaultHandleCreated(in _pendingAudioEventsHandle) ||
-                !IsVaultHandleCreated(in _nextFrameAudioEventsHandle))
+                !IsAudioEventVaultHandle(in _pendingAudioEventsHandle, PendingAudioEventsBufferId) ||
+                !IsAudioEventVaultHandle(in _nextFrameAudioEventsHandle, NextFrameAudioEventsBufferId))
             {
                 return false;
             }
@@ -1100,9 +1104,9 @@ namespace Hecton8.Audio
             IDataVault vault = _dataVault;
             if (vault != null)
             {
-                if (IsVaultHandleCreated(in _pendingAudioEventsHandle))
+                if (IsAudioEventVaultHandle(in _pendingAudioEventsHandle, PendingAudioEventsBufferId))
                     vault.ReleaseBuffer(in _pendingAudioEventsHandle);
-                if (IsVaultHandleCreated(in _nextFrameAudioEventsHandle))
+                if (IsAudioEventVaultHandle(in _nextFrameAudioEventsHandle, NextFrameAudioEventsBufferId))
                     vault.ReleaseBuffer(in _nextFrameAudioEventsHandle);
             }
 

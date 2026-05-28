@@ -27,8 +27,6 @@ namespace Hecton8.Core
         private const string MathLodModeProperty = "_HectonMathLodMode";
         private const string MathLodWeightProperty = "_HectonMathLodWeight";
         private const string MathLodDistanceSqProperty = "_HectonMathLodDistanceSq";
-        private const string MathLodHighKeyword = "_MATH_LOD_HIGH";
-        private const string MathLodLowKeyword = "_MATH_LOD_LOW";
         private static readonly int _mathLodModePropertyId = Shader.PropertyToID(MathLodModeProperty);
         private static readonly int _mathLodWeightPropertyId = Shader.PropertyToID(MathLodWeightProperty);
         private static readonly int _mathLodDistanceSqPropertyId = Shader.PropertyToID(MathLodDistanceSqProperty);
@@ -316,23 +314,12 @@ namespace Hecton8.Core
                 return;
             }
 
-            bool high = mode == MathLodMode.High;
-            Shader.SetGlobalFloat(_mathLodModePropertyId, high ? 1f : 0f);
+            Shader.SetGlobalFloat(_mathLodModePropertyId, quality);
             Shader.SetGlobalFloat(_mathLodWeightPropertyId, quality);
             Shader.SetGlobalFloat(_mathLodDistanceSqPropertyId, HighQualityDistanceSq);
             _lastPushedShaderMode = mode;
             _lastPushedShaderWeight = quality;
             _hasPushedShaderMode = true;
-
-            if (high)
-            {
-                Shader.EnableKeyword(MathLodHighKeyword);
-                Shader.DisableKeyword(MathLodLowKeyword);
-                return;
-            }
-
-            Shader.DisableKeyword(MathLodHighKeyword);
-            Shader.EnableKeyword(MathLodLowKeyword);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

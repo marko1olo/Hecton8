@@ -30,6 +30,7 @@ namespace Hecton8.Core.Memory.Editor
         private const string DumpPath = "Docs/AgentLogs/Dump_1412.bin";
         private const string SourcePath = "Assets/_Project/Scripts/Core/Memory/Editor/OOP_MemorySentryConcurrentRelocationFuzzer.cs";
         private const int BlackBoxFrameCount = 300;
+        private const int FuzzerTelemetryEntrySizeBytes = 64;
         private const int MinimumWorkers = 4;
         private const int MaximumWorkers = 8;
         private const int MinimumSlots = 8;
@@ -52,6 +53,12 @@ namespace Hecton8.Core.Memory.Editor
         private const int FailureFlagLockRelease = 1 << 7;
         private const int FailureFlagPinUnlock = 1 << 8;
         private const int FailureFlagGrowthResolverTimeout = 1 << 9;
+        private const int FailureFlagCleanupRelease = 1 << 10;
+        private const int FailureFlagArenaGrowthSerialized = 1 << 11;
+        private const int FailureFlagWriteLockAcquire = 1 << 12;
+        private const int FailureFlagPinLockAcquire = 1 << 13;
+        private const int FailureFlagResolveActiveSlot = 1 << 14;
+        private const byte DataVaultDefragFlagAliasBlocked = 1 << 7;
         private const SystemID Owner = SystemID.CoreDiagnostics;
 
         private static readonly BufferID[] s_bufferIds =
@@ -223,6 +230,8 @@ namespace Hecton8.Core.Memory.Editor
                     }
 
                     PopulateResultSnapshot(state, stopwatch, ref result);
+                    ReleaseActiveSlots(state, recordFailures: true);
+                    result.FailureFlags |= Volatile.Read(ref state.FailureFlags);
                     if (result.LockContentionEvidenceCount <= 0 && !injectCorruption)
                         result.FailureFlags |= FailureFlagLockedSkipMissing;
 
@@ -265,7 +274,7 @@ namespace Hecton8.Core.Memory.Editor
                     cts.Cancel();
                     canDisposeNativeState = state == null || Volatile.Read(ref state.TasksCompleted) != 0;
                     if (canDisposeNativeState && state != null)
-                        ReleaseActiveSlots(state);
+                        ReleaseActiveSlots(state, recordFailures: false);
                     if (canDisposeNativeState && jobFailures.IsCreated)
                         H8Memory.Release(ref jobFailures, Owner);
                     if (canDisposeNativeState && blackBox.IsCreated)
@@ -346,6 +355,11 @@ namespace Hecton8.Core.Memory.Editor
 
             if (arenaBytes <= 128L * 1024L * 1024L)
                 result.FailureFlags |= FailureFlagArenaGrowth;
+            result.GrowthResolveAttempts = Interlocked.Read(ref state.GrowthResolveAttempts);
+            result.GrowthResolveMisses = Interlocked.Read(ref state.GrowthResolveMisses);
+            result.GrowthResolveStructuralGateBlocks = Interlocked.Read(ref state.GrowthResolveStructuralGateBlocks);
+            if (result.GrowthResolveStructuralGateBlocks > 0L || result.GrowthResolveAttempts <= 0L)
+                result.FailureFlags |= FailureFlagArenaGrowthSerialized;
         }
 
         private static void ResolveLoopDuringGrowth(FuzzerState state)
@@ -360,7 +374,7 @@ namespace Hecton8.Core.Memory.Editor
                     if (slot.Active != 0)
                     {
                         Interlocked.Increment(ref state.GrowthResolveAttempts);
-                        if (!TryResolveSlot(state, slot, out _))
+                        if (!TryResolveSlotForArenaGrowthProbe(state, slot, out _))
                             Interlocked.Increment(ref state.GrowthResolveMisses);
                     }
                 }
@@ -404,17 +418,7 @@ namespace Hecton8.Core.Memory.Editor
             }
 
             state.Cancel();
-            bool allFinished = false;
-            try
-            {
-                allFinished = Task.WaitAll(tasks, state.Config.DurationMilliseconds + 5000);
-            }
-            catch (AggregateException ex)
-            {
-                for (int i = 0; i < ex.InnerExceptions.Count; i++)
-                    state.Exceptions.Enqueue(ex.InnerExceptions[i]);
-                allFinished = AreAllTasksCompleted(tasks);
-            }
+            bool allFinished = WaitTasksNoThrow(tasks, state.Config.DurationMilliseconds + 5000, state.Exceptions);
 
             if (!allFinished)
             {
@@ -422,7 +426,7 @@ namespace Hecton8.Core.Memory.Editor
                 int timeoutTaskCount = 0;
                 for (int i = 0; i < tasks.Length; i++)
                 {
-                    if (tasks[i] == null || !tasks[i].IsCompleted)
+                    if (tasks[i] != null && !tasks[i].IsCompleted)
                         timeoutTaskCount++;
                 }
 
@@ -432,8 +436,6 @@ namespace Hecton8.Core.Memory.Editor
                 }
             }
 
-            for (int i = 0; i < tasks.Length; i++)
-                CaptureTaskFault(tasks[i], state.Exceptions);
             Volatile.Write(ref state.TasksCompleted, allFinished ? 1 : 0);
         }
 
@@ -498,7 +500,11 @@ namespace Hecton8.Core.Memory.Editor
             lock (slot.Gate)
             {
                 int length = math.max(1, requestedLength);
+                bool wasActive = slot.Active != 0;
+                VaultGenerationHandle<int> previousHandle = slot.Handle;
+                int previousLength = slot.Length;
                 VaultGenerationHandle<int> handle;
+                NativeArray<int> buffer;
                 lock (state.StructuralGate)
                 {
                     handle = state.Vault.EnsureGenerationHandle<int>(
@@ -506,28 +512,44 @@ namespace Hecton8.Core.Memory.Editor
                         length,
                         Owner,
                         NativeArrayOptions.UninitializedMemory);
+
+                    if (handle.BufferID == 0u)
+                        return;
+
+                    if (!state.Vault.TryAcquireWriteLock(in handle, Owner, out buffer))
+                    {
+                        state.RecordFailure(FailureFlagWriteLockAcquire, slot.BufferId, operation);
+                        state.Cancel();
+                        if (!wasActive ||
+                            previousLength != length ||
+                            previousHandle.Generation != handle.Generation)
+                        {
+                            bool released = state.Vault.ReleaseBuffer(in handle);
+                            if (released)
+                                ClearSlot(slot);
+                            else
+                                state.RecordFailure(FailureFlagCleanupRelease, slot.BufferId, operation);
+                        }
+
+                        return;
+                    }
                 }
-
-                if (handle.BufferID == 0u)
-                    return;
-
-                slot.Handle = handle;
-                slot.Length = length;
-                slot.Active = 1;
-
-                if (!TryAcquireWriteLock(state, slot, out NativeArray<int> buffer))
-                    return;
 
                 try
                 {
-                    WritePattern(slot.BufferId, buffer);
+                    int patternEpoch = NextPatternEpoch(slot.PatternEpoch);
+                    WritePattern(slot.BufferId, patternEpoch, buffer);
+                    slot.Handle = handle;
+                    slot.Length = length;
+                    slot.PatternEpoch = patternEpoch;
                     slot.Bytes = (long)buffer.Length * UnsafeUtility.SizeOf<int>();
+                    slot.Active = 1;
                     Interlocked.Increment(ref state.AllocationAttempts);
                     RecordTelemetry(state, slot.BufferId, operation, 0u);
                 }
                 finally
                 {
-                    ReleaseWriteLockOrRecord(state, slot, operation);
+                    ReleaseWriteLockOrRecord(state, in handle, slot.BufferId, operation);
                 }
             }
         }
@@ -540,18 +562,22 @@ namespace Hecton8.Core.Memory.Editor
                     return;
 
                 if (!TryAcquireWriteLock(state, slot, out NativeArray<int> buffer))
+                {
+                    state.RecordFailure(FailureFlagWriteLockAcquire, slot.BufferId, operation);
+                    state.Cancel();
                     return;
+                }
 
                 try
                 {
-                    if (!TryVerifyPattern(slot.BufferId, buffer, out _, out _, out _))
+                    if (!TryVerifyPattern(slot.BufferId, slot.PatternEpoch, buffer, out _, out _, out _))
                     {
                         state.RecordFailure(FailureFlagIntegrity, slot.BufferId, operation);
                         state.Cancel();
                         return;
                     }
 
-                    WritePattern(slot.BufferId, buffer);
+                    WritePattern(slot.BufferId, slot.PatternEpoch, buffer);
                     Interlocked.Increment(ref state.WriteLockPasses);
                     RecordTelemetry(state, slot.BufferId, operation, 0u);
                     ForceCompactionPulse(state, operation);
@@ -571,7 +597,11 @@ namespace Hecton8.Core.Memory.Editor
                     return;
 
                 if (!TryRefreshSlotHandle(state, slot))
+                {
+                    state.RecordFailure(FailureFlagResolveActiveSlot, slot.BufferId, FuzzerOperation.PinJob);
+                    state.Cancel();
                     return;
+                }
 
                 bool lockedBuffer;
                 lock (state.StructuralGate)
@@ -580,12 +610,20 @@ namespace Hecton8.Core.Memory.Editor
                 }
 
                 if (!lockedBuffer)
+                {
+                    state.RecordFailure(FailureFlagPinLockAcquire, slot.BufferId, FuzzerOperation.PinJob);
+                    state.Cancel();
                     return;
+                }
 
                 try
                 {
                     if (!TryResolveSlot(state, slot, out NativeArray<int> buffer))
+                    {
+                        state.RecordFailure(FailureFlagResolveActiveSlot, slot.BufferId, FuzzerOperation.PinJob);
+                        state.Cancel();
                         return;
+                    }
 
                     int failureIndex = slot.Index;
                     state.JobFailures[failureIndex] = 0;
@@ -596,6 +634,7 @@ namespace Hecton8.Core.Memory.Editor
                         Failure = state.JobFailures,
                         FailureIndex = failureIndex,
                         BufferId = (int)slot.BufferId,
+                        PatternEpoch = slot.PatternEpoch,
                         Seed = rng.NextUInt(),
                         InnerIterations = state.Config.JobInnerIterations
                     };
@@ -627,7 +666,13 @@ namespace Hecton8.Core.Memory.Editor
                 if (slot.Active == 0)
                     return;
 
-                TryRefreshSlotHandle(state, slot);
+                if (!TryRefreshSlotHandle(state, slot))
+                {
+                    state.RecordFailure(FailureFlagCleanupRelease, slot.BufferId, operation);
+                    state.Cancel();
+                    return;
+                }
+
                 bool released;
                 lock (state.StructuralGate)
                 {
@@ -636,10 +681,7 @@ namespace Hecton8.Core.Memory.Editor
 
                 if (released)
                 {
-                    slot.Active = 0;
-                    slot.Handle = default;
-                    slot.Length = 0;
-                    slot.Bytes = 0L;
+                    ClearSlot(slot);
                     Interlocked.Increment(ref state.ReleaseAttempts);
                     RecordTelemetry(state, slot.BufferId, operation, 0u);
                 }
@@ -667,6 +709,9 @@ namespace Hecton8.Core.Memory.Editor
                         direct(activeMask);
                         Interlocked.Increment(ref state.DirectCompactionPasses);
                     }
+
+                    if ((state.Vault.LastDefragFlags & DataVaultDefragFlagAliasBlocked) != 0)
+                        Interlocked.Increment(ref state.AliasBlockedDefragPasses);
 
                     UpdateMaxLockedSkipCount(state);
                     RecordTelemetry(state, BufferID.Unknown, operation, activeMask);
@@ -704,22 +749,55 @@ namespace Hecton8.Core.Memory.Editor
             }
         }
 
+        private static bool TryResolveSlotForArenaGrowthProbe(FuzzerState state, SlotState slot, out NativeArray<int> buffer)
+        {
+            buffer = default;
+            bool entered = false;
+            try
+            {
+                Monitor.TryEnter(state.StructuralGate, 0, ref entered);
+                if (!entered)
+                {
+                    Interlocked.Increment(ref state.GrowthResolveStructuralGateBlocks);
+                    return false;
+                }
+
+                if (state.Vault.TryReadHandle(in slot.Handle, out buffer))
+                    return true;
+
+                if (!TryRefreshSlotHandleUnlocked(state, slot))
+                    return false;
+
+                return state.Vault.TryReadHandle(in slot.Handle, out buffer);
+            }
+            finally
+            {
+                if (entered)
+                    Monitor.Exit(state.StructuralGate);
+            }
+        }
+
         private static bool TryRefreshSlotHandle(FuzzerState state, SlotState slot)
         {
             lock (state.StructuralGate)
             {
-                if (slot.Active == 0)
-                    return false;
-
-                if (!state.Vault.TryGetGenerationHandle<int>(slot.BufferId, out VaultGenerationHandle<int> refreshed))
-                    return false;
-
-                if (slot.Handle.Generation != refreshed.Generation)
-                    Interlocked.Increment(ref state.GenerationRefreshes);
-
-                slot.Handle = refreshed;
-                return true;
+                return TryRefreshSlotHandleUnlocked(state, slot);
             }
+        }
+
+        private static bool TryRefreshSlotHandleUnlocked(FuzzerState state, SlotState slot)
+        {
+            if (slot.Active == 0)
+                return false;
+
+            if (!state.Vault.TryGetGenerationHandle<int>(slot.BufferId, out VaultGenerationHandle<int> refreshed))
+                return false;
+
+            if (slot.Handle.Generation != refreshed.Generation)
+                Interlocked.Increment(ref state.GenerationRefreshes);
+
+            slot.Handle = refreshed;
+            return true;
         }
 
         private static void VerifyAllActiveSlots(FuzzerState state, ref MemorySentryFuzzerResult result)
@@ -735,7 +813,7 @@ namespace Hecton8.Core.Memory.Editor
                     if (!TryResolveSlot(state, slot, out NativeArray<int> buffer))
                         throw new FatalMemoryCorruptionException("Failed to resolve active slot " + slot.BufferId);
 
-                    VerifyPatternOrThrow(slot.BufferId, buffer);
+                    VerifyPatternOrThrow(slot.BufferId, slot.PatternEpoch, buffer);
                     result.VerifiedIntegers += buffer.Length;
                 }
             }
@@ -797,7 +875,7 @@ namespace Hecton8.Core.Memory.Editor
             AllocateOrGrowSlot(state, state.Slots[0], 64, FuzzerOperation.Allocate);
         }
 
-        private static void ReleaseActiveSlots(FuzzerState state)
+        private static void ReleaseActiveSlots(FuzzerState state, bool recordFailures)
         {
             for (int i = 0; i < state.Slots.Length; i++)
             {
@@ -810,13 +888,22 @@ namespace Hecton8.Core.Memory.Editor
                     lock (state.StructuralGate)
                     {
                         if (state.Vault.TryGetGenerationHandle<int>(slot.BufferId, out VaultGenerationHandle<int> handle))
-                            state.Vault.ReleaseBuffer(in handle);
+                        {
+                            bool released = state.Vault.ReleaseBuffer(in handle);
+                            if (!released && recordFailures)
+                            {
+                                state.RecordFailure(FailureFlagCleanupRelease, slot.BufferId, FuzzerOperation.Release);
+                                continue;
+                            }
+                        }
+                        else if (recordFailures)
+                        {
+                            state.RecordFailure(FailureFlagCleanupRelease, slot.BufferId, FuzzerOperation.Release);
+                            continue;
+                        }
                     }
 
-                    slot.Active = 0;
-                    slot.Handle = default;
-                    slot.Length = 0;
-                    slot.Bytes = 0L;
+                    ClearSlot(slot);
                 }
             }
         }
@@ -838,14 +925,14 @@ namespace Hecton8.Core.Memory.Editor
             try
             {
                 Task[] tasks = state.RunningTasks;
-                bool completed = tasks == null || WaitTasksNoThrow(tasks, state.Config.DurationMilliseconds + 30000, state.Exceptions);
+                bool completed = tasks == null || WaitTasksNoThrow(tasks, Timeout.Infinite, state.Exceptions);
                 if (!completed)
                 {
                     state.RecordFailure(FailureFlagTimeout, BufferID.Unknown, FuzzerOperation.None);
                     return;
                 }
 
-                ReleaseActiveSlots(state);
+                ReleaseActiveSlots(state, recordFailures: false);
                 NativeArray<int> jobFailures = state.JobFailures;
                 if (jobFailures.IsCreated)
                     H8Memory.Release(ref jobFailures, Owner);
@@ -879,8 +966,10 @@ namespace Hecton8.Core.Memory.Editor
             result.DirectCompactionPasses = Interlocked.Read(ref state.DirectCompactionPasses);
             result.PublicDefragPasses = Interlocked.Read(ref state.PublicDefragPasses);
             result.MaskedDefragPasses = Interlocked.Read(ref state.MaskedDefragPasses);
+            result.AliasBlockedDefragPasses = Interlocked.Read(ref state.AliasBlockedDefragPasses);
             result.GrowthResolveAttempts = Interlocked.Read(ref state.GrowthResolveAttempts);
             result.GrowthResolveMisses = Interlocked.Read(ref state.GrowthResolveMisses);
+            result.GrowthResolveStructuralGateBlocks = Interlocked.Read(ref state.GrowthResolveStructuralGateBlocks);
             lock (state.StructuralGate)
             {
                 result.CompactionMovedBytes = state.Vault.TotalDefragMovedBytes;
@@ -892,7 +981,7 @@ namespace Hecton8.Core.Memory.Editor
             result.GenerationRefreshes = Interlocked.Read(ref state.GenerationRefreshes);
             result.ManagedExceptionCount = state.Exceptions.Count;
             result.TimeoutTaskCount = Volatile.Read(ref state.TimeoutTaskCount);
-            result.LockContentionEvidenceCount = SaturatingLongToInt((long)result.LockedSkipCount + Interlocked.Read(ref state.MaskedDefragPasses));
+            result.LockContentionEvidenceCount = SaturatingLongToInt((long)result.LockedSkipCount + result.AliasBlockedDefragPasses);
             int expectedExceptionAllowance = result.ExpectedCorruptionCaught != 0 ? 1 : 0;
             if (result.ManagedExceptionCount > expectedExceptionAllowance)
                 result.FailureFlags |= FailureFlagManagedException;
@@ -907,13 +996,22 @@ namespace Hecton8.Core.Memory.Editor
 
         private static void ReleaseWriteLockOrRecord(FuzzerState state, SlotState slot, FuzzerOperation operation)
         {
+            ReleaseWriteLockOrRecord(state, in slot.Handle, slot.BufferId, operation);
+        }
+
+        private static void ReleaseWriteLockOrRecord(
+            FuzzerState state,
+            in VaultGenerationHandle<int> handle,
+            BufferID bufferId,
+            FuzzerOperation operation)
+        {
             lock (state.StructuralGate)
             {
-                if (state.Vault.ReleaseWriteLock(in slot.Handle, Owner))
+                if (state.Vault.ReleaseWriteLock(in handle, Owner))
                     return;
             }
 
-            state.RecordFailure(FailureFlagLockRelease, slot.BufferId, operation);
+            state.RecordFailure(FailureFlagLockRelease, bufferId, operation);
         }
 
         private static void UnlockBufferOrRecord(FuzzerState state, SlotState slot, FuzzerOperation operation)
@@ -927,14 +1025,29 @@ namespace Hecton8.Core.Memory.Editor
             state.RecordFailure(FailureFlagPinUnlock, slot.BufferId, operation);
         }
 
-        private static void WritePattern(BufferID bufferId, NativeArray<int> buffer)
+        private static void ClearSlot(SlotState slot)
+        {
+            slot.Active = 0;
+            slot.Handle = default;
+            slot.Length = 0;
+            slot.Bytes = 0L;
+        }
+
+        private static int NextPatternEpoch(int currentEpoch)
+        {
+            int next = unchecked(currentEpoch + 1);
+            return next == 0 ? 1 : next;
+        }
+
+        private static void WritePattern(BufferID bufferId, int patternEpoch, NativeArray<int> buffer)
         {
             for (int i = 0; i < buffer.Length; i++)
-                buffer[i] = ComputePattern(bufferId, i);
+                buffer[i] = ComputePattern(bufferId, patternEpoch, i);
         }
 
         private static bool TryVerifyPattern(
             BufferID bufferId,
+            int patternEpoch,
             NativeArray<int> buffer,
             out int mismatchIndex,
             out int expectedValue,
@@ -945,7 +1058,7 @@ namespace Hecton8.Core.Memory.Editor
             actualValue = 0;
             for (int i = 0; i < buffer.Length; i++)
             {
-                int expected = ComputePattern(bufferId, i);
+                int expected = ComputePattern(bufferId, patternEpoch, i);
                 int actual = buffer[i];
                 if (actual != expected)
                 {
@@ -959,19 +1072,20 @@ namespace Hecton8.Core.Memory.Editor
             return true;
         }
 
-        private static void VerifyPatternOrThrow(BufferID bufferId, NativeArray<int> buffer)
+        private static void VerifyPatternOrThrow(BufferID bufferId, int patternEpoch, NativeArray<int> buffer)
         {
-            if (!TryVerifyPattern(bufferId, buffer, out int index, out int expected, out int actual))
+            if (!TryVerifyPattern(bufferId, patternEpoch, buffer, out int index, out int expected, out int actual))
                 throw new PatternMismatchMemoryCorruptionException("Pattern mismatch buffer=" + (int)bufferId + " index=" + index + " expected=" + expected + " actual=" + actual);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static int ComputePattern(BufferID bufferId, int index)
+        private static int ComputePattern(BufferID bufferId, int patternEpoch, int index)
         {
             unchecked
             {
                 uint hash = 2166136261u;
                 hash = (hash ^ (uint)(int)bufferId) * 16777619u;
+                hash = (hash ^ (uint)patternEpoch) * 16777619u;
                 hash = (hash ^ (uint)index) * 16777619u;
                 hash ^= hash >> 16;
                 hash *= 0x7FEB352Du;
@@ -1137,6 +1251,12 @@ namespace Hecton8.Core.Memory.Editor
             builder.AppendLine("{");
             AppendJson(builder, "agent_id", "1412", comma: true);
             AppendJson(builder, "role", "LIVE_DATAVAULT_COMPACTION_STRESS_FUZZER", comma: true);
+            AppendJson(builder, "status", "RUNTIME_EXECUTED_BY_UNITY_EDITOR", comma: true);
+            AppendJson(builder, "runtime_executed", true, comma: true);
+            AppendJson(builder, "fuzzer_compile_proof", true, comma: true);
+            AppendJson(builder, "fuzzer_asmdef_project_present", GeneratedAsmdefProjectPresent(), comma: true);
+            AppendJson(builder, "fuzzer_source_present_in_generated_csproj", GeneratedCsprojContainsFuzzerSource(), comma: true);
+            AppendJson(builder, "fuzzer_compile_gap", "Runtime execution proves Unity editor compiled the fuzzer; generated dotnet csproj proof may still differ.", comma: true);
             AppendJson(builder, "passed", passed, comma: true);
             AppendJson(builder, "injected_corruption_probe", injectedCorruption, comma: true);
             AppendJson(builder, "data_integrity", result.DataIntegrity != 0, comma: true);
@@ -1154,8 +1274,10 @@ namespace Hecton8.Core.Memory.Editor
             AppendJson(builder, "public_defrag_passes", result.PublicDefragPasses, comma: true);
             AppendJson(builder, "direct_compaction_passes", result.DirectCompactionPasses, comma: true);
             AppendJson(builder, "masked_defrag_passes", result.MaskedDefragPasses, comma: true);
+            AppendJson(builder, "alias_blocked_defrag_passes", result.AliasBlockedDefragPasses, comma: true);
             AppendJson(builder, "growth_resolve_attempts", result.GrowthResolveAttempts, comma: true);
             AppendJson(builder, "growth_resolve_misses", result.GrowthResolveMisses, comma: true);
+            AppendJson(builder, "growth_resolve_structural_gate_blocks", result.GrowthResolveStructuralGateBlocks, comma: true);
             AppendJson(builder, "locked_skip_count", result.LockedSkipCount, comma: true);
             AppendJson(builder, "lock_contention_evidence_count", result.LockContentionEvidenceCount, comma: true);
             AppendJson(builder, "arena_growth_probe_executed", result.ArenaGrowthProbeExecuted != 0, comma: true);
@@ -1176,6 +1298,26 @@ namespace Hecton8.Core.Memory.Editor
             builder.AppendLine("}");
             File.WriteAllText(fullPath, builder.ToString());
             WriteReportSha256Sidecar(fullPath);
+        }
+
+        private static bool GeneratedAsmdefProjectPresent()
+        {
+            string projectPath = Path.Combine(Directory.GetCurrentDirectory(), "Hecton8.Core.Memory.Editor.csproj");
+            return File.Exists(projectPath);
+        }
+
+        private static bool GeneratedCsprojContainsFuzzerSource()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string[] projects = Directory.GetFiles(root, "*.csproj", SearchOption.TopDirectoryOnly);
+            for (int i = 0; i < projects.Length; i++)
+            {
+                string text = File.ReadAllText(projects[i]);
+                if (text.IndexOf("OOP_MemorySentryConcurrentRelocationFuzzer.cs", StringComparison.Ordinal) >= 0)
+                    return true;
+            }
+
+            return false;
         }
 
         private static void AppendJson(StringBuilder builder, string name, string value, bool comma)
@@ -1221,26 +1363,38 @@ namespace Hecton8.Core.Memory.Editor
             using (BinaryWriter writer = new BinaryWriter(stream))
             {
                 writer.Write(0x323134315A5A5546UL);
-                writer.Write(1);
+                writer.Write(2);
+                writer.Write(FuzzerTelemetryEntrySizeBytes);
+                writer.Write(BlackBoxFrameCount);
                 writer.Write(result.FailureFlags);
                 writer.Write(result.TotalOperations);
                 writer.Write(result.LockedSkipCount);
                 lock (state.TelemetryGate)
                 {
-                    int count = state.BlackBox.IsCreated ? state.BlackBox.Length : 0;
+                    int capacity = state.BlackBox.IsCreated ? state.BlackBox.Length : 0;
+                    int count = state.BlackBoxRecordedCount;
+                    if (count > capacity)
+                        count = capacity;
+                    int cursor = state.BlackBoxCursor;
+                    int start = count == capacity ? cursor : 0;
                     writer.Write(count);
                     for (int i = 0; i < count; i++)
                     {
-                        FuzzerTelemetryEntry entry = state.BlackBox[i];
+                        int index = start + i;
+                        if (index >= capacity)
+                            index -= capacity;
+                        FuzzerTelemetryEntry entry = state.BlackBox[index];
+                        writer.Write(entry.TotalOperations);
+                        writer.Write(entry.CompactionPasses);
+                        writer.Write(entry.Reserved0);
+                        writer.Write(entry.Reserved1);
+                        writer.Write(entry.Reserved2);
                         writer.Write(entry.Sequence);
                         writer.Write(entry.BufferId);
                         writer.Write(entry.Operation);
                         writer.Write(entry.Flags);
                         writer.Write(entry.ActiveLockMask);
-                        writer.Write(entry.TotalOperations);
-                        writer.Write(entry.CompactionPasses);
-                        writer.Write(entry.Reserved0);
-                        writer.Write(entry.Reserved1);
+                        writer.Write(0u);
                     }
                 }
             }
@@ -1270,6 +1424,8 @@ namespace Hecton8.Core.Memory.Editor
                 if (cursor >= state.BlackBox.Length)
                     cursor = 0;
                 state.BlackBoxCursor = cursor;
+                if (state.BlackBoxRecordedCount < state.BlackBox.Length)
+                    state.BlackBoxRecordedCount++;
             }
         }
 
@@ -1288,30 +1444,70 @@ namespace Hecton8.Core.Memory.Editor
 
         private static bool WaitTasksNoThrow(Task[] tasks, int timeoutMilliseconds, ConcurrentQueue<Exception> exceptions)
         {
-            bool completed = false;
-            try
-            {
-                completed = Task.WaitAll(tasks, timeoutMilliseconds);
-            }
-            catch (AggregateException ex)
-            {
-                for (int i = 0; i < ex.InnerExceptions.Count; i++)
-                    exceptions.Enqueue(ex.InnerExceptions[i]);
-                completed = AreAllTasksCompleted(tasks);
-            }
-            catch (Exception ex)
-            {
-                exceptions.Enqueue(ex);
-                completed = AreAllTasksCompleted(tasks);
-            }
+            if (tasks == null)
+                return true;
 
-            if (completed)
+            bool completed = true;
+            bool infinite = timeoutMilliseconds == Timeout.Infinite;
+            long deadlineTicks = infinite
+                ? 0L
+                : Stopwatch.GetTimestamp() + MillisecondsToTicks(math.max(0, timeoutMilliseconds));
+
+            for (int i = 0; i < tasks.Length; i++)
             {
-                for (int i = 0; i < tasks.Length; i++)
+                Task task = tasks[i];
+                if (task == null)
+                    continue;
+
+                bool faultCaptured = false;
+                try
+                {
+                    int waitMilliseconds = infinite ? Timeout.Infinite : RemainingMilliseconds(deadlineTicks);
+                    if (!infinite && waitMilliseconds <= 0)
+                    {
+                        completed = false;
+                        continue;
+                    }
+
+                    if (!task.Wait(waitMilliseconds))
+                    {
+                        completed = false;
+                        continue;
+                    }
+                }
+                catch (AggregateException ex)
+                {
+                    for (int innerIndex = 0; innerIndex < ex.InnerExceptions.Count; innerIndex++)
+                        exceptions.Enqueue(ex.InnerExceptions[innerIndex]);
+                    faultCaptured = true;
+                }
+                catch (Exception ex)
+                {
+                    exceptions.Enqueue(ex);
+                    faultCaptured = true;
+                }
+
+                if (!task.IsCompleted)
+                {
+                    completed = false;
+                }
+                else if (!faultCaptured)
+                {
                     CaptureTaskFault(tasks[i], exceptions);
+                }
             }
 
             return completed;
+        }
+
+        private static int RemainingMilliseconds(long deadlineTicks)
+        {
+            long remainingTicks = deadlineTicks - Stopwatch.GetTimestamp();
+            if (remainingTicks <= 0L)
+                return 0;
+
+            long milliseconds = ((remainingTicks * 1000L) + Stopwatch.Frequency - 1L) / Stopwatch.Frequency;
+            return milliseconds > int.MaxValue ? int.MaxValue : (int)milliseconds;
         }
 
         private static void CaptureTaskFault(Task task, ConcurrentQueue<Exception> exceptions)
@@ -1321,17 +1517,6 @@ namespace Hecton8.Core.Memory.Editor
 
             for (int i = 0; i < task.Exception.InnerExceptions.Count; i++)
                 exceptions.Enqueue(task.Exception.InnerExceptions[i]);
-        }
-
-        private static bool AreAllTasksCompleted(Task[] tasks)
-        {
-            for (int i = 0; i < tasks.Length; i++)
-            {
-                if (tasks[i] == null || !tasks[i].IsCompleted)
-                    return false;
-            }
-
-            return true;
         }
 
         private static long MillisecondsToTicks(int milliseconds)
@@ -1370,6 +1555,7 @@ namespace Hecton8.Core.Memory.Editor
             public NativeArray<int> Failure;
             public int FailureIndex;
             public int BufferId;
+            public int PatternEpoch;
             public uint Seed;
             public int InnerIterations;
 
@@ -1381,7 +1567,7 @@ namespace Hecton8.Core.Memory.Editor
                 {
                     for (int i = 0; i < Buffer.Length; i++)
                     {
-                        int expected = ComputePatternBurst(BufferId, i);
+                        int expected = ComputePatternBurst(BufferId, PatternEpoch, i);
                         int actual = Buffer[i];
                         if (actual != expected)
                             Failure[FailureIndex] = 1;
@@ -1395,12 +1581,13 @@ namespace Hecton8.Core.Memory.Editor
                     Failure[FailureIndex] = 2;
             }
 
-            private static int ComputePatternBurst(int bufferId, int index)
+            private static int ComputePatternBurst(int bufferId, int patternEpoch, int index)
             {
                 unchecked
                 {
                     uint hash = 2166136261u;
                     hash = (hash ^ (uint)bufferId) * 16777619u;
+                    hash = (hash ^ (uint)patternEpoch) * 16777619u;
                     hash = (hash ^ (uint)index) * 16777619u;
                     hash ^= hash >> 16;
                     hash *= 0x7FEB352Du;
@@ -1468,8 +1655,10 @@ namespace Hecton8.Core.Memory.Editor
             public long DirectCompactionPasses;
             public long PublicDefragPasses;
             public long MaskedDefragPasses;
+            public long AliasBlockedDefragPasses;
             public long GrowthResolveAttempts;
             public long GrowthResolveMisses;
+            public long GrowthResolveStructuralGateBlocks;
             public int LockedSkipCount;
             public int LockContentionEvidenceCount;
             public long TotalBytesAllocated;
@@ -1540,6 +1729,7 @@ namespace Hecton8.Core.Memory.Editor
             public readonly int Index;
             public VaultGenerationHandle<int> Handle;
             public int Length;
+            public int PatternEpoch;
             public int Active;
             public long Bytes;
 
@@ -1573,12 +1763,15 @@ namespace Hecton8.Core.Memory.Editor
             public long DirectCompactionPasses;
             public long PublicDefragPasses;
             public long MaskedDefragPasses;
+            public long AliasBlockedDefragPasses;
             public long GenerationRefreshes;
             public long GrowthResolveAttempts;
             public long GrowthResolveMisses;
+            public long GrowthResolveStructuralGateBlocks;
             public Task[] RunningTasks;
             public int TelemetrySequence;
             public int BlackBoxCursor;
+            public int BlackBoxRecordedCount;
             public int MaxLockedSkipCount;
             public int FailureFlags;
             public int TasksCompleted = 1;

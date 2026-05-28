@@ -6,6 +6,9 @@ namespace CandiceAIforGames.AI
 {
     public class CandiceModuleMovement: CandiceBaseModule
     {
+        // COLD ALLOC: RaycastHit[1] - single ground probe for slope alignment - owner: CandiceModuleMovement
+        private static readonly RaycastHit[] GroundProbeHits = new RaycastHit[1];
+
         float t = 0;
         public CandiceModuleMovement(string moduleName = "CandiceModuleMovement") : base(moduleName) { }
         public void MoveForward(Transform transform, CandiceAIController aiController)
@@ -16,8 +19,10 @@ namespace CandiceAIforGames.AI
         {
             var ray = new Ray(transform.position, Vector3.down);
             Vector3 velocity = transform.forward ;
-            if (Physics.Raycast(ray, out RaycastHit hitInfo, aiController.HalfHeight + 0.2f))
+            int hitCount = Physics.RaycastNonAlloc(ray, GroundProbeHits, aiController.HalfHeight + 0.2f);
+            if (hitCount > 0)
             {
+                RaycastHit hitInfo = GroundProbeHits[0];
                 var slopeRotation = Quaternion.FromToRotation(Vector3.up, hitInfo.normal);
                 velocity = slopeRotation * velocity;
             }

@@ -47,27 +47,13 @@ namespace Hecton8.Visor
             [Range(0f, 1f)] public float ditherStrength = 0.85f;
         }
 
-        private readonly struct RuntimeState
+        private struct RuntimeState
         {
-            public RuntimeState(
-                float brownoutIntensity,
-                float worldFocusBlur,
-                float nearCollisionIntensity,
-                Vector4 vrComfortSignals,
-                Vector4 vrComfortMotion)
-            {
-                BrownoutIntensity = brownoutIntensity;
-                WorldFocusBlur = worldFocusBlur;
-                NearCollisionIntensity = nearCollisionIntensity;
-                VrComfortSignals = vrComfortSignals;
-                VrComfortMotion = vrComfortMotion;
-            }
-
-            public readonly float BrownoutIntensity;
-            public readonly float WorldFocusBlur;
-            public readonly float NearCollisionIntensity;
-            public readonly Vector4 VrComfortSignals;
-            public readonly Vector4 VrComfortMotion;
+            public float BrownoutIntensity;
+            public float WorldFocusBlur;
+            public float NearCollisionIntensity;
+            public Vector4 VrComfortSignals;
+            public Vector4 VrComfortMotion;
         }
 
         private sealed class BrownoutPass : ScriptableRenderPass
@@ -137,6 +123,8 @@ namespace Hecton8.Visor
                 {
                     return;
                 }
+                if (cameraData.renderType != CameraRenderType.Base)
+                    return;
 
                 TextureHandle sourceTexture = resourceData.activeColorTexture;
                 if (!sourceTexture.IsValid())
@@ -148,7 +136,7 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                TextureDesc destinationDesc = new TextureDesc(sourceDesc);
+                TextureDesc destinationDesc = sourceDesc;
                 destinationDesc.name = "_HectonVRBrownout";
                 destinationDesc.clearBuffer = false;
                 destinationDesc.depthBufferBits = DepthBits.None;
@@ -426,6 +414,8 @@ namespace Hecton8.Visor
             CameraType cameraType = renderingData.cameraData.cameraType;
             if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)
                 return;
+            if (renderingData.cameraData.renderType != CameraRenderType.Base)
+                return;
 
             Camera renderCamera = renderingData.cameraData.camera;
             if (!TryBuildRuntimeState(renderCamera, renderingData.cameraData.xr, out RuntimeState runtimeState))
@@ -472,12 +462,12 @@ namespace Hecton8.Visor
                 return false;
             }
 
-            runtimeState = new RuntimeState(
-                brownoutIntensity,
-                worldFocusBlur,
-                nearCollisionIntensity,
-                vrComfortSignals,
-                vrComfortMotion);
+            runtimeState = default;
+            runtimeState.BrownoutIntensity = brownoutIntensity;
+            runtimeState.WorldFocusBlur = worldFocusBlur;
+            runtimeState.NearCollisionIntensity = nearCollisionIntensity;
+            runtimeState.VrComfortSignals = vrComfortSignals;
+            runtimeState.VrComfortMotion = vrComfortMotion;
             return true;
         }
 

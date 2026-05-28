@@ -2,23 +2,50 @@
   "agentId": "1416",
   "role": "MODULAR_EQUIPMENT_AND_TOOL_RUNTIME_PURGER",
   "domain": "ECHELON 4 Equipment Runtime (Tools)",
-  "status": "PATCHED_STATIC_REAUDITED_OWNER_VAULT_BUILD_TIMEOUT_KILLED",
-  "evidenceClass": "STATIC_SOURCE_WITH_TIMED_OUT_BUILD_ATTEMPT",
+  "status": "PATCHED_STATIC_REAUDITED_LIVE_REFCOUNT_FIXED_BUILD_BLOCKED_AFTER_TIMEOUT",
+  "evidenceClass": "STATIC_SOURCE_WITH_THREE_TIMED_OUT_BUILD_ATTEMPTS_ONE_FAILED_NO_DIAGNOSTICS_FINAL_LIVE_REFCOUNT_PATCH_UNCOMPILED",
   "timestampLocal": "2026-05-28",
   "buildGate": {
-    "cpuLoadPercentBeforeBuild": 28,
-    "activeCompilerOrDotnetBeforeBuild": [],
+    "buildSpamCompliance": "Four dotnet build attempts total in this task. Attempts 2, 3, and 4 were launched only after C# signature/contract changes and green CPU/compiler gates. After the final live-source refcount patch, no fifth build was launched because an external compiler was active.",
+    "cpuLoadPercentBeforeOnlyBuildAttempt": 28,
+    "activeCompilerOrDotnetBeforeOnlyBuildAttempt": [],
     "dotnetBuildInvoked": true,
     "dotnetBuildCommand": "dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
     "dotnetBuildResult": "TIMEOUT_AFTER_124_SECONDS_NO_DIAGNOSTICS_CAPTURED",
-    "cleanup": "Stopped leftover dotnet pid 10444 and VBCSCompiler pid 67176 from this build attempt.",
-    "cpuLoadPercentAfterCleanup": 96,
-    "secondBuildInvoked": false
+    "cleanup": "Stopped leftover dotnet pid 10444 and VBCSCompiler pid 67176 from this agent's timed-out build attempt.",
+    "secondBuildInvoked": true,
+    "cpuLoadPercentBeforeSecondBuildAttempt": 16,
+    "activeCompilerOrDotnetBeforeSecondBuildAttempt": [],
+    "secondDotnetBuildCommand": "dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
+    "secondDotnetBuildResult": "TIMEOUT_AFTER_304_SECONDS_NO_DIAGNOSTICS_CAPTURED",
+    "secondCleanup": "Stopped leftover dotnet pid 68368, child dotnet pid 48280, child dotnet pid 11928, and VBCSCompiler pid 53788 from the second timed-out build attempt.",
+    "postSecondCleanupCpuLoadPercent": 44,
+    "postSecondCleanupActiveCompilerOrDotnet": [],
+    "postResumeProcessRecheck": "Transient dotnet pid 14652 and csc pid 57928 from Hecton8.Editor.csproj were observed after context resume; both exited before any further cleanup or third build. Later sample saw external compile-medic dotnet pid 15860 and csc pid 46524 with CPU 90%; those processes were not killed. After the acquisition refcount repair, CPU was 71% with external dotnet pid 21428 running dotnet build .\\Hecton8.slnx --no-restore -m:1 -p:UseSharedCompilation=false -clp:ErrorsOnly. No third build was launched by 1416.",
+    "latestBuildGateSampleAfterReportRefresh": "CPU 100%, external dotnet pid 21428 was active at hash refresh; build was still blocked at that moment.",
+    "thirdBuildInvoked": true,
+    "cpuLoadPercentBeforeThirdBuildAttempt": 45,
+    "activeCompilerOrDotnetBeforeThirdBuildAttempt": [],
+    "thirdDotnetBuildCommand": "dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
+    "thirdDotnetBuildResult": "EXIT_CODE_1_AFTER_128_6_SECONDS_NO_DIAGNOSTICS_EMITTED",
+    "postThirdBuildCpuLoadPercent": 99,
+    "postThirdBuildActiveCompilerOrDotnet": [],
+    "finalExternalCompilerSampleBeforeFourthAttempt": "CPU 77%, external compile-medic dotnet pid 27364 and csc pid 18240 running Hecton8.Core.csproj; no fourth build launched at that sample and external processes were not killed.",
+    "fourthBuildInvoked": true,
+    "cpuLoadPercentBeforeFourthBuildAttempt": 33,
+    "activeCompilerOrDotnetBeforeFourthBuildAttempt": [],
+    "fourthDotnetBuildCommand": "dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
+    "fourthDotnetBuildResult": "TIMEOUT_AFTER_364_SECONDS_NO_DIAGNOSTICS_CAPTURED",
+    "fourthCleanup": "Stopped leftover dotnet pid 56280 from the fourth timed-out build attempt.",
+    "postFourthBuildCpuLoadPercent": 96,
+    "postFourthBuildActiveCompilerOrDotnet": [],
+    "postLiveRefcountPatchBuildGateSample": "Initial sample CPU 46%, external dotnet pid 6608 and csc pid 32540 running dotnet build Hecton8.Core.csproj --no-restore -nologo -clp:ErrorsOnly -maxcpucount:1 /p:UseSharedCompilation=false /nr:false. Latest sample CPU 76%, external dotnet pid 31496 running dotnet build Hecton8.slnx /m:1 /nr:false /p:UseSharedCompilation=false. No fifth build launched by 1416.",
+    "latestRebuildBlockedReason": "No successful build exists. The final live-source refcount patch was not compiled because the post-patch gate had active external compiler processes."
   },
   "modifiedFiles": [
     {
       "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
-      "sha256": "F7EF18DCBD7078621EFBFA6C65D2E5975A4AD5550A9827530A1F9C9298518617"
+      "sha256": "063612621D2481073E347F779D3DED0D7540E424259ABF60A74AB9CBB38C878C"
     },
     {
       "path": "Assets/_Project/Scripts/Tools/EquipmentVaultView.cs",
@@ -30,188 +57,126 @@
     },
     {
       "path": "Assets/_Project/Tests/Editor/ModularEquipmentEngine1416EditTests.cs",
-      "sha256": "D461B086549649ACDAA91D1777868E90EFF68EB910631F1B3C2F2B21AF097CB8"
+      "sha256": "46D4E6695A71CEBBFF68C770D22B3A81F7EF8EB5111DC31EA4E83DF3BA036781"
     },
     {
       "path": "Assets/_Project/Tests/Editor/ModularEquipmentEngine1416EditTests.cs.meta",
       "sha256": "70998A52BB11702D03D6C9600B667A63A9CEFFF69C1B6289C229C38463C5411C"
     }
   ],
+  "bufferIdsSecured": [
+    "BufferID.ToolRuntimeHeat01 = 94",
+    "BufferID.ToolRuntimeBatteryCharge = 95",
+    "BufferID.ShinobuActiveEquipmentState = 71300",
+    "BufferID.ShinobuActiveEquipmentPublishedState = 71301",
+    "BufferID.ShinobuActiveEquipmentAupSamples = 71302",
+    "BufferID.ShinobuActiveEquipmentGridLoadRequests = 71303",
+    "BufferID.ShinobuActiveEquipmentTelemetryRing = 71304",
+    "BufferID.ShinobuActiveEquipmentTelemetryCursor = 71305",
+    "BufferID.ShinobuActiveEquipmentIntegrationCounters = 71306",
+    "BufferID.ShinobuActiveEquipmentTuning = 71308",
+    "BufferID.ShinobuActiveEquipmentHardwareSpecs = 71309",
+    "BufferID.ShinobuActiveEquipmentToolStates = 71311",
+    "BufferID.ShinobuActiveEquipmentToolStats = 71312",
+    "BufferID.ShinobuActiveEquipmentToolTypes = 71313",
+    "BufferID.ShinobuActiveEquipmentStatusMasks = 71314",
+    "BufferID.ShinobuActiveEquipmentEnvironmentHeat01 = 71315",
+    "BufferID.ShinobuActiveEquipmentWearDrainRates = 71316",
+    "FlashlightTelemetryRingBufferId = 71317",
+    "FlashlightTelemetryCursorBufferId = 71318",
+    "UpgradeMatrixConstants.UpgradeMasksBuffer = 71380",
+    "UpgradeMatrixConstants.UpgradeBaseStatsBuffer = 71381",
+    "UpgradeMatrixConstants.UpgradeCompiledStatsBuffer = 71382",
+    "UpgradeMatrixConstants.UpgradeLutBuffer = 71383",
+    "UpgradeMatrixConstants.UpgradeTelemetryRingBuffer = 71385",
+    "UpgradeMatrixConstants.UpgradeTelemetryCursorBuffer = 71386",
+    "UpgradeMatrixConstants.UpgradeVisualStateBuffer = 71389",
+    "UpgradeMatrixConstants.UpgradeToolModuleRulesBuffer = 71410",
+    "UpgradeMatrixConstants.UpgradeToolProfilesBuffer = 71412"
+  ],
   "aliasPurge": {
-    "forbiddenNativeCollectionFieldsDeletedFromEquipmentVaultViews": 28,
+    "forbiddenNativeCollectionFieldsAfter": 0,
     "vaultGenerationHandleFields": 28,
-    "nativeListFieldsAfter": 0,
-    "nativeQueueFieldsAfter": 0,
-    "nativeHashMapFieldsAfter": 0,
-    "managerPersistentNativeArrayFieldsAfter": 0,
-    "burstJobNativeArrayFieldsAfter": 2,
-    "burstJobNativeArrayFields": [
-      "EquipmentStateIntegrationJob.OverheatWriterBudget @ ModularEquipmentEngine.cs:3759",
-      "EquipmentStateIntegrationJob.DepletedWriterBudget @ ModularEquipmentEngine.cs:3767"
-    ],
-    "burstJobNativeArrayFieldsClassification": "physical SignalBus budget views passed to jobs, not persistent MonoBehaviour memory owners"
+    "stackViewFields": 28,
+    "acquireBufferCallSites": 28,
+    "ignoredReleaseEquipmentVaultHandleCalls": 0,
+    "releaseWriteLockInAcquireHelper": 0,
+    "implicitNativeArrayConversion": "removed from EquipmentVaultView<T>"
   },
   "lockingDiscipline": {
     "ownerSystemId": "SystemID.GameplayTools",
     "writeLockBufferCount": 28,
-    "acquireHelper": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1263-1353",
-    "releaseHelper": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1417-1505",
-    "pendingReleaseMask": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:163-164,1436-1469",
-    "completionHelper": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:2543-2607",
-    "contentionTelemetry": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1508-1557",
-    "releaseOwnerVault": "EquipmentVaultViews.Vault @ ModularEquipmentEngine.cs:168; direct release uses views.Vault @ 1390; scheduled job capture uses views.Vault @ 1399; completion view resolution uses _equipmentIntegrationWriteLockVault @ 1414",
-    "directAcquireCallCount": 16,
-    "directAcquireCallLines": "244,325,421,472,638,686,725,881,907,970,1004,1118,1907,2216,2915,3338",
-    "directFinallyReleaseCallCount": 16,
-    "directFinallyReleaseLines": "259,348,461,495,648,709,745,899,953,996,1025,1130,1948,2233,2934,3353",
-    "scheduledJobLockCapture": "Tick captures locks at ModularEquipmentEngine.cs:341; CompleteActiveEquipmentJob releases captured locks in finally at 2601-2607",
-    "releaseFailurePolicy": "ReleaseWriteLock bool return values are checked through a 28-bit mask; failed bits are retained in _equipmentPendingReleaseMask and retried before future acquisition.",
-    "failureCodes": {
-      "contention": "EquipmentFaultWriteLockContention = 1u << 5",
-      "releaseFailure": "EquipmentFaultWriteLockReleaseFailure = 1u << 6"
-    },
-    "faultDumpPath": "Docs/AgentLogs/Dump_1416_ModularEquipment.bin"
+    "acquireHelper": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1270-1336; createIfMissing path uses captured vault via EnsureEquipmentViews(vault, out _, createIfMissing: true)",
+    "acquireBufferHelper": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1338-1363; ref int acquiredCount increments immediately after successful TryAcquireWriteLock",
+    "acquisitionRefcountProof": "Final direct scan: TryAcquireEquipmentWriteBuffer occurrences=28; calls_with_ref_acquiredCount=28; caller_side_acquiredCount_increments_inside_TryAcquireEquipmentViewsWriteLock=0; helper_has_ref=True; helper_increment_count=1; helper_ReleaseWriteLock_in_handle_count=0",
+    "releaseMaskHelper": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1449-1483; checks 28 ReleaseWriteLock return values",
+    "pendingReleaseFlush": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1430-1446",
+    "contentionTelemetry": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1485-1539",
+    "scheduledJobCompletion": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:2553-2604; release is in finally",
+    "lifecycleDrain": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:3582-3589",
+    "lifecycleRelease": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:3592-3719",
+    "onDisable": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1080-1089",
+    "dataVaultRebind": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:3308-3359; fails closed when old handles cannot be released",
+    "disposeNativeState": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:3543-3580; clears dump-pending flags only after handle release succeeds",
+    "releaseFailurePolicy": "ReleaseWriteLock failures are retained in _equipmentPendingReleaseMask; ReleaseBuffer failures keep their VaultGenerationHandle instead of defaulting it."
   },
-  "readAccessorPurity": {
-    "readOnlyHandleHelper": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1563-1575",
-    "tryReadOnlyHandleCalls": "centralized in TryReadEquipmentBuffer",
-    "publicMutableTelemetryResolverRemoved": true,
-    "editorGizmoUsesReadOnlyPublishedState": true,
-    "lateFramePresentationUsesReadOnlyActiveStateAndCounters": true
+  "moduleCommitDiscipline": {
+    "registerTool": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:405-468; clamps authored module count through profile limits and checks TryWriteUpgradeMatrixStaging before _toolOwners/_slotUsed/ToolStates/ToolStats commit",
+    "tryInstallModule": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:531-550; returns false when RebuildCompiledState fails",
+    "tryRemoveModule": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:552-570; returns false when RebuildCompiledState fails",
+    "tryWriteUpgradeMatrixStaging": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1775-1815; prevalidates ruleBase before writing UpgradeMasks/Profile/Rules and returns bool",
+    "rebuildCompiledState": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1889-1949; commits _moduleRuleSlots only after staging and state rebuild succeed",
+    "staticOrderProof": "static_order_contract=PASS",
+    "capturedVaultCreateProof": "captured_vault_create=True; no_default_create_call=True",
+    "batteryRebuildRouteProof": "NoGetBatteryNormalized=True; UsesPreviousStats=True; UsesCurrentState=True; BatteryBeforeCompiledCapacity=True"
   },
   "dtoLayoutProof": {
-    "sourceFile": "Assets/_Project/Scripts/Tools/EquipmentThermalBatteryContracts.cs",
-    "activeEquipmentDto": {
-      "layout": "StructLayout Explicit Size 32",
-      "offsets": "ToolHashID=0, CurrentBattery=4, ThermalLoad=8, StateFlags=12, PowerDrawRate=16, HeatGenerationRate=20, _pad0=24, _pad1=28",
-      "sourceLines": "18-29",
-      "validatorLines": "4098-4107"
-    },
-    "equipmentTelemetryEntry": {
-      "layout": "StructLayout Explicit Size 64",
-      "offsets": "Frame=0, TickIndex=4, BatteryDrainWattSeconds=8, GridDrawWattSeconds=12, PeakThermal01=16, ActiveToolMask=20, SignalCount=24, FaultFlags=28, LastFaultToolHashID=32, CpuMicroseconds=36, GlobalQualityWeight=40, TickIntervalSeconds=44, ThermalGridVersion=48, ThermalGridCellCount=52, SnapshotHash=56, WearDrainNormalized=60",
-      "sourceLines": "58-77",
-      "validatorLine": "4111"
-    },
-    "flashlightTelemetryEntry": {
-      "layout": "StructLayout Explicit Size 64",
-      "offsets": "Frame=0, ToolHashID=4, Battery01=8, Thermal01=12, DepthMeters=16, AmbientCelsius=20, BatteryDrainWattSeconds=24, PeakThermal01=28, CpuMicroseconds=32, GlobalQualityWeight=36, TickIntervalSeconds=40, StateFlags=44, FaultFlags=48, SnapshotHash=52, SignalCount=56, WearDrainNormalized=60",
-      "sourceLines": "79-98",
-      "validatorLines": "4112-4129"
-    },
-    "coldValidationCall": "EquipmentLayoutVerifier.Validate() @ ModularEquipmentEngine.cs:1115"
+    "activeEquipmentDto": "StructLayout Explicit Size 32; offsets ToolHashID=0, CurrentBattery=4, ThermalLoad=8, StateFlags=12, PowerDrawRate=16, HeatGenerationRate=20, _pad0=24, _pad1=28",
+    "equipmentTelemetryEntry": "StructLayout Explicit Size 64; offsets Frame=0, TickIndex=4, BatteryDrainWattSeconds=8, GridDrawWattSeconds=12, PeakThermal01=16, ActiveToolMask=20, SignalCount=24, FaultFlags=28, LastFaultToolHashID=32, CpuMicroseconds=36, GlobalQualityWeight=40, TickIntervalSeconds=44, ThermalGridVersion=48, ThermalGridCellCount=52, SnapshotHash=56, WearDrainNormalized=60",
+    "flashlightTelemetryEntry": "StructLayout Explicit Size 64; offsets Frame=0, ToolHashID=4, Battery01=8, Thermal01=12, DepthMeters=16, AmbientCelsius=20, BatteryDrainWattSeconds=24, PeakThermal01=28, CpuMicroseconds=32, GlobalQualityWeight=36, TickIntervalSeconds=40, StateFlags=44, FaultFlags=48, SnapshotHash=52, SignalCount=56, WearDrainNormalized=60",
+    "validator": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:4164-4245",
+    "equipmentTelemetryOffsetAssertCount": 16
   },
   "zeroGcHotPathScan": [
-    {
-      "name": "Tick",
-      "lines": "302-350",
-      "newReferenceCandidates": 0,
-      "stringFormat": 0,
-      "toString": 0,
-      "foreach": 0,
-      "linqWhereSelectAnyFirstOrDefault": 0
-    },
-    {
-      "name": "LateFrameTick",
-      "lines": "376-393",
-      "newReferenceCandidates": 0,
-      "stringFormat": 0,
-      "toString": 0,
-      "foreach": 0,
-      "linqWhereSelectAnyFirstOrDefault": 0
-    },
-    {
-      "name": "CompleteActiveEquipmentJob",
-      "lines": "2543-2607",
-      "newReferenceCandidates": 0,
-      "stringFormat": 0,
-      "toString": 0,
-      "foreach": 0,
-      "linqWhereSelectAnyFirstOrDefault": 0
-    },
-    {
-      "name": "TryAcquireEquipmentViewsWriteLock",
-      "lines": "1263-1353",
-      "newReferenceCandidates": 0,
-      "stringFormat": 0,
-      "toString": 0,
-      "foreach": 0,
-      "linqWhereSelectAnyFirstOrDefault": 0
-    },
-    {
-      "name": "TryAcquireEquipmentWriteBuffer",
-      "lines": "1362-1386",
-      "newReferenceCandidates": 0,
-      "allowedStructNew": "1 x EquipmentVaultView<T>",
-      "stringFormat": 0,
-      "toString": 0,
-      "foreach": 0,
-      "linqWhereSelectAnyFirstOrDefault": 0
-    },
-    {
-      "name": "ReleaseEquipmentWriteLocks",
-      "lines": "1417-1505",
-      "newReferenceCandidates": 0,
-      "stringFormat": 0,
-      "toString": 0,
-      "foreach": 0,
-      "linqWhereSelectAnyFirstOrDefault": 0
-    },
-    {
-      "name": "TryRecordEquipmentWriteLockContention",
-      "lines": "1508-1557",
-      "newReferenceCandidates": 0,
-      "allowedStructNew": "1 x EquipmentTelemetryEntry",
-      "stringFormat": 0,
-      "toString": 0,
-      "foreach": 0,
-      "linqWhereSelectAnyFirstOrDefault": 0
-    }
+    "RegisterTool: reference_new_candidates=0, allowed_value_new=0, string.Format=0, .ToString=0, LINQ=0, foreach=0",
+    "TryInstallModule: reference_new_candidates=0, allowed_value_new=0, string.Format=0, .ToString=0, LINQ=0, foreach=0",
+    "TryRemoveModule: reference_new_candidates=0, allowed_value_new=0, string.Format=0, .ToString=0, LINQ=0, foreach=0",
+    "RebuildCompiledState: reference_new_candidates=0, allowed_value_new=0, string.Format=0, .ToString=0, LINQ=0, foreach=0",
+    "TryWriteUpgradeMatrixStaging: reference_new_candidates=0, allowed_value_new=1 UpgradeMaskDTO, string.Format=0, .ToString=0, LINQ=0, foreach=0",
+    "TryAcquireEquipmentViewsWriteLock: reference_new_candidates=0, allowed_struct_new=0, string.Format=0, .ToString=0, LINQ=0, foreach=0",
+    "TryAcquireEquipmentWriteBuffer: reference_new_candidates=0, allowed_struct_new=1 EquipmentVaultView<T>, string.Format=0, .ToString=0, LINQ=0, foreach=0",
+    "EnsureEquipmentBuffer: reference_new_candidates=0, allowed_struct_new=2 EquipmentVaultView<T>, string.Format=0, .ToString=0, LINQ=0, foreach=0",
+    "DrainEquipmentIntegrationLocksForLifecycle: reference_new_candidates=0, allowed_struct_new=0, string.Format=0, .ToString=0, LINQ=0, foreach=0",
+    "TryReleaseEquipmentVaultHandlesForLifecycle: reference_new_candidates=0, allowed_struct_new=0, string.Format=0, .ToString=0, LINQ=0, foreach=0",
+    "ReleaseEquipmentVaultHandles: reference_new_candidates=0, allowed_struct_new=0, string.Format=0, .ToString=0, LINQ=0, foreach=0",
+    "HasEquipmentVaultHandles: reference_new_candidates=0, allowed_struct_new=0, string.Format=0, .ToString=0, LINQ=0, foreach=0",
+    "ReleaseEquipmentVaultHandle: reference_new_candidates=0, allowed_struct_new=0, string.Format=0, .ToString=0, LINQ=0, foreach=0",
+    "CompleteActiveEquipmentJob: reference_new_candidates=0, allowed_struct_new=0, string.Format=0, .ToString=0, LINQ=0, foreach=0",
+    "TryRecordEquipmentWriteLockContention: reference_new_candidates=0, allowed_struct_new=1 EquipmentTelemetryEntry, string.Format=0, .ToString=0, LINQ=0, foreach=0",
+    "ReleaseEquipmentWriteLockMask: reference_new_candidates=0, allowed_struct_new=0, string.Format=0, .ToString=0, LINQ=0, foreach=0",
+    "DisposeNativeState: reference_new_candidates=0, allowed_struct_new=0, string.Format=0, .ToString=0, LINQ=0, foreach=0"
   ],
   "scalabilityAndCinematicCheat": {
-    "qualityScalar": "HomeostasisBrain.GlobalQualityWeight @ ModularEquipmentEngine.cs:2280",
-    "tickCadence": "ResolveEquipmentTickInterval uses continuous saturate/lerp @ ModularEquipmentEngine.cs:2284-2290.",
-    "upgradeJobs": "UpgradeMatrixScheduler receives GlobalQualityWeight through explicit job schedule calls @ ModularEquipmentEngine.cs:2399,2407.",
-    "visualTruthSeparation": "Tool visuals consume published/read-only state and shader globals; gameplay truth remains in DataVault buffers.",
+    "qualityScalar": "HomeostasisBrain.GlobalQualityWeight read at ModularEquipmentEngine.cs:2366-2370 and clamped continuously.",
+    "tickCadence": "ResolveEquipmentTickInterval at ModularEquipmentEngine.cs:2372-2379 uses continuous saturate/lerp, not if(isLowEnd).",
+    "upgradeJobs": "UpgradeMatrixScheduler receives _lastGlobalQualityWeight at ModularEquipmentEngine.cs:2409-2417 and uses continuous visual quality in UpgradeMatrixCompiler.",
     "binaryQualitySwitchesIntroduced": 0,
-    "physicalSimulationEscalation": "No new physical simulation added; existing thermal/battery math preserved."
+    "physicalSimulationEscalation": "No new physical simulation added; thermal/battery math stayed deterministic and cheap, with presentation/visual density scaled by the quality scalar."
   },
   "staticChecks": {
-    "nativeManagerFieldScan": "0 matches for manager native collection field regex",
-    "hotPathScan": "0 reference-new candidates, 0 string.Format, 0 .ToString(), 0 foreach, 0 LINQ over audited ranges",
-    "braceBalance": "ModularEquipmentEngine.cs open=365 close=365; EquipmentVaultView.cs open=9 close=9; ModularEquipmentEngine1416EditTests.cs open=13 close=13",
-    "gitDiffCheck": "scoped agent 1416 files: no whitespace errors, CRLF warning only; global diff check fails on unrelated Docs/Tasks/_1415_extracted_prompt.tmp.md trailing whitespace",
-    "dotnetBuild": "one throttled attempt timed out after 124 seconds; no diagnostics captured; leftover compiler processes stopped; no second build launched",
-    "editorHarness": "Assets/_Project/Tests/Editor/ModularEquipmentEngine1416EditTests.cs lines 12,19,38,57; not compiled or executed; guarded with Assert.Ignore when DataVault or ModularEquipment slot is occupied",
-    "implicitNativeArrayConversion": "removed from EquipmentVaultView.cs; only explicit AsNativeArray unwrap remains in editor CSV parser and upgrade job scheduling"
+    "braceBalance": "ModularEquipmentEngine.cs open=370 close=370; EquipmentVaultView.cs open=9 close=9; ModularEquipmentEngine1416EditTests.cs open=14 close=14",
+    "gitDiffCheck": "Scoped agent 1416 files: no whitespace errors; CRLF normalization warnings only.",
+    "editorHarness": "Assets/_Project/Tests/Editor/ModularEquipmentEngine1416EditTests.cs contains static contract tests and an Explicit 1024-frame mock harness; not compiled or executed because no successful build/test pass exists.",
+    "moduleCommitStaticOrder": "static_order_contract=PASS; module install/remove do not commit mirror directly, registration clamps authored slot count through profile limits, and registration checks staging before owner slot commit.",
+    "capturedVaultCreate": "captured_vault_create=True; `TryAcquireEquipmentViewsWriteLock` no longer rereads `_dataVault` in createIfMissing branch.",
+    "batteryRebuildRoute": "`RebuildCompiledState` reads battery fraction from locked `views.ToolStates` and `views.ToolStats`; it no longer calls public `GetBatteryNormalized` while holding write locks.",
+    "reportSidecar": "Docs/Reports/EQUIPMENT_MEMORY_OPTIMIZATION_REPORT_1416.sha256"
   },
-  "testHarness": {
-    "path": "Assets/_Project/Tests/Editor/ModularEquipmentEngine1416EditTests.cs",
-    "metaPath": "Assets/_Project/Tests/Editor/ModularEquipmentEngine1416EditTests.cs.meta",
-    "staticContractTests": [
-      "StaticPurge_NoPersistentNativeCollectionFieldsRemain @ line 19",
-      "StaticLockDiscipline_UsesCapturedJobLocksAndReleaseMask @ line 38"
-    ],
-    "explicitStressHarness": "MockEquipmentStressHarness_MockGenerationSurvivesRepeatedLockCycles @ line 57",
-    "iterations": 1024,
-    "executionStatus": "NOT_RUN_BUILD_TIMED_OUT; harness source is isolated-only and skips when GlobalRegistry.DataVault or GlobalRegistry.ModularEquipment is occupied"
-  },
-  "subagentFindingsAddressed": [
-    "LateFrameTick no longer force-completes the equipment integration job every frame.",
-    "ReleaseWriteLock return values for the 28-buffer release path are checked and failed bits are retained for retry.",
-    "Completion readback now uses TryResolveCapturedEquipmentIntegrationViews instead of reacquiring locks.",
-    "Upgrade matrix job NativeArray escapes are explicit via .AsNativeArray().",
-    "EquipmentVaultView.cs.meta added.",
-    "EquipmentVaultView<T> implicit NativeArray conversion removed after the editor CSV parser call was made explicit.",
-    "Direct and scheduled write-lock releases now use the vault captured in EquipmentVaultViews instead of rereading _dataVault.",
-    "Explicit mock harness now refuses to run in a non-isolated GlobalRegistry session."
-  ],
   "knownResidualRisk": [
-    "CLI compile verification is not complete because the single throttled build attempt timed out after 124 seconds and was stopped.",
-    "Task 16 editor stress harness exists but is Explicit, uncompiled, and unexecuted because build verification did not complete.",
-    "The prompt requested a new contiguous BufferID range, but this patch deliberately reuses existing project Equipment/Upgrade ranges to avoid route duplication.",
-    "TryAcquireEquipmentViewsWriteLock still acquires all 28 equipment/upgrade buffers for narrow writes; this is safe and fixed-order, but over-broad and should be split into buffer groups after compile gate clears.",
-    "Global git diff check is not clean because of unrelated trailing whitespace in Docs/Tasks/_1415_extracted_prompt.tmp.md.",
-    "Static source scans are not Unity Editor, PlayMode, profiler, GCMonitor, or player-build proof."
+    "No successful post-patch dotnet build exists. Build attempt 1 timed out after 124 seconds; build attempt 2 timed out after 304 seconds; build attempt 3 exited code 1 after 128.6 seconds; build attempt 4 timed out after 364 seconds; none produced diagnostics.",
+    "No Editor/PlayMode/profiler/GCMonitor execution proof exists after the latest module commit fix.",
+    "The 28-buffer write-lock group remains over-broad. It is fixed-order and safer than ad hoc locking, but it should be split into narrower groups after compile gate clears.",
+    "Global git diff check may still be affected by unrelated files outside agent 1416 scope.",
+    "No fifth build was launched after the final live-source refcount patch because the latest gate was CPU 73% with external dotnet pid 31496 active."
   ]
 }

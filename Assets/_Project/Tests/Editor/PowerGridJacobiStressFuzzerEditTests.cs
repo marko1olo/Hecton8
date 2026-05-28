@@ -51,7 +51,7 @@ public sealed class PowerGridJacobiStressFuzzerEditTests
     {
         Assert.AreEqual(5000, PowerJacobiStressFuzzerConstants.DefaultNodeCount);
         Assert.AreEqual(1000, PowerJacobiStressFuzzerConstants.DefaultFrameCount);
-        Assert.AreEqual(1000, PowerJacobiStressFuzzerConstants.DefaultSolverIterationCount);
+        Assert.AreEqual(50, PowerJacobiStressFuzzerConstants.DefaultSolverIterationCount);
     }
 
     [Test]
@@ -79,10 +79,49 @@ public sealed class PowerGridJacobiStressFuzzerEditTests
                                     PowerJacobiStressFuzzerConstants.FailureFlagInfiniteDivergence);
         Assert.AreEqual(0u, result.FailureFlags & forensicFlags);
         Assert.AreEqual(PowerJacobiStressFuzzerConstants.DefaultNodeCount, result.NodeCount);
-        Assert.GreaterOrEqual(result.FrameCount, 94);
+        Assert.GreaterOrEqual(result.FrameCount, PowerJacobiStressFuzzerConstants.MinimumSolverIterationCount);
         Assert.LessOrEqual(result.FrameCount, PowerJacobiStressFuzzerConstants.DefaultSolverIterationCount);
-        Assert.GreaterOrEqual(result.IterationCount, 94);
+        Assert.GreaterOrEqual(result.IterationCount, PowerJacobiStressFuzzerConstants.MinimumSolverIterationCount);
         Assert.LessOrEqual(result.IterationCount, PowerJacobiStressFuzzerConstants.DefaultSolverIterationCount);
+    }
+
+    [Test]
+    public void HostileCsrGraph_GlobalQualityWeightScalesIterationBudgetWithoutGc()
+    {
+        PowerJacobiStressTopologyProfile profile = PowerJacobiStressFuzzer.CreateDefaultProfile();
+        PowerJacobiStressRunConfig looseConfig = CreateTestConfig(in profile);
+        looseConfig.GlobalQualityWeight = 0f;
+        looseConfig.IterationCount = 0;
+        looseConfig.PerformanceLimitMicroseconds = float.MaxValue;
+
+        PowerJacobiStressRunConfig strictConfig = looseConfig;
+        strictConfig.GlobalQualityWeight = 1f;
+
+        bool loosePassed = PowerJacobiStressFuzzer.Run(
+            in looseConfig,
+            in profile,
+            "Docs/Reports/POWER_GRID_1422_LOOSE_FAILURES.csv",
+            "Docs/Reports/POWER_GRID_1422_LOOSE_SUCCESS.json",
+            "Docs/AgentLogs/Dump_1422_PowerGrid_Loose.bin",
+            out PowerJacobiStressFuzzerResult looseResult);
+
+        bool strictPassed = PowerJacobiStressFuzzer.Run(
+            in strictConfig,
+            in profile,
+            "Docs/Reports/POWER_GRID_1422_STRICT_FAILURES.csv",
+            "Docs/Reports/POWER_GRID_1422_STRICT_SUCCESS.json",
+            "Docs/AgentLogs/Dump_1422_PowerGrid_Strict.bin",
+            out PowerJacobiStressFuzzerResult strictResult);
+
+        Assert.AreEqual(looseResult.FailureFlags == 0u, loosePassed);
+        Assert.AreEqual(strictResult.FailureFlags == 0u, strictPassed);
+        Assert.AreEqual(PowerJacobiStressFuzzerConstants.DefaultNodeCount, looseResult.NodeCount);
+        Assert.AreEqual(PowerJacobiStressFuzzerConstants.DefaultNodeCount, strictResult.NodeCount);
+        Assert.AreEqual(0L, looseResult.ManagedBytesDelta);
+        Assert.AreEqual(0L, strictResult.ManagedBytesDelta);
+        Assert.Less(looseResult.IterationCount, strictResult.IterationCount);
+        Assert.LessOrEqual(looseResult.IterationCount, 3);
+        Assert.GreaterOrEqual(strictResult.IterationCount, 40);
     }
 
     [Test]

@@ -66,6 +66,8 @@ namespace Hecton8.Tests.Editor
             AssertOrdered(readbackSweepBody, "TryFinalizeTileHeightReadback(state)", "InvalidateTileChunks");
             AssertOrdered(finalizeReadbackBody, "state.ActiveCacheBufferIndex = state.PendingCacheBufferIndex", "state.CacheRevision++");
             AssertOrdered(disposeBody, "CompleteAndReleaseChunkBuildJobsForTile", "DisposeTileNativeCacheBuffer(ref state.PrimaryCacheBuffer)");
+            Assert.That(cacheMasksBody, Does.Not.Contain("SyncHeightmap"));
+            AssertOrdered(cacheMasksBody, "Texture heightTexture = state.HeightTextureCache", "AsyncGPUReadback.Request");
         }
 
         [Test]
@@ -251,6 +253,17 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void GroundRadarPingUploadBufferMutation_IsNotNamedAsPureResolveAccessor()
+        {
+            string source = ReadProjectScript("World/GroundPenetratingRadarRuntime.cs");
+            string acquireBody = ExtractMethodBody(source, "TryAcquireGprPingWriteBuffer");
+
+            Assert.That(source, Does.Not.Contain("TryResolveGprPingWriteBuffer"));
+            Assert.That(source, Does.Contain("TryAcquireGprPingWriteBuffer"));
+            Assert.That(acquireBody, Does.Contain("_gprUploadBufferIndex ^= 1"));
+        }
+
+        [Test]
         public void AbyssalPathScheduling_DefersReadbackUntilDispatcherCompletion()
         {
             string source = ReadProjectScript("World/VegetationNavGridSynchronizer.cs");
@@ -295,6 +308,7 @@ namespace Hecton8.Tests.Editor
             AssertOrdered(sampleBody, "ResolveAbyssalPathQualityWeight()", "ResolveAbyssalPathQualityBudget");
             Assert.That(budgetBody, Does.Contain("math.lerp"));
             Assert.That(budgetBody, Does.Not.Contain("isLowEnd"));
+            Assert.That(source, Does.Not.Contain("_lastAbyssalPathPortalLookAhead <= LowTierAbyssalPathPortalLookAhead"));
         }
 
         [Test]

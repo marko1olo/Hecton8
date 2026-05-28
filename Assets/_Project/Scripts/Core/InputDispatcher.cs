@@ -861,67 +861,67 @@ namespace Hecton8.Core
                 return;
 
             bool ready =
-                TryResolveOrAcquireInputBuffer(
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _currentInputDtoHandle,
                     BufferID.ShinobuInputCurrentDto,
                     1,
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
-                TryResolveOrAcquireInputBuffer(
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _inputJournalHandle,
                     BufferID.ShinobuInputJournalRing,
                     DeterministicInputRingCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
-                TryResolveOrAcquireInputBuffer(
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _predictedInputHandle,
                     BufferID.ShinobuPredictedInputRing,
                     DeterministicInputRingCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
-                TryResolveOrAcquireInputBuffer(
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _predictedInputAupTargetHandle,
                     BufferID.ShinobuPredictedInputAupTargets,
                     DeterministicInputRingCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
-                TryResolveOrAcquireInputBuffer(
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _inputStateBridgeRingHandle,
                     BufferID.ShinobuInputStateBridgeRing,
                     DeterministicInputRingCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
-                TryResolveOrAcquireInputBuffer(
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _buttonMaskWindowHandle,
                     BufferID.ShinobuInputButtonMaskWindow,
                     ButtonMaskWindowCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
-                TryResolveOrAcquireInputBuffer(
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _inputBlockMaskHandle,
                     BufferID.ShinobuInputBlockMask,
                     1,
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
-                TryResolveOrAcquireInputBuffer(
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _inputProfileHandle,
                     BufferID.ShinobuInputProfile,
                     1,
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
-                TryResolveOrAcquireInputBuffer(
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _inputTelemetryHandle,
                     BufferID.ShinobuInputTelemetryRing,
                     InputBlackBoxCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
-                TryResolveOrAcquireInputBuffer(
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _inputReplaySnapshotHandle,
                     BufferID.ShinobuInputReplaySnapshot,
                     DeterministicInputRingCapacity,
                     NativeArrayOptions.UninitializedMemory,
                     out _) &&
-                TryResolveOrAcquireInputBuffer(
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _hapticCommandDtoHandle,
                     BufferID.ShinobuInputHapticCommands,
                     HapticCommandDtoCapacity,
@@ -929,7 +929,7 @@ namespace Hecton8.Core
                     out _);
 #if UNITY_EDITOR
             ready = ready &&
-                TryResolveOrAcquireInputBuffer(
+                OpenOrAcquireInputBufferForOwnerRoute(
                     ref _inputProfileCsvScratchHandle,
                     BufferID.ShinobuInputCsvScratch,
                     4096,
@@ -989,7 +989,7 @@ namespace Hecton8.Core
                    ;
         }
 
-        private bool TryResolveOrAcquireInputBuffer<T>(
+        private bool OpenOrAcquireInputBufferForOwnerRoute<T>(
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
@@ -2723,7 +2723,7 @@ namespace Hecton8.Core
             if (vault == null)
                 return;
 
-            bool statesReady = TryResolveOrAcquireInputBuffer(
+            bool statesReady = OpenOrAcquireInputBufferForOwnerRoute(
                 ref _xrInputStatesHandle,
                 BufferID.ShinobuInputXRInputStates,
                 XRInputStateCapacity,

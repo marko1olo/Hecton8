@@ -1,0 +1,523 @@
+﻿{
+    "agent":  "1410",
+    "report":  "DISPATCHER_APEX_RECHECK10_1410",
+    "evidenceClass":  "STATIC_SOURCE_TEXT_SCAN",
+    "generatedUtc":  "2026-05-28T16:17:20.4071093Z",
+    "elapsedMicroseconds":  886545,
+    "files":  [
+                  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                  "Assets/_Project/Scripts/Gameplay/ConsumableItem.cs",
+                  "Assets/_Project/Scripts/ItemData.cs",
+                  "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs"
+              ],
+    "methodBodiesScanned":  28,
+    "missingMethods":  [
+
+                       ],
+    "zeroGcCounts":  {
+                         "referenceNewTotal":  0,
+                         "valueTypeNewTotal":  1,
+                         "stringFormatTotal":  0,
+                         "toStringTotal":  0,
+                         "linqTotal":  0,
+                         "foreachTotal":  0
+                     },
+    "valueTypeNewWhitelist":  [
+                                  "CoreAudioEvent explicit-layout struct, GlobalRegistryContracts.cs lines 1376-1395, Size=32"
+                              ],
+    "unmanagedStructLayoutProof":  [
+                                       {
+                                           "type":  "PlayerActionController.ActionAudioRequest",
+                                           "sizeBytes":  32,
+                                           "fields":  [
+                                                          "Position@0 Vector3 12 bytes",
+                                                          "EventId@12 uint",
+                                                          "ItemHash@16 uint",
+                                                          "ClipKind@20 byte",
+                                                          "Dirty@21 byte",
+                                                          "Reserved0@22 ushort",
+                                                          "Reserved1@24 uint",
+                                                          "Reserved2@28 uint"
+                                                      ]
+                                       },
+                                       {
+                                           "type":  "PlayerActionController.ActionCameraBobRequest",
+                                           "sizeBytes":  16,
+                                           "fields":  [
+                                                          "Intensity@0 float",
+                                                          "Frequency@4 float",
+                                                          "Command@8 byte",
+                                                          "Reserved0@9 byte",
+                                                          "Reserved1@10 ushort",
+                                                          "Reserved2@12 uint"
+                                                      ]
+                                       },
+                                       {
+                                           "type":  "BatteryCharger.ChargerAudioRequest",
+                                           "sizeBytes":  16,
+                                           "fields":  [
+                                                          "Position@0 Vector3 12 bytes",
+                                                          "ClipKind@12 byte",
+                                                          "Dirty@13 byte",
+                                                          "Reserved0@14 ushort"
+                                                      ]
+                                       },
+                                       {
+                                           "type":  "Hecton8.Core.AudioEvent",
+                                           "sizeBytes":  32,
+                                           "fields":  [
+                                                          "EventID@0 uint",
+                                                          "Position@4 Vector3 12 bytes",
+                                                          "Volume@16 float",
+                                                          "Pitch@20 float",
+                                                          "reserved@24 uint",
+                                                          "reserved@28 uint"
+                                                      ]
+                                       }
+                                   ],
+    "presentationRouteProof":  {
+                                   "backendTokenLines":  [
+                                                             {
+                                                                 "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                                                                 "line":  621,
+                                                                 "text":  "processor.RegisterActionBob(ResolveActionCameraBobPresentationIntensity(request.Intensity), request.Frequency);"
+                                                             },
+                                                             {
+                                                                 "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                                                                 "line":  623,
+                                                                 "text":  "processor.ClearActionBob();"
+                                                             },
+                                                             {
+                                                                 "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                                                                 "line":  669,
+                                                                 "text":  "if (audioService.QueueAudioEvent(in audioEvent))"
+                                                             },
+                                                             {
+                                                                 "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                                                                 "line":  675,
+                                                                 "text":  "audioService.PlayAtPoint(clip, request.Position, volume, 1f);"
+                                                             },
+                                                             {
+                                                                 "file":  "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs",
+                                                                 "line":  664,
+                                                                 "text":  "audio.PlayAtPoint(clip, request.Position, ResolveChargerAudioVolume(), 1f);"
+                                                             }
+                                                         ],
+                                   "directRootScanPath":  "Docs/Reports/DISPATCHER_RECHECK10_DIRECT_ROOT_PRESENTATION_SCAN_1410.json",
+                                   "directRootScanSha256":  "07928E30211F3DEFEA50771BB8C12E55F835963572ACAB76F9BCC5C19503D36C",
+                                   "directRootScanFindingCount":  0,
+                                   "directPlayerActionCameraJuiceCallsOutsideFlush":  0,
+                                   "staleManagedPendingAudioClipMatches":  0,
+                                   "batteryDirectInsertPlayAtPointMatches":  0
+                               },
+    "scalabilityProof":  {
+                             "actionAudio":  "ResolveActionAudioPresentationVolume reads HomeostasisBrain.GlobalQualityWeight and math.lerp(0.75,1.0,quality).",
+                             "actionCameraBob":  "ResolveActionCameraBobPresentationIntensity reads HomeostasisBrain.GlobalQualityWeight and math.lerp(0.65,1.15,quality).",
+                             "batteryChargerAudio":  "ResolveChargerAudioVolume reads HomeostasisBrain.GlobalQualityWeight and math.lerp(0.70,1.0,quality).",
+                             "binaryLowEndSwitchMatches":  0
+                         },
+    "dataVaultProof":  {
+                           "migratedToGlobalDataVault":  false,
+                           "newBufferIds":  [
+
+                                            ],
+                           "newTryAcquireWriteLockSites":  [
+
+                                                           ],
+                           "finallyReleaseProof":  "No GlobalDataVault locks introduced by recheck10."
+                       },
+    "rows":  [
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "Tick",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "LateFrameTick",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "ApplyCameraJuice",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "PlayCompletionSound",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "QueueActionCameraBob",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "QueueActionCameraBobClear",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "FlushQueuedActionCameraBob",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "ResolveActionCameraBobPresentationIntensity",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "PlayCancelSound",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "QueueActionAudio",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "FlushQueuedActionAudio",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  1,
+                     "newTypes":  [
+                                      "CoreAudioEvent"
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "ClearQueuedActionAudio",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "ResolveActionAudioClip",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "ResolveItemUseSound",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "ResolveActionAudioPresentationVolume",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "TryRegister",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                     "method":  "TryUnregister",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/ConsumableItem.cs",
+                     "method":  "TryConsumeWithoutAudio",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs",
+                     "method":  "SlowTick",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs",
+                     "method":  "LateFrameTick",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs",
+                     "method":  "InsertBattery",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs",
+                     "method":  "QueueChargerAudio",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs",
+                     "method":  "FlushQueuedChargerAudio",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs",
+                     "method":  "ClearQueuedChargerAudio",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs",
+                     "method":  "ResolveChargerAudioClip",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs",
+                     "method":  "ResolveChargerAudioVolume",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs",
+                     "method":  "TryRegister",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Gameplay/BatteryCharger.cs",
+                     "method":  "TryUnregister",
+                     "found":  true,
+                     "referenceNew":  0,
+                     "valueTypeNew":  0,
+                     "newTypes":  [
+
+                                  ],
+                     "stringFormat":  0,
+                     "toString":  0,
+                     "linq":  0,
+                     "foreach":  0
+                 }
+             ]
+}

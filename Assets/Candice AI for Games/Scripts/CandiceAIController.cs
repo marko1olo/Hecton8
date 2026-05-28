@@ -83,11 +83,13 @@ namespace CandiceAIforGames.AI
          */
 
         [SerializeField]
-        private List<GameObject> enemies = new List<GameObject>();
+        private List<GameObject> enemies = new List<GameObject>(64);
         [SerializeField]
-        private List<GameObject> allies = new List<GameObject>();
+        private List<GameObject> allies = new List<GameObject>(64);
         [SerializeField]
-        private List<GameObject> players = new List<GameObject>();
+        private List<GameObject> players = new List<GameObject>(64);
+        [SerializeField]
+        private List<GameObject> gameResources = new List<GameObject>(64);
         [SerializeField]
         private GameObject player;
         [SerializeField]
@@ -234,7 +236,7 @@ namespace CandiceAIforGames.AI
         public int AgentID { get => agentID; set => agentID = value; }
         
         public List<GameObject> Enemies { get => enemies; set => enemies = value; }
-        public List<GameObject> GameResources { get => enemies; set => enemies = value; }
+        public List<GameObject> GameResources { get => gameResources; set => gameResources = value; }
         public List<GameObject> Allies { get => allies; set => allies = value; }
         public List<GameObject> Players { get => players; set => players = value; }
         public GameObject Player { get => player; set => player = value; }
@@ -274,6 +276,11 @@ namespace CandiceAIforGames.AI
         public bool HasAttackAnimation { get => hasAttackAnimation; set => hasAttackAnimation = value; }
         public float DamageAngle { get => damageAngle; set => damageAngle = value; }
         public bool IsAttacking { get => isAttacking; set => isAttacking = value; }
+        private bool _pendingAttack;
+        private bool _pendingAttackIsRanged;
+        private float _pendingAttackAt;
+        private bool _pendingDeathDeactivate;
+        private float _deathDeactivateAt;
         public Camera MainCamera { get => mainCamera; set => mainCamera = value; }
         public GameObject Rig { get => rig; set => rig = value; }
         public bool EnableRagdoll { get => enableRagdoll; set => enableRagdoll = value; }
@@ -301,9 +308,17 @@ namespace CandiceAIforGames.AI
         private List<Action<bool, int>> readyStateListeners = new List<Action<bool, int>>();
 
         #endregion
+        private void OnEnable()
+        {
+            _pendingDeathDeactivate = false;
+            dead = false;
+            HitPoints = MaxHitPoints;
+        }
+
         // Start is called before the first frame update
         void Start()
         {
+            EnsureRuntimeListCapacity();
             //Check if there is a Candice AI Manager Component in the scene.
             candice = FindAnyObjectByType<CandiceAIManager>();
             if (candice == null)
@@ -323,12 +338,39 @@ namespace CandiceAIforGames.AI
             InitializeAnimations();
         }
 
+        private void EnsureRuntimeListCapacity()
+        {
+            enemies = EnsureListCapacity(enemies);
+            allies = EnsureListCapacity(allies);
+            players = EnsureListCapacity(players);
+            gameResources = EnsureListCapacity(gameResources);
+        }
+
+        private static List<GameObject> EnsureListCapacity(List<GameObject> list)
+        {
+            if (list == null)
+            {
+                // COLD ALLOC: List<GameObject>(64) - normalized Candice detection list - owner: CandiceAIController
+                return new List<GameObject>(64);
+            }
+
+            if (list.Capacity < 64)
+            {
+                list.Capacity = 64;
+            }
+
+            return list;
+        }
+
 
         // Update is called once per frame
         void Update()
         {
             if (BehaviorTree != null)
                 BehaviorTree.Evaluate();
+
+            ProcessPendingAttack();
+            ProcessPendingDeathDeactivate();
 
             //New Animations Assessment
             Animate();
@@ -349,6 +391,7 @@ namespace CandiceAIforGames.AI
             {
                 AgentID = agentId;
                 combatModule = new CandiceModuleCombat(transform, onAttackComplete, "Agent" + AgentID + "-CandiceModuleCombat");
+                combatModule.PrepareProjectilePool(Projectile, ProjectileSpawnPos);
                 movementModule = new CandiceModuleMovement("Agent" + AgentID + "-CandiceModuleMovement");
                 detectionModule = new CandiceModuleDetection(gameObject.transform, onObjectFound, "Agent" + AgentID + "-CandiceModuleDetection");
                 if(is3D)
@@ -361,8 +404,9 @@ namespace CandiceAIforGames.AI
                     BehaviorTree.Initialise();
                     BehaviorTree.CreateBehaviorTree(this, OnBTComplete);
                 }
-                foreach(Action<bool, int> listener in readyStateListeners)
+                for (int i = 0; i < readyStateListeners.Count; i++)
                 {
+                    Action<bool, int> listener = readyStateListeners[i];
                     listener(isRegistered, agentID);
                 }
                 //Debug.Log("Agent " + AgentID + " successfully registered with Candice.");
@@ -530,10 +574,7 @@ namespace CandiceAIforGames.AI
             else if (!IsAttacking)
             {
                 IsAttacking = true;
-                if (is3D)
-                    StartCoroutine(combatModule.DealTimedDamage(AttackSpeed, AttackDamage, AttackRange, DamageAngle, enemyTags));                    
-                else
-                    StartCoroutine(combatModule.DealTimedDamage2D(AttackSpeed, AttackDamage, AttackRange, DamageAngle, enemyTags));
+                SchedulePendingAttack(false);
                 
 
             }
@@ -548,7 +589,44 @@ namespace CandiceAIforGames.AI
             else if (!IsAttacking)
             {
                 IsAttacking = true;
-                StartCoroutine(combatModule.FireProjectile(AttackTarget,Projectile,ProjectileSpawnPos,AttackSpeed));
+                SchedulePendingAttack(true);
+            }
+        }
+
+        private void SchedulePendingAttack(bool isRanged)
+        {
+            _pendingAttack = true;
+            _pendingAttackIsRanged = isRanged;
+            _pendingAttackAt = Time.time + Mathf.Max(0f, AttackSpeed);
+        }
+
+        private void ProcessPendingAttack()
+        {
+            if (!_pendingAttack || Time.time < _pendingAttackAt)
+            {
+                return;
+            }
+
+            _pendingAttack = false;
+            if (combatModule == null)
+            {
+                IsAttacking = false;
+                return;
+            }
+
+            if (_pendingAttackIsRanged)
+            {
+                combatModule.FireProjectile(AttackTarget, Projectile, ProjectileSpawnPos);
+                return;
+            }
+
+            if (is3D)
+            {
+                combatModule.DealDamage(AttackDamage, AttackRange, DamageAngle, enemyTags);
+            }
+            else
+            {
+                combatModule.DealDamage2D(AttackDamage, AttackRange, DamageAngle, enemyTags);
             }
         }
         public void Wander()
@@ -641,8 +719,14 @@ namespace CandiceAIforGames.AI
 
         private void Die()
         {
+            if (dead)
+            {
+                return;
+            }
+
+            dead = true;
             //if kill cam is attached
-            if (attachKillCamera && !dead)
+            if (attachKillCamera)
             {   
                 //Kill Cam
                 //if there be an eye in the sky to see you die, if you die
@@ -650,18 +734,29 @@ namespace CandiceAIforGames.AI
                 {
                     CandiceAnimationManager.candiceCamera.target = transform;
                     CandiceAnimationManager.candiceCamera.KillCam();
-                    StartCoroutine(CandiceAnimationManager.candiceCamera.FreeFly(1.5f));                    
                 }
-                //if kill cam, destroy has to happen after the freefly buffer, otherwise this gameObject is destroyed
-                Destroy(this.gameObject, 3f);
-                //we need to know if we're dead (for possessor)
-                dead = true;
+                ScheduleDeathDeactivate(3f);
             }
             else {
-                Destroy(this.gameObject, 0.5f);
-                //we need to know if we're dead (for possessor)
-                dead = true;
+                ScheduleDeathDeactivate(0.5f);
             }
+        }
+
+        private void ScheduleDeathDeactivate(float delay)
+        {
+            _deathDeactivateAt = Time.time + Mathf.Max(0f, delay);
+            _pendingDeathDeactivate = true;
+        }
+
+        private void ProcessPendingDeathDeactivate()
+        {
+            if (!_pendingDeathDeactivate || Time.time < _deathDeactivateAt)
+            {
+                return;
+            }
+
+            _pendingDeathDeactivate = false;
+            gameObject.SetActive(false);
         }
 
         public bool WithinAttackRange()
@@ -692,45 +787,93 @@ namespace CandiceAIforGames.AI
             AllyDetected = false;
             EnemyDetected = false;
             PlayerDetected = false;
+            ResourceDetected = false;
             Enemies.Clear();
             Allies.Clear();
             Players.Clear();
             GameResources.Clear();
-            foreach (string key in results.objects.Keys)
+
+            CopyDetectedObjects(results.objects, EnemyTags, Enemies);
+            if (Enemies.Count > 0)
             {
-                if(EnemyTags.Contains(key))
-                {
-                    EnemyDetected = true;
-                    Enemies.AddRange(results.objects[key]);
-                    MainTarget = Enemies[0];
-                    MovePoint = MainTarget.transform.position;
-                    LookPoint = MainTarget.transform.position;
-                    AttackTarget = Enemies[0];
-                }
-                if (AllyTags.Contains(key))
-                {
-                    AllyDetected = true;
-                    Allies.AddRange(results.objects[key]);
-                }
-                if (key == "Player")
+                EnemyDetected = true;
+                MainTarget = Enemies[0];
+                MovePoint = MainTarget.transform.position;
+                LookPoint = MainTarget.transform.position;
+                AttackTarget = Enemies[0];
+            }
+
+            CopyDetectedObjects(results.objects, AllyTags, Allies);
+            AllyDetected = Allies.Count > 0;
+
+            CopyDetectedObjects(results.objects, ResourceTags, GameResources);
+            if (GameResources.Count > 0)
+            {
+                ResourceDetected = true;
+                MainTarget = GameResources[0];
+                MovePoint = MainTarget.transform.position;
+                LookPoint = MainTarget.transform.position;
+                ResourceTarget = GameResources[0];
+            }
+
+            if (results.objects != null && results.objects.TryGetValue("Player", out List<GameObject> detectedPlayers))
+            {
+                AddDetectedObjects(Players, detectedPlayers);
+                if (Players.Count > 0)
                 {
                     PlayerDetected = true;
-                    Players.AddRange(results.objects[key]);
                     Player = Players[0];
-                    
-                }
-
-                if (ResourceTags.Contains(key))
-                {
-                    ResourceDetected = true;
-                    GameResources.AddRange(results.objects[key]);
-                    MainTarget = GameResources[0];
-                    MovePoint = MainTarget.transform.position;
-                    LookPoint = MainTarget.transform.position;
-                    ResourceTarget = GameResources[0];
                 }
             }
         }
+
+        private static void CopyDetectedObjects(Dictionary<string, List<GameObject>> source, List<string> tags, List<GameObject> destination)
+        {
+            if (source == null || tags == null || destination == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < tags.Count; i++)
+            {
+                string tag = tags[i];
+                if (string.IsNullOrEmpty(tag))
+                {
+                    continue;
+                }
+
+                if (source.TryGetValue(tag, out List<GameObject> detectedObjects))
+                {
+                    AddDetectedObjects(destination, detectedObjects);
+                }
+            }
+        }
+
+        private static void AddDetectedObjects(List<GameObject> destination, List<GameObject> source)
+        {
+            if (destination == null || source == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < source.Count; i++)
+            {
+                GameObject detectedObject = source[i];
+                if (detectedObject != null)
+                {
+                    if (destination.Count == destination.Capacity)
+                    {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        Debug.LogWarning("Candice controller detection list saturated. Increase runtime list capacity.");
+#endif
+                        return;
+                    }
+
+                    destination.Add(detectedObject);
+                }
+            }
+        }
+
         void onAttackComplete(bool success)
         {
             IsAttacking = false;
@@ -739,9 +882,10 @@ namespace CandiceAIforGames.AI
         public bool StoneDetected()
         {
             bool stoneDetected = false;
-            foreach (GameObject resource in GameResources)
+            for (int i = 0; i < GameResources.Count; i++)
             {
-                if (resource.tag.Equals("Stone"))
+                GameObject resource = GameResources[i];
+                if (resource != null && resource.CompareTag("Stone"))
                 {
                     stoneDetected = true;
                     resourceTarget = resource;
@@ -753,9 +897,10 @@ namespace CandiceAIforGames.AI
         public bool PickaxeDetected()
         {
             bool pickaxeDetected = false;
-            foreach (GameObject resource in GameResources)
+            for (int i = 0; i < GameResources.Count; i++)
             {
-                if (resource.tag.Equals("Pickaxe"))
+                GameObject resource = GameResources[i];
+                if (resource != null && resource.CompareTag("Pickaxe"))
                 {
                     pickaxeDetected = true;
                     resourceTarget = resource;

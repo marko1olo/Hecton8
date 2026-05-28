@@ -37,6 +37,7 @@ namespace Hecton8.UI
         private static readonly Color Missing = new Color(1f, 0.74f, 0.22f, 0.92f);
         private static readonly Color Broken = new Color(1f, 0.48f, 0.38f, 0.92f);
         private const int CachedLoadoutSlots = 4;
+        private const int PrefabToolCacheCapacity = 32;
         private const float InvTwoPi = 0.15915494309f;
 
         [Header("References")]
@@ -61,7 +62,10 @@ namespace Hecton8.UI
 
         // COLD ALLOC: char[1024] — PDA loadout summary composition buffer — owner: PDALoadoutTab
         private readonly char[] _summaryCharBuffer = new char[1024];
-        private readonly System.Collections.Generic.Dictionary<ulong, IPlayerToolDataReadModel> _prefabToolCache = new System.Collections.Generic.Dictionary<ulong, IPlayerToolDataReadModel>(32); // COLD ALLOC: Dictionary<ulong, IPlayerToolDataReadModel>(32) — caches prefab tool metadata routes for repeated loadout refreshes — owner: PDALoadoutTab
+        private readonly ulong[] _prefabToolCacheIds = new ulong[PrefabToolCacheCapacity]; // COLD ALLOC: ulong[32] - prefab metadata lookup cache keys - owner: PDALoadoutTab
+        private readonly byte[] _prefabToolCacheStates = new byte[PrefabToolCacheCapacity]; // COLD ALLOC: byte[32] - 1=hit, 2=miss - owner: PDALoadoutTab
+        private readonly IPlayerToolDataReadModel[] _prefabToolCacheTools = new IPlayerToolDataReadModel[PrefabToolCacheCapacity]; // COLD ALLOC: interface[32] - cached prefab tool metadata - owner: PDALoadoutTab
+        private int _prefabToolCacheCount;
 
         private readonly uint[] _slotItemHashCache = new uint[CachedLoadoutSlots]; // COLD ALLOC: uint[4] - PDA slot item hash cache - owner: PDALoadoutTab
         private readonly uint[] _slotMetadataHashCache = new uint[CachedLoadoutSlots]; // COLD ALLOC: uint[4] - PDA slot metadata hash cache - owner: PDALoadoutTab
@@ -1561,16 +1565,23 @@ namespace Hecton8.UI
                 return null;
 
             ulong prefabId = EntityId.ToULong(prefab.GetEntityId());
-            if (_prefabToolCache.TryGetValue(prefabId, out IPlayerToolDataReadModel cachedTool) &&
-                cachedTool != null)
+            for (int i = 0; i < _prefabToolCacheCount; i++)
             {
-                return cachedTool;
+                if (_prefabToolCacheIds[i] == prefabId)
+                    return _prefabToolCacheStates[i] == 1 ? _prefabToolCacheTools[i] : null;
             }
 
             if (!prefab.TryGetComponent(out IPlayerToolDataReadModel resolvedTool))
-                return null;
+                resolvedTool = null;
 
-            _prefabToolCache[prefabId] = resolvedTool;
+            if (_prefabToolCacheCount < PrefabToolCacheCapacity)
+            {
+                int index = _prefabToolCacheCount++;
+                _prefabToolCacheIds[index] = prefabId;
+                _prefabToolCacheStates[index] = resolvedTool != null ? (byte)1 : (byte)2;
+                _prefabToolCacheTools[index] = resolvedTool;
+            }
+
             return resolvedTool;
         }
 

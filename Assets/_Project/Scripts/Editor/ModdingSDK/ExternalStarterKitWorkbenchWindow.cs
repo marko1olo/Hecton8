@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 using DiagnosticsProcess = System.Diagnostics.Process;
@@ -18,29 +20,50 @@ namespace Hecton8.Editor.ModdingSDK
             "Runtime API: envelope-only. This Workbench edits starter-kit files and runs validation tools; it does not enable managed DLL, Harmony, BepInEx, loose AssetBundle, PNG, or localization runtime ingress.";
         private const int ToolSummaryLineCount = 16;
         private const int MaxFreshnessScanFiles = 512;
+        private const int MaxGraphPreviewNodes = 256;
+        private const int MaxGraphPreviewBytes = 1048576;
+        private const int MaxAllowedOpcodePreviewRows = 512;
+        private const int MaxAllowedOpcodePreviewBytes = 1048576;
+        private const int MaxAuthoringDataPreviewBytes = 1048576;
+        private const int MaxSettingsPreviewRows = 128;
+        private const int MaxLocalePreviewStrings = 512;
         private static readonly string[] RequiredStarterFiles =
         {
             "README.md",
+            "Docs/capabilities.md",
             "h8mod.ps1",
             "mod.h8manifest.json",
             "mod.json",
+            "Content/README.md",
+            "Content/assets.h8manifest.json",
             "Graphs/main.h8graph.json",
             "Tables/settings.h8table.json",
             "Locales/en.h8loc.json",
-            "Content/assets.h8manifest.json",
+            "Generated/README.md",
+            "Reports/README.md",
+            "Reference/README.md",
             "Reference/allowed_opcodes.csv",
             "Reference/kernel_tuning_profiles.csv",
-            "Schemas/h8mod.authoring.schema.json",
-            "Schemas/runtime.mod.schema.json",
+            "Schemas/assets.schema.json",
             "Schemas/h8graph.schema.json",
-            "Schemas/h8table.schema.json",
-            "Schemas/h8loc.schema.json",
-            ".vscode/settings.json",
+            "Schemas/h8mod.authoring.schema.json",
+            "Schemas/locale.schema.json",
+            "Schemas/runtime.mod.schema.json",
+            "Schemas/settings_table.schema.json",
+            "Tools/README.md",
+            "Tools/apply_graph_node_snippet.ps1",
+            "Tools/apply_locale_entry_snippet.ps1",
+            "Tools/apply_settings_row_snippet.ps1",
+            "Tools/build_review_manifest.ps1",
+            "Tools/build_submission_package.ps1",
+            "Tools/create_locale_entry_snippet.ps1",
+            "Tools/create_graph_node_snippet.ps1",
+            "Tools/create_settings_row_snippet.ps1",
+            "Tools/list_allowed_opcodes.ps1",
             "Tools/prepare_mod.ps1",
             "Tools/set_mod_identity.ps1",
-            "Tools/list_allowed_opcodes.ps1",
             "Tools/validate_structure.ps1",
-            "Tools/build_review_manifest.ps1"
+            ".vscode/settings.json"
         };
 
         private Vector2 _scrollPosition;
@@ -50,11 +73,31 @@ namespace Hecton8.Editor.ModdingSDK
         private string _version = string.Empty;
         private string _starterHealthSummary = "Starter kit health not loaded.";
         private string _starterHealthDetails = string.Empty;
+        private string _capabilityMatrixSummary = "Capability Matrix not loaded.";
+        private string _capabilityMatrixDetails = string.Empty;
+        private string _graphContractPreviewSummary = "Graph Contract Preview not loaded.";
+        private string _graphContractPreviewDetails = string.Empty;
+        private string _authoringDataPreviewSummary = "Authoring Data Preview not loaded.";
+        private string _authoringDataPreviewDetails = string.Empty;
+        private string _graphNodeSnippetId = "node.spawn_item";
+        private string _graphNodeSnippetOpcode = "SpawnItem";
+        private string _settingsRowSnippetId = "setting.example_toggle";
+        private string _settingsRowSnippetKind = "bool";
+        private string _settingsRowSnippetDefault = "false";
+        private string _localeEntrySnippetKey = "text.example_line";
+        private string _localeEntrySnippetValue = "Your localized text";
         private string _reviewSummary = "Review manifest not loaded.";
         private string _reviewFreshnessSummary = "Review freshness not loaded.";
+        private string _submissionSummary = "Submission package not loaded.";
+        private string _submissionPackageRelativePath = string.Empty;
         private string _toolSummary = string.Empty;
+        private bool _toolSummaryIsError;
         private bool _starterHealthHasMissingFiles;
+        private bool _capabilityMatrixWarning;
+        private bool _graphContractPreviewWarning;
+        private bool _authoringDataPreviewWarning;
         private bool _reviewFreshnessWarning;
+        private bool _submissionWarning;
         private readonly object _toolOutputLock = new object();
         private DiagnosticsProcess _runningToolProcess;
         private StringBuilder _runningToolStdout;
@@ -109,6 +152,16 @@ namespace Hecton8.Editor.ModdingSDK
             EditorGUILayout.Space(10f);
             DrawStarterHealth();
             EditorGUILayout.Space(10f);
+            DrawCapabilityMatrix();
+            EditorGUILayout.Space(10f);
+            DrawGraphContractPreview();
+            EditorGUILayout.Space(10f);
+            DrawAuthoringDataPreview();
+            EditorGUILayout.Space(10f);
+            DrawAuthoringSnippets();
+            EditorGUILayout.Space(10f);
+            DrawGraphNodeSnippet();
+            EditorGUILayout.Space(10f);
             DrawIdentityEditor();
             EditorGUILayout.Space(10f);
             DrawValidationActions();
@@ -153,6 +206,161 @@ namespace Hecton8.Editor.ModdingSDK
                 EditorGUILayout.TextArea(_starterHealthDetails, GUILayout.MinHeight(72f));
         }
 
+        private void DrawCapabilityMatrix()
+        {
+            EditorGUILayout.LabelField("Capability Matrix", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                _capabilityMatrixSummary,
+                _capabilityMatrixWarning ? MessageType.Warning : MessageType.Info);
+
+            if (!string.IsNullOrWhiteSpace(_capabilityMatrixDetails))
+                EditorGUILayout.TextArea(_capabilityMatrixDetails, GUILayout.MinHeight(96f));
+
+            using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Open Capabilities Guide", GUILayout.Height(24f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Docs/capabilities.md");
+
+                if (GUILayout.Button("Open Allowed Opcodes", GUILayout.Height(24f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Reference/allowed_opcodes.csv");
+            }
+        }
+
+        private void DrawGraphContractPreview()
+        {
+            EditorGUILayout.LabelField("Graph Contract Preview", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                _graphContractPreviewSummary,
+                _graphContractPreviewWarning ? MessageType.Warning : MessageType.Info);
+
+            if (!string.IsNullOrWhiteSpace(_graphContractPreviewDetails))
+                EditorGUILayout.TextArea(_graphContractPreviewDetails, GUILayout.MinHeight(72f));
+        }
+
+        private void DrawAuthoringDataPreview()
+        {
+            EditorGUILayout.LabelField("Authoring Data Preview", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                _authoringDataPreviewSummary,
+                _authoringDataPreviewWarning ? MessageType.Warning : MessageType.Info);
+
+            if (!string.IsNullOrWhiteSpace(_authoringDataPreviewDetails))
+                EditorGUILayout.TextArea(_authoringDataPreviewDetails, GUILayout.MinHeight(72f));
+        }
+
+        private void DrawGraphNodeSnippet()
+        {
+            EditorGUILayout.LabelField("Graph Node Snippet", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "Generates Generated/graph_node_snippet.json from Reference/allowed_opcodes.csv, then applies it through a bounded offline tool. Apply rejects duplicates unless the CLI -Replace switch is explicit, raises the starter graph/manifest budget to one envelope if needed, validates after write, and restores the previous files on failure.",
+                MessageType.Info);
+
+            _graphNodeSnippetId = EditorGUILayout.TextField("Node Id", _graphNodeSnippetId);
+            _graphNodeSnippetOpcode = EditorGUILayout.TextField("Opcode", _graphNodeSnippetOpcode);
+
+            EditorGUI.BeginDisabledGroup(IsToolRunning);
+            using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Generate Node Snippet", GUILayout.Height(28f)))
+                    GenerateGraphNodeSnippet();
+
+                if (GUILayout.Button("Open Generated Snippet", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Generated/graph_node_snippet.json");
+
+                if (GUILayout.Button("Open Snippet Tool", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Tools/create_graph_node_snippet.ps1");
+            }
+            EditorGUI.EndDisabledGroup();
+
+            EditorGUI.BeginDisabledGroup(IsToolRunning);
+            using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Apply Node Snippet", GUILayout.Height(28f)))
+                    ApplyGraphNodeSnippet();
+
+                if (GUILayout.Button("Open Graph", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Graphs/main.h8graph.json");
+
+                if (GUILayout.Button("Open Graph Apply Tool", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Tools/apply_graph_node_snippet.ps1");
+            }
+            EditorGUI.EndDisabledGroup();
+        }
+
+        private void DrawAuthoringSnippets()
+        {
+            EditorGUILayout.LabelField("Authoring Snippets", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(
+                "Generates Generated/settings_row_snippet.json and Generated/locale_entry_snippet.json, then applies them through bounded offline tools. Apply rejects duplicates unless the CLI -Replace switch is explicit, validates after write, and restores the previous file on failure.",
+                MessageType.Info);
+
+            EditorGUILayout.LabelField("Settings Row Snippet", EditorStyles.miniBoldLabel);
+            _settingsRowSnippetId = EditorGUILayout.TextField("Setting Id", _settingsRowSnippetId);
+            _settingsRowSnippetKind = EditorGUILayout.TextField("Kind", _settingsRowSnippetKind);
+            _settingsRowSnippetDefault = EditorGUILayout.TextField("Default", _settingsRowSnippetDefault);
+
+            EditorGUI.BeginDisabledGroup(IsToolRunning);
+            using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Generate Setting Snippet", GUILayout.Height(28f)))
+                    GenerateSettingsRowSnippet();
+
+                if (GUILayout.Button("Open Setting Snippet", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Generated/settings_row_snippet.json");
+
+                if (GUILayout.Button("Open Settings Snippet Tool", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Tools/create_settings_row_snippet.ps1");
+            }
+            EditorGUI.EndDisabledGroup();
+
+            EditorGUI.BeginDisabledGroup(IsToolRunning);
+            using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Apply Setting Snippet", GUILayout.Height(28f)))
+                    ApplySettingsRowSnippet();
+
+                if (GUILayout.Button("Open Settings Table", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Tables/settings.h8table.json");
+
+                if (GUILayout.Button("Open Settings Apply Tool", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Tools/apply_settings_row_snippet.ps1");
+            }
+            EditorGUI.EndDisabledGroup();
+
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("Locale Entry Snippet", EditorStyles.miniBoldLabel);
+            _localeEntrySnippetKey = EditorGUILayout.TextField("Locale Key", _localeEntrySnippetKey);
+            _localeEntrySnippetValue = EditorGUILayout.TextField("Value", _localeEntrySnippetValue);
+
+            EditorGUI.BeginDisabledGroup(IsToolRunning);
+            using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Generate Locale Snippet", GUILayout.Height(28f)))
+                    GenerateLocaleEntrySnippet();
+
+                if (GUILayout.Button("Open Locale Snippet", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Generated/locale_entry_snippet.json");
+
+                if (GUILayout.Button("Open Locale Snippet Tool", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Tools/create_locale_entry_snippet.ps1");
+            }
+            EditorGUI.EndDisabledGroup();
+
+            EditorGUI.BeginDisabledGroup(IsToolRunning);
+            using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Apply Locale Snippet", GUILayout.Height(28f)))
+                    ApplyLocaleEntrySnippet();
+
+                if (GUILayout.Button("Open Locale Table", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Locales/en.h8loc.json");
+
+                if (GUILayout.Button("Open Locale Apply Tool", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Tools/apply_locale_entry_snippet.ps1");
+            }
+            EditorGUI.EndDisabledGroup();
+        }
+
         private void DrawIdentityEditor()
         {
             EditorGUILayout.LabelField("Package Identity", EditorStyles.boldLabel);
@@ -183,6 +391,9 @@ namespace Hecton8.Editor.ModdingSDK
                 if (GUILayout.Button("Validate + Build Review", GUILayout.Height(28f)))
                     RunStarterTool("Tools/prepare_mod.ps1", string.Empty, true);
 
+                if (GUILayout.Button("Build Submission Package", GUILayout.Height(28f)))
+                    RunStarterTool("Tools/build_submission_package.ps1", string.Empty, true);
+
                 if (GUILayout.Button("Validate Structure Only", GUILayout.Height(28f)))
                     RunStarterTool("Tools/validate_structure.ps1", string.Empty, true);
             }
@@ -191,6 +402,9 @@ namespace Hecton8.Editor.ModdingSDK
             {
                 if (GUILayout.Button("List Graph Opcodes", GUILayout.Height(28f)))
                     RunStarterTool("Tools/list_allowed_opcodes.ps1", string.Empty, false);
+
+                if (GUILayout.Button("Open Submission Package", GUILayout.Height(28f)))
+                    OpenSubmissionPackage();
 
                 if (GUILayout.Button("Open Root Launcher", GUILayout.Height(28f)))
                     OpenRelativePath("ModdingSDK/ExternalStarterKit/h8mod.ps1");
@@ -210,12 +424,15 @@ namespace Hecton8.Editor.ModdingSDK
                 if (GUILayout.Button("Runtime Manifest"))
                     OpenRelativePath("ModdingSDK/ExternalStarterKit/mod.json");
 
-                if (GUILayout.Button("Command Graph"))
-                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Graphs/main.h8graph.json");
+                if (GUILayout.Button("Capabilities Guide"))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Docs/capabilities.md");
             }
 
             using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
             {
+                if (GUILayout.Button("Command Graph"))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/Graphs/main.h8graph.json");
+
                 if (GUILayout.Button("Settings Table"))
                     OpenRelativePath("ModdingSDK/ExternalStarterKit/Tables/settings.h8table.json");
 
@@ -224,6 +441,15 @@ namespace Hecton8.Editor.ModdingSDK
 
                 if (GUILayout.Button("Review Manifest"))
                     OpenRelativePath("ModdingSDK/ExternalStarterKit/Reports/review_manifest.json");
+            }
+
+            using (EditorGUILayout.HorizontalScope _ = new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Submission Package"))
+                    OpenSubmissionPackage();
+
+                if (GUILayout.Button("Generated Folder"))
+                    RevealRelativePath("ModdingSDK/ExternalStarterKit/Generated");
             }
 
             EditorGUILayout.Space(6f);
@@ -253,10 +479,13 @@ namespace Hecton8.Editor.ModdingSDK
             EditorGUILayout.LabelField("Review Freshness", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox(_reviewFreshnessSummary, _reviewFreshnessWarning ? MessageType.Warning : MessageType.Info);
 
+            EditorGUILayout.LabelField("Submission Package", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(_submissionSummary, _submissionWarning ? MessageType.Warning : MessageType.Info);
+
             if (!string.IsNullOrWhiteSpace(_toolSummary))
             {
                 EditorGUILayout.LabelField("Last Tool Output", EditorStyles.boldLabel);
-                EditorGUILayout.HelpBox(_toolSummary, MessageType.Info);
+                EditorGUILayout.HelpBox(_toolSummary, _toolSummaryIsError ? MessageType.Error : MessageType.Info);
             }
 
             if (IsToolRunning)
@@ -273,6 +502,46 @@ namespace Hecton8.Editor.ModdingSDK
             RunStarterTool("Tools/set_mod_identity.ps1", arguments, true);
         }
 
+        private void GenerateGraphNodeSnippet()
+        {
+            string arguments =
+                " -Id " + QuoteArgument(_graphNodeSnippetId) +
+                " -Opcode " + QuoteArgument(_graphNodeSnippetOpcode);
+            RunStarterTool("Tools/create_graph_node_snippet.ps1", arguments, false);
+        }
+
+        private void ApplyGraphNodeSnippet()
+        {
+            RunStarterTool("Tools/apply_graph_node_snippet.ps1", string.Empty, true);
+        }
+
+        private void GenerateSettingsRowSnippet()
+        {
+            string arguments =
+                " -Id " + QuoteArgument(_settingsRowSnippetId) +
+                " -Kind " + QuoteArgument(_settingsRowSnippetKind) +
+                " -Default " + QuoteArgument(_settingsRowSnippetDefault);
+            RunStarterTool("Tools/create_settings_row_snippet.ps1", arguments, false);
+        }
+
+        private void GenerateLocaleEntrySnippet()
+        {
+            string arguments =
+                " -Key " + QuoteArgument(_localeEntrySnippetKey) +
+                " -Value " + QuoteArgument(_localeEntrySnippetValue);
+            RunStarterTool("Tools/create_locale_entry_snippet.ps1", arguments, false);
+        }
+
+        private void ApplySettingsRowSnippet()
+        {
+            RunStarterTool("Tools/apply_settings_row_snippet.ps1", string.Empty, true);
+        }
+
+        private void ApplyLocaleEntrySnippet()
+        {
+            RunStarterTool("Tools/apply_locale_entry_snippet.ps1", string.Empty, true);
+        }
+
         private void CreateOrRefreshStarterKit()
         {
             ModdingSdkHubWindow.CreateExternalStarterKit();
@@ -283,7 +552,11 @@ namespace Hecton8.Editor.ModdingSDK
         {
             LoadStarterHealth();
             LoadIdentity();
+            LoadCapabilityMatrix();
+            LoadGraphContractPreview();
+            LoadAuthoringDataPreview();
             LoadReviewSummary();
+            LoadSubmissionSummary();
             Repaint();
         }
 
@@ -330,6 +603,789 @@ namespace Hecton8.Editor.ModdingSDK
             _starterHealthDetails = details.ToString();
         }
 
+        private void LoadCapabilityMatrix()
+        {
+            string rootPath = ResolveProjectPath(ExternalStarterKitRoot);
+            string authoringPath = Path.Combine(rootPath, "mod.h8manifest.json");
+            string runtimePath = Path.Combine(rootPath, "mod.json");
+            string graphPath = Path.Combine(rootPath, "Graphs", "main.h8graph.json");
+            string assetsPath = Path.Combine(rootPath, "Content", "assets.h8manifest.json");
+            string settingsPath = Path.Combine(rootPath, "Tables", "settings.h8table.json");
+            string localePath = Path.Combine(rootPath, "Locales", "en.h8loc.json");
+            string guidePath = Path.Combine(rootPath, "Docs", "capabilities.md");
+            string allowedOpcodesPath = Path.Combine(rootPath, "Reference", "allowed_opcodes.csv");
+
+            if (!File.Exists(authoringPath))
+            {
+                _capabilityMatrixSummary = "Capability Matrix unavailable: missing mod.h8manifest.json.";
+                _capabilityMatrixDetails = string.Empty;
+                _capabilityMatrixWarning = true;
+                return;
+            }
+
+            try
+            {
+                AuthoringManifest manifest = JsonUtility.FromJson<AuthoringManifest>(File.ReadAllText(authoringPath));
+                if (manifest == null)
+                {
+                    _capabilityMatrixSummary = "Capability Matrix failed: mod.h8manifest.json parsed to null.";
+                    _capabilityMatrixDetails = string.Empty;
+                    _capabilityMatrixWarning = true;
+                    return;
+                }
+
+                int declaredCapabilityCount = manifest.Capabilities != null ? manifest.Capabilities.Length : 0;
+                int allowedOpcodeTokenCount = 0;
+                int allowedOpcodeAliasCount = 0;
+                if (File.Exists(allowedOpcodesPath))
+                {
+                    AllowedGraphOpcodeSet allowedOpcodes = LoadAllowedGraphOpcodes(allowedOpcodesPath);
+                    allowedOpcodeTokenCount = allowedOpcodes.HexCount;
+                    allowedOpcodeAliasCount = allowedOpcodes.AliasCount;
+                }
+
+                bool guideMissing = !File.Exists(guidePath);
+                bool runtimeMissing = !File.Exists(runtimePath);
+                bool graphMissing = !File.Exists(graphPath);
+                bool assetsMissing = !File.Exists(assetsPath);
+                bool settingsMissing = !File.Exists(settingsPath);
+                bool localeMissing = !File.Exists(localePath);
+                bool opcodeListMissing = !File.Exists(allowedOpcodesPath);
+
+                StringBuilder summary = new StringBuilder(384);
+                summary.Append("Runtime rights: envelope-only command requests after SDK/review approval.");
+                summary.AppendLine().Append("Supported authoring surfaces: graph, settings, locale, content manifest, review/submission package.");
+                summary.AppendLine().Append("Allowed graph opcode hex tokens: ").Append(allowedOpcodeTokenCount);
+                summary.Append(" / aliases: ").Append(allowedOpcodeAliasCount);
+                summary.AppendLine().Append("Declared authoring capabilities: ").Append(declaredCapabilityCount);
+                summary.AppendLine().Append("Budget MaxEnvelopesPerFrame: ").Append(manifest.Budgets != null ? manifest.Budgets.MaxEnvelopesPerFrame : 0);
+                summary.AppendLine().Append("Budget MaxAssetBytes: ").Append(manifest.Budgets != null ? manifest.Budgets.MaxAssetBytes : 0L);
+
+                StringBuilder details = new StringBuilder(1024);
+                details.AppendLine("SUPPORTED NOW");
+                details.AppendLine("- Package identity and dependency metadata: mod.h8manifest.json + mod.json.");
+                details.AppendLine("- Command graph draft: Graphs/main.h8graph.json, bounded by Reference/allowed_opcodes.csv and MaxEnvelopesPerFrame.");
+                details.AppendLine("- Settings table draft: Tables/settings.h8table.json, validated before review handoff.");
+                details.AppendLine("- Locale draft: Locales/en.h8loc.json, validated before review handoff.");
+                details.AppendLine("- Content manifest draft: Content/assets.h8manifest.json, review/approval only before runtime use.");
+                details.AppendLine("- Review and submission artifacts: Reports/review_manifest.json and Generated/<mod-id>_submission.zip.");
+                details.AppendLine();
+                details.AppendLine("NOT PUBLIC RIGHTS");
+                details.AppendLine("- Managed gameplay DLLs, Harmony, BepInEx, arbitrary Unity scripts, direct GameObject/ScriptableObject/material mutation.");
+                details.AppendLine("- Loose AssetBundle, PNG, audio, localization, or save-file runtime ingestion from the starter folder.");
+                details.AppendLine("- New hot SignalBus lanes, GlobalRegistry polling routes, direct save/world/inventory authority, or frame callbacks.");
+                details.AppendLine();
+                details.AppendLine("CURRENT FILE STATE");
+                details.Append("- Capabilities guide: ").Append(guideMissing ? "MISSING" : "OK").AppendLine();
+                details.Append("- Runtime manifest: ").Append(runtimeMissing ? "MISSING" : "OK").AppendLine();
+                details.Append("- Command graph: ").Append(graphMissing ? "MISSING" : "OK").AppendLine();
+                details.Append("- Content manifest: ").Append(assetsMissing ? "MISSING" : "OK").AppendLine();
+                details.Append("- Settings table: ").Append(settingsMissing ? "MISSING" : "OK").AppendLine();
+                details.Append("- Locale table: ").Append(localeMissing ? "MISSING" : "OK").AppendLine();
+                details.Append("- Opcode reference: ").Append(opcodeListMissing ? "MISSING" : "OK").AppendLine();
+
+                if (declaredCapabilityCount == 0)
+                    details.AppendLine("Capabilities array is empty. This is valid for the starter skeleton; add capability ids only when a review-owned contract exists.");
+                else
+                    details.Append("Declared capabilities: ").Append(string.Join(", ", manifest.Capabilities)).AppendLine();
+
+                _capabilityMatrixWarning =
+                    guideMissing ||
+                    runtimeMissing ||
+                    graphMissing ||
+                    assetsMissing ||
+                    settingsMissing ||
+                    localeMissing ||
+                    opcodeListMissing;
+                _capabilityMatrixSummary = summary.ToString();
+                _capabilityMatrixDetails = details.ToString();
+            }
+            catch (Exception exception)
+            {
+                _capabilityMatrixSummary = "Capability Matrix failed: " + exception.Message;
+                _capabilityMatrixDetails = string.Empty;
+                _capabilityMatrixWarning = true;
+            }
+        }
+
+        private void LoadGraphContractPreview()
+        {
+            string rootPath = ResolveProjectPath(ExternalStarterKitRoot);
+            string graphPath = Path.Combine(rootPath, "Graphs", "main.h8graph.json");
+            string allowedOpcodesPath = Path.Combine(rootPath, "Reference", "allowed_opcodes.csv");
+            if (!File.Exists(graphPath))
+            {
+                _graphContractPreviewSummary = "Graph Contract Preview unavailable: missing Graphs/main.h8graph.json.";
+                _graphContractPreviewDetails = string.Empty;
+                _graphContractPreviewWarning = true;
+                return;
+            }
+
+            if (!File.Exists(allowedOpcodesPath))
+            {
+                _graphContractPreviewSummary = "Graph Contract Preview unavailable: missing Reference/allowed_opcodes.csv.";
+                _graphContractPreviewDetails = string.Empty;
+                _graphContractPreviewWarning = true;
+                return;
+            }
+
+            try
+            {
+                if (new FileInfo(graphPath).Length > MaxGraphPreviewBytes)
+                {
+                    _graphContractPreviewSummary = "Graph Contract Preview unavailable: Graphs/main.h8graph.json exceeds preview byte cap.";
+                    _graphContractPreviewDetails = string.Empty;
+                    _graphContractPreviewWarning = true;
+                    return;
+                }
+
+                if (new FileInfo(allowedOpcodesPath).Length > MaxAllowedOpcodePreviewBytes)
+                {
+                    _graphContractPreviewSummary = "Graph Contract Preview unavailable: Reference/allowed_opcodes.csv exceeds preview byte cap.";
+                    _graphContractPreviewDetails = string.Empty;
+                    _graphContractPreviewWarning = true;
+                    return;
+                }
+
+                GraphDocument graph = JsonUtility.FromJson<GraphDocument>(File.ReadAllText(graphPath));
+                if (graph == null)
+                {
+                    _graphContractPreviewSummary = "Graph Contract Preview failed: graph JSON parsed to null.";
+                    _graphContractPreviewDetails = string.Empty;
+                    _graphContractPreviewWarning = true;
+                    return;
+                }
+
+                int budgetMax = LoadGraphBudgetMax();
+                AllowedGraphOpcodeSet allowedOpcodes = LoadAllowedGraphOpcodes(allowedOpcodesPath);
+                GraphNode[] nodes = graph.Nodes ?? new GraphNode[0];
+                Dictionary<string, bool> nodeIds = new Dictionary<string, bool>(Math.Max(1, nodes.Length), StringComparer.Ordinal);
+                StringBuilder details = new StringBuilder(512);
+                int opcodeNodeCount = 0;
+                int invalidOpcodeCount = 0;
+                int duplicateNodeIdCount = 0;
+                int missingFieldCount = 0;
+
+                if (!string.Equals(graph.Runtime, "envelope-only", StringComparison.Ordinal))
+                {
+                    details.Append("INVALID Runtime: ").Append(graph.Runtime ?? string.Empty).AppendLine();
+                    missingFieldCount++;
+                }
+
+                for (int i = 0; i < nodes.Length && i < MaxGraphPreviewNodes; i++)
+                {
+                    GraphNode node = nodes[i];
+                    if (node == null)
+                    {
+                        details.Append("INVALID null node at index ").Append(i).AppendLine();
+                        missingFieldCount++;
+                        continue;
+                    }
+
+                    string nodeId = node.Id ?? string.Empty;
+                    if (string.IsNullOrWhiteSpace(nodeId))
+                    {
+                        details.Append("INVALID missing node Id at index ").Append(i).AppendLine();
+                        missingFieldCount++;
+                    }
+                    else if (nodeIds.ContainsKey(nodeId))
+                    {
+                        details.Append("INVALID duplicate node Id: ").Append(nodeId).AppendLine();
+                        duplicateNodeIdCount++;
+                    }
+                    else
+                    {
+                        nodeIds.Add(nodeId, true);
+                    }
+
+                    string opcode = node.Opcode ?? string.Empty;
+                    if (string.IsNullOrWhiteSpace(opcode))
+                    {
+                        details.Append("INVALID missing Opcode for node: ").Append(string.IsNullOrWhiteSpace(nodeId) ? "<missing-id>" : nodeId).AppendLine();
+                        missingFieldCount++;
+                        continue;
+                    }
+
+                    opcodeNodeCount++;
+                    string opcodeToken = NormalizeGraphOpcodeToken(opcode.Trim());
+                    if (!allowedOpcodes.Tokens.Contains(opcodeToken))
+                    {
+                        details.Append("INVALID opcode ").Append(opcode).Append(" on node ").Append(string.IsNullOrWhiteSpace(nodeId) ? "<missing-id>" : nodeId).AppendLine();
+                        invalidOpcodeCount++;
+                    }
+                }
+
+                bool nodeScanCapped = nodes.Length > MaxGraphPreviewNodes;
+                if (nodeScanCapped)
+                    details.Append("Graph preview capped at ").Append(MaxGraphPreviewNodes).Append(" nodes. Run Validate Structure Only.").AppendLine();
+
+                if (opcodeNodeCount > 0 && graph.MaxEnvelopesPerFrame < 1)
+                    details.Append("INVALID MaxEnvelopesPerFrame must be >= 1 when opcode nodes exist.").AppendLine();
+
+                if (budgetMax >= 0 && graph.MaxEnvelopesPerFrame > budgetMax)
+                    details.Append("INVALID MaxEnvelopesPerFrame exceeds authoring budget: ").Append(graph.MaxEnvelopesPerFrame).Append(" > ").Append(budgetMax).AppendLine();
+
+                if (opcodeNodeCount == 0)
+                    details.Append("Empty graph emits no runtime packets.").AppendLine();
+
+                details.Append("Allowed opcode hex tokens: ").Append(allowedOpcodes.HexCount).AppendLine();
+                details.Append("Allowed opcode aliases: ").Append(allowedOpcodes.AliasCount).AppendLine();
+
+                StringBuilder summary = new StringBuilder(256);
+                summary.Append("Runtime: ").Append(graph.Runtime ?? string.Empty);
+                summary.AppendLine().Append("Nodes: ").Append(nodes.Length);
+                summary.AppendLine().Append("Nodes scanned: ").Append(Math.Min(nodes.Length, MaxGraphPreviewNodes)).Append("/").Append(MaxGraphPreviewNodes);
+                summary.AppendLine().Append("MaxEnvelopesPerFrame: ").Append(graph.MaxEnvelopesPerFrame);
+                if (budgetMax >= 0)
+                    summary.Append(" / authoring budget ").Append(budgetMax);
+                summary.AppendLine().Append("Invalid opcodes: ").Append(invalidOpcodeCount);
+                summary.AppendLine().Append("Duplicate node IDs: ").Append(duplicateNodeIdCount);
+                summary.AppendLine().Append("Missing/invalid fields: ").Append(missingFieldCount);
+
+                _graphContractPreviewWarning =
+                    nodeScanCapped ||
+                    invalidOpcodeCount > 0 ||
+                    duplicateNodeIdCount > 0 ||
+                    missingFieldCount > 0 ||
+                    (opcodeNodeCount > 0 && graph.MaxEnvelopesPerFrame < 1) ||
+                    (budgetMax >= 0 && graph.MaxEnvelopesPerFrame > budgetMax);
+                _graphContractPreviewSummary = summary.ToString();
+                _graphContractPreviewDetails = details.ToString();
+            }
+            catch (Exception exception)
+            {
+                _graphContractPreviewSummary = "Graph Contract Preview failed: " + exception.Message;
+                _graphContractPreviewDetails = string.Empty;
+                _graphContractPreviewWarning = true;
+            }
+        }
+
+        private void LoadSubmissionSummary()
+        {
+            _submissionPackageRelativePath = string.Empty;
+            string generatedPath = ResolveProjectPath("ModdingSDK/ExternalStarterKit/Generated");
+            if (!Directory.Exists(generatedPath))
+            {
+                _submissionSummary = "Submission package unavailable: Generated folder is missing.";
+                _submissionWarning = true;
+                return;
+            }
+
+            try
+            {
+                FileInfo newestPackage = null;
+                foreach (string packagePath in Directory.EnumerateFiles(generatedPath, "*_submission.zip", SearchOption.TopDirectoryOnly))
+                {
+                    FileInfo info = new FileInfo(packagePath);
+                    if (newestPackage == null || info.LastWriteTime > newestPackage.LastWriteTime)
+                        newestPackage = info;
+                }
+
+                if (newestPackage == null)
+                {
+                    _submissionSummary = "Submission package missing. Run Build Submission Package.";
+                    _submissionWarning = true;
+                    return;
+                }
+
+                string reviewPath = ResolveProjectPath("ModdingSDK/ExternalStarterKit/Reports/review_manifest.json");
+                bool reviewExists = File.Exists(reviewPath);
+                bool staleAgainstReview = reviewExists && File.GetLastWriteTime(reviewPath) > newestPackage.LastWriteTime.AddSeconds(1.0);
+                _submissionPackageRelativePath = "ModdingSDK/ExternalStarterKit/Generated/" + newestPackage.Name;
+
+                StringBuilder builder = new StringBuilder(256);
+                builder.Append("Package: Generated/").Append(newestPackage.Name);
+                builder.AppendLine().Append("Bytes: ").Append(newestPackage.Length);
+                builder.AppendLine().Append("Written: ").Append(newestPackage.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss"));
+                if (!reviewExists)
+                    builder.AppendLine().Append("Review manifest missing. Run Validate + Build Review, then Build Submission Package.");
+                else if (staleAgainstReview)
+                    builder.AppendLine().Append("Package is older than Reports/review_manifest.json. Run Build Submission Package.");
+                else
+                    builder.AppendLine().Append("Package freshness: current against review manifest.");
+
+                _submissionSummary = builder.ToString();
+                _submissionWarning = !reviewExists || staleAgainstReview;
+            }
+            catch (Exception exception)
+            {
+                _submissionSummary = "Submission package status failed: " + exception.Message;
+                _submissionWarning = true;
+            }
+        }
+
+        private void LoadAuthoringDataPreview()
+        {
+            string rootPath = ResolveProjectPath(ExternalStarterKitRoot);
+            string settingsPath = Path.Combine(rootPath, "Tables", "settings.h8table.json");
+            string localePath = Path.Combine(rootPath, "Locales", "en.h8loc.json");
+            StringBuilder details = new StringBuilder(512);
+            int invalidCount = 0;
+
+            if (!File.Exists(settingsPath))
+            {
+                _authoringDataPreviewSummary = "Authoring Data Preview unavailable: missing Tables/settings.h8table.json.";
+                _authoringDataPreviewDetails = string.Empty;
+                _authoringDataPreviewWarning = true;
+                return;
+            }
+
+            if (!File.Exists(localePath))
+            {
+                _authoringDataPreviewSummary = "Authoring Data Preview unavailable: missing Locales/en.h8loc.json.";
+                _authoringDataPreviewDetails = string.Empty;
+                _authoringDataPreviewWarning = true;
+                return;
+            }
+
+            try
+            {
+                if (new FileInfo(settingsPath).Length > MaxAuthoringDataPreviewBytes)
+                {
+                    _authoringDataPreviewSummary = "Authoring Data Preview unavailable: Tables/settings.h8table.json exceeds preview byte cap.";
+                    _authoringDataPreviewDetails = string.Empty;
+                    _authoringDataPreviewWarning = true;
+                    return;
+                }
+
+                if (new FileInfo(localePath).Length > MaxAuthoringDataPreviewBytes)
+                {
+                    _authoringDataPreviewSummary = "Authoring Data Preview unavailable: Locales/en.h8loc.json exceeds preview byte cap.";
+                    _authoringDataPreviewDetails = string.Empty;
+                    _authoringDataPreviewWarning = true;
+                    return;
+                }
+
+                SettingsTableDocument settings = JsonUtility.FromJson<SettingsTableDocument>(File.ReadAllText(settingsPath));
+                LocaleDocument locale = JsonUtility.FromJson<LocaleDocument>(File.ReadAllText(localePath));
+                SettingsRow[] rows = settings != null && settings.Rows != null ? settings.Rows : new SettingsRow[0];
+                HashSet<string> settingIds = new HashSet<string>(StringComparer.Ordinal);
+                int duplicateSettings = 0;
+                int invalidSettingRows = 0;
+                int invalidSettingKinds = 0;
+
+                if (settings == null || !string.Equals(settings.Schema, "hecton8.settings_table.draft.v1", StringComparison.Ordinal))
+                {
+                    details.Append("INVALID settings Schema must be hecton8.settings_table.draft.v1.").AppendLine();
+                    invalidCount++;
+                }
+
+                for (int i = 0; i < rows.Length && i < MaxSettingsPreviewRows; i++)
+                {
+                    SettingsRow row = rows[i];
+                    if (row == null)
+                    {
+                        details.Append("INVALID null settings row at index ").Append(i).AppendLine();
+                        invalidSettingRows++;
+                        continue;
+                    }
+
+                    string rowId = row.Id ?? string.Empty;
+                    if (!IsCanonicalAuthoringKey(rowId))
+                    {
+                        details.Append("INVALID settings row Id at index ").Append(i).Append(": ").Append(rowId).AppendLine();
+                        invalidSettingRows++;
+                    }
+                    else if (!settingIds.Add(rowId))
+                    {
+                        details.Append("INVALID duplicate settings row Id: ").Append(rowId).AppendLine();
+                        duplicateSettings++;
+                    }
+
+                    string kind = row.Kind ?? string.Empty;
+                    if (!IsSupportedSettingKind(kind))
+                    {
+                        details.Append("INVALID settings Kind for ").Append(string.IsNullOrWhiteSpace(rowId) ? "<missing-id>" : rowId).Append(": ").Append(kind).AppendLine();
+                        invalidSettingKinds++;
+                    }
+                }
+
+                bool settingsScanCapped = rows.Length > MaxSettingsPreviewRows;
+                if (settingsScanCapped)
+                    details.Append("Settings preview capped at ").Append(MaxSettingsPreviewRows).Append(" rows. Run Validate Structure Only.").AppendLine();
+
+                int localeStringCount = 0;
+                int invalidLocaleKeys = 0;
+                int invalidLocaleValues = 0;
+                bool localeScanCapped = false;
+                if (locale == null || !string.Equals(locale.Schema, "hecton8.locale.draft.v1", StringComparison.Ordinal))
+                {
+                    details.Append("INVALID locale Schema must be hecton8.locale.draft.v1.").AppendLine();
+                    invalidCount++;
+                }
+
+                string localeId = locale != null ? locale.Locale ?? string.Empty : string.Empty;
+                if (!IsLocaleCode(localeId))
+                {
+                    details.Append("INVALID Locale code: ").Append(localeId).AppendLine();
+                    invalidCount++;
+                }
+
+                ValidateLocaleStringsPreview(
+                    File.ReadAllText(localePath),
+                    details,
+                    out localeStringCount,
+                    out invalidLocaleKeys,
+                    out invalidLocaleValues,
+                    out localeScanCapped);
+
+                invalidCount += invalidSettingRows + duplicateSettings + invalidSettingKinds + invalidLocaleKeys + invalidLocaleValues;
+                StringBuilder summary = new StringBuilder(256);
+                summary.Append("Settings rows: ").Append(rows.Length).Append("/").Append(MaxSettingsPreviewRows);
+                summary.AppendLine().Append("Invalid settings rows: ").Append(invalidSettingRows);
+                summary.AppendLine().Append("Duplicate settings IDs: ").Append(duplicateSettings);
+                summary.AppendLine().Append("Invalid settings kinds: ").Append(invalidSettingKinds);
+                summary.AppendLine().Append("Locale: ").Append(localeId);
+                summary.AppendLine().Append("Locale strings: ").Append(localeStringCount).Append("/").Append(MaxLocalePreviewStrings);
+                summary.AppendLine().Append("Invalid locale keys: ").Append(invalidLocaleKeys);
+                summary.AppendLine().Append("Invalid locale values: ").Append(invalidLocaleValues);
+
+                if (details.Length == 0)
+                    details.Append("Settings/locale preview found no visible contract issues. Run Validate Structure Only for Default type proof.").AppendLine();
+
+                _authoringDataPreviewWarning = invalidCount > 0 || settingsScanCapped || localeScanCapped;
+                _authoringDataPreviewSummary = summary.ToString();
+                _authoringDataPreviewDetails = details.ToString();
+            }
+            catch (Exception exception)
+            {
+                _authoringDataPreviewSummary = "Authoring Data Preview failed: " + exception.Message;
+                _authoringDataPreviewDetails = string.Empty;
+                _authoringDataPreviewWarning = true;
+            }
+        }
+
+        private int LoadGraphBudgetMax()
+        {
+            string authoringPath = ResolveProjectPath("ModdingSDK/ExternalStarterKit/mod.h8manifest.json");
+            if (!File.Exists(authoringPath))
+                return -1;
+
+            AuthoringManifest manifest = JsonUtility.FromJson<AuthoringManifest>(File.ReadAllText(authoringPath));
+            return manifest != null && manifest.Budgets != null ? manifest.Budgets.MaxEnvelopesPerFrame : -1;
+        }
+
+        private static AllowedGraphOpcodeSet LoadAllowedGraphOpcodes(string allowedOpcodesPath)
+        {
+            AllowedGraphOpcodeSet result = new AllowedGraphOpcodeSet();
+            int lineCount = 0;
+            foreach (string line in File.ReadLines(allowedOpcodesPath))
+            {
+                lineCount++;
+                if (lineCount > MaxAllowedOpcodePreviewRows)
+                    throw new InvalidDataException("Reference/allowed_opcodes.csv exceeds preview row cap.");
+
+                string text = line ?? string.Empty;
+                string comment = string.Empty;
+                int commentIndex = text.IndexOf('#');
+                if (commentIndex >= 0)
+                {
+                    comment = text.Substring(commentIndex + 1).Trim();
+                    text = text.Substring(0, commentIndex).Trim();
+                }
+                else
+                {
+                    text = text.Trim();
+                }
+
+                if (string.IsNullOrWhiteSpace(text))
+                    continue;
+
+                if (!IsGraphOpcodeHexToken(text))
+                    throw new InvalidDataException("Reference/allowed_opcodes.csv contains invalid opcode token: " + text);
+
+                string hexToken = NormalizeGraphOpcodeToken(text);
+                if (!result.Tokens.Add(hexToken))
+                    throw new InvalidDataException("Reference/allowed_opcodes.csv contains duplicate opcode token: " + hexToken);
+
+                result.HexCount++;
+                if (string.IsNullOrWhiteSpace(comment))
+                    continue;
+
+                string[] commentParts = comment.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                if (commentParts.Length == 0 || !IsGraphOpcodeAlias(commentParts[0]))
+                    continue;
+
+                if (!result.Tokens.Add(commentParts[0]))
+                    throw new InvalidDataException("Reference/allowed_opcodes.csv contains duplicate opcode alias: " + commentParts[0]);
+
+                result.AliasCount++;
+            }
+
+            if (result.HexCount == 0)
+                throw new InvalidDataException("Reference/allowed_opcodes.csv has no allowed graph opcodes.");
+
+            return result;
+        }
+
+        private static string NormalizeGraphOpcodeToken(string opcode)
+        {
+            if (opcode.Length > 2 &&
+                opcode[0] == '0' &&
+                (opcode[1] == 'x' || opcode[1] == 'X'))
+            {
+                return opcode.ToUpperInvariant();
+            }
+
+            return opcode;
+        }
+
+        private static bool IsGraphOpcodeHexToken(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value) ||
+                value.Length < 3 ||
+                value.Length > 10 ||
+                value[0] != '0' ||
+                (value[1] != 'x' && value[1] != 'X'))
+            {
+                return false;
+            }
+
+            for (int i = 2; i < value.Length; i++)
+            {
+                char current = value[i];
+                bool isHex =
+                    (current >= '0' && current <= '9') ||
+                    (current >= 'a' && current <= 'f') ||
+                    (current >= 'A' && current <= 'F');
+                if (!isHex)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsGraphOpcodeAlias(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value) || !char.IsLetter(value[0]))
+                return false;
+
+            for (int i = 1; i < value.Length; i++)
+            {
+                char current = value[i];
+                if (!char.IsLetterOrDigit(current) && current != '_')
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsCanonicalAuthoringKey(string value)
+        {
+            return !string.IsNullOrWhiteSpace(value) &&
+                   Regex.IsMatch(value, "^[a-z0-9]+([._-][a-z0-9]+)*$", RegexOptions.CultureInvariant);
+        }
+
+        private static bool IsSupportedSettingKind(string value)
+        {
+            switch (value)
+            {
+                case "bool":
+                case "int":
+                case "float":
+                case "string":
+                case "enum":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsLocaleCode(string value)
+        {
+            return !string.IsNullOrWhiteSpace(value) &&
+                   Regex.IsMatch(value, "^[a-z]{2}(-[A-Z]{2})?$", RegexOptions.CultureInvariant);
+        }
+
+        private static void ValidateLocaleStringsPreview(
+            string localeJson,
+            StringBuilder details,
+            out int stringCount,
+            out int invalidKeys,
+            out int invalidValues,
+            out bool scanCapped)
+        {
+            stringCount = 0;
+            invalidKeys = 0;
+            invalidValues = 0;
+            scanCapped = false;
+
+            if (!TryExtractJsonObjectBody(localeJson, "Strings", out string stringsBody))
+            {
+                details.Append("INVALID locale Strings object is missing.").AppendLine();
+                invalidValues++;
+                return;
+            }
+
+            int index = 0;
+            while (index < stringsBody.Length)
+            {
+                SkipJsonWhitespace(stringsBody, ref index);
+                if (index >= stringsBody.Length)
+                    break;
+
+                if (stringsBody[index] == ',')
+                {
+                    index++;
+                    continue;
+                }
+
+                if (!TryReadJsonString(stringsBody, ref index, out string key))
+                {
+                    details.Append("INVALID locale Strings entry key near index ").Append(index).AppendLine();
+                    invalidKeys++;
+                    break;
+                }
+
+                SkipJsonWhitespace(stringsBody, ref index);
+                if (index >= stringsBody.Length || stringsBody[index] != ':')
+                {
+                    details.Append("INVALID locale Strings entry missing ':' for key ").Append(key).AppendLine();
+                    invalidValues++;
+                    break;
+                }
+
+                index++;
+                SkipJsonWhitespace(stringsBody, ref index);
+                if (!TryReadJsonString(stringsBody, ref index, out string value))
+                {
+                    details.Append("INVALID locale value for key ").Append(key).AppendLine();
+                    invalidValues++;
+                    break;
+                }
+
+                stringCount++;
+                if (!IsCanonicalAuthoringKey(key))
+                {
+                    details.Append("INVALID locale key: ").Append(key).AppendLine();
+                    invalidKeys++;
+                }
+
+                if (string.IsNullOrWhiteSpace(value) || value.Trim() != value)
+                {
+                    details.Append("INVALID locale value text for key ").Append(key).AppendLine();
+                    invalidValues++;
+                }
+
+                if (stringCount > MaxLocalePreviewStrings)
+                {
+                    scanCapped = true;
+                    stringCount = MaxLocalePreviewStrings;
+                    details.Append("Locale preview capped at ").Append(MaxLocalePreviewStrings).Append(" strings. Run Validate Structure Only.").AppendLine();
+                    return;
+                }
+            }
+        }
+
+        private static bool TryExtractJsonObjectBody(string json, string propertyName, out string body)
+        {
+            body = string.Empty;
+            string marker = "\"" + propertyName + "\"";
+            int propertyIndex = json.IndexOf(marker, StringComparison.Ordinal);
+            if (propertyIndex < 0)
+                return false;
+
+            int colonIndex = json.IndexOf(':', propertyIndex + marker.Length);
+            if (colonIndex < 0)
+                return false;
+
+            int openIndex = json.IndexOf('{', colonIndex + 1);
+            if (openIndex < 0)
+                return false;
+
+            bool inString = false;
+            bool escaping = false;
+            int depth = 0;
+            for (int i = openIndex; i < json.Length; i++)
+            {
+                char current = json[i];
+                if (inString)
+                {
+                    if (escaping)
+                    {
+                        escaping = false;
+                    }
+                    else if (current == '\\')
+                    {
+                        escaping = true;
+                    }
+                    else if (current == '"')
+                    {
+                        inString = false;
+                    }
+
+                    continue;
+                }
+
+                if (current == '"')
+                {
+                    inString = true;
+                    continue;
+                }
+
+                if (current == '{')
+                {
+                    depth++;
+                    continue;
+                }
+
+                if (current != '}')
+                    continue;
+
+                depth--;
+                if (depth == 0)
+                {
+                    body = json.Substring(openIndex + 1, i - openIndex - 1);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void SkipJsonWhitespace(string text, ref int index)
+        {
+            while (index < text.Length && char.IsWhiteSpace(text[index]))
+                index++;
+        }
+
+        private static bool TryReadJsonString(string text, ref int index, out string value)
+        {
+            value = string.Empty;
+            if (index >= text.Length || text[index] != '"')
+                return false;
+
+            index++;
+            StringBuilder builder = new StringBuilder(64);
+            bool escaping = false;
+            while (index < text.Length)
+            {
+                char current = text[index++];
+                if (escaping)
+                {
+                    builder.Append(current);
+                    escaping = false;
+                    continue;
+                }
+
+                if (current == '\\')
+                {
+                    escaping = true;
+                    continue;
+                }
+
+                if (current == '"')
+                {
+                    value = builder.ToString();
+                    return true;
+                }
+
+                builder.Append(current);
+            }
+
+            return false;
+        }
+
         private void LoadIdentity()
         {
             string authoringPath = ResolveProjectPath("ModdingSDK/ExternalStarterKit/mod.h8manifest.json");
@@ -353,6 +1409,7 @@ namespace Hecton8.Editor.ModdingSDK
             catch (Exception exception)
             {
                 _toolSummary = "Identity load failed: " + exception.Message;
+                _toolSummaryIsError = true;
             }
         }
 
@@ -471,6 +1528,17 @@ namespace Hecton8.Editor.ModdingSDK
                    !relativePath.StartsWith("Reports/", StringComparison.OrdinalIgnoreCase);
         }
 
+        private void OpenSubmissionPackage()
+        {
+            if (string.IsNullOrWhiteSpace(_submissionPackageRelativePath))
+            {
+                RevealRelativePath("ModdingSDK/ExternalStarterKit/Generated");
+                return;
+            }
+
+            OpenRelativePath(_submissionPackageRelativePath);
+        }
+
         private static string ToStarterRelativePath(string rootPath, string fullPath)
         {
             string normalizedRoot = Path.GetFullPath(rootPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
@@ -490,6 +1558,7 @@ namespace Hecton8.Editor.ModdingSDK
             if (IsToolRunning)
             {
                 _toolSummary = "Tool already running: " + _runningToolName;
+                _toolSummaryIsError = false;
                 Repaint();
                 return;
             }
@@ -499,6 +1568,7 @@ namespace Hecton8.Editor.ModdingSDK
             if (!File.Exists(scriptPath))
             {
                 _toolSummary = "Missing starter tool: " + scriptPath;
+                _toolSummaryIsError = true;
                 Repaint();
                 return;
             }
@@ -537,6 +1607,7 @@ namespace Hecton8.Editor.ModdingSDK
                 if (!process.Start())
                 {
                     _toolSummary = "Tool process did not start.";
+                    _toolSummaryIsError = true;
                     DisposeRunningTool();
                     Repaint();
                     return;
@@ -545,6 +1616,7 @@ namespace Hecton8.Editor.ModdingSDK
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();
                 _toolSummary = "Tool running: " + scriptRelativePath;
+                _toolSummaryIsError = false;
                 EditorApplication.update -= PollRunningTool;
                 EditorApplication.update += PollRunningTool;
                 Repaint();
@@ -552,6 +1624,7 @@ namespace Hecton8.Editor.ModdingSDK
             catch (Exception exception)
             {
                 _toolSummary = "Tool launch failed: " + exception.Message;
+                _toolSummaryIsError = true;
                 DisposeRunningTool();
                 Debug.LogError("[ExternalStarterKitWorkbenchWindow] Tool launch failed: " + exception);
             }
@@ -609,6 +1682,7 @@ namespace Hecton8.Editor.ModdingSDK
             int exitCode = _runningToolExitCode;
             bool reloadAfterSuccess = _runningToolReloadAfterSuccess;
             _toolSummary = BuildToolSummary(exitCode, stdout, stderr);
+            _toolSummaryIsError = exitCode != 0;
             DisposeRunningTool();
 
             if (reloadAfterSuccess && exitCode == 0)
@@ -702,6 +1776,58 @@ namespace Hecton8.Editor.ModdingSDK
             public string DisplayName = string.Empty;
             public string Author = string.Empty;
             public string Version = string.Empty;
+            public string[] Capabilities = new string[0];
+            public AuthoringBudgets Budgets = new AuthoringBudgets();
+        }
+
+        [Serializable]
+        private sealed class AuthoringBudgets
+        {
+            public int MaxEnvelopesPerFrame = 0;
+            public long MaxAssetBytes = 0L;
+        }
+
+        [Serializable]
+        private sealed class GraphDocument
+        {
+            public string Runtime = string.Empty;
+            public int MaxEnvelopesPerFrame = 0;
+            public GraphNode[] Nodes = new GraphNode[0];
+        }
+
+        [Serializable]
+        private sealed class GraphNode
+        {
+            public string Id = string.Empty;
+            public string Opcode = string.Empty;
+        }
+
+        [Serializable]
+        private sealed class SettingsTableDocument
+        {
+            public string Schema = string.Empty;
+            public SettingsRow[] Rows = new SettingsRow[0];
+        }
+
+        [Serializable]
+        private sealed class SettingsRow
+        {
+            public string Id = string.Empty;
+            public string Kind = string.Empty;
+        }
+
+        [Serializable]
+        private sealed class LocaleDocument
+        {
+            public string Schema = string.Empty;
+            public string Locale = string.Empty;
+        }
+
+        private sealed class AllowedGraphOpcodeSet
+        {
+            public readonly HashSet<string> Tokens = new HashSet<string>(StringComparer.Ordinal);
+            public int HexCount;
+            public int AliasCount;
         }
 
         [Serializable]

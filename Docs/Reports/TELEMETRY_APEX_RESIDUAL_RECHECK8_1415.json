@@ -1,0 +1,79 @@
+{
+  "agent": 1415,
+  "role": "CIRCULAR_TELEMETRY_RING_HARDENER",
+  "domain": "Echelon 1 Core Infrastructure / Crash Telemetry Layout",
+  "generatedUtc": "2026-05-28T14:13:26Z",
+  "issue": "Residual AUP origin-shift telemetry hot writers still used value-type object initializer syntax that polluted strict Zero-GC text evidence even though it was not a managed reference allocation. The AUP telemetry row itself remains 128 bytes and still requires a header/detail split route card before ABI shrink.",
+  "fix": "Replaced AupOriginShiftTelemetryEntry object initializers in RecordRebaseCompletion and RecordFrameTelemetry with default + direct field assignments. Replaced the local shiftLocal value-type constructor in RecordRebaseCompletion with default + x/y/z assignments.",
+  "modifiedFile": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs",
+  "lineProof": {
+    "telemetryRingBufferId": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:256 BufferID 73033",
+    "evaluateRequestedRebaseTelemetryLock": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:697 acquire, 765 release in finally",
+    "recordRebaseCompletionTelemetryLock": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:917 acquire, 966 release in finally",
+    "recordRebaseCompletionDefaultEntry": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:934-960",
+    "recordFrameTelemetryDefaultEntry": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:1286-1316",
+    "continuousQualityScalar": "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:816,1169,1286 HomeostasisBrain.GlobalQualityWeight"
+  },
+  "zeroGcHotPathScan": {
+    "RecordRebaseCompletion_lines_903_970": {
+      "new": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "linq": 0,
+      "foreach": 0
+    },
+    "RecordFrameTelemetry_lines_1267_1320": {
+      "new": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "linq": 0,
+      "foreach": 0
+    },
+    "newAupOriginShiftTelemetryEntryMatches": 0
+  },
+  "dataSovereignty": {
+    "migratedNewGlobalDataVaultFields": false,
+    "bufferId": "(BufferID)73033 TelemetryRingBuffer",
+    "writeLockSites": [
+      "line 697 caller-held frame telemetry write view",
+      "line 917 RecordRebaseCompletion write view"
+    ],
+    "finallyReleaseSites": [
+      "line 765 caller finally release",
+      "line 966 RecordRebaseCompletion finally release"
+    ]
+  },
+  "continuousScalability": "AUP batch/telemetry cadence uses HomeostasisBrain.GlobalQualityWeight at lines 816, 1169, and 1286 through ResolveQualityScaledBatchSize; no binary isLowEnd switch was added.",
+  "cinematicCheat": "No physical simulation was added. This pass is a telemetry writer syntax/evidence cleanup only.",
+  "residualRisk": {
+    "AupOriginShiftTelemetryEntry": "Still 128 bytes. Field-preserving 64-byte compliance requires owner-approved header/detail split and a second DataVault buffer/dump format; not safe to fake by deleting double3 TotalUniverseOffset or camera/local diagnostics.",
+    "compile": "Not green until external ModularEquipmentEngine.cs CS8168/CS8350 and current host compile contention are resolved."
+  },
+  "sourceHashes": {
+    "AupOriginShiftCoordinator.cs": "30750f1f74718fd14c10274645d9bb71b6d58e217200b99464e79e8178bc9f26",
+    "CrashTelemetryBuffer.cs": "b952748d54e2e9aae0463a4d42ec60027ba3eaf03722f966eff554d4b0568ee9"
+  },
+  "verification": {
+    "jsonParse": "passed for final, recheck8, and recheck7 reports",
+    "dashboardSmoke": "python -B Tools\\TelemetryDashboard\\smoke_test.py -> telemetry dashboard smoke ok",
+    "staleAliasAndInitializerScan": "0 matches for stale v1 live telemetry, CrashTelemetryBuffer raw alias, and new AupOriginShiftTelemetryEntry patterns",
+    "currentTelemetryStructScan": {
+      "non64": 29,
+      "under64": 0,
+      "over64": 29
+    },
+    "gitDiffCheck": "exit 0; CRLF normalization warnings only"
+  },
+  "compilation": {
+    "dotnetBuildLaunchedInRecheck8": false,
+    "cpuLoadPercentSample": 99,
+    "activeCompilerProcesses": [
+      {
+        "id": 31496,
+        "processName": "dotnet",
+        "cpu": 709.703125
+      }
+    ],
+    "reason": "Compilation Resource Throttling forbids build when CPU > 50% or active compiler/dotnet process exists."
+  }
+}

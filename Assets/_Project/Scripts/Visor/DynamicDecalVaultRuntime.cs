@@ -1397,17 +1397,31 @@ namespace Hecton8.Visor
                 return false;
 
             if (!IsDynamicDecalVaultHandle(in handle, bufferId) ||
-                !_vault.TryAcquireWriteLock(in handle, OwnerSystem, out buffer) ||
-                _vault.IsCompactionFenceActive ||
-                !buffer.IsCreated ||
-                buffer.Length < requiredLength)
+                !_vault.TryAcquireWriteLock(in handle, OwnerSystem, out buffer))
             {
-                ReleaseDynamicDecalVaultBuffer(in handle, bufferId);
                 buffer = default;
                 return false;
             }
 
-            return true;
+            bool releaseOnExit = true;
+            try
+            {
+                if (_vault.IsCompactionFenceActive ||
+                    !buffer.IsCreated ||
+                    buffer.Length < requiredLength)
+                {
+                    buffer = default;
+                    return false;
+                }
+
+                releaseOnExit = false;
+                return true;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                    ReleaseDynamicDecalVaultBuffer(in handle, bufferId);
+            }
         }
 
         private static void ReleaseDynamicDecalVaultBuffer<T>(

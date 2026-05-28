@@ -118,7 +118,7 @@ namespace Hecton8.Tests.Editor
 
             string flush = ExtractMethodBody(registry, "FlushMathPrecisionShaderState");
             Assert.Greater(Count(flush, @"\bShader\.SetGlobal"), 0);
-            Assert.Greater(Count(flush, @"\bShader\.(?:EnableKeyword|DisableKeyword)"), 0);
+            Assert.AreEqual(0, Count(flush, @"\bShader\.(?:EnableKeyword|DisableKeyword)"), "Math precision keyword toggle");
             Assert.That(flush, Does.Contain("_mathPrecisionShaderDirty"));
         }
 
@@ -133,7 +133,7 @@ namespace Hecton8.Tests.Editor
 
             Assert.AreEqual(0, Count(nonFlushSource, @"\bShader\.(?:SetGlobal|EnableKeyword|DisableKeyword)"), "DistanceMath shader write outside visual sync flush");
             Assert.Greater(Count(flush, @"\bShader\.SetGlobal"), 0);
-            Assert.Greater(Count(flush, @"\bShader\.(?:EnableKeyword|DisableKeyword)"), 0);
+            Assert.AreEqual(0, Count(flush, @"\bShader\.(?:EnableKeyword|DisableKeyword)"), "DistanceMath keyword toggle");
             Assert.That(dispatcher, Does.Contain("DistanceMath.FlushVisualSyncShaderState();"));
         }
 

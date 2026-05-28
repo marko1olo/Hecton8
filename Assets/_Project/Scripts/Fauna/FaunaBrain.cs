@@ -671,6 +671,14 @@ namespace Hecton8.AI
         private float _pendingCorpseBloatShaderStartTimeSeconds = -1f;
         private bool _pendingAupPresentationPoseDirty;
         private Vector3 _pendingAupPresentationPosition;
+        private bool _pendingMimicAcousticDirty;
+        private AcousticPingSignal _pendingMimicAcoustic;
+        private bool _pendingLeviathanRoarAcousticDirty;
+        private AcousticPingSignal _pendingLeviathanRoarAcoustic;
+        private bool _pendingPredatorImpactHapticDirty;
+        private HapticRequest _pendingPredatorImpactHaptic;
+        private bool _pendingProceduralAudioEventDirty;
+        private SignalAudioEvent _pendingProceduralAudioEvent;
         private bool _pendingSelfDespawnOrDeactivate;
         private GameObject _pendingExternalDespawnOrDeactivate;
         private uint _latchedCorpseNodeId;
@@ -868,6 +876,7 @@ namespace Hecton8.AI
             ClearDirectorHuntTarget();
             ClearHibernationStarvationHuntCommand();
             ClearEcholocationMimicSignal();
+            ClearQueuedPresentationFeedback();
             ClearPredatorLungeCheat();
             ClearPredatorSquadState();
             ReleaseCorpseSinkingKinematicsBuffers();
@@ -897,6 +906,7 @@ namespace Hecton8.AI
             ClearDirectorHuntTarget();
             ClearHibernationStarvationHuntCommand();
             ClearEcholocationMimicSignal();
+            ClearQueuedPresentationFeedback();
             ClearPredatorLungeCheat();
             ClearPredatorSquadState();
             ReleaseCorpseSinkingKinematicsBuffers();
@@ -2174,7 +2184,7 @@ namespace Hecton8.AI
             signal.SourceId = unchecked((uint)ComputeStableSpeciesId());
             signal.Channel = 0;
             signal.Flags = 0;
-            SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
+            QueueMimicAcoustic(in signal);
         }
 
         private bool TryResolveMimicPingTransmission(Vector3 selfPosition, Vector3 playerPosition, out float acousticTransmission01)
@@ -3198,7 +3208,79 @@ namespace Hecton8.AI
             FlushCorpseBloatShaderTimer();
             FlushFaunaPresentationShaderState();
             FlushEcosystemInfectionVisuals();
+            FlushQueuedPresentationFeedback();
             FlushQueuedDespawnOrDeactivate();
+        }
+
+        private void QueueMimicAcoustic(in AcousticPingSignal signal)
+        {
+            _pendingMimicAcoustic = signal;
+            _pendingMimicAcousticDirty = true;
+            TryRegisterCorpseSinkLateFrame();
+        }
+
+        private void QueueLeviathanRoarAcoustic(in AcousticPingSignal signal)
+        {
+            _pendingLeviathanRoarAcoustic = signal;
+            _pendingLeviathanRoarAcousticDirty = true;
+            TryRegisterCorpseSinkLateFrame();
+        }
+
+        private void QueuePredatorImpactHaptic(in HapticRequest signal)
+        {
+            _pendingPredatorImpactHaptic = signal;
+            _pendingPredatorImpactHapticDirty = true;
+            TryRegisterCorpseSinkLateFrame();
+        }
+
+        private void QueueProceduralAudioEvent(in SignalAudioEvent signal)
+        {
+            _pendingProceduralAudioEvent = signal;
+            _pendingProceduralAudioEventDirty = true;
+            TryRegisterCorpseSinkLateFrame();
+        }
+
+        private void FlushQueuedPresentationFeedback()
+        {
+            if (_pendingProceduralAudioEventDirty)
+            {
+                _pendingProceduralAudioEventDirty = false;
+                SignalBus<SignalAudioEvent>.TryPushTracked(in _pendingProceduralAudioEvent, ref _signalPushDropCount);
+                _pendingProceduralAudioEvent = default;
+            }
+
+            if (_pendingMimicAcousticDirty)
+            {
+                _pendingMimicAcousticDirty = false;
+                SignalBus<AcousticPingSignal>.TryPushTracked(in _pendingMimicAcoustic, ref _signalPushDropCount);
+                _pendingMimicAcoustic = default;
+            }
+
+            if (_pendingLeviathanRoarAcousticDirty)
+            {
+                _pendingLeviathanRoarAcousticDirty = false;
+                SignalBus<AcousticPingSignal>.TryPushTracked(in _pendingLeviathanRoarAcoustic, ref _signalPushDropCount);
+                _pendingLeviathanRoarAcoustic = default;
+            }
+
+            if (_pendingPredatorImpactHapticDirty)
+            {
+                _pendingPredatorImpactHapticDirty = false;
+                SignalBus<HapticRequest>.TryPushTracked(in _pendingPredatorImpactHaptic, ref _signalPushDropCount);
+                _pendingPredatorImpactHaptic = default;
+            }
+        }
+
+        private void ClearQueuedPresentationFeedback()
+        {
+            _pendingMimicAcousticDirty = false;
+            _pendingMimicAcoustic = default;
+            _pendingLeviathanRoarAcousticDirty = false;
+            _pendingLeviathanRoarAcoustic = default;
+            _pendingPredatorImpactHapticDirty = false;
+            _pendingPredatorImpactHaptic = default;
+            _pendingProceduralAudioEventDirty = false;
+            _pendingProceduralAudioEvent = default;
         }
 
         private void ApplyAmbientWanderNoise(ref Vector3 desiredDirection)
@@ -3884,7 +3966,7 @@ namespace Hecton8.AI
             haptic.Frame = signal.Frame;
             haptic.Channel = HapticRequest.ChannelCollision;
             haptic.Flags = flags;
-            SignalBus<HapticRequest>.TryPushTracked(in haptic, ref _signalPushDropCount);
+            QueuePredatorImpactHaptic(in haptic);
 
             if (signal.TargetHash != 0u && lostKineticEnergy >= KinematicCcdContractMath.MassiveLostKineticEnergyJoules)
             {
@@ -4012,7 +4094,7 @@ namespace Hecton8.AI
                 AcousticOcclusionUtility.PrimeOcclusionPath(sourcePosition, listenerPosition, sensoryMask, transform, playerRoot);
             }
 
-            TryPushProceduralAudioPing(
+            QueueProceduralAudioPing(
                 sourcePosition,
                 intensity,
                 LeviathanAttackTelegraphAudioDurationSeconds,
@@ -5200,7 +5282,7 @@ namespace Hecton8.AI
                 : unchecked((uint)ComputeStableSpeciesId());
             roarSignal.Channel = AcousticPingSignal.ChannelLeviathanRoar;
             roarSignal.Flags = AcousticPingSignal.FlagLeviathanRoar;
-            SignalBus<AcousticPingSignal>.TryPushTracked(in roarSignal, ref _signalPushDropCount);
+            QueueLeviathanRoarAcoustic(in roarSignal);
             PublishAlphaLeviathanStressSpike();
         }
 
@@ -5913,7 +5995,7 @@ namespace Hecton8.AI
                     playerRoot);
             }
 
-            TryPushProceduralAudioPing(
+            QueueProceduralAudioPing(
                 killPosition,
                 intensity,
                 PredatorKillAudioDurationSeconds,
@@ -6171,7 +6253,7 @@ namespace Hecton8.AI
             damageReceiver.ReceiveDamage(in packet);
         }
 
-        private static bool TryPushProceduralAudioPing(
+        private void QueueProceduralAudioPing(
             Vector3 sourcePosition,
             float intensity,
             float durationSeconds,
@@ -6189,7 +6271,7 @@ namespace Hecton8.AI
                 lowPassCutoffHz,
                 kind);
             SignalAudioEvent audioEvent = SignalAudioEvent.FromAudioPing(in payload);
-            return SignalBus<SignalAudioEvent>.TryPushTracked(in audioEvent, ref _signalPushDropCount);
+            QueueProceduralAudioEvent(in audioEvent);
         }
 
         private bool TryQueuePhysicsForce(Rigidbody body, Vector3 force, ForceMode mode)

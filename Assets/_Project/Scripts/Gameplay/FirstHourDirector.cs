@@ -672,8 +672,11 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-65)]
-    public sealed class FirstHourDirector : MonoBehaviour, ISaveable, ISlowTickable, IQuestEventListener, IAudioLogEventListener, INarrativeEventListener, IScanEventListener, ICraftingEventListener, IInteractionEventListener, IFirstHourReadModel, IFirstHourRouteContactSink, IGlobalRegistryHotSwapListener
+    public sealed class FirstHourDirector : MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, IQuestEventListener, IAudioLogEventListener, INarrativeEventListener, IScanEventListener, ICraftingEventListener, IInteractionEventListener, IFirstHourReadModel, IFirstHourRouteContactSink, IGlobalRegistryHotSwapListener
     {
+        private const int PendingNotificationCapacity = 4;
+        private const int PendingNotificationCharCapacity = 512;
+
         [Flags]
         private enum GuidanceStateFlags
         {
@@ -744,6 +747,7 @@ namespace Hecton8.Gameplay
         private float _sessionTime;
         private int   _completedMilestones; // bitovaya maska
         private bool  _registered;
+        private bool  _lateFrameRegistered;
         private bool  _serviceRegistered;
         private bool  _firstModuleHintIssued;
         private bool  _firstResourceReminderIssued;
@@ -780,6 +784,26 @@ namespace Hecton8.Gameplay
         private bool _hotSwapRegistered;
         private bool _saveRegistered;
         private ISaveService _saveService;
+        private PendingNotificationRequest _pendingNotification0;
+        private PendingNotificationRequest _pendingNotification1;
+        private PendingNotificationRequest _pendingNotification2;
+        private PendingNotificationRequest _pendingNotification3;
+        private byte _pendingNotificationCount;
+
+        private unsafe struct PendingNotificationRequest
+        {
+            public ushort Length;
+            public byte Severity;
+            public byte IsDirty;
+            public fixed char Characters[PendingNotificationCharCapacity];
+
+            public void Clear()
+            {
+                Length = 0;
+                Severity = 0;
+                IsDirty = 0;
+            }
+        }
 
         private const float MinEarnedOrientationTime = 75f;
         private const string DataCopperItemId = "Data_Copper";
@@ -868,6 +892,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterLateFrameTick();
             TryUnregisterService();
             TryUnregisterSaveParticipant();
 
@@ -891,6 +916,7 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterLateFrameTick();
             TryUnregisterSaveParticipant();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
@@ -930,6 +956,121 @@ namespace Hecton8.Gameplay
             _registered = false;
         }
 
+        public void LateFrameTick()
+        {
+            FlushQueuedNotifications();
+            if (_pendingNotificationCount == 0)
+                TryUnregisterLateFrameTick();
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameRegistered = false;
+            }
+
+            ClearQueuedNotifications();
+        }
+
+        private unsafe bool QueueNotification(ReadOnlySpan<char> message, NotificationEventSeverity severity)
+        {
+            if (message.IsEmpty || message.Length > PendingNotificationCharCapacity)
+                return false;
+            if (_pendingNotificationCount >= PendingNotificationCapacity)
+                return false;
+
+            ref PendingNotificationRequest request = ref GetPendingNotificationSlot(_pendingNotificationCount);
+            fixed (char* destination = request.Characters)
+            {
+                for (int i = 0; i < message.Length; i++)
+                    destination[i] = message[i];
+            }
+
+            request.Length = (ushort)message.Length;
+            request.Severity = (byte)severity;
+            request.IsDirty = 1;
+            _pendingNotificationCount++;
+            TryRegisterLateFrameTick();
+            return true;
+        }
+
+        private unsafe void FlushQueuedNotifications()
+        {
+            int count = _pendingNotificationCount;
+            _pendingNotificationCount = 0;
+
+            for (int i = 0; i < count; i++)
+            {
+                ref PendingNotificationRequest request = ref GetPendingNotificationSlot(i);
+                if (request.IsDirty == 0 || request.Length == 0)
+                {
+                    request.Clear();
+                    continue;
+                }
+
+                ushort length = request.Length;
+                byte severity = request.Severity;
+                request.Clear();
+
+                fixed (char* characters = request.Characters)
+                {
+                    ReadOnlySpan<char> message =
+                        System.Runtime.InteropServices.MemoryMarshal.CreateReadOnlySpan(ref characters[0], length);
+                    uint messageHash = NotificationEvents.RegisterMessage(message);
+                    if (messageHash == 0u)
+                        continue;
+
+                    if (severity == (byte)NotificationEventSeverity.Warning)
+                    {
+                        NotificationEvents.TryPushRegisteredWarning(messageHash);
+                        continue;
+                    }
+
+                    if (severity == (byte)NotificationEventSeverity.Critical)
+                    {
+                        NotificationEvents.TryPushRegisteredCritical(messageHash);
+                        continue;
+                    }
+
+                    NotificationEvents.TryPushRegisteredInfo(messageHash);
+                }
+            }
+        }
+
+        private void ClearQueuedNotifications()
+        {
+            _pendingNotificationCount = 0;
+            _pendingNotification0.Clear();
+            _pendingNotification1.Clear();
+            _pendingNotification2.Clear();
+            _pendingNotification3.Clear();
+        }
+
+        private ref PendingNotificationRequest GetPendingNotificationSlot(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return ref _pendingNotification0;
+                case 1:
+                    return ref _pendingNotification1;
+                case 2:
+                    return ref _pendingNotification2;
+                default:
+                    return ref _pendingNotification3;
+            }
+        }
+
         private bool TryRegisterService()
         {
             if (_serviceRegistered || !Application.isPlaying)
@@ -967,8 +1108,13 @@ namespace Hecton8.Gameplay
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _registered = false;
+                    _lateFrameRegistered = false;
                     if (currentService != null && isActiveAndEnabled)
+                    {
                         TryRegister();
+                        if (_pendingNotificationCount > 0)
+                            TryRegisterLateFrameTick();
+                    }
                     break;
                 case GlobalRegistryServiceSlot.QuestRuntime:
                     _cachedQuestManager = currentService as IQuestSystem;
@@ -1100,9 +1246,11 @@ namespace Hecton8.Gameplay
             {
                 _firstModuleHintIssued = true;
                 _firstModuleReminderIssued = true;
-                NotificationEvents.TryPushInfo(ResolveLocalizedSpan(
-                    LocalizationKeys.FIRST_HOUR_MODULE_SCAN_HINT,
-                    "SCAN RUINS AND MODULES. SOMETHING INTACT IS STILL DOWN HERE."));
+                QueueNotification(
+                    ResolveLocalizedSpan(
+                        LocalizationKeys.FIRST_HOUR_MODULE_SCAN_HINT,
+                        "SCAN RUINS AND MODULES. SOMETHING INTACT IS STILL DOWN HERE."),
+                    NotificationEventSeverity.Info);
             }
 
             TryIssueRetentionNudges();
@@ -1562,7 +1710,7 @@ namespace Hecton8.Gameplay
                     : ResolveLocalizedSpan(
                         LocalizationKeys.FIRST_HOUR_RESOURCE_REMINDER_GENERIC,
                         "LOOK FOR THE FIRST CORE MATERIAL IN THE DEBRIS AND ALONG READABLE ROCK FACES. WITHOUT IT, THE CHAIN STOPS HERE.");
-                NotificationEvents.TryPushInfo(reminderMessage);
+                QueueNotification(reminderMessage, NotificationEventSeverity.Info);
             }
 
             if (!_firstDepthReminderIssued &&
@@ -1572,9 +1720,11 @@ namespace Hecton8.Gameplay
                 _sessionTime >= firstDepthReminderTime)
             {
                 _firstDepthReminderIssued = true;
-                NotificationEvents.TryPushInfo(ResolveLocalizedSpan(
-                    LocalizationKeys.FIRST_HOUR_DEPTH_REMINDER,
-                    "THE FIRST REAL FIND IS LOWER. GO DEEPER, BUT DO NOT LOSE THE WAY OUT."));
+                QueueNotification(
+                    ResolveLocalizedSpan(
+                        LocalizationKeys.FIRST_HOUR_DEPTH_REMINDER,
+                        "THE FIRST REAL FIND IS LOWER. GO DEEPER, BUT DO NOT LOSE THE WAY OUT."),
+                    NotificationEventSeverity.Info);
             }
 
             if (!_firstModuleReminderIssued &&
@@ -1586,7 +1736,9 @@ namespace Hecton8.Gameplay
 
                 WorldZoneAnchor currentZone = _worldZoneDirector != null ? _worldZoneDirector.CurrentZone : null;
                 HectonBiomeMatrixProfile currentBiome = ResolveCurrentBiomeProfile(currentZone);
-                NotificationEvents.TryPushInfo(ResolveModuleRouteGuidanceMessage(currentZone, currentBiome));
+                QueueNotification(
+                    ResolveModuleRouteGuidanceMessage(currentZone, currentBiome),
+                    NotificationEventSeverity.Info);
             }
         }
 
@@ -1805,7 +1957,7 @@ namespace Hecton8.Gameplay
             if (message.IsEmpty)
                 return;
 
-            NotificationEvents.TryPushInfo(message);
+            QueueNotification(message, NotificationEventSeverity.Info);
             float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             _nextContextualGuidanceTime = now + math.max(0f, contextualGuidanceCooldown);
         }

@@ -1,0 +1,113 @@
+﻿{
+    "agent_id":  "1423",
+    "status":  "PENDING VERIFICATION",
+    "generated_at":  "2026-05-28T18:30:41.3133915+04:00",
+    "domain":  "ECHELON 8 PRESENTATION \u0026 UX / Zero-GC Subtitles (Babel), VWS",
+    "continuation":  12,
+    "assignment_source":  {
+                              "current_batch_contains_agent_prompt_1423":  true,
+                              "prompt_line":  2139,
+                              "prompt_sha256":  "9C307765413C5548CA5CD5D2CEE58C7E415CC93819BA21AA3C264488E260C8A6",
+                              "prompt_length_chars":  20627,
+                              "prompt_task_count":  20
+                          },
+    "files_changed_or_audited":  {
+                                     "Assets/_Project/Scripts/LocRegistry.cs":  "1038B5AB64E79EF263C67E875EA3540DB9B9EF4B47577131A0BCC5D6BB322086",
+                                     "Assets/_Project/Scripts/SpatialAudioManager.cs":  "0D2E03FCC840E382FC1F04EFE247B171154B646338CAC07430221923F0A5A7F2",
+                                     "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs":  "DEC296A28A48A260A454B5A5A7069DD33304B6CC5E6B219F57E2F6E0C48E459C",
+                                     "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs":  "66F5C730FB186DBE135F3C75BF24D0FBA997EB589BF412418C23897FA51111E5"
+                                 },
+    "continuation12_change":  {
+                                  "problem":  "Continuation11 made audio captions Babel-first, but TryWriteCaptionText still probed LocRegistry.TryGetLocalizedSpan and then called TryWriteVisualSpanFromUtf8, which performs another tracked lookup for the same hash. Dispatch also revalidated HasCaptionText after enqueue validation.",
+                                  "solution":  "Added LocRegistry.TryWriteKnownLocalizedSpanFromUtf8 for already-resolved UTF-8 spans, routed AudioCaptionEvents.TryWriteCaptionText through it, and removed the redundant Dispatch HasCaptionText lookup. The overlay still owns the final fixed-buffer write.",
+                                  "changed_paths":  [
+                                                        "Assets/_Project/Scripts/LocRegistry.cs",
+                                                        "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                                                        "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs"
+                                                    ],
+                                  "exact_line_evidence":  {
+                                                              "known_utf8_writer_overload":  "Assets/_Project/Scripts/LocRegistry.cs:1074-1110",
+                                                              "known_utf8_decode_call":  "Assets/_Project/Scripts/LocRegistry.cs:1107",
+                                                              "dispatch_without_second_presence_lookup":  "Assets/_Project/Scripts/SpatialAudioManager.cs:12214-12242",
+                                                              "caption_writer_uses_known_utf8":  "Assets/_Project/Scripts/SpatialAudioManager.cs:12354-12394",
+                                                              "source_regressions":  "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs:224-286"
+                                                          }
+                              },
+    "static_scan":  {
+                        "changed_caption_and_loc_forbidden_patterns":  [
+                                                                           "string.Format",
+                                                                           ".ToString(",
+                                                                           "TMP_Text.text assignment",
+                                                                           "new string",
+                                                                           "StringBuilder",
+                                                                           "Array.Resize",
+                                                                           "foreach(",
+                                                                           "interpolation",
+                                                                           "public static string ResolveCaptionText",
+                                                                           "private const string *CaptionText",
+                                                                           "LocHash.Compute(*CaptionText)",
+                                                                           "old overlay TryResolveCaptionTextSpan bridge",
+                                                                           "SlotTextMatches span bridge"
+                                                                       ],
+                        "changed_caption_and_loc_forbidden_hits":  0,
+                        "loc_known_writer_method_counts":  {
+                                                               "TrackLocalizedSpanLookupForDecode":  0,
+                                                               "TryFindUtf8Slice":  0,
+                                                               "DecodeUtf8VisualSpan_keyHash_true_utf8Bytes":  1,
+                                                               "string_Format":  0,
+                                                               "ToString_call":  0,
+                                                               "foreach_loop":  0,
+                                                               "reference_type_new_suspects":  0
+                                                           },
+                        "audio_caption_writer_counts":  {
+                                                            "TryWriteCaptionText_TryGetLocalizedSpan":  1,
+                                                            "TryWriteCaptionText_KnownUtf8Decode":  1,
+                                                            "TryWriteCaptionText_TrackedUtf8LookupDecode":  0,
+                                                            "Dispatch_HasCaptionText":  0,
+                                                            "Dispatch_reference_type_new_suspects_excluding_AudioCaptionRequest_struct":  0
+                                                        },
+                        "git_diff_check":  "exit 0; CRLF normalization warnings only"
+                    },
+    "bounded_cursor_proof":  {
+                                 "known_utf8_writer":  "Returns false and length=0 for empty UTF-8; otherwise delegates to existing DecodeUtf8VisualSpan with found=true and caller-owned Span\u003cchar\u003e.",
+                                 "decode_invariant":  "DecodeUtf8VisualSpan computes maxGlyphs=min(destination.Length, MaxDecodedGlyphs); writes only while charCursor + requiredChars \u003c= maxGlyphs; truncation appends ellipsis within maxGlyphs.",
+                                 "caption_fallback_invariant":  "Fallback displayLength=min(fallbackText.Length,destination.Length); loop writes only i \u003c displayLength; ellipsis branch requires displayLength\u003e=3."
+                             },
+    "data_sovereignty":  {
+                             "new_global_data_vault_migrations_in_continuation12":  0,
+                             "existing_buffer_ids_secured_by_prior_1423_work":  [
+                                                                                    "15070550 SubtitleCueStateBufferId",
+                                                                                    "15070551 SubtitleCueTelemetryBufferId",
+                                                                                    "15070552 UIOptimizationTelemetryBufferId"
+                                                                                ],
+                             "continuation12_lock_changes":  "None. The patch decodes an already-resolved ReadOnlySpan\u003cbyte\u003e; it does not acquire or migrate GlobalDataVault buffers."
+                         },
+    "cinematic_and_scalability":  {
+                                      "cinematic_cheat":  "No simulation added. The fix removes duplicate lookup work from semantic caption text presentation.",
+                                      "continuous_scalability":  "No binary isLowEnd/LowEnd branch added. Existing GlobalQualityWeight-driven text presentation policies remain unchanged.",
+                                      "binary_switch_scan":  "No new isLowEnd/LowEnd branch in changed files."
+                                  },
+    "build_throttle":  {
+                           "continuation12_build_launched":  false,
+                           "cpu_sample_percent":  93,
+                           "active_dotnet_csc_vbcscompiler":  [
+                                                                  "dotnet PID 62104 CPU 343.390625 StartTime 2026-05-28 18:33:06"
+                                                              ],
+                           "reason":  "CPU \u003e 50 and active dotnet process exists; dotnet build was not launched.",
+                           "previous_build_failure_dump":  "Docs/AgentLogs/Dump_1423_CONT9_BUILD_FAILURE.txt",
+                           "previous_build_failure_dump_sha256":  "9CBEE6CDC1A63242D46CEB23F7029637F1857AF5F0DC063F1DAEB46C59B64273"
+                       },
+    "verification_truth":  {
+                               "project_build_passed":  false,
+                               "runtime_profiler_gc_bytes":  null,
+                               "editor_tests_executed":  false,
+                               "reason":  "No build/test/profiler run after continuation12 because CPU/build contention violates the project throttle."
+                           },
+    "residual_faults":  [
+                            "AudioCaptionEvents still uses a managed listener interface; migrating to SignalBus\u003cT\u003e remains a separate cross-domain route-card task.",
+                            "Fixed English caption literals still back TryResolveCaptionTextSpan until spatial-audio captions are authored in Babel.",
+                            "Runtime 0B GC remains unmeasured because no passing build/profiler run exists."
+                        ],
+    "report_path":  "Docs/Reports/UI_ZERO_GC_CONTINUATION12_AUDIT_1423.json",
+    "report_kind":  "UI_ZERO_GC_CONTINUATION12_AUDIT_1423"
+}

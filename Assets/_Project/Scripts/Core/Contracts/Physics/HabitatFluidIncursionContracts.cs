@@ -146,7 +146,7 @@ namespace Hecton8.Core.Contracts.Physics
         [FieldOffset(60)] public uint Reserved0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct CoreFluidCompartmentTelemetryDTO
     {
         [FieldOffset(0)] public uint NodeHash;
@@ -158,6 +158,10 @@ namespace Hecton8.Core.Contracts.Physics
         [FieldOffset(24)] public uint Frame;
         [FieldOffset(28)] public ushort CompartmentIndex;
         [FieldOffset(30)] public ushort Reserved0;
+        [FieldOffset(32)] private ulong _pad0;
+        [FieldOffset(40)] private ulong _pad1;
+        [FieldOffset(48)] private ulong _pad2;
+        [FieldOffset(56)] private ulong _pad3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]

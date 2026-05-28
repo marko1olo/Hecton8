@@ -144,7 +144,7 @@ namespace Hecton8.Visor
                 if (dispatchX <= 0 || dispatchY <= 0)
                     return;
 
-                TextureDesc aoDesc = new TextureDesc(depthDesc);
+                TextureDesc aoDesc = depthDesc;
                 aoDesc.name = "_HectonVoxelSSAOTexture";
                 aoDesc.width = aoWidth;
                 aoDesc.height = aoHeight;

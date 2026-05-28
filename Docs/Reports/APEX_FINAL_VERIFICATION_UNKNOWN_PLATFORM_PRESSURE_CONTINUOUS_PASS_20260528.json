@@ -1,0 +1,180 @@
+{
+  "schema": "HECTON8_APEX_FINAL_VERIFICATION",
+  "agent_id": "UNKNOWN",
+  "domain": "Core / platform pressure / scalability bridge",
+  "date_local": "2026-05-28",
+  "status": "PENDING_RUNTIME_VERIFICATION",
+  "pass": "PLATFORM_PRESSURE_CONTINUOUS_SCALING_PASS",
+  "scope_rule": "Clean Core files only. Dirty central GlobalRegistry/Homeostasis/HardwareThermal files were not edited in this pass because other agents are active.",
+  "modified_files": [
+    {
+      "path": "Assets/_Project/Scripts/Core/PlatformBatteryWatchdog.cs",
+      "sha256": "04FD74026E77487A4F80ADCD5AB1F386B2C1BE3B531BA59D13A1C75B78B9B9A5",
+      "lines": {
+        "CriticalBatteryPressureMilli": 30,
+        "SampleAndApply_pressure_resolve": 68,
+        "ResolveCriticalBatteryPressure01": 93,
+        "ResolveCriticalBatteryPressureMilli_public": 98,
+        "ResolveCriticalBatteryPressureMilli_private": 118
+      },
+      "change_summary": "Removed direct binary transient-low scalability writes. Battery pressure is now encoded as continuous 0..1000 pressure for platform governor consumers."
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/PlatformAdaptiveBudgetGovernor.cs",
+      "sha256": "959E605EC7AD3145F804BD1AC506C3E40AE04D3AFEAC25B33F0218401F61F763",
+      "lines": {
+        "PressureIntensityMilli": 62,
+        "RecommendedQualityWeightMilli": 68,
+        "SecondaryHudEffectWeightMilli": 83,
+        "Sample_pressure01": 145,
+        "Sample_pressureCurve": 146,
+        "HomeostasisBrain_GlobalQualityWeight_read": 147,
+        "RecommendedQualityWeight_write": 152,
+        "RenderScale_write": 153,
+        "FrostTick_write": 154,
+        "SecondaryHudEffect_write": 155,
+        "ResolvePlatformPressure01": 289,
+        "Battery_pressure_composition": 299,
+        "ResolveQualityWeightMilli": 309,
+        "ResolveFrostTickIntervalFrames": 317,
+        "ResolveRenderScaleMilli": 326,
+        "HomeostasisBrain_TargetRenderScale01_read": 329,
+        "ResolveSecondaryHudEffectWeightMilli": 358,
+        "SanitizeGlobalQualityWeight01": 365,
+        "SmoothStep01": 378
+      },
+      "change_summary": "Removed cached binary GlobalRegistry override writer and low-tier state. Platform pressure is now a continuous scalar that composes battery, VRAM, thermal, frame, UMA, Steam Deck, HomeostasisBrain.GlobalQualityWeight, and HomeostasisBrain.TargetRenderScale01."
+    }
+  ],
+  "problem_verified": [
+    "PlatformBatteryWatchdog and PlatformAdaptiveBudgetGovernor previously wrote GlobalRegistry transient low scalability overrides from clean platform pressure code.",
+    "Those callers encoded battery/platform pressure as binary enabled/disabled route bits instead of a continuous quality pressure.",
+    "The Core rule says GlobalQualityWeight is continuous and must not be reduced to a binary low-end switch."
+  ],
+  "actions_taken": [
+    "Removed direct SetTransientLowScalabilityOverride calls from the clean battery/platform pressure files.",
+    "Added continuous pressure scalar properties: CriticalBatteryPressureMilli, PressureIntensityMilli, RecommendedQualityWeightMilli, RecommendedRenderScaleMilli, FrostTickIntervalFrames, SecondaryHudEffectWeightMilli.",
+    "Composed platform pressure with HomeostasisBrain.GlobalQualityWeight and HomeostasisBrain.TargetRenderScale01 so local platform presentation recommendations do not exceed the central continuous quality state.",
+    "Kept dynamic-resolution pressure as the actual runtime presentation hook and avoided scene search, DataVault mutation, managed events, LINQ, foreach, or job completion."
+  ],
+  "zero_gc_added_line_scan": {
+    "command": "git diff --unified=0 -- PlatformBatteryWatchdog.cs PlatformAdaptiveBudgetGovernor.cs; regex scan of added lines",
+    "added_lines": 230,
+    "reference_type_new_tokens": 0,
+    "string_Format_tokens": 0,
+    "dot_ToString_calls": 0,
+    "linq_call_tokens": 0,
+    "foreach_tokens": 0,
+    "job_Complete_calls": 0,
+    "GlobalRegistry_tokens_on_added_lines": 0,
+    "binary_low_end_tokens": 0,
+    "HomeostasisBrain_GlobalQuality_tokens": 2
+  },
+  "binary_override_scan": {
+    "command": "rg -n \"SetTransientLowScalabilityOverride|TransientScalabilityPlatformPressureMask|TransientScalabilityBatteryPressureMask|_lowTierApplied|s_setTransientLowScalabilityOverride|PlatformPressureMask|isLowEnd|lowEnd|LowEnd\" -- target files",
+    "exit_code": 1,
+    "target_file_hits": 0
+  },
+  "global_residual_scan": {
+    "command": "rg -n \"TransientScalabilityPlatformPressureMask|TransientScalabilityBatteryPressureMask|SetTransientLowScalabilityOverride\" -- Assets/_Project/Scripts/Core",
+    "residuals": [
+      "Assets/_Project/Scripts/Core/GlobalRegistry.cs:102 TransientScalabilityPlatformPressureMask constant remains.",
+      "Assets/_Project/Scripts/Core/GlobalRegistry.cs:103 TransientScalabilityBatteryPressureMask constant remains.",
+      "Assets/_Project/Scripts/Core/GlobalRegistry.cs:2895 SetTransientLowScalabilityOverride API remains.",
+      "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs:432 shutdown clears platform transient override.",
+      "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs:936 platform MathLOD lease still writes transient override.",
+      "Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs:581 and 610 thermal pressure still writes binary transient override."
+    ],
+    "status": "Residual remains outside this clean-file pass. Not edited because those central files are dirty/concurrent-agent surfaces."
+  },
+  "data_sovereignty": {
+    "GlobalDataVault_fields_migrated": false,
+    "buffer_ids_secured": [],
+    "TryAcquireWriteLock_sites_added": [],
+    "finally_release_sites_added": [],
+    "proof": "This pass did not touch DataVault-backed storage or unmanaged DTO layouts."
+  },
+  "native_layout_and_offsets": {
+    "unmanaged_struct_layout_changed": false,
+    "offset_proof_required": false,
+    "proof": "No FieldOffset, StructLayout, NativeArray element struct, BufferID payload, save DTO, or binary layout was modified."
+  },
+  "continuous_scalability": {
+    "binary_low_end_switch_introduced": false,
+    "GlobalQualityWeight_consumed": true,
+    "GlobalQualityWeight_sites": [
+      "Assets/_Project/Scripts/Core/PlatformAdaptiveBudgetGovernor.cs:147",
+      "Assets/_Project/Scripts/Core/PlatformAdaptiveBudgetGovernor.cs:329"
+    ],
+    "scalars": [
+      "pressure01",
+      "pressureCurve",
+      "globalQualityWeight01",
+      "RecommendedQualityWeightMilli",
+      "RecommendedRenderScaleMilli",
+      "FrostTickIntervalFrames",
+      "SecondaryHudEffectWeightMilli"
+    ],
+    "low_middle_high_ultra_behavior": "Low: continuous render-scale and optional HUD budget pressure instead of global binary low-tier. Middle: partial pressure through SmoothStep01 and FrostTick cadence stretch. High: pressure mostly zero, HomeostasisBrain quality passes through. Ultra: no platform clamp unless actual telemetry pressure appears."
+  },
+  "cinematic_cheat_protocol": {
+    "physical_simulation_added": false,
+    "visual_fake_used": true,
+    "details": "The pass changes presentation budgets, render scale, cadence, and optional HUD effect weight. It does not simulate battery chemistry, thermal physics, water, lighting, or deformation."
+  },
+  "static_integrity_checks": {
+    "git_diff_check_exit_code": 0,
+    "git_diff_check_notes": "Only LF-to-CRLF working-copy warnings from git.",
+    "brace_counts": [
+      {
+        "path": "Assets/_Project/Scripts/Core/PlatformBatteryWatchdog.cs",
+        "open": 23,
+        "close": 23,
+        "balanced": true
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/PlatformAdaptiveBudgetGovernor.cs",
+        "open": 41,
+        "close": 41,
+        "balanced": true
+      }
+    ],
+    "numstat": [
+      {
+        "path": "Assets/_Project/Scripts/Core/PlatformAdaptiveBudgetGovernor.cs",
+        "added": 169,
+        "deleted": 38
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/PlatformBatteryWatchdog.cs",
+        "added": 61,
+        "deleted": 18
+      }
+    ]
+  },
+  "compilation_resource_throttling": {
+    "dotnet_build_invocations": 0,
+    "final_cpu_sample_percent": 100.0,
+    "active_compiler_or_dotnet": [
+      {
+        "ProcessName": "dotnet",
+        "Id": 57828,
+        "CPU": 27.140625
+      }
+    ],
+    "build_skipped_reason": "AGENTS forbids build under CPU > 50% or active compiler/dotnet. User also said global compile errors are assigned to another agent."
+  },
+  "runtime_verification": {
+    "unity_import": "not_run",
+    "play_mode": "not_run",
+    "profiler_gc_monitor": "not_run",
+    "player_build": "not_run",
+    "device_run": "not_run",
+    "status": "PENDING_RUNTIME_VERIFICATION"
+  },
+  "faults_declared": [
+    "No Unity runtime proof exists for this pass.",
+    "No profiler microsecond saving is claimed.",
+    "Central residual binary transient override API and thermal/Homeostasis callers still exist outside this pass."
+  ]
+}

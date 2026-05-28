@@ -824,24 +824,35 @@ namespace Hecton8.Core
 
             GameObject root = new GameObject(TransitionOverlayRootName, typeof(RectTransform), typeof(Canvas), typeof(CanvasGroup)); // COLD ALLOC: GameObject[1] - scene transition blackout overlay - owner: SceneRuntimeService
             root.transform.SetParent(transform, false);
-            Canvas canvas = root.GetComponent<Canvas>();
+            if (!root.TryGetComponent(out Canvas canvas) ||
+                !root.TryGetComponent(out CanvasGroup overlayGroup))
+            {
+                DestroyTransitionOverlayRoot(root);
+                return;
+            }
+
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = TransitionOverlaySortingOrder;
 
-            _transitionOverlayGroup = root.GetComponent<CanvasGroup>();
+            _transitionOverlayGroup = overlayGroup;
             _transitionOverlayGroup.alpha = 0f;
             _transitionOverlayGroup.interactable = false;
             _transitionOverlayGroup.blocksRaycasts = true;
 
             GameObject imageRoot = new GameObject("DitherBlackout", typeof(RectTransform), typeof(Image)); // COLD ALLOC: GameObject[1] - full-screen dither image - owner: SceneRuntimeService
             imageRoot.transform.SetParent(root.transform, false);
-            RectTransform imageRect = imageRoot.GetComponent<RectTransform>();
+            if (!imageRoot.TryGetComponent(out RectTransform imageRect) ||
+                !imageRoot.TryGetComponent(out Image image))
+            {
+                DestroyTransitionOverlayRoot(root);
+                return;
+            }
+
             imageRect.anchorMin = Vector2.zero;
             imageRect.anchorMax = Vector2.one;
             imageRect.offsetMin = Vector2.zero;
             imageRect.offsetMax = Vector2.zero;
 
-            Image image = imageRoot.GetComponent<Image>();
             image.raycastTarget = true;
             image.color = _TransitionAbyssColor;
 
@@ -861,13 +872,18 @@ namespace Hecton8.Core
 
             GameObject terminalRoot = new GameObject("TerminalBootOverlay", typeof(RectTransform), typeof(TextMeshProUGUI)); // COLD ALLOC: GameObject[1] - zero-GC terminal boot overlay text - owner: SceneRuntimeService
             terminalRoot.transform.SetParent(root.transform, false);
-            RectTransform terminalRect = terminalRoot.GetComponent<RectTransform>();
+            if (!terminalRoot.TryGetComponent(out RectTransform terminalRect) ||
+                !terminalRoot.TryGetComponent(out TextMeshProUGUI terminalText))
+            {
+                DestroyTransitionOverlayRoot(root);
+                return;
+            }
+
             terminalRect.anchorMin = Vector2.zero;
             terminalRect.anchorMax = Vector2.one;
             terminalRect.offsetMin = new Vector2(48f, 40f);
             terminalRect.offsetMax = new Vector2(-48f, -40f);
 
-            TextMeshProUGUI terminalText = terminalRoot.GetComponent<TextMeshProUGUI>();
             terminalText.raycastTarget = false;
             terminalText.alignment = TextAlignmentOptions.BottomLeft;
             terminalText.textWrappingMode = TextWrappingModes.NoWrap;
@@ -876,6 +892,17 @@ namespace Hecton8.Core
             _terminalBootText = terminalText;
 
             _transitionOverlayRoot = root;
+        }
+
+        private static void DestroyTransitionOverlayRoot(GameObject root)
+        {
+            if (root == null)
+                return;
+
+            if (Application.isPlaying)
+                Destroy(root);
+            else
+                DestroyImmediate(root);
         }
 
         private void UpdateTerminalBootOverlay()

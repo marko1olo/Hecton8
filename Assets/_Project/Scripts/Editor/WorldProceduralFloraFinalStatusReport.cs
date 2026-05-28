@@ -1476,7 +1476,7 @@ namespace Hecton8.EditorTools
             builder.Append("- Root: `").Append(rootFolder).AppendLine("`");
             builder.Append("- Generated: `GEN_` prefabs are starter finals only.").AppendLine();
             builder.Append("- Texture proof: procedural editor-generated `.asset` textures do not count as authored photoreal final proof.").AppendLine();
-            builder.Append("- Shader proof: material contract requires `_QUALITY_MX350`, no `_QUALITY_HIGH`, and positive triplanar/normal/fresnel/parallax properties.").AppendLine();
+            builder.Append("- Shader proof: material contract rejects `_QUALITY_MX350`/`_QUALITY_HIGH` and requires positive triplanar/normal/fresnel/parallax properties.").AppendLine();
             builder.Append("- Coverage metric: `aX/gY` = authored prefab count / generated prefab count under baked root.").AppendLine();
             builder.Append("- Linked metric: counts from `WorldPrefabFamilyProfile.variants` with `finalReady=true` and `proxyOnly=false`.").AppendLine();
             builder.AppendLine();

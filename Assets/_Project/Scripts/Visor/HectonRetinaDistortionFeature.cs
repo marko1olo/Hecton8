@@ -18,9 +18,11 @@ namespace Hecton8.Visor
     /// <summary>
     /// Health-critical fullscreen retina distortion pass driven by the player heartbeat cadence.
     /// </summary>
-    public sealed class HectonRetinaDistortionFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
-    {
-        private const int RetinaGlobalsStrideBytes = 32;
+        public sealed class HectonRetinaDistortionFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
+        {
+            private const int RetinaGlobalsStrideBytes = 32;
+            private const int RetinaSurvivalGraphicsMemoryMb = 1536;
+            private const int RetinaVisualOverkillGraphicsMemoryMb = 4096;
 
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_RetinaDistortion.shader";
@@ -66,20 +68,12 @@ namespace Hecton8.Visor
             internal readonly float DistortionOffset;
         }
 
-        private readonly struct RuntimeState
+        private struct RuntimeState
         {
-            public RuntimeState(float health01, float critical01, float heartbeatBpm, float narcosis01)
-            {
-                Health01 = health01;
-                Critical01 = critical01;
-                HeartbeatBpm = heartbeatBpm;
-                Narcosis01 = narcosis01;
-            }
-
-            public readonly float Health01;
-            public readonly float Critical01;
-            public readonly float HeartbeatBpm;
-            public readonly float Narcosis01;
+            public float Health01;
+            public float Critical01;
+            public float HeartbeatBpm;
+            public float Narcosis01;
         }
 
         private sealed class RetinaDistortionPass : ScriptableRenderPass
@@ -103,8 +97,6 @@ namespace Hecton8.Visor
             private RetinaGlobalsDTO _lastRetinaGlobals;
             private int _retinaGlobalsWriteIndex;
             private bool _hasRetinaGlobals;
-            private bool _lastMx350Tier;
-            private bool _keywordStateInitialized;
 
             public RetinaDistortionPass()
             {
@@ -159,7 +151,7 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                TextureDesc destinationDesc = new TextureDesc(sourceDesc);
+                TextureDesc destinationDesc = sourceDesc;
                 destinationDesc.name = "_HectonRetinaDistortion";
                 destinationDesc.clearBuffer = false;
                 destinationDesc.depthBufferBits = DepthBits.None;
@@ -215,7 +207,6 @@ namespace Hecton8.Visor
                 _retinaGlobalsBuffer = null;
                 _retinaGlobalsWriteIndex = 0;
                 _hasRetinaGlobals = false;
-                _keywordStateInitialized = false;
             }
 
             private bool EnsureRetinaGlobalsBuffer()
@@ -262,19 +253,16 @@ namespace Hecton8.Visor
                 float drive01 = math.max(critical01, narcosis01);
                 float health01 = math.saturate(runtimeState.Health01);
                 float heartbeatBpm = math.max(1f, runtimeState.HeartbeatBpm);
+                float retinaQualityWeight = ResolveRetinaRuntimeQualityWeight(SystemInfo.graphicsMemorySize);
                 RetinaOffsetBudget offsetBudget = ResolveRetinaOffsetBudget(
                     math.max(0f, settings.maxChromaticOffset),
                     math.max(0f, settings.maxDistortionOffset),
-                    drive01,
-                    SystemInfo.graphicsMemorySize);
-                bool mx350Tier = SystemInfo.graphicsMemorySize > 0 && SystemInfo.graphicsMemorySize <= 2048;
+                    drive01);
                 float vignetteStrength = math.saturate(settings.maxVignetteStrength) * math.max(critical01, narcosis01 * 0.62f);
-
-                SetMx350KeywordIfChanged(mx350Tier);
 
                 RetinaGlobalsDTO globals = new RetinaGlobalsDTO(
                     new Vector4(health01, critical01, heartbeatBpm, narcosis01),
-                    new Vector4(offsetBudget.ChromaticOffset, offsetBudget.DistortionOffset, vignetteStrength, 0f));
+                    new Vector4(offsetBudget.ChromaticOffset, offsetBudget.DistortionOffset, vignetteStrength, retinaQualityWeight));
                 if (_hasRetinaGlobals && RetinaGlobalsEqual(in _lastRetinaGlobals, in globals))
                 {
                     return _retinaGlobalsBuffer != null && _retinaGlobalsBuffer.IsValid();
@@ -345,20 +333,6 @@ namespace Hecton8.Visor
                 _hasRetinaGlobals = false;
             }
 
-            private void SetMx350KeywordIfChanged(bool mx350Tier)
-            {
-                if (_keywordStateInitialized && _lastMx350Tier == mx350Tier)
-                    return;
-
-                if (mx350Tier)
-                    Shader.EnableKeyword(ShaderConstants.Mx350Keyword);
-                else
-                    Shader.DisableKeyword(ShaderConstants.Mx350Keyword);
-
-                _lastMx350Tier = mx350Tier;
-                _keywordStateInitialized = true;
-            }
-
             private static bool RetinaGlobalsEqual(in RetinaGlobalsDTO left, in RetinaGlobalsDTO right)
             {
                 return Vector4Approximately(left.Params0, right.Params0) &&
@@ -395,7 +369,6 @@ namespace Hecton8.Visor
             internal static readonly int RetinaGlobalsBufferId = Shader.PropertyToID("HectonRetinaDistortionGlobals");
             internal static readonly int BlitTextureId = Shader.PropertyToID("_BlitTexture");
             internal static readonly int NarcosisId = Shader.PropertyToID("_HectonNarcosisScalar");
-            internal const string Mx350Keyword = "_QUALITY_MX350";
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
@@ -493,7 +466,11 @@ namespace Hecton8.Visor
             float drive01 = critical01 * critical01 * (3f - 2f * critical01);
             float baseBpm = math.max(1f, settings.baseHeartbeatBpm);
             float criticalBpm = math.max(baseBpm, settings.criticalHeartbeatBpm);
-            runtimeState = new RuntimeState(health01, drive01, math.lerp(baseBpm, criticalBpm, drive01), narcosis01);
+            runtimeState = default;
+            runtimeState.Health01 = health01;
+            runtimeState.Critical01 = drive01;
+            runtimeState.HeartbeatBpm = math.lerp(baseBpm, criticalBpm, drive01);
+            runtimeState.Narcosis01 = narcosis01;
             return true;
         }
 
@@ -517,21 +494,30 @@ namespace Hecton8.Visor
         internal static RetinaOffsetBudget ResolveRetinaOffsetBudget(
             float maxChromaticOffset,
             float maxDistortionOffset,
-            float critical01,
-            int graphicsMemoryMb)
+            float critical01)
         {
             float clampedCritical = math.saturate(critical01);
-            bool mx350Tier = graphicsMemoryMb > 0 && graphicsMemoryMb <= 2048;
-            if (mx350Tier)
-            {
-                return new RetinaOffsetBudget(
-                    math.max(0f, maxChromaticOffset) * clampedCritical,
-                    0f);
-            }
-
             return new RetinaOffsetBudget(
-                0f,
+                math.max(0f, maxChromaticOffset) * clampedCritical,
                 math.max(0f, maxDistortionOffset) * clampedCritical);
+        }
+
+        internal static float ResolveRetinaVisualQualityWeight(int graphicsMemoryMb)
+        {
+            if (graphicsMemoryMb <= 0)
+                return 1f;
+
+            float range = math.max(1f, RetinaVisualOverkillGraphicsMemoryMb - RetinaSurvivalGraphicsMemoryMb);
+            float t = math.saturate((graphicsMemoryMb - RetinaSurvivalGraphicsMemoryMb) / range);
+            return t * t * (3f - 2f * t);
+        }
+
+        private static float ResolveRetinaRuntimeQualityWeight(int graphicsMemoryMb)
+        {
+            float hardwareWeight = ResolveRetinaVisualQualityWeight(graphicsMemoryMb);
+            float globalWeight = HomeostasisBrain.GlobalQualityWeight;
+            globalWeight = math.isfinite(globalWeight) ? math.saturate(globalWeight) : 1f;
+            return hardwareWeight * globalWeight;
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)

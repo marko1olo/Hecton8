@@ -10,7 +10,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/LifePod Fire Extinguisher Nozzle")]
-    public sealed class LifePodFireExtinguisherNozzle : MonoBehaviour, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class LifePodFireExtinguisherNozzle : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const byte HapticPrioritySpray = 1;
         private const byte BothMotorMask = 0x03;
@@ -67,6 +67,19 @@ namespace Hecton8.Gameplay
         private IPlayerRuntimeContext _playerRuntime;
         private bool _registeredHotSwapListener;
         private bool _tickDormant;
+        private bool _registeredLateFrame;
+        private bool _pendingSprayHapticDirty;
+        private SprayHapticRequest _pendingSprayHaptic;
+
+        private struct SprayHapticRequest
+        {
+            public float LowFrequency;
+            public float HighFrequency;
+            public float DurationSeconds;
+            public float FrequencyHz;
+            public byte Priority;
+            public byte MotorMask;
+        }
 
         /// <summary>
         /// True while the nozzle is actively feeding foam into the visor shader fake.
@@ -94,6 +107,7 @@ namespace Hecton8.Gameplay
             InvalidateColdReferenceCache();
             TryUnregisterHotSwapListener();
             TryUnregisterTick();
+            TryUnregisterLateFrameTick();
         }
 
         /// <summary>
@@ -178,6 +192,13 @@ namespace Hecton8.Gameplay
             RefreshCachedFoamFlowDirectionFrame();
             targetController.ApplyExtinguisherFoamCachedFlow(foamDelta, _cachedFoamFlowDirection);
             QueueSprayHaptic(dt);
+        }
+
+        public void LateFrameTick()
+        {
+            FlushQueuedSprayHaptic();
+            if (!_pendingSprayHapticDirty)
+                TryUnregisterLateFrameTick();
         }
 
         private void RefreshCachedFoamFlowDirectionFrame()
@@ -265,13 +286,31 @@ namespace Hecton8.Gameplay
                 return;
 
             _nextHapticPulseSeconds = _resolvedHapticPulseIntervalSeconds;
+            _pendingSprayHaptic.LowFrequency = _resolvedHapticLowFrequency;
+            _pendingSprayHaptic.HighFrequency = _resolvedHapticHighFrequency;
+            _pendingSprayHaptic.DurationSeconds = _resolvedHapticDurationSeconds;
+            _pendingSprayHaptic.FrequencyHz = _resolvedHapticFrequencyHz;
+            _pendingSprayHaptic.Priority = HapticPrioritySpray;
+            _pendingSprayHaptic.MotorMask = BothMotorMask;
+            _pendingSprayHapticDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void FlushQueuedSprayHaptic()
+        {
+            if (!_pendingSprayHapticDirty)
+                return;
+
+            SprayHapticRequest request = _pendingSprayHaptic;
+            _pendingSprayHaptic = default;
+            _pendingSprayHapticDirty = false;
             ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
-                _resolvedHapticLowFrequency,
-                _resolvedHapticHighFrequency,
-                _resolvedHapticDurationSeconds,
-                _resolvedHapticFrequencyHz,
-                HapticPrioritySpray,
-                BothMotorMask);
+                request.LowFrequency,
+                request.HighFrequency,
+                request.DurationSeconds,
+                request.FrequencyHz,
+                request.Priority,
+                request.MotorMask);
         }
 
         private void CacheScalarConfig()
@@ -313,6 +352,26 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registeredTick = false;
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_registeredLateFrame || !Application.isPlaying)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredLateFrame = false;
+            }
+
+            _pendingSprayHapticDirty = false;
+            _pendingSprayHaptic = default;
         }
 
         private void RefreshColdRegistryReferences()

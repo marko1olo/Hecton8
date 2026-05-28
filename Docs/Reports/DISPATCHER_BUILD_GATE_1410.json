@@ -1,23 +1,29 @@
-﻿{
-    "agent":  "1410",
-    "timestamp":  "2026-05-28T13:43:09.4730110+04:00",
-    "cpuLoadPercent":  90,
-    "compilerProcesses":  [
-                              {
-                                  "id":  63300,
-                                  "processName":  "csc",
-                                  "cpu":  176.40625,
-                                  "startTime":  "2026-05-28T13:41:45+04:00"
-                              },
-                              {
-                                  "id":  53008,
-                                  "processName":  "dotnet",
-                                  "cpu":  35.015625,
-                                  "startTime":  "2026-05-28T13:41:18+04:00"
-                              }
-                          ],
-    "decision":  "BLOCKED_BY_CPU_AND_COMPILER_CONTENTION",
-    "dotnetBuildInvoked":  false,
+{
+    "generatedAt":  "2026-05-28T20:33:13.6872385+04:00",
+    "evidenceClass":  "RECHECK11_BUILD_BLOCKED_BY_CPU_AND_ACTIVE_DOTNET",
+    "preBuildCpuAveragePercent":  100,
+    "preBuildActiveCompilerProcessCount":  1,
+    "preBuildActiveCompilerProcesses":  [
+                                            {
+                                                "processId":  13464,
+                                                "name":  "dotnet.exe",
+                                                "commandLine":  "\"C:\\Program Files\\dotnet\\dotnet.exe\" build MapMagic.MicroSplat.csproj -nologo --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false",
+                                                "creationDate":  "2026-05-28T20:31:56+04:00"
+                                            }
+                                        ],
+    "buildAllowedAtPreSample":  false,
+    "buildInvoked":  false,
     "command":  "dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
-    "rule":  "Do not launch dotnet build when CPU \u003e 50% or dotnet/csc/VBCSCompiler is active."
+    "blockReason":  "CPU 100% exceeds the 50% compilation throttle gate and an active dotnet build process is running for MapMagic.MicroSplat.csproj.",
+    "previousBuildAttempt":  {
+                                 "evidenceClass":  "CLI_COMPILE_ATTEMPT_TIMEOUT_CLEANED_UP",
+                                 "preBuildCpuAveragePercent":  36,
+                                 "preBuildActiveCompilerProcessCount":  0,
+                                 "buildInvoked":  true,
+                                 "timeoutMilliseconds":  300000,
+                                 "exitCode":  124,
+                                 "result":  "TIMEOUT_NO_COMPILE_VERDICT",
+                                 "timedOutProcessCleanup":  "Stopped remnant dotnet build PIDs 17856 and 34600 after confirming both command lines were the invoked Hecton8.slnx build."
+                             },
+    "residualRisk":  "No green CLI compile verdict exists. Recheck11 validation is static-source and diff-check only until CPU <= 50% and compiler-process gate is clear."
 }

@@ -40,6 +40,7 @@ namespace Hecton8.Physics.Vehicles
         private VaultGenerationHandle<SubmarineGyroVisualStateDTO> _gyroVisualHandle;
         private VaultGenerationHandle<SubmarineGyroProfileDTO> _gyroProfileHandle;
         private VaultGenerationHandle<SubmarineGyroCounterDTO> _gyroCounterHandle;
+        private bool _gyroTuningReadPinHeld;
 #if UNITY_EDITOR
         private VaultGenerationHandle<byte> _gyroCsvScratchHandle;
 #endif
@@ -204,7 +205,6 @@ namespace Hecton8.Physics.Vehicles
             out NativeArray<SubmarineGyroForcePacketDTO> packets,
             out NativeArray<GyroTelemetryEntry> telemetry,
             out NativeArray<SubmarineGyroVisualStateDTO> visuals,
-            out NativeArray<SubmarineGyroProfileDTO> profiles,
             out NativeArray<SubmarineGyroCounterDTO> counters)
         {
             gyros = default;
@@ -212,7 +212,6 @@ namespace Hecton8.Physics.Vehicles
             packets = default;
             telemetry = default;
             visuals = default;
-            profiles = default;
             counters = default;
 
             return TryResolveVaultHandle(in _gyroHandle, out gyros) &&
@@ -220,30 +219,54 @@ namespace Hecton8.Physics.Vehicles
                    TryResolveVaultHandle(in _gyroForcePacketHandle, out packets) &&
                    TryResolveVaultHandle(in _gyroTelemetryHandle, out telemetry) &&
                    TryResolveVaultHandle(in _gyroVisualHandle, out visuals) &&
-                   TryResolveVaultHandle(in _gyroProfileHandle, out profiles) &&
                    TryResolveVaultHandle(in _gyroCounterHandle, out counters);
         }
 
         private bool TryLockGyroBuffers()
         {
-            return TryAcquireVaultWriteLock(in _gyroHandle, out _) &&
-                   TryAcquireVaultWriteLock(in _gyroErrorHandle, out _) &&
-                   TryAcquireVaultWriteLock(in _gyroForcePacketHandle, out _) &&
-                   TryAcquireVaultWriteLock(in _gyroTelemetryHandle, out _) &&
-                   TryAcquireVaultWriteLock(in _gyroVisualHandle, out _) &&
-                   TryAcquireVaultWriteLock(in _gyroProfileHandle, out _) &&
-                   TryAcquireVaultWriteLock(in _gyroCounterHandle, out _);
+            bool locked = false;
+            try
+            {
+                _gyroTuningReadPinHeld = false;
+                if (!TryAcquireVaultReadPin(in _gyroHandle, BufferID.Shinobu332SubmarineGyros, math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles), out _) ||
+                    !TryMarkGyroTuningReadPin() ||
+                    !TryAcquireVaultWriteLock(in _gyroErrorHandle, out _) ||
+                    !TryAcquireVaultWriteLock(in _gyroForcePacketHandle, out _) ||
+                    !TryAcquireVaultWriteLock(in _gyroTelemetryHandle, out _) ||
+                    !TryAcquireVaultWriteLock(in _gyroVisualHandle, out _) ||
+                    !TryAcquireVaultWriteLock(in _gyroCounterHandle, out _))
+                {
+                    return false;
+                }
+
+                locked = true;
+                return true;
+            }
+            finally
+            {
+                if (!locked)
+                    UnlockGyroBuffers();
+            }
+        }
+
+        private bool TryMarkGyroTuningReadPin()
+        {
+            _gyroTuningReadPinHeld = true;
+            return true;
         }
 
         private void UnlockGyroBuffers()
         {
-            ReleaseVaultWriteLock(in _gyroHandle);
             ReleaseVaultWriteLock(in _gyroErrorHandle);
             ReleaseVaultWriteLock(in _gyroForcePacketHandle);
             ReleaseVaultWriteLock(in _gyroTelemetryHandle);
             ReleaseVaultWriteLock(in _gyroVisualHandle);
-            ReleaseVaultWriteLock(in _gyroProfileHandle);
             ReleaseVaultWriteLock(in _gyroCounterHandle);
+            if (_gyroTuningReadPinHeld)
+            {
+                ReleaseVaultReadPin(BufferID.Shinobu332SubmarineGyros);
+                _gyroTuningReadPinHeld = false;
+            }
         }
 
         private unsafe JobHandle ScheduleGyroPipeline(
@@ -262,7 +285,6 @@ namespace Hecton8.Physics.Vehicles
                     out NativeArray<SubmarineGyroForcePacketDTO> packets,
                     out NativeArray<GyroTelemetryEntry> telemetry,
                     out NativeArray<SubmarineGyroVisualStateDTO> visuals,
-                    out _,
                     out NativeArray<SubmarineGyroCounterDTO> counters))
             {
                 return inputDependency;
@@ -365,7 +387,7 @@ namespace Hecton8.Physics.Vehicles
                 return false;
             }
 
-            if (!TryReadVaultHandle(in _gyroTelemetryHandle, out NativeArray<GyroTelemetryEntry> telemetry) || telemetry.Length == 0)
+            if (!TryReadOnlyVaultHandle(in _gyroTelemetryHandle, out NativeArray<GyroTelemetryEntry>.ReadOnly telemetry) || telemetry.Length == 0)
                 return false;
 
             int index = (int)(_frameCounter % (uint)telemetry.Length);
@@ -408,7 +430,7 @@ namespace Hecton8.Physics.Vehicles
             if (!_buffersReady || _buffersLocked || _integratorPending || _dataVault == null)
                 return false;
 
-            if (!TryReadVaultHandle(in _gyroHandle, out NativeArray<SubmarineGyroDTO> gyros) || gyros.Length == 0)
+            if (!TryReadOnlyVaultHandle(in _gyroHandle, out NativeArray<SubmarineGyroDTO>.ReadOnly gyros) || gyros.Length == 0)
                 return false;
 
             SubmarineGyroDTO raw = gyros[0];
@@ -461,7 +483,7 @@ namespace Hecton8.Physics.Vehicles
             if (!_buffersReady || _buffersLocked || _integratorPending || _dataVault == null)
                 return false;
 
-            if (!TryReadVaultHandle(in _gyroTelemetryHandle, out NativeArray<GyroTelemetryEntry> rows) || rows.Length == 0)
+            if (!TryReadOnlyVaultHandle(in _gyroTelemetryHandle, out NativeArray<GyroTelemetryEntry>.ReadOnly rows) || rows.Length == 0)
                 return false;
 
             telemetry = rows[(int)(_frameCounter % (uint)rows.Length)];
@@ -475,8 +497,8 @@ namespace Hecton8.Physics.Vehicles
             if (!_buffersReady || _buffersLocked || _integratorPending || _dataVault == null)
                 return false;
 
-            if (!TryReadVaultHandle(in _gyroForcePacketHandle, out NativeArray<SubmarineGyroForcePacketDTO> packets) ||
-                !TryReadVaultHandle(in _gyroErrorHandle, out NativeArray<SubmarineGyroErrorDTO> errors) ||
+            if (!TryReadOnlyVaultHandle(in _gyroForcePacketHandle, out NativeArray<SubmarineGyroForcePacketDTO>.ReadOnly packets) ||
+                !TryReadOnlyVaultHandle(in _gyroErrorHandle, out NativeArray<SubmarineGyroErrorDTO>.ReadOnly errors) ||
                 packets.Length == 0 ||
                 errors.Length == 0)
             {
@@ -493,7 +515,7 @@ namespace Hecton8.Physics.Vehicles
             if (!_buffersReady || _dataVault == null || _integratorPending)
                 return;
 
-            if (!TryReadVaultHandle(in _gyroVisualHandle, out NativeArray<SubmarineGyroVisualStateDTO> visuals) || visuals.Length == 0)
+            if (!TryReadOnlyVaultHandle(in _gyroVisualHandle, out NativeArray<SubmarineGyroVisualStateDTO>.ReadOnly visuals) || visuals.Length == 0)
                 return;
 
             int count = math.min(visuals.Length, math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles));
@@ -502,7 +524,7 @@ namespace Hecton8.Physics.Vehicles
 
             uint uploadFrame = _frameCounter;
             bool hasActiveController = true;
-            if (TryReadVaultHandle(in _gyroCounterHandle, out NativeArray<SubmarineGyroCounterDTO> counters) && counters.Length > 0)
+            if (TryReadOnlyVaultHandle(in _gyroCounterHandle, out NativeArray<SubmarineGyroCounterDTO>.ReadOnly counters) && counters.Length > 0)
             {
                 SubmarineGyroCounterDTO counter = counters[0];
                 uploadFrame = counter.Frame;

@@ -55,9 +55,6 @@ namespace Hecton8.Gameplay
             if (survivalSystem != null)
                 ApplyEffects(item, survivalSystem);
 
-            if (item.useSound != null && audioService != null)
-                audioService.PlayStatic2D(item.useSound, 1f);
-
             return true;
         }
 
@@ -75,6 +72,18 @@ namespace Hecton8.Gameplay
         public static bool TryConsume(ItemData item, IAudioService audioService)
         {
             return TryConsume(item, ResolveSurvivalSystem(), audioService);
+        }
+
+        public static bool TryConsumeWithoutAudio(ItemData item)
+        {
+            if (item == null || !item.isConsumable)
+                return false;
+
+            HectonSurvivalSystem survivalSystem = ResolveSurvivalSystem();
+            if (survivalSystem != null)
+                ApplyEffects(item, survivalSystem);
+
+            return true;
         }
 
         /// <summary>

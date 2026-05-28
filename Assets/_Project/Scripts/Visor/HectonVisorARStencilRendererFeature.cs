@@ -539,7 +539,7 @@ namespace Hecton8.Visor
                 }
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                TextureDesc destinationDesc = new TextureDesc(sourceDesc);
+                TextureDesc destinationDesc = sourceDesc;
                 destinationDesc.name = "_HectonVisorARStencilResolve";
                 destinationDesc.clearBuffer = false;
                 destinationDesc.depthBufferBits = DepthBits.None;
@@ -842,7 +842,8 @@ namespace Hecton8.Visor
                 if (_dataVault == null && previousService is IDataVault previousVault)
                     ReleaseVaultHandles(previousVault);
 
-                BindDataVaultForLifecycle(currentService as IDataVault);
+                IDataVault nextVault = currentService is IDataVault dataVault ? dataVault : null;
+                BindDataVaultForLifecycle(nextVault);
                 TryEnsureVaultBuffers();
 #if UNITY_EDITOR
                 LoadCsvProfilesCold();

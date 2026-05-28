@@ -261,6 +261,11 @@ namespace Hecton8.Crafting
         private AudioClip _pendingAudioClip;
         private Vector3 _pendingAudioPosition;
         private bool _pendingAudioDirty;
+        private int _pendingProceduralAudioPingCount;
+        private ProceduralAudioPingRequest _pendingProceduralAudioPing0;
+        private ProceduralAudioPingRequest _pendingProceduralAudioPing1;
+        private bool _pendingProgressHapticDirty;
+        private FabricatorHapticRequest _pendingProgressHaptic;
 
         // -- Craft State --
         private bool       _isCrafting;
@@ -331,6 +336,26 @@ namespace Hecton8.Crafting
             [FieldOffset(61)] private byte _pad1;
             [FieldOffset(62)] private byte _pad2;
             [FieldOffset(63)] private byte _pad3;
+        }
+
+        private struct ProceduralAudioPingRequest
+        {
+            public Vector3 Position;
+            public float Intensity01;
+            public float DurationSeconds;
+            public float Transmission01;
+            public float PitchCarrierHz;
+            public ProceduralAudioPingKind Kind;
+        }
+
+        private struct FabricatorHapticRequest
+        {
+            public float LowFrequencyIntensity;
+            public float HighFrequencyIntensity;
+            public float DurationSeconds;
+            public float PulseFrequencyHz;
+            public byte Priority;
+            public byte MotorMask;
         }
 
         private sealed class FabricatorMemoryDumpSnapshot
@@ -938,6 +963,8 @@ namespace Hecton8.Crafting
             }
 
             FlushPendingAudio();
+            FlushPendingProceduralAudioPings();
+            FlushPendingProgressHaptics();
         }
 
         public void SlowTick()
@@ -1014,7 +1041,7 @@ namespace Hecton8.Crafting
             if (progress > previousProgress)
             {
                 RaiseFabricatorProgressAudioPing();
-                RaiseFabricatorProgressHaptics(progress);
+                QueueFabricatorProgressHaptics(progress);
                 TriggerSparkProxyLight();
             }
 
@@ -2707,10 +2734,66 @@ namespace Hecton8.Crafting
             _audioService?.PlayAtPoint(clip, position);
         }
 
+        private void QueueProceduralAudioPing(
+            Vector3 position,
+            float intensity01,
+            float durationSeconds,
+            float transmission01,
+            float pitchCarrierHz,
+            ProceduralAudioPingKind kind)
+        {
+            ProceduralAudioPingRequest request = default;
+            request.Position = position;
+            request.Intensity01 = Mathf.Clamp01(intensity01);
+            request.DurationSeconds = Mathf.Max(0f, durationSeconds);
+            request.Transmission01 = Mathf.Clamp01(transmission01);
+            request.PitchCarrierHz = Mathf.Max(0f, pitchCarrierHz);
+            request.Kind = kind;
+
+            if (_pendingProceduralAudioPingCount == 0)
+            {
+                _pendingProceduralAudioPing0 = request;
+                _pendingProceduralAudioPingCount = 1;
+            }
+            else
+            {
+                _pendingProceduralAudioPing1 = request;
+                _pendingProceduralAudioPingCount = 2;
+            }
+
+            TryRegisterLateFrame();
+        }
+
+        private void FlushPendingProceduralAudioPings()
+        {
+            int count = _pendingProceduralAudioPingCount;
+            if (count <= 0)
+                return;
+
+            _pendingProceduralAudioPingCount = 0;
+            FlushProceduralAudioPing(in _pendingProceduralAudioPing0);
+            if (count > 1)
+                FlushProceduralAudioPing(in _pendingProceduralAudioPing1);
+
+            _pendingProceduralAudioPing0 = default;
+            _pendingProceduralAudioPing1 = default;
+        }
+
+        private static void FlushProceduralAudioPing(in ProceduralAudioPingRequest request)
+        {
+            ProceduralAudioEvents.TryRaiseAudioPingTriggered(
+                request.Position,
+                request.Intensity01,
+                request.DurationSeconds,
+                request.Transmission01,
+                request.PitchCarrierHz,
+                request.Kind);
+        }
+
         private void RaiseFabricatorProgressAudioPing()
         {
             float pitchCarrierHz = Mathf.Clamp(900f + (_activeCraftPowerMultiplier * 180f), 900f, 2200f);
-            ProceduralAudioEvents.TryRaiseAudioPingTriggered(
+            QueueProceduralAudioPing(
                 transform.position,
                 Mathf.Clamp01(0.18f + _activeCraftPowerMultiplier * 0.08f),
                 0.08f,
@@ -2724,20 +2807,35 @@ namespace Hecton8.Crafting
             AcousticEcholocationBarkEvents.RaiseStorageCapacityExceeded();
         }
 
-        private static void RaiseFabricatorProgressHaptics(float progress)
+        private void QueueFabricatorProgressHaptics(float progress)
         {
             float finalPulseT = math.saturate((progress - 0.9f) * 10f);
             float finalPulse01 = finalPulseT * finalPulseT * (3f - (2f * finalPulseT));
-            float lowFrequencyIntensity = math.saturate(math.lerp(0.12f, 0.3f, progress) + finalPulse01 * 0.35f);
-            float highFrequencyIntensity = math.saturate(0.025f + finalPulse01 * 0.05f);
-            float pulseFrequencyHz = math.lerp(18f, 30f, finalPulse01);
+            _pendingProgressHaptic.LowFrequencyIntensity = math.saturate(math.lerp(0.12f, 0.3f, progress) + finalPulse01 * 0.35f);
+            _pendingProgressHaptic.HighFrequencyIntensity = math.saturate(0.025f + finalPulse01 * 0.05f);
+            _pendingProgressHaptic.DurationSeconds = 0.18f;
+            _pendingProgressHaptic.PulseFrequencyHz = math.lerp(18f, 30f, finalPulse01);
+            _pendingProgressHaptic.Priority = finalPulse01 > 0f ? FabricatorFinalHapticPriority : FabricatorHapticPriority;
+            _pendingProgressHaptic.MotorMask = FabricatorHapticMotorMask;
+            _pendingProgressHapticDirty = true;
+            TryRegisterLateFrame();
+        }
+
+        private void FlushPendingProgressHaptics()
+        {
+            if (!_pendingProgressHapticDirty)
+                return;
+
+            FabricatorHapticRequest request = _pendingProgressHaptic;
+            _pendingProgressHaptic = default;
+            _pendingProgressHapticDirty = false;
             ToolHapticsRuntime.TryEnqueueSinusoidalCommand(
-                lowFrequencyIntensity,
-                highFrequencyIntensity,
-                0.18f,
-                pulseFrequencyHz,
-                finalPulse01 > 0f ? FabricatorFinalHapticPriority : FabricatorHapticPriority,
-                FabricatorHapticMotorMask);
+                request.LowFrequencyIntensity,
+                request.HighFrequencyIntensity,
+                request.DurationSeconds,
+                request.PulseFrequencyHz,
+                request.Priority,
+                request.MotorMask);
         }
 
         private void TriggerCraftFailureFeedback()
@@ -2746,7 +2844,7 @@ namespace Hecton8.Crafting
             ApplyErrorFeedback(1f);
             CraftingEvents.TryRaiseCraftFailed(this);
             PlaySound(fabricationErrorBuzzerSound);
-            ProceduralAudioEvents.TryRaiseAudioPingTriggered(
+            QueueProceduralAudioPing(
                 transform.position,
                 0.85f,
                 0.12f,
@@ -3916,6 +4014,11 @@ namespace Hecton8.Crafting
             _pendingErrorFeedbackDirty = false;
             _pendingAudioClip = null;
             _pendingAudioDirty = false;
+            _pendingProceduralAudioPingCount = 0;
+            _pendingProceduralAudioPing0 = default;
+            _pendingProceduralAudioPing1 = default;
+            _pendingProgressHapticDirty = false;
+            _pendingProgressHaptic = default;
         }
 
         private void TryRegisterSparkLightTick()

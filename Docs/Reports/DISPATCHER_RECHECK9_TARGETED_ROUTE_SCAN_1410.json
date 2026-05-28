@@ -1,0 +1,82 @@
+﻿{
+    "generatedAt":  "2026-05-28T18:41:58.1842414+04:00",
+    "evidenceClass":  "STATIC_SOURCE_TEXT_SCAN",
+    "scope":  "Recheck9 targeted PlayerAction/Consumable/ItemData backend, payload, and continuous quality route scan",
+    "staleManagedPendingAudioClipMatches":  0,
+    "backendCallsOutsidePlayerActionFlush":  0,
+    "consumableTryConsumeWithoutAudioBackendCalls":  0,
+    "binaryLowEndSwitchMatches":  0,
+    "notes":  [
+                  "PlayerActionController backend calls are restricted to FlushQueuedActionAudio lines 609 and 615.",
+                  "ConsumableItem.TryConsume still has legacy PlayStatic2D at line 59, but PlayerActionController now calls TryConsumeWithoutAudio on completion/instant paths.",
+                  "ActionAudioRequest is the phase-transfer payload; no AudioClip is stored in pending state.",
+                  "ResolveActionAudioPresentationVolume consumes HomeostasisBrain.GlobalQualityWeight as a continuous 0.75..1.0 presentation volume scalar."
+              ],
+    "tokenRows":  [
+                      {
+                          "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                          "line":  48,
+                          "text":  "private struct ActionAudioRequest"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                          "line":  118,
+                          "text":  "private ActionAudioRequest _pendingActionAudio;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                          "line":  546,
+                          "text":  "uint eventId = item.UseAudioEventId;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                          "line":  598,
+                          "text":  "ActionAudioRequest request = _pendingActionAudio;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                          "line":  605,
+                          "text":  "float volume = ResolveActionAudioPresentationVolume();"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                          "line":  609,
+                          "text":  "if (audioService.QueueAudioEvent(in audioEvent))"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                          "line":  615,
+                          "text":  "audioService.PlayAtPoint(clip, request.Position, volume, 1f);"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                          "line":  623,
+                          "text":  "private AudioClip ResolveActionAudioClip(in ActionAudioRequest request)"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                          "line":  654,
+                          "text":  "private static float ResolveActionAudioPresentationVolume()"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Gameplay/PlayerActionController.cs",
+                          "line":  656,
+                          "text":  "float quality = HomeostasisBrain.GlobalQualityWeight;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Gameplay/ConsumableItem.cs",
+                          "line":  59,
+                          "text":  "audioService.PlayStatic2D(item.useSound, 1f);"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/ItemData.cs",
+                          "line":  157,
+                          "text":  "[SerializeField, Min(0)] private uint useAudioEventId;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/ItemData.cs",
+                          "line":  295,
+                          "text":  "public uint UseAudioEventId =\u003e useAudioEventId;"
+                      }
+                  ]
+}

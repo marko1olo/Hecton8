@@ -124,7 +124,7 @@ namespace Hecton8.Ecosystem
             IDataVault vault = runtime != null ? runtime._vault : null;
             return runtime != null &&
                    vault != null &&
-                   TryOpenReadVaultBuffer(vault, in runtime._tuningHandle, out NativeArray<NutrientDriftTuningDTO> tuningArray) &&
+                   TryOpenReadVaultBuffer(vault, in runtime._tuningHandle, out NativeArray<NutrientDriftTuningDTO>.ReadOnly tuningArray) &&
                    tuningArray.Length > 0 &&
                    ReadSnapshotReady(tuningArray[0], out tuning);
         }
@@ -135,16 +135,24 @@ namespace Hecton8.Ecosystem
             IDataVault vault = runtime != null ? runtime._vault : null;
             if (runtime == null ||
                 vault == null ||
-                !IsMatchingVaultHandle(in runtime._tuningHandle, BufferID.ShinobuNutrientDriftTuning) ||
-                !vault.TryAcquireWriteLock(in runtime._tuningHandle, SystemID.AIEcology, out NativeArray<NutrientDriftTuningDTO> tuningArray) ||
-                !tuningArray.IsCreated ||
-                tuningArray.Length <= 0)
+                !IsMatchingVaultHandle(in runtime._tuningHandle, BufferID.ShinobuNutrientDriftTuning))
+            {
+                return false;
+            }
+
+            if (!vault.TryAcquireWriteLock(in runtime._tuningHandle, SystemID.AIEcology, out NativeArray<NutrientDriftTuningDTO> tuningArray))
             {
                 return false;
             }
 
             try
             {
+                if (!tuningArray.IsCreated ||
+                    tuningArray.Length <= 0)
+                {
+                    return false;
+                }
+
                 NutrientDriftTuningDTO sanitized = NutrientDriftMath.SanitizeTuning(
                     requestedTuning,
                     tuningArray[0].GridOriginAup);
@@ -168,7 +176,7 @@ namespace Hecton8.Ecosystem
             if (runtime == null ||
                 vault == null ||
                 (uint)index >= TelemetryCapacity ||
-                !TryOpenReadVaultBuffer(vault, in runtime._telemetryHandle, out NativeArray<FluidGridTelemetryEntry> telemetry) ||
+                !TryOpenReadVaultBuffer(vault, in runtime._telemetryHandle, out NativeArray<FluidGridTelemetryEntry>.ReadOnly telemetry) ||
                 (uint)index >= (uint)telemetry.Length)
             {
                 return false;
@@ -193,7 +201,7 @@ namespace Hecton8.Ecosystem
             IDataVault vault = runtime != null ? runtime._vault : null;
             if (runtime == null ||
                 vault == null ||
-                !TryOpenReadVaultBuffer(vault, in runtime._telemetryCursorHandle, out NativeArray<int> cursorArray) ||
+                !TryOpenReadVaultBuffer(vault, in runtime._telemetryCursorHandle, out NativeArray<int>.ReadOnly cursorArray) ||
                 cursorArray.Length <= 0)
             {
                 return false;
@@ -210,7 +218,7 @@ namespace Hecton8.Ecosystem
             IDataVault vault = runtime != null ? runtime._vault : null;
             if (runtime == null ||
                 vault == null ||
-                !TryOpenReadVaultBuffer(vault, in runtime._headerHandle, out NativeArray<NutrientDriftGridHeaderDTO> headers) ||
+                !TryOpenReadVaultBuffer(vault, in runtime._headerHandle, out NativeArray<NutrientDriftGridHeaderDTO>.ReadOnly headers) ||
                 headers.Length <= 0)
             {
                 return false;
@@ -228,7 +236,7 @@ namespace Hecton8.Ecosystem
             if (runtime == null || vault == null || runtime._jobScheduled)
                 return false;
 
-            if (!TryOpenReadVaultBuffer(vault, in runtime._tuningHandle, out NativeArray<NutrientDriftTuningDTO> tuningArray) ||
+            if (!TryOpenReadVaultBuffer(vault, in runtime._tuningHandle, out NativeArray<NutrientDriftTuningDTO>.ReadOnly tuningArray) ||
                 tuningArray.Length <= 0 ||
                 !ReadSnapshotReady(tuningArray[0], out NutrientDriftTuningDTO tuning))
             {
@@ -239,7 +247,7 @@ namespace Hecton8.Ecosystem
             if ((uint)x >= (uint)axis || (uint)y >= (uint)axis || (uint)z >= (uint)axis)
                 return false;
 
-            if (!TryOpenReadVaultBuffer(vault, in runtime._frontHandle, out NativeArray<NutrientCellDTO> front))
+            if (!TryOpenReadVaultBuffer(vault, in runtime._frontHandle, out NativeArray<NutrientCellDTO>.ReadOnly front))
                 return false;
 
             int index = NutrientDriftMath.Index3D(x, y, z, GridAxisMax);
@@ -296,6 +304,7 @@ namespace Hecton8.Ecosystem
             {
                 _initialized = false;
                 _profilesLoadedCold = false;
+                UnlockCarrionJobBuffers();
                 UnlockJobBuffers();
                 return;
             }
@@ -527,68 +536,113 @@ namespace Hecton8.Ecosystem
                 return EnsureCarrionVaultState(vault);
             }
 
-            if (!OpenOrAcquireVaultBuffer(vault, ref _frontHandle, BufferID.ShinobuNutrientDriftCellFront, GridCellCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<NutrientCellDTO> front) ||
-                !OpenOrAcquireVaultBuffer(vault, ref _backHandle, BufferID.ShinobuNutrientDriftCellBack, GridCellCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<NutrientCellDTO> back) ||
-                !OpenOrAcquireVaultBuffer(vault, ref _flowHandle, BufferID.ShinobuNutrientDriftFlowField, GridCellCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<float3> flow) ||
-                !OpenOrAcquireVaultBuffer(vault, ref _injectionHandle, BufferID.ShinobuNutrientDriftInjection, GridCellCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<float> injection) ||
-                !OpenOrAcquireVaultBuffer(vault, ref _sourceHandle, BufferID.ShinobuNutrientDriftSources, SourceCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<NutrientSourceDTO> sources) ||
-                !OpenOrAcquireVaultBuffer(vault, ref _sourceCountHandle, BufferID.ShinobuNutrientDriftSourceCount, 1, NativeArrayOptions.UninitializedMemory, out NativeArray<int> sourceCount) ||
-                !OpenOrAcquireVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuNutrientDriftTuning, 1, NativeArrayOptions.UninitializedMemory, out NativeArray<NutrientDriftTuningDTO> tuning) ||
-                !OpenOrAcquireVaultBuffer(vault, ref _telemetryHandle, BufferID.ShinobuNutrientDriftTelemetryRing, TelemetryCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<FluidGridTelemetryEntry> telemetry) ||
-                !OpenOrAcquireVaultBuffer(vault, ref _telemetryCursorHandle, BufferID.ShinobuNutrientDriftTelemetryCursor, 1, NativeArrayOptions.UninitializedMemory, out NativeArray<int> telemetryCursor) ||
-                !OpenOrAcquireVaultBuffer(vault, ref _densityUploadHandle, BufferID.ShinobuNutrientDriftDensityUpload, GridCellCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<float> densityUpload) ||
-                !OpenOrAcquireVaultBuffer(vault, ref _headerHandle, BufferID.ShinobuNutrientDriftGridHeader, 1, NativeArrayOptions.UninitializedMemory, out NativeArray<NutrientDriftGridHeaderDTO> headers) ||
-                !OpenOrAcquireVaultBuffer(vault, ref _profileHandle, BufferID.ShinobuNutrientDriftProfiles, ProfileCapacity, NativeArrayOptions.UninitializedMemory, out NativeArray<NutrientProfileDTO> profiles) ||
-                !OpenOrAcquireVaultBuffer(vault, ref _csvScratchHandle, BufferID.ShinobuNutrientDriftCsvScratch, CsvScratchBytes, NativeArrayOptions.UninitializedMemory, out NativeArray<byte> scratch) ||
-                !OpenOrAcquireVaultBuffer(vault, ref _faultFlagHandle, BufferID.ShinobuNutrientDriftFaultFlags, 4, NativeArrayOptions.UninitializedMemory, out NativeArray<uint> faultFlags))
+            if (!EnsureVaultBufferHandle(vault, ref _frontHandle, BufferID.ShinobuNutrientDriftCellFront, GridCellCapacity, NativeArrayOptions.UninitializedMemory) ||
+                !EnsureVaultBufferHandle(vault, ref _backHandle, BufferID.ShinobuNutrientDriftCellBack, GridCellCapacity, NativeArrayOptions.UninitializedMemory) ||
+                !EnsureVaultBufferHandle(vault, ref _flowHandle, BufferID.ShinobuNutrientDriftFlowField, GridCellCapacity, NativeArrayOptions.UninitializedMemory) ||
+                !EnsureVaultBufferHandle(vault, ref _injectionHandle, BufferID.ShinobuNutrientDriftInjection, GridCellCapacity, NativeArrayOptions.UninitializedMemory) ||
+                !EnsureVaultBufferHandle(vault, ref _sourceHandle, BufferID.ShinobuNutrientDriftSources, SourceCapacity, NativeArrayOptions.UninitializedMemory) ||
+                !EnsureVaultBufferHandle(vault, ref _sourceCountHandle, BufferID.ShinobuNutrientDriftSourceCount, 1, NativeArrayOptions.UninitializedMemory) ||
+                !EnsureVaultBufferHandle(vault, ref _tuningHandle, BufferID.ShinobuNutrientDriftTuning, 1, NativeArrayOptions.UninitializedMemory) ||
+                !EnsureVaultBufferHandle(vault, ref _telemetryHandle, BufferID.ShinobuNutrientDriftTelemetryRing, TelemetryCapacity, NativeArrayOptions.UninitializedMemory) ||
+                !EnsureVaultBufferHandle(vault, ref _telemetryCursorHandle, BufferID.ShinobuNutrientDriftTelemetryCursor, 1, NativeArrayOptions.UninitializedMemory) ||
+                !EnsureVaultBufferHandle(vault, ref _densityUploadHandle, BufferID.ShinobuNutrientDriftDensityUpload, GridCellCapacity, NativeArrayOptions.UninitializedMemory) ||
+                !EnsureVaultBufferHandle(vault, ref _headerHandle, BufferID.ShinobuNutrientDriftGridHeader, 1, NativeArrayOptions.UninitializedMemory) ||
+                !EnsureVaultBufferHandle(vault, ref _profileHandle, BufferID.ShinobuNutrientDriftProfiles, ProfileCapacity, NativeArrayOptions.UninitializedMemory) ||
+                !EnsureVaultBufferHandle(vault, ref _csvScratchHandle, BufferID.ShinobuNutrientDriftCsvScratch, CsvScratchBytes, NativeArrayOptions.UninitializedMemory) ||
+                !EnsureVaultBufferHandle(vault, ref _faultFlagHandle, BufferID.ShinobuNutrientDriftFaultFlags, 4, NativeArrayOptions.UninitializedMemory))
             {
                 return false;
             }
 
-            if (_initialized && (tuning[0].Flags & TuningFlagInitialized) != 0u)
+            bool nutrientReady = false;
+            bool profileLoadRequired = false;
+            bool jobLocked = false;
+            bool profileLocked = false;
+            try
             {
-                if (!_profilesLoadedCold)
+                if (!TryLockJobBuffers(vault))
+                    return false;
+
+                jobLocked = true;
+                if (!vault.TryAcquireWriteLock(in _profileHandle, SystemID.AIEcology, out NativeArray<NutrientProfileDTO> profiles))
+                    return false;
+
+                profileLocked = true;
+                if (!profiles.IsCreated ||
+                    profiles.Length < ProfileCapacity ||
+                    !TryOpenVaultBuffer(vault, ref _frontHandle, BufferID.ShinobuNutrientDriftCellFront, GridCellCapacity, out NativeArray<NutrientCellDTO> front) ||
+                    !TryOpenVaultBuffer(vault, ref _backHandle, BufferID.ShinobuNutrientDriftCellBack, GridCellCapacity, out NativeArray<NutrientCellDTO> back) ||
+                    !TryOpenVaultBuffer(vault, ref _flowHandle, BufferID.ShinobuNutrientDriftFlowField, GridCellCapacity, out NativeArray<float3> flow) ||
+                    !TryOpenVaultBuffer(vault, ref _injectionHandle, BufferID.ShinobuNutrientDriftInjection, GridCellCapacity, out NativeArray<float> injection) ||
+                    !TryOpenVaultBuffer(vault, ref _sourceHandle, BufferID.ShinobuNutrientDriftSources, SourceCapacity, out NativeArray<NutrientSourceDTO> sources) ||
+                    !TryOpenVaultBuffer(vault, ref _sourceCountHandle, BufferID.ShinobuNutrientDriftSourceCount, 1, out NativeArray<int> sourceCount) ||
+                    !TryOpenVaultBuffer(vault, ref _tuningHandle, BufferID.ShinobuNutrientDriftTuning, 1, out NativeArray<NutrientDriftTuningDTO> tuning) ||
+                    !TryOpenVaultBuffer(vault, ref _telemetryHandle, BufferID.ShinobuNutrientDriftTelemetryRing, TelemetryCapacity, out NativeArray<FluidGridTelemetryEntry> telemetry) ||
+                    !TryOpenVaultBuffer(vault, ref _telemetryCursorHandle, BufferID.ShinobuNutrientDriftTelemetryCursor, 1, out NativeArray<int> telemetryCursor) ||
+                    !TryOpenVaultBuffer(vault, ref _densityUploadHandle, BufferID.ShinobuNutrientDriftDensityUpload, GridCellCapacity, out NativeArray<float> densityUpload) ||
+                    !TryOpenVaultBuffer(vault, ref _headerHandle, BufferID.ShinobuNutrientDriftGridHeader, 1, out NativeArray<NutrientDriftGridHeaderDTO> headers) ||
+                    !TryOpenVaultBuffer(vault, ref _faultFlagHandle, BufferID.ShinobuNutrientDriftFaultFlags, 4, out NativeArray<uint> faultFlags))
                 {
-                    _profilesLoadedCold = true;
-                    TryLoadProfilesCsvCold();
+                    return false;
                 }
-                return EnsureCarrionVaultState(vault);
+
+                if (_initialized && (tuning[0].Flags & TuningFlagInitialized) != 0u)
+                {
+                    nutrientReady = true;
+                    profileLoadRequired = !_profilesLoadedCold;
+                }
+                else
+                {
+                    double3 originAup = ResolveGridOriginAup();
+                    NutrientDriftTuningDTO defaultTuning = NutrientDriftMath.CreateDefaultTuning(originAup);
+                    tuning[0] = defaultTuning;
+                    sourceCount[0] = 0;
+                    telemetryCursor[0] = 0;
+                    _telemetryCursor = 0;
+                    headers[0] = NutrientDriftMath.CreateHeader(defaultTuning, 0f, 0f, 0);
+
+                    var initJob = new InitializeNutrientGridJob
+                    {
+                        Front = (NutrientCellDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(front),
+                        Back = (NutrientCellDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(back),
+                        Flow = (float3*)NativeArrayUnsafeUtility.GetUnsafePtr(flow),
+                        Injection = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(injection),
+                        DensityUpload = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(densityUpload),
+                        Sources = (NutrientSourceDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(sources),
+                        Profiles = (NutrientProfileDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(profiles),
+                        FaultFlags = (uint*)NativeArrayUnsafeUtility.GetUnsafePtr(faultFlags)
+                    };
+                    JobHandle initHandle = initJob.Schedule(GridCellCapacity, JobBatchSize);
+
+                    var telemetryInitJob = new InitializeNutrientTelemetryJob
+                    {
+                        TelemetryRing = (FluidGridTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetry)
+                    };
+                    initHandle = telemetryInitJob.Schedule(TelemetryCapacity, JobBatchSize, initHandle);
+                    DispatcherJobFence.TryComplete(ref initHandle, forceComplete: true); // COLD_BOOTSTRAP_SYNC: uninitialized Vault memory must be deterministically populated before first public read.
+
+                    _initialized = true;
+                    nutrientReady = true;
+                    profileLoadRequired = !_profilesLoadedCold;
+                }
+            }
+            finally
+            {
+                if (profileLocked)
+                    vault.ReleaseWriteLock(in _profileHandle, SystemID.AIEcology);
+                if (jobLocked)
+                    UnlockJobBuffers();
             }
 
-            double3 originAup = ResolveGridOriginAup();
-            NutrientDriftTuningDTO defaultTuning = NutrientDriftMath.CreateDefaultTuning(originAup);
-            tuning[0] = defaultTuning;
-            sourceCount[0] = 0;
-            telemetryCursor[0] = 0;
-            _telemetryCursor = 0;
-            headers[0] = NutrientDriftMath.CreateHeader(defaultTuning, 0f, 0f, 0);
+            if (!nutrientReady)
+                return false;
 
-            var initJob = new InitializeNutrientGridJob
-            {
-                Front = (NutrientCellDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(front),
-                Back = (NutrientCellDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(back),
-                Flow = (float3*)NativeArrayUnsafeUtility.GetUnsafePtr(flow),
-                Injection = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(injection),
-                DensityUpload = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(densityUpload),
-                Sources = (NutrientSourceDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(sources),
-                Profiles = (NutrientProfileDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(profiles),
-                FaultFlags = (uint*)NativeArrayUnsafeUtility.GetUnsafePtr(faultFlags)
-            };
-            JobHandle initHandle = initJob.Schedule(GridCellCapacity, JobBatchSize);
-
-            var telemetryInitJob = new InitializeNutrientTelemetryJob
-            {
-                TelemetryRing = (FluidGridTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetry)
-            };
-            initHandle = telemetryInitJob.Schedule(TelemetryCapacity, JobBatchSize, initHandle);
-            DispatcherJobFence.TryComplete(ref initHandle, forceComplete: true); // COLD_BOOTSTRAP_SYNC: uninitialized Vault memory must be deterministically populated before first public read.
-
-            _initialized = true;
-            if (!_profilesLoadedCold)
+            if (profileLoadRequired)
             {
                 _profilesLoadedCold = true;
                 TryLoadProfilesCsvCold();
             }
+
             return EnsureCarrionVaultState(vault);
         }
 
@@ -1027,7 +1081,7 @@ namespace Hecton8.Ecosystem
 
         private void DumpTelemetry(IDataVault vault)
         {
-            if (!TryOpenVaultBuffer(vault, ref _telemetryHandle, BufferID.ShinobuNutrientDriftTelemetryRing, TelemetryCapacity, out NativeArray<FluidGridTelemetryEntry> telemetry))
+            if (!TryOpenReadVaultBuffer(vault, in _telemetryHandle, out NativeArray<FluidGridTelemetryEntry>.ReadOnly telemetry))
                 return;
 
             try
@@ -1051,9 +1105,12 @@ namespace Hecton8.Ecosystem
                     WriteUInt32(header.Slice(20, 4), RouteHash);
                     stream.Write(header);
 
-                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                    int bytes = telemetry.Length * UnsafeUtility.SizeOf<FluidGridTelemetryEntry>();
-                    stream.Write(new ReadOnlySpan<byte>(ptr, bytes));
+                    int stride = UnsafeUtility.SizeOf<FluidGridTelemetryEntry>();
+                    for (int i = 0; i < telemetry.Length; i++)
+                    {
+                        FluidGridTelemetryEntry entry = telemetry[i];
+                        stream.Write(new ReadOnlySpan<byte>(&entry, stride));
+                    }
                 }
             }
             catch (IOException)
@@ -1095,26 +1152,59 @@ namespace Hecton8.Ecosystem
             if (lastWriteUtc.Ticks == _csvTimestampTicks)
                 return true;
 
-            if (!TryOpenVaultBuffer(vault, ref _csvScratchHandle, BufferID.ShinobuNutrientDriftCsvScratch, CsvScratchBytes, out NativeArray<byte> scratch) ||
-                !TryOpenVaultBuffer(vault, ref _profileHandle, BufferID.ShinobuNutrientDriftProfiles, ProfileCapacity, out NativeArray<NutrientProfileDTO> profiles))
+            if (!IsMatchingVaultHandle(in _csvScratchHandle, BufferID.ShinobuNutrientDriftCsvScratch) ||
+                !IsMatchingVaultHandle(in _profileHandle, BufferID.ShinobuNutrientDriftProfiles))
             {
                 return false;
             }
 
+            int bytesRead = 0;
+            bool scratchLocked = false;
             try
             {
-                int bytesRead;
+                if (!vault.TryAcquireWriteLock(in _csvScratchHandle, SystemID.AIEcology, out NativeArray<byte> scratch))
+                    return false;
+
+                scratchLocked = true;
+                if (!scratch.IsCreated ||
+                    scratch.Length <= 0)
+                {
+                    return false;
+                }
+
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                 {
                     int maxBytes = math.min(scratch.Length, CsvScratchBytes);
                     bytesRead = stream.Read(new Span<byte>(NativeArrayUnsafeUtility.GetUnsafePtr(scratch), maxBytes));
+                }
+            }
+            finally
+            {
+                if (scratchLocked)
+                    vault.ReleaseWriteLock(in _csvScratchHandle, SystemID.AIEcology);
+            }
+
+            bool profilesLocked = false;
+            try
+            {
+                if (!TryOpenReadVaultBuffer(vault, in _csvScratchHandle, bytesRead, out NativeArray<byte>.ReadOnly scratchRead))
+                    return false;
+
+                if (!vault.TryAcquireWriteLock(in _profileHandle, SystemID.AIEcology, out NativeArray<NutrientProfileDTO> profiles))
+                    return false;
+
+                profilesLocked = true;
+                if (!profiles.IsCreated ||
+                    profiles.Length < ProfileCapacity)
+                {
+                    return false;
                 }
 
                 if (bytesRead <= 0)
                     return false;
 
                 int parsed = NutrientDriftCsvParser.ParseProfiles(
-                    new ReadOnlySpan<byte>(NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch), bytesRead),
+                    new ReadOnlySpan<byte>(scratchRead.GetUnsafeReadOnlyPtr(), bytesRead),
                     profiles);
                 if (parsed > 0)
                 {
@@ -1141,6 +1231,11 @@ namespace Hecton8.Ecosystem
             catch (InvalidOperationException)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(0x4E445043u, RouteHash, 0f);
+            }
+            finally
+            {
+                if (profilesLocked)
+                    vault.ReleaseWriteLock(in _profileHandle, SystemID.AIEcology);
             }
 
             return false;
@@ -1169,32 +1264,6 @@ namespace Hecton8.Ecosystem
 #endif
         }
 
-        private static bool OpenOrAcquireVaultBuffer<T>(
-            IDataVault vault,
-            ref VaultGenerationHandle<T> handle,
-            BufferID bufferId,
-            int requiredLength,
-            NativeArrayOptions options,
-            out NativeArray<T> buffer) where T : struct
-        {
-            if (TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
-                return true;
-
-            if (vault == null)
-            {
-                buffer = default;
-                return false;
-            }
-
-            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.AIEcology, options);
-            if (TryOpenVaultBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
-                return true;
-
-            handle = default;
-            buffer = default;
-            return false;
-        }
-
         private static bool TryOpenVaultBuffer<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
@@ -1220,13 +1289,47 @@ namespace Hecton8.Ecosystem
         private static bool TryOpenReadVaultBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            return TryOpenReadVaultBuffer(vault, in handle, 1, out buffer);
+        }
+
+        private static bool TryOpenReadVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
         {
             buffer = default;
             return vault != null &&
+                   requiredLength > 0 &&
                    handle.Generation != 0u &&
-                   vault.TryReadHandle(in handle, out buffer) &&
-                   buffer.IsCreated;
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool EnsureVaultBufferHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options) where T : struct
+        {
+            if (IsMatchingVaultHandle(in handle, bufferId) &&
+                TryOpenReadVaultBuffer(vault, in handle, requiredLength, out NativeArray<T>.ReadOnly _))
+                return true;
+
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.AIEcology, options);
+            if (IsMatchingVaultHandle(in handle, bufferId) &&
+                TryOpenReadVaultBuffer(vault, in handle, requiredLength, out NativeArray<T>.ReadOnly _))
+                return true;
+
+            handle = default;
+            return false;
         }
 
         private static bool IsMatchingVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct

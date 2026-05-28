@@ -15,17 +15,33 @@ int _MinSlice;
 void FFTBakeMultiRes( const uint3 id : SV_DispatchThreadID )
 {
 	// Read dimensions
-	int fftRes;
-	int outHeight;
+	uint fftWidth;
+	uint fftHeight;
+	uint fftDepth;
+	uint outWidth;
+	uint outHeight;
 	{
-		int dummyi;
-		_InFFTWaves.GetDimensions( fftRes, dummyi, dummyi );
-		_OutDisplacements.GetDimensions( dummyi, outHeight );
+		_InFFTWaves.GetDimensions( fftWidth, fftHeight, fftDepth );
+		_OutDisplacements.GetDimensions( outWidth, outHeight );
+	}
+
+	if (fftWidth == 0u || fftHeight == 0u || fftDepth == 0u || outWidth == 0u || outHeight == 0u || _MinSlice < 0)
+	{
+		return;
+	}
+
+	if (id.x >= outWidth || id.y >= outHeight || id.x >= fftWidth)
+	{
+		return;
 	}
 
 	// Compute index of current slice
-	int slice = _MinSlice + id.y / fftRes;
+	uint slice = (uint)_MinSlice + id.y / fftHeight;
+	if (slice >= fftDepth)
+	{
+		return;
+	}
 
 	// Return displacement
-	_OutDisplacements[id.xy] = float4(_InFFTWaves[uint3(id.x, id.y % fftRes, slice)].xyz, 0.0);
+	_OutDisplacements[id.xy] = float4(_InFFTWaves[uint3(id.x, id.y % fftHeight, slice)].xyz, 0.0);
 }

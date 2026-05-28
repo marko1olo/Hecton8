@@ -349,6 +349,126 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 | Hash proof | APEX JSON SHA-256 is `A6484321E054D644F5EF220EC97F9ABD6679BF89524C5C6B93EEE1886768ADDD`; source report JSON SHA-256 is `C28063C63403175C4679E073561C728A754E0F1E9CE5952F8DF86B5A626EA038` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HOMEOSTASIS_20260528.json.sha256` |
 | Build throttle | CPU sample was `100%`, active `dotnet.exe` PID `62124`, and this verification launched `0` builds | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HOMEOSTASIS_20260528.json` |
 
+## 2026-05-28 Foveated Native Ownership Pass
+
+| Area | Fact | Proof |
+|---|---|---|
+| Persistent native aliases | `FoveatedSimulationManager` private `NativeArray<T>` fields are `0` | `../Reports/UNITY_FOVEATED_NATIVE_OWNERSHIP_PASS_UNKNOWN_20260528.md` |
+| DataVault writer locks | Score-position and telemetry writes now use `TryAcquireWriteLock` with `finally` release; current file count is `2` acquires and `2` releases | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_FOVEATED_20260528.md` |
+| Job pointer pins | Importance-job BufferIDs `73220..73226` are pinned with `TryLockBuffer` before scheduling and unlocked after completion/failure/dispose | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_FOVEATED_20260528.json` |
+| Route contract | `IFoveatedDispatcher.TryResolveTick` active references are `0`; mutating tick path is now `TryAdvanceTick` with `3` active references | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_FOVEATED_20260528.json` |
+| Build throttle | Initial CPU sample was `100%` with active `csc.exe` PID `16180` and `dotnet.exe` PID `31636`; final guard was CPU `61.5%` with active `dotnet.exe` PID `6088`; this pass launched `0` builds | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_FOVEATED_20260528.json` |
+| Hash proof | APEX JSON SHA-256 is `999B48C6A45FF134C2AF5F1ABA9EBE7D9FD164F8E9D9931F09DAB67AA30F5838`; updated source report JSON SHA-256 is `0CE6153E7862186ABF48F2D1C610690E6E01863B46D37E3B91E24C83DC1F578F` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_FOVEATED_20260528.json.sha256` |
+
+## 2026-05-28 Homeostasis Scalability Read Accessor / Writer Lock Pass
+
+| Area | Fact | Proof |
+|---|---|---|
+| Read route purity | `TryReadMockHeavyLoad`, `TryResolveMockTerrainSamplerStatus`, `TryResolveCsvScratch`, `TryResolveScalabilityTelemetry`, and public `TryGet*` facades have `Ensure=0`, `TryResolveOrAcquire=0`, and native writes `0` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HOMEOSTASIS_SCALABILITY_20260528.json` |
+| DataVault write discipline | State, telemetry, mock-heavy-load, and editor terrain status writes use writer locks; player terrain sampler job pins `ShinobuScalabilityMockScatterDensity` with `TryLockBuffer` and releases with `TryUnlockBuffer` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HOMEOSTASIS_SCALABILITY_20260528.md` |
+| Continuous scalability | The source still has binary low-end token count `0`; `GlobalQualityWeight` remains the continuous scalar for stochastic decimation, render scale, and MathLOD | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HOMEOSTASIS_SCALABILITY_20260528.json` |
+| Build throttle | CPU sample was `100%` with active `dotnet.exe` PID `59388` and `VBCSCompiler.exe` PID `14544`; this pass launched `0` builds | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HOMEOSTASIS_SCALABILITY_20260528.json` |
+| Hash proof | APEX JSON SHA-256 is `45202940359096680F0D9D82DB57DFB80FC4D0B8A34DE47FB28B5F53E6F90472` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HOMEOSTASIS_SCALABILITY_20260528.json.sha256` |
+
+## 2026-05-28 Content Authority DataVault Lock Pass
+
+| Area | Fact | Proof |
+|---|---|---|
+| Mutating route names | `ContentRuntimeServices.cs` active `TryResolveTelemetryPointer`, `TryResolveTelemetryBuffers`, `TryResolvePendingLoads`, `TryResolveOrAcquire`, and `TryResolveNormalized` references are `0`; mutating routes use `OpenOrAcquire*Write*` | `../Reports/UNITY_CONTENT_AUTHORITY_DATAVAULT_LOCK_PASS_UNKNOWN_20260528.md` |
+| DataVault write discipline | Bundle refs, pending loads, and telemetry writes use writer locks and `finally` release paths | `../Reports/UNITY_CONTENT_AUTHORITY_DATAVAULT_LOCK_PASS_UNKNOWN_20260528.json` |
+| Static proof | Source SHA-256 is `E4A64A1BF9DC433AE2A5990231BB25D4834555BE82086126A5E7AD8C3B60A24D`; brace counts `268/268`; scoped diff check exit `0`; added-line forbidden scan is clean | `../Reports/UNITY_CONTENT_AUTHORITY_DATAVAULT_LOCK_PASS_UNKNOWN_20260528.json` |
+| Build throttle | Intended build check skipped at CPU `100%` with one active compiler/dotnet process; follow-up guard CPU `57%`, active `dotnet.exe` PID `48280`; this pass launched `0` builds | `../Reports/UNITY_CONTENT_AUTHORITY_DATAVAULT_LOCK_PASS_UNKNOWN_20260528.json` |
+| Hash proof | Report JSON SHA-256 is `02E88835B73E03525C8174EBC9180C6E9AF866AD66BBB5201B1F63371C224D50` | `../Reports/UNITY_CONTENT_AUTHORITY_DATAVAULT_LOCK_PASS_UNKNOWN_20260528.json.sha256` |
+
+## 2026-05-28 AUP Origin Route Resolve/Open Split
+
+| Area | Fact | Proof |
+|---|---|---|
+| Mutating route names | `AupOriginShiftCoordinator.cs` active `TryResolveOrAcquire` and `EnsureRuntimeState` references are `0`; owner mutation is `OpenOrAcquireRuntimeStateForOwnerRoute` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_AUP_ORIGIN_ROUTE_20260528.md` |
+| Frame/shift route | `TickPreSimulation`, `ScheduleVaultOriginRebase`, `RecordRebaseCompletion`, and `TryGetEditorSnapshot` use resolve-only `TryResolveRuntimeState` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_AUP_ORIGIN_ROUTE_20260528.json` |
+| Static proof | AUP source SHA-256 is `4FE8D7649224590D900F97E2C79B53E24FEC7831C30E750920C3B39316FAF04D`; FloatingOrigin source SHA-256 is `86C8B2CC51620AED9DFF22C522A168BD4A643F42053ABAD00D649F198A2E105F`; added-line forbidden scan is clean | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_AUP_ORIGIN_ROUTE_20260528.json` |
+| Build throttle | CPU sample was `87.5%` with active `dotnet.exe` PIDs `37700` and `67192`; this pass launched `0` builds | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_AUP_ORIGIN_ROUTE_20260528.json` |
+| Hash proof | Report JSON SHA-256 is `2619A7A03D51E6A7C3D9BA1A2F122B73C63032C10E43478358929F2E1142267F` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_AUP_ORIGIN_ROUTE_20260528.json.sha256` |
+| Residual closed statically | AUP direct NativeArray writer-lock/job-pin residual was superseded by the AUP lock/pin pass below | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_AUP_LOCK_PIN_PASS_20260528.json` |
+
+## 2026-05-28 AUP Origin Writer-Lock / Job-Pin Pass
+
+| Area | Fact | Proof |
+|---|---|---|
+| Owner writer locks | AUP owner buffers `73030..73037` now use writer-lock paths for active writes; release paths are guarded with `finally` in the write bodies | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_AUP_LOCK_PIN_PASS_20260528.md` |
+| Scheduled job pins | Scheduled AUP rebase pins `MockStatesBuffer`, `CounterBuffer`, `MockHistoricalPointsBuffer`, `VaultHotEntityData`, and tether historical buffers with `TryLockBuffer`; `HectonFloatingOrigin` releases pins after job completion and again in `finally` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_AUP_LOCK_PIN_PASS_20260528.json` |
+| Static proof | Source SHA-256 values are `5F11D259FF25C1469463034608EEFD2CC783A9B3F9D32A0E5C17FA3ED52EBF03` and `061B6D3820FF35AA0CC4F51068F97ACA7EAE555309D217354787D57E0AC67EC6`; added-line forbidden scan is clean | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_AUP_LOCK_PIN_PASS_20260528.json` |
+| Build boundary | One throttled build was attempted after CPU `31.2%` and no active compiler; it timed out at `904s` and captured `60` unrelated compile errors in `ModularEquipmentEngine.cs` and `SargassumMicroFaunaBoids.cs` | `../Reports/BUILD_UNKNOWN_AUP_LOCK_PIN_PASS_20260528.log` |
+| Hash proof | Report JSON SHA-256 is `E10FCFC8F1A3824A92380982B7C182854DD1FF203D7D94314127D7EC1C7BDD4A` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_AUP_LOCK_PIN_PASS_20260528.json.sha256` |
+| Residual | Runtime proof is still absent: no Unity import, Console, Play Mode, profiler/GCMonitor, player build, device run, or crash dump | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_AUP_LOCK_PIN_PASS_20260528.md` |
+
+## 2026-05-28 Input Route Naming Pass
+
+| Area | Fact | Proof |
+|---|---|---|
+| Mutating route name | `TryResolveOrAcquireInputBuffer<T>` active references are `0`; the mutating helper is now `OpenOrAcquireInputBufferForOwnerRoute<T>` with `21` active references | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_INPUT_ROUTE_NAMING_PASS_20260528.md` |
+| Owner route evidence | The helper declaration is `InputDispatcher.cs:992`; it calls `vault.EnsureGenerationHandle<T>` at `InputDispatcher.cs:1006`, so it is explicitly an owner/open route | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_INPUT_ROUTE_NAMING_PASS_20260528.json` |
+| Zero-GC static scan | Added-line scan has reference `new=0`, `string.Format=0`, `.ToString()=0`, LINQ `0`, `foreach=0`, `.Complete()=0`, added `GlobalRegistry=0` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_INPUT_ROUTE_NAMING_PASS_20260528.json` |
+| Build throttle | CPU sample was `51.7%`; no active dotnet/csc/VBCSCompiler was listed; this pass launched `0` builds because CPU exceeded the 50% guard | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_INPUT_ROUTE_NAMING_PASS_20260528.json` |
+| Hash proof | Report JSON SHA-256 is `A38DE05D5D31067D593E305C8CA081AC44B843EAFDF1DD2DD9667E93BC062528` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_INPUT_ROUTE_NAMING_PASS_20260528.json.sha256` |
+| Residual | Runtime proof is still absent: no Unity import, Console, Play Mode, profiler/GCMonitor, player build, device run, or crash dump | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_INPUT_ROUTE_NAMING_PASS_20260528.md` |
+
+## 2026-05-28 Simulation Bucketer Writer-Lock / Job-Pin Pass
+
+| Area | Fact | Proof |
+|---|---|---|
+| Writer locks | Synchronous `ModuloSimulationBucketer` writes now route through `TryAcquireWriteView` / `TryAcquireWriteLock` and release in `finally` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_SIMULATION_BUCKETER_LOCK_PIN_PASS_20260528.md` |
+| Scheduled job pins | Rebalance job buffers `SimulationBucketEntityCostEwma`, `SimulationBucketEntityWork`, `SimulationBucketRebalanceLoads`, and `SimulationBucketRebalanceResult` are pinned with `TryLockBuffer` and released through `ReleaseRebalanceBufferPins` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_SIMULATION_BUCKETER_LOCK_PIN_PASS_20260528.json` |
+| BufferIDs | Secured BufferIDs are `98`, `99`, `100`, `101`, `102`, `103`, `104`, and `194` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_SIMULATION_BUCKETER_LOCK_PIN_PASS_20260528.json` |
+| Continuous scalability | Existing `_qualityWeight01`, `SmoothStep01`, `ResolveActiveSlowBucketCount`, and `ResolveRebalanceCadenceFrames` remain continuous; no binary `isLowEnd` route was added | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_SIMULATION_BUCKETER_LOCK_PIN_PASS_20260528.json` |
+| Static proof | Source SHA-256 is `51F68EBFFA50165B4153E5C3DCC8E3151D418B494F4F9256CDDD6B1DE24AA1BD`; added-line forbidden scan is clean; brace count is `150/150` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_SIMULATION_BUCKETER_LOCK_PIN_PASS_20260528.json` |
+| Build throttle | CPU sample was `99.8%` with active `dotnet.exe` PIDs `10736` and `42644`; this pass launched `0` builds | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_SIMULATION_BUCKETER_LOCK_PIN_PASS_20260528.json` |
+| Hash proof | Report JSON SHA-256 is `CD394CF9AFBBA0E9A82E3CF6C8FCE17D5F32BC461F5C6E50DCCF3E3CC3CF555F` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_SIMULATION_BUCKETER_LOCK_PIN_PASS_20260528.json.sha256` |
+| Residual | Runtime proof is still absent: no Unity import, Console, Play Mode, profiler/GCMonitor, player build, device run, or crash dump | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_SIMULATION_BUCKETER_LOCK_PIN_PASS_20260528.md` |
+
+## 2026-05-28 APEX Current Recheck
+
+| Area | Fact | Proof |
+|---|---|---|
+| Current source hashes | InputDispatcher, HapticSynth, and ModuloSimulationBucketer hashes were recomputed after docs/source edits | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_CURRENT_RECHECK_20260528.json` |
+| Combined Zero-GC scan | Current touched-source added lines have reference `new=0`, `string.Format=0`, `.ToString()=0`, LINQ `0`, `foreach=0`, `.Complete()=0`, `GlobalRegistry=0`, binary low-end tokens `0` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_CURRENT_RECHECK_20260528.json` |
+| Build throttle | CPU sample was `98.7%` with active `dotnet.exe` PID `68208`; this recheck launched `0` builds | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_CURRENT_RECHECK_20260528.json` |
+| Hash proof | Report JSON SHA-256 is `562AE537F4D33103F2D07D0EAC8AC88CC73B8210DC6A1F42D2F4B3473753DAB7` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_CURRENT_RECHECK_20260528.json.sha256` |
+| Residual | Runtime proof is still absent: no Unity import, Console, Play Mode, profiler/GCMonitor, player build, device run, or crash dump | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_CURRENT_RECHECK_20260528.md` |
+
+## 2026-05-28 UNKNOWN Job Admission Writer-Lock Pass
+
+| Area | Fact | Proof |
+|---|---|---|
+| Source | `BurstTokenBucketJobAdmissionService.cs` was updated to lock `SystemID.JobAdmission` DataVault write paths and remove mutable `Resolve*` helpers | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_JOB_ADMISSION_LOCK_PASS_20260528.json` |
+| BufferIDs | `JobAdmissionLaneBudgets=283`, `JobAdmissionBaseRefill=284`, `JobAdmissionJobHashes=285`, `JobAdmissionEwmaCosts=286`, `JobAdmissionBlackBox=287` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_JOB_ADMISSION_LOCK_PASS_20260528.md` |
+| Zero-GC static scan | Added lines have reference `new=0`, `string.Format=0`, `.ToString()=0`, LINQ `0`, `foreach=0`, `.Complete()=0`, `GlobalRegistry=0`, binary low-end tokens `0` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_JOB_ADMISSION_LOCK_PASS_20260528.json` |
+| Build throttle | CPU sample was `90.0%`, active `dotnet.exe` PID `28668`, active `csc.exe` PID `21340`; this pass launched `0` builds | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_JOB_ADMISSION_LOCK_PASS_20260528.json` |
+| Hash proof | Report JSON SHA-256 is `ECBE6B5EA34B997ACC118B836B3BC162164C1E7BB8CCB48D0F468F5BA91A7686` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_JOB_ADMISSION_LOCK_PASS_20260528.json.sha256` |
+| Residual | Runtime proof is still absent: no Unity import, Console, Play Mode, profiler/GCMonitor, player build, device run, or crash dump | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_JOB_ADMISSION_LOCK_PASS_20260528.md` |
+
+## 2026-05-28 UNKNOWN Hardware Thermal Owner-Route Pass
+
+| Area | Fact | Proof |
+|---|---|---|
+| Source | `HardwareThermalService.cs` hot thermal severity and blackbox writes now use resolve-existing `TryAcquireThermal*WriteView` helpers; cold prewarm uses explicit `OpenOrAcquireThermal*ForOwnerRoute` helpers | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HARDWARE_THERMAL_OWNER_ROUTE_PASS_20260528.json` |
+| BufferIDs | `HardwareThermalSeverity=166`, `HardwareThermalBlackBox=167` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HARDWARE_THERMAL_OWNER_ROUTE_PASS_20260528.md` |
+| Zero-GC static scan | Added lines have reference `new=0`, `string.Format=0`, `.ToString()=0`, LINQ `0`, `foreach=0`, `.Complete()=0`, `EnsureGenerationHandle=0`, `GlobalRegistry=0`, binary low-end tokens `0` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HARDWARE_THERMAL_OWNER_ROUTE_PASS_20260528.json` |
+| Build throttle | CPU sample was `100%`, active `dotnet.exe` PID `65020`; this pass launched `0` builds | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HARDWARE_THERMAL_OWNER_ROUTE_PASS_20260528.json` |
+| Hash proof | Report JSON SHA-256 is `3CF3074A50A62DB74DB866C832FF78E0D0ACB44C3704E78AF9E391FA962CC918` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HARDWARE_THERMAL_OWNER_ROUTE_PASS_20260528.json.sha256` |
+| Residual | Runtime proof is still absent. Existing binary thermal-pressure registry override remains documented residual pending coordinated GlobalRegistry/Homeostasis API work | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HARDWARE_THERMAL_OWNER_ROUTE_PASS_20260528.md` |
+
+## 2026-05-28 UNKNOWN Platform Pressure Continuous Scaling Pass
+
+| Area | Fact | Proof |
+|---|---|---|
+| Source | `PlatformBatteryWatchdog.cs` and `PlatformAdaptiveBudgetGovernor.cs` no longer call the binary platform/battery transient-low override route from the clean platform pressure files | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_PLATFORM_PRESSURE_CONTINUOUS_PASS_20260528.json` |
+| Continuous scaling | Platform pressure now emits continuous pressure, quality, render-scale, cadence, and optional-HUD weights and composes with `HomeostasisBrain.GlobalQualityWeight` / `HomeostasisBrain.TargetRenderScale01` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_PLATFORM_PRESSURE_CONTINUOUS_PASS_20260528.md` |
+| Zero-GC static scan | Added lines have reference `new=0`, `string.Format=0`, `.ToString()=0`, LINQ `0`, `foreach=0`, `.Complete()=0`, `GlobalRegistry=0`, binary low-end tokens `0` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_PLATFORM_PRESSURE_CONTINUOUS_PASS_20260528.json` |
+| Build throttle | Final CPU sample was `100%`, active `dotnet` PID `57828`; this pass launched `0` builds | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_PLATFORM_PRESSURE_CONTINUOUS_PASS_20260528.json` |
+| Hash proof | Report JSON SHA-256 is `08E9154E9A309D2F29B8523D16363D103C1F40C9ED9326B25179209B61AB348A` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_PLATFORM_PRESSURE_CONTINUOUS_PASS_20260528.json.sha256` |
+| Residual | Runtime proof is still absent. Central binary transient override API/callers remain in dirty `GlobalRegistry`, `HomeostasisBrain`, and `HardwareThermalService` files pending coordinated central work | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_PLATFORM_PRESSURE_CONTINUOUS_PASS_20260528.md` |
+
 ## Validation
 
 | Validator | Required state |

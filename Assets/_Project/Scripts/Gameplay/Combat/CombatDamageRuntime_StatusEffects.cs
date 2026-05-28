@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -217,7 +218,7 @@ namespace Hecton8.Gameplay
             if (_statusJobScheduled || _queuedStatusEffectRequestCount >= StatusEffectRequestBudget)
                 return false;
 
-            if (!TryResolveStatusEffectVaultViews(out CombatStatusEffectVaultViews statusViews, ensure: false) ||
+            if (!TryOpenOrEnsureStatusEffectVaultViews(out CombatStatusEffectVaultViews statusViews, ensure: false) ||
                 !statusViews.Requests.IsCreated)
                 return false;
 
@@ -267,7 +268,7 @@ namespace Hecton8.Gameplay
                 return 0;
 
             EnsureInitialized();
-            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+            if (!TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
                 return 0;
 
             int queued = 0;
@@ -288,12 +289,12 @@ namespace Hecton8.Gameplay
         public static bool GenerateMockStatusEffects(int count, uint seed)
         {
             EnsureInitialized();
-            if (!TryResolveStatusEffectVaultViews(out CombatStatusEffectVaultViews statusViews, ensure: false) ||
+            if (!TryOpenOrEnsureStatusEffectVaultViews(out CombatStatusEffectVaultViews statusViews, ensure: false) ||
                 !statusViews.States.IsCreated ||
                 _damageJobScheduled ||
                 _statusJobScheduled ||
                 _targetCount <= 0 ||
-                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+                !TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
             {
                 return false;
             }
@@ -313,8 +314,8 @@ namespace Hecton8.Gameplay
 
             try
             {
-                if (!TryResolveStatusEffectVaultViews(out statusViews, ensure: false) ||
-                    !TryResolveCombatDamageVaultViews(out views, ensure: false) ||
+                if (!TryOpenOrEnsureStatusEffectVaultViews(out statusViews, ensure: false) ||
+                    !TryOpenOrEnsureCombatDamageVaultViews(out views, ensure: false) ||
                     !statusViews.States.IsCreated ||
                     !views.StatusMasks.IsCreated ||
                     !views.StatusDurations0123.IsCreated ||
@@ -600,7 +601,7 @@ namespace Hecton8.Gameplay
             if (_statusEffectVault == null)
                 return false;
 
-            if (TryResolveStatusEffectVaultViews(out CombatStatusEffectVaultViews existingViews, ensure: false))
+            if (TryOpenOrEnsureStatusEffectVaultViews(out CombatStatusEffectVaultViews existingViews, ensure: false))
             {
                 if (existingViews.Tuning.IsCreated &&
                     existingViews.Tuning.Length > 0 &&
@@ -612,7 +613,7 @@ namespace Hecton8.Gameplay
                 return TryWriteStatusEffectTuningLocked(CreateDefaultStatusEffectTuning(ResolveStatusEffectQualityWeight01()));
             }
 
-            if (!TryResolveStatusEffectVaultViews(out CombatStatusEffectVaultViews views, ensure: true))
+            if (!TryOpenOrEnsureStatusEffectVaultViews(out CombatStatusEffectVaultViews views, ensure: true))
                 return false;
 
             if (!TryLockStatusEffectVaultBuffersForJobs(includeSimulationBuffers: false))
@@ -620,7 +621,7 @@ namespace Hecton8.Gameplay
 
             try
             {
-                if (!TryResolveStatusEffectVaultViews(out views, ensure: false))
+                if (!TryOpenOrEnsureStatusEffectVaultViews(out views, ensure: false))
                     return false;
 
                 ClearStatusEffectTelemetryImmediate(ref views);
@@ -659,62 +660,62 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static bool TryResolveStatusEffectVaultViews(out CombatStatusEffectVaultViews views, bool ensure)
+        private static bool TryOpenOrEnsureStatusEffectVaultViews(out CombatStatusEffectVaultViews views, bool ensure)
         {
             views = default;
             if (_statusEffectVault == null || _statusEffectVault.IsCompactionFenceActive)
                 return false;
 
-            return TryResolveStatusEffectBuffer(
+            return TryOpenOrEnsureStatusEffectBuffer(
                        BufferID.Shinobu319StatusEffectRequests,
                        StatusEffectRequestBudget,
                        NativeArrayOptions.UninitializedMemory,
                        ensure,
                        ref _statusEffectRequestsHandle,
                        out views.Requests) &&
-                   TryResolveStatusEffectBuffer(
+                   TryOpenOrEnsureStatusEffectBuffer(
                        BufferID.Shinobu319StatusEffectStates,
                        MaxTargets,
                        NativeArrayOptions.ClearMemory,
                        ensure,
                        ref _statusEffectStatesHandle,
                        out views.States) &&
-                   TryResolveStatusEffectBuffer(
+                   TryOpenOrEnsureStatusEffectBuffer(
                        BufferID.Shinobu319StatusEffectTuning,
                        1,
                        NativeArrayOptions.ClearMemory,
                        ensure,
                        ref _statusEffectTuningHandle,
                        out views.Tuning) &&
-                   TryResolveStatusEffectBuffer(
+                   TryOpenOrEnsureStatusEffectBuffer(
                        BufferID.Shinobu319StatusEffectTelemetryRing,
                        StatusEffectTelemetryCapacity,
                        NativeArrayOptions.UninitializedMemory,
                        ensure,
                        ref _statusEffectTelemetryHandle,
                        out views.TelemetryRing) &&
-                   TryResolveStatusEffectBuffer(
+                   TryOpenOrEnsureStatusEffectBuffer(
                        BufferID.Shinobu319StatusEffectTelemetryCursor,
                        StatusEffectTelemetryCursorLength,
                        NativeArrayOptions.UninitializedMemory,
                        ensure,
                        ref _statusEffectTelemetryCursorHandle,
                        out views.TelemetryCursor) &&
-                   TryResolveStatusEffectBuffer(
+                   TryOpenOrEnsureStatusEffectBuffer(
                        BufferID.Shinobu319StatusEffectCounters,
                        StatusEffectCounterLength,
                        NativeArrayOptions.UninitializedMemory,
                        ensure,
                        ref _statusEffectCountersHandle,
                        out views.Counters) &&
-                   TryResolveStatusEffectBuffer(
+                   TryOpenOrEnsureStatusEffectBuffer(
                        BufferID.Shinobu319StatusEffectVfxRequests,
                        StatusEffectVfxRequestBudget,
                        NativeArrayOptions.UninitializedMemory,
                        ensure,
                        ref _statusEffectVfxRequestsHandle,
                        out views.VfxRequests) &&
-                   TryResolveStatusEffectBuffer(
+                   TryOpenOrEnsureStatusEffectBuffer(
                        BufferID.Shinobu319StatusEffectDamageSignals,
                        StatusEffectDamageSignalBudget,
                        NativeArrayOptions.UninitializedMemory,
@@ -756,7 +757,7 @@ namespace Hecton8.Gameplay
                        out views.Counters);
         }
 
-        private static bool TryResolveStatusEffectBuffer<T>(
+        private static bool TryOpenOrEnsureStatusEffectBuffer<T>(
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
@@ -880,7 +881,7 @@ namespace Hecton8.Gameplay
 
             if (!EnsureStatusEffectStorage())
                 return false;
-            if (!TryResolveStatusEffectVaultViews(out CombatStatusEffectVaultViews statusViews, ensure: false))
+            if (!TryOpenOrEnsureStatusEffectVaultViews(out CombatStatusEffectVaultViews statusViews, ensure: false))
                 return false;
 
             RefreshRuntimePolicy();
@@ -903,7 +904,7 @@ namespace Hecton8.Gameplay
             if (hasSimulationWork && !SignalBus<CombatDamageSignal>.HasNativeStorage)
                 return false;
 
-            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews damageViews, ensure: false))
+            if (!TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews damageViews, ensure: false))
                 return false;
 
             float evaluationDelta = hasSimulationWork ? _statusEvaluationAccumulatorSeconds : 0f;
@@ -917,7 +918,7 @@ namespace Hecton8.Gameplay
             {
                 if (hasSimulationWork)
                 {
-                    if (!TryResolveArmorPenetrationVaultViews(out armorViews, ensure: true) ||
+                    if (!TryOpenOrEnsureArmorPenetrationVaultViews(out armorViews, ensure: true) ||
                         !armorViews.TargetRootAups.IsCreated)
                     {
                         return false;
@@ -939,9 +940,9 @@ namespace Hecton8.Gameplay
 
                 lockedDamageVaultBuffers = true;
 
-                if (!TryResolveStatusEffectVaultViews(out statusViews, ensure: false) ||
-                    !TryResolveCombatDamageVaultViews(out damageViews, ensure: false) ||
-                    (hasSimulationWork && !TryResolveArmorPenetrationVaultViews(out armorViews, ensure: false)))
+                if (!TryOpenOrEnsureStatusEffectVaultViews(out statusViews, ensure: false) ||
+                    !TryOpenOrEnsureCombatDamageVaultViews(out damageViews, ensure: false) ||
+                    (hasSimulationWork && !TryOpenOrEnsureArmorPenetrationVaultViews(out armorViews, ensure: false)))
                 {
                     return false;
                 }
@@ -1038,13 +1039,14 @@ namespace Hecton8.Gameplay
         private static void CompleteStatusEffectFrame()
         {
             _queuedStatusEffectRequestCount = 0;
-            if (!TryResolveStatusEffectVaultViews(out CombatStatusEffectVaultViews statusViews, ensure: false) ||
+            if (!TryOpenOrEnsureStatusEffectVaultViews(out CombatStatusEffectVaultViews statusViews, ensure: false) ||
                 !statusViews.Counters.IsCreated)
             {
                 UnlockCombatDamageVaultBuffersForJobs(CombatDamageVaultJobLockCount);
                 UnlockStatusEffectVaultBuffersForJobs();
                 UnlockStatusEffectBorrowedArmorBuffers();
                 _statusScheduledSimulationWork = false;
+                TryApplyPendingArmorVaultRebind();
                 return;
             }
 
@@ -1069,6 +1071,7 @@ namespace Hecton8.Gameplay
             UnlockStatusEffectVaultBuffersForJobs();
             UnlockStatusEffectBorrowedArmorBuffers();
             _statusScheduledSimulationWork = false;
+            TryApplyPendingArmorVaultRebind();
         }
 
         private static void PublishStatusEffectDamageSignals(int requestedCount, ref CombatStatusEffectVaultViews statusViews)
@@ -1891,7 +1894,7 @@ namespace Hecton8.Gameplay
         {
             if (!statusViews.TelemetryRing.IsCreated ||
                 !statusViews.TelemetryCursor.IsCreated ||
-                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
+                !TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
                 !views.StatusResults.IsCreated ||
                 !views.StatusResultActive.IsCreated ||
                 !statusViews.States.IsCreated)
@@ -1978,15 +1981,18 @@ namespace Hecton8.Gameplay
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                using (FileStream stream = File.Open(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
-                    writer.Write(StatusEffectTelemetryMagicLow);
-                    writer.Write(StatusEffectTelemetryMagicHigh);
-                    writer.Write((uint)ringLength);
-                    writer.Write((uint)StatusEffectTelemetrySizeBytes);
-                    writer.Write(cursor);
-                    writer.Write(anomalyHash);
+                    Span<byte> header = stackalloc byte[24];
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(0, 4), StatusEffectTelemetryMagicLow);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(4, 4), StatusEffectTelemetryMagicHigh);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(8, 4), (uint)ringLength);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(12, 4), (uint)StatusEffectTelemetrySizeBytes);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(16, 4), cursor);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(20, 4), anomalyHash);
+                    stream.Write(header);
+
+                    Span<byte> entryBytes = stackalloc byte[StatusEffectTelemetrySizeBytes];
                     int start = cursor >= (uint)ringLength
                         ? (int)(cursor % (uint)ringLength)
                         : 0;
@@ -1994,7 +2000,8 @@ namespace Hecton8.Gameplay
                     for (int i = 0; i < ringLength; i++)
                     {
                         int index = (start + i) % ringLength;
-                        WriteStatusEffectTelemetryEntry(writer, statusViews.TelemetryRing[index]);
+                        WriteStatusEffectTelemetryEntry(entryBytes, statusViews.TelemetryRing[index]);
+                        stream.Write(entryBytes);
                     }
                 }
 
@@ -2008,25 +2015,26 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static void WriteStatusEffectTelemetryEntry(BinaryWriter writer, in CombatStatusEffectTelemetryEntry entry)
+        private static void WriteStatusEffectTelemetryEntry(Span<byte> entryBytes, in CombatStatusEffectTelemetryEntry entry)
         {
-            writer.Write(entry.FrameIndex);
-            writer.Write(entry.TargetHash);
-            writer.Write(entry.StatusEffectMask);
-            writer.Write(entry.StateHash);
-            writer.Write(entry.AnomalyHash);
-            writer.Write(entry.PreviousHealth);
-            writer.Write(entry.NextHealth);
-            writer.Write(entry.AppliedDamage);
-            writer.Write(entry.DeltaTime);
-            writer.Write(entry.GlobalQualityWeight01);
-            writer.Write(entry.Flags);
-            writer.Write(entry.FsmPacked0);
-            writer.Write(entry.FsmPacked1);
-            writer.Write(entry.ActiveCount);
-            writer.Write(entry.RequestCount);
-            writer.Write(entry.EstimatedMicroseconds);
-            writer.Write(entry.Reserved);
+            entryBytes.Clear();
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(0, 4), entry.FrameIndex);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(4, 4), entry.TargetHash);
+            BinaryPrimitives.WriteUInt64LittleEndian(entryBytes.Slice(8, 8), entry.StatusEffectMask);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(16, 4), entry.StateHash);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(20, 4), entry.AnomalyHash);
+            WriteFloatLittleEndian(entryBytes.Slice(24, 4), entry.PreviousHealth);
+            WriteFloatLittleEndian(entryBytes.Slice(28, 4), entry.NextHealth);
+            WriteFloatLittleEndian(entryBytes.Slice(32, 4), entry.AppliedDamage);
+            WriteFloatLittleEndian(entryBytes.Slice(36, 4), entry.DeltaTime);
+            WriteFloatLittleEndian(entryBytes.Slice(40, 4), entry.GlobalQualityWeight01);
+            BinaryPrimitives.WriteUInt16LittleEndian(entryBytes.Slice(44, 2), entry.Flags);
+            entryBytes[46] = entry.FsmPacked0;
+            entryBytes[47] = entry.FsmPacked1;
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(48, 4), entry.ActiveCount);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(52, 4), entry.RequestCount);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(56, 4), entry.EstimatedMicroseconds);
+            BinaryPrimitives.WriteUInt32LittleEndian(entryBytes.Slice(60, 4), entry.Reserved);
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]

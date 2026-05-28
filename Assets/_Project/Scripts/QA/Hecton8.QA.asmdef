@@ -6,7 +6,8 @@
         "Hecton8.Core.Memory",
         "Hecton8.Core.Contracts",
         "Unity.Mathematics",
-        "Unity.Collections"
+        "Unity.Collections",
+        "Unity.Profiling.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

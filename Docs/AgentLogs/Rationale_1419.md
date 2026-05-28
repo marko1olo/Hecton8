@@ -273,3 +273,67 @@ Solution: Regenerated `Docs/Reports/ECOSYSTEM_APEX_FINAL_VERIFICATION_1419.json`
 Rejected Alternatives: Leaving stale JSON proof; reporting chat-only evidence.
 Scalability potential: N/A; evidence integrity only.
 Hardware Impact: Runtime 0 us. Final build gate sample `2026-05-28T10:10:21.0658960Z` had CPU 100% and active `dotnet:10444`, so `dotnet build` was not invoked.
+
+## 2026-05-28 Loop 11 APEX Sargassum GPU/DataVault Recheck Decisions
+
+Problem: `SargassumMicroFaunaBoids` still had writer-lock acquires embedded in compound `||` guards around sensory threat upload and foveated simulation decision buffers.
+Solution: Split null/read-only validation from `TryAcquireSargassumWriteLock` in `UpdateBoidSensoryThreats`, `PrimeFoveatedSimulationDecision`, and `ScheduleFoveatedSimulationDecision`. Follow-up context scan returned `compoundAcquireContextMatches = 0`.
+Rejected Alternatives: Classifying the guards as behaviorally safe. They were probably safe after helper rollback, but the proof was not mechanical and the mandate requires exact release evidence.
+Scalability potential: Low devices still fail closed when Vault views are locked; Middle/High/Ultra keep the same foveated hibernation route and can spend budget on visual swarm density through continuous `GlobalQualityWeight`.
+Hardware Impact: Runtime speed change below measurement noise; correctness/proof improvement only.
+
+Problem: `DrainCarrionDeathSignalSnapshot` released death ingress manually on invalid ingress/counter-acquire failure before entering the main `finally`.
+Solution: Moved ingress validation and counter acquisition inside the `try`, using `deathLocked` and `countersLocked` flags. Both acquired locks now release only in the final block at `NutrientDriftRuntime_Carrion.cs:412/414`.
+Rejected Alternatives: Keeping the early releases because they were paired. The user requested proof that every acquired write lock exits through `finally`.
+Scalability potential: Low-tier carrion ingress now fails closed with a single proof path; higher tiers keep the same continuous carrion quality scalar and attraction visuals.
+Hardware Impact: Normal frame gain 0 us claimed. This removes a lock-proof ambiguity in signal drain handling.
+
+Problem: `RegisterWhaleFallScavengerBurst` released `_boidStateHandle` manually before fallback fear/telemetry when `_activeBoidCount <= 0`.
+Solution: Reworked the method so boid-state release occurs in the existing `finally`; fallback fear burst and food-chain telemetry execute after the lock is released.
+Rejected Alternatives: Calling fallback systems while holding the boid-state write lock; that would risk nested lock contention. Keeping manual release also weakened evidence.
+Scalability potential: Low devices retain cheap panic/fear fake if no boids are active; High/Ultra still get visual scavenger rematerialization when active boids exist. No physical scavenger solver was added.
+Hardware Impact: Runtime speed change below measurement noise; avoids nested lock/fallback coupling.
+
+Problem: `HasRequiredMicroFaunaStorage` used mutable `Resolve...().IsCreated` calls for cold readiness checks.
+Solution: Added `HasSargassumReadOnlyStorage` and converted readiness checks to `TryReadOnlySargassumVaultArray` routes at `SargassumMicroFaunaBoids.cs:2753-2779`.
+Rejected Alternatives: Leaving it as a cold readiness helper. Cold mutable reads still contradict Data Sovereignty and can become future hot-path precedent.
+Scalability potential: Low-tier initialization/rematerialization now fails closed during Vault contention; higher tiers keep identical storage identity and visual density budgets.
+Hardware Impact: 0 us normal-frame gain claimed; possible tiny cold-path branch cost.
+
+Problem: `TryAcquireSargassumWriteLock` released invalid acquired views manually before returning false.
+Solution: Converted the helper to a `try/finally` with `acquired`/`keepLock` flags, so failed post-acquire validation rolls back inside `finally`.
+Rejected Alternatives: Assuming the Vault will never return invalid arrays after successful acquire. That assumption weakens the mathematical release proof.
+Scalability potential: All tiers share one robust writer-lock helper; no gameplay truth, DTO layout, save identity, or authority route changed.
+Hardware Impact: One branch per writer-lock acquisition; below measurable frame budget.
+
+Problem: Final compile proof became available by policy gate, then failed before source type-check.
+Solution: Sampled CPU/process state first (`2026-05-28T15:11:25.6478125Z`, CPU 14%, compiler process count 0), launched exactly one `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1`, and recorded the MSB4006 project-graph failure to `Docs/AgentLogs/Dump_1419_BuildFailure_20260528T151125Z.txt`.
+Rejected Alternatives: Re-running the same build after a project-graph failure; claiming compile success; editing Universal Render Pipeline project graph outside domain.
+Scalability potential: N/A; build evidence only.
+Hardware Impact: Host build was throttled correctly. Compile/type proof remains unavailable because MSBuild failed on `ResolveProjectReferences` before C# diagnostics.
+
+## 2026-05-28 Loop 12 APEX Read-Only/Cold Bootstrap Recheck Decisions
+
+Problem: `SargassumMicroFaunaBoids.NativeRingBuffer<T>.PushOverwrite` wrote through a resolved Vault array without a local write-lock proof, and several leviathan/foveated readers still depended on mutable-ready helper patterns.
+Solution: Rewrote `PushOverwrite` to acquire the ring array with `TryAcquireWriteLock`, set the lock flag immediately after acquisition, perform capacity/index validation after acquisition, then release only in `finally`. Converted leviathan node and foveated simulation consumers to `TryReadOnlySargassumVaultArray` and added a static helper overload so readiness checks do not require mutable views.
+Rejected Alternatives: Treating the ring as private scratch; clearing old leviathan snapshots on every transient read contention; adding a managed fallback list. Those weaken DataVault ownership or create heap pressure.
+Scalability potential: Low devices now fail closed under Vault contention while preserving last valid visual state; Middle/High/Ultra keep the same spline/foveated fake route and can spend quality budget on denser visual fish, not a physical leviathan solver.
+Hardware Impact: Normal frame gain 0 us claimed. Correctness gain is removal of a lock-proof hole. Existing mapped GPU upload estimate remains 35-120 us per 5000-boid bulk upload and 2-8 us per single-boid mapped write versus high-level SetData.
+
+Problem: `NutrientDriftRuntime` public reads, cold bootstrap, telemetry dump, and editor CSV reload still mixed mutable handle resolution with diagnostic/cold logic, so the Data Sovereignty proof was incomplete.
+Solution: Public read helpers now resolve through `TryOpenReadVaultBuffer` returning `NativeArray<T>.ReadOnly`; `EnsureVaultState` first verifies handles through read-only storage, then opens mutable views only inside `TryLockJobBuffers` and profile write-lock windows; `DumpTelemetry` reads telemetry through a read-only view; `TryLoadProfilesCsvCold` locks CSV scratch and profile buffers separately and releases both in a single `finally`.
+Rejected Alternatives: Keeping cold/editor paths mutable because they are not hot; using `OpenOrAcquireVaultBuffer` as a convenience wrapper; allocating a managed CSV staging array.
+Scalability potential: Low-tier FrostTick can skip or fail closed during Vault contention; Middle/High/Ultra keep identical nutrient truth while `HomeostasisBrain.GlobalQualityWeight` scales active axis/cell count continuously.
+Hardware Impact: Normal hot-frame gain 0 us claimed. Cold/profile correctness improves; hot scan still reports zero reference-type allocations in the modified ranges.
+
+Problem: Carrion mock extinction, bootstrap, signal drain, dump, and CSV profile routes had the same proof weakness: mutable views outside a clearly named lock/read-only window.
+Solution: `GenerateMockMassExtinctionCold` and `EnsureCarrionVaultState` now run under carrion job locks; public carrion reads and dump routes resolve read-only views; `DrainCarrionDeathSignalSnapshot` reads tuning read-only and releases ingress/counter locks in `finally`; `TryLoadCarrionProfilesCsvCold` locks scratch/profile buffers with release in `finally`.
+Rejected Alternatives: Classifying mock/cold carrion paths as outside DataVault discipline; duplicating carrion state into managed diagnostics; forcing a physical carrion attraction simulation instead of cheap attraction records.
+Scalability potential: Low-tier carrion can retain cheap attraction fakes and fail closed under contention; High/Ultra can increase visual carrion density without changing the carrion truth DTO route.
+Hardware Impact: Normal frame gain 0 us claimed. Removes cold-route lock ambiguity and preserves zero-GC hot behavior.
+
+Problem: Loop 12 needed a final compilation check, but the current host sample violated the build throttle after the prior legal build had already failed in project graph resolution.
+Solution: Sampled CPU/process state at `2026-05-28T20:03:48.2927113+04:00`: CPU `100%`, active `csc` pid `21340`, active `dotnet` pid `28668`. Final documentation-pass recheck at `2026-05-28T20:17:28.7828391+04:00` found CPU `83%` and active `dotnet` pid `65020`. No Loop 12 build was launched. The prior legal build failure remains recorded in `Docs/AgentLogs/Dump_1419_BuildFailure_20260528T151125Z.txt`.
+Rejected Alternatives: Running `dotnet build` during CPU >50% and active compiler/dotnet contention; rerunning after the unresolved MSB4006 project-graph circular dependency; claiming C# type proof without a compiler pass.
+Scalability potential: N/A; build host protection only.
+Hardware Impact: Prevented additional host contention. Runtime Unity/Profiler/GC proof remains PENDING VERIFICATION.

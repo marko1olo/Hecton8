@@ -25,6 +25,18 @@ namespace Hecton8.Core.Bucketing
         private const float DefaultEntityCostMs = 0.025f;
         private const float CatastrophicCostClampMs = 1000f;
         private const float EwmaWeight = 0.10f;
+        private const ulong RebalanceVaultMutationGuardMask =
+            (1UL << 3) |
+            (1UL << 4) |
+            (1UL << 6) |
+            (1UL << 8);
+        private const ulong EntityStateVaultMutationGuardMask =
+            (1UL << 2) |
+            (1UL << 3) |
+            (1UL << 4) |
+            (1UL << 5) |
+            (1UL << 6) |
+            (1UL << 8);
 
         private VaultGenerationHandle<int> _entityBucketsHandle;
         private VaultGenerationHandle<int> _entityBucketsWorkHandle;
@@ -69,6 +81,7 @@ namespace Hecton8.Core.Bucketing
         private bool _rebalancePending;
         private bool _nonFiniteCostObserved;
         private bool _pendingBlackBoxDump;
+        private bool _rebalanceVaultGuardHeld;
 
         public bool IsInitialized
         {
@@ -255,12 +268,21 @@ namespace Hecton8.Core.Bucketing
                 : 0f;
             _jitterVarianceMs = math.lerp(previousJitter, math.abs(sanitized - previous), EwmaWeight);
 
-            NativeArray<float> bucketLoads = ResolveBucketLoadEwma();
-            if (bucketLoads.IsCreated && (uint)_activeSlowBucket < (uint)bucketLoads.Length)
+            bool bucketLoadsLocked = false;
+            try
             {
-                float current = bucketLoads[_activeSlowBucket];
-                float seed = current > 0f && math.isfinite(current) ? current : sanitized;
-                bucketLoads[_activeSlowBucket] = math.lerp(seed, sanitized, EwmaWeight);
+                bucketLoadsLocked = TryAcquireWriteView(in _bucketLoadEwmaHandle, out NativeArray<float> bucketLoads);
+                if (bucketLoadsLocked && bucketLoads.IsCreated && (uint)_activeSlowBucket < (uint)bucketLoads.Length)
+                {
+                    float current = bucketLoads[_activeSlowBucket];
+                    float seed = current > 0f && math.isfinite(current) ? current : sanitized;
+                    bucketLoads[_activeSlowBucket] = math.lerp(seed, sanitized, EwmaWeight);
+                }
+            }
+            finally
+            {
+                if (bucketLoadsLocked)
+                    ReleaseWriteView(in _bucketLoadEwmaHandle);
             }
 
             UpdatePacingFlags();
@@ -277,15 +299,27 @@ namespace Hecton8.Core.Bucketing
 
         public bool TryReportEntityCostMs(int entityIndex, float measuredCostMs)
         {
-            NativeArray<float> costs = ResolveEntityCostEwma();
-            if (!costs.IsCreated || (uint)entityIndex >= (uint)costs.Length)
+            if (_rebalancePending)
                 return false;
 
-            float sanitized = SanitizeCost(measuredCostMs);
-            float current = costs[entityIndex];
-            float seed = current > 0f && math.isfinite(current) ? current : sanitized;
-            costs[entityIndex] = math.lerp(seed, sanitized, EwmaWeight);
-            return true;
+            bool costsLocked = false;
+            try
+            {
+                costsLocked = TryAcquireWriteView(in _entityCostEwmaHandle, out NativeArray<float> costs);
+                if (!costsLocked || !costs.IsCreated || (uint)entityIndex >= (uint)costs.Length)
+                    return false;
+
+                float sanitized = SanitizeCost(measuredCostMs);
+                float current = costs[entityIndex];
+                float seed = current > 0f && math.isfinite(current) ? current : sanitized;
+                costs[entityIndex] = math.lerp(seed, sanitized, EwmaWeight);
+                return true;
+            }
+            finally
+            {
+                if (costsLocked)
+                    ReleaseWriteView(in _entityCostEwmaHandle);
+            }
         }
 
         public int ResolveEntityIndex(uint stableHash)
@@ -295,20 +329,50 @@ namespace Hecton8.Core.Bucketing
 
         public bool TryRegisterEntityBucket(int entityIndex, uint stableHash)
         {
-            NativeArray<int> entityBuckets = ResolveEntityBuckets();
-            if (!entityBuckets.IsCreated || (uint)entityIndex >= (uint)entityBuckets.Length)
-                return false;
-
             int bucket = ResolveSlowBucket(stableHash);
-            entityBuckets[entityIndex] = bucket;
+            bool entityBucketsLocked = TryAcquireWriteView(in _entityBucketsHandle, out NativeArray<int> entityBuckets);
+            if (!entityBucketsLocked || !entityBuckets.IsCreated || (uint)entityIndex >= (uint)entityBuckets.Length)
+            {
+                if (entityBucketsLocked)
+                    ReleaseWriteView(in _entityBucketsHandle);
+                return false;
+            }
 
-            NativeArray<int> work = ResolveEntityBucketsWork();
-            if (!_rebalancePending && work.IsCreated && (uint)entityIndex < (uint)work.Length)
-                work[entityIndex] = bucket;
+            try
+            {
+                entityBuckets[entityIndex] = bucket;
+            }
+            finally
+            {
+                ReleaseWriteView(in _entityBucketsHandle);
+            }
 
-            NativeArray<float> costs = ResolveEntityCostEwma();
-            if (costs.IsCreated && (uint)entityIndex < (uint)costs.Length)
-                costs[entityIndex] = DefaultEntityCostMs;
+            if (!_rebalancePending)
+            {
+                bool workLocked = TryAcquireWriteView(in _entityBucketsWorkHandle, out NativeArray<int> work);
+                try
+                {
+                    if (workLocked && work.IsCreated && (uint)entityIndex < (uint)work.Length)
+                        work[entityIndex] = bucket;
+                }
+                finally
+                {
+                    if (workLocked)
+                        ReleaseWriteView(in _entityBucketsWorkHandle);
+                }
+
+                bool costsLocked = TryAcquireWriteView(in _entityCostEwmaHandle, out NativeArray<float> costs);
+                try
+                {
+                    if (costsLocked && costs.IsCreated && (uint)entityIndex < (uint)costs.Length)
+                        costs[entityIndex] = DefaultEntityCostMs;
+                }
+                finally
+                {
+                    if (costsLocked)
+                        ReleaseWriteView(in _entityCostEwmaHandle);
+                }
+            }
 
             _mutationVersion++;
             return true;
@@ -316,19 +380,49 @@ namespace Hecton8.Core.Bucketing
 
         public bool TryUnregisterEntityBucket(int entityIndex)
         {
-            NativeArray<int> entityBuckets = ResolveEntityBuckets();
-            if (!entityBuckets.IsCreated || (uint)entityIndex >= (uint)entityBuckets.Length)
+            bool entityBucketsLocked = TryAcquireWriteView(in _entityBucketsHandle, out NativeArray<int> entityBuckets);
+            if (!entityBucketsLocked || !entityBuckets.IsCreated || (uint)entityIndex >= (uint)entityBuckets.Length)
+            {
+                if (entityBucketsLocked)
+                    ReleaseWriteView(in _entityBucketsHandle);
                 return false;
+            }
 
-            entityBuckets[entityIndex] = -1;
+            try
+            {
+                entityBuckets[entityIndex] = -1;
+            }
+            finally
+            {
+                ReleaseWriteView(in _entityBucketsHandle);
+            }
 
-            NativeArray<int> work = ResolveEntityBucketsWork();
-            if (!_rebalancePending && work.IsCreated && (uint)entityIndex < (uint)work.Length)
-                work[entityIndex] = -1;
+            if (!_rebalancePending)
+            {
+                bool workLocked = TryAcquireWriteView(in _entityBucketsWorkHandle, out NativeArray<int> work);
+                try
+                {
+                    if (workLocked && work.IsCreated && (uint)entityIndex < (uint)work.Length)
+                        work[entityIndex] = -1;
+                }
+                finally
+                {
+                    if (workLocked)
+                        ReleaseWriteView(in _entityBucketsWorkHandle);
+                }
 
-            NativeArray<float> costs = ResolveEntityCostEwma();
-            if (costs.IsCreated && (uint)entityIndex < (uint)costs.Length)
-                costs[entityIndex] = 0f;
+                bool costsLocked = TryAcquireWriteView(in _entityCostEwmaHandle, out NativeArray<float> costs);
+                try
+                {
+                    if (costsLocked && costs.IsCreated && (uint)entityIndex < (uint)costs.Length)
+                        costs[entityIndex] = 0f;
+                }
+                finally
+                {
+                    if (costsLocked)
+                        ReleaseWriteView(in _entityCostEwmaHandle);
+                }
+            }
 
             _mutationVersion++;
             return true;
@@ -508,6 +602,29 @@ namespace Hecton8.Core.Bucketing
             return vault.TryReadOnlyHandle(in handle, out buffer) && buffer.Length > 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool TryAcquireWriteView<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
+            where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || handle.BufferID == 0u)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return vault.TryAcquireWriteLock(in handle, SystemID.SimulationBucketer, out buffer) && buffer.IsCreated;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ReleaseWriteView<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && handle.BufferID != 0u)
+                vault.ReleaseWriteLock(in handle, SystemID.SimulationBucketer);
+        }
+
         private void ReleaseHandlesOnly()
         {
             if (_rebalancePending)
@@ -515,6 +632,7 @@ namespace Hecton8.Core.Bucketing
                 CompleteRebalanceHandle(ref _rebalanceHandle);
                 _rebalancePending = false;
             }
+            ReleaseRebalanceVaultGuard();
 
             IDataVault vault = _dataVault;
             if (vault != null)
@@ -555,41 +673,60 @@ namespace Hecton8.Core.Bucketing
 
         private void ClearEntityState()
         {
-            NativeArray<int> entityBuckets = ResolveEntityBuckets();
-            NativeArray<int> work = ResolveEntityBucketsWork();
-            NativeArray<float> costs = ResolveEntityCostEwma();
-            if (entityBuckets.IsCreated && work.IsCreated && costs.IsCreated)
+            if (!TryAcquireVaultMutationGuard(EntityStateVaultMutationGuardMask))
+                return;
+
+            try
             {
-                int entityCount = math.min(entityBuckets.Length, math.min(work.Length, costs.Length));
-                for (int i = 0; i < entityCount; i++)
+                NativeArray<int> entityBuckets = ResolveEntityBuckets();
+                if (entityBuckets.IsCreated)
                 {
-                    entityBuckets[i] = -1;
-                    work[i] = -1;
-                    costs[i] = 0f;
+                    for (int i = 0; i < entityBuckets.Length; i++)
+                        entityBuckets[i] = -1;
+                }
+
+                NativeArray<int> work = ResolveEntityBucketsWork();
+                if (work.IsCreated)
+                {
+                    for (int i = 0; i < work.Length; i++)
+                        work[i] = -1;
+                }
+
+                NativeArray<float> costs = ResolveEntityCostEwma();
+                if (costs.IsCreated)
+                {
+                    for (int i = 0; i < costs.Length; i++)
+                        costs[i] = 0f;
+                }
+
+                NativeArray<float> bucketLoads = ResolveBucketLoadEwma();
+                if (bucketLoads.IsCreated)
+                {
+                    for (int i = 0; i < bucketLoads.Length; i++)
+                        bucketLoads[i] = 0f;
+                }
+
+                NativeArray<float> rebalanceLoads = ResolveRebalanceBucketLoads();
+                if (rebalanceLoads.IsCreated)
+                {
+                    for (int i = 0; i < rebalanceLoads.Length; i++)
+                        rebalanceLoads[i] = 0f;
+                }
+
+                NativeArray<SimulationBucketRebalanceResult> result = ResolveRebalanceResult();
+                if (result.IsCreated && result.Length > 0)
+                    result[0] = default;
+
+                NativeArray<SimulationBucketBlackBoxEntry> blackBox = ResolveBlackBoxBuffer();
+                if (blackBox.IsCreated)
+                {
+                    for (int i = 0; i < blackBox.Length; i++)
+                        blackBox[i] = default;
                 }
             }
-
-            NativeArray<float> bucketLoads = ResolveBucketLoadEwma();
-            NativeArray<float> rebalanceLoads = ResolveRebalanceBucketLoads();
-            if (bucketLoads.IsCreated && rebalanceLoads.IsCreated)
+            finally
             {
-                int loadCount = math.min(bucketLoads.Length, rebalanceLoads.Length);
-                for (int i = 0; i < loadCount; i++)
-                {
-                    bucketLoads[i] = 0f;
-                    rebalanceLoads[i] = 0f;
-                }
-            }
-
-            NativeArray<SimulationBucketRebalanceResult> result = ResolveRebalanceResult();
-            if (result.IsCreated && result.Length > 0)
-                result[0] = default;
-
-            NativeArray<SimulationBucketBlackBoxEntry> blackBox = ResolveBlackBoxBuffer();
-            if (blackBox.IsCreated)
-            {
-                for (int i = 0; i < blackBox.Length; i++)
-                    blackBox[i] = default;
+                ReleaseVaultMutationGuard(EntityStateVaultMutationGuardMask);
             }
         }
 
@@ -600,6 +737,9 @@ namespace Hecton8.Core.Bucketing
 
             _rebalanceCountdown--;
             if (_rebalanceCountdown > 0)
+                return;
+
+            if (!TryAcquireRebalanceVaultGuard())
                 return;
 
             NativeArray<float> costs = ResolveEntityCostEwma();
@@ -615,6 +755,7 @@ namespace Hecton8.Core.Bucketing
                 !result.IsCreated ||
                 result.Length < RebalanceResultLength)
             {
+                ReleaseRebalanceVaultGuard();
                 return;
             }
 
@@ -632,10 +773,20 @@ namespace Hecton8.Core.Bucketing
                 TargetFrameMs = SimulationBucketConstants.TargetFrameMilliseconds
             };
 
-            _rebalanceMutationVersion = _mutationVersion;
-            _rebalanceHandle = job.Schedule();
-            H8Memory.RegisterActiveJob(SystemID.SimulationBucketer, _rebalanceHandle);
-            _rebalancePending = true;
+            bool scheduled = false;
+            try
+            {
+                _rebalanceMutationVersion = _mutationVersion;
+                _rebalanceHandle = job.Schedule();
+                H8Memory.RegisterActiveJob(SystemID.SimulationBucketer, _rebalanceHandle);
+                _rebalancePending = true;
+                scheduled = true;
+            }
+            finally
+            {
+                if (!scheduled)
+                    ReleaseRebalanceVaultGuard();
+            }
         }
 
         private void CompleteRebalanceIfReady()
@@ -648,34 +799,90 @@ namespace Hecton8.Core.Bucketing
 
             _rebalancePending = false;
 
-            if (_rebalanceMutationVersion == _mutationVersion)
+            try
             {
-                NativeArray<int> front = ResolveEntityBuckets();
-                NativeArray<int> work = ResolveEntityBucketsWork();
-                if (front.IsCreated && work.IsCreated)
+                if (_rebalanceMutationVersion == _mutationVersion)
                 {
-                    int count = math.min(front.Length, work.Length);
-                    for (int i = 0; i < count; i++)
-                        front[i] = work[i];
-                }
-            }
-
-            NativeArray<SimulationBucketRebalanceResult> resultBuffer = ResolveRebalanceResult();
-            if (resultBuffer.IsCreated && resultBuffer.Length > 0)
-            {
-                SimulationBucketRebalanceResult result = resultBuffer[0];
-                _expectedMaxBucketLoadMs = SanitizeCost(result.MaxBucketLoadMs);
-                _expectedMeanBucketLoadMs = SanitizeCost(result.MeanBucketLoadMs);
-                if (!math.isfinite(result.MaxBucketLoadMs) ||
-                    !math.isfinite(result.MeanBucketLoadMs) ||
-                    (result.FramePacingFlags & SimulationBucketPacingFlags.NonFiniteCost) != 0u)
-                {
-                    _nonFiniteCostObserved = true;
-                    _pendingBlackBoxDump = true;
+                    bool frontLocked = false;
+                    try
+                    {
+                        frontLocked = TryAcquireWriteView(in _entityBucketsHandle, out NativeArray<int> front);
+                        NativeArray<int> work = ResolveEntityBucketsWork();
+                        if (frontLocked && front.IsCreated && work.IsCreated)
+                        {
+                            int count = math.min(front.Length, work.Length);
+                            for (int i = 0; i < count; i++)
+                                front[i] = work[i];
+                        }
+                    }
+                    finally
+                    {
+                        if (frontLocked)
+                            ReleaseWriteView(in _entityBucketsHandle);
+                    }
                 }
 
-                _rebalanceSequence = _rebalanceSequence == uint.MaxValue ? 1u : _rebalanceSequence + 1u;
+                NativeArray<SimulationBucketRebalanceResult> resultBuffer = ResolveRebalanceResult();
+                if (resultBuffer.IsCreated && resultBuffer.Length > 0)
+                {
+                    SimulationBucketRebalanceResult result = resultBuffer[0];
+                    _expectedMaxBucketLoadMs = SanitizeCost(result.MaxBucketLoadMs);
+                    _expectedMeanBucketLoadMs = SanitizeCost(result.MeanBucketLoadMs);
+                    if (!math.isfinite(result.MaxBucketLoadMs) ||
+                        !math.isfinite(result.MeanBucketLoadMs) ||
+                        (result.FramePacingFlags & SimulationBucketPacingFlags.NonFiniteCost) != 0u)
+                    {
+                        _nonFiniteCostObserved = true;
+                        _pendingBlackBoxDump = true;
+                    }
+
+                    _rebalanceSequence = _rebalanceSequence == uint.MaxValue ? 1u : _rebalanceSequence + 1u;
+                }
             }
+            finally
+            {
+                ReleaseRebalanceVaultGuard();
+            }
+        }
+
+        private bool TryAcquireRebalanceVaultGuard()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            ReleaseRebalanceVaultGuard();
+            _rebalanceVaultGuardHeld = vault.TryAcquireMutationGuard(RebalanceVaultMutationGuardMask);
+            return _rebalanceVaultGuardHeld;
+        }
+
+        private bool TryAcquireVaultMutationGuard(ulong mask)
+        {
+            IDataVault vault = _dataVault;
+            return vault != null && vault.TryAcquireMutationGuard(mask);
+        }
+
+        private void ReleaseVaultMutationGuard(ulong mask)
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                vault.ReleaseMutationGuard(mask);
+        }
+
+        private void ReleaseRebalanceVaultGuard()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+            {
+                _rebalanceVaultGuardHeld = false;
+                return;
+            }
+
+            if (!_rebalanceVaultGuardHeld)
+                return;
+
+            vault.ReleaseMutationGuard(RebalanceVaultMutationGuardMask);
+            _rebalanceVaultGuardHeld = false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -738,50 +945,57 @@ namespace Hecton8.Core.Bucketing
 
         private void WriteBlackBoxEntry()
         {
-            NativeArray<SimulationBucketBlackBoxEntry> blackBox = ResolveBlackBoxBuffer();
-            if (!blackBox.IsCreated || blackBox.Length < BlackBoxFrameCount)
-                return;
-
-            int writeIndex = _blackBoxCursor;
-            bool overwriteCurrentFrame = _lastBlackBoxFrame == _currentFrameCount;
-            if (overwriteCurrentFrame)
+            bool blackBoxLocked = false;
+            try
             {
-                writeIndex = _blackBoxCursor == 0 ? BlackBoxFrameCount - 1 : _blackBoxCursor - 1;
+                blackBoxLocked = TryAcquireWriteView(in _blackBoxHandle, out NativeArray<SimulationBucketBlackBoxEntry> blackBox);
+                if (!blackBoxLocked || !blackBox.IsCreated || blackBox.Length < BlackBoxFrameCount)
+                    return;
+
+                int writeIndex = _blackBoxCursor;
+                bool overwriteCurrentFrame = _lastBlackBoxFrame == _currentFrameCount;
+                if (overwriteCurrentFrame)
+                    writeIndex = _blackBoxCursor == 0 ? BlackBoxFrameCount - 1 : _blackBoxCursor - 1;
+
+                blackBox[writeIndex] = new SimulationBucketBlackBoxEntry
+                {
+                    CurrentFrameCount = _currentFrameCount,
+                    ActiveFastBucket = _activeFastBucket,
+                    ActiveSlowBucket = _activeSlowBucket,
+                    ActiveColdBucket = _activeColdBucket,
+                    SlowBucketCount = _slowBucketCount,
+                    CriticalDebtFrames = _criticalDebtFrames,
+                    FramePacingFlags = _framePacingFlags,
+                    RebalanceSequence = _rebalanceSequence,
+                    ActiveBucketLoadMs = _lastActiveBucketLoadMs,
+                    JitterVarianceMs = _jitterVarianceMs,
+                    ExpectedMaxBucketLoadMs = _expectedMaxBucketLoadMs,
+                    ExpectedMeanBucketLoadMs = _expectedMeanBucketLoadMs,
+                    PreSimulationCostMs = _preSimulationCostMs,
+                    SimulationBucketInterpolationAlpha = _simulationBucketInterpolationAlpha,
+                    ActiveSlowBucketCount = _activeSlowBucketCount,
+                    AupBarrierActive = _aupBarrierActive ? (byte)1 : (byte)0,
+                    ReservedPadding = 0,
+                    StateHash = ComputeBlackBoxStateHash()
+                };
+
+                if (!overwriteCurrentFrame)
+                {
+                    writeIndex++;
+                    if (writeIndex >= BlackBoxFrameCount)
+                        writeIndex = 0;
+
+                    _blackBoxCursor = writeIndex;
+                    _lastBlackBoxFrame = _currentFrameCount;
+                }
+
+                TryDumpBlackBoxIfRequested(blackBox);
             }
-
-            blackBox[writeIndex] = new SimulationBucketBlackBoxEntry
+            finally
             {
-                CurrentFrameCount = _currentFrameCount,
-                ActiveFastBucket = _activeFastBucket,
-                ActiveSlowBucket = _activeSlowBucket,
-                ActiveColdBucket = _activeColdBucket,
-                SlowBucketCount = _slowBucketCount,
-                CriticalDebtFrames = _criticalDebtFrames,
-                FramePacingFlags = _framePacingFlags,
-                RebalanceSequence = _rebalanceSequence,
-                ActiveBucketLoadMs = _lastActiveBucketLoadMs,
-                JitterVarianceMs = _jitterVarianceMs,
-                ExpectedMaxBucketLoadMs = _expectedMaxBucketLoadMs,
-                ExpectedMeanBucketLoadMs = _expectedMeanBucketLoadMs,
-                PreSimulationCostMs = _preSimulationCostMs,
-                SimulationBucketInterpolationAlpha = _simulationBucketInterpolationAlpha,
-                ActiveSlowBucketCount = _activeSlowBucketCount,
-                AupBarrierActive = _aupBarrierActive ? (byte)1 : (byte)0,
-                ReservedPadding = 0,
-                StateHash = ComputeBlackBoxStateHash()
-            };
-
-            if (!overwriteCurrentFrame)
-            {
-                writeIndex++;
-                if (writeIndex >= BlackBoxFrameCount)
-                    writeIndex = 0;
-
-                _blackBoxCursor = writeIndex;
-                _lastBlackBoxFrame = _currentFrameCount;
+                if (blackBoxLocked)
+                    ReleaseWriteView(in _blackBoxHandle);
             }
-
-            TryDumpBlackBoxIfRequested(blackBox);
         }
 
         private uint ComputeBlackBoxStateHash()
@@ -859,9 +1073,18 @@ namespace Hecton8.Core.Bucketing
 
         private void UpdateFrameStateBuffer()
         {
-            NativeArray<SimulationBucketFrameState> frameState = ResolveFrameStateBuffer();
-            if (frameState.IsCreated && frameState.Length > 0)
-                frameState[0] = CaptureFrameState();
+            bool frameStateLocked = false;
+            try
+            {
+                frameStateLocked = TryAcquireWriteView(in _frameStateHandle, out NativeArray<SimulationBucketFrameState> frameState);
+                if (frameStateLocked && frameState.IsCreated && frameState.Length > 0)
+                    frameState[0] = CaptureFrameState();
+            }
+            finally
+            {
+                if (frameStateLocked)
+                    ReleaseWriteView(in _frameStateHandle);
+            }
         }
 
         private float ResolveGlobalInterpolationAlpha()

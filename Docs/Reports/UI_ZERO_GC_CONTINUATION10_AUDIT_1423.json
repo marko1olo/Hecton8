@@ -1,0 +1,103 @@
+{
+    "agent_id":  "1423",
+    "status":  "PENDING VERIFICATION",
+    "generated_at":  "2026-05-28T17:47:22+04:00",
+    "domain":  "ECHELON 8 PRESENTATION \u0026 UX / Zero-GC Subtitles (Babel), VWS",
+    "continuation":  10,
+    "assignment_source":  {
+                              "current_batch_contains_agent_prompt_1423":  false,
+                              "retained_last_verified_status_hash":  "B0CBBF4990D1B48DD03878D3E2B9D7B32EA36C93FAE228F1BDAC28C681952077",
+                              "retained_last_verified_task_count":  20,
+                              "note":  "Current batch file still does not contain the 1423 prompt; no neighboring prompt adopted."
+                          },
+    "files_changed_or_audited":  {
+                                     "Assets/_Project/Scripts/SpatialAudioManager.cs":  "58CC7F7C52F3B61CFB4F3237425381ED3BD26CBA9CC578A31201862B65BD013E",
+                                     "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs":  "FA70A8402A8081221938852079710DA90FCCA6235424E2AF22DD99C2D4B25E51",
+                                     "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs":  "09633A2ECF863273E09427E4CE20711AA3DB6E2F0150CB9FC90F2F9EA48AF10E",
+                                     "Assets/_Project/Scripts/Core/Contracts/Signals/SubtitleCueSignal.cs":  "F1AEDBA3CE8E65E8684EC4FF0AD1A9FE61B5B3943E02C136540DA4B9131C6690",
+                                     "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs":  "099C3A6C4AD93F3F1C2F4FE1E4D990F3C1400474E00304FC597EE77B5D90AE93",
+                                     "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs":  "6CDBC5B2564A710848ED4E41DCC61CB07CCD78E3E82A69B568DDAB7FD85A9763",
+                                     "Assets/_Project/Scripts/UI/SubtitleManager.cs":  "084243DAC5C5A74C3945FEA0F2F290AE13CDB544B6F228CC7F0653E998E4B71B",
+                                     "Assets/_Project/Scripts/LocRegistry.cs":  "A5BA183D8C8985D5D61DECB93224DCB9428AB51B10DFFEC8E5CAB616D1E46B73"
+                                 },
+    "continuation10_change":  {
+                                  "problem":  "After CONT9, AudioCaptionEvents still exposed a public managed string resolver and computed caption hash fields from named CaptionText string constants during static initialization.",
+                                  "solution":  "Deleted ResolveCaptionText(uint), replaced caption hash fields with precomputed FNV-1a uint constants, and kept TryResolveCaptionTextSpan as the only first-party caption text resolver.",
+                                  "changed_paths":  [
+                                                        "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                                                        "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs"
+                                                    ],
+                                  "exact_line_evidence":  {
+                                                              "precomputed_hash_constants":  "Assets/_Project/Scripts/SpatialAudioManager.cs:11981-11991",
+                                                              "span_resolver":  "Assets/_Project/Scripts/SpatialAudioManager.cs:12299-12409",
+                                                              "source_regression":  "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs:205-221"
+                                                          }
+                              },
+    "static_scan":  {
+                        "production_legacy_caption_string_api_regex":  "public static string ResolveCaptionText|LocHash\\.Compute\\([^\\)]*CaptionText|private const string .*CaptionText|CaptionText\\s*[=;]",
+                        "production_legacy_caption_string_api_hits":  0,
+                        "changed_caption_hot_forbidden_regex":  "string\\.Format|\\.ToString\\(|\\.text\\s*=|new string|StringBuilder|Array\\.Resize|foreach\\s*\\(|\\$\"|public static string ResolveCaptionText",
+                        "changed_caption_hot_forbidden_hits":  0,
+                        "scan_case_sensitivity":  "case-sensitive; earlier case-insensitive verification miscounted local captionText span variables and was rejected",
+                        "negative_assertion_hits_in_editor_tests":  8,
+                        "git_diff_check":  "exit 0; CRLF normalization warnings only",
+                        "caveat":  "String literals still back TryResolveCaptionTextSpan. The removed fault is the public managed string resolver and static LocHash.Compute(CaptionText) route, not all metadata literals."
+                    },
+    "fnv_hash_proof":  {
+                           "algorithm":  "LocHash.Compute(ReadOnlySpan\u003cchar\u003e) UTF-16 FNV-1a: offset 2166136261, prime 16777619, low byte then high byte per char.",
+                           "algorithm_lines":  "Assets/_Project/Scripts/LocRegistry.cs:52-64 and 158-164",
+                           "constants":  {
+                                             "LowPowerCaptionHash":  "0x9806014E",
+                                             "LifeSupportCaptionHash":  "0x8140980F",
+                                             "MultiFailureCaptionHash":  "0x386392CB",
+                                             "EmergencyDangerCaptionHash":  "0xE984BC39",
+                                             "AbandonShipCaptionHash":  "0x5CEF8426",
+                                             "HostileDroneCaptionHash":  "0x964F3F39",
+                                             "OxygenLowCaptionHash":  "0x12DCC423",
+                                             "OxygenCriticalCaptionHash":  "0xAE1F0464",
+                                             "HullBreachCaptionHash":  "0x723B50A7",
+                                             "PressureHighCaptionHash":  "0xEE32D0F3",
+                                             "ThermalStressCaptionHash":  "0x585A5256"
+                                         },
+                           "verification_command":  "Python helper mirroring LocHash UTF-16 byte order; first PowerShell attempt overflowed and was rejected as invalid evidence."
+                       },
+    "reference_type_new_audit":  {
+                                     "repaired_hot_methods":  "CanQueueCaptionHash, EnqueueCaptionRequest, Dispatch, HandleCaptionRequested, span display helpers, TryResolveCaptionTextSpan",
+                                     "reference_type_new_hits_in_repaired_hot_methods":  0,
+                                     "remaining_cold_reference_allocations":  "unchanged cold listener/pending arrays, UI GameObjects, and caption slot char buffers; not claimed as runtime zero-GC proof"
+                                 },
+    "data_sovereignty":  {
+                             "new_global_data_vault_migrations_in_continuation10":  0,
+                             "existing_buffer_ids_secured_by_prior_1423_work":  [
+                                                                                    "15070550 SubtitleTelemetryBufferId",
+                                                                                    "15070551 SubtitleCueMirrorBufferId",
+                                                                                    "15070552 UIOptimizationTelemetryBufferId"
+                                                                                ],
+                             "continuation10_lock_changes":  "None"
+                         },
+    "cinematic_and_scalability":  {
+                                      "cinematic_cheat":  "No simulation added; text remains hash plus fixed span presentation.",
+                                      "continuous_scalability":  "No new quality branch. Existing GlobalQualityWeight-driven rich-text/canvas policies remain the scalability route.",
+                                      "binary_switch_scan":  "No isLowEnd/LowEnd branch added."
+                                  },
+    "build_throttle":  {
+                           "continuation10_build_launched":  false,
+                           "cpu_sample_percent":  87,
+                           "active_dotnet_csc_vbcscompiler":  "none",
+                           "reason":  "CPU \u003e 50 and latest build already blocked by out-of-domain ModularEquipmentEngine.cs. Static source graph showed no references to deleted ResolveCaptionText.",
+                           "previous_build_failure_dump":  "Docs/AgentLogs/Dump_1423_CONT9_BUILD_FAILURE.txt"
+                       },
+    "verification_truth":  {
+                               "project_build_passed":  false,
+                               "runtime_profiler_gc_bytes":  null,
+                               "editor_tests_executed":  false,
+                               "reason":  "No build/test/profiler run after CONT10 due CPU throttle and known out-of-domain compile wall."
+                           },
+    "residual_faults":  [
+                            "AudioCaptionEvents still uses managed listener interface dispatch; payload and text route are hash/span only.",
+                            "String literals still back fixed English caption spans until a real Babel table route exists for these spatial-audio captions.",
+                            "Legacy LocRegistry compatibility APIs and SubtitleManager managed/cold compatibility surfaces remain documented from prior loops."
+                        ],
+    "report_path":  "Docs/Reports/UI_ZERO_GC_CONTINUATION10_AUDIT_1423.json",
+    "report_kind":  "UI_ZERO_GC_CONTINUATION10_AUDIT_1423"
+}

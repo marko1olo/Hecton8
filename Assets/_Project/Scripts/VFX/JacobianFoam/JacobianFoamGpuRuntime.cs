@@ -175,7 +175,7 @@ namespace Hecton8.VFX
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            RebindDataVaultForLifecycle(currentService as IDataVault);
+            RebindDataVaultForLifecycle(currentService is IDataVault currentVault ? currentVault : null);
 
             if (isActiveAndEnabled && _vault != null)
                 EnsureVaultState(true);

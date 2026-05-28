@@ -178,14 +178,31 @@ namespace Hecton8.Logistics
         public const float LowCadenceSeconds = 1f;
         public const float MiddleCadenceSeconds = 0.25f;
         public const float HighCadenceSeconds = 0.1f;
-        public const float UltraCadenceSeconds = 0.1f;
+        public const float UltraCadenceSeconds = 0.05f;
         public const float AuthoritativeCadenceSeconds = 0.1f;
         public const uint FnvOffset = 2166136261u;
         public const uint FnvPrime = 16777619u;
 
+        public static float ResolveCadenceSeconds(float globalQualityWeight)
+        {
+            float q = math.saturate(math.isfinite(globalQualityWeight) ? globalQualityWeight : 1f);
+            float curve = math.smoothstep(0f, 1f, q);
+            return math.lerp(LowCadenceSeconds, UltraCadenceSeconds, curve);
+        }
+
         public static float ResolveCadenceSeconds(FluidPipeMathLod lod)
         {
-            return AuthoritativeCadenceSeconds;
+            switch (lod)
+            {
+                case FluidPipeMathLod.Low:
+                    return LowCadenceSeconds;
+                case FluidPipeMathLod.Middle:
+                    return MiddleCadenceSeconds;
+                case FluidPipeMathLod.High:
+                    return HighCadenceSeconds;
+                default:
+                    return UltraCadenceSeconds;
+            }
         }
 
         public static uint MixHash(uint hash, uint value)

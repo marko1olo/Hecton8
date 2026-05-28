@@ -12,6 +12,7 @@
     "MaxEnvelopesPerFrame": { "type": "integer", "minimum": 0 },
     "Nodes": {
       "type": "array",
+      "maxItems": 256,
       "items": {
         "type": "object",
         "additionalProperties": true,

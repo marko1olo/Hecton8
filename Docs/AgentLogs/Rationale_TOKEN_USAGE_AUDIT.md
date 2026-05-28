@@ -204,3 +204,11 @@ Solution: Rerun the fast token refresh, dashboard, and apex verifier; patch `Tok
 Rejected Alternatives: Running `dotnet build` was rejected because CPU was 96 percent with active `csc` and `dotnet`. Leaving the stale 13:55 CPU sample was rejected because evidence must be current to the report. Claiming Python bytecode compile under contention was rejected as false proof.
 Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected; this is offline audit hygiene. Evidence scalability improves because future apex reports cannot silently overclaim compile proof during heavy parallel-agent load.
 Hardware Impact: 0 us runtime gain. Audit correctness gain: refreshed total is 113,292,508,044 tokens, chart count remains 41, and compile proof is explicitly downgraded to no-compile under CPU/compiler contention.
+
+## Decision 34 - 2026-05-28 full workspace checkpoint boundary
+
+Problem: The operator requested full commits and pushes after the token refresh, while the workspace contained hundreds of unrelated cross-agent changes and an explicit prohibition against touching paths containing `1334`.
+Solution: Commit token evidence first, then stage the remaining workspace as a separate checkpoint after scanning staged paths for `1334` and cleaning only mechanical whitespace gate failures.
+Rejected Alternatives: Reverting unrelated staged changes was rejected because they are other agents' work. Pushing without a clean `git diff --cached --check` was rejected after whitespace errors were found. Running `dotnet build` was rejected because TOKEN_USAGE_AUDIT did not own runtime changes and compiler contention was already observed.
+Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected by this audit checkpoint. Repository evidence improves because token telemetry has isolated commits and broad agent work has a separate checkpoint boundary.
+Hardware Impact: 0 us runtime gain. Process gain: no protected `1334` path was staged, and whitespace gate was green before the broad commit.

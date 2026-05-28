@@ -183,7 +183,7 @@ namespace Hecton8.World
         private float _debugSeamExpensiveWeight;
         private float _debugMaskDetailWeight;
         private bool _debugLowTierVisualOnly;
-        private bool _debugHighTierMaskDetail;
+        private bool _debugMaskDetailActive;
 
         private void Awake()
         {
@@ -703,7 +703,7 @@ namespace Hecton8.World
             float seamExpensiveWeight = ResolveSeamExpensiveWeight(globalQualityWeight);
             float maskDetailWeight = ResolveMaskDetailWeight(globalQualityWeight);
             bool lowTierVisualOnly = seamExpensiveWeight <= 0.0001f;
-            bool highTierMaskDetail = maskDetailWeight > 0.0001f;
+            bool maskDetailActive = maskDetailWeight > 0.0001f;
             NativeArray<ushort> quantizedHeightmap = default;
             bool usedVaultHeightmap = TryResolveVaultHeightmap(state, out quantizedHeightmap);
 
@@ -717,7 +717,7 @@ namespace Hecton8.World
                 if (!TryResolveHybridTerrainScratchBuffers(
                         hybridPlanCount,
                         sampleCount,
-                        highTierMaskDetail,
+                        maskDetailActive,
                         out nativePlans,
                         out patchHeights,
                         out blendMask,
@@ -787,7 +787,7 @@ namespace Hecton8.World
 
                 JobHandle projectionHandle = projectionJob.Schedule(sampleCount, 64);
                 JobHandle finalHandle = projectionHandle;
-                if (highTierMaskDetail)
+                if (maskDetailActive)
                 {
                     float cellSizeX = terrainSize.x / Mathf.Max(1, state.heightmapResolution - 1);
                     float cellSizeZ = terrainSize.z / Mathf.Max(1, state.heightmapResolution - 1);
@@ -869,7 +869,7 @@ namespace Hecton8.World
                     maxHeight01,
                     maxBlend01,
                     lowTierVisualOnly,
-                    highTierMaskDetail,
+                    maskDetailActive,
                     usedVaultHeightmap,
                     changedHeightSample,
                     faulted,
@@ -895,7 +895,7 @@ namespace Hecton8.World
                 _debugSeamExpensiveWeight = seamExpensiveWeight;
                 _debugMaskDetailWeight = maskDetailWeight;
                 _debugLowTierVisualOnly = lowTierVisualOnly;
-                _debugHighTierMaskDetail = highTierMaskDetail;
+                _debugMaskDetailActive = maskDetailActive;
 
                 if (faulted)
                     DumpTerrainSeamBlackBox();
@@ -1461,7 +1461,7 @@ namespace Hecton8.World
             float maxHeight01,
             float maxBlend01,
             bool lowTierVisualOnly,
-            bool highTierMaskDetail,
+            bool maskDetailActive,
             bool usedVaultHeightmap,
             bool heightmapChanged,
             bool faulted,
@@ -1490,7 +1490,7 @@ namespace Hecton8.World
                 Flags = (uint)(
                     (lowTierVisualOnly ? 1 : 0) |
                     (faulted ? 2 : 0) |
-                    (highTierMaskDetail ? 4 : 0) |
+                    (maskDetailActive ? 4 : 0) |
                     (usedVaultHeightmap ? 8 : 0) |
                     (heightmapChanged ? 16 : 0)),
                 StateHash = stateHash

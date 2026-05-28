@@ -224,7 +224,7 @@ namespace Hecton8.Core.Contracts.Signals
     /// <summary>
     /// Last flushed state for one typed signal lane.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct SignalLaneTelemetry
     {
         // Low32: pushed last flush. High32: corrupted total.
@@ -240,6 +240,10 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(30)] public byte Flags;
         // Payload stride bytes, saturated to 255.
         [FieldOffset(31)] public byte Reserved0;
+        [FieldOffset(32)] private ulong _pad0;
+        [FieldOffset(40)] private ulong _pad1;
+        [FieldOffset(48)] private ulong _pad2;
+        [FieldOffset(56)] private ulong _pad3;
     }
 
     /// <summary>Procedural instance culling overload signal. Size: 32 bytes.</summary>

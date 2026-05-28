@@ -1314,6 +1314,10 @@ namespace Hecton8.Gameplay
         private float _underwaterSomaticFatigueBreathCooldownTimer;
         private readonly PresentationAudioEvent[] _pendingPresentationAudioEvents = new PresentationAudioEvent[MaxPendingPresentationAudioEvents]; // COLD ALLOC: fixed visual-sync audio queue - owner: HectonPlayerMovement
         private int _pendingPresentationAudioEventCount;
+        private bool _pendingMovementAcousticSignalDirty;
+        private MovementAcousticSignal _pendingMovementAcousticSignal;
+        private bool _pendingKccWallScrapeAcousticDirty;
+        private AcousticPingSignal _pendingKccWallScrapeAcoustic;
         private int _pendingBreachBubbleCount;
         private int _pendingWipeoutBubbleCount;
         private bool _pendingBreachSplashRingDirty;
@@ -2915,7 +2919,7 @@ namespace Hecton8.Gameplay
             signal.LocomotionMode = (byte)_currentLocomotionMode;
             signal.SurfaceMode = (byte)math.select(0, 1, _isSurfaceSwimming);
             signal.Flags = (byte)(ResolvePlayerKinematicsTelemetryFlags() & 0xFFu);
-            SignalBus<MovementAcousticSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
+            QueueMovementAcousticSignal(in signal);
         }
 
         private void UpdateBrineLayerState(float fixedDeltaTime)
@@ -7221,6 +7225,7 @@ namespace Hecton8.Gameplay
             FlushImpactBubbleBursts();
             FlushBreachSplashRing();
             FlushPresentationAudioEvents();
+            FlushQueuedFeedbackSignals();
         }
 
         private bool QueuePresentationAudioAtPoint(AudioClip clip, Vector3 position, float volume, float pitch)
@@ -7299,6 +7304,37 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void QueueMovementAcousticSignal(in MovementAcousticSignal signal)
+        {
+            _pendingMovementAcousticSignal = signal;
+            _pendingMovementAcousticSignalDirty = true;
+            TryRegisterLateFrameTickable();
+        }
+
+        private void QueueKccWallScrapeAcoustic(in AcousticPingSignal signal)
+        {
+            _pendingKccWallScrapeAcoustic = signal;
+            _pendingKccWallScrapeAcousticDirty = true;
+            TryRegisterLateFrameTickable();
+        }
+
+        private void FlushQueuedFeedbackSignals()
+        {
+            if (_pendingMovementAcousticSignalDirty)
+            {
+                _pendingMovementAcousticSignalDirty = false;
+                SignalBus<MovementAcousticSignal>.TryPushTracked(in _pendingMovementAcousticSignal, ref _signalPushDropCount);
+                _pendingMovementAcousticSignal = default;
+            }
+
+            if (_pendingKccWallScrapeAcousticDirty)
+            {
+                _pendingKccWallScrapeAcousticDirty = false;
+                SignalBus<AcousticPingSignal>.TryPushTracked(in _pendingKccWallScrapeAcoustic, ref _signalPushDropCount);
+                _pendingKccWallScrapeAcoustic = default;
+            }
+        }
+
         private void ClearPendingPresentationSync()
         {
             int audioCount = _pendingPresentationAudioEventCount;
@@ -7306,6 +7342,10 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < audioCount; i++)
                 _pendingPresentationAudioEvents[i] = default;
 
+            _pendingMovementAcousticSignalDirty = false;
+            _pendingMovementAcousticSignal = default;
+            _pendingKccWallScrapeAcousticDirty = false;
+            _pendingKccWallScrapeAcoustic = default;
             _pendingBreachBubbleCount = 0;
             _pendingWipeoutBubbleCount = 0;
             _pendingBreachSplashRingDirty = false;
@@ -11757,7 +11797,7 @@ namespace Hecton8.Gameplay
                 Channel = AcousticPingSignal.ChannelFabricScrape,
                 Flags = AcousticPingSignal.FlagFabricScrape
             };
-            SignalBus<AcousticPingSignal>.TryPushTracked(in scrapePing, ref _signalPushDropCount);
+            QueueKccWallScrapeAcoustic(in scrapePing);
         }
 
         private void ApplyExosuitJumpJets(float fixedDeltaTime)

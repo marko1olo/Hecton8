@@ -346,7 +346,7 @@ namespace Hecton8.AI.Ecosystem
             UnlockJobBuffers();
             ShinobuEcosystemTelemetryForensics.ShutdownDumpWorker();
             ShinobuSpatialGridForensics.ShutdownDumpWorker();
-            RebindDataVaultForLifecycle(currentService as IDataVault);
+            RebindDataVaultForLifecycle(currentService is IDataVault currentVault ? currentVault : null);
 
             if (_dataVault == null || !EnsureVaultState())
             {
@@ -1153,39 +1153,39 @@ namespace Hecton8.AI.Ecosystem
 
         private bool AreVaultHandlesCreated(IDataVault vault)
         {
-            return TryOpenVaultView(vault, in _entityHandle, entityCapacity, out NativeArray<AmbientEntityDTO> _) &&
-                   TryOpenVaultView(vault, in _aupHandle, entityCapacity, out NativeArray<AmbientEntityAupDTO> _) &&
-                   TryOpenVaultView(vault, in _boidStateHandle, entityCapacity, out NativeArray<BoidStateDTO> _) &&
-                   TryOpenVaultView(vault, in _entitySnapshotHandle, entityCapacity, out NativeArray<AmbientEntityDTO> _) &&
-                   TryOpenVaultView(vault, in _aupSnapshotHandle, entityCapacity, out NativeArray<AmbientEntityAupDTO> _) &&
-                   TryOpenVaultView(vault, in _boidStateSnapshotHandle, entityCapacity, out NativeArray<BoidStateDTO> _) &&
-                   TryOpenVaultView(vault, in _sectorHandle, sectorCapacity, out NativeArray<EcosystemSectorDTO> _) &&
-                   TryOpenVaultView(vault, in _tuningHandle, 1, out NativeArray<ShinobuEcosystemTuning> _) &&
-                   TryOpenVaultView(vault, in _counterHandle, CounterCapacity, out NativeArray<int> _) &&
-                   TryOpenVaultView(vault, in _telemetryHandle, TelemetryCapacity, out NativeArray<EcosystemTelemetryEntry> _) &&
-                   TryOpenVaultView(vault, in _flockingThreatHandle, FlockingThreatCapacity, out NativeArray<FlockingThreatDTO> _) &&
-                   TryOpenVaultView(vault, in _flockingThreatCountHandle, 1, out NativeArray<int> _) &&
-                   TryOpenVaultView(vault, in _flockingTelemetryHandle, FlockingTelemetryCapacity, out NativeArray<FlockingTelemetryEntry> _) &&
-                   TryOpenVaultView(vault, in _flockingCounterHandle, FlockingCounterCapacity, out NativeArray<FlockingCounter64> _) &&
-                   TryOpenVaultView(vault, in _debugCellHandle, DebugCellCapacity, out NativeArray<ShinobuSpatialHashDebugCell> _) &&
-                   TryOpenVaultView(vault, in _renderMatrixHandle, entityCapacity, out NativeArray<BoidMatrixDTO> _) &&
-                   TryOpenVaultView(vault, in _renderCustomDataHandle, entityCapacity, out NativeArray<BoidCustomDataDTO> _) &&
-                   TryOpenVaultView(vault, in _indirectArgsHandle, 1, out NativeArray<BoidIndirectArgsDTO> _) &&
-                   TryOpenVaultView(vault, in _spatialHashBucketHeadHandle, SpatialHashBucketCapacity, out NativeArray<int> _) &&
-                   TryOpenVaultView(vault, in _spatialHashNextHandle, entityCapacity + sectorCapacity, out NativeArray<int> _) &&
-                   TryOpenVaultView(vault, in _spatialGridEntryHandle, entityCapacity, out NativeArray<SpatialGridEntryDTO> _) &&
-                   TryOpenVaultView(vault, in _spatialGridSortScratchHandle, entityCapacity, out NativeArray<SpatialGridEntryDTO> _) &&
-                   TryOpenVaultView(vault, in _spatialGridBucketRangeHandle, SpatialGridBucketRangeCapacity, out NativeArray<SpatialGridBucketRangeDTO> _) &&
-                   TryOpenVaultView(vault, in _spatialGridTelemetryHandle, ShinobuSpatialGridConstants.TelemetryCapacity, out NativeArray<SpatialGridTelemetryEntry> _) &&
-                   TryOpenVaultView(vault, in _spatialGridTelemetryCursorHandle, 1, out NativeArray<int> _) &&
-                   TryOpenVaultView(vault, in _spatialGridTuningHandle, 1, out NativeArray<SpatialGridTuningDTO> _) &&
-                   TryOpenVaultView(vault, in _spatialGridProfileHandle, SpatialGridProfileCapacity, out NativeArray<SpatialGridProfileDTO> _) &&
-                   TryOpenVaultView(vault, in _spatialGridCsvScratchHandle, SpatialGridCsvMaxBytes, out NativeArray<byte> _) &&
-                   TryOpenVaultView(vault, in _spatialGridDumpSnapshotHandle, ShinobuSpatialGridForensics.DumpSnapshotBytes, out NativeArray<byte> _) &&
-                   TryOpenVaultView(vault, in _ecosystemDumpSnapshotHandle, ShinobuEcosystemTelemetryForensics.DumpSnapshotBytes, out NativeArray<byte> _) &&
-                   TryOpenVaultView(vault, in _csvScratchHandle, CsvMaxBytes, out NativeArray<byte> _) &&
-                   TryOpenVaultView(vault, in _legacyScratchHandle, LegacyProfileReadBytes, out NativeArray<byte> _) &&
-                   TryOpenVaultView(vault, in _swarmSpeciesProfileHandle, SwarmSpeciesProfileCapacity, out NativeArray<SwarmSpeciesProfileDTO> _);
+            return TryOpenVaultView(vault, in _entityHandle, BufferID.ShinobuAmbientEntities, entityCapacity, out NativeArray<AmbientEntityDTO> _) &&
+                   TryOpenVaultView(vault, in _aupHandle, BufferID.ShinobuAmbientAups, entityCapacity, out NativeArray<AmbientEntityAupDTO> _) &&
+                   TryOpenVaultView(vault, in _boidStateHandle, BufferID.ShinobuBoidStates, entityCapacity, out NativeArray<BoidStateDTO> _) &&
+                   TryOpenVaultView(vault, in _entitySnapshotHandle, BufferID.ShinobuAmbientEntitySnapshot, entityCapacity, out NativeArray<AmbientEntityDTO> _) &&
+                   TryOpenVaultView(vault, in _aupSnapshotHandle, BufferID.ShinobuAmbientAupSnapshot, entityCapacity, out NativeArray<AmbientEntityAupDTO> _) &&
+                   TryOpenVaultView(vault, in _boidStateSnapshotHandle, BufferID.ShinobuBoidStateSnapshot, entityCapacity, out NativeArray<BoidStateDTO> _) &&
+                   TryOpenVaultView(vault, in _sectorHandle, BufferID.ShinobuEcosystemSectors, sectorCapacity, out NativeArray<EcosystemSectorDTO> _) &&
+                   TryOpenVaultView(vault, in _tuningHandle, BufferID.ShinobuEcosystemTuning, 1, out NativeArray<ShinobuEcosystemTuning> _) &&
+                   TryOpenVaultView(vault, in _counterHandle, BufferID.ShinobuEcosystemCounters, CounterCapacity, out NativeArray<int> _) &&
+                   TryOpenVaultView(vault, in _telemetryHandle, BufferID.ShinobuEcosystemTelemetryRing, TelemetryCapacity, out NativeArray<EcosystemTelemetryEntry> _) &&
+                   TryOpenVaultView(vault, in _flockingThreatHandle, BufferID.ShinobuFlockingThreats, FlockingThreatCapacity, out NativeArray<FlockingThreatDTO> _) &&
+                   TryOpenVaultView(vault, in _flockingThreatCountHandle, BufferID.ShinobuFlockingThreatCount, 1, out NativeArray<int> _) &&
+                   TryOpenVaultView(vault, in _flockingTelemetryHandle, BufferID.ShinobuFlockingTelemetryRing, FlockingTelemetryCapacity, out NativeArray<FlockingTelemetryEntry> _) &&
+                   TryOpenVaultView(vault, in _flockingCounterHandle, BufferID.ShinobuFlockingCounters64, FlockingCounterCapacity, out NativeArray<FlockingCounter64> _) &&
+                   TryOpenVaultView(vault, in _debugCellHandle, BufferID.ShinobuSpatialHashDebugCells, DebugCellCapacity, out NativeArray<ShinobuSpatialHashDebugCell> _) &&
+                   TryOpenVaultView(vault, in _renderMatrixHandle, BufferID.ShinobuRenderMatrices, entityCapacity, out NativeArray<BoidMatrixDTO> _) &&
+                   TryOpenVaultView(vault, in _renderCustomDataHandle, BufferID.ShinobuRenderCustomData, entityCapacity, out NativeArray<BoidCustomDataDTO> _) &&
+                   TryOpenVaultView(vault, in _indirectArgsHandle, BufferID.ShinobuBoidIndirectArgs, 1, out NativeArray<BoidIndirectArgsDTO> _) &&
+                   TryOpenVaultView(vault, in _spatialHashBucketHeadHandle, BufferID.ShinobuSpatialHashBucketHeads, SpatialHashBucketCapacity, out NativeArray<int> _) &&
+                   TryOpenVaultView(vault, in _spatialHashNextHandle, BufferID.ShinobuSpatialHashNext, entityCapacity + sectorCapacity, out NativeArray<int> _) &&
+                   TryOpenVaultView(vault, in _spatialGridEntryHandle, BufferID.ShinobuSpatialGridEntries, entityCapacity, out NativeArray<SpatialGridEntryDTO> _) &&
+                   TryOpenVaultView(vault, in _spatialGridSortScratchHandle, BufferID.ShinobuSpatialGridSortScratch, entityCapacity, out NativeArray<SpatialGridEntryDTO> _) &&
+                   TryOpenVaultView(vault, in _spatialGridBucketRangeHandle, BufferID.ShinobuSpatialGridBucketRanges, SpatialGridBucketRangeCapacity, out NativeArray<SpatialGridBucketRangeDTO> _) &&
+                   TryOpenVaultView(vault, in _spatialGridTelemetryHandle, BufferID.ShinobuSpatialGridTelemetryRing, ShinobuSpatialGridConstants.TelemetryCapacity, out NativeArray<SpatialGridTelemetryEntry> _) &&
+                   TryOpenVaultView(vault, in _spatialGridTelemetryCursorHandle, BufferID.ShinobuSpatialGridTelemetryCursor, 1, out NativeArray<int> _) &&
+                   TryOpenVaultView(vault, in _spatialGridTuningHandle, BufferID.ShinobuSpatialGridTuning, 1, out NativeArray<SpatialGridTuningDTO> _) &&
+                   TryOpenVaultView(vault, in _spatialGridProfileHandle, BufferID.ShinobuSpatialGridProfiles, SpatialGridProfileCapacity, out NativeArray<SpatialGridProfileDTO> _) &&
+                   TryOpenVaultView(vault, in _spatialGridCsvScratchHandle, BufferID.ShinobuSpatialGridCsvScratch, SpatialGridCsvMaxBytes, out NativeArray<byte> _) &&
+                   TryOpenVaultView(vault, in _spatialGridDumpSnapshotHandle, BufferID.ShinobuSpatialGridDumpSnapshot, ShinobuSpatialGridForensics.DumpSnapshotBytes, out NativeArray<byte> _) &&
+                   TryOpenVaultView(vault, in _ecosystemDumpSnapshotHandle, BufferID.ShinobuEcosystemDumpSnapshot, ShinobuEcosystemTelemetryForensics.DumpSnapshotBytes, out NativeArray<byte> _) &&
+                   TryOpenVaultView(vault, in _csvScratchHandle, BufferID.ShinobuEcosystemCsvScratch, CsvMaxBytes, out NativeArray<byte> _) &&
+                   TryOpenVaultView(vault, in _legacyScratchHandle, BufferID.ShinobuEcosystemLegacyScratch, LegacyProfileReadBytes, out NativeArray<byte> _) &&
+                   TryOpenVaultView(vault, in _swarmSpeciesProfileHandle, BufferID.ShinobuSwarmSpeciesProfiles, SwarmSpeciesProfileCapacity, out NativeArray<SwarmSpeciesProfileDTO> _);
         }
 
         private void EnsureGpuUploadCapacity()
@@ -1234,28 +1234,39 @@ namespace Hecton8.AI.Ecosystem
 
             if (vault.IsAllocationLocked)
             {
-                return vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> existing)
-                    ? existing
-                    : default;
+                if (!vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> existing))
+                    return default;
+
+                return IsOwnedVaultHandle(in existing, bufferId) ? existing : default;
             }
 
-            return vault.EnsureGenerationHandle<T>(
+            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
                 requiredLength,
                 SystemID.AIEcology,
                 options);
+            return IsOwnedVaultHandle(in handle, bufferId) ? handle : default;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == (uint)expectedBufferId &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)SystemID.AIEcology;
         }
 
         private static bool TryOpenVaultView<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
             int requiredLength,
             out NativeArray<T> buffer) where T : struct
         {
             buffer = default;
             if (vault == null ||
-                handle.BufferID == 0u ||
-                handle.Generation == 0u ||
+                !IsOwnedVaultHandle(in handle, expectedBufferId) ||
                 requiredLength < 0 ||
                 !vault.TryResolveHandle(in handle, out NativeArray<T> resolved) ||
                 !resolved.IsCreated ||
@@ -1304,22 +1315,22 @@ namespace Hecton8.AI.Ecosystem
             spatialHashBucketHeads = default;
             spatialHashNext = default;
 
-            return TryOpenVaultView(vault, in _entityHandle, entityCapacity, out entities) &&
-                   TryOpenVaultView(vault, in _aupHandle, entityCapacity, out aups) &&
-                   TryOpenVaultView(vault, in _boidStateHandle, entityCapacity, out boidStates) &&
-                   TryOpenVaultView(vault, in _entitySnapshotHandle, entityCapacity, out entitySnapshot) &&
-                   TryOpenVaultView(vault, in _aupSnapshotHandle, entityCapacity, out aupSnapshot) &&
-                   TryOpenVaultView(vault, in _boidStateSnapshotHandle, entityCapacity, out boidStateSnapshot) &&
-                   TryOpenVaultView(vault, in _sectorHandle, sectorCapacity, out sectors) &&
-                   TryOpenVaultView(vault, in _tuningHandle, 1, out tuning) &&
-                   TryOpenVaultView(vault, in _counterHandle, CounterCapacity, out counters) &&
-                   TryOpenVaultView(vault, in _telemetryHandle, TelemetryCapacity, out telemetry) &&
-                   TryOpenVaultView(vault, in _debugCellHandle, DebugCellCapacity, out debugCells) &&
-                   TryOpenVaultView(vault, in _renderMatrixHandle, entityCapacity, out matrices) &&
-                   TryOpenVaultView(vault, in _renderCustomDataHandle, entityCapacity, out customData) &&
-                   TryOpenVaultView(vault, in _indirectArgsHandle, 1, out indirectArgs) &&
-                   TryOpenVaultView(vault, in _spatialHashBucketHeadHandle, SpatialHashBucketCapacity, out spatialHashBucketHeads) &&
-                   TryOpenVaultView(vault, in _spatialHashNextHandle, entityCapacity + sectorCapacity, out spatialHashNext);
+            return TryOpenVaultView(vault, in _entityHandle, BufferID.ShinobuAmbientEntities, entityCapacity, out entities) &&
+                   TryOpenVaultView(vault, in _aupHandle, BufferID.ShinobuAmbientAups, entityCapacity, out aups) &&
+                   TryOpenVaultView(vault, in _boidStateHandle, BufferID.ShinobuBoidStates, entityCapacity, out boidStates) &&
+                   TryOpenVaultView(vault, in _entitySnapshotHandle, BufferID.ShinobuAmbientEntitySnapshot, entityCapacity, out entitySnapshot) &&
+                   TryOpenVaultView(vault, in _aupSnapshotHandle, BufferID.ShinobuAmbientAupSnapshot, entityCapacity, out aupSnapshot) &&
+                   TryOpenVaultView(vault, in _boidStateSnapshotHandle, BufferID.ShinobuBoidStateSnapshot, entityCapacity, out boidStateSnapshot) &&
+                   TryOpenVaultView(vault, in _sectorHandle, BufferID.ShinobuEcosystemSectors, sectorCapacity, out sectors) &&
+                   TryOpenVaultView(vault, in _tuningHandle, BufferID.ShinobuEcosystemTuning, 1, out tuning) &&
+                   TryOpenVaultView(vault, in _counterHandle, BufferID.ShinobuEcosystemCounters, CounterCapacity, out counters) &&
+                   TryOpenVaultView(vault, in _telemetryHandle, BufferID.ShinobuEcosystemTelemetryRing, TelemetryCapacity, out telemetry) &&
+                   TryOpenVaultView(vault, in _debugCellHandle, BufferID.ShinobuSpatialHashDebugCells, DebugCellCapacity, out debugCells) &&
+                   TryOpenVaultView(vault, in _renderMatrixHandle, BufferID.ShinobuRenderMatrices, entityCapacity, out matrices) &&
+                   TryOpenVaultView(vault, in _renderCustomDataHandle, BufferID.ShinobuRenderCustomData, entityCapacity, out customData) &&
+                   TryOpenVaultView(vault, in _indirectArgsHandle, BufferID.ShinobuBoidIndirectArgs, 1, out indirectArgs) &&
+                   TryOpenVaultView(vault, in _spatialHashBucketHeadHandle, BufferID.ShinobuSpatialHashBucketHeads, SpatialHashBucketCapacity, out spatialHashBucketHeads) &&
+                   TryOpenVaultView(vault, in _spatialHashNextHandle, BufferID.ShinobuSpatialHashNext, entityCapacity + sectorCapacity, out spatialHashNext);
         }
 
         private bool TryResolveBuffers(
@@ -1374,20 +1385,20 @@ namespace Hecton8.AI.Ecosystem
             profiles = default;
             csvScratch = default;
 
-            return TryOpenVaultView(vault, in _spatialGridEntryHandle, entityCapacity, out entries) &&
-                   TryOpenVaultView(vault, in _spatialGridSortScratchHandle, entityCapacity, out sortScratch) &&
-                   TryOpenVaultView(vault, in _spatialGridBucketRangeHandle, SpatialGridBucketRangeCapacity, out bucketRanges) &&
-                   TryOpenVaultView(vault, in _spatialGridTelemetryHandle, ShinobuSpatialGridConstants.TelemetryCapacity, out telemetry) &&
-                   TryOpenVaultView(vault, in _spatialGridTelemetryCursorHandle, 1, out telemetryCursor) &&
-                   TryOpenVaultView(vault, in _spatialGridTuningHandle, 1, out tuning) &&
-                   TryOpenVaultView(vault, in _spatialGridProfileHandle, SpatialGridProfileCapacity, out profiles) &&
-                   TryOpenVaultView(vault, in _spatialGridCsvScratchHandle, SpatialGridCsvMaxBytes, out csvScratch);
+            return TryOpenVaultView(vault, in _spatialGridEntryHandle, BufferID.ShinobuSpatialGridEntries, entityCapacity, out entries) &&
+                   TryOpenVaultView(vault, in _spatialGridSortScratchHandle, BufferID.ShinobuSpatialGridSortScratch, entityCapacity, out sortScratch) &&
+                   TryOpenVaultView(vault, in _spatialGridBucketRangeHandle, BufferID.ShinobuSpatialGridBucketRanges, SpatialGridBucketRangeCapacity, out bucketRanges) &&
+                   TryOpenVaultView(vault, in _spatialGridTelemetryHandle, BufferID.ShinobuSpatialGridTelemetryRing, ShinobuSpatialGridConstants.TelemetryCapacity, out telemetry) &&
+                   TryOpenVaultView(vault, in _spatialGridTelemetryCursorHandle, BufferID.ShinobuSpatialGridTelemetryCursor, 1, out telemetryCursor) &&
+                   TryOpenVaultView(vault, in _spatialGridTuningHandle, BufferID.ShinobuSpatialGridTuning, 1, out tuning) &&
+                   TryOpenVaultView(vault, in _spatialGridProfileHandle, BufferID.ShinobuSpatialGridProfiles, SpatialGridProfileCapacity, out profiles) &&
+                   TryOpenVaultView(vault, in _spatialGridCsvScratchHandle, BufferID.ShinobuSpatialGridCsvScratch, SpatialGridCsvMaxBytes, out csvScratch);
         }
 
         private void EnsureProfilesLoaded(IDataVault vault)
         {
-            if (!TryOpenVaultView(vault, in _counterHandle, CounterCapacity, out NativeArray<int> counters) ||
-                !TryOpenVaultView(vault, in _tuningHandle, 1, out NativeArray<ShinobuEcosystemTuning> tuning))
+            if (!TryOpenVaultView(vault, in _counterHandle, BufferID.ShinobuEcosystemCounters, CounterCapacity, out NativeArray<int> counters) ||
+                !TryOpenVaultView(vault, in _tuningHandle, BufferID.ShinobuEcosystemTuning, 1, out NativeArray<ShinobuEcosystemTuning> tuning))
             {
                 return;
             }
@@ -1410,7 +1421,7 @@ namespace Hecton8.AI.Ecosystem
                 if (profilePath == null || profilePath.Length == 0 || !File.Exists(profilePath))
                     return false;
 
-                if (!TryOpenVaultView(vault, in _legacyScratchHandle, LegacyProfileReadBytes, out NativeArray<byte> scratch))
+                if (!TryOpenVaultView(vault, in _legacyScratchHandle, BufferID.ShinobuEcosystemLegacyScratch, LegacyProfileReadBytes, out NativeArray<byte> scratch))
                     return false;
 
                 int bytesRead = LoadFileIntoNativeScratch(profilePath, scratch, LegacyProfileReadBytes, FileShare.Read);
@@ -1483,17 +1494,17 @@ namespace Hecton8.AI.Ecosystem
 
         private void EnsureInitialPopulation(IDataVault vault)
         {
-            if (!TryOpenVaultView(vault, in _counterHandle, CounterCapacity, out NativeArray<int> counters) ||
+            if (!TryOpenVaultView(vault, in _counterHandle, BufferID.ShinobuEcosystemCounters, CounterCapacity, out NativeArray<int> counters) ||
                 counters.Length <= CounterInitialized ||
                 counters[CounterInitialized] != 0)
             {
                 return;
             }
 
-            if (!TryOpenVaultView(vault, in _entityHandle, entityCapacity, out NativeArray<AmbientEntityDTO> entities) ||
-                !TryOpenVaultView(vault, in _aupHandle, entityCapacity, out NativeArray<AmbientEntityAupDTO> aups) ||
-                !TryOpenVaultView(vault, in _boidStateHandle, entityCapacity, out NativeArray<BoidStateDTO> boidStates) ||
-                !TryOpenVaultView(vault, in _sectorHandle, sectorCapacity, out NativeArray<EcosystemSectorDTO> sectors))
+            if (!TryOpenVaultView(vault, in _entityHandle, BufferID.ShinobuAmbientEntities, entityCapacity, out NativeArray<AmbientEntityDTO> entities) ||
+                !TryOpenVaultView(vault, in _aupHandle, BufferID.ShinobuAmbientAups, entityCapacity, out NativeArray<AmbientEntityAupDTO> aups) ||
+                !TryOpenVaultView(vault, in _boidStateHandle, BufferID.ShinobuBoidStates, entityCapacity, out NativeArray<BoidStateDTO> boidStates) ||
+                !TryOpenVaultView(vault, in _sectorHandle, BufferID.ShinobuEcosystemSectors, sectorCapacity, out NativeArray<EcosystemSectorDTO> sectors))
             {
                 return;
             }
@@ -1602,7 +1613,7 @@ namespace Hecton8.AI.Ecosystem
                 if (lastWriteUtc.Ticks == _csvTimestampTicks)
                     return;
 
-                if (!TryOpenVaultView(vault, in _csvScratchHandle, CsvMaxBytes, out NativeArray<byte> scratch))
+                if (!TryOpenVaultView(vault, in _csvScratchHandle, BufferID.ShinobuEcosystemCsvScratch, CsvMaxBytes, out NativeArray<byte> scratch))
                     return;
 
                 int bytesRead = LoadFileIntoNativeScratch(path, scratch, CsvMaxBytes, FileShare.ReadWrite);
@@ -1610,10 +1621,10 @@ namespace Hecton8.AI.Ecosystem
                 if (bytesRead <= 0)
                     return;
 
-                if (!TryOpenVaultView(vault, in _tuningHandle, 1, out NativeArray<ShinobuEcosystemTuning> tuning))
+                if (!TryOpenVaultView(vault, in _tuningHandle, BufferID.ShinobuEcosystemTuning, 1, out NativeArray<ShinobuEcosystemTuning> tuning))
                     return;
 
-                TryOpenVaultView(vault, in _counterHandle, CounterCapacity, out NativeArray<int> counters);
+                TryOpenVaultView(vault, in _counterHandle, BufferID.ShinobuEcosystemCounters, CounterCapacity, out NativeArray<int> counters);
                 ShinobuEcosystemTuning profile = tuning[0];
                 ParseCsvOverrides(scratch, bytesRead, ref profile);
                 profile.Flags |= TuningFlagCsvOverride;
@@ -1657,8 +1668,8 @@ namespace Hecton8.AI.Ecosystem
                 if (lastWriteUtc.Ticks == _swarmSpeciesCsvTimestampTicks)
                     return;
 
-                if (!TryOpenVaultView(vault, in _csvScratchHandle, CsvMaxBytes, out NativeArray<byte> scratch) ||
-                    !TryOpenVaultView(vault, in _swarmSpeciesProfileHandle, SwarmSpeciesProfileCapacity, out NativeArray<SwarmSpeciesProfileDTO> profiles))
+                if (!TryOpenVaultView(vault, in _csvScratchHandle, BufferID.ShinobuEcosystemCsvScratch, CsvMaxBytes, out NativeArray<byte> scratch) ||
+                    !TryOpenVaultView(vault, in _swarmSpeciesProfileHandle, BufferID.ShinobuSwarmSpeciesProfiles, SwarmSpeciesProfileCapacity, out NativeArray<SwarmSpeciesProfileDTO> profiles))
                 {
                     return;
                 }
@@ -1667,7 +1678,7 @@ namespace Hecton8.AI.Ecosystem
                 if (bytesRead <= 0)
                     return;
 
-                TryOpenVaultView(vault, in _counterHandle, CounterCapacity, out NativeArray<int> counters);
+                TryOpenVaultView(vault, in _counterHandle, BufferID.ShinobuEcosystemCounters, CounterCapacity, out NativeArray<int> counters);
                 int parsed = ParseSwarmSpeciesProfiles(scratch, bytesRead, profiles);
                 if (counters.IsCreated && counters.Length > CounterProfileLoaded)
                     counters[CounterProfileLoaded] = math.max(counters[CounterProfileLoaded], parsed);
@@ -1800,7 +1811,7 @@ namespace Hecton8.AI.Ecosystem
                    vault.TryGetGenerationHandle(
                        BufferID.ShinobuMacroEcosystemSectorFront,
                        out VaultGenerationHandle<MacroEcosystemSectorDTO> handle) &&
-                   handle.BufferID != 0u &&
+                   handle.BufferID == (uint)BufferID.ShinobuMacroEcosystemSectorFront &&
                    handle.Generation != 0u;
         }
 
@@ -1859,9 +1870,9 @@ namespace Hecton8.AI.Ecosystem
             if (Application.isBatchMode)
                 return;
 
-            if (!TryOpenVaultView(vault, in _renderMatrixHandle, entityCapacity, out NativeArray<BoidMatrixDTO> matrices) ||
-                !TryOpenVaultView(vault, in _renderCustomDataHandle, entityCapacity, out NativeArray<BoidCustomDataDTO> customData) ||
-                !TryOpenVaultView(vault, in _indirectArgsHandle, 1, out NativeArray<BoidIndirectArgsDTO> indirectArgs))
+            if (!TryOpenVaultView(vault, in _renderMatrixHandle, BufferID.ShinobuRenderMatrices, entityCapacity, out NativeArray<BoidMatrixDTO> matrices) ||
+                !TryOpenVaultView(vault, in _renderCustomDataHandle, BufferID.ShinobuRenderCustomData, entityCapacity, out NativeArray<BoidCustomDataDTO> customData) ||
+                !TryOpenVaultView(vault, in _indirectArgsHandle, BufferID.ShinobuBoidIndirectArgs, 1, out NativeArray<BoidIndirectArgsDTO> indirectArgs))
             {
                 return;
             }
@@ -1892,8 +1903,8 @@ namespace Hecton8.AI.Ecosystem
 
         private void WriteTelemetryAndFaultDump(IDataVault vault)
         {
-            if (!TryOpenVaultView(vault, in _telemetryHandle, TelemetryCapacity, out NativeArray<EcosystemTelemetryEntry> telemetry) ||
-                !TryOpenVaultView(vault, in _counterHandle, CounterCapacity, out NativeArray<int> counters))
+            if (!TryOpenVaultView(vault, in _telemetryHandle, BufferID.ShinobuEcosystemTelemetryRing, TelemetryCapacity, out NativeArray<EcosystemTelemetryEntry> telemetry) ||
+                !TryOpenVaultView(vault, in _counterHandle, BufferID.ShinobuEcosystemCounters, CounterCapacity, out NativeArray<int> counters))
             {
                 return;
             }
@@ -1950,8 +1961,8 @@ namespace Hecton8.AI.Ecosystem
                 DumpBlackBox(telemetry, nextCursor);
             }
 
-            if (TryOpenVaultView(vault, in _spatialGridTelemetryHandle, ShinobuSpatialGridConstants.TelemetryCapacity, out NativeArray<SpatialGridTelemetryEntry> spatialTelemetry) &&
-                TryOpenVaultView(vault, in _spatialGridTelemetryCursorHandle, 1, out NativeArray<int> spatialCursor) &&
+            if (TryOpenVaultView(vault, in _spatialGridTelemetryHandle, BufferID.ShinobuSpatialGridTelemetryRing, ShinobuSpatialGridConstants.TelemetryCapacity, out NativeArray<SpatialGridTelemetryEntry> spatialTelemetry) &&
+                TryOpenVaultView(vault, in _spatialGridTelemetryCursorHandle, BufferID.ShinobuSpatialGridTelemetryCursor, 1, out NativeArray<int> spatialCursor) &&
                 spatialTelemetry.Length > 0)
             {
                 int safeSpatialCursor = spatialCursor[0];
@@ -1959,7 +1970,7 @@ namespace Hecton8.AI.Ecosystem
                     safeSpatialCursor = 1;
                 int spatialIndex = (safeSpatialCursor - 1) % spatialTelemetry.Length;
                 SpatialGridTelemetryEntry spatialEntry = spatialTelemetry[spatialIndex];
-                if (TryOpenVaultView(vault, in _flockingCounterHandle, FlockingCounterCapacity, out NativeArray<FlockingCounter64> flockingCounters))
+                if (TryOpenVaultView(vault, in _flockingCounterHandle, BufferID.ShinobuFlockingCounters64, FlockingCounterCapacity, out NativeArray<FlockingCounter64> flockingCounters))
                 {
                     int queryCount = ReadFlockingCounter(flockingCounters, FlockingCounterSpatialGridQueries);
                     if (queryCount >= 0 && spatialEntry.QueryCount != queryCount)
@@ -1999,65 +2010,75 @@ namespace Hecton8.AI.Ecosystem
                 return false;
 
             int lockedCount = 0;
-            if (!vault.TryLockBuffer(BufferID.ShinobuAmbientEntities, SystemID.AIEcology)) return false;
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuAmbientAups, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuBoidStates, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuAmbientEntitySnapshot, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuAmbientAupSnapshot, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuBoidStateSnapshot, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuEcosystemSectors, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuEcosystemTuning, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuEcosystemCounters, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuEcosystemTelemetryRing, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSpatialHashDebugCells, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuRenderMatrices, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuRenderCustomData, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuBoidIndirectArgs, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSpatialHashBucketHeads, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSpatialHashNext, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridEntries, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridSortScratch, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridBucketRanges, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridTelemetryRing, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridTelemetryCursor, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridTuning, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridProfiles, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridCsvScratch, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuFlockingThreats, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuFlockingThreatCount, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuFlockingTelemetryRing, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(BufferID.ShinobuFlockingCounters64, SystemID.AIEcology)) { UnlockLockedJobBuffers(vault, lockedCount); return false; }
-            lockedCount++;
+            bool ownershipTransferred = false;
+            try
+            {
+                if (!vault.TryLockBuffer(BufferID.ShinobuAmbientEntities, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuAmbientAups, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuBoidStates, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuAmbientEntitySnapshot, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuAmbientAupSnapshot, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuBoidStateSnapshot, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuEcosystemSectors, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuEcosystemTuning, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuEcosystemCounters, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuEcosystemTelemetryRing, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSpatialHashDebugCells, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuRenderMatrices, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuRenderCustomData, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuBoidIndirectArgs, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSpatialHashBucketHeads, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSpatialHashNext, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridEntries, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridSortScratch, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridBucketRanges, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridTelemetryRing, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridTelemetryCursor, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridTuning, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridProfiles, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuSpatialGridCsvScratch, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuFlockingThreats, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuFlockingThreatCount, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuFlockingTelemetryRing, SystemID.AIEcology)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(BufferID.ShinobuFlockingCounters64, SystemID.AIEcology)) return false;
+                lockedCount++;
 
-            _jobLocksHeld = true;
-            return true;
+                _jobLocksHeld = true;
+                ownershipTransferred = true;
+                return true;
+            }
+            finally
+            {
+                if (!ownershipTransferred)
+                    UnlockLockedJobBuffers(vault, lockedCount);
+            }
         }
 
         private void UnlockJobBuffers()
@@ -2066,9 +2087,15 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             IDataVault vault = _dataVault;
-            if (vault != null)
-                UnlockLockedJobBuffers(vault, 28);
-            _jobLocksHeld = false;
+            try
+            {
+                if (vault != null)
+                    UnlockLockedJobBuffers(vault, 28);
+            }
+            finally
+            {
+                _jobLocksHeld = false;
+            }
         }
 
         private static void UnlockLockedJobBuffers(IDataVault vault, int lockedCount)
@@ -2236,48 +2263,48 @@ namespace Hecton8.AI.Ecosystem
 
         private void ReleaseOwnedVaultHandles(IDataVault vault)
         {
-            ReleaseOwnedVaultHandle(vault, ref _entityHandle);
-            ReleaseOwnedVaultHandle(vault, ref _aupHandle);
-            ReleaseOwnedVaultHandle(vault, ref _boidStateHandle);
-            ReleaseOwnedVaultHandle(vault, ref _entitySnapshotHandle);
-            ReleaseOwnedVaultHandle(vault, ref _aupSnapshotHandle);
-            ReleaseOwnedVaultHandle(vault, ref _boidStateSnapshotHandle);
-            ReleaseOwnedVaultHandle(vault, ref _sectorHandle);
-            ReleaseOwnedVaultHandle(vault, ref _tuningHandle);
-            ReleaseOwnedVaultHandle(vault, ref _counterHandle);
-            ReleaseOwnedVaultHandle(vault, ref _telemetryHandle);
-            ReleaseOwnedVaultHandle(vault, ref _flockingThreatHandle);
-            ReleaseOwnedVaultHandle(vault, ref _flockingThreatCountHandle);
-            ReleaseOwnedVaultHandle(vault, ref _flockingTelemetryHandle);
-            ReleaseOwnedVaultHandle(vault, ref _flockingCounterHandle);
-            ReleaseOwnedVaultHandle(vault, ref _debugCellHandle);
-            ReleaseOwnedVaultHandle(vault, ref _renderMatrixHandle);
-            ReleaseOwnedVaultHandle(vault, ref _renderCustomDataHandle);
-            ReleaseOwnedVaultHandle(vault, ref _indirectArgsHandle);
-            ReleaseOwnedVaultHandle(vault, ref _spatialHashBucketHeadHandle);
-            ReleaseOwnedVaultHandle(vault, ref _spatialHashNextHandle);
-            ReleaseOwnedVaultHandle(vault, ref _spatialGridEntryHandle);
-            ReleaseOwnedVaultHandle(vault, ref _spatialGridSortScratchHandle);
-            ReleaseOwnedVaultHandle(vault, ref _spatialGridBucketRangeHandle);
-            ReleaseOwnedVaultHandle(vault, ref _spatialGridTelemetryHandle);
-            ReleaseOwnedVaultHandle(vault, ref _spatialGridTelemetryCursorHandle);
-            ReleaseOwnedVaultHandle(vault, ref _spatialGridTuningHandle);
-            ReleaseOwnedVaultHandle(vault, ref _spatialGridProfileHandle);
-            ReleaseOwnedVaultHandle(vault, ref _spatialGridCsvScratchHandle);
-            ReleaseOwnedVaultHandle(vault, ref _spatialGridDumpSnapshotHandle);
-            ReleaseOwnedVaultHandle(vault, ref _ecosystemDumpSnapshotHandle);
-            ReleaseOwnedVaultHandle(vault, ref _csvScratchHandle);
-            ReleaseOwnedVaultHandle(vault, ref _legacyScratchHandle);
-            ReleaseOwnedVaultHandle(vault, ref _swarmSpeciesProfileHandle);
+            ReleaseOwnedVaultHandle(vault, ref _entityHandle, BufferID.ShinobuAmbientEntities);
+            ReleaseOwnedVaultHandle(vault, ref _aupHandle, BufferID.ShinobuAmbientAups);
+            ReleaseOwnedVaultHandle(vault, ref _boidStateHandle, BufferID.ShinobuBoidStates);
+            ReleaseOwnedVaultHandle(vault, ref _entitySnapshotHandle, BufferID.ShinobuAmbientEntitySnapshot);
+            ReleaseOwnedVaultHandle(vault, ref _aupSnapshotHandle, BufferID.ShinobuAmbientAupSnapshot);
+            ReleaseOwnedVaultHandle(vault, ref _boidStateSnapshotHandle, BufferID.ShinobuBoidStateSnapshot);
+            ReleaseOwnedVaultHandle(vault, ref _sectorHandle, BufferID.ShinobuEcosystemSectors);
+            ReleaseOwnedVaultHandle(vault, ref _tuningHandle, BufferID.ShinobuEcosystemTuning);
+            ReleaseOwnedVaultHandle(vault, ref _counterHandle, BufferID.ShinobuEcosystemCounters);
+            ReleaseOwnedVaultHandle(vault, ref _telemetryHandle, BufferID.ShinobuEcosystemTelemetryRing);
+            ReleaseOwnedVaultHandle(vault, ref _flockingThreatHandle, BufferID.ShinobuFlockingThreats);
+            ReleaseOwnedVaultHandle(vault, ref _flockingThreatCountHandle, BufferID.ShinobuFlockingThreatCount);
+            ReleaseOwnedVaultHandle(vault, ref _flockingTelemetryHandle, BufferID.ShinobuFlockingTelemetryRing);
+            ReleaseOwnedVaultHandle(vault, ref _flockingCounterHandle, BufferID.ShinobuFlockingCounters64);
+            ReleaseOwnedVaultHandle(vault, ref _debugCellHandle, BufferID.ShinobuSpatialHashDebugCells);
+            ReleaseOwnedVaultHandle(vault, ref _renderMatrixHandle, BufferID.ShinobuRenderMatrices);
+            ReleaseOwnedVaultHandle(vault, ref _renderCustomDataHandle, BufferID.ShinobuRenderCustomData);
+            ReleaseOwnedVaultHandle(vault, ref _indirectArgsHandle, BufferID.ShinobuBoidIndirectArgs);
+            ReleaseOwnedVaultHandle(vault, ref _spatialHashBucketHeadHandle, BufferID.ShinobuSpatialHashBucketHeads);
+            ReleaseOwnedVaultHandle(vault, ref _spatialHashNextHandle, BufferID.ShinobuSpatialHashNext);
+            ReleaseOwnedVaultHandle(vault, ref _spatialGridEntryHandle, BufferID.ShinobuSpatialGridEntries);
+            ReleaseOwnedVaultHandle(vault, ref _spatialGridSortScratchHandle, BufferID.ShinobuSpatialGridSortScratch);
+            ReleaseOwnedVaultHandle(vault, ref _spatialGridBucketRangeHandle, BufferID.ShinobuSpatialGridBucketRanges);
+            ReleaseOwnedVaultHandle(vault, ref _spatialGridTelemetryHandle, BufferID.ShinobuSpatialGridTelemetryRing);
+            ReleaseOwnedVaultHandle(vault, ref _spatialGridTelemetryCursorHandle, BufferID.ShinobuSpatialGridTelemetryCursor);
+            ReleaseOwnedVaultHandle(vault, ref _spatialGridTuningHandle, BufferID.ShinobuSpatialGridTuning);
+            ReleaseOwnedVaultHandle(vault, ref _spatialGridProfileHandle, BufferID.ShinobuSpatialGridProfiles);
+            ReleaseOwnedVaultHandle(vault, ref _spatialGridCsvScratchHandle, BufferID.ShinobuSpatialGridCsvScratch);
+            ReleaseOwnedVaultHandle(vault, ref _spatialGridDumpSnapshotHandle, BufferID.ShinobuSpatialGridDumpSnapshot);
+            ReleaseOwnedVaultHandle(vault, ref _ecosystemDumpSnapshotHandle, BufferID.ShinobuEcosystemDumpSnapshot);
+            ReleaseOwnedVaultHandle(vault, ref _csvScratchHandle, BufferID.ShinobuEcosystemCsvScratch);
+            ReleaseOwnedVaultHandle(vault, ref _legacyScratchHandle, BufferID.ShinobuEcosystemLegacyScratch);
+            ReleaseOwnedVaultHandle(vault, ref _swarmSpeciesProfileHandle, BufferID.ShinobuSwarmSpeciesProfiles);
         }
 
-        private static void ReleaseOwnedVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseOwnedVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId)
             where T : struct
         {
-            if (vault != null &&
-                handle.BufferID != 0u &&
-                handle.Generation != 0u &&
-                handle.SystemID == (uint)SystemID.AIEcology)
+            if (vault != null && IsOwnedVaultHandle(in handle, expectedBufferId))
             {
                 vault.ReleaseBuffer(in handle);
             }
@@ -2477,7 +2504,7 @@ namespace Hecton8.AI.Ecosystem
         private void ClearSpatialGridRangeTable(IDataVault vault)
         {
             if (vault == null ||
-                !TryOpenVaultView(vault, in _spatialGridBucketRangeHandle, SpatialGridBucketRangeCapacity, out NativeArray<SpatialGridBucketRangeDTO> bucketRanges))
+                !TryOpenVaultView(vault, in _spatialGridBucketRangeHandle, BufferID.ShinobuSpatialGridBucketRanges, SpatialGridBucketRangeCapacity, out NativeArray<SpatialGridBucketRangeDTO> bucketRanges))
             {
                 return;
             }

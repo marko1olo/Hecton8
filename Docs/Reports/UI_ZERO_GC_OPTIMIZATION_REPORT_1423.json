@@ -1,401 +1,157 @@
-﻿{
-    "agent_id":  "1423",
-    "role":  "ZERO_GC_SUBTITLES_AND_BABEL_LOCALIZATION_COMPILER",
-    "source_files_changed":  [
-                                 {
-                                     "path":  "Assets/_Project/Scripts/Core/Contracts/BabelLocalizationContract.cs",
-                                     "exists":  true,
-                                     "sha256":  "08124D34399C8F54138C9F181114ABA9FF74B7FF9C5CF100E0E40BA7C2449E24",
-                                     "counts":  {
-                                                    "string_format":  0,
-                                                    "to_string_call":  0,
-                                                    "tmp_text_assignment":  0,
-                                                    "set_text_call":  0,
-                                                    "new_string":  0,
-                                                    "string_builder":  0,
-                                                    "array_resize":  0,
-                                                    "foreach":  0,
-                                                    "linq_using":  0,
-                                                    "linq_methods":  0,
-                                                    "interpolation":  0,
-                                                    "scene_search":  0
-                                                }
-                                 },
-                                 {
-                                     "path":  "Assets/_Project/Scripts/Core/ZeroGCFormatter.cs",
-                                     "exists":  true,
-                                     "sha256":  "DF0E50E0EDEA48D8CE2FADBEE1EB2842C1E27C78D78580D68EDBC52DC8A16CB0",
-                                     "counts":  {
-                                                    "string_format":  0,
-                                                    "to_string_call":  0,
-                                                    "tmp_text_assignment":  0,
-                                                    "set_text_call":  0,
-                                                    "new_string":  0,
-                                                    "string_builder":  0,
-                                                    "array_resize":  0,
-                                                    "foreach":  0,
-                                                    "linq_using":  0,
-                                                    "linq_methods":  0,
-                                                    "interpolation":  0,
-                                                    "scene_search":  0
-                                                }
-                                 },
-                                 {
-                                     "path":  "Assets/_Project/Scripts/LocalizationManager.cs",
-                                     "exists":  true,
-                                     "sha256":  "9BD64EB488B606B4E759DC8455F6FC200390E47558A7671D2C4E8C8DA2A50CFB",
-                                     "counts":  {
-                                                    "string_format":  0,
-                                                    "to_string_call":  0,
-                                                    "tmp_text_assignment":  0,
-                                                    "set_text_call":  0,
-                                                    "new_string":  0,
-                                                    "string_builder":  0,
-                                                    "array_resize":  0,
-                                                    "foreach":  0,
-                                                    "linq_using":  0,
-                                                    "linq_methods":  0,
-                                                    "interpolation":  0,
-                                                    "scene_search":  0
-                                                }
-                                 },
-                                 {
-                                     "path":  "Assets/_Project/Scripts/LocNumericBuffer.cs",
-                                     "exists":  true,
-                                     "sha256":  "E29798E924AED1DAEB42912860B43547341F465D4CC2288FA78552BEED9134A4",
-                                     "counts":  {
-                                                    "string_format":  0,
-                                                    "to_string_call":  0,
-                                                    "tmp_text_assignment":  0,
-                                                    "set_text_call":  0,
-                                                    "new_string":  0,
-                                                    "string_builder":  0,
-                                                    "array_resize":  0,
-                                                    "foreach":  0,
-                                                    "linq_using":  0,
-                                                    "linq_methods":  0,
-                                                    "interpolation":  0,
-                                                    "scene_search":  0
-                                                }
-                                 },
-                                 {
-                                     "path":  "Assets/_Project/Scripts/LocRegistry.cs",
-                                     "exists":  true,
-                                     "sha256":  "EA6D91974BEBD1BEE214EF1ED1E69978D4ED929083D61AB0E7B811BC9A052104",
-                                     "counts":  {
-                                                    "string_format":  0,
-                                                    "to_string_call":  0,
-                                                    "tmp_text_assignment":  0,
-                                                    "set_text_call":  0,
-                                                    "new_string":  0,
-                                                    "string_builder":  0,
-                                                    "array_resize":  0,
-                                                    "foreach":  0,
-                                                    "linq_using":  0,
-                                                    "linq_methods":  0,
-                                                    "interpolation":  0,
-                                                    "scene_search":  0
-                                                }
-                                 },
-                                 {
-                                     "path":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
-                                     "exists":  true,
-                                     "sha256":  "A56BD6C648B6A0A4C8F2E7FF71F69351FE65B33138D5818B7940BF55DDB2CA29",
-                                     "counts":  {
-                                                    "string_format":  0,
-                                                    "to_string_call":  0,
-                                                    "tmp_text_assignment":  0,
-                                                    "set_text_call":  0,
-                                                    "new_string":  0,
-                                                    "string_builder":  0,
-                                                    "array_resize":  0,
-                                                    "foreach":  0,
-                                                    "linq_using":  0,
-                                                    "linq_methods":  0,
-                                                    "interpolation":  0,
-                                                    "scene_search":  0
-                                                }
-                                 },
-                                 {
-                                     "path":  "Assets/_Project/Scripts/UI/TmpTextNoAlloc.cs",
-                                     "exists":  true,
-                                     "sha256":  "294DFCA23D14A8E5B304CEC53CC6376D1CC7190086B37D9FD9071FD999FE63E7",
-                                     "counts":  {
-                                                    "string_format":  0,
-                                                    "to_string_call":  0,
-                                                    "tmp_text_assignment":  0,
-                                                    "set_text_call":  0,
-                                                    "new_string":  0,
-                                                    "string_builder":  0,
-                                                    "array_resize":  0,
-                                                    "foreach":  0,
-                                                    "linq_using":  0,
-                                                    "linq_methods":  0,
-                                                    "interpolation":  0,
-                                                    "scene_search":  0
-                                                }
-                                 },
-                                 {
-                                     "path":  "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs",
-                                     "exists":  true,
-                                     "sha256":  "8FA0AB00B05431444D26336409079F339F7E17DD83859E5F0203E82B4AD6AAFE",
-                                     "counts":  {
-                                                    "string_format":  0,
-                                                    "to_string_call":  0,
-                                                    "tmp_text_assignment":  0,
-                                                    "set_text_call":  0,
-                                                    "new_string":  0,
-                                                    "string_builder":  0,
-                                                    "array_resize":  0,
-                                                    "foreach":  0,
-                                                    "linq_using":  0,
-                                                    "linq_methods":  0,
-                                                    "interpolation":  0,
-                                                    "scene_search":  0
-                                                }
-                                 },
-                                 {
-                                     "path":  "Assets/_Project/Scripts/UI/LabelSwapScheduler.cs",
-                                     "exists":  true,
-                                     "sha256":  "5A9254E45F2F32E638CEBAC24E6E4A58060022C17DBA83D1CD3A4F5B3BF25F1C",
-                                     "counts":  {
-                                                    "string_format":  0,
-                                                    "to_string_call":  0,
-                                                    "tmp_text_assignment":  0,
-                                                    "set_text_call":  0,
-                                                    "new_string":  0,
-                                                    "string_builder":  0,
-                                                    "array_resize":  0,
-                                                    "foreach":  0,
-                                                    "linq_using":  0,
-                                                    "linq_methods":  0,
-                                                    "interpolation":  0,
-                                                    "scene_search":  0
-                                                }
-                                 }
-                             ],
-    "string_allocation_calls_deleted":  0,
-    "note_on_deleted_calls":  "Task 01 found no real runtime hot hits for string.Format, TMP_Text.text assignment, ToString, or interpolation in the assigned UI/Audio/Babel target set; edits hardened existing zero-GC span routes instead of deleting false positives.",
-    "systems_hardened":  [
-                             "ZeroGCFormatter",
-                             "LocNumericBuffer",
-                             "LocRegistry Babel decode",
-                             "TmpTextNoAlloc",
-                             "IBabelLocalization contract",
-                             "BabelSubtitleSyncRuntime UI optimization telemetry"
-                         ],
-    "final_runtime_hot_scan":  {
-                                   "scanned_roots":  [
-                                                         "Assets/_Project/Scripts/UI",
-                                                         "Assets/_Project/Scripts/Audio",
-                                                         "Assets/_Project/Scripts/LocalizationManager.cs",
-                                                         "Assets/_Project/Scripts/LocRegistry.cs",
-                                                         "Assets/_Project/Scripts/LocNumericBuffer.cs",
-                                                         "Assets/_Project/Scripts/Core/ZeroGCFormatter.cs"
-                                                     ],
-                                   "hit_count_total":  0,
-                                   "known_false_positive_paths":  [
-                                                                      "Assets/_Project/Scripts/UI/GlitchTable.cs",
-                                                                      "Assets/_Project/Scripts/UI/FontAssetRecovery.cs"
-                                                                  ],
-                                   "real_hot_hit_count":  0,
-                                   "real_hot_hits":  [
-
-                                                     ]
-                               },
-    "formatter_cursor_proof":  {
-                                   "invariant":  "cursor is checked before every slice; append helpers clamp negative cursor to 0 and over-capacity cursor to destination.Length; write cursor increments only by TryFormat charsWritten after TryFormat succeeds.",
-                                   "overflow_policy":  "recognized Babel placeholders that cannot fit set formatterOverflow/truncated, clamp charCursor to maxGlyphs, and append ASCII ellipsis through existing bounded path.",
-                                   "max_destination":  "LocRegistry uses min(destination.Length, MaxDecodedGlyphs); TmpTextNoAlloc uses fixed CharBufferPool leases."
-                               },
-    "truncation_proof":  {
-                             "method":  "ZeroGCFormatter.AppendToSpanTruncated plus LocRegistry truncation branch",
-                             "ellipsis":  "ASCII ... only when capacity \u003e= 3; high-surrogate boundary is backed up before writing dots.",
-                             "failure_codes":  [
-                                                   "MissingLocalizationHash",
-                                                   "TextBufferOverflow",
-                                                   "FormatterOverflow",
-                                                   "InvalidTextState"
-                                               ]
-                         },
-    "telemetry_ring_evidence":  {
-                                    "struct":  "UIOptimizationTelemetryEntry",
-                                    "capacity":  300,
-                                    "buffer_id":  15070552,
-                                    "dump_path":  "Docs/AgentLogs/Dump_1423.bin",
-                                    "write_path":  "BabelSubtitleSyncRuntime.RecordUIOptimizationFailure"
-                                },
-    "mock_fuzzer":  {
-                        "test_file":  "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs",
-                        "iterations":  500,
-                        "runtime_gc_bytes":  null,
-                        "runtime_gc_status":  "NOT_MEASURED_BUILD_BLOCKED_BY_OUT_OF_DOMAIN_XRPASS"
-                    },
-    "compilation_status":  {
-                               "dotnet_build_launched":  true,
-                               "reason":  "dotnet build Hecton8.Core.csproj launched exactly once after CPU 44.12 percent and no csc.exe; build failed on out-of-domain XRPass reference errors. APEX recheck sampled CPU 67 percent and no csc.exe, so no second build was launched.",
-                               "csc_process_detected":  false,
-                               "exit_code":  1,
-                               "command":  "dotnet build C:\\hades\\Hecton8\\Hecton8.Core.csproj --nologo",
-                               "errors":  [
-                                              "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs(437,64): CS0246 XRPass not found",
-                                              "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs(476,74): CS0246 XRPass not found"
-                                          ]
-                           },
-    "verification_limits":  [
-                                "No Unity runtime profiler run",
-                                "No GCMonitor sample",
-                                "dotnet build blocked by out-of-domain XRPass compile dependency before final success"
-                            ],
-    "ast_audit_report":  {
-                             "path":  "Docs/Reports/UI_STRING_ALLOCATION_AST_AUDIT_1423.json",
-                             "sha256":  "25C429201E32CE3B5B0F39D2804704F9BC47D7C82206335610A0F213E08D541A"
-                         },
-    "apex_verification_report":  {
-                                     "path":  "Docs/Reports/UI_ZERO_GC_APEX_VERIFICATION_1423.json",
-                                     "sha256":  "F6B81458B26F9921C0B021D1756749C8156FA952BAEA2D93D37F357E545EF975",
-                                     "current_cpu_sample_percent":  73,
-                                     "final_build_launched":  false
-                                 },
-    "generated_local":  "2026-05-28T14:28:42.6783343+04:00",
-    "continuation_audit_2026_05_28":  {
-                                          "path":  "Docs/Reports/UI_ZERO_GC_CONTINUATION_AUDIT_1423.json",
-                                          "sha256":  "B2A869217C094F8DB46A74030276BF1BD3045C76F8D7F7C84CDFFB900B43721B",
-                                          "ast_audit_path":  "Docs/Reports/UI_STRING_ALLOCATION_AST_AUDIT_1423.json",
-                                          "ast_audit_sha256":  "6C22B4A674DB925EFA7CCE31477247AF7C938E152BF5A3B2D24E21BD13279355",
-                                          "apex_report_path":  "Docs/Reports/UI_ZERO_GC_APEX_VERIFICATION_1423.json",
-                                          "source_changes":  [
-                                                                 "Added Assets/_Project/Scripts/UI/BabelRichTextLodPolicy.cs and .meta",
-                                                                 "Deleted Assets/_Project/Scripts/RTLProcessor.cs and .meta",
-                                                                 "Removed manual RTL reversal from LocRegistry and LocalizedWorldSign",
-                                                                 "Routed subtitle/label rich text stripping through continuous GlobalQualityWeight policy",
-                                                                 "Added RTL sink and finally lease release to PDADataArchaeologyDecryptLabel"
-                                                             ],
-                                          "scan_total_forbidden_hits":  0,
-                                          "build_decision":  "NO_BUILD: CPU 65%, csc 0, active dotnet build-related process PID 66444 (AmplifyImpostors.Editor.csproj); previous build already blocked by out-of-domain XRPass errors.",
-                                          "runtime_gc_bytes_for_500_subtitle_test":  null,
-                                          "runtime_gc_status":  "NOT_MEASURED_BUILD_BLOCKED"
-                                      },
-    "polish_verification_2026_05_28":  {
-                                           "path":  "Docs/Reports/UI_ZERO_GC_POLISH_VERIFICATION_1423.json",
-                                           "sha256":  "D6A670EBDCD571DA07470B60AA24D6C2C00D5394E76104881DEC2F196C73034F",
-                                           "localized_world_sign":  "FAIL_CLOSED_FIXED_128_CHARS",
-                                           "broad_scan_files":  152,
-                                           "forbidden_string_hits":  0,
-                                           "foreach_hits":  0,
-                                           "scene_search_hits":  0,
-                                           "build_decision":  "NO_BUILD: CPU 68%, csc 0, active dotnet build Hecton8.slnx PID 22412"
-                                       },
-    "continuation3_audit_2026_05_28":  {
-                                           "path":  "Docs/Reports/UI_ZERO_GC_CONTINUATION3_AUDIT_1423.json",
-                                           "sha256":  "EE60C4F2275803FFB82460459034CF967294F51AA12A38B56991242F63B12971",
-                                           "tmp_text_no_alloc_sha256":  "294DFCA23D14A8E5B304CEC53CC6376D1CC7190086B37D9FD9071FD999FE63E7",
-                                           "lease_finally_repair":  [
-                                                                        "TmpTextNoAlloc.cs:34-41",
-                                                                        "TmpTextNoAlloc.cs:50-57",
-                                                                        "TmpTextNoAlloc.cs:65-72"
-                                                                    ],
-                                           "broad_scan_files":  155,
-                                           "forbidden_string_hits":  0,
-                                           "foreach_hits":  0,
-                                           "scene_search_hits":  0,
-                                           "build_decision":  "NO_BUILD: CPU 60%, active dotnet build Hecton8.slnx PID 25684 and VBCSCompiler.exe PID 27088",
-                                           "runtime_gc_bytes_for_500_subtitle_test":  null,
-                                           "runtime_gc_status":  "NOT_MEASURED_ACTIVE_BUILD_AND_COMPILER_PROCESS"
-                                       },
-    "continuation4_audit_2026_05_28":  {
-                                           "path":  "Docs/Reports/UI_ZERO_GC_CONTINUATION4_AUDIT_1423.json",
-                                           "sha256":  "E9F6FF525D63DB90BB217A5BCC0099D6E9C4633D0925F61905F04FB31E2BBE16",
-                                           "locregistry_sha256":  "F52855376E96616DA02C1BF6AEEC0F3C360EB642EAA8092205F51BEB3CB7F354",
-                                           "babel_subtitle_sync_runtime_sha256":  "A56BD6C648B6A0A4C8F2E7FF71F69351FE65B33138D5818B7940BF55DDB2CA29",
-                                           "tmp_text_no_alloc_sha256":  "294DFCA23D14A8E5B304CEC53CC6376D1CC7190086B37D9FD9071FD999FE63E7",
-                                           "modified_hot_path_scan_counts":  {
-                                                                                 "linq_methods":  0,
-                                                                                 "new_string":  0,
-                                                                                 "tmp_text_assignment":  0,
-                                                                                 "string_builder":  0,
-                                                                                 "set_text_call":  0,
-                                                                                 "foreach":  0,
-                                                                                 "string_format":  0,
-                                                                                 "array_resize":  0,
-                                                                                 "to_string_call":  0,
-                                                                                 "linq_using":  0
-                                                                             },
-                                           "broad_non_editor_domain_scan_files":  155,
-                                           "broad_non_editor_domain_scan_forbidden_counts":  {
-                                                                                                 "new_string":  0,
-                                                                                                 "tmp_text_assignment":  0,
-                                                                                                 "string_builder":  0,
-                                                                                                 "set_text_call":  0,
-                                                                                                 "foreach":  0,
-                                                                                                 "string_format":  0,
-                                                                                                 "array_resize":  0,
-                                                                                                 "to_string_call":  0,
-                                                                                                 "linq_using":  0
-                                                                                             },
-                                           "datavault_lock_repair":  "TryAcquireSubtitleWriteBuffer post-acquire failure release now guarded by releaseOnExit finally at BabelSubtitleSyncRuntime.cs:681-698.",
-                                           "build_decision":  "NO_BUILD: samples CPU 100 with VBCSCompiler.exe/PID 18948 after dotnet PID 38260; CPU 87 with no compiler process; final gate CPU 96 with csc.exe PID 63300 and dotnet.exe PID 53008.",
-                                           "runtime_gc_bytes_for_500_subtitle_test":  null,
-                                           "runtime_gc_status":  "NOT_MEASURED_CPU_THROTTLED_AND_PROJECT_PREVIOUSLY_BLOCKED_BY_XRPASS"
-                                       },
-    "continuation5_audit_2026_05_28":  {
-                                           "path":  "Docs/Reports/UI_ZERO_GC_CONTINUATION5_AUDIT_1423.json",
-                                           "sha256":  "3D829F1DBF8EA3EDE9F4EF000345171D88BCB100A6A1EB2EE014DC6EB4B27C11",
-                                           "locregistry_sha256":  "EA6D91974BEBD1BEE214EF1ED1E69978D4ED929083D61AB0E7B811BC9A052104",
-                                           "pda_decrypt_label_sha256":  "2748B2DFD6A460002CB7EC8B2BFE661667EB15BB62FACBD7284F081F98A2EE99",
-                                           "editor_regression_sha256":  "726201C59AFBA6AB0FA0C8A7350DC6B5D76B10617B4D528840CDB87C41B6E0C3",
-                                           "modified_hot_path_scan_counts":  {
-                                                                                 "linq_methods":  0,
-                                                                                 "new_string":  0,
-                                                                                 "tmp_text_assignment":  0,
-                                                                                 "string_builder":  0,
-                                                                                 "set_text_call":  0,
-                                                                                 "foreach":  0,
-                                                                                 "string_format":  0,
-                                                                                 "array_resize":  0,
-                                                                                 "to_string_call":  0,
-                                                                                 "linq_using":  0
-                                                                             },
-                                           "broad_non_editor_domain_scan_files":  155,
-                                           "broad_non_editor_domain_scan_forbidden_counts":  {
-                                                                                                 "new_string":  0,
-                                                                                                 "tmp_text_assignment":  0,
-                                                                                                 "string_builder":  0,
-                                                                                                 "set_text_call":  0,
-                                                                                                 "foreach":  0,
-                                                                                                 "string_format":  0,
-                                                                                                 "array_resize":  0,
-                                                                                                 "to_string_call":  0,
-                                                                                                 "linq_using":  0
-                                                                                             },
-                                           "read_purity_repair":  "TryGetLocalizedSpan now uses IsValidUtf8SliceNoRefresh; PDA decrypt label no longer calls GetLength before TryGetVisualBuffer.",
-                                           "build_decision":  "NO_BUILD: CPU 65 with no compiler/dotnet, then CPU 100 with active dotnet.exe PID 67140.",
-                                           "runtime_gc_bytes_for_500_subtitle_test":  null,
-                                           "runtime_gc_status":  "NOT_MEASURED_CPU_THROTTLED_AND_PROJECT_PREVIOUSLY_BLOCKED_BY_XRPASS"
-                                       },
-    "continuation6_audit_2026_05_28":  {
-                                           "path":  "Docs/Reports/UI_ZERO_GC_CONTINUATION6_AUDIT_1423.json",
-                                           "sha256":  "1F4840AF3A7A9D2AF480AC86B53EB309F55B26206ED800DB9BC371F7BEB23D68",
-                                           "label_swap_scheduler_rich_text_policy":  "FIXED_AT_LabelSwapScheduler.cs:128_BEFORE_SetCharArray_LINE_155",
-                                           "label_swap_scheduler_sha256":  "5A9254E45F2F32E638CEBAC24E6E4A58060022C17DBA83D1CD3A4F5B3BF25F1C",
-                                           "editor_test_sha256":  "8FA0AB00B05431444D26336409079F339F7E17DD83859E5F0203E82B4AD6AAFE",
-                                           "broad_non_editor_domain_scan_files":  154,
-                                           "broad_forbidden_counts":  {
-                                                                          "string_format":  0,
-                                                                          "to_string_call":  0,
-                                                                          "tmp_text_assignment":  0,
-                                                                          "set_text_call":  0,
-                                                                          "new_string":  0,
-                                                                          "string_builder":  0,
-                                                                          "array_resize":  0,
-                                                                          "foreach":  0,
-                                                                          "linq_using":  0,
-                                                                          "linq_methods":  0,
-                                                                          "interpolation":  0,
-                                                                          "scene_search":  0
-                                                                      },
-                                           "build_decision":  "NO_BUILD: CPU 69 then 73; active csc.exe PID 60436 and dotnet.exe PID 31336",
-                                           "runtime_gc_bytes_for_500_subtitle_test":  null,
-                                           "runtime_gc_status":  "NOT_MEASURED_ACTIVE_COMPILER_AND_CPU_OVER_50"
-                                       }
+{
+  "agent_id": "1423",
+  "status": "PENDING VERIFICATION",
+  "generated_at": "2026-05-28T20:21:33+04:00",
+  "domain": "ECHELON 8 PRESENTATION AND UX / Zero-GC Subtitles (Babel), VWS",
+  "latest_continuation": 15,
+  "assignment_source": {
+    "current_batch_contains_agent_prompt_1423": true,
+    "prompt_line": 2139,
+    "prompt_sha256": "9C307765413C5548CA5CD5D2CEE58C7E415CC93819BA21AA3C264488E260C8A6",
+    "prompt_length_chars": 20627,
+    "prompt_task_count": 20
+  },
+  "files_changed_or_audited": {
+    "Assets/_Project/Scripts/LocRegistry.cs": "1038B5AB64E79EF263C67E875EA3540DB9B9EF4B47577131A0BCC5D6BB322086",
+    "Assets/_Project/Scripts/VwsCaptionFallbackCatalog.cs": "A31CE42F5DADA23DE66866072B1A716FDF439B3E929DEBCDB75B009F1600B264",
+    "Assets/_Project/Scripts/VwsCaptionFallbackCatalog.cs.meta": "65B85683A44C1BA9A8E5DDBD4A684001E5F740A4D8A3C94880E024D8B5AFE55B",
+    "Assets/_Project/Scripts/SpatialAudioManager.cs": "E27961F2EDBF7355F9CD138F8EA9E04FE2500DCEAD78F7299DB72194E01D54CB",
+    "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs": "DAACC585E4780C83A33117D1EFFA366BC4D3E713494907F7C3DA908338B9F2B1",
+    "Assets/_Project/Scripts/UI/HectonSubmarineOsDisplay.cs": "891D476DA712B8A6E8F6C65CF9D5EA7B73CE764E2C70D0E539DEB8F0FAFA9FDE",
+    "Assets/_Project/Scripts/UI/BIOSMessageStreamer.cs": "E9C9A10C8A3E1CFAB2B0F384CE03D58294B64541A817BDF0EDD989F060919606",
+    "Assets/_Project/Scripts/UI/LoadingScreenController.cs": "9431DDBF774A1926593D50AD1246399B326279C3B4ADFC6DF701ACB2E84E0E0B",
+    "Assets/_Project/Scripts/UI/SaveSlotHoverPreview.cs": "93B7C368F69688DA453C800F0BB5687BD8DBFAA7DDD9F4DEECAB04DDE3BCBEDA",
+    "Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs": "9A06A4553A77FF32CB786BCAB736952534B61516893ECEA614FC1D1A8770FE23",
+    "Assets/_Project/Scripts/UI/PDAAtlasSignalTab.cs": "87B3FD1901D8E16D0A1BC4B18D1A355746C60B213706D69A951C41C4DD8C1705",
+    "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs": "AD7114A44E109FC238A4FC67A88ACB531649783BF85F84058A86CE1E81AF8B31"
+  },
+  "completed_current_delta": {
+    "problem": "After the VWS fallback repair, a broader UI runtime scan still found cold static .ToCharArray() clones in small UI components.",
+    "solution": "Replaced loading, save hover, builder overlay, and PDA Atlas static char clones with ReadOnlySpan<char> literal/template properties copied into existing instance buffers before SetCharArray or LocNumericBuffer writes.",
+    "line_evidence": {
+      "loading_span_literals": "Assets/_Project/Scripts/UI/LoadingScreenController.cs:35",
+      "loading_stage_span_route": "Assets/_Project/Scripts/UI/LoadingScreenController.cs:320",
+      "save_preview_span_literals": "Assets/_Project/Scripts/UI/SaveSlotHoverPreview.cs:45",
+      "save_preview_span_append": "Assets/_Project/Scripts/UI/SaveSlotHoverPreview.cs:502",
+      "builder_span_literals": "Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs:25",
+      "builder_title_copy": "Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs:426",
+      "builder_numeric_template": "Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs:840",
+      "atlas_span_templates": "Assets/_Project/Scripts/UI/PDAAtlasSignalTab.cs:48",
+      "atlas_empty_timer_copy": "Assets/_Project/Scripts/UI/PDAAtlasSignalTab.cs:759",
+      "atlas_numeric_span_template": "Assets/_Project/Scripts/UI/PDAAtlasSignalTab.cs:942"
+    }
+  },
+  "zero_gc_static_evidence": {
+    "runtime_forbidden_scan_hits": 0,
+    "runtime_forbidden_scan_patterns": [
+      "string.Format",
+      ".ToString(",
+      "TMP_Text.text assignment",
+      "new string",
+      "StringBuilder",
+      "Array.Resize",
+      "foreach",
+      "interpolation",
+      "old CaptionText bridge",
+      ".ToCharArray()"
+    ],
+    "audio_caption_events_block_counts": {
+      "string.Format": 0,
+      ".ToString(": 0,
+      "TMP_Text.text assignment": 0,
+      "new string": 0,
+      "StringBuilder": 0,
+      "Array.Resize": 0,
+      "foreach": 0,
+      "LINQ": 0,
+      "reference_type_new_suspects": 0
+    },
+    "ui_terminal_runtime_scan_counts": {
+      "ToCharArray": 0,
+      "string.Format": 0,
+      ".ToString(": 0,
+      "TMP_Text.text assignment": 0,
+      "new string": 0,
+      "StringBuilder": 0,
+      "Array.Resize": 0,
+      "foreach": 0,
+      "LINQ": 0,
+      "invalid_static_ReadOnlySpan_field_or_array": 0
+    },
+    "spatial_audio_fixed_english_literal_hits": 0,
+    "small_ui_cont15_to_char_array_hits": 0,
+    "small_ui_cont15_single_argument_SetCharArray_hits": 0,
+    "domain_to_char_array_remaining_hits": 30,
+    "domain_to_char_array_remaining_by_file": {
+      "Assets/_Project/Scripts/LocRegistry.cs": 1,
+      "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs": 29
+    },
+    "git_diff_check": "exit 0; CRLF normalization warnings only"
+  },
+  "bounded_cursor_and_queue_proof": {
+    "queue_capacity": 32,
+    "enqueue_bound": "Enqueue rejects when pending + next >= 32, then writes at (head + count) % length. No write index can exceed 31.",
+    "consume_bound": "ConsumeNextPendingCaption reads only while _pendingEventCount > 0 and advances head by modulo length.",
+    "text_bound": "TryWriteCaptionText uses displayLength=min(source.Length,destination.Length); fallback loop writes only i < displayLength. UTF-8 localized route delegates to DecodeUtf8VisualSpan with caller-owned Span<char>.",
+    "terminal_span_bound": "AppendSpan uses safeCursor=clamp(cursor,0,destination.Length) and safeLength=min(source.Length,destination.Length-safeCursor), so destination[safeCursor+i] is bounded.",
+    "small_ui_span_bound": "CONT15 small UI spans are copied into existing buffers; each route clamps length to destination buffer length before SetCharArray.",
+    "fail_closed": "Overflow never grows buffers. Fallback truncates into destination and uses ASCII ellipsis only when displayLength >= 3."
+  },
+  "data_sovereignty": {
+    "new_global_data_vault_migrations_in_latest_delta": 0,
+    "buffer_ids": [
+      "15070550 SubtitleCueStateBufferId",
+      "15070551 SubtitleCueTelemetryBufferId",
+      "15070552 UIOptimizationTelemetryBufferId"
+    ],
+    "try_acquire_write_lock": "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:618",
+    "release_finally_lines": [
+      "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:459",
+      "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:637",
+      "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:846",
+      "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:960",
+      "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:1064"
+    ]
+  },
+  "cinematic_cheat_and_scalability": {
+    "cinematic_cheat": "No physical simulation or expensive UI solver added; caption and terminal presentation are cheap semantic visual fakes over bounded hash/span payloads.",
+    "global_quality_weight_routes": [
+      "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:700 ResolveCanvasDirtyBudget",
+      "Assets/_Project/Scripts/LocRegistry.cs:2821 ResolveGlobalQualityWeight",
+      "Assets/_Project/Scripts/UI/BabelRichTextLodPolicy.cs:14 ShouldStrip",
+      "Assets/_Project/Scripts/UI/BabelRichTextLodPolicy.cs:21 ShouldEnableTmpRichTextParsing"
+    ],
+    "binary_quality_switches_added": 0
+  },
+  "build_throttle": {
+    "build_launched_in_latest_delta": false,
+    "cpu_sample_percent": 100,
+    "active_dotnet_csc_vbcscompiler": [
+      "dotnet PID 13464 CPU 42.53125 StartTime 2026-05-28 20:31:56"
+    ],
+    "reason": "CPU > 50 and active dotnet process exists.",
+    "previous_build_failure_dump": "Docs/AgentLogs/Dump_1423_CONT9_BUILD_FAILURE.txt",
+    "previous_build_failure_dump_sha256": "9CBEE6CDC1A63242D46CEB23F7029637F1857AF5F0DC063F1DAEB46C59B64273"
+  },
+  "verification_truth": {
+    "project_build_passed": false,
+    "runtime_profiler_gc_bytes": null,
+    "editor_tests_executed": false,
+    "static_source_regressions_updated": true,
+    "status_reason": "Host load and active dotnet process prohibited build/test execution. Runtime 0B GC is not claimed."
+  },
+  "residual_faults": [
+    "Domain scan still reports 30 .ToCharArray() hits: LocRegistry missing-key char[] fallback and SuitHUDV4CanvasOverlay HUD/static breach buffers.",
+    "VWS caption fallback strings are still fixed English literals in VwsCaptionFallbackCatalog because the current Babel JSON/static-data artifact path does not prove authored caption keys are available at runtime.",
+    "Runtime 0B GC remains unmeasured because no passing build/profiler run exists."
+  ],
+  "linked_reports": [
+    "Docs/Reports/UI_ZERO_GC_CONTINUATION15_AUDIT_1423.json",
+    "Docs/Reports/UI_ZERO_GC_CONTINUATION14_AUDIT_1423.json",
+    "Docs/Reports/UI_ZERO_GC_CONTINUATION13_AUDIT_1423.json",
+    "Docs/Reports/UI_STRING_ALLOCATION_AST_AUDIT_1423.json",
+    "Docs/Reports/UI_ZERO_GC_APEX_VERIFICATION_1423.json"
+  ],
+  "report_path": "Docs/Reports/UI_ZERO_GC_OPTIMIZATION_REPORT_1423.json",
+  "report_kind": "UI_ZERO_GC_OPTIMIZATION_REPORT_1423"
 }

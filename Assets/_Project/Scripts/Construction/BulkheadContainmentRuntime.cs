@@ -29,6 +29,9 @@ namespace Hecton8.Construction
         private const float AuthoritativeQualityWeight = 1f;
         private const uint MockSeed = 0x53484E42u;
         private const SystemID OwnerSystemId = SystemID.Construction;
+        private const ulong BulkheadProfileImportMutationGuardMask = 1UL << 58;
+        private const ulong BulkheadTelemetryMutationGuardMask = 1UL << 59;
+        private const ulong BulkheadRefreshMutationGuardMask = 1UL << 60;
         private const uint BulkheadJobPinStates = 1u << 0;
         private const uint BulkheadJobPinAups = 1u << 1;
         private const uint BulkheadJobPinPlanes = 1u << 2;
@@ -186,16 +189,24 @@ namespace Hecton8.Construction
             if (vault == null || !runtime.BootstrapVaultState(vault))
                 return false;
 
-            if (!TryAcquireWriteLane(vault, in runtime._profilesHandle, 1, out NativeArray<BulkheadProfileDTO> profiles))
+            if (!vault.TryAcquireMutationGuard(BulkheadProfileImportMutationGuardMask))
                 return false;
 
             try
             {
+                if (!IsBulkheadVaultHandle(in runtime._profilesHandle, BufferID.Shinobu220BulkheadProfiles) ||
+                    !vault.TryResolveHandle(in runtime._profilesHandle, out NativeArray<BulkheadProfileDTO> profiles) ||
+                    !profiles.IsCreated ||
+                    profiles.Length == 0)
+                {
+                    return false;
+                }
+
                 return ParseProfiles(csv, profiles) > 0;
             }
             finally
             {
-                vault.ReleaseWriteLock(in runtime._profilesHandle, OwnerSystemId);
+                vault.ReleaseMutationGuard(BulkheadProfileImportMutationGuardMask);
             }
         }
 
@@ -209,16 +220,23 @@ namespace Hecton8.Construction
             if (vault == null || !runtime.BootstrapVaultState(vault))
                 return false;
 
-            if (!TryAcquireWriteLane(vault, in runtime._profilesHandle, 1, out NativeArray<BulkheadProfileDTO> profiles))
+            if (!vault.TryAcquireMutationGuard(BulkheadProfileImportMutationGuardMask))
                 return false;
-            bool scratchLocked = false;
 
             try
             {
-                if (!TryAcquireWriteLane(vault, in runtime._csvScratchHandle, 1, out NativeArray<byte> scratch))
+                if (!IsBulkheadVaultHandle(in runtime._profilesHandle, BufferID.Shinobu220BulkheadProfiles) ||
+                    !IsBulkheadVaultHandle(in runtime._csvScratchHandle, BufferID.Shinobu220BulkheadCsvScratch) ||
+                    !vault.TryResolveHandle(in runtime._profilesHandle, out NativeArray<BulkheadProfileDTO> profiles) ||
+                    !vault.TryResolveHandle(in runtime._csvScratchHandle, out NativeArray<byte> scratch) ||
+                    !profiles.IsCreated ||
+                    !scratch.IsCreated ||
+                    profiles.Length == 0 ||
+                    scratch.Length == 0)
+                {
                     return false;
+                }
 
-                scratchLocked = true;
                 using FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
                 if (stream.Length <= 0L || stream.Length > scratch.Length)
                     return false;
@@ -243,9 +261,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                if (scratchLocked)
-                    vault.ReleaseWriteLock(in runtime._csvScratchHandle, OwnerSystemId);
-                vault.ReleaseWriteLock(in runtime._profilesHandle, OwnerSystemId);
+                vault.ReleaseMutationGuard(BulkheadProfileImportMutationGuardMask);
             }
         }
 #endif
@@ -358,7 +374,7 @@ namespace Hecton8.Construction
         public void OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
-                RequestDataVaultRebind(currentService as IDataVault);
+                RequestDataVaultRebind(currentService is IDataVault currentVault ? currentVault : null);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -367,7 +383,7 @@ namespace Hecton8.Construction
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
-                RequestDataVaultRebind(currentService as IDataVault);
+                RequestDataVaultRebind(currentService is IDataVault currentVault ? currentVault : null);
         }
 
         private void RequestDataVaultRebind(IDataVault currentVault)
@@ -458,10 +474,10 @@ namespace Hecton8.Construction
             return _vaultRebindPending ? null : _vault;
         }
 
-        private bool Resolve<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        private bool Resolve<T>(in VaultGenerationHandle<T> handle, BufferID bufferId, out NativeArray<T> buffer) where T : struct
         {
             IDataVault vault = ResolveVault();
-            if (vault == null || handle.Generation == 0u)
+            if (vault == null || !IsBulkheadVaultHandle(in handle, bufferId))
             {
                 buffer = default;
                 return false;
@@ -470,10 +486,10 @@ namespace Hecton8.Construction
             return vault.TryResolveHandle(in handle, out buffer);
         }
 
-        private bool Read<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        private bool Read<T>(in VaultGenerationHandle<T> handle, BufferID bufferId, out NativeArray<T> buffer) where T : struct
         {
             IDataVault vault = ResolveVault();
-            if (vault == null || handle.Generation == 0u)
+            if (vault == null || !IsBulkheadVaultHandle(in handle, bufferId))
             {
                 buffer = default;
                 return false;
@@ -504,20 +520,25 @@ namespace Hecton8.Construction
         {
             if (_layoutFaultTelemetryWritten ||
                 vault == null ||
-                !IsVaultHandleCreated(in _telemetryHandle) ||
-                !IsVaultHandleCreated(in _telemetryCursorHandle) ||
-                !TryAcquireWriteLane(vault, in _telemetryHandle, 1, out NativeArray<BulkheadTelemetryEntry> telemetry))
+                !IsBulkheadVaultHandle(in _telemetryHandle, BufferID.Shinobu220BulkheadTelemetryRing) ||
+                !IsBulkheadVaultHandle(in _telemetryCursorHandle, BufferID.Shinobu220BulkheadTelemetryCursor) ||
+                !vault.TryAcquireMutationGuard(BulkheadTelemetryMutationGuardMask))
             {
                 return;
             }
 
-            bool cursorLocked = false;
             try
             {
-                if (!TryAcquireWriteLane(vault, in _telemetryCursorHandle, 1, out NativeArray<uint> cursor))
+                if (!vault.TryResolveHandle(in _telemetryHandle, out NativeArray<BulkheadTelemetryEntry> telemetry) ||
+                    !vault.TryResolveHandle(in _telemetryCursorHandle, out NativeArray<uint> cursor) ||
+                    !telemetry.IsCreated ||
+                    !cursor.IsCreated ||
+                    telemetry.Length == 0 ||
+                    cursor.Length == 0)
+                {
                     return;
+                }
 
-                cursorLocked = true;
                 uint writeCursor = cursor[0];
                 int telemetryIndex = (int)(writeCursor % (uint)telemetry.Length);
                 telemetry[telemetryIndex] = new BulkheadTelemetryEntry
@@ -542,21 +563,14 @@ namespace Hecton8.Construction
             }
             finally
             {
-                if (cursorLocked)
-                    vault.ReleaseWriteLock(in _telemetryCursorHandle, OwnerSystemId);
-                vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
+                vault.ReleaseMutationGuard(BulkheadTelemetryMutationGuardMask);
             }
-        }
-
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle)
-            where T : struct
-        {
-            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private static bool TryAcquireWriteLane<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
             int requiredLength,
             out NativeArray<T> buffer)
             where T : struct
@@ -564,7 +578,7 @@ namespace Hecton8.Construction
             buffer = default;
             if (vault == null ||
                 requiredLength <= 0 ||
-                !IsVaultHandleCreated(in handle) ||
+                !IsBulkheadVaultHandle(in handle, bufferId) ||
                 !vault.TryAcquireWriteLock(in handle, OwnerSystemId, out buffer))
             {
                 return false;
@@ -716,22 +730,22 @@ namespace Hecton8.Construction
             IDataVault vault = _vault;
             if (vault != null)
             {
-                ReleaseVaultHandle(vault, ref _statesHandle);
-                ReleaseVaultHandle(vault, ref _aupsHandle);
-                ReleaseVaultHandle(vault, ref _planesHandle);
-                ReleaseVaultHandle(vault, ref _csrEdgesHandle);
-                ReleaseVaultHandle(vault, ref _edgeConductivityHandle);
-                ReleaseVaultHandle(vault, ref _fluidFlowHandle);
-                ReleaseVaultHandle(vault, ref _moduleIntegrityHandle);
-                ReleaseVaultHandle(vault, ref _tuningHandle);
-                ReleaseVaultHandle(vault, ref _telemetryHandle);
-                ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
-                ReleaseVaultHandle(vault, ref _collisionResultsHandle);
-                ReleaseVaultHandle(vault, ref _profilesHandle);
-                ReleaseVaultHandle(vault, ref _csvScratchHandle);
-                ReleaseVaultHandle(vault, ref _shaderUploadHandle);
-                ReleaseVaultHandle(vault, ref _intentRingHandle);
-                ReleaseVaultHandle(vault, ref _intentControlHandle);
+                ReleaseVaultHandle(vault, ref _statesHandle, BufferID.Shinobu220BulkheadStates);
+                ReleaseVaultHandle(vault, ref _aupsHandle, BufferID.Shinobu220BulkheadAups);
+                ReleaseVaultHandle(vault, ref _planesHandle, BufferID.Shinobu220BulkheadPlanes);
+                ReleaseVaultHandle(vault, ref _csrEdgesHandle, BufferID.Shinobu220BulkheadCsrEdges);
+                ReleaseVaultHandle(vault, ref _edgeConductivityHandle, BufferID.Shinobu220BulkheadEdgeConductivity);
+                ReleaseVaultHandle(vault, ref _fluidFlowHandle, BufferID.Shinobu220BulkheadFluidFlow);
+                ReleaseVaultHandle(vault, ref _moduleIntegrityHandle, BufferID.Shinobu220BulkheadModuleIntegrity);
+                ReleaseVaultHandle(vault, ref _tuningHandle, BufferID.Shinobu220BulkheadTuning);
+                ReleaseVaultHandle(vault, ref _telemetryHandle, BufferID.Shinobu220BulkheadTelemetryRing);
+                ReleaseVaultHandle(vault, ref _telemetryCursorHandle, BufferID.Shinobu220BulkheadTelemetryCursor);
+                ReleaseVaultHandle(vault, ref _collisionResultsHandle, BufferID.Shinobu220BulkheadCollisionResults);
+                ReleaseVaultHandle(vault, ref _profilesHandle, BufferID.Shinobu220BulkheadProfiles);
+                ReleaseVaultHandle(vault, ref _csvScratchHandle, BufferID.Shinobu220BulkheadCsvScratch);
+                ReleaseVaultHandle(vault, ref _shaderUploadHandle, BufferID.Shinobu220BulkheadShaderUpload);
+                ReleaseVaultHandle(vault, ref _intentRingHandle, BufferID.Shinobu220BulkheadIntentRing);
+                ReleaseVaultHandle(vault, ref _intentControlHandle, BufferID.Shinobu220BulkheadIntentControl);
                 ReleaseHatchLockVaultHandles(vault);
             }
             else
@@ -760,18 +774,30 @@ namespace Hecton8.Construction
             _vault = null;
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle, BufferID bufferId)
             where T : struct
         {
-            if (vault != null &&
-                handle.BufferID != 0u &&
-                handle.Generation != 0u &&
-                handle.SystemID == (uint)OwnerSystemId)
+            if (vault != null && IsBulkheadVaultHandle(in handle, bufferId))
             {
                 vault.ReleaseBuffer(in handle);
             }
 
             handle = default;
+        }
+
+        private static bool IsBulkheadVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)OwnerSystemId &&
+                   handle.Generation != 0u;
+        }
+
+        private static bool IsVaultHandleForBuffer<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.Generation != 0u;
         }
 
         private bool BootstrapVaultState(IDataVault vault)
@@ -826,37 +852,38 @@ namespace Hecton8.Construction
                 return false;
 
             int capacity = math.clamp(bulkheadCapacity, 1, BulkheadContainmentConstants.DefaultBulkheadCapacity);
-            if (!Read(in _statesHandle, out NativeArray<BulkheadStateDTO> states) ||
-                !Read(in _aupsHandle, out NativeArray<double3> aups) ||
-                !Read(in _planesHandle, out NativeArray<BulkheadPlaneDTO> planes) ||
-                !Read(in _csrEdgesHandle, out NativeArray<BulkheadCsrEdgeDTO> csrEdges))
+            if (!Read(in _statesHandle, BufferID.Shinobu220BulkheadStates, out NativeArray<BulkheadStateDTO> states) ||
+                !Read(in _aupsHandle, BufferID.Shinobu220BulkheadAups, out NativeArray<double3> aups) ||
+                !Read(in _planesHandle, BufferID.Shinobu220BulkheadPlanes, out NativeArray<BulkheadPlaneDTO> planes) ||
+                !Read(in _csrEdgesHandle, BufferID.Shinobu220BulkheadCsrEdges, out NativeArray<BulkheadCsrEdgeDTO> csrEdges))
             {
                 return false;
             }
 
             if (!states.IsCreated || !aups.IsCreated || !planes.IsCreated || !csrEdges.IsCreated ||
                 states.Length <= 0 || aups.Length <= 0 || planes.Length <= 0 || csrEdges.Length <= 0 ||
-                !TryAcquireWriteLane(vault, in _edgeConductivityHandle, 1, out NativeArray<float> conductivity))
+                !vault.TryAcquireMutationGuard(BulkheadRefreshMutationGuardMask))
             {
                 return false;
             }
 
-            bool fluidLocked = false;
-            bool integrityLocked = false;
-            bool tuningLocked = false;
             try
             {
-                if (!TryAcquireWriteLane(vault, in _fluidFlowHandle, 1, out NativeArray<float> fluidFlow))
+                if (!Resolve(in _edgeConductivityHandle, BufferID.Shinobu220BulkheadEdgeConductivity, out NativeArray<float> conductivity) ||
+                    !Resolve(in _fluidFlowHandle, BufferID.Shinobu220BulkheadFluidFlow, out NativeArray<float> fluidFlow) ||
+                    !Resolve(in _moduleIntegrityHandle, BufferID.Shinobu220BulkheadModuleIntegrity, out NativeArray<float> moduleIntegrity) ||
+                    !Resolve(in _tuningHandle, BufferID.Shinobu220BulkheadTuning, out NativeArray<BulkheadTuningDTO> tuning) ||
+                    !conductivity.IsCreated ||
+                    !fluidFlow.IsCreated ||
+                    !moduleIntegrity.IsCreated ||
+                    !tuning.IsCreated ||
+                    conductivity.Length == 0 ||
+                    fluidFlow.Length == 0 ||
+                    moduleIntegrity.Length == 0 ||
+                    tuning.Length == 0)
+                {
                     return false;
-                fluidLocked = true;
-
-                if (!TryAcquireWriteLane(vault, in _moduleIntegrityHandle, 1, out NativeArray<float> moduleIntegrity))
-                    return false;
-                integrityLocked = true;
-
-                if (!TryAcquireWriteLane(vault, in _tuningHandle, 1, out NativeArray<BulkheadTuningDTO> tuning))
-                    return false;
-                tuningLocked = true;
+                }
 
                 if (!_defaultsInitialized)
                 {
@@ -876,13 +903,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                if (tuningLocked)
-                    vault.ReleaseWriteLock(in _tuningHandle, OwnerSystemId);
-                if (integrityLocked)
-                    vault.ReleaseWriteLock(in _moduleIntegrityHandle, OwnerSystemId);
-                if (fluidLocked)
-                    vault.ReleaseWriteLock(in _fluidFlowHandle, OwnerSystemId);
-                vault.ReleaseWriteLock(in _edgeConductivityHandle, OwnerSystemId);
+                vault.ReleaseMutationGuard(BulkheadRefreshMutationGuardMask);
             }
 
             return !refreshHatchLocks || RefreshHatchLockVaultState(vault, capacity, allowDefaultProfileLoad: false);
@@ -891,7 +912,7 @@ namespace Hecton8.Construction
         private bool TryWriteTuningRow()
         {
             IDataVault vault = ResolveVault();
-            if (!TryAcquireWriteLane(vault, in _tuningHandle, 1, out NativeArray<BulkheadTuningDTO> tuning))
+            if (!TryAcquireWriteLane(vault, in _tuningHandle, BufferID.Shinobu220BulkheadTuning, 1, out NativeArray<BulkheadTuningDTO> tuning))
             {
                 return false;
             }
@@ -1084,16 +1105,23 @@ namespace Hecton8.Construction
                 return;
 
             IDataVault vault = ResolveVault();
-            if (!TryAcquireWriteLane(vault, in _intentRingHandle, 1, out NativeArray<BulkheadContainmentIntentDTO> intents))
+            if (vault == null || !vault.TryAcquireMutationGuard(BulkheadContainmentIntentBus.IntentMutationGuardMask))
                 return;
 
-            bool controlLocked = false;
             try
             {
-                if (!TryAcquireWriteLane(vault, in _intentControlHandle, 1, out NativeArray<BulkheadContainmentIntentControlDTO> controlRows))
+                if (!IsBulkheadVaultHandle(in _intentRingHandle, BufferID.Shinobu220BulkheadIntentRing) ||
+                    !IsBulkheadVaultHandle(in _intentControlHandle, BufferID.Shinobu220BulkheadIntentControl) ||
+                    !vault.TryResolveHandle(in _intentRingHandle, out NativeArray<BulkheadContainmentIntentDTO> intents) ||
+                    !vault.TryResolveHandle(in _intentControlHandle, out NativeArray<BulkheadContainmentIntentControlDTO> controlRows) ||
+                    !intents.IsCreated ||
+                    !controlRows.IsCreated ||
+                    intents.Length == 0 ||
+                    controlRows.Length == 0)
+                {
                     return;
+                }
 
-                controlLocked = true;
                 BulkheadContainmentIntentControlDTO control = controlRows[0];
                 uint write = control.WriteCursor;
                 uint read = control.ReadCursor;
@@ -1139,9 +1167,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                if (controlLocked)
-                    vault.ReleaseWriteLock(in _intentControlHandle, OwnerSystemId);
-                vault.ReleaseWriteLock(in _intentRingHandle, OwnerSystemId);
+                vault.ReleaseMutationGuard(BulkheadContainmentIntentBus.IntentMutationGuardMask);
             }
         }
 
@@ -1217,12 +1243,12 @@ namespace Hecton8.Construction
             bool keepPins = false;
             try
             {
-                if (!Resolve(in _statesHandle, out NativeArray<BulkheadStateDTO> states) ||
-                    !Resolve(in _aupsHandle, out NativeArray<double3> aups) ||
-                    !Resolve(in _planesHandle, out NativeArray<BulkheadPlaneDTO> planes) ||
-                    !Resolve(in _csrEdgesHandle, out NativeArray<BulkheadCsrEdgeDTO> csrEdges) ||
-                    !Resolve(in _moduleIntegrityHandle, out NativeArray<float> moduleIntegrity) ||
-                    !Resolve(in _collisionResultsHandle, out NativeArray<BulkheadCollisionResultDTO> collisions))
+                if (!Resolve(in _statesHandle, BufferID.Shinobu220BulkheadStates, out NativeArray<BulkheadStateDTO> states) ||
+                    !Resolve(in _aupsHandle, BufferID.Shinobu220BulkheadAups, out NativeArray<double3> aups) ||
+                    !Resolve(in _planesHandle, BufferID.Shinobu220BulkheadPlanes, out NativeArray<BulkheadPlaneDTO> planes) ||
+                    !Resolve(in _csrEdgesHandle, BufferID.Shinobu220BulkheadCsrEdges, out NativeArray<BulkheadCsrEdgeDTO> csrEdges) ||
+                    !Resolve(in _moduleIntegrityHandle, BufferID.Shinobu220BulkheadModuleIntegrity, out NativeArray<float> moduleIntegrity) ||
+                    !Resolve(in _collisionResultsHandle, BufferID.Shinobu220BulkheadCollisionResults, out NativeArray<BulkheadCollisionResultDTO> collisions))
                 {
                     return;
                 }
@@ -1323,10 +1349,10 @@ namespace Hecton8.Construction
             float safeCadenceHz = BulkheadContainmentMath.SanitizePositive(cadenceHz, 5f);
             float period = 1f / (safeCadenceHz < 1f ? 1f : safeCadenceHz);
 
-            if (!Resolve(in _statesHandle, out NativeArray<BulkheadStateDTO> states) ||
-                !Resolve(in _collisionResultsHandle, out NativeArray<BulkheadCollisionResultDTO> collisions) ||
-                !Resolve(in _telemetryHandle, out NativeArray<BulkheadTelemetryEntry> telemetry) ||
-                !Resolve(in _telemetryCursorHandle, out NativeArray<uint> cursor))
+            if (!Resolve(in _statesHandle, BufferID.Shinobu220BulkheadStates, out NativeArray<BulkheadStateDTO> states) ||
+                !Resolve(in _collisionResultsHandle, BufferID.Shinobu220BulkheadCollisionResults, out NativeArray<BulkheadCollisionResultDTO> collisions) ||
+                !Resolve(in _telemetryHandle, BufferID.Shinobu220BulkheadTelemetryRing, out NativeArray<BulkheadTelemetryEntry> telemetry) ||
+                !Resolve(in _telemetryCursorHandle, BufferID.Shinobu220BulkheadTelemetryCursor, out NativeArray<uint> cursor))
             {
                 return FailSimulationSchedule(dependency);
             }
@@ -1344,9 +1370,9 @@ namespace Hecton8.Construction
 
             if (generateMockBulkheads && !_mockGenerated && _activeCount <= 0)
             {
-                if (!Resolve(in _aupsHandle, out NativeArray<double3> mockAups) ||
-                    !Resolve(in _planesHandle, out NativeArray<BulkheadPlaneDTO> planes) ||
-                    !Resolve(in _csrEdgesHandle, out NativeArray<BulkheadCsrEdgeDTO> mockCsrEdges) ||
+                if (!Resolve(in _aupsHandle, BufferID.Shinobu220BulkheadAups, out NativeArray<double3> mockAups) ||
+                    !Resolve(in _planesHandle, BufferID.Shinobu220BulkheadPlanes, out NativeArray<BulkheadPlaneDTO> planes) ||
+                    !Resolve(in _csrEdgesHandle, BufferID.Shinobu220BulkheadCsrEdges, out NativeArray<BulkheadCsrEdgeDTO> mockCsrEdges) ||
                     !mockAups.IsCreated ||
                     !planes.IsCreated ||
                     !mockCsrEdges.IsCreated ||
@@ -1401,11 +1427,11 @@ namespace Hecton8.Construction
                     BulkheadTelemetryFlags.ScheduleTimeOnly);
             }
 
-            if (!Resolve(in _csrEdgesHandle, out NativeArray<BulkheadCsrEdgeDTO> csrEdges) ||
-                !Resolve(in _aupsHandle, out NativeArray<double3> aups) ||
-                !Resolve(in _edgeConductivityHandle, out NativeArray<float> conductivity) ||
-                !Resolve(in _fluidFlowHandle, out NativeArray<float> fluidFlow) ||
-                !Resolve(in _moduleIntegrityHandle, out NativeArray<float> moduleIntegrity))
+            if (!Resolve(in _csrEdgesHandle, BufferID.Shinobu220BulkheadCsrEdges, out NativeArray<BulkheadCsrEdgeDTO> csrEdges) ||
+                !Resolve(in _aupsHandle, BufferID.Shinobu220BulkheadAups, out NativeArray<double3> aups) ||
+                !Resolve(in _edgeConductivityHandle, BufferID.Shinobu220BulkheadEdgeConductivity, out NativeArray<float> conductivity) ||
+                !Resolve(in _fluidFlowHandle, BufferID.Shinobu220BulkheadFluidFlow, out NativeArray<float> fluidFlow) ||
+                !Resolve(in _moduleIntegrityHandle, BufferID.Shinobu220BulkheadModuleIntegrity, out NativeArray<float> moduleIntegrity))
             {
                 long telemetryStart = Stopwatch.GetTimestamp();
                 return ScheduleTelemetryJob(
@@ -1679,9 +1705,9 @@ namespace Hecton8.Construction
                 return;
             }
 
-            if (!Read(in _statesHandle, out NativeArray<BulkheadStateDTO> states) ||
-                !Read(in _telemetryHandle, out NativeArray<BulkheadTelemetryEntry> telemetry) ||
-                !Read(in _telemetryCursorHandle, out NativeArray<uint> cursor))
+            if (!Read(in _statesHandle, BufferID.Shinobu220BulkheadStates, out NativeArray<BulkheadStateDTO> states) ||
+                !Read(in _telemetryHandle, BufferID.Shinobu220BulkheadTelemetryRing, out NativeArray<BulkheadTelemetryEntry> telemetry) ||
+                !Read(in _telemetryCursorHandle, BufferID.Shinobu220BulkheadTelemetryCursor, out NativeArray<uint> cursor))
             {
                 DisableShaderGlobals();
                 return;
@@ -1741,48 +1767,35 @@ namespace Hecton8.Construction
         {
             if (vault == null ||
                 _telemetryHandle.Generation == 0u ||
-                _telemetryCursorHandle.Generation == 0u ||
-                !vault.TryLockBuffer(BufferID.Shinobu220BulkheadTelemetryRing, OwnerSystemId))
+                _telemetryCursorHandle.Generation == 0u)
             {
                 return;
             }
 
-            bool cursorPinned = false;
-            try
+            if (!IsBulkheadVaultHandle(in _telemetryHandle, BufferID.Shinobu220BulkheadTelemetryRing) ||
+                !IsBulkheadVaultHandle(in _telemetryCursorHandle, BufferID.Shinobu220BulkheadTelemetryCursor) ||
+                !vault.TryResolveHandle(in _telemetryHandle, out NativeArray<BulkheadTelemetryEntry> telemetry) ||
+                !vault.TryResolveHandle(in _telemetryCursorHandle, out NativeArray<uint> cursor) ||
+                !telemetry.IsCreated ||
+                !cursor.IsCreated ||
+                telemetry.Length <= 0 ||
+                cursor.Length <= 0 ||
+                cursor[0] == 0u)
             {
-                if (!vault.TryLockBuffer(BufferID.Shinobu220BulkheadTelemetryCursor, OwnerSystemId))
-                    return;
-                cursorPinned = true;
-
-                if (!vault.TryResolveHandle(in _telemetryHandle, out NativeArray<BulkheadTelemetryEntry> telemetry) ||
-                    !vault.TryResolveHandle(in _telemetryCursorHandle, out NativeArray<uint> cursor) ||
-                    !telemetry.IsCreated ||
-                    !cursor.IsCreated ||
-                    telemetry.Length <= 0 ||
-                    cursor.Length <= 0 ||
-                    cursor[0] == 0u)
-                {
-                    return;
-                }
-
-                uint cursorValue = cursor[0];
-                if (cursorValue == _lastDumpedTelemetryCursor ||
-                    cursorValue == _lastDumpAttemptTelemetryCursor)
-                    return;
-
-                BulkheadTelemetryEntry entry = telemetry[(int)((cursorValue - 1u) % (uint)telemetry.Length)];
-                if ((entry.Flags & BulkheadTelemetryFlags.DumpRequested) != 0u)
-                {
-                    _lastDumpAttemptTelemetryCursor = cursorValue;
-                    if (TryDumpBlackBox(telemetry, cursorValue))
-                        _lastDumpedTelemetryCursor = cursorValue;
-                }
+                return;
             }
-            finally
+
+            uint cursorValue = cursor[0];
+            if (cursorValue == _lastDumpedTelemetryCursor ||
+                cursorValue == _lastDumpAttemptTelemetryCursor)
+                return;
+
+            BulkheadTelemetryEntry entry = telemetry[(int)((cursorValue - 1u) % (uint)telemetry.Length)];
+            if ((entry.Flags & BulkheadTelemetryFlags.DumpRequested) != 0u)
             {
-                if (cursorPinned)
-                    vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadTelemetryCursor, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.Shinobu220BulkheadTelemetryRing, OwnerSystemId);
+                _lastDumpAttemptTelemetryCursor = cursorValue;
+                if (TryDumpBlackBox(telemetry, cursorValue))
+                    _lastDumpedTelemetryCursor = cursorValue;
             }
         }
 
@@ -1813,7 +1826,7 @@ namespace Hecton8.Construction
             if (vault == null)
                 return false;
 
-            if (IsVaultHandleCreated(in _playerKinematicStateHandle) &&
+            if (IsVaultHandleForBuffer(in _playerKinematicStateHandle, BufferID.PlayerKinematicState) &&
                 vault.TryReadOnlyHandle(in _playerKinematicStateHandle, out playerStates) &&
                 playerStates.Length > 0)
             {
@@ -1834,6 +1847,7 @@ namespace Hecton8.Construction
             }
 
             return TryBindPlayerKinematicStateHandle(vault) &&
+                   IsVaultHandleForBuffer(in _playerKinematicStateHandle, BufferID.PlayerKinematicState) &&
                    vault.TryReadOnlyHandle(in _playerKinematicStateHandle, out playerStates) &&
                    playerStates.Length > 0;
         }
@@ -2259,8 +2273,8 @@ namespace Hecton8.Construction
         private void OnDrawGizmos()
         {
             if (!_vaultInitialized ||
-                !Read(in _statesHandle, out NativeArray<BulkheadStateDTO> states) ||
-                !Read(in _planesHandle, out NativeArray<BulkheadPlaneDTO> planes) ||
+                !Read(in _statesHandle, BufferID.Shinobu220BulkheadStates, out NativeArray<BulkheadStateDTO> states) ||
+                !Read(in _planesHandle, BufferID.Shinobu220BulkheadPlanes, out NativeArray<BulkheadPlaneDTO> planes) ||
                 !states.IsCreated ||
                 !planes.IsCreated)
             {

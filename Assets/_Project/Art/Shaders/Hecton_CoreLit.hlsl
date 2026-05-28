@@ -133,7 +133,8 @@ float4 _HectonXRNearClipDitherParams;  // x=active, y=fade start meters, z=fade 
 float4 _HectonXROriginShiftState;      // x=XR active, y=origin shift sequence, z=pose refresh marker, w=fixed alpha
 float4 _TotalUniverseOffset;           // xyz=runtime-to-absolute offset used for AUP-stable visual phase
 float _AupJitterMask;                  // 1 during the AUP shift render frame; rounds camera-relative vertices to millimeters
-float _HectonMathLodMode;              // 0=cheap dominant-axis, 1=exact high
+float _HectonMathLodMode;              // Legacy mirror of the continuous math LOD weight.
+float _HectonMathLodWeight;            // 0=cheap dear-lie math, 1=exact visual overkill.
 float _HectonMathLodDistanceSq;        // C# scalability bridge debug/readback value
 float4 _HectonWorldShake;              // xyz=seismic vertex offset, w=intensity
 float _HectonEquipmentRust01;          // global equipment corrosion scalar, 0 clean -> 1 ruined
@@ -160,17 +161,21 @@ float3 HectonCoreLitDominantAxisOrDefault(float3 value, float3 fallbackValue)
         : (absValue.y >= absValue.z ? axisY : axisZ);
 }
 
+float HectonCoreLitMathLodWeight()
+{
+    float weight = isfinite(_HectonMathLodWeight) ? _HectonMathLodWeight : _HectonMathLodMode;
+    return saturate(weight);
+}
+
 float3 HectonCoreLitSafeNormalize(float3 value)
 {
     float lenSq = dot(value, value);
     if (!isfinite(lenSq) || lenSq <= 0.0001)
         return float3(0.0, 1.0, 0.0);
 
-#if defined(_MATH_LOD_HIGH)
-    return value * rsqrt(lenSq);
-#else
-    return HectonCoreLitDominantAxisOrDefault(value, float3(0.0, 1.0, 0.0));
-#endif
+    float3 cheap = HectonCoreLitDominantAxisOrDefault(value, float3(0.0, 1.0, 0.0));
+    float3 exact = value * rsqrt(lenSq);
+    return lerp(cheap, exact, HectonCoreLitMathLodWeight());
 }
 
 float HectonCoreLitApproxDistance(float3 delta)
@@ -284,15 +289,11 @@ float3 HectonCoreLitSanitizePositionWS(float3 positionWS)
 float3 HectonCoreLitApplyWorldShake(float3 positionWS)
 {
     float3 sanitized = HectonCoreLitSanitizePositionWS(positionWS);
-#if defined(_MATH_LOD_LOW)
-    return sanitized;
-#else
-    float intensity = saturate(_HectonWorldShake.w);
+    float intensity = saturate(_HectonWorldShake.w) * HectonCoreLitMathLodWeight();
     if (intensity <= 0.0001)
         return sanitized;
 
-    return HectonCoreLitSanitizePositionWS(sanitized + _HectonWorldShake.xyz);
-#endif
+    return HectonCoreLitSanitizePositionWS(sanitized + _HectonWorldShake.xyz * intensity);
 }
 
 float HectonCoreLitInterleavedGradientNoise(float2 pixel)
@@ -911,11 +912,8 @@ float2 HectonCoreLitResolveDynamicWearUv(
 
     rustPacked = SAMPLE_TEXTURE2D(_RustDetailMap, sampler_RustDetailMap, rustUv);
 
-#if defined(_MATH_LOD_LOW)
-    return baseUv;
-#else
     float qualityPressure = saturate(_HectonMaterialDecayRuntime.z);
-    float rustPomWeight = 1.0 - smoothstep(0.18, 0.72, qualityPressure);
+    float rustPomWeight = (1.0 - smoothstep(0.18, 0.72, qualityPressure)) * HectonCoreLitMathLodWeight();
     if (rust01 <= 0.3001h || rustPomWeight <= 0.001)
         return baseUv;
 
@@ -944,7 +942,6 @@ float2 HectonCoreLitResolveDynamicWearUv(
     rustMask = saturate(rust01 * (0.58h + pitMask * 0.42h));
     half2 pitNormal = (rustPacked.gb * 2.0h - 1.0h) * (rustMask * 0.0035h);
     return resolvedUv - _RustDetailMap_ST.zw + pitNormal;
-#endif
 }
 
 half3 HectonCoreLitDecodeRustNormalTS(half4 rustPacked, half strength)
@@ -1406,11 +1403,9 @@ half3 HectonCoreLitApplyDepthCrushCurve(half3 color, float3 positionWS)
     float depthMeters = max(0.0, surfaceY - positionWS.y);
     half crushWeight = (half)saturate((depthMeters - 500.0) * 0.002);
     half3 safeColor = max(color, abyssFloor);
-#if defined(_MATH_LOD_LOW)
-    half3 crushed = max(safeColor * safeColor, abyssFloor);
-#else
-    half3 crushed = max((half3)pow((float3)safeColor, float3(2.2, 2.2, 2.2)), abyssFloor);
-#endif
+    half3 cheapCrushed = max(safeColor * safeColor, abyssFloor);
+    half3 exactCrushed = max((half3)pow((float3)safeColor, float3(2.2, 2.2, 2.2)), abyssFloor);
+    half3 crushed = lerp(cheapCrushed, exactCrushed, (half)HectonCoreLitMathLodWeight());
     return lerp(safeColor, crushed, crushWeight);
 }
 
@@ -1505,9 +1500,10 @@ half3 HectonCoreLitEvaluateOrganicSss(
 
 float HectonCoreLitEvaluateActiveSonarTriplanarGrid(float3 positionWS, float gridEnabled)
 {
-#if defined(_MATH_LOD_LOW)
-    return 1.0;
-#else
+    float mathLodWeight = HectonCoreLitMathLodWeight();
+    if (mathLodWeight <= 0.0001)
+        return 1.0;
+
     if (gridEnabled <= 0.5)
         return 1.0;
 
@@ -1531,8 +1527,7 @@ float HectonCoreLitEvaluateActiveSonarTriplanarGrid(float3 positionWS, float gri
     }
 
     float scanNoise = abs(frac(dot(stablePosition, float3(0.037, 0.011, 0.029))) - 0.5) * 2.0;
-    return saturate(0.62 + grid * 0.55 + (scanNoise - 0.5) * 0.18);
-#endif
+    return lerp(1.0, saturate(0.62 + grid * 0.55 + (scanNoise - 0.5) * 0.18), mathLodWeight);
 }
 
 float HectonCoreLitEvaluateActiveSonarGeoRing(float3 positionWS)

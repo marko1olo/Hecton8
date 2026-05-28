@@ -124,45 +124,21 @@ namespace Hecton8.Core.Scheduling
                 SystemID.JobAdmission,
                 NativeArrayOptions.ClearMemory);
 
-            NativeArray<float> laneBudgetsMs = ResolveLaneBudgets();
-            NativeArray<float> baseRefillMs = ResolveBaseRefill();
-            NativeArray<uint> jobHashes = ResolveJobHashes();
-            NativeArray<float> ewmaCostsMs = ResolveEwmaCosts();
-            NativeArray<JobAdmissionBlackboxEntry> blackbox = ResolveBlackbox();
-            if (!laneBudgetsMs.IsCreated ||
-                laneBudgetsMs.Length < LaneCount ||
-                !baseRefillMs.IsCreated ||
-                baseRefillMs.Length < LaneCount ||
-                !jobHashes.IsCreated ||
-                jobHashes.Length < CostSlotCapacity ||
-                !ewmaCostsMs.IsCreated ||
-                ewmaCostsMs.Length < CostSlotCapacity ||
-                !blackbox.IsCreated ||
-                blackbox.Length < BlackboxCapacity)
+            _overflowEwmaCostMs = OverflowEstimatedCostMs;
+            _lastFaultDumpFrameSequence = uint.MaxValue;
+
+            bool initFailed = !InitializeBaseRefillBudgets() ||
+                              !InitializeLaneBudgets() ||
+                              !ClearJobHashes() ||
+                              !ClearEwmaCosts() ||
+                              !ClearBlackbox();
+
+            if (initFailed)
             {
                 ReleaseVaultHandlesOnly();
                 ResetRuntimeState(clearTelemetrySink: false);
                 return;
             }
-
-            _overflowEwmaCostMs = OverflowEstimatedCostMs;
-            _lastFaultDumpFrameSequence = uint.MaxValue;
-
-            for (int i = 0; i < LaneCount; i++)
-            {
-                float refill = ResolveDefaultRefillBudgetMs(i);
-                baseRefillMs[i] = refill;
-                laneBudgetsMs[i] = refill;
-            }
-
-            for (int i = 0; i < CostSlotCapacity; i++)
-            {
-                jobHashes[i] = 0u;
-                ewmaCostsMs[i] = 0f;
-            }
-
-            for (int i = 0; i < BlackboxCapacity; i++)
-                blackbox[i] = default;
 
             _initialized = true;
         }
@@ -173,101 +149,159 @@ namespace Hecton8.Core.Scheduling
             if (!_initialized)
                 return;
 
-            NativeArray<float> laneBudgetsMs = ResolveLaneBudgets();
-            NativeArray<float> baseRefillMs = ResolveBaseRefill();
-            if (!laneBudgetsMs.IsCreated || laneBudgetsMs.Length < LaneCount || !baseRefillMs.IsCreated || baseRefillMs.Length < LaneCount)
+            NativeArray<float>.ReadOnly baseRefillMs = ReadBaseRefill();
+            bool laneBudgetsLocked = TryAcquireWriteView(in _laneBudgetsMsHandle, out NativeArray<float> laneBudgetsMs);
+            if (!laneBudgetsLocked || laneBudgetsMs.Length < LaneCount || baseRefillMs.Length < LaneCount)
+            {
+                if (laneBudgetsLocked)
+                    ReleaseWriteView(in _laneBudgetsMsHandle);
                 return;
-
-            _refillFrameSequence = _refillFrameSequence == uint.MaxValue ? 1u : _refillFrameSequence + 1u;
-            float deltaMilliseconds = deltaTimeSeconds * 1000f;
-            if (!math.isfinite(deltaMilliseconds) || deltaMilliseconds <= 0f)
-            {
-                ReportNonFinite(JobAdmissionLane.Lane0_Critical, 0u, deltaMilliseconds);
-                deltaMilliseconds = TargetFrameMilliseconds;
             }
 
-            float deltaScale = math.clamp(deltaMilliseconds * TargetFrameMillisecondsRcp, MinDeltaRefillScale, MaxDeltaRefillScale);
-            float qualityWeight01 = SanitizeQualityWeight01(globalQualityWeight01);
-            float qualityCurve01 = SmoothStep01(qualityWeight01);
-            float qualityScale = math.lerp(SurvivalBudgetScalar, 1f, qualityCurve01);
-            float missScale = previousFrameMissedBudget ? MissedFrameRefillScalar : 1f;
-            float refillScale = deltaScale * qualityScale * missScale;
-
-            for (int lane = 0; lane < LaneCount; lane++)
+            bool pendingNonFinite = false;
+            JobAdmissionLane pendingNonFiniteLane = JobAdmissionLane.Lane0_Critical;
+            uint pendingNonFiniteJobHash = 0u;
+            float pendingNonFiniteValue = 0f;
+            try
             {
-                float baseRefill = baseRefillMs[lane];
-                if (!math.isfinite(baseRefill) || baseRefill < 0f)
+                _refillFrameSequence = _refillFrameSequence == uint.MaxValue ? 1u : _refillFrameSequence + 1u;
+                float deltaMilliseconds = deltaTimeSeconds * 1000f;
+                if (!math.isfinite(deltaMilliseconds) || deltaMilliseconds <= 0f)
                 {
-                    ReportNonFinite((JobAdmissionLane)lane, 0u, baseRefill);
-                    baseRefill = 0f;
-                    baseRefillMs[lane] = 0f;
-                }
-                else if (baseRefill > AdmissionCostClampMs)
-                {
-                    baseRefill = AdmissionCostClampMs;
-                    baseRefillMs[lane] = baseRefill;
-                }
-
-                float refill = baseRefill * refillScale;
-                if (!math.isfinite(refill))
-                {
-                    ReportNonFinite((JobAdmissionLane)lane, 0u, refill);
-                    refill = 0f;
-                }
-                else if (refill > AdmissionCostClampMs)
-                {
-                    refill = AdmissionCostClampMs;
+                    CaptureFirstNonFinite(
+                        ref pendingNonFinite,
+                        ref pendingNonFiniteLane,
+                        ref pendingNonFiniteJobHash,
+                        ref pendingNonFiniteValue,
+                        JobAdmissionLane.Lane0_Critical,
+                        0u,
+                        deltaMilliseconds);
+                    deltaMilliseconds = TargetFrameMilliseconds;
                 }
 
-                float current = laneBudgetsMs[lane];
-                if (!math.isfinite(current))
+                float deltaScale = math.clamp(deltaMilliseconds * TargetFrameMillisecondsRcp, MinDeltaRefillScale, MaxDeltaRefillScale);
+                float qualityWeight01 = SanitizeQualityWeight01(globalQualityWeight01);
+                float qualityCurve01 = SmoothStep01(qualityWeight01);
+                float qualityScale = math.lerp(SurvivalBudgetScalar, 1f, qualityCurve01);
+                float missScale = previousFrameMissedBudget ? MissedFrameRefillScalar : 1f;
+                float refillScale = deltaScale * qualityScale * missScale;
+
+                for (int lane = 0; lane < LaneCount; lane++)
                 {
-                    ReportNonFinite((JobAdmissionLane)lane, 0u, current);
-                    current = 0f;
+                    float baseRefill = baseRefillMs[lane];
+                    if (!math.isfinite(baseRefill) || baseRefill < 0f)
+                    {
+                        CaptureFirstNonFinite(
+                            ref pendingNonFinite,
+                            ref pendingNonFiniteLane,
+                            ref pendingNonFiniteJobHash,
+                            ref pendingNonFiniteValue,
+                            (JobAdmissionLane)lane,
+                            0u,
+                            baseRefill);
+                        baseRefill = 0f;
+                    }
+                    else if (baseRefill > AdmissionCostClampMs)
+                    {
+                        baseRefill = AdmissionCostClampMs;
+                    }
+
+                    float refill = baseRefill * refillScale;
+                    if (!math.isfinite(refill))
+                    {
+                        CaptureFirstNonFinite(
+                            ref pendingNonFinite,
+                            ref pendingNonFiniteLane,
+                            ref pendingNonFiniteJobHash,
+                            ref pendingNonFiniteValue,
+                            (JobAdmissionLane)lane,
+                            0u,
+                            refill);
+                        refill = 0f;
+                    }
+                    else if (refill > AdmissionCostClampMs)
+                    {
+                        refill = AdmissionCostClampMs;
+                    }
+
+                    float current = laneBudgetsMs[lane];
+                    if (!math.isfinite(current))
+                    {
+                        CaptureFirstNonFinite(
+                            ref pendingNonFinite,
+                            ref pendingNonFiniteLane,
+                            ref pendingNonFiniteJobHash,
+                            ref pendingNonFiniteValue,
+                            (JobAdmissionLane)lane,
+                            0u,
+                            current);
+                        current = 0f;
+                    }
+                    else
+                    {
+                        current = ClampLaneBudgetMilliseconds(lane, current);
+                        laneBudgetsMs[lane] = current;
+                    }
+
+                    float cap = baseRefill * MaxDeltaRefillScale * qualityScale;
+                    if (!math.isfinite(cap) || cap < 0f)
+                    {
+                        CaptureFirstNonFinite(
+                            ref pendingNonFinite,
+                            ref pendingNonFiniteLane,
+                            ref pendingNonFiniteJobHash,
+                            ref pendingNonFiniteValue,
+                            (JobAdmissionLane)lane,
+                            0u,
+                            cap);
+                        cap = 0f;
+                    }
+                    else if (cap > AdmissionCostClampMs)
+                    {
+                        cap = AdmissionCostClampMs;
+                    }
+
+                    float next = current + refill;
+                    if (!math.isfinite(next))
+                    {
+                        CaptureFirstNonFinite(
+                            ref pendingNonFinite,
+                            ref pendingNonFiniteLane,
+                            ref pendingNonFiniteJobHash,
+                            ref pendingNonFiniteValue,
+                            (JobAdmissionLane)lane,
+                            0u,
+                            next);
+                        next = cap;
+                    }
+                    else
+                    {
+                        next = ClampLaneBudgetMilliseconds(lane, next);
+                    }
+
+                    laneBudgetsMs[lane] = math.min(next, cap);
+                    _telemetrySink?.ReportLaneState((JobAdmissionLane)lane, laneBudgetsMs[lane], refill, _criticalDebtFrameCount, _systemKillSwitchMask);
+                }
+
+                if (laneBudgetsMs[JobAdmissionLanes.Lane0Critical] < 0f)
+                {
+                    _criticalDebtFrameCount = math.min(_criticalDebtFrameCount + 1, int.MaxValue);
+                    if (_criticalDebtFrameCount >= CriticalDebtKillFrames)
+                        _systemKillSwitchMask |= KillSwitchDisableVfxMask;
                 }
                 else
                 {
-                    current = ClampLaneBudgetMilliseconds(lane, current);
-                    laneBudgetsMs[lane] = current;
+                    _criticalDebtFrameCount = 0;
+                    _systemKillSwitchMask &= ~KillSwitchDisableVfxMask;
                 }
-
-                float cap = baseRefill * MaxDeltaRefillScale * qualityScale;
-                if (!math.isfinite(cap) || cap < 0f)
-                {
-                    ReportNonFinite((JobAdmissionLane)lane, 0u, cap);
-                    cap = 0f;
-                }
-                else if (cap > AdmissionCostClampMs)
-                {
-                    cap = AdmissionCostClampMs;
-                }
-
-                float next = current + refill;
-                if (!math.isfinite(next))
-                {
-                    ReportNonFinite((JobAdmissionLane)lane, 0u, next);
-                    next = cap;
-                }
-                else
-                {
-                    next = ClampLaneBudgetMilliseconds(lane, next);
-                }
-
-                laneBudgetsMs[lane] = math.min(next, cap);
-                _telemetrySink?.ReportLaneState((JobAdmissionLane)lane, laneBudgetsMs[lane], refill, _criticalDebtFrameCount, _systemKillSwitchMask);
             }
-
-            if (laneBudgetsMs[JobAdmissionLanes.Lane0Critical] < 0f)
+            finally
             {
-                _criticalDebtFrameCount = math.min(_criticalDebtFrameCount + 1, int.MaxValue);
-                if (_criticalDebtFrameCount >= CriticalDebtKillFrames)
-                    _systemKillSwitchMask |= KillSwitchDisableVfxMask;
+                ReleaseWriteView(in _laneBudgetsMsHandle);
             }
-            else
-            {
-                _criticalDebtFrameCount = 0;
-                _systemKillSwitchMask &= ~KillSwitchDisableVfxMask;
-            }
+
+            if (pendingNonFinite)
+                ReportNonFinite(pendingNonFiniteLane, pendingNonFiniteJobHash, pendingNonFiniteValue);
         }
 
         /// <inheritdoc />
@@ -277,81 +311,168 @@ namespace Hecton8.Core.Scheduling
             if (!_initialized)
                 return true;
 
-            NativeArray<float> laneBudgetsMs = ResolveLaneBudgets();
-            if (!laneBudgetsMs.IsCreated || laneBudgetsMs.Length < LaneCount)
-                return true;
-
-            NativeArray<uint> jobHashes = ResolveJobHashes();
-            NativeArray<float> ewmaCostsMs = ResolveEwmaCosts();
-            int laneIndex = ClampLane(lane);
-            JobAdmissionLane normalizedLane = (JobAdmissionLane)laneIndex;
-            estimatedCostMs = ResolveEstimatedCostMs(jobHash, jobHashes, ewmaCostsMs);
-            if (!math.isfinite(estimatedCostMs) || estimatedCostMs < 0f)
+            bool laneBudgetsLocked = TryAcquireWriteView(in _laneBudgetsMsHandle, out NativeArray<float> laneBudgetsMs);
+            if (!laneBudgetsLocked || laneBudgetsMs.Length < LaneCount)
             {
-                ReportNonFinite(normalizedLane, jobHash, estimatedCostMs);
-                estimatedCostMs = DefaultEstimatedCostMs;
-            }
-            else
-            {
-                estimatedCostMs = math.min(estimatedCostMs, AdmissionCostClampMs);
-            }
-
-            float budget = laneBudgetsMs[laneIndex];
-            if (!math.isfinite(budget))
-            {
-                ReportNonFinite(normalizedLane, jobHash, budget);
-                budget = 0f;
-                laneBudgetsMs[laneIndex] = 0f;
-            }
-            else
-            {
-                budget = ClampLaneBudgetMilliseconds(laneIndex, budget);
-                laneBudgetsMs[laneIndex] = budget;
-            }
-
-            if (_aupBarrierActive && laneIndex != JobAdmissionLanes.Lane0Critical)
-            {
-                ReportDenied(normalizedLane, jobHash, estimatedCostMs, budget);
-                return false;
-            }
-
-            if (laneIndex == JobAdmissionLanes.Lane4VFX && (_systemKillSwitchMask & KillSwitchDisableVfxMask) != 0u)
-            {
-                ReportDenied(normalizedLane, jobHash, estimatedCostMs, budget);
-                return false;
-            }
-
-            if (laneIndex == JobAdmissionLanes.Lane0Critical)
-            {
-                float previousDebt = math.max(0f, -budget);
-                float nextBudget = math.max(LaneDebtFloorMs, budget - estimatedCostMs);
-                float nextDebt = math.max(0f, -nextBudget);
-                laneBudgetsMs[laneIndex] = nextBudget;
-                BorrowCriticalDebt(laneBudgetsMs, math.max(0f, nextDebt - previousDebt), jobHash);
-                WriteBlackbox(normalizedLane, jobHash, estimatedCostMs, laneBudgetsMs[laneIndex], admitted: true);
+                if (laneBudgetsLocked)
+                    ReleaseWriteView(in _laneBudgetsMsHandle);
                 return true;
             }
 
-            if (budget >= estimatedCostMs)
+            bool admitted = true;
+            bool pendingBlackbox = false;
+            bool pendingBlackboxAdmitted = false;
+            JobAdmissionLane pendingBlackboxLane = JobAdmissionLane.Lane0_Critical;
+            uint pendingBlackboxJobHash = 0u;
+            float pendingBlackboxEstimatedCostMs = 0f;
+            float pendingBlackboxRemainingBudgetMs = 0f;
+            bool pendingDenied = false;
+            bool pendingNonFinite = false;
+            JobAdmissionLane pendingNonFiniteLane = JobAdmissionLane.Lane0_Critical;
+            uint pendingNonFiniteJobHash = 0u;
+            float pendingNonFiniteValue = 0f;
+            try
             {
-                laneBudgetsMs[laneIndex] = budget - estimatedCostMs;
-                WriteBlackbox(normalizedLane, jobHash, estimatedCostMs, laneBudgetsMs[laneIndex], admitted: true);
-                return true;
+                NativeArray<uint>.ReadOnly jobHashes = ReadJobHashes();
+                NativeArray<float>.ReadOnly ewmaCostsMs = ReadEwmaCosts();
+                int laneIndex = ClampLane(lane);
+                JobAdmissionLane normalizedLane = (JobAdmissionLane)laneIndex;
+                estimatedCostMs = ResolveEstimatedCostMsReadOnly(jobHash, jobHashes, ewmaCostsMs);
+                if (!math.isfinite(estimatedCostMs) || estimatedCostMs < 0f)
+                {
+                    CaptureFirstNonFinite(
+                        ref pendingNonFinite,
+                        ref pendingNonFiniteLane,
+                        ref pendingNonFiniteJobHash,
+                        ref pendingNonFiniteValue,
+                        normalizedLane,
+                        jobHash,
+                        estimatedCostMs);
+                    estimatedCostMs = DefaultEstimatedCostMs;
+                }
+                else
+                {
+                    estimatedCostMs = math.min(estimatedCostMs, AdmissionCostClampMs);
+                }
+
+                float budget = laneBudgetsMs[laneIndex];
+                if (!math.isfinite(budget))
+                {
+                    CaptureFirstNonFinite(
+                        ref pendingNonFinite,
+                        ref pendingNonFiniteLane,
+                        ref pendingNonFiniteJobHash,
+                        ref pendingNonFiniteValue,
+                        normalizedLane,
+                        jobHash,
+                        budget);
+                    budget = 0f;
+                    laneBudgetsMs[laneIndex] = 0f;
+                }
+                else
+                {
+                    budget = ClampLaneBudgetMilliseconds(laneIndex, budget);
+                    laneBudgetsMs[laneIndex] = budget;
+                }
+
+                if (_aupBarrierActive && laneIndex != JobAdmissionLanes.Lane0Critical)
+                {
+                    admitted = false;
+                    pendingDenied = true;
+                    pendingBlackbox = true;
+                    pendingBlackboxAdmitted = false;
+                    pendingBlackboxLane = normalizedLane;
+                    pendingBlackboxJobHash = jobHash;
+                    pendingBlackboxEstimatedCostMs = estimatedCostMs;
+                    pendingBlackboxRemainingBudgetMs = budget;
+                }
+                else if (laneIndex == JobAdmissionLanes.Lane4VFX && (_systemKillSwitchMask & KillSwitchDisableVfxMask) != 0u)
+                {
+                    admitted = false;
+                    pendingDenied = true;
+                    pendingBlackbox = true;
+                    pendingBlackboxAdmitted = false;
+                    pendingBlackboxLane = normalizedLane;
+                    pendingBlackboxJobHash = jobHash;
+                    pendingBlackboxEstimatedCostMs = estimatedCostMs;
+                    pendingBlackboxRemainingBudgetMs = budget;
+                }
+                else if (laneIndex == JobAdmissionLanes.Lane0Critical)
+                {
+                    float previousDebt = math.max(0f, -budget);
+                    float nextBudget = math.max(LaneDebtFloorMs, budget - estimatedCostMs);
+                    float nextDebt = math.max(0f, -nextBudget);
+                    laneBudgetsMs[laneIndex] = nextBudget;
+                    BorrowCriticalDebt(
+                        laneBudgetsMs,
+                        math.max(0f, nextDebt - previousDebt),
+                        jobHash,
+                        ref pendingNonFinite,
+                        ref pendingNonFiniteLane,
+                        ref pendingNonFiniteJobHash,
+                        ref pendingNonFiniteValue);
+                    pendingBlackbox = true;
+                    pendingBlackboxAdmitted = true;
+                    pendingBlackboxLane = normalizedLane;
+                    pendingBlackboxJobHash = jobHash;
+                    pendingBlackboxEstimatedCostMs = estimatedCostMs;
+                    pendingBlackboxRemainingBudgetMs = laneBudgetsMs[laneIndex];
+                }
+                else if (budget >= estimatedCostMs)
+                {
+                    laneBudgetsMs[laneIndex] = budget - estimatedCostMs;
+                    pendingBlackbox = true;
+                    pendingBlackboxAdmitted = true;
+                    pendingBlackboxLane = normalizedLane;
+                    pendingBlackboxJobHash = jobHash;
+                    pendingBlackboxEstimatedCostMs = estimatedCostMs;
+                    pendingBlackboxRemainingBudgetMs = laneBudgetsMs[laneIndex];
+                }
+                else
+                {
+                    admitted = false;
+                    pendingDenied = true;
+                    pendingBlackbox = true;
+                    pendingBlackboxAdmitted = false;
+                    pendingBlackboxLane = normalizedLane;
+                    pendingBlackboxJobHash = jobHash;
+                    pendingBlackboxEstimatedCostMs = estimatedCostMs;
+                    pendingBlackboxRemainingBudgetMs = budget;
+                }
+            }
+            finally
+            {
+                ReleaseWriteView(in _laneBudgetsMsHandle);
             }
 
-            ReportDenied(normalizedLane, jobHash, estimatedCostMs, budget);
-            return false;
+            if (pendingBlackbox)
+                WriteBlackbox(
+                    pendingBlackboxLane,
+                    pendingBlackboxJobHash,
+                    pendingBlackboxEstimatedCostMs,
+                    pendingBlackboxRemainingBudgetMs,
+                    pendingBlackboxAdmitted);
+
+            if (pendingDenied)
+            {
+                _telemetrySink?.ReportAdmissionDenied(
+                    pendingBlackboxLane,
+                    pendingBlackboxJobHash,
+                    ClampCostTelemetryMilliseconds(pendingBlackboxEstimatedCostMs),
+                    ClampLaneBudgetMilliseconds(pendingBlackboxLane, pendingBlackboxRemainingBudgetMs),
+                    _criticalDebtFrameCount);
+            }
+
+            if (pendingNonFinite)
+                ReportNonFinite(pendingNonFiniteLane, pendingNonFiniteJobHash, pendingNonFiniteValue);
+
+            return admitted;
         }
 
         /// <inheritdoc />
         public void ReportJobCompleted(JobAdmissionLane lane, uint jobHash, float measuredCompleteMs)
         {
             if (!_initialized || jobHash == 0u)
-                return;
-
-            NativeArray<uint> jobHashes = ResolveJobHashes();
-            NativeArray<float> ewmaCostsMs = ResolveEwmaCosts();
-            if (!jobHashes.IsCreated || jobHashes.Length < CostSlotCapacity || !ewmaCostsMs.IsCreated || ewmaCostsMs.Length < CostSlotCapacity)
                 return;
 
             JobAdmissionLane normalizedLane = (JobAdmissionLane)ClampLane(lane);
@@ -362,8 +483,24 @@ namespace Hecton8.Core.Scheduling
             }
 
             measuredCompleteMs = math.min(measuredCompleteMs, AdmissionCostClampMs);
+            bool jobHashesLocked = TryAcquireWriteView(in _jobHashesHandle, out NativeArray<uint> jobHashes);
+            if (!jobHashesLocked || jobHashes.Length < CostSlotCapacity)
+            {
+                if (jobHashesLocked)
+                    ReleaseWriteView(in _jobHashesHandle);
+                return;
+            }
 
-            int slot = FindOrAllocateCostSlot(jobHash, jobHashes, ewmaCostsMs);
+            int slot;
+            try
+            {
+                slot = FindOrAllocateCostSlot(jobHash, jobHashes);
+            }
+            finally
+            {
+                ReleaseWriteView(in _jobHashesHandle);
+            }
+
             if (slot < 0)
             {
                 float overflowSeed = ResolveOverflowEstimatedCostMs();
@@ -371,9 +508,24 @@ namespace Hecton8.Core.Scheduling
                 return;
             }
 
-            float previous = ewmaCostsMs[slot];
-            float seed = previous > 0f && math.isfinite(previous) ? previous : measuredCompleteMs;
-            ewmaCostsMs[slot] = JobAdmissionMath.UpdateEwma(seed, measuredCompleteMs);
+            bool ewmaCostsLocked = TryAcquireWriteView(in _ewmaCostsMsHandle, out NativeArray<float> ewmaCostsMs);
+            if (!ewmaCostsLocked || ewmaCostsMs.Length <= slot)
+            {
+                if (ewmaCostsLocked)
+                    ReleaseWriteView(in _ewmaCostsMsHandle);
+                return;
+            }
+
+            try
+            {
+                float previous = ewmaCostsMs[slot];
+                float seed = previous > 0f && math.isfinite(previous) ? previous : measuredCompleteMs;
+                ewmaCostsMs[slot] = JobAdmissionMath.UpdateEwma(seed, measuredCompleteMs);
+            }
+            finally
+            {
+                ReleaseWriteView(in _ewmaCostsMsHandle);
+            }
         }
 
         /// <inheritdoc />
@@ -409,13 +561,6 @@ namespace Hecton8.Core.Scheduling
             ResetRuntimeState(clearTelemetrySink: true);
         }
 
-        private NativeArray<float> ResolveLaneBudgets()
-        {
-            return _dataVault != null && _laneBudgetsMsHandle.BufferID != 0u && _dataVault.TryResolveHandle(in _laneBudgetsMsHandle, out NativeArray<float> buffer)
-                ? buffer
-                : default;
-        }
-
         private NativeArray<float>.ReadOnly ReadLaneBudgets()
         {
             return _dataVault != null && _laneBudgetsMsHandle.BufferID != 0u && _dataVault.TryReadOnlyHandle(in _laneBudgetsMsHandle, out NativeArray<float>.ReadOnly buffer)
@@ -423,30 +568,35 @@ namespace Hecton8.Core.Scheduling
                 : default;
         }
 
-        private NativeArray<float> ResolveBaseRefill()
+        private NativeArray<float>.ReadOnly ReadBaseRefill()
         {
-            return _dataVault != null && _baseRefillMsHandle.BufferID != 0u && _dataVault.TryResolveHandle(in _baseRefillMsHandle, out NativeArray<float> buffer)
+            return _dataVault != null && _baseRefillMsHandle.BufferID != 0u && _dataVault.TryReadOnlyHandle(in _baseRefillMsHandle, out NativeArray<float>.ReadOnly buffer)
                 ? buffer
                 : default;
         }
 
-        private NativeArray<uint> ResolveJobHashes()
+        private bool TryAcquireWriteView<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
         {
-            return _dataVault != null && _jobHashesHandle.BufferID != 0u && _dataVault.TryResolveHandle(in _jobHashesHandle, out NativeArray<uint> buffer)
-                ? buffer
-                : default;
+            IDataVault vault = _dataVault;
+            if (vault == null || handle.BufferID == 0u)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return vault.TryAcquireWriteLock(in handle, SystemID.JobAdmission, out buffer) && buffer.IsCreated;
+        }
+
+        private void ReleaseWriteView<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && handle.BufferID != 0u)
+                vault.ReleaseWriteLock(in handle, SystemID.JobAdmission);
         }
 
         private NativeArray<uint>.ReadOnly ReadJobHashes()
         {
             return _dataVault != null && _jobHashesHandle.BufferID != 0u && _dataVault.TryReadOnlyHandle(in _jobHashesHandle, out NativeArray<uint>.ReadOnly buffer)
-                ? buffer
-                : default;
-        }
-
-        private NativeArray<float> ResolveEwmaCosts()
-        {
-            return _dataVault != null && _ewmaCostsMsHandle.BufferID != 0u && _dataVault.TryResolveHandle(in _ewmaCostsMsHandle, out NativeArray<float> buffer)
                 ? buffer
                 : default;
         }
@@ -458,11 +608,137 @@ namespace Hecton8.Core.Scheduling
                 : default;
         }
 
-        private NativeArray<JobAdmissionBlackboxEntry> ResolveBlackbox()
+        private bool InitializeBaseRefillBudgets()
         {
-            return _dataVault != null && _blackboxHandle.BufferID != 0u && _dataVault.TryResolveHandle(in _blackboxHandle, out NativeArray<JobAdmissionBlackboxEntry> buffer)
-                ? buffer
-                : default;
+            bool locked = TryAcquireWriteView(in _baseRefillMsHandle, out NativeArray<float> baseRefillMs);
+            if (!locked || baseRefillMs.Length < LaneCount)
+            {
+                if (locked)
+                    ReleaseWriteView(in _baseRefillMsHandle);
+                return false;
+            }
+
+            try
+            {
+                for (int i = 0; i < LaneCount; i++)
+                    baseRefillMs[i] = ResolveDefaultRefillBudgetMs(i);
+
+                return true;
+            }
+            finally
+            {
+                ReleaseWriteView(in _baseRefillMsHandle);
+            }
+        }
+
+        private bool InitializeLaneBudgets()
+        {
+            bool locked = TryAcquireWriteView(in _laneBudgetsMsHandle, out NativeArray<float> laneBudgetsMs);
+            if (!locked || laneBudgetsMs.Length < LaneCount)
+            {
+                if (locked)
+                    ReleaseWriteView(in _laneBudgetsMsHandle);
+                return false;
+            }
+
+            try
+            {
+                for (int i = 0; i < LaneCount; i++)
+                    laneBudgetsMs[i] = ResolveDefaultRefillBudgetMs(i);
+
+                return true;
+            }
+            finally
+            {
+                ReleaseWriteView(in _laneBudgetsMsHandle);
+            }
+        }
+
+        private bool ClearJobHashes()
+        {
+            bool locked = TryAcquireWriteView(in _jobHashesHandle, out NativeArray<uint> jobHashes);
+            if (!locked || jobHashes.Length < CostSlotCapacity)
+            {
+                if (locked)
+                    ReleaseWriteView(in _jobHashesHandle);
+                return false;
+            }
+
+            try
+            {
+                for (int i = 0; i < CostSlotCapacity; i++)
+                    jobHashes[i] = 0u;
+
+                return true;
+            }
+            finally
+            {
+                ReleaseWriteView(in _jobHashesHandle);
+            }
+        }
+
+        private bool ClearEwmaCosts()
+        {
+            bool locked = TryAcquireWriteView(in _ewmaCostsMsHandle, out NativeArray<float> ewmaCostsMs);
+            if (!locked || ewmaCostsMs.Length < CostSlotCapacity)
+            {
+                if (locked)
+                    ReleaseWriteView(in _ewmaCostsMsHandle);
+                return false;
+            }
+
+            try
+            {
+                for (int i = 0; i < CostSlotCapacity; i++)
+                    ewmaCostsMs[i] = 0f;
+
+                return true;
+            }
+            finally
+            {
+                ReleaseWriteView(in _ewmaCostsMsHandle);
+            }
+        }
+
+        private bool ClearBlackbox()
+        {
+            bool locked = TryAcquireWriteView(in _blackboxHandle, out NativeArray<JobAdmissionBlackboxEntry> blackbox);
+            if (!locked || blackbox.Length < BlackboxCapacity)
+            {
+                if (locked)
+                    ReleaseWriteView(in _blackboxHandle);
+                return false;
+            }
+
+            try
+            {
+                for (int i = 0; i < BlackboxCapacity; i++)
+                    blackbox[i] = default;
+
+                return true;
+            }
+            finally
+            {
+                ReleaseWriteView(in _blackboxHandle);
+            }
+        }
+
+        private static void CaptureFirstNonFinite(
+            ref bool pendingNonFinite,
+            ref JobAdmissionLane pendingLane,
+            ref uint pendingJobHash,
+            ref float pendingValue,
+            JobAdmissionLane lane,
+            uint jobHash,
+            float value)
+        {
+            if (pendingNonFinite)
+                return;
+
+            pendingNonFinite = true;
+            pendingLane = lane;
+            pendingJobHash = jobHash;
+            pendingValue = value;
         }
 
         private void ReleaseVaultHandlesOnly()
@@ -549,28 +825,6 @@ namespace Hecton8.Core.Scheduling
             }
         }
 
-        private float ResolveEstimatedCostMs(uint jobHash, NativeArray<uint> jobHashes, NativeArray<float> ewmaCostsMs)
-        {
-            if (jobHash == 0u)
-                return DefaultEstimatedCostMs;
-
-            if (!jobHashes.IsCreated || jobHashes.Length < CostSlotCapacity || !ewmaCostsMs.IsCreated || ewmaCostsMs.Length < CostSlotCapacity)
-                return DefaultEstimatedCostMs;
-
-            int costSlot = FindCostSlot(jobHash, jobHashes);
-            if (costSlot < 0)
-            {
-                return _costSlotCount >= CostSlotCapacity
-                    ? ResolveOverflowEstimatedCostMs()
-                    : DefaultEstimatedCostMs;
-            }
-
-            float cached = ewmaCostsMs[costSlot];
-            return cached > 0f && math.isfinite(cached)
-                ? math.min(cached, AdmissionCostClampMs)
-                : DefaultEstimatedCostMs;
-        }
-
         private float ResolveEstimatedCostMsReadOnly(uint jobHash, NativeArray<uint>.ReadOnly jobHashes, NativeArray<float>.ReadOnly ewmaCostsMs)
         {
             if (jobHash == 0u)
@@ -602,7 +856,7 @@ namespace Hecton8.Core.Scheduling
                 : OverflowEstimatedCostMs;
         }
 
-        private int FindOrAllocateCostSlot(uint jobHash, NativeArray<uint> jobHashes, NativeArray<float> ewmaCostsMs)
+        private int FindOrAllocateCostSlot(uint jobHash, NativeArray<uint> jobHashes)
         {
             if (jobHash == 0u)
                 jobHash = 1u;
@@ -616,7 +870,6 @@ namespace Hecton8.Core.Scheduling
 
             int slot = _costSlotCount++;
             jobHashes[slot] = jobHash;
-            ewmaCostsMs[slot] = DefaultEstimatedCostMs;
             return slot;
         }
 
@@ -650,7 +903,14 @@ namespace Hecton8.Core.Scheduling
             return -1;
         }
 
-        private void BorrowCriticalDebt(NativeArray<float> laneBudgetsMs, float debtMs, uint jobHash)
+        private void BorrowCriticalDebt(
+            NativeArray<float> laneBudgetsMs,
+            float debtMs,
+            uint jobHash,
+            ref bool pendingNonFinite,
+            ref JobAdmissionLane pendingNonFiniteLane,
+            ref uint pendingNonFiniteJobHash,
+            ref float pendingNonFiniteValue)
         {
             float remainingDebt = debtMs;
             if (remainingDebt <= 0f || !laneBudgetsMs.IsCreated || laneBudgetsMs.Length < LaneCount)
@@ -661,7 +921,14 @@ namespace Hecton8.Core.Scheduling
                 float budget = laneBudgetsMs[lane];
                 if (!math.isfinite(budget))
                 {
-                    ReportNonFinite((JobAdmissionLane)lane, jobHash, budget);
+                    CaptureFirstNonFinite(
+                        ref pendingNonFinite,
+                        ref pendingNonFiniteLane,
+                        ref pendingNonFiniteJobHash,
+                        ref pendingNonFiniteValue,
+                        (JobAdmissionLane)lane,
+                        jobHash,
+                        budget);
                     laneBudgetsMs[lane] = 0f;
                     continue;
                 }
@@ -706,8 +973,8 @@ namespace Hecton8.Core.Scheduling
             _lastFaultDumpFrameSequence = _refillFrameSequence;
             if (_telemetrySink != null)
             {
-                NativeArray<float> laneBudgetsMs = ResolveLaneBudgets();
-                NativeArray<float> baseRefillMs = ResolveBaseRefill();
+                NativeArray<float>.ReadOnly laneBudgetsMs = ReadLaneBudgets();
+                NativeArray<float>.ReadOnly baseRefillMs = ReadBaseRefill();
                 for (int lane = 0; lane < LaneCount; lane++)
                 {
                     float budget = laneBudgetsMs.IsCreated && laneBudgetsMs.Length > lane ? laneBudgetsMs[lane] : 0f;
@@ -722,11 +989,11 @@ namespace Hecton8.Core.Scheduling
 
                 int slotCount = math.min(_costSlotCount, CostSlotCapacity);
                 float overflow = ResolveOverflowEstimatedCostMs();
-                NativeArray<uint> jobHashes = ResolveJobHashes();
-                NativeArray<float> ewmaCostsMs = ResolveEwmaCosts();
+                NativeArray<uint>.ReadOnly jobHashes = ReadJobHashes();
+                NativeArray<float>.ReadOnly ewmaCostsMs = ReadEwmaCosts();
                 for (int slot = 0; slot < slotCount; slot++)
                 {
-                    if (!jobHashes.IsCreated || !ewmaCostsMs.IsCreated || slot >= jobHashes.Length || slot >= ewmaCostsMs.Length)
+                    if (slot >= jobHashes.Length || slot >= ewmaCostsMs.Length)
                         break;
 
                     float cost = ewmaCostsMs[slot];

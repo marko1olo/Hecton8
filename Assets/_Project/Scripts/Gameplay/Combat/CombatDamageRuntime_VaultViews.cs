@@ -110,44 +110,44 @@ namespace Hecton8.Gameplay
                    IsCombatDamageVaultHandleCreated(in _targetLookupSlotsHandle, CombatDamageTargetLookupSlotsBufferId);
         }
 
-        private static bool TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, bool ensure)
+        private static bool TryOpenOrEnsureCombatDamageVaultViews(out CombatDamageVaultViews views, bool ensure)
         {
             views = default;
-            IDataVault vault = ResolveCombatDataVault(ensure);
+            IDataVault vault = OpenCombatDataVault(ensure);
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            return TryResolveCombatVaultBuffer(vault, ref _damageSignalsHandle, CombatDamageSignalsBufferId, MaxQueuedSignals, NativeArrayOptions.ClearMemory, ensure, out views.DamageSignals) &&
-                   TryResolveCombatVaultBuffer(vault, ref _signalDetailsHandle, CombatDamageSignalDetailsBufferId, MaxQueuedSignals, NativeArrayOptions.ClearMemory, ensure, out views.SignalDetails) &&
-                   TryResolveCombatVaultBuffer(vault, ref _targetLookupKeysHandle, CombatDamageTargetLookupKeysBufferId, CombatTargetLookupCapacity, NativeArrayOptions.ClearMemory, ensure, out views.TargetLookupKeys) &&
-                   TryResolveCombatVaultBuffer(vault, ref _targetLookupSlotsHandle, CombatDamageTargetLookupSlotsBufferId, CombatTargetLookupCapacity, NativeArrayOptions.ClearMemory, ensure, out views.TargetLookupSlots) &&
-                   TryResolveCombatVaultBuffer(vault, ref _instanceIdsHandle, CombatDamageInstanceIdsBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.InstanceIds) &&
-                   TryResolveCombatVaultBuffer(vault, ref _healthHandle, CombatDamageHealthBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.Health) &&
-                   TryResolveCombatVaultBuffer(vault, ref _maxHealthHandle, CombatDamageMaxHealthBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.MaxHealth) &&
-                   TryResolveCombatVaultBuffer(vault, ref _invMaxHealthHandle, CombatDamageInvMaxHealthBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.InvMaxHealth) &&
-                   TryResolveCombatVaultBuffer(vault, ref _armorValuesHandle, CombatDamageArmorValuesBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.ArmorValues) &&
-                   TryResolveCombatVaultBuffer(vault, ref _shieldValuesHandle, CombatDamageShieldValuesBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.ShieldValues) &&
-                   TryResolveCombatVaultBuffer(vault, ref _minorDamageAccumulatorsHandle, CombatDamageMinorAccumulatorsBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.MinorDamageAccumulators) &&
-                   TryResolveCombatVaultBuffer(vault, ref _targetForwardVectorsHandle, CombatDamageTargetForwardBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.TargetForwardVectors) &&
-                   TryResolveCombatVaultBuffer(vault, ref _targetHeightsHandle, CombatDamageTargetHeightsBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.TargetHeights) &&
-                   TryResolveCombatVaultBuffer(vault, ref _targetFlagsHandle, CombatDamageTargetFlagsBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.TargetFlags) &&
-                   TryResolveCombatVaultBuffer(vault, ref _statusMasksHandle, CombatDamageStatusMasksBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.StatusMasks) &&
-                   TryResolveCombatVaultBuffer(vault, ref _statusDurations0123Handle, CombatDamageStatusDurations0123BufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.StatusDurations0123) &&
-                   TryResolveCombatVaultBuffer(vault, ref _legacyStatusDurations4567Handle, CombatDamageLegacyStatusDurations4567BufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.LegacyStatusDurations4567) &&
-                   TryResolveCombatVaultBuffer(vault, ref _brittleDurationsHandle, CombatDamageBrittleDurationsBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.BrittleDurations) &&
-                   TryResolveCombatVaultBuffer(vault, ref _damageArmorLutHandle, CombatDamageArmorLutBufferId, DamageArmorLutLength, NativeArrayOptions.ClearMemory, ensure, out views.DamageArmorLut) &&
-                   TryResolveCombatVaultBuffer(vault, ref _resultsHandle, CombatDamageResultsBufferId, MaxResults, NativeArrayOptions.ClearMemory, ensure, out views.Results) &&
-                   TryResolveCombatVaultBuffer(vault, ref _statusResultsHandle, CombatDamageStatusResultsBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.StatusResults) &&
-                   TryResolveCombatVaultBuffer(vault, ref _statusResultActiveHandle, CombatDamageStatusResultActiveBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.StatusResultActive) &&
-                   TryResolveCombatVaultBuffer(vault, ref _countersHandle, CombatDamageCountersBufferId, CounterLength, NativeArrayOptions.ClearMemory, ensure, out views.Counters) &&
-                   TryResolveCombatVaultBuffer(vault, ref _telemetryRingHandle, CombatDamageTelemetryRingBufferId, TelemetryFrameCapacity, NativeArrayOptions.ClearMemory, ensure, out views.TelemetryRing) &&
-                   TryResolveCombatVaultBuffer(vault, ref _telemetryStateHandle, CombatDamageTelemetryStateBufferId, TelemetryStateLength, NativeArrayOptions.ClearMemory, ensure, out views.TelemetryState);
+            return TryOpenOrEnsureCombatVaultBuffer(vault, ref _damageSignalsHandle, CombatDamageSignalsBufferId, MaxQueuedSignals, NativeArrayOptions.ClearMemory, ensure, out views.DamageSignals) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _signalDetailsHandle, CombatDamageSignalDetailsBufferId, MaxQueuedSignals, NativeArrayOptions.ClearMemory, ensure, out views.SignalDetails) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _targetLookupKeysHandle, CombatDamageTargetLookupKeysBufferId, CombatTargetLookupCapacity, NativeArrayOptions.ClearMemory, ensure, out views.TargetLookupKeys) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _targetLookupSlotsHandle, CombatDamageTargetLookupSlotsBufferId, CombatTargetLookupCapacity, NativeArrayOptions.ClearMemory, ensure, out views.TargetLookupSlots) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _instanceIdsHandle, CombatDamageInstanceIdsBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.InstanceIds) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _healthHandle, CombatDamageHealthBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.Health) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _maxHealthHandle, CombatDamageMaxHealthBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.MaxHealth) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _invMaxHealthHandle, CombatDamageInvMaxHealthBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.InvMaxHealth) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _armorValuesHandle, CombatDamageArmorValuesBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.ArmorValues) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _shieldValuesHandle, CombatDamageShieldValuesBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.ShieldValues) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _minorDamageAccumulatorsHandle, CombatDamageMinorAccumulatorsBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.MinorDamageAccumulators) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _targetForwardVectorsHandle, CombatDamageTargetForwardBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.TargetForwardVectors) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _targetHeightsHandle, CombatDamageTargetHeightsBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.TargetHeights) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _targetFlagsHandle, CombatDamageTargetFlagsBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.TargetFlags) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _statusMasksHandle, CombatDamageStatusMasksBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.StatusMasks) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _statusDurations0123Handle, CombatDamageStatusDurations0123BufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.StatusDurations0123) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _legacyStatusDurations4567Handle, CombatDamageLegacyStatusDurations4567BufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.LegacyStatusDurations4567) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _brittleDurationsHandle, CombatDamageBrittleDurationsBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.BrittleDurations) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _damageArmorLutHandle, CombatDamageArmorLutBufferId, DamageArmorLutLength, NativeArrayOptions.ClearMemory, ensure, out views.DamageArmorLut) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _resultsHandle, CombatDamageResultsBufferId, MaxResults, NativeArrayOptions.ClearMemory, ensure, out views.Results) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _statusResultsHandle, CombatDamageStatusResultsBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.StatusResults) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _statusResultActiveHandle, CombatDamageStatusResultActiveBufferId, MaxTargets, NativeArrayOptions.ClearMemory, ensure, out views.StatusResultActive) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _countersHandle, CombatDamageCountersBufferId, CounterLength, NativeArrayOptions.ClearMemory, ensure, out views.Counters) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _telemetryRingHandle, CombatDamageTelemetryRingBufferId, TelemetryFrameCapacity, NativeArrayOptions.ClearMemory, ensure, out views.TelemetryRing) &&
+                   TryOpenOrEnsureCombatVaultBuffer(vault, ref _telemetryStateHandle, CombatDamageTelemetryStateBufferId, TelemetryStateLength, NativeArrayOptions.ClearMemory, ensure, out views.TelemetryState);
         }
 
         private static bool TryResolveCombatDamageReadOnlyViews(out CombatDamageReadOnlyVaultViews views)
         {
             views = default;
-            IDataVault vault = ResolveCombatDataVault(allowColdBootstrap: false);
+            IDataVault vault = OpenCombatDataVault(allowColdBootstrap: false);
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
@@ -158,7 +158,7 @@ namespace Hecton8.Gameplay
                    TryResolveCombatReadOnlyVaultBuffer(vault, in _instanceIdsHandle, CombatDamageInstanceIdsBufferId, MaxTargets, out views.InstanceIds);
         }
 
-        private static IDataVault ResolveCombatDataVault(bool allowColdBootstrap)
+        private static IDataVault OpenCombatDataVault(bool allowColdBootstrap)
         {
             if (_combatDataVault != null)
                 return _combatDataVault;
@@ -170,7 +170,7 @@ namespace Hecton8.Gameplay
             return _combatDataVault;
         }
 
-        private static bool TryResolveCombatVaultBuffer<T>(
+        private static bool TryOpenOrEnsureCombatVaultBuffer<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -239,7 +239,7 @@ namespace Hecton8.Gameplay
 
         private static void ReleaseCombatDamageVaultBuffers()
         {
-            IDataVault vault = ResolveCombatDataVault(allowColdBootstrap: false);
+            IDataVault vault = OpenCombatDataVault(allowColdBootstrap: false);
             ReleaseCombatDamageVaultBuffers(vault);
         }
 
@@ -319,7 +319,7 @@ namespace Hecton8.Gameplay
         private static bool TryLockCombatDamageVaultBuffersForJobs(out int lockedCount)
         {
             lockedCount = 0;
-            IDataVault vault = ResolveCombatDataVault(allowColdBootstrap: false);
+            IDataVault vault = OpenCombatDataVault(allowColdBootstrap: false);
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
@@ -388,7 +388,7 @@ namespace Hecton8.Gameplay
 
         private static void UnlockCombatDamageVaultBuffersForJobs(int lockedCount)
         {
-            IDataVault vault = ResolveCombatDataVault(allowColdBootstrap: false);
+            IDataVault vault = OpenCombatDataVault(allowColdBootstrap: false);
             if (vault == null)
                 return;
 
@@ -423,7 +423,7 @@ namespace Hecton8.Gameplay
         {
             views = default;
             lockedCount = 0;
-            IDataVault vault = ResolveCombatDataVault(allowColdBootstrap: false);
+            IDataVault vault = OpenCombatDataVault(allowColdBootstrap: false);
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
@@ -478,7 +478,7 @@ namespace Hecton8.Gameplay
 
         private static void ReleaseCombatTargetWriteLocks(int lockedCount)
         {
-            IDataVault vault = ResolveCombatDataVault(allowColdBootstrap: false);
+            IDataVault vault = OpenCombatDataVault(allowColdBootstrap: false);
             if (vault == null)
                 return;
 
@@ -502,46 +502,104 @@ namespace Hecton8.Gameplay
             if (lockedCount >= 1) vault.ReleaseWriteLock(in _targetLookupKeysHandle, CombatDamageMemoryOwner);
         }
 
-        private static bool TryAcquireCombatTelemetryWriteLocks(
+        private static bool TryResolveCombatTargetSlotReadOnly(int targetId, out int slot)
+        {
+            slot = -1;
+            IDataVault vault = OpenCombatDataVault(allowColdBootstrap: false);
+            if (targetId == 0 ||
+                vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryReadOnlyHandle(in _targetLookupKeysHandle, out NativeArray<int>.ReadOnly keys) ||
+                !vault.TryReadOnlyHandle(in _targetLookupSlotsHandle, out NativeArray<int>.ReadOnly slots) ||
+                !vault.TryReadOnlyHandle(in _instanceIdsHandle, out NativeArray<int>.ReadOnly instanceIds) ||
+                !TryFindTargetSlotInLookup(keys, slots, targetId, out slot) ||
+                !instanceIds.IsCreated ||
+                (uint)slot >= (uint)instanceIds.Length ||
+                instanceIds[slot] != targetId)
+            {
+                return false;
+            }
+
+            return IsManagedMirrorSlotReadable(slot);
+        }
+
+        private static bool TryResolveCombatTargetHealthOwnerViews(
+            out NativeArray<float> health,
+            out NativeArray<float> maxHealth,
+            out NativeArray<float> invMaxHealth)
+        {
+            health = default;
+            maxHealth = default;
+            invMaxHealth = default;
+            IDataVault vault = OpenCombatDataVault(allowColdBootstrap: false);
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryResolveHandle(in _healthHandle, out health) &&
+                   vault.TryResolveHandle(in _maxHealthHandle, out maxHealth) &&
+                   vault.TryResolveHandle(in _invMaxHealthHandle, out invMaxHealth) &&
+                   health.IsCreated &&
+                   maxHealth.IsCreated &&
+                   invMaxHealth.IsCreated;
+        }
+
+        private static bool TryResolveCombatTargetProtectionOwnerViews(
+            out NativeArray<int> armorValues,
+            out NativeArray<float> shieldValues)
+        {
+            armorValues = default;
+            shieldValues = default;
+            IDataVault vault = OpenCombatDataVault(allowColdBootstrap: false);
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryResolveHandle(in _armorValuesHandle, out armorValues) &&
+                   vault.TryResolveHandle(in _shieldValuesHandle, out shieldValues) &&
+                   armorValues.IsCreated &&
+                   shieldValues.IsCreated;
+        }
+
+        private static bool TryResolveCombatTargetHitProfileOwnerViews(
+            out NativeArray<float3> targetForwardVectors,
+            out NativeArray<float> targetHeights)
+        {
+            targetForwardVectors = default;
+            targetHeights = default;
+            IDataVault vault = OpenCombatDataVault(allowColdBootstrap: false);
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryResolveHandle(in _targetForwardVectorsHandle, out targetForwardVectors) &&
+                   vault.TryResolveHandle(in _targetHeightsHandle, out targetHeights) &&
+                   targetForwardVectors.IsCreated &&
+                   targetHeights.IsCreated;
+        }
+
+        private static bool TryClearCombatTargetLookupOwnerView()
+        {
+            IDataVault vault = OpenCombatDataVault(allowColdBootstrap: false);
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryResolveHandle(in _targetLookupKeysHandle, out NativeArray<int> keys) ||
+                !vault.TryResolveHandle(in _targetLookupSlotsHandle, out NativeArray<int> slots))
+            {
+                return false;
+            }
+
+            ClearTargetLookup(keys, slots);
+            return true;
+        }
+
+        private static bool TryResolveCombatTelemetryOwnerViews(
             out NativeArray<CombatTelemetryEntry> telemetryRing,
-            out NativeArray<uint> telemetryState,
-            out int lockedCount)
+            out NativeArray<uint> telemetryState)
         {
             telemetryRing = default;
             telemetryState = default;
-            lockedCount = 0;
-            IDataVault vault = ResolveCombatDataVault(allowColdBootstrap: false);
-            if (vault == null || vault.IsCompactionFenceActive)
-                return false;
-
-            if (!vault.TryAcquireWriteLock(in _telemetryRingHandle, CombatDamageMemoryOwner, out telemetryRing))
-                return false;
-            lockedCount++;
-            bool success = false;
-            try
-            {
-                if (!vault.TryAcquireWriteLock(in _telemetryStateHandle, CombatDamageMemoryOwner, out telemetryState))
-                    return false;
-
-                lockedCount++;
-                success = true;
-                return true;
-            }
-            finally
-            {
-                if (!success)
-                    ReleaseCombatTelemetryWriteLocks(lockedCount);
-            }
-        }
-
-        private static void ReleaseCombatTelemetryWriteLocks(int lockedCount)
-        {
-            IDataVault vault = ResolveCombatDataVault(allowColdBootstrap: false);
-            if (vault == null)
-                return;
-
-            if (lockedCount >= 2) vault.ReleaseWriteLock(in _telemetryStateHandle, CombatDamageMemoryOwner);
-            if (lockedCount >= 1) vault.ReleaseWriteLock(in _telemetryRingHandle, CombatDamageMemoryOwner);
+            IDataVault vault = OpenCombatDataVault(allowColdBootstrap: false);
+            return vault != null &&
+                   !vault.IsCompactionFenceActive &&
+                   vault.TryResolveHandle(in _telemetryRingHandle, out telemetryRing) &&
+                   vault.TryResolveHandle(in _telemetryStateHandle, out telemetryState) &&
+                   telemetryRing.IsCreated &&
+                   telemetryState.IsCreated;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

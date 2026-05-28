@@ -4,7 +4,7 @@ Date: 2026-05-28
 Agent: 1410
 Role: DISPATCHER_PHASE_ALIGNMENT_AND_LATEFRAME_SYNC_VALIDATOR
 Domain: Echelon 1 Core Infrastructure / Tick Dispatcher & Time Dilation
-Status: PENDING VERIFICATION
+Status: STATIC APEX RECHECK11 COMPLETE / BUILD BLOCKED BY CPU AND ACTIVE DOTNET
 
 ## Hygiene
 
@@ -108,7 +108,7 @@ Loop 4 complete: Tasks 16-18 proof tests/static scans added.
 
 Loop 5 complete: Tasks 19-20 rationale/report artifacts written.
 
-Final state: STATIC PROOF COMPLETE, BUILD BLOCKED BY CPU CONTENTION. No `dotnet build` was launched by agent 1410 after the CPU gate failed.
+Final state: STATIC PROOF COMPLETE THROUGH RECHECK11. Previous recheck9 `dotnet build` attempt timed out after 300000 ms; no green compile verdict exists. Recheck11 build gate sampled CPU 100% with active `dotnet` PID 13464, so `dotnet build` was not invoked.
 
 ## APEX Recheck
 
@@ -161,3 +161,86 @@ Final state: STATIC PROOF COMPLETE, BUILD BLOCKED BY CPU CONTENTION. No `dotnet 
   - Latest build gate: CPU 90%, active `csc` PID 63300 and `dotnet` PID 53008, build not invoked.
   - Recheck4 report SHA-256: `abda3f0deb1f940391c84bc1a2f057863e99a13a927c966ee944558bf11af449`.
   - Final report SHA-256: `abda3f0deb1f940391c84bc1a2f057863e99a13a927c966ee944558bf11af449`.
+- [x] APEX recheck5 completed residual feedback-route audit and proof refresh.
+  - Report: `Docs/Reports/DISPATCHER_APEX_RECHECK5_1410.json`.
+  - Final report mirror: `Docs/Reports/DISPATCHER_ALIGNMENT_REPORT_1410.json`.
+  - Residual direct routes fixed/reverified: `SpectrumSystem` active sonar acoustic signal, `Fabricator` procedural audio/haptics, `PlayerFlashlight` audio, `SubmarineFluidDynamics` cavitation feedback, `SubmarineAutoLevelBallastController` flood/air-release feedback, `HectonMusicDirector` stingers, `FaunaBrain` procedural audio, `PlayerCriticalProceduralAudioRenderer` structural haptics, `MantaScooter` spawn/despawn/unequip headlight globals.
+  - Route backend scan: 27/27 route methods found, forbidden backend findings = 0.
+  - Zero-GC scan: 71/71 hot methods found, elapsed 12546036 us, reference `new` = 0, value-type `new` = 3, `string.Format` = 0, `.ToString()` = 0, LINQ = 0, `foreach` = 0.
+  - Value-type `new` sites: `HectonPlayerMovement.TryProcessKccWallScrapeFeedback` (`AcousticPingSignal`), `SubmarineFluidDynamics.PublishCavitationRumbleIfNeeded` (`AudioPingTriggerPayload`), `FaunaBrain.QueueProceduralAudioPing` (`AudioPingTriggerPayload`).
+  - DataVault proof refreshed: no new `GlobalDataVault` buffers introduced; `AupDiscoveryGridBufferId=(BufferID)71030`, `ActiveSonarGeoTelemetryRingBufferId=(BufferID)71031`; `TryAcquireWriteLock` lines 2898, 2947, 3712 release in `finally` at lines 2919, 2987, 3742.
+  - Binary low-end switch scan across 11 hot files: 0 matches for `isLowEnd`, `LowEnd`, `lowEnd`.
+  - Latest build gate: CPU 66%, active `dotnet` PID 50672 and `VBCSCompiler` PID 28580, build not invoked.
+  - Recheck5/final report SHA-256: `6ae37536e3ab4eb0af056f2e52b25eebea5c209a02f2d8e16bf7e2d46dc46227`.
+  - Build gate SHA-256: `b0c17c8037f252e605920b8f72878dd677001c6a9b43357bc487214e6920f152`.
+- [x] APEX recheck6 completed late-frame feedback route hardening.
+  - Report: `Docs/Reports/DISPATCHER_APEX_RECHECK6_1410.json`.
+  - Final report mirror: `Docs/Reports/DISPATCHER_ALIGNMENT_REPORT_1410.json`.
+  - New fixes: `LifePodFireExtinguisherNozzle` spray haptics, `MountablePlayerTransport` entanglement haptics/notification/structural stress audio, `SubmarineAutoLevelBallastController` PID hull-stress fallback audio, and `VRSomaticProvider` velocity-anchor haptics now stage value payloads and flush through `LateFrameTick`.
+  - Corrected route scan: candidate files 259, methods 24100, roots traversed 351, forbidden backend findings = 0, elapsed 40881435 us.
+  - Zero-GC scan: 25/25 requested methods found; reference `new` 0, value-type `new` 1 (`HullStressSignal`), `string.Format` 0, `.ToString()` 0, LINQ 0, `foreach` 0.
+  - DataVault proof unchanged: no new buffers; Spectrum buffers remain `AupDiscoveryGridBufferId=(BufferID)71030` and `ActiveSonarGeoTelemetryRingBufferId=(BufferID)71031`; write locks at `SpectrumSystem.cs:2898`, `:2947`, `:3712` release in `finally` at `:2917`, `:2985`, `:3740`.
+  - Binary low-end switch scan in touched files: 0 matches for `isLowEnd`, `LowEnd`, `lowEnd`.
+  - Build gate: CPU 47%, active `VBCSCompiler` PID 14544, build not invoked.
+  - Recheck6/final report SHA-256: `aa487c9a34ff4f9f71c2c1361cb0f5c4642e6a22b0b8cdfa3be464231f2f71a7`.
+  - Build gate SHA-256: `4328d1920dfef9b91b7f8cc1ab5ec52592db515a22c90fa157754d6c7088678f`.
+- [x] APEX recheck7 completed expanded audio-backend sweep.
+  - Report: `Docs/Reports/DISPATCHER_APEX_RECHECK7_1410.json`.
+  - Final report mirror: `Docs/Reports/DISPATCHER_ALIGNMENT_REPORT_1410.json`.
+  - Real defect found: `MountablePlayerTransport.Tick/FixedTick` could reach `DismountRiderInternal -> PlayTransportOneShot -> IAudioService.PlayAtPoint` before late-frame.
+  - Fix: mount/dismount one-shot audio now stages `TransportAudioOneShotRequest` (`Vector3 + float + byte`) and resolves the `AudioClip` only during `FlushQueuedTransportAudio()` from `LateFrameTick`.
+  - Additional fix: `LifePodFireExtinguisherNozzle.TryUnregisterLateFrameTick` now clears pending spray haptic state even when late-frame registration was never acquired.
+  - Expanded route scan: candidate files 266, methods 24565, roots traversed 359, forbidden backend findings = 0, elapsed 80548914 us.
+  - Zero-GC scan: 31/31 requested methods found; reference `new` 0, value-type `new` 1 (`HullStressSignal`), `string.Format` 0, `.ToString()` 0, LINQ 0, `foreach` 0.
+  - DataVault proof unchanged: no new buffers; Spectrum buffers remain `AupDiscoveryGridBufferId=(BufferID)71030` and `ActiveSonarGeoTelemetryRingBufferId=(BufferID)71031`; write locks at `SpectrumSystem.cs:2898`, `:2947`, `:3712` release in `finally` at `:2917`, `:2985`, `:3740`.
+  - Build gate: CPU 45%, active `dotnet` PID 14652, build not invoked.
+  - Recheck7/final report SHA-256: `6c8b65732c1d017a05602422ece7198718a550e6034ff8dc360819422f5cab01`.
+  - Build gate SHA-256: `6dc366c58d0ad30191920763be19dc0344b631d31f4aab845dcc4c6ae3569a50`.
+- [x] APEX recheck8 completed targeted late-frame hardening.
+  - Report: `Docs/Reports/DISPATCHER_APEX_RECHECK8_1410.json`.
+  - Final report mirror: `Docs/Reports/DISPATCHER_ALIGNMENT_REPORT_1410.json`.
+  - New fixes: `Atlas6DirectiveSystem`, `EndingSystem`, and `FirstHourDirector` now stage notifications into bounded fixed-char owner payloads and flush through `LateFrameTick`; `EndingSystem` also defers `_AtlasSignalStrength` shader upload to `LateFrameTick`.
+  - New fixes: `HectonVoxelStreamingBridge.QueueVolumeDespawn` no longer flushes despawns/material resets from `SlowTick` on queue saturation; `SubmarineAutoLevelBallastController.EmitPidHullStressSignal` no longer calls `IAudioService.QueueHullStressSignal` before late-frame; `PlayerActionController` action audio no longer calls `IAudioService.PlayAtPoint` from `Tick`/cancel/complete paths.
+  - Added `ConsumableItem.TryConsumeWithoutAudio` so delayed action completion can apply consumable truth without `PlayStatic2D`.
+  - Targeted backend route scan: `Docs/Reports/DISPATCHER_RECHECK8_TARGETED_BACKEND_ROUTE_SCAN_1410.json`; files 14, methods 1277, roots 24, forbidden backend findings 0, elapsed 6830259 us.
+  - Zero-GC scan: `Docs/Reports/DISPATCHER_RECHECK8_ZERO_GC_1410.json`; methods 30/30 found, reference `new` 0, value-type `new` 1 (`HullStressSignal`), `string.Format` 0, `.ToString()` 0, LINQ 0, `foreach` 0.
+  - Direct token notes: `PlayerActionController` `PlayAtPoint` remains only in `FlushQueuedActionAudio`; `EndingSystem` `Shader.SetGlobalFloat` remains only in `FlushQueuedAtlasSignalStrength`; `QueueVolumeDespawn` no longer calls `FlushPendingDespawns`.
+  - DataVault: no new `GlobalDataVault` buffers or locks introduced in recheck8.
+  - Build gate: CPU 100%, active compiler/dotnet processes 2, build not invoked.
+  - Recheck8/final report SHA-256: `b3030884287f9046ca5001afe7f2eed54805cdd5831ee178b6f7d495974453bb`.
+- [x] APEX recheck9 closed managed pending-audio payload fault.
+  - Report: `Docs/Reports/DISPATCHER_APEX_RECHECK9_1410.json`.
+  - Final report mirror: `Docs/Reports/DISPATCHER_ALIGNMENT_REPORT_1410.json`.
+  - Real defect found: recheck8 staged player action audio correctly by phase, but `_pendingActionAudioClip` still carried a managed `AudioClip` reference across the Tick -> LateFrame boundary.
+  - Fix: `PlayerActionController` now stages `ActionAudioRequest` only: `Vector3 Position`, `uint EventId`, `uint ItemHash`, `byte ClipKind`, `byte Dirty`, explicit padding, total 32 bytes. `AudioClip` is resolved only inside `FlushQueuedActionAudio`.
+  - Fix: `ItemData` now exposes authored `UseAudioEventId` so consumables can route through `IAudioService.QueueAudioEvent` without carrying an object reference in the phase-transfer payload.
+  - Fix: `ResolveActionAudioPresentationVolume` consumes `HomeostasisBrain.GlobalQualityWeight` as a continuous scalar: `math.lerp(0.75f, 1f, quality)`. Targeted scan reports binary low-end switch matches 0.
+  - Zero-GC scan: `Docs/Reports/DISPATCHER_RECHECK9_ZERO_GC_1410.json`; method bodies 13, reference `new` 0, value-type `new` 1 (`CoreAudioEvent` explicit-layout struct), `string.Format` 0, `.ToString()` 0, LINQ 0, `foreach` 0.
+  - Targeted route scan: `Docs/Reports/DISPATCHER_RECHECK9_TARGETED_ROUTE_SCAN_1410.json`; stale managed pending audio clip matches 0, backend calls outside `FlushQueuedActionAudio` 0, `TryConsumeWithoutAudio` backend calls 0.
+  - DataVault: no new `GlobalDataVault` buffers or locks introduced in recheck9.
+  - Build: one allowed final `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` attempt was invoked after CPU 36% and active compiler count 0; it timed out after 300000 ms with exit code 124. Remnant build PIDs 17856 and 34600 were stopped after command-line confirmation. No green compile verdict exists.
+  - Recheck9/final report SHA-256: `99794de4c4de3fb578c2dbdb2d22d12162dcb5332375f50305b12b2bbe1742e0`.
+- [x] APEX recheck10 closed residual action camera/battery charger presentation routes.
+  - Report: `Docs/Reports/DISPATCHER_APEX_RECHECK10_1410.json`.
+  - Final report mirror: `Docs/Reports/DISPATCHER_ALIGNMENT_REPORT_1410.json`.
+  - Real defects found: `PlayerActionController.Tick` still reached `CameraJuiceProcessor.RegisterActionBob`, cancel/complete still reached `ClearActionBob`, and `BatteryCharger.InsertBattery` still reached `IAudioService.PlayAtPoint`.
+  - Fix: `PlayerActionController` now stages `ActionCameraBobRequest` (`float`, `float`, `byte`, padding, 16 bytes) and flushes camera bob apply/clear only from `LateFrameTick`.
+  - Fix: `BatteryCharger` now implements `ILateFrameTickable`, stages `ChargerAudioRequest` (`Vector3`, `byte`, `byte`, padding, 16 bytes), registers/unregisters late-frame independently from logistics, and flushes insert audio only from `LateFrameTick`.
+  - Static proof: `Docs/Reports/DISPATCHER_RECHECK10_DIRECT_ROOT_PRESENTATION_SCAN_1410.json`; files scanned 1797, root methods 1772, finding count 0, SHA-256 `07928E30211F3DEFEA50771BB8C12E55F835963572ACAB76F9BCC5C19503D36C`.
+  - Zero-GC proof: method bodies 28, missing methods 0, reference `new` 0, value-type `new` 1 (`CoreAudioEvent` explicit-layout struct), `string.Format` 0, `.ToString()` 0, LINQ 0, `foreach` 0.
+  - Exact method proof: `BatteryCharger.InsertBattery` `PlayAtPoint(` count 0 after method-bound extraction; backend call remains only in `FlushQueuedChargerAudio`.
+  - DataVault: no new `GlobalDataVault` buffers or locks introduced in recheck10.
+  - Build: blocked by CPU throttle; CPU 83%, active `dotnet/csc/VBCSCompiler` count 0, `dotnet build` not invoked.
+  - Recheck10/final report SHA-256 after proof correction: `83F3E7FCFAF1774AF4E2BE3790D3BB85C211F9D0FDB77C9687FBD7E35A71C2AB`.
+  - Forensic dump for missing compile verdict: `Docs/AgentLogs/Dump_1410_RECHECK10_BUILD_GATE_20260528.txt`.
+- [x] APEX recheck11 closed public consumable audio trap.
+  - Report: `Docs/Reports/DISPATCHER_APEX_RECHECK11_1410.json`.
+  - Final report mirror: `Docs/Reports/DISPATCHER_ALIGNMENT_REPORT_1410.json`.
+  - Real defect found: `ConsumableItem.TryConsume(ItemData,HectonSurvivalSystem,IAudioService)` still contained direct `audioService.PlayStatic2D(item.useSound, 1f)`.
+  - Fix: public overload signature preserved, but the static consumable truth utility no longer publishes audio. Action audio remains owned by `PlayerActionController.LateFrameTick`.
+  - Exact method proof: `ConsumableItem.TryConsume(..., IAudioService)` backend count 0 after method-bound extraction.
+  - Zero-GC proof: method bodies 29, missing methods 0, reference `new` 0, value-type `new` 1 (`CoreAudioEvent` explicit-layout struct), `string.Format` 0, `.ToString()` 0, LINQ 0, `foreach` 0.
+  - DataVault: no new `GlobalDataVault` buffers or locks introduced in recheck11.
+  - Build: blocked by CPU and active dotnet; CPU 100%, active `dotnet` PID 13464 running `MapMagic.MicroSplat.csproj`, `dotnet build Hecton8.slnx` not invoked.
+  - Recheck11/final report SHA-256: `4869A8998467C72FE01CFED1E7E364F5FC02DC7012A27F0BF551F5D9E1F739D6`.
+  - Forensic dump for missing compile verdict: `Docs/AgentLogs/Dump_1410_RECHECK11_BUILD_GATE_20260528.txt`.

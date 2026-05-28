@@ -29,6 +29,7 @@ namespace Hecton8.Gameplay
         IFixedTickable,
         IPostFixedTickable,
         ISlowTickable,
+        ILateFrameTickable,
         IOriginShiftListener,
         IVehicleCommandSignalListener,
         IDamageReceiver,
@@ -112,7 +113,8 @@ namespace Hecton8.Gameplay
             public byte CriticalFloodActive;
             public byte MaelstromApproximationTier;
             public int ActiveMaelstromCount;
-            [ReadOnly, NoAlias] public NativeArray<WhirlpoolFlow>.ReadOnly ActiveMaelstroms;
+            public WhirlpoolFlow ActiveMaelstrom0;
+            public WhirlpoolFlow ActiveMaelstrom1;
             [NoAlias] public NativeArray<PidJobOutput> Output;
 
             public void Execute()
@@ -187,11 +189,27 @@ namespace Hecton8.Gameplay
                 if (torqueLengthSq > maxTorque * maxTorque && torqueLengthSq > Epsilon)
                     torque *= maxTorque * math.rsqrt(math.max(torqueLengthSq, Epsilon));
 
-                float3 maelstromAcceleration = FluidAnalyticalContractMath.SampleWhirlpoolVelocity(
-                    PositionWS,
-                    ActiveMaelstroms,
-                    ActiveMaelstromCount,
-                    MaelstromApproximationTier,
+                float3 maelstromAcceleration = float3.zero;
+                if (ActiveMaelstromCount > 0)
+                {
+                    maelstromAcceleration += FluidAnalyticalContractMath.SampleWhirlpoolVelocity(
+                        PositionWS,
+                        ActiveMaelstrom0,
+                        MaelstromApproximationTier,
+                        MaelstromAccelerationClamp);
+                }
+
+                if (ActiveMaelstromCount > 1)
+                {
+                    maelstromAcceleration += FluidAnalyticalContractMath.SampleWhirlpoolVelocity(
+                        PositionWS,
+                        ActiveMaelstrom1,
+                        MaelstromApproximationTier,
+                        MaelstromAccelerationClamp);
+                }
+
+                maelstromAcceleration = FluidAnalyticalContractMath.ClampFiniteFloat3Magnitude(
+                    maelstromAcceleration,
                     MaelstromAccelerationClamp);
 
                 uint flags = 0u;
@@ -351,6 +369,16 @@ namespace Hecton8.Gameplay
         private const uint PidTelemetryFlagBallastInvalid = 1u << 13;
         private const uint PidTelemetryFlagVaultWriteContention = 1u << 14;
         private const uint PidTelemetryFlagVaultViewInvalid = 1u << 15;
+        private const uint PidTelemetryDumpFaultMask =
+            PidTelemetryFlagInvalidOutput |
+            PidTelemetryFlagFloodInvalid |
+            PidTelemetryFlagDataVaultMissing |
+            PidTelemetryFlagBallastInvalid |
+            PidTelemetryFlagVaultWriteContention |
+            PidTelemetryFlagVaultViewInvalid;
+        private const uint PidTelemetryPidOutputForceBlockMask =
+            PidTelemetryFlagInvalidOutput |
+            PidTelemetryFlagCriticalFlood;
         private const byte VaultFaultCodeMissing = 1;
         private const byte VaultFaultCodeContention = 2;
         private const byte VaultFaultCodeInvalidView = 3;
@@ -447,6 +475,7 @@ namespace Hecton8.Gameplay
         private bool _registeredFixed;
         private bool _registeredPostFixed;
         private bool _registeredSlowTick;
+        private bool _registeredLateFrameTick;
         private bool _registeredOriginShift;
         private bool _registeredHotSwap;
         private bool _registeredCombatTarget;
@@ -458,10 +487,23 @@ namespace Hecton8.Gameplay
         private bool _pidOutputVaultLockHeld;
         private bool _floodMassOutputVaultLockHeld;
         private bool _ballastSolverVaultLocksHeld;
+        private bool _ballastCommandsReadPinHeld;
         private bool _floodMassSolveRequested;
         private bool _resetIntegralPending;
         private bool _dumpedTelemetry;
         private bool _dumpedBallastTelemetry;
+        private bool _pendingFloodStressAcousticDirty;
+        private AcousticPingSignal _pendingFloodStressAcoustic;
+        private bool _pendingCriticalFloodHapticDirty;
+        private HapticRequest _pendingCriticalFloodHaptic;
+        private bool _pendingTailHeavyBubbleDirty;
+        private BubbleSpawnSignal _pendingTailHeavyBubble;
+        private bool _pendingTailHeavyFluidImpulseDirty;
+        private FluidImpulseSignal _pendingTailHeavyFluidImpulse;
+        private bool _pendingAirReleaseAudioDirty;
+        private ProceduralAudioPingRequest _pendingAirReleaseAudio;
+        private bool _pendingPidHullStressSignalDirty;
+        private HullStressSignal _pendingPidHullStressSignal;
         private byte _floodRoomInputVaultLockMask;
         private byte _pumpPowered = 1;
         private byte _authoritativeMathLod;
@@ -472,6 +514,16 @@ namespace Hecton8.Gameplay
         private int _ballastProfileRows;
         private int _ballastActiveSampleBudget;
         private float _baseMassKg = 1200f;
+
+        private struct ProceduralAudioPingRequest
+        {
+            public Vector3 Position;
+            public float Intensity01;
+            public float DurationSeconds;
+            public float Transmission01;
+            public float PitchCarrierHz;
+            public ProceduralAudioPingKind Kind;
+        }
         private float _baseAngularDamping;
         private float _ballastWaterMassKg;
         private float _floodSolveAccumulator;
@@ -638,6 +690,11 @@ namespace Hecton8.Gameplay
             _floodMassSolveRequested = true;
         }
 
+        public void LateFrameTick()
+        {
+            FlushDynamicFloodFeedback();
+        }
+
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             if (shiftData.ShiftOffset.sqrMagnitude <= 0.000001f)
@@ -747,6 +804,8 @@ namespace Hecton8.Gameplay
             if (!_registeredSlowTick && GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player))
                 _registeredSlowTick = true;
 
+            TryRegisterLateFrameTickable();
+
             if (!_registeredOriginShift)
             {
                 HectonFloatingOrigin.RegisterListener(this);
@@ -772,6 +831,14 @@ namespace Hecton8.Gameplay
             }
 
             TryRegisterInteractionTargetTree();
+        }
+
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_registeredLateFrameTick || !Application.isPlaying)
+                return;
+
+            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
         private void TryRegisterStateReadModel()
@@ -822,6 +889,12 @@ namespace Hecton8.Gameplay
                 _registeredSlowTick = false;
             }
 
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredLateFrameTick = false;
+            }
+
             if (_registeredFixed)
             {
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
@@ -842,9 +915,26 @@ namespace Hecton8.Gameplay
             _audio = null;
             _analyticalFlowReadModel = null;
             ResetDynamicFloodState(clearSignalFrame: true);
+            ClearPendingDynamicFloodFeedback();
             RestoreDynamicFloodAngularDrag();
             RestoreDynamicFloodInertiaTensor();
             ResetExternalFloodDragTensor();
+        }
+
+        private void ClearPendingDynamicFloodFeedback()
+        {
+            _pendingFloodStressAcousticDirty = false;
+            _pendingFloodStressAcoustic = default;
+            _pendingCriticalFloodHapticDirty = false;
+            _pendingCriticalFloodHaptic = default;
+            _pendingTailHeavyBubbleDirty = false;
+            _pendingTailHeavyBubble = default;
+            _pendingTailHeavyFluidImpulseDirty = false;
+            _pendingTailHeavyFluidImpulse = default;
+            _pendingAirReleaseAudioDirty = false;
+            _pendingAirReleaseAudio = default;
+            _pendingPidHullStressSignalDirty = false;
+            _pendingPidHullStressSignal = default;
         }
 
         private void TryRegisterInteractionTargetTree()
@@ -1174,8 +1264,8 @@ namespace Hecton8.Gameplay
             if (_dataVault == null || string.IsNullOrEmpty(_ballastProfilesCsvPath) || !File.Exists(_ballastProfilesCsvPath))
                 return false;
 
-            bool scratchLocked = false;
-            bool profilesLocked = false;
+            bool scratchWriteLocked = false;
+            bool profilesWriteLocked = false;
             try
             {
                 FileInfo info = new FileInfo(_ballastProfilesCsvPath);
@@ -1186,29 +1276,23 @@ namespace Hecton8.Gameplay
                 if (info.Length <= 0L || info.Length > MaxBallastProfileCsvBytes)
                     return false;
 
-                if (!_dataVault.TryLockBuffer(SubmarineBallastBufferIds.CsvScratch, OwnerSystem))
-                    return false;
-                scratchLocked = true;
-
-                if (!_dataVault.TryLockBuffer(SubmarineBallastBufferIds.Profiles, OwnerSystem))
-                    return false;
-                profilesLocked = true;
-
-                if (!TryResolveVehiclesPhysicsVaultBuffer(
-                        _dataVault,
-                        ref _ballastCsvScratchHandle,
+                if (!TryAcquireVaultWrite(
+                        in _ballastCsvScratchHandle,
                         SubmarineBallastBufferIds.CsvScratch,
                         SubmarineBallastConstants.CsvScratchBytes,
-                        out NativeArray<byte> scratch) ||
-                    !TryResolveVehiclesPhysicsVaultBuffer(
-                        _dataVault,
-                        ref _ballastProfilesHandle,
+                        out NativeArray<byte> scratch))
+                    return false;
+
+                scratchWriteLocked = true;
+
+                if (!TryAcquireVaultWrite(
+                        in _ballastProfilesHandle,
                         SubmarineBallastBufferIds.Profiles,
                         SubmarineBallastConstants.ProfileCapacity,
                         out NativeArray<SubmarineBallastProfileDTO> profiles))
-                {
                     return false;
-                }
+
+                profilesWriteLocked = true;
 
                 byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
                 Span<byte> bytes = new Span<byte>(scratchPtr, (int)info.Length);
@@ -1237,10 +1321,10 @@ namespace Hecton8.Gameplay
             }
             finally
             {
-                if (profilesLocked)
-                    _dataVault.TryUnlockBuffer(SubmarineBallastBufferIds.Profiles, OwnerSystem);
-                if (scratchLocked)
-                    _dataVault.TryUnlockBuffer(SubmarineBallastBufferIds.CsvScratch, OwnerSystem);
+                if (profilesWriteLocked)
+                    ReleaseVaultWrite(in _ballastProfilesHandle);
+                if (scratchWriteLocked)
+                    ReleaseVaultWrite(in _ballastCsvScratchHandle);
             }
         }
 #endif
@@ -1425,6 +1509,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            bool wroteCommands = false;
+            float writtenTankVolumeLiters = 0f;
             try
             {
                 if (!TryAcquireVaultWrite(
@@ -1465,7 +1551,8 @@ namespace Hecton8.Gameplay
                     WriteBallastCommand(commands, tanks, TankAft, targetAft, tankVolumeLiters, fixedDeltaTime, pumpPowered, emergencyBlow);
                     WriteBallastCommand(commands, tanks, TankPort, targetPort, tankVolumeLiters, fixedDeltaTime, pumpPowered, emergencyBlow);
                     WriteBallastCommand(commands, tanks, TankStarboard, targetStarboard, tankVolumeLiters, fixedDeltaTime, pumpPowered, emergencyBlow);
-                    WriteBallastTuning(tankVolumeLiters);
+                    writtenTankVolumeLiters = tankVolumeLiters;
+                    wroteCommands = true;
                 }
                 finally
                 {
@@ -1476,6 +1563,9 @@ namespace Hecton8.Gameplay
             {
                 ReleaseVaultWrite(in _ballastTanksHandle);
             }
+
+            if (wroteCommands)
+                WriteBallastTuning(writtenTankVolumeLiters);
         }
 
         private float EstimateRequestedFillDelta01(
@@ -1586,7 +1676,7 @@ namespace Hecton8.Gameplay
 
             _airReleaseCooldownSeconds = 0.2f;
             Vector3 source = _hull != null ? _hull.worldCenterOfMass : (_cachedTransform != null ? _cachedTransform.position : Vector3.zero);
-            ProceduralAudioEvents.TryRaiseAudioPingTriggered(
+            QueueAirReleaseAudio(
                 source,
                 math.saturate(releasedFill),
                 0.16f,
@@ -2126,7 +2216,7 @@ namespace Hecton8.Gameplay
                     stress.Intensity01 = math.saturate(offsetMagnitude * 1.8f);
                     stress.SourceId = unchecked((uint)_targetInstanceId);
                     stress.Channel = AcousticPingSignal.ChannelMetalStress;
-                    SignalBus<AcousticPingSignal>.TryPushTracked(in stress, ref s_x001SubmarineAutoLevelBallastControllerSignalPushDropCount);
+                    QueueFloodStressAcoustic(in stress);
                 }
             }
 
@@ -2143,7 +2233,7 @@ namespace Hecton8.Gameplay
                 haptic.SourceHash = FloodFeedbackSourceHash;
                 haptic.Frame = unchecked((uint)_tickCount);
                 haptic.Channel = HapticRequest.ChannelVehicleCritical;
-                SignalBus<HapticRequest>.TryPushTracked(in haptic, ref s_x001SubmarineAutoLevelBallastControllerSignalPushDropCount);
+                QueueCriticalFloodHaptic(in haptic);
             }
 
             if (_criticalListCooldown > 0f || !IsCriticalFloodPitchExceeded())
@@ -2155,6 +2245,88 @@ namespace Hecton8.Gameplay
             criticalList.Flags = (byte)VehicleCommandSignalFlags.CriticalList;
             if (VehicleCommandSignalBus.TryPublish(in criticalList))
                 _pendingTelemetryFlags |= PidTelemetryFlagCriticalList;
+        }
+
+        private void QueueFloodStressAcoustic(in AcousticPingSignal signal)
+        {
+            _pendingFloodStressAcoustic = signal;
+            _pendingFloodStressAcousticDirty = true;
+        }
+
+        private void QueueCriticalFloodHaptic(in HapticRequest signal)
+        {
+            _pendingCriticalFloodHaptic = signal;
+            _pendingCriticalFloodHapticDirty = true;
+        }
+
+        private void QueueAirReleaseAudio(
+            Vector3 position,
+            float intensity01,
+            float durationSeconds,
+            float transmission01,
+            float pitchCarrierHz,
+            ProceduralAudioPingKind kind)
+        {
+            _pendingAirReleaseAudio.Position = position;
+            _pendingAirReleaseAudio.Intensity01 = intensity01;
+            _pendingAirReleaseAudio.DurationSeconds = durationSeconds;
+            _pendingAirReleaseAudio.Transmission01 = transmission01;
+            _pendingAirReleaseAudio.PitchCarrierHz = pitchCarrierHz;
+            _pendingAirReleaseAudio.Kind = kind;
+            _pendingAirReleaseAudioDirty = true;
+        }
+
+        private void FlushDynamicFloodFeedback()
+        {
+            if (_pendingAirReleaseAudioDirty)
+            {
+                _pendingAirReleaseAudioDirty = false;
+                ProceduralAudioPingRequest request = _pendingAirReleaseAudio;
+                _pendingAirReleaseAudio = default;
+                ProceduralAudioEvents.TryRaiseAudioPingTriggered(
+                    request.Position,
+                    request.Intensity01,
+                    request.DurationSeconds,
+                    request.Transmission01,
+                    request.PitchCarrierHz,
+                    request.Kind);
+            }
+
+            if (_pendingFloodStressAcousticDirty)
+            {
+                _pendingFloodStressAcousticDirty = false;
+                SignalBus<AcousticPingSignal>.TryPushTracked(in _pendingFloodStressAcoustic, ref s_x001SubmarineAutoLevelBallastControllerSignalPushDropCount);
+                _pendingFloodStressAcoustic = default;
+            }
+
+            if (_pendingCriticalFloodHapticDirty)
+            {
+                _pendingCriticalFloodHapticDirty = false;
+                SignalBus<HapticRequest>.TryPushTracked(in _pendingCriticalFloodHaptic, ref s_x001SubmarineAutoLevelBallastControllerSignalPushDropCount);
+                _pendingCriticalFloodHaptic = default;
+            }
+
+            if (_pendingTailHeavyBubbleDirty)
+            {
+                _pendingTailHeavyBubbleDirty = false;
+                SignalBus<BubbleSpawnSignal>.TryPushTracked(in _pendingTailHeavyBubble, ref s_x001SubmarineAutoLevelBallastControllerSignalPushDropCount);
+                _pendingTailHeavyBubble = default;
+            }
+
+            if (_pendingTailHeavyFluidImpulseDirty)
+            {
+                _pendingTailHeavyFluidImpulseDirty = false;
+                SignalBus<FluidImpulseSignal>.TryPushTracked(in _pendingTailHeavyFluidImpulse, ref s_x001SubmarineAutoLevelBallastControllerSignalPushDropCount);
+                _pendingTailHeavyFluidImpulse = default;
+            }
+
+            if (_pendingPidHullStressSignalDirty)
+            {
+                _pendingPidHullStressSignalDirty = false;
+                HullStressSignal request = _pendingPidHullStressSignal;
+                _pendingPidHullStressSignal = default;
+                ProceduralAudioEvents.TryRaiseHullStressSignal(in request);
+            }
         }
 
         private static float ApproximateMagnitudeNoSqrt(float3 value)
@@ -2203,7 +2375,7 @@ namespace Hecton8.Gameplay
             signal.Frame = unchecked((uint)_tickCount);
             signal.SourceHash = EngineVentBubbleSourceHash;
             signal.Flags = BubbleSpawnSignal.FlagEngineVent | BubbleSpawnSignal.FlagTailHeavy;
-            SignalBus<BubbleSpawnSignal>.TryPushTracked(in signal, ref s_x001SubmarineAutoLevelBallastControllerSignalPushDropCount);
+            QueueTailHeavyBubbleSignal(in signal);
             _pendingTelemetryFlags |= PidTelemetryFlagBubbleSignal;
             EmitTailHeavyFluidImpulse(in signal.PositionAup, ventDirection, intensity01);
         }
@@ -2227,8 +2399,20 @@ namespace Hecton8.Gameplay
             impulse.Frame = unchecked((uint)_tickCount);
             impulse.SourceHash = EngineVentBubbleSourceHash;
             impulse.Flags = EngineVentFluidImpulseFlag | TailHeavyFluidImpulseFlag;
-            SignalBus<FluidImpulseSignal>.TryPushTracked(in impulse, ref s_x001SubmarineAutoLevelBallastControllerSignalPushDropCount);
+            QueueTailHeavyFluidImpulse(in impulse);
             _pendingTelemetryFlags |= PidTelemetryFlagFluidImpulseSignal;
+        }
+
+        private void QueueTailHeavyBubbleSignal(in BubbleSpawnSignal signal)
+        {
+            _pendingTailHeavyBubble = signal;
+            _pendingTailHeavyBubbleDirty = true;
+        }
+
+        private void QueueTailHeavyFluidImpulse(in FluidImpulseSignal impulse)
+        {
+            _pendingTailHeavyFluidImpulse = impulse;
+            _pendingTailHeavyFluidImpulseDirty = true;
         }
 
         private bool IsCriticalFloodPitchExceeded()
@@ -2303,14 +2487,22 @@ namespace Hecton8.Gameplay
 
             Quaternion rotation = _hull.rotation;
             Vector3 angularVelocity = _hull.angularVelocity;
-            NativeArray<WhirlpoolFlow>.ReadOnly activeMaelstroms = default;
+            WhirlpoolFlow activeMaelstrom0 = default;
+            WhirlpoolFlow activeMaelstrom1 = default;
             int activeMaelstromCount = 0;
             IAnalyticalFlowReadModel analyticalFlow = _analyticalFlowReadModel;
             if (analyticalFlow != null &&
-                analyticalFlow.TryGetActiveWhirlpoolFlows(out NativeArray<WhirlpoolFlow>.ReadOnly maelstroms, out int maelstromCount))
+                analyticalFlow.TryGetActiveWhirlpoolFlows(out NativeArray<WhirlpoolFlow>.ReadOnly maelstroms, out int maelstromCount) &&
+                maelstroms.IsCreated)
             {
-                activeMaelstroms = maelstroms;
-                activeMaelstromCount = maelstromCount;
+                int maelstromLimit = math.min(
+                    FluidAnalyticalContractConstants.MaxActiveMaelstromCount,
+                    math.min(math.max(0, maelstromCount), maelstroms.Length));
+                if (maelstromLimit > 0)
+                    activeMaelstrom0 = maelstroms[0];
+                if (maelstromLimit > 1)
+                    activeMaelstrom1 = maelstroms[1];
+                activeMaelstromCount = maelstromLimit;
             }
 
             try
@@ -2336,7 +2528,8 @@ namespace Hecton8.Gameplay
                     CriticalFloodActive = _criticalFloodActive,
                     MaelstromApproximationTier = 0,
                     ActiveMaelstromCount = activeMaelstromCount,
-                    ActiveMaelstroms = activeMaelstroms,
+                    ActiveMaelstrom0 = activeMaelstrom0,
+                    ActiveMaelstrom1 = activeMaelstrom1,
                     Output = pidOutput
                 }.Schedule();
                 _pidJobPending = true;
@@ -2422,25 +2615,26 @@ namespace Hecton8.Gameplay
                 _lastIntegralWindup = output.IntegralWindup;
                 _pendingTelemetryFlags |= output.Flags;
 
-                if (output.Flags != 0u)
+                if ((output.Flags & PidTelemetryDumpFaultMask) != 0u)
                     DumpTelemetryOnce(output.Flags);
 
+                bool forceOutputBlocked = (output.Flags & PidTelemetryPidOutputForceBlockMask) != 0u;
                 float3 acceptedTorque = output.TorqueWorld;
-                if ((output.Flags & PidTelemetryFlagInvalidOutput) != 0u)
+                if (forceOutputBlocked)
                     _smoothedPidTorqueWorld = float3.zero;
                 else
                     acceptedTorque = FastNlerp(_smoothedPidTorqueWorld, acceptedTorque, pidTorqueFastNlerp01);
 
                 RefreshShinobu332GyroRouteStateFromCachedVault();
                 bool shinobuGyroActive = IsShinobu332GyroRouteActive();
-                if (!shinobuGyroActive && _hull != null && output.Flags == 0u && math.lengthsq(output.TorqueWorld) > 0.0001f)
+                if (!shinobuGyroActive && _hull != null && !forceOutputBlocked && math.lengthsq(output.TorqueWorld) > 0.0001f)
                 {
                     _smoothedPidTorqueWorld = acceptedTorque;
                     EmitPidHullStressSignal(output.Error, _hull.worldCenterOfMass);
                     _physicsService?.QueueTorque(_hull, ToVector3(acceptedTorque), ForceMode.Force);
                 }
 
-                if (_hull != null && output.Flags == 0u && math.lengthsq(output.MaelstromAcceleration) > 0.0001f)
+                if (_hull != null && !forceOutputBlocked && math.lengthsq(output.MaelstromAcceleration) > 0.0001f)
                     _physicsService?.QueueAmbientForce(_hull, ToVector3(output.MaelstromAcceleration), ForceMode.Acceleration);
 
                 return true;
@@ -2476,11 +2670,13 @@ namespace Hecton8.Gameplay
                 depthMeters,
                 pitchScale);
 
-            IAudioService audioService = _audio;
-            if (audioService != null && audioService.QueueHullStressSignal(in signal))
-                return;
+            QueuePidHullStressSignal(in signal);
+        }
 
-            ProceduralAudioEvents.TryRaiseHullStressSignal(in signal);
+        private void QueuePidHullStressSignal(in HullStressSignal signal)
+        {
+            _pendingPidHullStressSignal = signal;
+            _pendingPidHullStressSignalDirty = true;
         }
 
         private void RefreshSnapshot()
@@ -3128,7 +3324,7 @@ namespace Hecton8.Gameplay
             telemetry = default;
 
             bool tanksLocked = false;
-            bool commandsLocked = false;
+            bool commandsPinned = false;
             bool samplesLocked = false;
             bool forcePacketsLocked = false;
             bool telemetryLocked = false;
@@ -3139,9 +3335,9 @@ namespace Hecton8.Gameplay
                     return false;
                 tanksLocked = true;
 
-                if (!TryAcquireVaultWrite(in _ballastCommandsHandle, SubmarineBallastBufferIds.Commands, TankCount, out commands))
+                if (!TryAcquirePinnedJobReadBuffer(ref _ballastCommandsHandle, SubmarineBallastBufferIds.Commands, TankCount, out commands))
                     return false;
-                commandsLocked = true;
+                commandsPinned = true;
 
                 if (!TryAcquireVaultWrite(in _ballastFluidSamplesHandle, SubmarineBallastBufferIds.FluidSamples, 1, out samples))
                     return false;
@@ -3160,6 +3356,7 @@ namespace Hecton8.Gameplay
                 telemetryLocked = true;
 
                 _ballastSolverVaultLocksHeld = true;
+                _ballastCommandsReadPinHeld = true;
                 success = true;
                 return true;
             }
@@ -3173,8 +3370,12 @@ namespace Hecton8.Gameplay
                         ReleaseVaultWrite(in _ballastForcePacketsHandle);
                     if (samplesLocked)
                         ReleaseVaultWrite(in _ballastFluidSamplesHandle);
-                    if (commandsLocked)
-                        ReleaseVaultWrite(in _ballastCommandsHandle);
+                    if (commandsPinned)
+                    {
+                        IDataVault vault = ResolveDataVault();
+                        if (vault != null)
+                            vault.TryUnlockBuffer(SubmarineBallastBufferIds.Commands, OwnerSystem);
+                    }
                     if (tanksLocked)
                         ReleaseVaultWrite(in _ballastTanksHandle);
 
@@ -3195,7 +3396,13 @@ namespace Hecton8.Gameplay
             ReleaseVaultWrite(in _ballastTelemetryHandle);
             ReleaseVaultWrite(in _ballastForcePacketsHandle);
             ReleaseVaultWrite(in _ballastFluidSamplesHandle);
-            ReleaseVaultWrite(in _ballastCommandsHandle);
+            if (_ballastCommandsReadPinHeld)
+            {
+                IDataVault vault = ResolveDataVault();
+                if (vault != null)
+                    vault.TryUnlockBuffer(SubmarineBallastBufferIds.Commands, OwnerSystem);
+                _ballastCommandsReadPinHeld = false;
+            }
             ReleaseVaultWrite(in _ballastTanksHandle);
             _ballastSolverVaultLocksHeld = false;
         }
@@ -3316,7 +3523,7 @@ namespace Hecton8.Gameplay
 
         private bool TryReadShinobu332GyroCountersCached(out NativeArray<SubmarineGyroCounterDTO>.ReadOnly buffer)
         {
-            return TryReadOnlyVaultBuffer(
+            return TryReadExternalReadOnlyVaultBuffer(
                 in _shinobu332GyroCounterHandle,
                 BufferID.Shinobu332GyroCounters,
                 1,
@@ -3501,6 +3708,88 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private bool TryAcquirePinnedJobReadBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            IDataVault vault = ResolveDataVault();
+            if (vault == null || requiredLength <= 0)
+            {
+                RecordVaultFault(bufferId, VaultFaultCodeMissing, PidTelemetryFlagDataVaultMissing);
+                return false;
+            }
+
+            if (vault.IsCompactionFenceActive)
+            {
+                RecordVaultFault(bufferId, VaultFaultCodeContention, PidTelemetryFlagVaultWriteContention);
+                return false;
+            }
+
+            if (!IsVaultHandleForBuffer(in handle, bufferId))
+            {
+                if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> refreshed) ||
+                    !IsVaultHandleForBuffer(in refreshed, bufferId))
+                {
+                    handle = default;
+                    RecordVaultFault(bufferId, VaultFaultCodeInvalidView, PidTelemetryFlagVaultViewInvalid);
+                    return false;
+                }
+
+                handle = refreshed;
+            }
+
+            if (!vault.TryLockBuffer(bufferId, OwnerSystem))
+            {
+                RecordVaultFault(bufferId, VaultFaultCodeContention, PidTelemetryFlagVaultWriteContention);
+                return false;
+            }
+
+            bool success = false;
+            try
+            {
+                if (!vault.TryResolveHandle(in handle, out buffer) ||
+                    !buffer.IsCreated ||
+                    buffer.Length < requiredLength)
+                {
+                    if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> refreshed) ||
+                        !IsVaultHandleForBuffer(in refreshed, bufferId) ||
+                        !vault.TryResolveHandle(in refreshed, out buffer) ||
+                        !buffer.IsCreated ||
+                        buffer.Length < requiredLength)
+                    {
+                        handle = default;
+                        buffer = default;
+                        RecordVaultFault(bufferId, VaultFaultCodeInvalidView, PidTelemetryFlagVaultViewInvalid);
+                        return false;
+                    }
+
+                    handle = refreshed;
+                }
+
+                if (vault.IsCompactionFenceActive)
+                {
+                    buffer = default;
+                    RecordVaultFault(bufferId, VaultFaultCodeContention, PidTelemetryFlagVaultWriteContention);
+                    return false;
+                }
+
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                {
+                    vault.TryUnlockBuffer(bufferId, OwnerSystem);
+                    buffer = default;
+                }
+            }
+        }
+
         private bool EnsureVaultBufferCold<T>(
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -3603,6 +3892,30 @@ namespace Hecton8.Gameplay
                 return false;
 
             if (!IsVehiclesPhysicsVaultHandle(in handle, bufferId) ||
+                !vault.TryReadOnlyHandle(in handle, out buffer) ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryReadExternalReadOnlyVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            buffer = default;
+            IDataVault vault = ResolveDataVault();
+            if (vault == null || vault.IsCompactionFenceActive || requiredLength <= 0)
+                return false;
+
+            if (!IsVaultHandleForBuffer(in handle, bufferId) ||
                 !vault.TryReadOnlyHandle(in handle, out buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)

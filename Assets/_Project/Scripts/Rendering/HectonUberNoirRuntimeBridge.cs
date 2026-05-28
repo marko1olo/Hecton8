@@ -543,16 +543,25 @@ namespace Hecton8.Core
                 return false;
             }
 
-            if (vault.IsCompactionFenceActive ||
-                !buffer.IsCreated ||
-                buffer.Length < TelemetryCapacity)
+            bool releaseOnExit = true;
+            try
             {
-                vault.ReleaseWriteLock(in handle, SystemID.GraphicsScalability);
-                buffer = default;
-                return false;
-            }
+                if (vault.IsCompactionFenceActive ||
+                    !buffer.IsCreated ||
+                    buffer.Length < TelemetryCapacity)
+                {
+                    buffer = default;
+                    return false;
+                }
 
-            return true;
+                releaseOnExit = false;
+                return true;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                    vault.ReleaseWriteLock(in handle, SystemID.GraphicsScalability);
+            }
         }
 
         private static bool TryReadTelemetryRing(

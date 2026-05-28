@@ -37,8 +37,9 @@ namespace Hecton8.Core
         private const int LiveTelemetryStateIdle = 0;
         private const int LiveTelemetryStateQueued = 1;
         private const int RecorderCapacity = 1;
-        private const int LiveTelemetryWriteIntervalFrames = 60;
-        private const int LiveTelemetryRecordSizeBytes = 32;
+        private const int LiveTelemetryWriteIntervalMinFrames = 30;
+        private const int LiveTelemetryWriteIntervalMaxFrames = 120;
+        private const int LiveTelemetryRecordSizeBytes = 64;
         private const float PlayerResolveCooldownSeconds = 1f;
         private const uint KccVelocityTelemetryMaxAgeFrames = 12u;
         private const float OriginShiftTelemetryIntervalSeconds = 1f;
@@ -50,7 +51,7 @@ namespace Hecton8.Core
         private const float NanosecondsToMilliseconds = 0.000001f;
         private const float SignedTemperatureToUnit = 0.006666667f;
         private const uint LiveTelemetryMagic = 0x4D4C4554u; // "TELM"
-        private const uint LiveTelemetryVersion = 1u;
+        private const uint LiveTelemetryVersion = 2u;
         private const ulong BinaryMagic = 0x00384E4F54434548ul; // "HECTON8\0" in little-endian byte order.
         private const string ExportFilePrefix = "crash_";
         private const string ExportFileExtension = ".h8dump";
@@ -261,17 +262,33 @@ namespace Hecton8.Core
             [FieldOffset(4)]
             public uint Version;
             [FieldOffset(8)]
-            public uint FrameIndex;
+            public uint RecordSizeBytes;
             [FieldOffset(12)]
-            public uint ActiveChunkCount;
+            public uint FrameIndex;
             [FieldOffset(16)]
-            public uint GcAllocBytes;
+            public uint ActiveChunkCount;
             [FieldOffset(20)]
-            public float CpuFrameTimeMs;
+            public uint GcAllocBytes;
             [FieldOffset(24)]
-            public float DeltaTime;
+            public float CpuFrameTimeMs;
             [FieldOffset(28)]
+            public float DeltaTime;
+            [FieldOffset(32)]
             public float ReservedMemoryMb;
+            [FieldOffset(36)]
+            public float LatencyMs;
+            [FieldOffset(40)]
+            public float GpuFrameTimeMs;
+            [FieldOffset(44)]
+            public uint SystemMask;
+            [FieldOffset(48)]
+            public uint ErrorFlags;
+            [FieldOffset(52)]
+            public uint VelocityPacked;
+            [FieldOffset(56)]
+            public uint AupShiftSequence;
+            [FieldOffset(60)]
+            public uint LastOriginShiftFrame;
         }
 
         private struct VaultArray<T> where T : struct
@@ -306,8 +323,24 @@ namespace Hecton8.Core
                 }
                 set
                 {
-                    if (TryResolve(out NativeArray<T> buffer) && buffer.IsCreated && index >= 0 && index < buffer.Length)
+                    if (_vault == null || !HasHandle || index < 0)
+                        return;
+
+                    bool locked = false;
+                    NativeArray<T> buffer = default;
+                    try
+                    {
+                        locked = _vault.TryAcquireWriteLock(in _handle, SystemID.CoreDiagnostics, out buffer);
+                        if (!locked || !buffer.IsCreated || index >= buffer.Length)
+                            return;
+
                         buffer[index] = value;
+                    }
+                    finally
+                    {
+                        if (locked)
+                            _vault.ReleaseWriteLock(in _handle, SystemID.CoreDiagnostics);
+                    }
                 }
             }
 
@@ -320,10 +353,6 @@ namespace Hecton8.Core
                        buffer.IsCreated;
             }
 
-            public static implicit operator NativeArray<T>(VaultArray<T> view)
-            {
-                return view.TryResolve(out NativeArray<T> buffer) ? buffer : default;
-            }
         }
 
         private IDataVault _dataVault;
@@ -365,7 +394,7 @@ namespace Hecton8.Core
         private readonly object _liveTelemetryFileGate = new object();
         // COLD ALLOC: object[1] - crash export file write/dispose gate - owner: CrashTelemetryBuffer
         private readonly object _crashTelemetryFileGate = new object();
-        // COLD ALLOC: byte[32] - portable live telemetry file scratch - owner: CrashTelemetryBuffer
+        // COLD ALLOC: byte[64] - portable live telemetry file scratch - owner: CrashTelemetryBuffer
         private readonly byte[] _liveTelemetryFileScratch = new byte[LiveTelemetryRecordSizeBytes];
         // COLD ALLOC: byte[64016] - portable crash export file scratch - owner: CrashTelemetryBuffer
         private readonly byte[] _crashExportFileScratch = new byte[ExportScratchSizeBytes];
@@ -1256,7 +1285,19 @@ namespace Hecton8.Core
                 entry.GcAllocBytes = gcAllocBytes;
                 entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
                 _ringBuffer[writeIndex] = entry;
-                TryWriteLiveTelemetry(frameIndex, dt, reservedMemoryMb, activeChunkCount);
+                TryWriteLiveTelemetry(
+                    frameIndex,
+                    dt,
+                    reservedMemoryMb,
+                    activeChunkCount,
+                    gcAllocBytes,
+                    latencyMs,
+                    gpuFrameTime,
+                    systemMask,
+                    errorFlags,
+                    playerVelocityPacked,
+                    shiftEvent.Sequence,
+                    entry.LastOriginShiftFrame);
 
                 if (errorFlags != 0u)
                 {
@@ -3188,24 +3229,45 @@ namespace Hecton8.Core
             }
         }
 
-        private void TryWriteLiveTelemetry(uint frameIndex, float dt, float reservedMemoryMb, uint activeChunkCount)
+        private void TryWriteLiveTelemetry(
+            uint frameIndex,
+            float dt,
+            float reservedMemoryMb,
+            uint activeChunkCount,
+            uint gcAllocBytes,
+            float latencyMs,
+            float gpuFrameTimeMs,
+            uint systemMask,
+            uint errorFlags,
+            uint velocityPacked,
+            uint aupShiftSequence,
+            uint lastOriginShiftFrame)
         {
             if (string.IsNullOrEmpty(_liveTelemetryPath))
                 return;
 
             int frameNumber = unchecked((int)frameIndex);
-            if (frameNumber <= 0 || frameNumber - _lastLiveTelemetryWriteFrame < LiveTelemetryWriteIntervalFrames)
+            int writeIntervalFrames = ResolveLiveTelemetryWriteIntervalFrames();
+            if (frameNumber <= 0 || frameNumber - _lastLiveTelemetryWriteFrame < writeIntervalFrames)
                 return;
 
             LiveTelemetryRecord record = default;
             record.Magic = LiveTelemetryMagic;
             record.Version = LiveTelemetryVersion;
+            record.RecordSizeBytes = LiveTelemetryRecordSizeBytes;
             record.FrameIndex = frameIndex;
             record.ActiveChunkCount = activeChunkCount;
-            record.GcAllocBytes = unchecked((uint)math.max(0, ReadIntValue(_gcAllocRecorder)));
+            record.GcAllocBytes = gcAllocBytes;
             record.CpuFrameTimeMs = ReadMilliseconds(_frameTimeRecorder);
             record.DeltaTime = dt;
             record.ReservedMemoryMb = reservedMemoryMb;
+            record.LatencyMs = latencyMs;
+            record.GpuFrameTimeMs = gpuFrameTimeMs;
+            record.SystemMask = systemMask;
+            record.ErrorFlags = errorFlags;
+            record.VelocityPacked = velocityPacked;
+            record.AupShiftSequence = aupShiftSequence;
+            record.LastOriginShiftFrame = lastOriginShiftFrame;
 
             if (Interlocked.CompareExchange(ref _liveTelemetryWriteState, LiveTelemetryStateQueued, LiveTelemetryStateIdle) != LiveTelemetryStateIdle)
                 return;
@@ -3226,6 +3288,19 @@ namespace Hecton8.Core
                 if (!queued)
                     Volatile.Write(ref _liveTelemetryWriteState, LiveTelemetryStateIdle);
             }
+        }
+
+        private static int ResolveLiveTelemetryWriteIntervalFrames()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            quality = math.saturate(math.select(1f, quality, math.isfinite(quality)));
+            return math.clamp(
+                (int)math.round(math.lerp(
+                    (float)LiveTelemetryWriteIntervalMaxFrames,
+                    (float)LiveTelemetryWriteIntervalMinFrames,
+                    quality)),
+                LiveTelemetryWriteIntervalMinFrames,
+                LiveTelemetryWriteIntervalMaxFrames);
         }
 
         private static void ExecuteBackgroundLiveTelemetryWrite(object state)
@@ -3373,9 +3448,8 @@ namespace Hecton8.Core
 
         private int SnapshotRecentEntries(ExportReason exportReason)
         {
-            NativeArray<CrashTelemetryEntry> ringBuffer = _ringBuffer;
-            NativeArray<CrashTelemetryEntry> exportSnapshot = _exportSnapshot;
-            if (!ringBuffer.IsCreated || !exportSnapshot.IsCreated)
+            IDataVault vault = _dataVault;
+            if (vault == null || !_ringBuffer.HasHandle || !_exportSnapshot.HasHandle)
                 return 0;
 
             long writeCursor = Volatile.Read(ref _writeCursor);
@@ -3389,36 +3463,65 @@ namespace Hecton8.Core
             long startCursor = writeCursor - skipNewestEntry - availableEntries;
             int sourceStart = (int)startCursor & RingCapacityMask;
 
-            unsafe
+            VaultGenerationHandle<CrashTelemetryEntry> ringHandle = _ringBuffer.Handle;
+            VaultGenerationHandle<CrashTelemetryEntry> snapshotHandle = _exportSnapshot.Handle;
+            bool ringLocked = false;
+            bool snapshotLocked = false;
+            NativeArray<CrashTelemetryEntry> ringBuffer = default;
+            NativeArray<CrashTelemetryEntry> exportSnapshot = default;
+            try
             {
-                byte* sourceBase = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ringBuffer);
-                byte* destinationBase = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(exportSnapshot);
-                int firstCopyCount = math.min(entryCount, RingCapacity - sourceStart);
-                int firstCopyBytes = firstCopyCount * CrashTelemetryEntrySizeBytes;
-                int totalCopyBytes = entryCount * CrashTelemetryEntrySizeBytes;
-                int destinationBytes = exportSnapshot.Length * CrashTelemetryEntrySizeBytes;
-
-                if (!UnsafeMemoryCopyGuard.TryMemCpy(
-                        destinationBase,
-                        destinationBytes,
-                        sourceBase + (sourceStart * CrashTelemetryEntrySizeBytes),
-                        firstCopyBytes))
+                ringLocked = vault.TryLockBuffer(RingBufferId, SystemID.CoreDiagnostics);
+                if (!ringLocked ||
+                    !vault.TryReadHandle(in ringHandle, out ringBuffer) ||
+                    !ringBuffer.IsCreated)
                 {
-                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
                     return 0;
                 }
 
-                int remainingBytes = totalCopyBytes - firstCopyBytes;
-                if (remainingBytes > 0 &&
-                    !UnsafeMemoryCopyGuard.TryMemCpy(
-                        destinationBase + firstCopyBytes,
-                        destinationBytes - firstCopyBytes,
-                        sourceBase,
-                        remainingBytes))
-                {
-                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
+                snapshotLocked = vault.TryAcquireWriteLock(in snapshotHandle, SystemID.CoreDiagnostics, out exportSnapshot);
+                if (!snapshotLocked || !exportSnapshot.IsCreated)
                     return 0;
+
+                unsafe
+                {
+                    byte* sourceBase = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ringBuffer);
+                    byte* destinationBase = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(exportSnapshot);
+                    int firstCopyCount = math.min(entryCount, RingCapacity - sourceStart);
+                    int firstCopyBytes = firstCopyCount * CrashTelemetryEntrySizeBytes;
+                    int totalCopyBytes = entryCount * CrashTelemetryEntrySizeBytes;
+                    int destinationBytes = exportSnapshot.Length * CrashTelemetryEntrySizeBytes;
+
+                    if (!UnsafeMemoryCopyGuard.TryMemCpy(
+                            destinationBase,
+                            destinationBytes,
+                            sourceBase + (sourceStart * CrashTelemetryEntrySizeBytes),
+                            firstCopyBytes))
+                    {
+                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
+                        return 0;
+                    }
+
+                    int remainingBytes = totalCopyBytes - firstCopyBytes;
+                    if (remainingBytes > 0 &&
+                        !UnsafeMemoryCopyGuard.TryMemCpy(
+                            destinationBase + firstCopyBytes,
+                            destinationBytes - firstCopyBytes,
+                            sourceBase,
+                            remainingBytes))
+                    {
+                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
+                        return 0;
+                    }
                 }
+            }
+            finally
+            {
+                if (snapshotLocked)
+                    vault.ReleaseWriteLock(in snapshotHandle, SystemID.CoreDiagnostics);
+
+                if (ringLocked)
+                    vault.TryUnlockBuffer(RingBufferId, SystemID.CoreDiagnostics);
             }
 
             return entryCount;
@@ -3426,50 +3529,78 @@ namespace Hecton8.Core
 
         private int BuildExportScratch(int snapshotCount)
         {
-            NativeArray<byte> exportScratch = _exportScratch;
-            NativeArray<CrashTelemetryEntry> exportSnapshot = _exportSnapshot;
-            if (snapshotCount <= 0 || !exportScratch.IsCreated || !exportSnapshot.IsCreated)
+            IDataVault vault = _dataVault;
+            if (vault == null || snapshotCount <= 0 || !_exportScratch.HasHandle || !_exportSnapshot.HasHandle)
                 return 0;
 
-            unsafe
+            VaultGenerationHandle<byte> scratchHandle = _exportScratch.Handle;
+            VaultGenerationHandle<CrashTelemetryEntry> snapshotHandle = _exportSnapshot.Handle;
+            bool scratchLocked = false;
+            bool snapshotLocked = false;
+            NativeArray<byte> exportScratch = default;
+            NativeArray<CrashTelemetryEntry> exportSnapshot = default;
+            try
             {
-                CrashExportHeader header = default;
-                header.Magic = BinaryMagic;
-                header.EntryCount = unchecked((uint)snapshotCount);
-                header.StructSizeBytes = CrashTelemetryEntrySizeBytes;
-
-                int entryBytes = snapshotCount * CrashTelemetryEntrySizeBytes;
-                int totalBytes = CrashExportHeaderSizeBytes + entryBytes;
-
-                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(exportScratch);
-                UnsafeUtility.CopyStructureToPtr(ref header, destination);
-                void* snapshotPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(exportSnapshot);
-                int destinationBytes = exportScratch.Length - CrashExportHeaderSizeBytes;
-                if (!UnsafeMemoryCopyGuard.TryMemCpy(
-                        destination + CrashExportHeaderSizeBytes,
-                        destinationBytes,
-                        snapshotPtr,
-                        entryBytes))
+                snapshotLocked = vault.TryLockBuffer(ExportSnapshotBufferId, SystemID.CoreDiagnostics);
+                if (!snapshotLocked ||
+                    !vault.TryReadHandle(in snapshotHandle, out exportSnapshot) ||
+                    !exportSnapshot.IsCreated)
                 {
-                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
                     return 0;
                 }
 
-                fixed (byte* managedDestination = _crashExportFileScratch)
+                scratchLocked = vault.TryAcquireWriteLock(in scratchHandle, SystemID.CoreDiagnostics, out exportScratch);
+                if (!scratchLocked || !exportScratch.IsCreated)
+                    return 0;
+
+                unsafe
                 {
-                    UnsafeUtility.MemClear(managedDestination, ExportScratchSizeBytes);
+                    CrashExportHeader header = default;
+                    header.Magic = BinaryMagic;
+                    header.EntryCount = unchecked((uint)snapshotCount);
+                    header.StructSizeBytes = CrashTelemetryEntrySizeBytes;
+
+                    int entryBytes = snapshotCount * CrashTelemetryEntrySizeBytes;
+                    int totalBytes = CrashExportHeaderSizeBytes + entryBytes;
+
+                    byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(exportScratch);
+                    UnsafeUtility.CopyStructureToPtr(ref header, destination);
+                    void* snapshotPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(exportSnapshot);
+                    int destinationBytes = exportScratch.Length - CrashExportHeaderSizeBytes;
                     if (!UnsafeMemoryCopyGuard.TryMemCpy(
-                            managedDestination,
-                            ExportScratchSizeBytes,
-                            destination,
-                            totalBytes))
+                            destination + CrashExportHeaderSizeBytes,
+                            destinationBytes,
+                            snapshotPtr,
+                            entryBytes))
                     {
                         UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
                         return 0;
                     }
-                }
 
-                return totalBytes;
+                    fixed (byte* managedDestination = _crashExportFileScratch)
+                    {
+                        UnsafeUtility.MemClear(managedDestination, ExportScratchSizeBytes);
+                        if (!UnsafeMemoryCopyGuard.TryMemCpy(
+                                managedDestination,
+                                ExportScratchSizeBytes,
+                                destination,
+                                totalBytes))
+                        {
+                            UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
+                            return 0;
+                        }
+                    }
+
+                    return totalBytes;
+                }
+            }
+            finally
+            {
+                if (scratchLocked)
+                    vault.ReleaseWriteLock(in scratchHandle, SystemID.CoreDiagnostics);
+
+                if (snapshotLocked)
+                    vault.TryUnlockBuffer(ExportSnapshotBufferId, SystemID.CoreDiagnostics);
             }
         }
 

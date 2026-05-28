@@ -153,6 +153,8 @@ namespace Hecton8.Items
         public float thirstRestore;
         [Tooltip("Audio clip played when the item is consumed.")]
         public AudioClip useSound;
+        [Tooltip("One-based SpatialAudioManager audio-event table id played when this item is consumed. Zero keeps the legacy clip fallback.")]
+        [SerializeField, Min(0)] private uint useAudioEventId;
 
         [Header("Interaction")]
         [Tooltip("Legacy fallback interaction verb used when no localization key is configured.")]
@@ -290,6 +292,7 @@ namespace Hecton8.Items
 
         /// <summary>Time in seconds to consume this item. 0 = instant.</summary>
         public float UseDuration => useDuration;
+        public uint UseAudioEventId => useAudioEventId;
 
         public int DeconstructYieldCount => deconstructYields != null ? deconstructYields.Length : 0;
 

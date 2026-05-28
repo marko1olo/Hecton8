@@ -2,181 +2,630 @@
     "agentId":  "1411",
     "domain":  "Echelon 7 GPU Architecture and PCIe Upload Bandwidth Guard",
     "taskCount":  20,
-    "status":  "STATIC_VERIFIED_WITH_BUILD_BLOCKED_BY_CPU_CONTENTION",
-    "checkedAtUtc":  "2026-05-28T09:56:51.3809522Z",
-    "buildGate":  {
-                      "cpuLoadPercent":  94,
-                      "cscProcessCount":  0,
-                      "dotnetProcessCount":  1,
-                      "vbcsCompilerProcessCount":  0,
-                      "activeDotnetPid":  62124,
-                      "activeDotnetCommandLine":  "dotnet build Hecton8.Editor.csproj --no-restore -nologo -v:minimal /m:1 /p:UseSharedCompilation=false /nr:false",
-                      "dotnetBuildLaunchedByAgent":  false,
-                      "reason":  "CPU \u003e 50 and active dotnet build present"
-                  },
+    "status":  "STATIC_PASS_BUILD_FAILED_EXTERNAL_DEPENDENCIES",
+    "checkedAtUtc":  "2026-05-28T12:45:20.7289342Z",
+    "unityApiContractRepair":  {
+                                   "finding":  "Unity LockBufferForWrite is valid only for CPU-written buffers. It is not valid for buffers written by the GPU or used as random-write targets; Graphics.CopyBuffer requires CopySource on the source and CopyDestination on the destination.",
+                                   "officialDocs":  [
+                                                        "https://docs.unity.cn/6000.2/Documentation/ScriptReference/GraphicsBuffer.UsageFlags.LockBufferForWrite.html",
+                                                        "https://docs.unity.cn/ScriptReference/Graphics.CopyBuffer.html"
+                                                    ],
+                                   "finalRoute":  [
+                                                      "GPU-write destination buffers: CopyDestination, no LockBufferForWrite.",
+                                                      "CPU upload staging buffers: CopySource plus LockBufferForWrite.",
+                                                      "Whole reset/static payloads: LockBufferForWrite staging followed by UnityEngine.Graphics.CopyBuffer.",
+                                                      "GPU-evolved partial dirty pages: SetData range fallback only, because whole-buffer copy would overwrite shader-owned pages."
+                                                  ]
+                               },
     "modifiedRuntimeCleanup":  [
                                    {
+                                       "file":  "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+                                       "lines":  "7102,7125,7142,7206-7233,7248-7297,7507-7574",
+                                       "action":  "Added CopyDestination factories, LockBufferForWrite CopySource staging factories, whole-buffer staging copy helpers, and narrow SetData range helpers for GPU-write partial updates."
+                                   },
+                                   {
                                        "file":  "Assets/_Project/Scripts/HectonBoidController.cs",
-                                       "lines":  "946-947,959-962,1105,1138-1139",
-                                       "action":  "boid ping buffers and visible indirect args converted to LockBufferForWrite-capable buffers; SetData fallback replaced with UploadArray"
+                                       "lines":  "960-975,1122,1159-1160",
+                                       "action":  "Boid GPU-written ping buffers and visible indirect args now use CopyDestination destinations plus CPU-visible staging copy."
+                                   },
+                                   {
+                                       "file":  "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+                                       "lines":  "2690-2691,2845-2846,5919,6054,6116-6136",
+                                       "action":  "Sargassum GPU-written boid ping buffers remain GPU-write/CopyDestination buffers without LockBufferForWrite; spawn and single-boid CPU sync now use narrow SetData fallback ranges instead of mapped writes on RWStructuredBuffer targets."
                                    },
                                    {
                                        "file":  "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
-                                       "lines":  "816,818,870-872,888",
-                                       "action":  "foveated visibility cache and scatter indirect args converted to mapped uploads"
+                                       "lines":  "819-824,880-906",
+                                       "action":  "Foveated visibility cache and scatter indirect args now use staging copy into GPU-written/CopyCount destinations."
                                    },
                                    {
                                        "file":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
-                                       "lines":  "3308-3311,3666-3668",
-                                       "action":  "cull telemetry counter buffer converted to mapped clear upload"
+                                       "lines":  "3312,3667-3670,5395-5452,5681-5742",
+                                       "action":  "Cull telemetry counters use staging copy. Native vegetation A/B dirty backlogs remain DataVault-owned and release all writer locks in finally paths."
                                    },
                                    {
                                        "file":  "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-                                       "lines":  "100-122,3709,4348-4349,4382-4383",
-                                       "action":  "explicit smoke payload layouts plus mapped A/B particle reset uploads"
+                                       "lines":  "101-122,3763,4420-4455",
+                                       "action":  "Thermal vent and ash particle GPU payloads have explicit layouts; smoke GPU-write particle reset uses staging copy."
+                                   },
+                                   {
+                                       "file":  "Assets/_Project/Scripts/Graphics/Culling/InstanceCullingService.cs",
+                                       "lines":  "468-473,510-514",
+                                       "action":  "Indirect args destination is CopyDestination without LockBufferForWrite; CPU staging buffer is copied into it."
+                                   },
+                                   {
+                                       "file":  "Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs",
+                                       "lines":  "980-988,1134",
+                                       "action":  "Scatter LOD indirect args use CopyDestination plus staging copy."
+                                   },
+                                   {
+                                       "file":  "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+                                       "lines":  "6262-6270,6629-6633",
+                                       "action":  "Drone procedural indirect args use CopyDestination plus staging copy before GPU CopyCount updates."
+                                   },
+                                   {
+                                       "file":  "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs",
+                                       "lines":  "1477-1490,2471-2475,2555-2559",
+                                       "action":  "Damage append point buffer and damage indirect args destination use staging copy instead of direct SetData or invalid LockBufferForWrite target."
+                                   },
+                                   {
+                                       "file":  "Assets/_Project/Scripts/HectonFluidEngine.cs",
+                                       "lines":  "325-327,4593-4618,4838-4904",
+                                       "action":  "Fluid advection GPU-write buffers are CopyDestination without LockBufferForWrite; dirty page uploads use narrow SetData fallback and release dirty page locks in finally."
+                                   },
+                                   {
+                                       "file":  "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs",
+                                       "lines":  "813,2218-2230",
+                                       "action":  "Carve debris GPU-write buffers are CopyDestination without LockBufferForWrite; injected ranges use narrow SetData range fallback."
+                                   },
+                                   {
+                                       "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                                       "lines":  "590-607,921-925",
+                                       "action":  "Readback request buffers are GPU-write destinations copied from per-slot CPU-visible upload staging buffers."
                                    }
                                ],
-    "existingCoreProof":  {
-                              "dirtyPageBufferIds":  [
-                                                         74603,
-                                                         74604,
-                                                         74605,
-                                                         74606,
-                                                         74607,
-                                                         74608,
-                                                         74609,
-                                                         74610,
-                                                         74611,
-                                                         74612,
-                                                         74613,
-                                                         74614,
-                                                         1322041,
-                                                         1322042,
-                                                         1322043
-                                                     ],
-                              "vegetationRendererLocks":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:5651-5739 TryAcquireUploadedDirtyPagesForWrite acquires four dirty page lanes and releases all acquired locks in finally/failed-acquire cleanup.",
-                              "mapMagicProducerLocks":  "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs:7460-7528 TryAcquireActiveAggregateDirtyPagesForWrite plus ReleaseActiveAggregateDirtyPageWriteLocks release matrix/metadata dirty page locks.",
-                              "fluidDirtyLocks":  "Assets/_Project/Scripts/HectonFluidEngine.cs:4851-4904,4919-4931,4937-4951 acquire dirty page write locks and release in finally."
-                          },
+    "dataSovereignty":  {
+                            "bufferIdsSecured":  [
+                                                     {
+                                                         "id":  74603,
+                                                         "name":  "NativeUploadMatrixDirtyPagesAId",
+                                                         "owner":  "HectonIndirectVegetationRenderer"
+                                                     },
+                                                     {
+                                                         "id":  74604,
+                                                         "name":  "NativeUploadMatrixDirtyPagesBId",
+                                                         "owner":  "HectonIndirectVegetationRenderer"
+                                                     },
+                                                     {
+                                                         "id":  74605,
+                                                         "name":  "NativeUploadDataDirtyPagesAId",
+                                                         "owner":  "HectonIndirectVegetationRenderer"
+                                                     },
+                                                     {
+                                                         "id":  74606,
+                                                         "name":  "NativeUploadDataDirtyPagesBId",
+                                                         "owner":  "HectonIndirectVegetationRenderer"
+                                                     },
+                                                     {
+                                                         "id":  74607,
+                                                         "name":  "SurfaceAggregateFrontMatrixDirtyPagesId",
+                                                         "owner":  "HectonMapMagicVegetationBridge"
+                                                     },
+                                                     {
+                                                         "id":  74608,
+                                                         "name":  "SurfaceAggregateFrontMetadataDirtyPagesId",
+                                                         "owner":  "HectonMapMagicVegetationBridge"
+                                                     },
+                                                     {
+                                                         "id":  74609,
+                                                         "name":  "SurfaceAggregateBackMatrixDirtyPagesId",
+                                                         "owner":  "HectonMapMagicVegetationBridge"
+                                                     },
+                                                     {
+                                                         "id":  74610,
+                                                         "name":  "SurfaceAggregateBackMetadataDirtyPagesId",
+                                                         "owner":  "HectonMapMagicVegetationBridge"
+                                                     },
+                                                     {
+                                                         "id":  74611,
+                                                         "name":  "UnderwaterAggregateFrontMatrixDirtyPagesId",
+                                                         "owner":  "HectonMapMagicVegetationBridge"
+                                                     },
+                                                     {
+                                                         "id":  74612,
+                                                         "name":  "UnderwaterAggregateFrontMetadataDirtyPagesId",
+                                                         "owner":  "HectonMapMagicVegetationBridge"
+                                                     },
+                                                     {
+                                                         "id":  74613,
+                                                         "name":  "UnderwaterAggregateBackMatrixDirtyPagesId",
+                                                         "owner":  "HectonMapMagicVegetationBridge"
+                                                     },
+                                                     {
+                                                         "id":  74614,
+                                                         "name":  "UnderwaterAggregateBackMetadataDirtyPagesId",
+                                                         "owner":  "HectonMapMagicVegetationBridge"
+                                                     },
+                                                     {
+                                                         "id":  1322041,
+                                                         "name":  "FluidAdvectedSiltDirtyPagesBufferId",
+                                                         "owner":  "HectonFluidEngine"
+                                                     },
+                                                     {
+                                                         "id":  1322042,
+                                                         "name":  "FluidAdvectedBubbleDirtyPagesBufferId",
+                                                         "owner":  "HectonFluidEngine"
+                                                     },
+                                                     {
+                                                         "id":  1322043,
+                                                         "name":  "FluidAdvectedDebrisDirtyPagesBufferId",
+                                                         "owner":  "HectonFluidEngine"
+                                                     }
+                                                 ],
+                            "lockProof":  [
+                                              "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:5681-5742 TryAcquireUploadedDirtyPagesForWrite acquires four renderer dirty page lanes and ReleaseUploadedDirtyPageWriteLocks releases all acquired locks in finally/failed-acquire paths.",
+                                              "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs:7522-7545 TryAcquireActiveAggregateDirtyPagesForWrite and ReleaseActiveAggregateDirtyPageWriteLocks release matrix/metadata dirty page locks.",
+                                              "Assets/_Project/Scripts/HectonFluidEngine.cs:4851-4904,4919-4931,4937-4951 acquire dirty page write locks and release through finally."
+                                          ]
+                        },
     "structLayoutProof":  [
                               {
                                   "file":  "Assets/_Project/Scripts/HectonFluidEngine.cs",
-                                  "lines":  "1002-1037",
+                                  "lines":  "1003-1037",
                                   "structs":  "AdvectedSilt/AdvectedBubble/AdvectedDebris",
                                   "sizeBytes":  32,
-                                  "offsets":  "0,12,16,28"
+                                  "fieldOffsets":  "0,12,16,28"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/HectonBoidController.cs",
+                                  "lines":  "134-139",
+                                  "structs":  "BoidData",
+                                  "sizeBytes":  32,
+                                  "fieldOffsets":  "0,12,24,28",
+                                  "hlslProof":  "Assets/_Project/Scripts/BoidSimulation.compute:92-116"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+                                  "lines":  "101-122",
+                                  "structs":  "ThermalVentGpuData/AshParticleData",
+                                  "sizeBytes":  "40/48",
+                                  "fieldOffsets":  "Thermal:0,12,16,20,24,28,32; Ash:0,12,16,28,32,36,40,44"
                               },
                               {
                                   "file":  "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
-                                  "lines":  "113-119",
+                                  "lines":  "114-119",
                                   "structs":  "DroneProceduralIndirectArgsDTO",
                                   "sizeBytes":  16,
-                                  "offsets":  "0,4,8,12"
-                              },
-                              {
-                                  "file":  "Assets/_Project/Scripts/HectonBoidController.cs",
-                                  "lines":  "133-139",
-                                  "structs":  "BoidData",
-                                  "sizeBytes":  32,
-                                  "offsets":  "0,12,24,28"
-                              },
-                              {
-                                  "file":  "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-                                  "lines":  "100-122",
-                                  "structs":  "ThermalVentGpuData/AshParticleData",
-                                  "sizeBytes":  "40/48",
-                                  "offsets":  "Thermal:0,12,16,20,24,28,32; Ash:0,12,16,28,32,36,40,44"
+                                  "fieldOffsets":  "0,4,8,12"
                               }
                           ],
-    "zeroGcHotPathScan":  [
-                              {
-                                  "range":  "BoidIndirectArgsUpload",
-                                  "file":  "Assets/_Project/Scripts/HectonBoidController.cs",
-                                  "lines":  "1091-1106",
-                                  "referenceNew":  0,
-                                  "stringFormat":  0,
-                                  "toString":  0,
-                                  "linq":  0,
-                                  "foreach":  0,
-                                  "fallbackUploadTokens":  0
+    "zeroGcHotPathTextScan":  {
+                                  "scanner":  "PowerShell fixed line-range scan over modified hot upload ranges",
+                                  "totals":  {
+                                                 "ranges":  20,
+                                                 "referenceNewTokens":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0
+                                             },
+                                  "valueTypeNewTokensOnly":  [
+                                                                 "BoidData",
+                                                                 "AshParticleData",
+                                                                 "Vector3",
+                                                                 "GraphicsBuffer.IndirectDrawIndexedArgs"
+                                                             ],
+                                  "ranges":  [
+                                                 {
+                                                     "name":  "CoreUploadNativeArrayAndCopyWholeBuffer",
+                                                     "file":  "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+                                                     "lines":  "7206-7218",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 },
+                                                 {
+                                                     "name":  "CoreUploadArrayAndCopyWholeBuffer",
+                                                     "file":  "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+                                                     "lines":  "7221-7233",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 },
+                                                 {
+                                                     "name":  "CoreUploadNativeArraySetDataRange",
+                                                     "file":  "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+                                                     "lines":  "7248-7266",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 },
+                                                 {
+                                                     "name":  "CoreUploadNativeArrayDirtyPagesSetData",
+                                                     "file":  "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+                                                     "lines":  "7507-7574",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 },
+                                                 {
+                                                     "name":  "BoidIndirectArgsUpload",
+                                                     "file":  "Assets/_Project/Scripts/HectonBoidController.cs",
+                                                     "lines":  "1109-1126",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 },
+                                                 {
+                                                     "name":  "BoidSpawnResetUpload",
+                                                     "file":  "Assets/_Project/Scripts/HectonBoidController.cs",
+                                                     "lines":  "1130-1160",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 },
+                                                 {
+                                                     "name":  "SargassumBoidSpawnGpuWriteFallback",
+                                                     "file":  "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+                                                     "lines":  "2837-2847",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 },
+                                                 {
+                                                     "name":  "SargassumSingleBoidGpuWriteFallback",
+                                                     "file":  "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+                                                     "lines":  "6116-6136",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 },
+                                                 {
+                                                     "name":  "GPUScatterVisibilityCacheClearUpload",
+                                                     "file":  "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
+                                                     "lines":  "812-824",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 },
+                                                 {
+                                                     "name":  "GPUScatterIndirectArgsHotUploadOnly",
+                                                     "file":  "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
+                                                     "lines":  "891-906",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 },
+                                                 {
+                                                     "name":  "VegetationCullTelemetryClearUpload",
+                                                     "file":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+                                                     "lines":  "3649-3670",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 },
+                                                 {
+                                                     "name":  "InstanceCullingIndirectArgsUpload",
+                                                     "file":  "Assets/_Project/Scripts/Graphics/Culling/InstanceCullingService.cs",
+                                                     "lines":  "496-514",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 },
+                                                 {
+                                                     "name":  "GpuScatterLodIndirectArgsUpload",
+                                                     "file":  "Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs",
+                                                     "lines":  "1110-1135",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 },
+                                                 {
+                                                     "name":  "VehicleDamageFallbackPointUpload",
+                                                     "file":  "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs",
+                                                     "lines":  "2461-2478",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 },
+                                                 {
+                                                     "name":  "VehicleDamageArgsUpload",
+                                                     "file":  "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs",
+                                                     "lines":  "2532-2562",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 },
+                                                 {
+                                                     "name":  "FluidAdvectionDirtyLaneUpload",
+                                                     "file":  "Assets/_Project/Scripts/HectonFluidEngine.cs",
+                                                     "lines":  "4838-4904",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 },
+                                                 {
+                                                     "name":  "CarveDebrisUploadRange",
+                                                     "file":  "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs",
+                                                     "lines":  "2218-2230",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 },
+                                                 {
+                                                     "name":  "AsyncBuoyancyRequestUpload",
+                                                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                                                     "lines":  "590-607",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 },
+                                                 {
+                                                     "name":  "DroneProceduralArgsUpload",
+                                                     "file":  "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+                                                     "lines":  "6618-6635",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 },
+                                                 {
+                                                     "name":  "AbyssalThermalParticleResetUploads",
+                                                     "file":  "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+                                                     "lines":  "4405-4455",
+                                                     "referenceNewTokens":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linq":  0,
+                                                     "foreach":  0
+                                                 }
+                                             ],
+                                  "latestStrictScan":  {
+                                                           "executedAfterLoop20":  true,
+                                                           "rangeSource":  "zeroGcHotPathTextScan.ranges in this JSON report",
+                                                           "commandSummary":  "PowerShell fixed line-range scan; LINQ counted only query from-in or LINQ extension methods, not C# generic where constraints.",
+                                                           "result":  {
+                                                                          "ranges":  20,
+                                                                          "referenceNewTokens":  0,
+                                                                          "stringFormat":  0,
+                                                                          "toString":  0,
+                                                                          "linqQueriesOrMethods":  0,
+                                                                          "foreach":  0
+                                                                      }
+                                                       }
                               },
-                              {
-                                  "range":  "BoidSpawnResetUpload",
-                                  "file":  "Assets/_Project/Scripts/HectonBoidController.cs",
-                                  "lines":  "1108-1139",
-                                  "referenceNew":  0,
-                                  "stringFormat":  0,
-                                  "toString":  0,
-                                  "linq":  0,
-                                  "foreach":  0,
-                                  "fallbackUploadTokens":  0
-                              },
-                              {
-                                  "range":  "GPUScatterVisibilityCacheClearUpload",
-                                  "file":  "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
-                                  "lines":  "810-819",
-                                  "referenceNew":  0,
-                                  "stringFormat":  0,
-                                  "toString":  0,
-                                  "linq":  0,
-                                  "foreach":  0,
-                                  "fallbackUploadTokens":  0
-                              },
-                              {
-                                  "range":  "GPUScatterIndirectArgsUpload",
-                                  "file":  "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
-                                  "lines":  "875-888",
-                                  "referenceNew":  0,
-                                  "stringFormat":  0,
-                                  "toString":  0,
-                                  "linq":  0,
-                                  "foreach":  0,
-                                  "fallbackUploadTokens":  0
-                              },
-                              {
-                                  "range":  "VegetationCullTelemetryClearUpload",
-                                  "file":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
-                                  "lines":  "3647-3670",
-                                  "referenceNew":  0,
-                                  "stringFormat":  0,
-                                  "toString":  0,
-                                  "linq":  0,
-                                  "foreach":  0,
-                                  "fallbackUploadTokens":  0
-                              },
-                              {
-                                  "range":  "AbyssalThermalParticleResetUploads",
-                                  "file":  "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
-                                  "lines":  "4336-4389",
-                                  "referenceNew":  0,
-                                  "stringFormat":  0,
-                                  "toString":  0,
-                                  "linq":  0,
-                                  "foreach":  0,
-                                  "fallbackUploadTokens":  0
-                              }
-                          ],
-    "residualFirstPartyRuntimeUploadScan":  [
-                                                "Assets/_Project/Scripts/Core/SystemDispatcher.cs:7169 UploadNativeArraySetData helper declaration",
-                                                "Assets/_Project/Scripts/Core/SystemDispatcher.cs:7175 cold fallback SetData helper body",
-                                                "Assets/_Project/Scripts/Core/SystemDispatcher.cs:7181 UploadArraySetData helper declaration",
-                                                "Assets/_Project/Scripts/Core/SystemDispatcher.cs:7187 cold fallback SetData helper body",
-                                                "Assets/_Project/Scripts/World/GlobalWorldSampler.cs:701/727/752/777/806 job.SetData method-name collisions, not GraphicsBuffer.SetData"
+    "continuousScalabilityProof":  {
+                                       "binarySwitchScan":  "rg -n \"isLowEnd|lowEnd|LowEnd\" over touched graphics-domain runtime files returned no hits; exit code 1 was no-match, not a tool failure.",
+                                       "routes":  [
+                                                      "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:5771 ResolveNativeUploadBudgetBytes scales vegetation dirty-page upload bytes from GlobalQualityWeight.",
+                                                      "Assets/_Project/Scripts/HectonFluidEngine.cs:4908 ResolveFluidAdvectionUploadBudgetBytes maps SmoothFluidAdvectionQuality(ResolveFluidAdvectionQualityWeight()) from 32 KiB to 512 KiB.",
+                                                      "Assets/_Project/Scripts/HectonBoidController.cs:2130-2140 resolves boid quality from HomeostasisBrain.GlobalQualityWeight/config and derives social LOD continuously.",
+                                                      "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:6872-6876 resolves signal quality from HomeostasisBrain.GlobalQualityWeight as a byte scalar.",
+                                                      "Assets/_Project/Scripts/World/GPUScatterDirector.cs:960-972 resolves scatter curve from cached global quality / HomeostasisBrain.GlobalQualityWeight.",
+                                                      "Assets/_Project/Scripts/World/AbyssalThermalManager.cs:2675-2681 multiplies thermal grid quality by continuous VRAM weight."
+                                                  ],
+                                       "cinematicCheats":  [
+                                                               "No new physical simulation added.",
+                                                               "Fluid, scatter, smoke, and boid changes preserve existing visual fakes and only reduce bus/update cost.",
+                                                               "Dirty-page deferral trades visual latency for stable frames on weak devices; high/ultra drains more pages and spends budget on denser visuals."
+                                                           ]
+                                   },
+    "buildGate":  {
+                      "cpuSamplesPercent":  [
+                                                69,
+                                                53,
+                                                46
                                             ],
-    "continuousScalabilityProof":  [
-                                       "HectonIndirectVegetationRenderer.cs:5768 ResolveNativeUploadBudgetBytes uses cached HomeostasisBrain.GlobalQualityWeight route; no isLowEnd hits in scanned domain files.",
-                                       "HectonFluidEngine.cs:4908 ResolveFluidAdvectionUploadBudgetBytes maps SmoothFluidAdvectionQuality(ResolveFluidAdvectionQualityWeight()) from 32 KiB to 512 KiB.",
-                                       "HectonBoidController.cs:2091-2101 resolves boid social LOD from GlobalQualityWeight.",
-                                       "GPUScatterDirector.cs:942-954 resolves scatter curve from SignalBusRegistry/HomeostasisBrain global quality.",
-                                       "AbyssalThermalManager.cs:2621-2627 gates thermal grid with continuous quality * VRAM weight."
-                                   ],
+                      "activeCompilerProcessesBeforeBuild":  {
+                                                                 "dotnet":  0,
+                                                                 "csc":  0,
+                                                                 "VBCSCompiler":  0
+                                                             },
+                      "dotnetBuildLaunchedByAgent":  true,
+                      "buildCommand":  "dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
+                      "buildTimeoutMs":  604016,
+                      "buildResult":  "FAILED_EXTERNAL_COMPILE_ERRORS_AFTER_LOOP20",
+                      "postTimeoutObservedProcesses":  [
+                                                           {
+                                                               "pid":  51336,
+                                                               "name":  "dotnet.exe",
+                                                               "commandLine":  "dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1"
+                                                           },
+                                                           {
+                                                               "pid":  4348,
+                                                               "name":  "VBCSCompiler.exe",
+                                                               "commandLine":  "Roslyn compiler server spawned by build"
+                                                           }
+                                                       ],
+                      "finalCompilerProcessState":  "No dotnet/csc/VBCSCompiler processes after later check.",
+                      "postSargassumRepairGate":  {
+                                                      "blockedSample":  {
+                                                                            "cpuSamplePercent":  96,
+                                                                            "activeCompilerProcesses":  [
+                                                                                                            {
+                                                                                                                "pid":  2104,
+                                                                                                                "name":  "csc",
+                                                                                                                "cpu":  286.671875,
+                                                                                                                "startTime":  "2026-05-28 15:34:57 local"
+                                                                                                            },
+                                                                                                            {
+                                                                                                                "pid":  6088,
+                                                                                                                "name":  "dotnet",
+                                                                                                                "cpu":  310.6875,
+                                                                                                                "startTime":  "2026-05-28 15:30:26 local"
+                                                                                                            }
+                                                                                                        ],
+                                                                            "buildLaunched":  false,
+                                                                            "reason":  "Compilation Resource Throttling: CPU above 50 percent and active csc/dotnet processes."
+                                                                        },
+                                                      "preBuildSample":  {
+                                                                             "cpuSamplePercent":  21,
+                                                                             "activeCompilerProcesses":  0
+                                                                         },
+                                                      "buildLaunched":  true,
+                                                      "buildCommand":  "dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
+                                                      "buildTimeoutMs":  904007,
+                                                      "buildResult":  "TIMEOUT_NO_CAPTURED_SUCCESS_OR_FAILURE",
+                                                      "postTimeoutObservedProcesses":  [
+                                                                                           {
+                                                                                               "pid":  50672,
+                                                                                               "name":  "dotnet.exe",
+                                                                                               "commandLine":  "dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1"
+                                                                                           },
+                                                                                           {
+                                                                                               "pid":  28580,
+                                                                                               "name":  "VBCSCompiler.exe",
+                                                                                               "commandLine":  "Roslyn compiler server spawned by build"
+                                                                                           }
+                                                                                       ],
+                                                      "stopAction":  "Stopped timed-out dotnet PID 50672 and VBCSCompiler PID 28580 to avoid leaving compiler load running.",
+                                                      "finalCompilerProcessState":  "No dotnet/csc/VBCSCompiler processes after Stop-Process; CPU sample 90 percent."
+                                                  },
+                      "secondBuildLaunched":  true,
+                      "finalBuildLoop20":  {
+                                               "preBuildCpuSamplePercent":  11,
+                                               "activeCompilerProcessesBeforeBuild":  0,
+                                               "buildLaunched":  true,
+                                               "buildCommand":  "dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
+                                               "elapsed":  "00:13:28.44",
+                                               "warnings":  0,
+                                               "errors":  58,
+                                               "result":  "FAILED_EXTERNAL_COMPILE_ERRORS",
+                                               "forensicDump":  "Docs/AgentLogs/Dump_1411_BuildFailure_20260528T124520Z.txt",
+                                               "forensicDumpSha256":  "D2E8862B6894CC2A5972CE16CFE77A689B57E618C810FEB8E8EC4683CB29967C",
+                                               "failingFiles":  [
+                                                                    {
+                                                                        "file":  "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+                                                                        "lines":  "1290-1317 captured build output",
+                                                                        "errorCodes":  "CS8168, CS8350",
+                                                                        "ownerAssessment":  "External equipment/gameplay domain",
+                                                                        "summary":  "By-ref escape around local acquiredCount passed to TryAcquireEquipmentWriteBuffer\u003cT\u003e."
+                                                                    },
+                                                                    {
+                                                                        "file":  "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+                                                                        "lines":  "7363 captured build output",
+                                                                        "errorCodes":  "CS0019",
+                                                                        "ownerAssessment":  "External audio domain",
+                                                                        "summary":  "uint == BufferID comparison."
+                                                                    },
+                                                                    {
+                                                                        "file":  "Assets/_Project/Scripts/Gameplay/MountablePlayerTransport.cs",
+                                                                        "lines":  "866 captured build output",
+                                                                        "errorCodes":  "CS0103",
+                                                                        "ownerAssessment":  "External gameplay transport domain",
+                                                                        "summary":  "FlushQueuedEntanglementFeedback missing in captured build; follow-up static read found method now present at line 2294, indicating parallel-agent churn after the captured build."
+                                                                    }
+                                                                ],
+                                               "postFailureCompilerProcessesObservedLater":  [
+                                                                                                 {
+                                                                                                     "pid":  58540,
+                                                                                                     "name":  "csc",
+                                                                                                     "note":  "Observed after failure during no-build gate; not launched again by Agent 1411."
+                                                                                                 },
+                                                                                                 {
+                                                                                                     "pid":  56680,
+                                                                                                     "name":  "dotnet",
+                                                                                                     "note":  "Observed after failure during no-build gate; not launched again by Agent 1411."
+                                                                                                 },
+                                                                                                 {
+                                                                                                     "pid":  14544,
+                                                                                                     "name":  "VBCSCompiler",
+                                                                                                     "note":  "Observed after failure during no-build gate; not launched again by Agent 1411."
+                                                                                                 }
+                                                                                             ]
+                                           },
+                      "dotnetBuildLaunchCountByAgent1411":  3,
+                      "finalNoBuildGateAfterReportUpdate":  {
+                                                                "cpuSamplePercent":  62,
+                                                                "activeCompilerProcesses":  [
+                                                                                                {
+                                                                                                    "pid":  68368,
+                                                                                                    "name":  "dotnet",
+                                                                                                    "cpu":  196.984375,
+                                                                                                    "startTime":  "2026-05-28 16:52:58 local"
+                                                                                                },
+                                                                                                {
+                                                                                                    "pid":  53788,
+                                                                                                    "name":  "VBCSCompiler",
+                                                                                                    "cpu":  11.703125,
+                                                                                                    "startTime":  "2026-05-28 16:55:03 local"
+                                                                                                }
+                                                                                            ],
+                                                                "buildLaunched":  false,
+                                                                "reason":  "Compilation Resource Throttling: CPU above 50 percent and active dotnet/VBCSCompiler processes after report update."
+                                                            }
+                  },
+    "residualRuntimeSetDataScan":  {
+                                       "command":  "rg -n \"\\.SetData\\(\" Assets/_Project/Scripts --glob \"*.cs\"",
+                                       "status":  "PASS_WITH_DOCUMENTED_RESIDUALS",
+                                       "residuals":  [
+                                                         "Assets/_Project/Scripts/Core/SystemDispatcher.cs:7245/7265/7277/7297 isolated fallback helpers, including required GPU-write range fallback.",
+                                                         "Assets/_Project/Scripts/Dev/HabitatStressSmokeTester.cs:405-406 dev-only smoke tester.",
+                                                         "Assets/_Project/Scripts/Graphics/Materials/Editor/* editor scanners.",
+                                                         "Assets/_Project/Scripts/World/GlobalWorldSampler.cs:701/727/752/777/806 method-name collision: job.SetData, not GraphicsBuffer.SetData.",
+                                                         "Assets/_Project/Scripts/UI/Editor/UIAudioPlaceholderGenerator.cs:111 audio clip SetData."
+                                                     ]
+                                   },
     "verification":  {
+                         "unsafePointerMathScanner":  "Docs/Reports/Agent1411_UnsafePointerMathScanner.ps1",
                          "astAuditStatus":  "PASS",
-                         "astAuditTargetCount":  17,
-                         "astAuditSha256":  "15DD9CEF81DE29782950CB98753B77D5EBECA2EC83CA19CC3E6C35D9B5746927",
-                         "runtimeSetDataScanStatus":  "PASS_WITH_ONLY_COLD_OR_NON_GPU_RESIDUALS",
-                         "diffCheck":  "PASS_WITH_CRLF_WARNINGS_ONLY",
-                         "braceBalance":  "PASS for HectonBoidController, GPUScatterDirector, HectonIndirectVegetationRenderer, AbyssalThermalManager, Agent1411 scanner",
-                         "crashDump":  "No Docs/AgentLogs/Dump_1411* produced; no runtime crash/test failure observed."
-                     }
+                         "astAuditTargetCount":  29,
+                         "astAuditSha256":  "4AE14FCB5BBDCF0728D21D6D559C51B4AC3DFF7A4CB15F26DE536AE10EF2318F",
+                         "crashDump":  "Docs/AgentLogs/Dump_1411_BuildFailure_20260528T124520Z.txt",
+                         "compileResult":  "FAILED_EXTERNAL_COMPILE_ERRORS_58",
+                         "crashDumpSha256":  "D2E8862B6894CC2A5972CE16CFE77A689B57E618C810FEB8E8EC4683CB29967C"
+                     },
+    "loop20ResidualGpuContractAudit":  {
+                                           "status":  "PASS_NO_RUNTIME_PATCH_REQUIRED",
+                                           "scanner":  "Docs/Reports/Agent1411_UnsafePointerMathScanner.ps1",
+                                           "scannerTargetCount":  29,
+                                           "scannerPatchLines":  "Docs/Reports/Agent1411_UnsafePointerMathScanner.ps1:27-34,144-151",
+                                           "astAuditJson":  "Docs/Reports/PCIE_BANDWIDTH_AST_AUDIT_1411.json",
+                                           "astAuditSha256":  "4AE14FCB5BBDCF0728D21D6D559C51B4AC3DFF7A4CB15F26DE536AE10EF2318F",
+                                           "checkedSystems":  [
+                                                                  "FloraInteractionManager wake trail and flow field buffers are CPU-input/read-only shader lanes, not GPU-write mapped targets.",
+                                                                  "SargassumCutManager stamp buffers are CPU-input shader lanes for cut masks and terrain damage volumes.",
+                                                                  "ProceduralCoralGpuUploadDispatcher uses CPU-only mapped draw buffers and DrawProceduralIndirect; no ComputeShader writer contract found.",
+                                                                  "ProceduralWreckageGpuUploadDispatcher uses CPU-only mapped draw buffers and DrawProceduralIndirect; no ComputeShader writer contract found.",
+                                                                  "ShinobuEcosystemBalancer GPU culling write targets are not LockBufferForWrite-capable; CPU matrix/custom upload buffers remain input-only."
+                                                              ],
+                                           "action":  "Expanded static contract scanner only; no new runtime code edit because audited candidates already match the Unity GPU-write/CPU-input contract."
+                                       }
 }

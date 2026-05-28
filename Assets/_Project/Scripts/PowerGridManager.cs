@@ -294,6 +294,7 @@ namespace Hecton8.Power
                 _shinobuLogisticsRouter = null;
                 _submarineThermalGridRuntime?.Dispose();
                 _submarineThermalGridRuntime = null;
+                InjectDataVaultForAllGrids(currentService as IDataVault);
                 ReleaseJacobiPowerVaultBuffers(previousService as IDataVault);
                 _nextSubmarineThermalGridTickTime = 0f;
                 _submarineThermalGridSimulationFrame = 0u;
@@ -313,7 +314,7 @@ namespace Hecton8.Power
 
             EnsureStorage();
 
-            PowerGrid grid = new PowerGrid();
+            PowerGrid grid = new PowerGrid(dataVault: GlobalRegistry.DataVault);
             grid.AddNode(initialNode);
             _allGrids.Add(grid);
             return grid;
@@ -402,7 +403,7 @@ namespace Hecton8.Power
                 if (componentSize <= 0)
                     continue;
 
-                PowerGrid newGrid = new PowerGrid(componentSize);
+                PowerGrid newGrid = new PowerGrid(componentSize, GlobalRegistry.DataVault);
                 _allGrids.Add(newGrid);
 
                 for (int nodeIndex = topologyNodes.Count - 1; nodeIndex >= 0; nodeIndex--)
@@ -458,6 +459,16 @@ namespace Hecton8.Power
                 _allGrids[gridIndex]?.Dispose();
 
             _allGrids.Clear();
+        }
+
+        private static void InjectDataVaultForAllGrids(IDataVault dataVault)
+        {
+            if (_allGrids == null)
+                return;
+
+            int gridCount = _allGrids.Count;
+            for (int gridIndex = 0; gridIndex < gridCount; gridIndex++)
+                _allGrids[gridIndex]?.InjectDataVault(dataVault);
         }
 
         private static void SwapRemoveAt(int index)
@@ -632,7 +643,7 @@ namespace Hecton8.Power
             if (emergencyReserveActive)
                 flags |= 1 << 1;
 
-            float supplyRatio = math.saturate(math.isfinite(snapshot.SupplyRatio) ? snapshot.SupplyRatio : 1f);
+            float supplyRatio = math.saturate(math.select(1f, snapshot.SupplyRatio, math.isfinite(snapshot.SupplyRatio)));
             float severity01 = highestBrownoutTier != LogisticsBrownoutTier.None ||
                                hasPowerDeficit ||
                                emergencyReserveActive
@@ -640,7 +651,7 @@ namespace Hecton8.Power
                 : 0f;
             if (emergencyReserveActive)
                 severity01 = math.max(severity01, 0.75f);
-            severity01 = math.saturate(math.isfinite(severity01) ? severity01 : 0f);
+            severity01 = math.saturate(math.select(0f, severity01, math.isfinite(severity01)));
             uint frame = unchecked(_powerBrownoutSignalFrame + 1u);
             if (frame == 0u)
                 frame = 1u;
@@ -662,7 +673,7 @@ namespace Hecton8.Power
                 supplyRatio,
                 severity01,
                 (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
-                math.saturate(math.isfinite(quality) ? quality : 1f)));
+                math.saturate(math.select(1f, quality, math.isfinite(quality)))));
         }
 
         private void TryRegister()

@@ -97,26 +97,35 @@ namespace Den.Tools
 
 		public static object GetObjectSelector ()
 		{
+			#if UNITY_EDITOR
 			if (objectSelectorType == null) objectSelectorType = Type.GetType("UnityEditor.ObjectSelector,UnityEditor");
 			
 			PropertyInfo getProperty = objectSelectorType.GetProperty("get", BindingFlags.Public | BindingFlags.Static);
 			object objSelector = getProperty.GetValue(null,null);
 
 			return objSelector;
+			#else
+			return null;
+			#endif
 		}
 
 		public static int GetObjectSelectorId ()
 		{
+			#if UNITY_EDITOR
 			if (objectSelectorType == null) objectSelectorType = Type.GetType("UnityEditor.ObjectSelector,UnityEditor");
 			object objectSelector = GetObjectSelector();
 			
 			FieldInfo idField = objectSelectorType.GetField("objectSelectorID", BindingFlags.Instance | BindingFlags.NonPublic);
 
 			return (int)idField.GetValue(objectSelector);
+			#else
+			return -1;
+			#endif
 		}
 
 		public static object GetObjectSelectorObject ()
 		{
+			#if UNITY_EDITOR
 			if (objectSelectorType == null) objectSelectorType = Type.GetType("UnityEditor.ObjectSelector,UnityEditor");
 			object objectSelector = GetObjectSelector();
 
@@ -127,6 +136,9 @@ namespace Den.Tools
 			//Debug.Log(objectMethod.Invoke(objectSelector, new object[0]));
 
 			//return objectMethod.Invoke(objectSelector, new object[0]);
+			#else
+			return null;
+			#endif
 		}
 
 		public static void ShowObjectSelector (Type objType, int id=12345, bool allowSceneObjects=false, Action<UnityEngine.Object> onClosed=null, Action<UnityEngine.Object> onUpdated=null)

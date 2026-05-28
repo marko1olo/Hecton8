@@ -37,39 +37,38 @@ namespace Hecton8.UI
         private static readonly Color s_heatBarBackColor = new Color(0.10f, 0.18f, 0.18f, 1f);
         private static readonly Color s_heatBarFillColor = new Color(0.92f, 0.96f, 0.62f, 1f);
         private static readonly Color s_heatBarHotColor = new Color(1f, 0.22f, 0.12f, 1f);
-        private static readonly char[] s_emptyChars = System.Array.Empty<char>();
-        private static readonly char[] s_statusNominal = "LVL 0 // NOMINAL".ToCharArray();
-        private static readonly char[] s_statusCaution = "LVL 1 // CAUTION".ToCharArray();
-        private static readonly char[] s_statusDanger = "LVL 2 // DANGER".ToCharArray();
-        private static readonly char[] s_statusEvacuate = "LVL 3 // EVACUATE".ToCharArray();
-        private static readonly char[] s_logPrefixOk = "[OK] ".ToCharArray();
-        private static readonly char[] s_logPrefixWarn = "[WARN] ".ToCharArray();
-        private static readonly char[] s_logPrefixCrit = "[CRIT] ".ToCharArray();
-        private static readonly char[] s_iconEngines = "ENG".ToCharArray();
-        private static readonly char[] s_iconLifeSupport = "AIR".ToCharArray();
-        private static readonly char[] s_iconLights = "LGT".ToCharArray();
-        private static readonly char[] s_iconSonar = "SNR".ToCharArray();
-        private static readonly char[] s_activeDrones512 = "Active Drones: 512".ToCharArray();
-        private static readonly char[] s_logReactorStable = "[OK] REACTOR STABLE".ToCharArray();
-        private static readonly char[] s_logLowPowerEngaged = "[WARN] LOW POWER MODE ENGAGED".ToCharArray();
-        private static readonly char[] s_logLowPowerCleared = "[OK] LOW POWER MODE CLEARED".ToCharArray();
-        private static readonly char[] s_logLifeSupportCritical = "[CRIT] LIFE SUPPORT CRITICAL".ToCharArray();
-        private static readonly char[] s_logLifeSupportStabilized = "[OK] LIFE SUPPORT STABILIZED".ToCharArray();
-        private static readonly char[] s_logHullPressureHigh = "[WARN] HULL PRESSURE HIGH".ToCharArray();
-        private static readonly char[] s_logHullPressureStabilized = "[OK] HULL PRESSURE STABLE".ToCharArray();
-        private static readonly char[] s_logMultiFailure = "[CRIT] MULTIPLE SYSTEM FAILURES".ToCharArray();
-        private static readonly char[] s_logFatalImplosion = "[CRIT] FATAL IMPLOSION EVENT".ToCharArray();
-        private static readonly char[] s_logLevelNominal = "[OK] EMERGENCY LEVEL NOMINAL".ToCharArray();
-        private static readonly char[] s_logLevelCaution = "[WARN] EMERGENCY LEVEL CAUTION".ToCharArray();
-        private static readonly char[] s_logLevelDanger = "[CRIT] EMERGENCY LEVEL DANGER".ToCharArray();
-        private static readonly char[] s_logLevelEvacuate = "[CRIT] EMERGENCY LEVEL EVACUATE".ToCharArray();
-        private static readonly char[] s_logStationKeepingArmed = "[OK] STATION KEEPING ARMED".ToCharArray();
-        private static readonly char[] s_logStationKeepingReleased = "[OK] STATION KEEPING RELEASED".ToCharArray();
-        private static readonly char[] s_logHostileDroneDetected = "[CRIT] HOSTILE DRONE DETECTED".ToCharArray();
-        private static readonly char[] s_logBusPower = "BUS POWER ".ToCharArray();
-        private static readonly char[] s_logOxygen = "OXYGEN ".ToCharArray();
-        private static readonly char[] s_logHullPressure = "HULL PRESSURE ".ToCharArray();
-        private static readonly char[] s_logKpaSuffix = "KPA".ToCharArray();
+        private static ReadOnlySpan<char> StatusNominal => "LVL 0 // NOMINAL".AsSpan();
+        private static ReadOnlySpan<char> StatusCaution => "LVL 1 // CAUTION".AsSpan();
+        private static ReadOnlySpan<char> StatusDanger => "LVL 2 // DANGER".AsSpan();
+        private static ReadOnlySpan<char> StatusEvacuate => "LVL 3 // EVACUATE".AsSpan();
+        private static ReadOnlySpan<char> LogPrefixOk => "[OK] ".AsSpan();
+        private static ReadOnlySpan<char> LogPrefixWarn => "[WARN] ".AsSpan();
+        private static ReadOnlySpan<char> LogPrefixCrit => "[CRIT] ".AsSpan();
+        private static ReadOnlySpan<char> IconEngines => "ENG".AsSpan();
+        private static ReadOnlySpan<char> IconLifeSupport => "AIR".AsSpan();
+        private static ReadOnlySpan<char> IconLights => "LGT".AsSpan();
+        private static ReadOnlySpan<char> IconSonar => "SNR".AsSpan();
+        private static ReadOnlySpan<char> ActiveDrones512 => "Active Drones: 512".AsSpan();
+        private static ReadOnlySpan<char> LogReactorStable => "[OK] REACTOR STABLE".AsSpan();
+        private static ReadOnlySpan<char> LogLowPowerEngaged => "[WARN] LOW POWER MODE ENGAGED".AsSpan();
+        private static ReadOnlySpan<char> LogLowPowerCleared => "[OK] LOW POWER MODE CLEARED".AsSpan();
+        private static ReadOnlySpan<char> LogLifeSupportCritical => "[CRIT] LIFE SUPPORT CRITICAL".AsSpan();
+        private static ReadOnlySpan<char> LogLifeSupportStabilized => "[OK] LIFE SUPPORT STABILIZED".AsSpan();
+        private static ReadOnlySpan<char> LogHullPressureHigh => "[WARN] HULL PRESSURE HIGH".AsSpan();
+        private static ReadOnlySpan<char> LogHullPressureStabilized => "[OK] HULL PRESSURE STABLE".AsSpan();
+        private static ReadOnlySpan<char> LogMultiFailure => "[CRIT] MULTIPLE SYSTEM FAILURES".AsSpan();
+        private static ReadOnlySpan<char> LogFatalImplosion => "[CRIT] FATAL IMPLOSION EVENT".AsSpan();
+        private static ReadOnlySpan<char> LogLevelNominal => "[OK] EMERGENCY LEVEL NOMINAL".AsSpan();
+        private static ReadOnlySpan<char> LogLevelCaution => "[WARN] EMERGENCY LEVEL CAUTION".AsSpan();
+        private static ReadOnlySpan<char> LogLevelDanger => "[CRIT] EMERGENCY LEVEL DANGER".AsSpan();
+        private static ReadOnlySpan<char> LogLevelEvacuate => "[CRIT] EMERGENCY LEVEL EVACUATE".AsSpan();
+        private static ReadOnlySpan<char> LogStationKeepingArmed => "[OK] STATION KEEPING ARMED".AsSpan();
+        private static ReadOnlySpan<char> LogStationKeepingReleased => "[OK] STATION KEEPING RELEASED".AsSpan();
+        private static ReadOnlySpan<char> LogHostileDroneDetected => "[CRIT] HOSTILE DRONE DETECTED".AsSpan();
+        private static ReadOnlySpan<char> LogBusPower => "BUS POWER ".AsSpan();
+        private static ReadOnlySpan<char> LogOxygen => "OXYGEN ".AsSpan();
+        private static ReadOnlySpan<char> LogHullPressure => "HULL PRESSURE ".AsSpan();
+        private static ReadOnlySpan<char> LogKpaSuffix => "KPA".AsSpan();
 
         private struct PendingEntry
         {
@@ -353,10 +352,8 @@ namespace Hecton8.UI
 
             if (emergencyLevel != _renderedEmergencyLevel)
             {
-                char[] source = ResolveStatusChars(emergencyLevel);
-                int safeLength = math.min(source.Length, _statusBuffer.Length);
-                for (int i = 0; i < safeLength; i++)
-                    _statusBuffer[i] = source[i];
+                ReadOnlySpan<char> source = ResolveStatusChars(emergencyLevel);
+                int safeLength = CopySpan(_statusBuffer, 0, source);
 
                 _statusLabel.SetCharArray(_statusBuffer, 0, safeLength);
                 _renderedEmergencyLevel = emergencyLevel;
@@ -449,7 +446,9 @@ namespace Hecton8.UI
             if (_droneFleetLabel == null)
                 return;
 
-            _droneFleetLabel.SetCharArray(s_activeDrones512, 0, s_activeDrones512.Length);
+            ReadOnlySpan<char> label = ActiveDrones512;
+            int safeLength = CopySpan(_statusBuffer, 0, label);
+            _droneFleetLabel.SetCharArray(_statusBuffer, 0, safeLength);
         }
 
         private void RefreshLogLabel()
@@ -567,10 +566,10 @@ namespace Hecton8.UI
 
             _subsystemIconImages = new Image[4]; // COLD ALLOC: Image[4] — subsystem monochrome icon image refs — owner: HectonSubmarineOsDisplay
             _subsystemIconLabels = new TMP_Text[4]; // COLD ALLOC: TMP_Text[4] — subsystem icon labels — owner: HectonSubmarineOsDisplay
-            CreateIconSlot(0, s_iconEngines, new Vector2(-156f, -16f));
-            CreateIconSlot(1, s_iconLifeSupport, new Vector2(-78f, -16f));
-            CreateIconSlot(2, s_iconLights, new Vector2(0f, -16f));
-            CreateIconSlot(3, s_iconSonar, new Vector2(78f, -16f));
+            CreateIconSlot(0, IconEngines, new Vector2(-156f, -16f));
+            CreateIconSlot(1, IconLifeSupport, new Vector2(-78f, -16f));
+            CreateIconSlot(2, IconLights, new Vector2(0f, -16f));
+            CreateIconSlot(3, IconSonar, new Vector2(78f, -16f));
 
             InvalidateSnapshotRenderCaches();
             RefreshStatusLabels();
@@ -580,7 +579,7 @@ namespace Hecton8.UI
             return true;
         }
 
-        private void CreateIconSlot(int index, char[] labelChars, Vector2 anchoredPosition)
+        private void CreateIconSlot(int index, ReadOnlySpan<char> labelChars, Vector2 anchoredPosition)
         {
             GameObject iconObject = new GameObject("SubsystemIcon", typeof(RectTransform), typeof(Image)); // COLD ALLOC: GameObject[1] — subsystem icon root — owner: HectonSubmarineOsDisplay
             iconObject.transform.SetParent(_root, false);
@@ -597,7 +596,8 @@ namespace Hecton8.UI
 
             TMP_Text label = CreateText("Label", iconRect, new Vector2(0f, 0f), new Vector2(IconWidth, IconHeight), 14f);
             label.alignment = TextAlignmentOptions.Center;
-            label.SetCharArray(labelChars, 0, labelChars.Length);
+            int safeLength = CopySpan(_statusBuffer, 0, labelChars);
+            label.SetCharArray(_statusBuffer, 0, safeLength);
             _subsystemIconLabels[index] = label;
         }
 
@@ -662,26 +662,26 @@ namespace Hecton8.UI
             return canvas;
         }
 
-        private static char[] ResolveStatusChars(SubmarineEmergencyLevel emergencyLevel)
+        private static ReadOnlySpan<char> ResolveStatusChars(SubmarineEmergencyLevel emergencyLevel)
         {
             switch (emergencyLevel)
             {
                 case SubmarineEmergencyLevel.Caution:
-                    return s_statusCaution;
+                    return StatusCaution;
                 case SubmarineEmergencyLevel.Danger:
-                    return s_statusDanger;
+                    return StatusDanger;
                 case SubmarineEmergencyLevel.Evacuate:
-                    return s_statusEvacuate;
+                    return StatusEvacuate;
                 default:
-                    return s_statusNominal;
+                    return StatusNominal;
             }
         }
 
-        private static bool TryResolveLogChars(HectonSubmarineOsLogCode code, out char[] chars, out int length)
+        private static bool TryResolveLogChars(HectonSubmarineOsLogCode code, out ReadOnlySpan<char> chars, out int length)
         {
             chars = ResolveLogChars(code);
-            length = chars != null ? chars.Length : 0;
-            return chars != null && length > 0;
+            length = chars.Length;
+            return length > 0;
         }
 
         private void InvalidateSnapshotRenderCaches()
@@ -705,65 +705,65 @@ namespace Hecton8.UI
             switch (code)
             {
                 case HectonSubmarineOsLogCode.LowPowerModeEngaged:
-                    cursor = AppendChars(destination, cursor, s_logPrefixWarn);
-                    cursor = AppendChars(destination, cursor, s_logBusPower);
+                    cursor = AppendSpan(destination, cursor, LogPrefixWarn);
+                    cursor = AppendSpan(destination, cursor, LogBusPower);
                     return AppendPercent(destination, cursor, _snapshot.PowerNormalized);
 
                 case HectonSubmarineOsLogCode.LifeSupportCritical:
-                    cursor = AppendChars(destination, cursor, s_logPrefixCrit);
-                    cursor = AppendChars(destination, cursor, s_logOxygen);
+                    cursor = AppendSpan(destination, cursor, LogPrefixCrit);
+                    cursor = AppendSpan(destination, cursor, LogOxygen);
                     return AppendPercent(destination, cursor, _snapshot.OxygenNormalized);
 
                 case HectonSubmarineOsLogCode.HullPressureHigh:
-                    cursor = AppendChars(destination, cursor, s_logPrefixWarn);
-                    cursor = AppendChars(destination, cursor, s_logHullPressure);
+                    cursor = AppendSpan(destination, cursor, LogPrefixWarn);
+                    cursor = AppendSpan(destination, cursor, LogHullPressure);
                     cursor = AppendInt(destination, cursor, (int)math.round(_snapshot.MaxPressureKPa));
-                    return AppendChars(destination, cursor, s_logKpaSuffix);
+                    return AppendSpan(destination, cursor, LogKpaSuffix);
 
                 default:
-                    if (!TryResolveLogChars(code, out char[] chars, out int length))
+                    if (!TryResolveLogChars(code, out ReadOnlySpan<char> chars, out int length))
                         return 0;
 
-                    return AppendRange(destination, cursor, chars, 0, length);
+                    return AppendSpan(destination, cursor, chars.Slice(0, length));
             }
         }
 
-        private static char[] ResolveLogChars(HectonSubmarineOsLogCode code)
+        private static ReadOnlySpan<char> ResolveLogChars(HectonSubmarineOsLogCode code)
         {
             switch (code)
             {
                 case HectonSubmarineOsLogCode.LowPowerModeEngaged:
-                    return s_logLowPowerEngaged;
+                    return LogLowPowerEngaged;
                 case HectonSubmarineOsLogCode.LowPowerModeCleared:
-                    return s_logLowPowerCleared;
+                    return LogLowPowerCleared;
                 case HectonSubmarineOsLogCode.LifeSupportCritical:
-                    return s_logLifeSupportCritical;
+                    return LogLifeSupportCritical;
                 case HectonSubmarineOsLogCode.LifeSupportStabilized:
-                    return s_logLifeSupportStabilized;
+                    return LogLifeSupportStabilized;
                 case HectonSubmarineOsLogCode.HullPressureHigh:
-                    return s_logHullPressureHigh;
+                    return LogHullPressureHigh;
                 case HectonSubmarineOsLogCode.HullPressureStabilized:
-                    return s_logHullPressureStabilized;
+                    return LogHullPressureStabilized;
                 case HectonSubmarineOsLogCode.MultiSystemFailure:
-                    return s_logMultiFailure;
+                    return LogMultiFailure;
                 case HectonSubmarineOsLogCode.FatalImplosion:
-                    return s_logFatalImplosion;
+                    return LogFatalImplosion;
                 case HectonSubmarineOsLogCode.EmergencyLevelNominal:
-                    return s_logLevelNominal;
+                    return LogLevelNominal;
                 case HectonSubmarineOsLogCode.EmergencyLevelCaution:
-                    return s_logLevelCaution;
+                    return LogLevelCaution;
                 case HectonSubmarineOsLogCode.EmergencyLevelDanger:
-                    return s_logLevelDanger;
+                    return LogLevelDanger;
                 case HectonSubmarineOsLogCode.EmergencyLevelEvacuate:
-                    return s_logLevelEvacuate;
+                    return LogLevelEvacuate;
                 case HectonSubmarineOsLogCode.StationKeepingArmed:
-                    return s_logStationKeepingArmed;
+                    return LogStationKeepingArmed;
                 case HectonSubmarineOsLogCode.StationKeepingReleased:
-                    return s_logStationKeepingReleased;
+                    return LogStationKeepingReleased;
                 case HectonSubmarineOsLogCode.HostileDroneDetected:
-                    return s_logHostileDroneDetected;
+                    return LogHostileDroneDetected;
                 default:
-                    return s_logReactorStable;
+                    return LogReactorStable;
             }
         }
 
@@ -781,9 +781,22 @@ namespace Hecton8.UI
             return safeCursor + safeLength;
         }
 
-        private static int AppendChars(char[] destination, int cursor, char[] source)
+        private static int AppendSpan(char[] destination, int cursor, ReadOnlySpan<char> source)
         {
-            return AppendRange(destination, cursor, source, 0, source != null ? source.Length : 0);
+            if (destination == null || source.Length <= 0)
+                return cursor;
+
+            int safeCursor = math.clamp(cursor, 0, destination.Length);
+            int safeLength = math.min(source.Length, destination.Length - safeCursor);
+            for (int i = 0; i < safeLength; i++)
+                destination[safeCursor + i] = source[i];
+
+            return safeCursor + safeLength;
+        }
+
+        private static int CopySpan(char[] destination, int cursor, ReadOnlySpan<char> source)
+        {
+            return AppendSpan(destination, cursor, source);
         }
 
         private static int AppendPercent(char[] destination, int cursor, float normalizedValue)

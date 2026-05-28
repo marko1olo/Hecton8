@@ -170,7 +170,7 @@ namespace Hecton8.Visor
                 Vector3 absoluteCameraPosition = cameraData.camera.transform.position + floatingOriginOffset;
                 RefreshWorldMemoryRect(new Vector2(absoluteCameraPosition.x, absoluteCameraPosition.z), false);
 
-                TextureDesc compositeDesc = new TextureDesc(sourceDesc);
+                TextureDesc compositeDesc = sourceDesc;
                 compositeDesc.name = "_HectonSonarPointCloudComposite";
                 compositeDesc.clearBuffer = false;
                 compositeDesc.depthBufferBits = DepthBits.None;

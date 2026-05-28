@@ -115,8 +115,18 @@ float2 _WindDir;
 [numthreads(8,8,1)]
 void SpectrumInitalize(uint3 id : SV_DispatchThreadID)
 {
+	uint width;
+	uint height;
+	uint depth;
+	_ResultInit.GetDimensions( width, height, depth );
+
+	if ( id.x >= width || id.y >= height || id.z >= depth || _Size <= 0 )
+	{
+		return;
+	}
+
 	const int2 center = _Size.xx / 2;
-	const int2 coord = id.xy - center;
+	const int2 coord = (int2)id.xy - center;
 
 	if( coord.x == 0 && coord.y == 0 )
 	{
@@ -124,16 +134,10 @@ void SpectrumInitalize(uint3 id : SV_DispatchThreadID)
 		return;
 	}
 
-	uint depth;
-	{
-		uint width, height;
-		_ResultInit.GetDimensions( width, height, depth );
-	}
-
-	uint maxCoord = int( max( abs( coord.x ), abs( coord.y ) ) );
+	uint maxCoord = (uint)max( abs( coord.x ), abs( coord.y ) );
 
 	// Matches variable with same name in ShapeFFT.cs
-	uint WAVE_SAMPLE_FACTOR = 8;
+	uint WAVE_SAMPLE_FACTOR = 8u;
 
 	// If not largest cascade which will get all wavelengths, then limit
 	// so we split range of frequencies with no overlaps.
@@ -141,11 +145,11 @@ void SpectrumInitalize(uint3 id : SV_DispatchThreadID)
 	// uint samplesPerWave = _Size / WAVE_SAMPLE_FACTOR;
 	// Too low wavelength (maxCoord < _Size / (2 * samplesPerWave) ||
 	// Too high wavelength maxCoord >= _Size / samplesPerWave)
-	if ( id.z < (depth - 1) &&
+	if ( id.z < (depth - 1u) &&
 		// Too low wavelength
-		maxCoord < WAVE_SAMPLE_FACTOR / 2 ||
+		(maxCoord < WAVE_SAMPLE_FACTOR / 2u ||
 		// Too high wavelength
-		maxCoord >= WAVE_SAMPLE_FACTOR
+		maxCoord >= WAVE_SAMPLE_FACTOR)
 		)
 	{
 		_ResultInit[id] = 0.0;
@@ -217,8 +221,37 @@ float2 cmul(float2 lhs, float2 rhs)
 [numthreads(8, 8, 1)]
 void SpectrumUpdate(uint3 id : SV_DispatchThreadID)
 {
+	uint initWidth;
+	uint initHeight;
+	uint initDepth;
+	_Init0.GetDimensions( initWidth, initHeight, initDepth );
+
+	uint heightWidth;
+	uint heightHeight;
+	uint heightDepth;
+	_ResultHeight.GetDimensions( heightWidth, heightHeight, heightDepth );
+
+	uint displaceXWidth;
+	uint displaceXHeight;
+	uint displaceXDepth;
+	_ResultDisplaceX.GetDimensions( displaceXWidth, displaceXHeight, displaceXDepth );
+
+	uint displaceZWidth;
+	uint displaceZHeight;
+	uint displaceZDepth;
+	_ResultDisplaceZ.GetDimensions( displaceZWidth, displaceZHeight, displaceZDepth );
+
+	if ( id.x >= initWidth || id.y >= initHeight || id.z >= initDepth ||
+		id.x >= heightWidth || id.y >= heightHeight || id.z >= heightDepth ||
+		id.x >= displaceXWidth || id.y >= displaceXHeight || id.z >= displaceXDepth ||
+		id.x >= displaceZWidth || id.y >= displaceZHeight || id.z >= displaceZDepth ||
+		_Size <= 0 )
+	{
+		return;
+	}
+
 	const int2 center = _Size.xx / 2;
-	const int2 coord = id.xy - center;
+	const int2 coord = (int2)id.xy - center;
 
 	// Find wave vector and number
 	const float worldSize = 0.5 * (1 << id.z);

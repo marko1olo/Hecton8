@@ -42,6 +42,11 @@ void SampleDisplacementsCompute(
 	in float i_width, in float i_height, in float3 i_uv_slice,
 	in float i_wt, inout float3 io_worldPos
 ) {
+	if (i_width <= 0.0 || i_height <= 0.0)
+	{
+		return;
+	}
+
 	// NOTE: We have to roll our own bilinear filter in Compute shaders when
 	// reading from a RWTexture. The documentation below explains how SRV
 	// and UAV mappings of the same texture cannot exist at the same time.
@@ -57,14 +62,18 @@ void SampleDisplacementsCompute(
 	pixelCoordCenters = clamp(pixelCoordCenters, 0.0, float2(i_width, i_height) - 1.0);
 
 	// Compute integral and fractional parts
-	const uint2 pixelCoordCentersBotLeft = floor(pixelCoordCenters);
+	const uint2 pixelCoordCentersBotLeft = (uint2)floor(pixelCoordCenters);
+	const uint2 pixelCoordMax = uint2((uint)i_width - 1u, (uint)i_height - 1u);
+	const uint2 pixelCoordCentersTopRight = min(pixelCoordCentersBotLeft + uint2(1u, 1u), pixelCoordMax);
+	const uint2 pixelCoordBotRight = uint2(pixelCoordCentersTopRight.x, pixelCoordCentersBotLeft.y);
+	const uint2 pixelCoordTopLeft = uint2(pixelCoordCentersBotLeft.x, pixelCoordCentersTopRight.y);
 	const uint sliceIndex = i_uv_slice.z;
 	const float2 pixelCoordCentersFrac = frac(pixelCoordCenters);
 
 	const half4 dataBotLeft = i_dispSampler[uint3(pixelCoordCentersBotLeft, sliceIndex)];
-	const half4 dataBotRight = i_dispSampler[uint3(pixelCoordCentersBotLeft + uint2(1, 0), sliceIndex)];
-	const half4 dataTopLeft = i_dispSampler[uint3(pixelCoordCentersBotLeft + uint2(0, 1), sliceIndex)];
-	const half4 dataTopRight = i_dispSampler[uint3(pixelCoordCentersBotLeft + uint2(1, 1), sliceIndex)];
+	const half4 dataBotRight = i_dispSampler[uint3(pixelCoordBotRight, sliceIndex)];
+	const half4 dataTopLeft = i_dispSampler[uint3(pixelCoordTopLeft, sliceIndex)];
+	const half4 dataTopRight = i_dispSampler[uint3(pixelCoordCentersTopRight, sliceIndex)];
 
 	const float4 dataLerped = lerp(
 		lerp(dataBotLeft, dataBotRight, pixelCoordCentersFrac.x),
@@ -77,12 +86,19 @@ void SampleDisplacementsCompute(
 
 void ShapeCombineBase(uint3 id)
 {
-	float width, height;
+	uint width, height, depth;
 	{
-		float dummy;
-		_LD_TexArray_AnimatedWaves_Compute.GetDimensions(width, height, dummy);
+		_LD_TexArray_AnimatedWaves_Compute.GetDimensions(width, height, depth);
 	}
-	const float2 input_uv = IDtoUV(id.xy, width, height);
+
+	if (id.x >= width || id.y >= height || _LD_SliceIndex >= depth)
+	{
+		return;
+	}
+
+	const float widthFloat = (float)width;
+	const float heightFloat = (float)height;
+	const float2 input_uv = IDtoUV(id.xy, widthFloat, heightFloat);
 	const CascadeParams cascadeData0 = _CrestCascadeData[_LD_SliceIndex];
 	const CascadeParams cascadeData1 = _CrestCascadeData[_LD_SliceIndex + 1];
 
@@ -115,7 +131,7 @@ void ShapeCombineBase(uint3 id)
 #if !_DISABLE_COMBINE
 	// Waves to combine down from the next lod up the chain.
 	// Do not combine variance. Variance is already cumulative - from low cascades up.
-	SampleDisplacementsCompute(_LD_TexArray_AnimatedWaves_Compute, width, height, uv_nextLod, 1.0, result);
+	SampleDisplacementsCompute(_LD_TexArray_AnimatedWaves_Compute, widthFloat, heightFloat, uv_nextLod, 1.0, result);
 #endif
 
 #if _DYNAMIC_WAVE_SIM_ON

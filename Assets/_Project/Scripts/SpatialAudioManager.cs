@@ -2226,17 +2226,17 @@ namespace Hecton8.Audio
             if (_audioRamDebugTextBuffer == null || _audioRamDebugTextBuffer.Length < AudioRamDebugTextCapacity)
                 _audioRamDebugTextBuffer = new char[AudioRamDebugTextCapacity]; // COLD ALLOC: char[48] - development audio RAM overlay text staging - owner: SpatialAudioManager
 
-            GameObject overlayRoot = new GameObject("AudioRamDebugOverlay", typeof(RectTransform), typeof(Canvas)); // COLD ALLOC: GameObject[1] - development audio RAM overlay canvas - owner: SpatialAudioManager
+            GameObject overlayRoot = new GameObject("AudioRamDebugOverlay", typeof(RectTransform)); // COLD ALLOC: GameObject[1] - development audio RAM overlay canvas - owner: SpatialAudioManager
             overlayRoot.transform.SetParent(transform, false);
 
-            Canvas canvas = overlayRoot.GetComponent<Canvas>();
+            Canvas canvas = overlayRoot.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = AudioRamDebugCanvasSortingOrder;
 
-            GameObject labelObject = new GameObject("AudioRamDebugLabel", typeof(RectTransform), typeof(CanvasRenderer), typeof(TMPro.TextMeshProUGUI)); // COLD ALLOC: GameObject[1] - development audio RAM overlay label - owner: SpatialAudioManager
+            GameObject labelObject = new GameObject("AudioRamDebugLabel", typeof(RectTransform), typeof(CanvasRenderer)); // COLD ALLOC: GameObject[1] - development audio RAM overlay label - owner: SpatialAudioManager
             labelObject.transform.SetParent(overlayRoot.transform, false);
 
-            _audioRamDebugLabel = labelObject.GetComponent<TMPro.TextMeshProUGUI>();
+            _audioRamDebugLabel = labelObject.AddComponent<TMPro.TextMeshProUGUI>();
             TMPro.TMP_FontAsset defaultFont = TMPro.TMP_Settings.defaultFontAsset;
             if (defaultFont != null)
                 _audioRamDebugLabel.font = defaultFont;
@@ -3197,9 +3197,9 @@ namespace Hecton8.Audio
         }
 
         /// <inheritdoc />
-        public void SetLowTierVirtualization(bool lowTier)
+        public void SetVirtualizationQualityWeight(float qualityWeight01)
         {
-            ApplyVirtualVoiceQualityWeight(lowTier ? 0f : 1f);
+            ApplyVirtualVoiceQualityWeight(qualityWeight01);
         }
 
         private float3 ResolveVirtualListenerVelocity(in AbsoluteUniversePosition listenerAup, float deltaTime)
@@ -11768,7 +11768,6 @@ namespace Hecton8.Audio
         public AudioCaptionRequest(uint captionHashId, Vector3 worldPosition, float durationSeconds, float intensity)
         {
             CaptionHashId = captionHashId;
-            CaptionText = AudioCaptionEvents.ResolveCaptionText(captionHashId) ?? string.Empty;
             WorldPosition = worldPosition;
             bool hasWorldAup = TryResolveAupFromRuntimeOrigin(worldPosition, out AbsoluteUniversePosition worldAup);
             WorldAup = worldAup;
@@ -11778,33 +11777,17 @@ namespace Hecton8.Audio
         }
 
         public AudioCaptionRequest(uint captionHashId, Vector3 worldPosition, in AbsoluteUniversePosition worldAup, float durationSeconds, float intensity)
-            : this(captionHashId, AudioCaptionEvents.ResolveCaptionText(captionHashId) ?? string.Empty, worldPosition, worldAup, true, durationSeconds, intensity)
-        {
-        }
-
-        private AudioCaptionRequest(
-            uint captionHashId,
-            string captionText,
-            Vector3 worldPosition,
-            AbsoluteUniversePosition worldAup,
-            bool hasWorldAup,
-            float durationSeconds,
-            float intensity)
         {
             CaptionHashId = captionHashId;
-            CaptionText = captionText;
             WorldPosition = worldPosition;
             WorldAup = worldAup;
-            _hasWorldAup = hasWorldAup ? (byte)1 : (byte)0;
+            _hasWorldAup = 1;
             DurationSeconds = durationSeconds;
             Intensity = intensity;
         }
 
         /// <summary>Stable caption text/hash id. Zero means invalid/legacy-only.</summary>
         public uint CaptionHashId { get; }
-
-        /// <summary>Cached presentation text shown by the HUD after hash resolution.</summary>
-        public string CaptionText { get; }
 
         /// <summary>World-space origin used to position the caption around the reticle.</summary>
         public Vector3 WorldPosition { get; }
@@ -11977,52 +11960,30 @@ namespace Hecton8.Audio
     }
 
     /// <summary>
-    /// Listener for deferred spatial-audio caption requests.
-    /// </summary>
-    public interface IAudioCaptionEventListener
-    {
-        void OnAudioCaptionRequested(AudioCaptionRequest request);
-    }
-
-    /// <summary>
     /// Fixed-ring main-thread event bus for spatial-audio captions.
     /// Audio systems publish semantic cue text here; HUD overlays render it.
     /// </summary>
     public static class AudioCaptionEvents
     {
-        private const int ListenerCapacity = 8;
         private const int PendingEventCapacity = 32;
         private const ushort CaptionRequestedEventType = 1;
         private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("AudioCaptionEvents.Overflow"));
         private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("AudioCaptionEvents"));
-        private const string LowPowerCaptionText = "SUBMARINE LOW POWER";
-        private const string LifeSupportCaptionText = "LIFE SUPPORT CRITICAL";
-        private const string MultiFailureCaptionText = "MULTIPLE SYSTEM FAILURES";
-        private const string EmergencyDangerCaptionText = "EMERGENCY LEVEL DANGER";
-        private const string AbandonShipCaptionText = "ABANDON SHIP";
-        private const string HostileDroneCaptionText = "HOSTILE DRONE DETECTED";
-        private const string OxygenLowCaptionText = "OXYGEN LOW";
-        private const string OxygenCriticalCaptionText = "OXYGEN CRITICAL";
-        private const string HullBreachCaptionText = "HULL BREACH";
-        private const string PressureHighCaptionText = "HULL PRESSURE HIGH";
-        private const string ThermalStressCaptionText = "THERMAL STRESS";
+        public const uint LowPowerCaptionHash = VwsCaptionFallbackCatalog.LowPowerCaptionHash;
+        public const uint LifeSupportCaptionHash = VwsCaptionFallbackCatalog.LifeSupportCaptionHash;
+        public const uint MultiFailureCaptionHash = VwsCaptionFallbackCatalog.MultiFailureCaptionHash;
+        public const uint EmergencyDangerCaptionHash = VwsCaptionFallbackCatalog.EmergencyDangerCaptionHash;
+        public const uint AbandonShipCaptionHash = VwsCaptionFallbackCatalog.AbandonShipCaptionHash;
+        public const uint HostileDroneCaptionHash = VwsCaptionFallbackCatalog.HostileDroneCaptionHash;
+        public const uint OxygenLowCaptionHash = VwsCaptionFallbackCatalog.OxygenLowCaptionHash;
+        public const uint OxygenCriticalCaptionHash = VwsCaptionFallbackCatalog.OxygenCriticalCaptionHash;
+        public const uint HullBreachCaptionHash = VwsCaptionFallbackCatalog.HullBreachCaptionHash;
+        public const uint PressureHighCaptionHash = VwsCaptionFallbackCatalog.PressureHighCaptionHash;
+        public const uint ThermalStressCaptionHash = VwsCaptionFallbackCatalog.ThermalStressCaptionHash;
 
-        public static readonly uint LowPowerCaptionHash = unchecked((uint)LocHash.Compute(LowPowerCaptionText));
-        public static readonly uint LifeSupportCaptionHash = unchecked((uint)LocHash.Compute(LifeSupportCaptionText));
-        public static readonly uint MultiFailureCaptionHash = unchecked((uint)LocHash.Compute(MultiFailureCaptionText));
-        public static readonly uint EmergencyDangerCaptionHash = unchecked((uint)LocHash.Compute(EmergencyDangerCaptionText));
-        public static readonly uint AbandonShipCaptionHash = unchecked((uint)LocHash.Compute(AbandonShipCaptionText));
-        public static readonly uint HostileDroneCaptionHash = unchecked((uint)LocHash.Compute(HostileDroneCaptionText));
-        public static readonly uint OxygenLowCaptionHash = unchecked((uint)LocHash.Compute(OxygenLowCaptionText));
-        public static readonly uint OxygenCriticalCaptionHash = unchecked((uint)LocHash.Compute(OxygenCriticalCaptionText));
-        public static readonly uint HullBreachCaptionHash = unchecked((uint)LocHash.Compute(HullBreachCaptionText));
-        public static readonly uint PressureHighCaptionHash = unchecked((uint)LocHash.Compute(PressureHighCaptionText));
-        public static readonly uint ThermalStressCaptionHash = unchecked((uint)LocHash.Compute(ThermalStressCaptionText));
-
-        private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity]; // COLD ALLOC: ListenerSlot[8] - audio caption listeners drained by SystemDispatcher LateUpdate - owner: AudioCaptionEvents
-        private static int _listenerCount;
-        private static AudioCaptionPayload[] _pendingEvents;
-        private static AudioCaptionPayload[] _nextFrameEvents;
+        private static readonly AudioCaptionPayload[] _pendingEvents = new AudioCaptionPayload[PendingEventCapacity]; // COLD ALLOC: AudioCaptionPayload[32] - deferred spatial audio caption lane - owner: AudioCaptionEvents
+        private static readonly AudioCaptionPayload[] _nextFrameEvents = new AudioCaptionPayload[PendingEventCapacity]; // COLD ALLOC: AudioCaptionPayload[32] - next-frame spatial audio caption lane - owner: AudioCaptionEvents
+        private static int _activeConsumerCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
         private static int _pendingEventHead;
@@ -12036,12 +11997,9 @@ namespace Hecton8.Audio
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _pendingEvents = null;
-            _nextFrameEvents = null;
-
-            for (int i = 0; i < _listenerCount; i++)
-                _listeners[i].Clear();
-            _listenerCount = 0;
+            Array.Clear(_pendingEvents, 0, _pendingEvents.Length);
+            Array.Clear(_nextFrameEvents, 0, _nextFrameEvents.Length);
+            _activeConsumerCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
             _pendingEventHead = 0;
@@ -12050,58 +12008,71 @@ namespace Hecton8.Audio
             _isDispatching = false;
         }
 
-        /// <summary>Registers one audio caption listener.</summary>
-        public static void Register(IAudioCaptionEventListener listener)
+        /// <summary>Registers one UI-side pull consumer for audio captions.</summary>
+        public static void RegisterConsumer()
         {
-            if (listener == null)
-                return;
-
             if (!Application.isPlaying)
                 return;
 
-            EnsureInitialized();
-            RegisterImmediate(listener);
+            if (_activeConsumerCount < int.MaxValue)
+                _activeConsumerCount++;
         }
 
-        /// <summary>Unregisters one audio caption listener.</summary>
-        public static void Unregister(IAudioCaptionEventListener listener)
+        /// <summary>Unregisters one UI-side pull consumer for audio captions.</summary>
+        public static void UnregisterConsumer()
         {
-            if (listener == null)
-                return;
+            if (_activeConsumerCount > 0)
+                _activeConsumerCount--;
 
-            TryUnregisterImmediate(listener);
-            if (_listenerCount <= 0)
+            if (_activeConsumerCount <= 0)
                 DropQueuedCaptionPayloads();
         }
 
-        /// <summary>Flushes queued audio captions to registered UI listeners.</summary>
+        /// <summary>Dispatcher compatibility hook; active UI overlays drain captions from their LateFrameTick.</summary>
         public static void FlushPending()
         {
-            if (_pendingEvents == null)
-                return;
+            if (_activeConsumerCount <= 0)
+                DropQueuedCaptionPayloads();
+        }
 
-            if (_listenerCount <= 0)
+        /// <summary>Consumes one queued caption payload into a stack/local request DTO.</summary>
+        public static bool ConsumeNextPendingCaption(out AudioCaptionRequest request)
+        {
+            request = default;
+            if (_activeConsumerCount <= 0)
             {
                 DropQueuedCaptionPayloads();
-                return;
+                return false;
             }
 
-            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            if (_pendingEventCount <= 0)
+            {
+                _pendingEventHead = 0;
+                PromoteNextFrameEvents();
+                if (_pendingEventCount <= 0)
+                    return false;
+            }
+
+            int scanBudget = _pendingEventCount;
             _isDispatching = true;
             try
             {
                 while (scanBudget-- > 0 && _pendingEventCount > 0)
                 {
-                    if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                        return;
-
                     int readIndex = _pendingEventHead;
                     AudioCaptionPayload payload = _pendingEvents[readIndex];
                     _pendingEvents[readIndex] = default;
                     _pendingEventHead = (_pendingEventHead + 1) % _pendingEvents.Length;
                     _pendingEventCount--;
+                    bool hasRequest = TryBuildCaptionRequest(in payload, out request);
+                    if (_pendingEventCount <= 0)
+                    {
+                        _pendingEventHead = 0;
+                        PromoteNextFrameEvents();
+                    }
 
-                    Dispatch(in payload);
+                    if (hasRequest)
+                        return true;
                 }
             }
             finally
@@ -12109,11 +12080,13 @@ namespace Hecton8.Audio
                 _isDispatching = false;
             }
 
-            if (_pendingEventCount > 0)
-                return;
+            if (_pendingEventCount <= 0)
+            {
+                _pendingEventHead = 0;
+                PromoteNextFrameEvents();
+            }
 
-            _pendingEventHead = 0;
-            PromoteNextFrameEvents();
+            return false;
         }
 
         /// <summary>
@@ -12154,9 +12127,22 @@ namespace Hecton8.Audio
         private static bool CanQueueCaptionHash(uint captionHashId)
         {
             return Application.isPlaying &&
-                   _listenerCount > 0 &&
+                   _activeConsumerCount > 0 &&
                    captionHashId != 0u &&
-                   !string.IsNullOrWhiteSpace(ResolveCaptionText(captionHashId));
+                   HasCaptionText(captionHashId);
+        }
+
+        private static bool HasCaptionText(uint captionHashId)
+        {
+            if (captionHashId == 0u)
+                return false;
+
+            if (LocRegistry.TryGetLocalizedSpan(captionHashId, out ReadOnlySpan<byte> localizedUtf8) &&
+                localizedUtf8.Length > 0)
+                return true;
+
+            return TryResolveCaptionTextSpan(captionHashId, out ReadOnlySpan<char> captionText) &&
+                   captionText.Length > 0;
         }
 
         private static bool EnqueueCaptionRequest(in AudioCaptionRequest request)
@@ -12177,23 +12163,6 @@ namespace Hecton8.Audio
             });
         }
 
-        private static void EnsureInitialized()
-        {
-            if (_pendingEvents == null || _pendingEvents.Length != PendingEventCapacity)
-            {
-                _pendingEvents = new AudioCaptionPayload[PendingEventCapacity]; // COLD ALLOC: AudioCaptionPayload[32] - deferred spatial audio caption lane - owner: AudioCaptionEvents
-                _pendingEventHead = 0;
-                _pendingEventCount = 0;
-            }
-
-            if (_nextFrameEvents == null || _nextFrameEvents.Length != PendingEventCapacity)
-            {
-                _nextFrameEvents = new AudioCaptionPayload[PendingEventCapacity]; // COLD ALLOC: AudioCaptionPayload[32] - next-frame spatial audio caption lane - owner: AudioCaptionEvents
-                _nextFrameEventHead = 0;
-                _nextFrameEventCount = 0;
-            }
-        }
-
         private static bool Enqueue(in AudioCaptionPayload payload)
         {
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
@@ -12202,7 +12171,6 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            EnsureInitialized();
             if (_isDispatching)
             {
                 int writeIndex = (_nextFrameEventHead + _nextFrameEventCount) % _nextFrameEvents.Length;
@@ -12221,7 +12189,7 @@ namespace Hecton8.Audio
 
         private static void PromoteNextFrameEvents()
         {
-            if (_nextFrameEvents == null || _pendingEvents == null || _nextFrameEventCount <= 0)
+            if (_nextFrameEventCount <= 0)
                 return;
 
             while (_nextFrameEventCount > 0 && _pendingEventCount < PendingEventCapacity)
@@ -12242,30 +12210,28 @@ namespace Hecton8.Audio
 
         private static void DropQueuedCaptionPayloads()
         {
-            if (_pendingEvents != null)
-                Array.Clear(_pendingEvents, 0, _pendingEvents.Length);
-            if (_nextFrameEvents != null)
-                Array.Clear(_nextFrameEvents, 0, _nextFrameEvents.Length);
+            if (_pendingEventCount <= 0 && _nextFrameEventCount <= 0)
+                return;
+
+            Array.Clear(_pendingEvents, 0, _pendingEvents.Length);
+            Array.Clear(_nextFrameEvents, 0, _nextFrameEvents.Length);
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
             _pendingEventHead = 0;
             _nextFrameEventHead = 0;
         }
 
-        private static void Dispatch(in AudioCaptionPayload payload)
+        private static bool TryBuildCaptionRequest(in AudioCaptionPayload payload, out AudioCaptionRequest request)
         {
+            request = default;
             if (payload.EventType != CaptionRequestedEventType ||
                 payload.CaptionHashId == 0u)
             {
-                return;
+                return false;
             }
 
-            string captionText = ResolveCaptionText(payload.CaptionHashId);
-            if (string.IsNullOrWhiteSpace(captionText))
-                return;
-
             AbsoluteUniversePosition worldAup = payload.WorldAup;
-            AudioCaptionRequest request = payload.HasWorldAup != 0
+            request = payload.HasWorldAup != 0
                 ? new AudioCaptionRequest(
                     payload.CaptionHashId,
                     payload.WorldPosition,
@@ -12277,89 +12243,54 @@ namespace Hecton8.Audio
                     payload.WorldPosition,
                     payload.DurationSeconds,
                     payload.Intensity);
-
-            int count = _listenerCount;
-            for (int i = count - 1; i >= 0; i--)
-            {
-                IAudioCaptionEventListener listener = _listeners[i].Listener;
-                if (listener != null)
-                    listener.OnAudioCaptionRequested(request);
-            }
+            return true;
         }
 
-        private static void RegisterImmediate(IAudioCaptionEventListener listener)
+        public static bool TryResolveCaptionTextSpan(uint captionHashId, out ReadOnlySpan<char> captionText)
         {
-            if (ContainsImmediate(listener) || _listenerCount >= ListenerCapacity)
-                return;
-
-            _listeners[_listenerCount].Listener = listener;
-            _listenerCount++;
+            return VwsCaptionFallbackCatalog.TryResolveCaptionTextSpan(captionHashId, out captionText);
         }
 
-        private static bool TryUnregisterImmediate(IAudioCaptionEventListener listener)
+        public static bool TryWriteCaptionText(
+            uint captionHashId,
+            Span<char> destination,
+            out int displayLength,
+            out int sourceLength,
+            out bool localized)
         {
-            for (int i = 0; i < _listenerCount; i++)
+            displayLength = 0;
+            sourceLength = 0;
+            localized = false;
+
+            if (captionHashId == 0u || destination.Length <= 0)
+                return false;
+
+            if (LocRegistry.TryGetLocalizedSpan(captionHashId, out ReadOnlySpan<byte> localizedUtf8) &&
+                localizedUtf8.Length > 0)
             {
-                if (!ReferenceEquals(_listeners[i].Listener, listener))
-                    continue;
-
-                int lastIndex = _listenerCount - 1;
-                _listeners[i] = _listeners[lastIndex];
-                _listeners[lastIndex].Clear();
-                _listenerCount = lastIndex;
-                return true;
-            }
-
-            return false;
-        }
-
-        private static bool ContainsImmediate(IAudioCaptionEventListener listener)
-        {
-            for (int i = 0; i < _listenerCount; i++)
-            {
-                if (ReferenceEquals(_listeners[i].Listener, listener))
+                if (LocRegistry.TryWriteKnownLocalizedSpanFromUtf8(captionHashId, localizedUtf8, destination, out displayLength) &&
+                    displayLength > 0)
+                {
+                    localized = true;
+                    sourceLength = math.max(displayLength, localizedUtf8.Length);
                     return true;
+                }
+
+                displayLength = 0;
+                sourceLength = 0;
             }
 
-            return false;
-        }
+            if (!TryResolveCaptionTextSpan(captionHashId, out ReadOnlySpan<char> fallbackText) ||
+                fallbackText.Length == 0)
+                return false;
 
-        public static string ResolveCaptionText(uint captionHashId)
-        {
-            if (captionHashId == LowPowerCaptionHash)
-                return LowPowerCaptionText;
-            if (captionHashId == LifeSupportCaptionHash)
-                return LifeSupportCaptionText;
-            if (captionHashId == MultiFailureCaptionHash)
-                return MultiFailureCaptionText;
-            if (captionHashId == EmergencyDangerCaptionHash)
-                return EmergencyDangerCaptionText;
-            if (captionHashId == AbandonShipCaptionHash)
-                return AbandonShipCaptionText;
-            if (captionHashId == HostileDroneCaptionHash)
-                return HostileDroneCaptionText;
-            if (captionHashId == OxygenLowCaptionHash)
-                return OxygenLowCaptionText;
-            if (captionHashId == OxygenCriticalCaptionHash)
-                return OxygenCriticalCaptionText;
-            if (captionHashId == HullBreachCaptionHash)
-                return HullBreachCaptionText;
-            if (captionHashId == PressureHighCaptionHash)
-                return PressureHighCaptionText;
-            if (captionHashId == ThermalStressCaptionHash)
-                return ThermalStressCaptionText;
+            sourceLength = fallbackText.Length;
+            displayLength = math.min(fallbackText.Length, destination.Length);
+            bool truncated = fallbackText.Length > destination.Length && displayLength >= 3;
+            for (int i = 0; i < displayLength; i++)
+                destination[i] = truncated && i >= displayLength - 3 ? '.' : fallbackText[i];
 
-            return null;
-        }
-
-        private struct ListenerSlot
-        {
-            public IAudioCaptionEventListener Listener;
-
-            public void Clear()
-            {
-                Listener = null;
-            }
+            return displayLength > 0;
         }
 
         private static void ReportOverflowOncePerFrame()

@@ -1513,7 +1513,7 @@ namespace Hecton8.World
         private uint _wakeTrailDispatchSerial;
         private uint _lastWakeTrailDispatchSerial;
         private int _wakeTrailRuntimeResolution;
-        private int _wakeTrailQualityLevel = -1;
+        private int _wakeTrailQualityMilli = -1;
         private int _wakeTrailSimulationKernel = -1;
         private int _wakeTrailThreadGroupSizeX;
         private int _wakeTrailThreadGroupSizeY;
@@ -1740,8 +1740,8 @@ namespace Hecton8.World
             _floraSwaySpringDecayRate = Mathf.Clamp(_floraSwaySpringDecayRate, 0.1f, 12f);
             _floraSwayGlobalCurrentInfluence = Mathf.Clamp01(_floraSwayGlobalCurrentInfluence);
             _floraSwayEntityMassMultiplier = Mathf.Clamp(_floraSwayEntityMassMultiplier, 0f, 4f);
-            _wakeTrailQualityLevel = QualitySettings.GetQualityLevel();
-            _wakeTrailRuntimeResolution = ResolveWakeTrailResolutionForQuality(_wakeTrailQualityLevel);
+            _wakeTrailQualityMilli = ResolveWakeTrailQualityMilli();
+            _wakeTrailRuntimeResolution = ResolveWakeTrailResolutionForQualityWeight(_wakeTrailQualityMilli * 0.001f);
             _vegetationBridge = ResolveVegetationBridge();
             _destructibleOrganicManager = ResolveDestructibleOrganicManager();
             _toxicSporeStableHashId = string.IsNullOrWhiteSpace(_toxicSporeStableId) ? 0 : LocHash.Compute(_toxicSporeStableId);
@@ -1815,6 +1815,7 @@ namespace Hecton8.World
             HectonFloatingOrigin.RegisterListener(this);
             GlobalRegistry.RegisterWakeDisplacementService(this);
             CacheEnvironmentRuntimeServicesCold();
+            RefreshPlayerReferenceCacheCold();
             ResolveProceduralWakeVaultBuffer(clearExisting: false);
             ResolveFloraSwayFieldVaultBuffer(clearExisting: false);
             ResolveFloraAuxiliaryVaultBuffers(clearExisting: false);
@@ -2173,6 +2174,11 @@ namespace Hecton8.World
 
         private Transform ResolveRuntimePlayerTransform()
         {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            Transform contextTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (contextTransform != null)
+                return contextTransform;
+
             Transform runtimePlayerTransform = BootstrapState.CurrentPlayerTransform;
             if (runtimePlayerTransform != null)
                 return runtimePlayerTransform;
@@ -2184,13 +2190,13 @@ namespace Hecton8.World
         {
             if (_playerTransform == runtimePlayerTransform)
             {
+                RefreshCachedPlayerContracts(runtimePlayerTransform);
                 ResolveScooterState();
                 return;
             }
 
             _playerTransform = runtimePlayerTransform;
-            runtimePlayerTransform.TryGetComponent(out _playerMovement);
-            _playerToolManager = ResolvePlayerToolManager(runtimePlayerTransform);
+            RefreshCachedPlayerContracts(runtimePlayerTransform);
             _activeScooterTransform = _scooterTransformOverride;
             _smoothPosition = runtimePlayerPosition;
             _lastPlayerPosition = runtimePlayerPosition;
@@ -2205,14 +2211,31 @@ namespace Hecton8.World
             ResolveScooterState();
         }
 
+        private void RefreshCachedPlayerContracts(Transform runtimePlayerTransform)
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            if (playerContext != null && playerContext.PlayerTransform == runtimePlayerTransform)
+            {
+                _playerMovement = playerContext.PlayerMovement;
+                _playerToolManager = playerContext.ToolManager;
+                return;
+            }
+
+            if (runtimePlayerTransform != _playerTransformOverride)
+            {
+                _playerMovement = null;
+                _playerToolManager = null;
+            }
+        }
+
         private void RefreshQualityDependentResourcesIfNeeded()
         {
-            int qualityLevel = QualitySettings.GetQualityLevel();
-            if (_wakeTrailQualityLevel == qualityLevel)
+            int qualityMilli = ResolveWakeTrailQualityMilli();
+            if (_wakeTrailQualityMilli == qualityMilli)
                 return;
 
-            _wakeTrailQualityLevel = qualityLevel;
-            int desiredResolution = ResolveWakeTrailResolutionForQuality(qualityLevel);
+            _wakeTrailQualityMilli = qualityMilli;
+            int desiredResolution = ResolveWakeTrailResolutionForQualityWeight(qualityMilli * 0.001f);
             if (_wakeTrailRuntimeResolution == desiredResolution)
                 return;
 
@@ -2221,11 +2244,26 @@ namespace Hecton8.World
             QueueWakeTrailGlobals();
         }
 
-        private int ResolveWakeTrailResolutionForQuality(int qualityLevel)
+        private static int ResolveWakeTrailQualityMilli()
         {
-            string[] qualityNames = QualitySettings.names;
-            string qualityName = qualityLevel >= 0 && qualityLevel < qualityNames.Length ? qualityNames[qualityLevel] : string.Empty;
-            return 256;
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            if (float.IsNaN(quality) || float.IsInfinity(quality))
+                quality = 1f;
+
+            return Mathf.RoundToInt(Mathf.Clamp01(quality) * 1000f);
+        }
+
+        private static int ResolveWakeTrailResolutionForQualityWeight(float quality01)
+        {
+            float t = SmoothQuality01(quality01);
+            int resolution = Mathf.RoundToInt(Mathf.Lerp(128f, 256f, t) * 0.125f) * 8;
+            return Mathf.Clamp(resolution, 128, 256);
+        }
+
+        private static float SmoothQuality01(float value)
+        {
+            float t = Mathf.Clamp01(value);
+            return t * t * (3f - 2f * t);
         }
 
         private Vector3 ResolvePlayerVelocity(Vector3 targetPosition, float deltaTime)
@@ -2422,8 +2460,8 @@ namespace Hecton8.World
             if (playerContext != null && playerContext.ToolManager != null)
                 return playerContext.ToolManager;
 
-            return runtimePlayerTransform.TryGetComponent(out PlayerToolManager directToolManager)
-                ? directToolManager
+            return runtimePlayerTransform == _playerTransformOverride
+                ? _playerToolManager
                 : null;
         }
 
@@ -8678,6 +8716,42 @@ namespace Hecton8.World
             RefreshCachedSubmarineContext();
         }
 
+        private void RefreshPlayerReferenceCacheCold()
+        {
+            IPlayerRuntimeContext playerContext = _playerRuntimeContext;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (playerTransform == null)
+                playerTransform = _playerTransformOverride;
+
+            _playerTransform = playerTransform;
+            if (playerTransform == null)
+            {
+                _playerMovement = null;
+                _playerToolManager = null;
+                return;
+            }
+
+            if (playerContext != null && playerContext.PlayerTransform == playerTransform)
+            {
+                _playerMovement = playerContext.PlayerMovement;
+                _playerToolManager = playerContext.ToolManager;
+                return;
+            }
+
+            playerTransform.TryGetComponent(out _playerMovement);
+            _playerToolManager = ResolvePlayerToolManagerCold(playerTransform);
+        }
+
+        private static PlayerToolManager ResolvePlayerToolManagerCold(Transform playerTransform)
+        {
+            if (playerTransform == null)
+                return null;
+
+            return playerTransform.TryGetComponent(out PlayerToolManager directToolManager)
+                ? directToolManager
+                : null;
+        }
+
         private void BindFloraDataVault(IDataVault dataVault)
         {
             if (ReferenceEquals(_wakeDataVault, dataVault))
@@ -9883,9 +9957,7 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
-                    _playerToolManager = _playerTransform != null
-                        ? ResolvePlayerToolManager(_playerTransform)
-                        : null;
+                    RefreshPlayerReferenceCacheCold();
                     break;
                 case GlobalRegistryServiceSlot.Submarine:
                     _submarineRuntimeContext = currentService as ISubmarineRuntimeContext;

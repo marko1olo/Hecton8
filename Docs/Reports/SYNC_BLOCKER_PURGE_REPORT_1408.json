@@ -1,132 +1,230 @@
-{
-  "agent_id": "1408",
-  "generated_local_time": "2026-05-28T14:08:35+04:00",
-  "status": "PENDING_VERIFICATION_STATIC_PASS_BUILD_BLOCKED_BY_CPU",
-  "domain": "Echelon 3 / World vegetation residency and flow-field async execution",
-  "prompt_source": "Docs/Tasks/CURRENT_BATCH.md",
-  "prompt_bytes_utf8": 20163,
-  "prompt_task_count": 20,
-  "loop": "Loop 13 - residency clear cancellation",
-  "summary": "Normal ClearAllResidency no longer force-drains in-flight vegetation jobs. It cancels pending chunk, threat, flow, thermal, and abyssal path work and lets LateFrame dispatcher completion release native payloads.",
-  "sync_blocker_scan": {
-    "world_runtime_raw_run_complete_matches": 0,
-    "assigned_runtime_allocator_tempjob_matches": 0,
-    "clear_all_residency_contains_dispose_all_chunk_build_jobs": false,
-    "clear_all_residency_contains_force_complete_true": false,
-    "git_diff_check_errors": 0,
-    "git_diff_check_warnings": [
-      "LF will be replaced by CRLF for touched files"
-    ]
-  },
-  "fixes_this_pass": [
-    {
-      "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
-      "lines": "1870-1914,5520-5536,8201-8222",
-      "issue": "ClearAllResidency is reached from normal RefreshResidency when tile state or player context disappears, but it still called DisposeAllChunkBuildJobs and could force-complete chunk jobs outside teardown.",
-      "fix": "Added Cancelled flags to host pending structs, added HasActiveChunkBuildJobs, CancelAllChunkBuildJobs, and CancelAsyncWorldJobsForResidencyClear; ClearAllResidency now marks async work canceled and returns cleanup to LateFrame fences."
-    },
-    {
-      "file": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
-      "lines": "370-506,557-578",
-      "issue": "Threat, flow, and thermal jobs could publish stale output after a full residency clear because they lacked a cancellation bit.",
-      "fix": "Added CancelVegetationSimulationJobsForResidencyClear and pending.Cancelled checks before every DataVault publish path."
-    },
-    {
-      "file": "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs",
-      "lines": "76-87,152-168,349",
-      "issue": "Static source contract did not prove normal residency clear avoids forced chunk drains.",
-      "fix": "Added source-contract assertions for cancel route and cancel-before-publish ordering."
-    }
-  ],
-  "zero_gc_method_scan": [
-    { "method": "ClearAllResidency", "new": 0, "reference_new": 0, "string_format": 0, "to_string": 0, "foreach": 0, "linq_like": 0 },
-    { "method": "CancelAsyncWorldJobsForResidencyClear", "new": 0, "reference_new": 0, "string_format": 0, "to_string": 0, "foreach": 0, "linq_like": 0 },
-    { "method": "CancelAllChunkBuildJobs", "new": 0, "reference_new": 0, "string_format": 0, "to_string": 0, "foreach": 0, "linq_like": 0 },
-    { "method": "HasActiveChunkBuildJobs", "new": 0, "reference_new": 0, "string_format": 0, "to_string": 0, "foreach": 0, "linq_like": 0 },
-    { "method": "CancelVegetationSimulationJobsForResidencyClear", "new": 0, "reference_new": 0, "string_format": 0, "to_string": 0, "foreach": 0, "linq_like": 0 },
-    { "method": "CompleteThreatPropagationJob", "new": 0, "reference_new": 0, "string_format": 0, "to_string": 0, "foreach": 0, "linq_like": 0 },
-    { "method": "CompleteFlowFieldJob", "new": 0, "reference_new": 0, "string_format": 0, "to_string": 0, "foreach": 0, "linq_like": 0 },
-    { "method": "CompleteThermalGridJob", "new": 0, "reference_new": 0, "string_format": 0, "to_string": 0, "foreach": 0, "linq_like": 0 }
-  ],
-  "data_sovereignty": {
-    "migrated_to_global_data_vault": false,
-    "new_buffer_ids_added": [],
-    "secured_existing_buffer_ids": [
-      "VegetationEcosystemThreatGrid",
-      "VegetationEcosystemThreatGridCompressed",
-      "VegetationEcosystemThreatEcho",
-      "VegetationEcosystemThreatVoxel",
-      "VegetationEcosystemFlowField",
-      "VegetationAbyssalThermalGrid",
-      "VegetationAbyssalFlowVolume",
-      "GroundRadarHits",
-      "GroundRadarSignalStrength",
-      "GroundRadarAgeSeconds",
-      "GroundRadarOreTypes",
-      "GroundRadarPingGpu",
-      "GroundRadarCounters",
-      "GroundRadarMaxSignalStrength"
-    ],
-    "try_acquire_write_lock_sites": [
-      "Assets/_Project/Scripts/World/VegetationMemorySovereigntyRuntime.cs:147,167,302",
-      "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs:584-626",
-      "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:726-772"
-    ],
-    "finally_release_proof": [
-      "TryCopyVegetationMemorySnapshot releases vault write lock in finally",
-      "TryPublishRadarPendingJob releases each acquired GPR write lock in finally",
-      "Cancelled threat/flow/thermal jobs return before TryCopyVegetationMemorySnapshot and still release pending NativeArrays in finally"
-    ],
-    "cross_frame_snapshot_payloads": [
-      "SandMaskSnapshot",
-      "RockMaskSnapshot",
-      "HeightSamplesSnapshot",
-      "PreviousThreat",
-      "ThreatGridSnapshot",
-      "NavPassabilityGrid",
-      "ThreatVoxelGrid",
-      "SdfSnapshot"
-    ]
-  },
-  "continuous_scalability": {
-    "global_quality_weight_paths": [
-      "HectonMapMagicVegetationBridge.ResolveGrassQualityWeight",
-      "VegetationFlowFieldIntegrator.ResolveVegetationVisualQualityWeight",
-      "VegetationNavGridSynchronizer.ResolveAbyssalPathQualityWeight",
-      "GroundPenetratingRadarRuntime.ReadGlobalQualityWeight01"
-    ],
-    "binary_quality_switch_matches_in_modified_domain": 0,
-    "cinematic_cheat_position": "Cancellation keeps old visual snapshots instead of blocking for physical correctness. Grass, abyssal paths, flow visuals, and GPR density remain continuous quality-budgeted visual systems, not new gameplay truth simulation."
-  },
-  "unmanaged_layout": {
-    "explicit_layout_structs_modified": 0,
-    "note": "Added Cancelled bools only to host-side pending structs carrying NativeArray and JobHandle fields. No Burst job payload DTO and no [StructLayout(LayoutKind.Explicit)] unmanaged offsets were changed."
-  },
-  "compilation_resource_throttling": {
-    "dotnet_build_invocations_this_pass": 0,
-    "cpu_load_percent_before_final_compile_decision": 65,
-    "active_compiler_processes": [
-      {
-        "Id": 1604,
-        "ProcessName": "dotnet",
-        "CPU": 66.703125,
-        "StartTime": "2026-05-28T14:04:59+04:00"
-      }
-    ],
-    "final_compile_status": "BLOCKED_BY_CONTENTION"
-  },
-  "file_hashes": [
-    { "path": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs", "sha256": "A0635FF1D2791F6B1604EAF2DAAF84FA9C7B4E9EEC4566301FC3814D83580CF1" },
-    { "path": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs", "sha256": "2B46BBD054937137600D1D43272F9C8B6BB4EC19A36759E5AB2357062E7E0252" },
-    { "path": "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs", "sha256": "2A0735C1E23C51BED5BF3B725B8A7D37B1B020709B0410A51289222334C03573" },
-    { "path": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs", "sha256": "21424C65E5390957D6D889EEFC0D6DD98D3B5886D1754A9FA1C39DE980D6897A" },
-    { "path": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs", "sha256": "CB1F158A40AFC86F39D8C2D4825D8B351EA90D50691A92FCF186651605CC5AB1" },
-    { "path": "Assets/_Project/Scripts/World/VegetationTileCacheResidency.cs", "sha256": "FA6B04AEC157E035647E1B4CF1056EEDDECF480DD7D7435C26E486CE81DCD82C" },
-    { "path": "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs", "sha256": "1467E53B857DA82F59ACED3CA97398FA72E70D2AD043B5CB7CD70B26F09533A8" }
-  ],
-  "residual_risks": [
-    "dotnet build was not executed because CPU was 65 percent and dotnet PID 1604 was active.",
-    "No Unity profiler microsecond measurement was taken; microsecond claims remain static estimates only."
-  ],
-  "dump_artifact": null
+﻿{
+    "agent_id":  "1408",
+    "generated_local_time":  "2026-05-28T20:20:30+04:00",
+    "status":  "PENDING_VERIFICATION_STATIC_PASS_BUILD_TIMEOUT",
+    "domain":  "Echelon 3 / World vegetation residency and flow-field async execution",
+    "prompt_source":  "Docs/Tasks/CURRENT_BATCH.md",
+    "prompt_bytes_utf8":  20163,
+    "prompt_task_count":  20,
+    "loop":  "Loop 18 - Abyssal telemetry scalability recheck",
+    "summary":  "Loop 18 removed a binary low-tier telemetry flag from abyssal path telemetry, hardened the static test contract, re-ran sync/read-accessor/schedule-readback/zero-GC scans, and attempted exactly one throttled final dotnet build. Build timed out after 603584 ms; compile status is unknown, not pass.",
+    "sync_blocker_scan":  {
+                              "assigned_runtime_sync_token_matches_loop18":  0,
+                              "read_accessor_field_mutation_or_sync_matches_loop18":  0,
+                              "schedule_readback_colocated_methods_loop18":  0,
+                              "removed_binary_telemetry_predicate_runtime_matches":  0
+                          },
+    "latest_fixes":  [
+                         {
+                             "file":  "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+                             "lines":  "2103-2107",
+                             "issue":  "Telemetry encoded low-tier budget as a binary flag even though budgets are already continuous numeric values.",
+                             "fix":  "Removed the binary low-tier predicate; flags now only encode empty output and non-finite path fault."
+                         },
+                         {
+                             "file":  "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs",
+                             "lines":  "298-312",
+                             "issue":  "Static contract did not explicitly reject reintroduction of the removed binary telemetry predicate.",
+                             "fix":  "Added negative assertion for _lastAbyssalPathPortalLookAhead \u003c= LowTierAbyssalPathPortalLookAhead."
+                         }
+                     ],
+    "zero_gc_method_scan":  [
+                                {
+                                    "method":  "RecordAbyssalPathTelemetry",
+                                    "file":  "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+                                    "lines":  "2083-2158",
+                                    "newTotal":  1,
+                                    "referenceNew":  0,
+                                    "valueNew":  "AbyssalPathTelemetryEntry",
+                                    "stringFormat":  0,
+                                    "toString":  0,
+                                    "foreach":  0,
+                                    "linqLike":  0,
+                                    "run":  0,
+                                    "complete":  0,
+                                    "waitForCompletion":  0
+                                },
+                                {
+                                    "method":  "ResolveAbyssalPathPortalLookAhead",
+                                    "file":  "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+                                    "lines":  "558-566",
+                                    "newTotal":  0,
+                                    "referenceNew":  0,
+                                    "valueNew":  "",
+                                    "stringFormat":  0,
+                                    "toString":  0,
+                                    "foreach":  0,
+                                    "linqLike":  0,
+                                    "run":  0,
+                                    "complete":  0,
+                                    "waitForCompletion":  0
+                                },
+                                {
+                                    "method":  "ResolveAbyssalPathDdaSampleCap",
+                                    "file":  "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+                                    "lines":  "568-577",
+                                    "newTotal":  0,
+                                    "referenceNew":  0,
+                                    "valueNew":  "",
+                                    "stringFormat":  0,
+                                    "toString":  0,
+                                    "foreach":  0,
+                                    "linqLike":  0,
+                                    "run":  0,
+                                    "complete":  0,
+                                    "waitForCompletion":  0
+                                },
+                                {
+                                    "method":  "ResolveAbyssalPathQualityBudget",
+                                    "file":  "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+                                    "lines":  "585-597",
+                                    "newTotal":  0,
+                                    "referenceNew":  0,
+                                    "valueNew":  "",
+                                    "stringFormat":  0,
+                                    "toString":  0,
+                                    "foreach":  0,
+                                    "linqLike":  0,
+                                    "run":  0,
+                                    "complete":  0,
+                                    "waitForCompletion":  0
+                                }
+                            ],
+    "data_sovereignty":  {
+                             "new_buffer_ids_added_loop18":  [
+
+                                                             ],
+                             "secured_existing_buffer_ids":  [
+                                                                 "BufferID.AbyssalPathTelemetryRing",
+                                                                 "BufferID.GroundRadarHits",
+                                                                 "BufferID.GroundRadarSignalStrength",
+                                                                 "BufferID.GroundRadarAgeSeconds",
+                                                                 "BufferID.GroundRadarOreTypes",
+                                                                 "BufferID.GroundRadarPingGpu",
+                                                                 "BufferID.GroundRadarCounters",
+                                                                 "BufferID.GroundRadarMaxSignalStrength",
+                                                                 "BufferID.VegetationEcosystemThreatGrid",
+                                                                 "BufferID.VegetationAbyssalFlowVolume",
+                                                                 "BufferID.VegetationAbyssalPathSnapshot"
+                                                             ],
+                             "abyssal_path_telemetry_buffer_constant":  "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs:181 -\u003e AbyssalPathTelemetryBufferId = BufferID.AbyssalPathTelemetryRing",
+                             "try_acquire_write_lock_sites":  [
+                                                                  "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:2111",
+                                                                  "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:726,729,732,735,738,741,744",
+                                                                  "Assets/_Project/Scripts/World/VegetationMemorySovereigntyRuntime.cs:302",
+                                                                  "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs:595-617 via TryCopyVegetationMemorySnapshot"
+                                                              ],
+                             "finally_release_sites":  [
+                                                           "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:2145-2147",
+                                                           "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:757-772",
+                                                           "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs:615-619",
+                                                           "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs:7264-7268,7394-7412"
+                                                       ],
+                             "lock_lifetime":  "No DataVault write lock is held across a scheduled worker job in Loop 18; telemetry write lock is acquired only after path result finalization and released in finally."
+                         },
+    "unmanaged_layout":  {
+                             "abyssal_path_telemetry_entry":  "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs:44-79",
+                             "struct_layout":  "[StructLayout(LayoutKind.Explicit, Size = 64)]",
+                             "field_offsets":  "Frame 0, RawCount 4, OutputCount 8, PortalLookAhead 12, MaxDdaSamples 16, FunnelMs 20, StartXYZ 24/28/32, EndXYZ 36/40/44, Flags 48, Sequence 52, Padding 56/60",
+                             "modified_layout_bytes":  0,
+                             "proof":  "Loop 18 removed a uint flag assignment only. No FieldOffset, Size, or DTO layout changed."
+                         },
+    "continuous_scalability":  {
+                                   "global_quality_weight_site":  "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:581",
+                                   "continuous_budget_sites":  [
+                                                                   "ResolveAbyssalPathPortalLookAhead lines 558-566",
+                                                                   "ResolveAbyssalPathDdaSampleCap lines 568-577",
+                                                                   "ResolveAbyssalPathQualityBudget lines 585-597 uses math.lerp"
+                                                               ],
+                                   "binary_switch_removed":  "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:2103-2107 no longer contains _lastAbyssalPathPortalLookAhead \u003c= LowTierAbyssalPathPortalLookAhead",
+                                   "low_middle_high_ultra":  "Low uses cheap portal/sample budgets and stale path telemetry if jobs lag; Middle interpolates toward mid budgets; High/Ultra interpolate toward configured high budgets and store actual numeric budgets in telemetry instead of a binary low-tier flag.",
+                                   "cinematic_cheat":  "Abyssal path smoothing and telemetry remain visual/readback helpers. The system records actual budgets and stale/empty/fault flags; it does not simulate extra physical truth to classify quality."
+                               },
+    "compilation_resource_throttling":  {
+                                            "cpu_load_percent_before_final_compile_decision":  47,
+                                            "active_compiler_processes_before_final_compile":  [
+
+                                                                                               ],
+                                            "dotnet_build_invocations_loop18":  1,
+                                            "build_command":  "dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
+                                            "build_result":  "TIMEOUT_AFTER_603584_MS_EXIT_124",
+                                            "active_compiler_processes_after_timeout":  [
+
+                                                                                        ],
+                                            "final_compile_status":  "UNKNOWN_TIMEOUT_NOT_PASS",
+                                            "dump_artifact":  "Docs/AgentLogs/Dump_1408_BUILD_TIMEOUT_LOOP18_20260528.txt",
+                                            "later_external_compiler_contention":  [
+                                                                                       {
+                                                                                           "ProcessId":  46892,
+                                                                                           "Name":  "dotnet.exe",
+                                                                                           "ParentProcessId":  8316,
+                                                                                           "CreationDate":  "2026-05-28T20:22:32+04:00",
+                                                                                           "CommandLine":  "dotnet build Hecton8.Core.csproj -nologo --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false",
+                                                                                           "Classification":  "external compile-medic targeted build, not Agent 1408 Loop 18 solution-build command"
+                                                                                       },
+                                                                                       {
+                                                                                           "ProcessId":  28228,
+                                                                                           "Name":  "csc.exe",
+                                                                                           "ParentProcessId":  46892,
+                                                                                           "CreationDate":  "2026-05-28T20:23:18+04:00",
+                                                                                           "CommandLine":  "Roslyn csc.exe @MSBuildTemp response file",
+                                                                                           "Classification":  "child compiler of external compile-medic targeted build"
+                                                                                       }
+                                                                                   ]
+                                        },
+    "file_hashes":  [
+                        {
+                            "path":  "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+                            "sha256":  "7505F64E26BA63D5639FCF238B325CDA2467CE8F2ADFF8D3EB271F5F056D2171"
+                        },
+                        {
+                            "path":  "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+                            "sha256":  "820250266FFA80975A4BCBE3099B7AF89D4600E18CA2C3520FDBDB720088B007"
+                        },
+                        {
+                            "path":  "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+                            "sha256":  "4E055EC7EA9030D1E016A554932EBC41782C13E2AF3EF92EC6279921B748998D"
+                        },
+                        {
+                            "path":  "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+                            "sha256":  "2B46BBD054937137600D1D43272F9C8B6BB4EC19A36759E5AB2357062E7E0252"
+                        },
+                        {
+                            "path":  "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+                            "sha256":  "21424C65E5390957D6D889EEFC0D6DD98D3B5886D1754A9FA1C39DE980D6897A"
+                        },
+                        {
+                            "path":  "Assets/_Project/Scripts/World/VegetationTileCacheResidency.cs",
+                            "sha256":  "FA6B04AEC157E035647E1B4CF1056EEDDECF480DD7D7435C26E486CE81DCD82C"
+                        },
+                        {
+                            "path":  "Assets/_Project/Scripts/World/VegetationMemorySovereigntyRuntime.cs",
+                            "sha256":  "58A588A978EE1807BE16016714562297BD933EFFB1DEFC85DCE3204871C2F03A"
+                        },
+                        {
+                            "path":  "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs",
+                            "sha256":  "59BC76A175C97888FDCE16A5EADC97A44891B446D926AE365D3B79F104AC575E"
+                        }
+                    ],
+    "residual_risks":  [
+                           "dotnet build did not complete; compile status is unknown, not green.",
+                           "No Unity Editor playmode/profiler/GCMonitor run was available in this session; runtime microsecond savings are not measured.",
+                           "After the Loop 18 timeout scan, an external compile-medic targeted build appeared: dotnet PID 46892 with csc PID 28228; it was not terminated because it is not the Agent 1408 solution-build command."
+                       ],
+    "dump_artifact":  "Docs/AgentLogs/Dump_1408_BUILD_TIMEOUT_LOOP18_20260528.txt",
+    "latest_loop16_artifact":  {
+                                   "path":  "Docs/Reports/APEX_LOOP16_READ_ACCESSOR_NAMING_RECHECK_1408.json",
+                                   "sha256":  "8A262569530EF14D666E5B71B250836DCA464D7D99A48580E02A08ED2369679F",
+                                   "dump":  "Docs/AgentLogs/Dump_1408_BUILD_BLOCKED_LOOP16_20260528.txt"
+                               },
+    "latest_loop17_artifact":  {
+                                   "path":  "Docs/Reports/APEX_LOOP17_GPR_RESOLVE_MUTATION_RECHECK_1408.json",
+                                   "sha256":  "1C19BF1FB281877C5FDEF805ED4DF39470E2CFFD26DF5ED572D79DE29CC82BB0",
+                                   "dump":  "Docs/AgentLogs/Dump_1408_BUILD_BLOCKED_LOOP17_20260528.txt"
+                               },
+    "latest_loop18_artifact":  {
+                                   "path":  "Docs/Reports/APEX_LOOP18_ABYSSAL_TELEMETRY_SCALABILITY_RECHECK_1408.json",
+                                   "sha256":  "25FEE7DD5E6E8E675DBBEA33B082A1FD8414DD2081FA81FF06321803DEA9CB07",
+                                   "dump":  "Docs/AgentLogs/Dump_1408_BUILD_TIMEOUT_LOOP18_20260528.txt"
+                               }
 }

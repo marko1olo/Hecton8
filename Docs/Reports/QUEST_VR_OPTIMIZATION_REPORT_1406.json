@@ -1,268 +1,1557 @@
 {
-  "agentId": "1406",
-  "role": "QUEST_URP_QUALITY_CONFIGURATOR_AND_VR_FOVEATION_DRIVER",
-  "status": "PENDING_VERIFICATION",
-  "generatedAt": "2026-05-28",
-  "evidenceType": "static_analysis_only_no_unity_import_no_playmode_no_quest_device_profiler",
-  "promptExtraction": {
-    "path": "Docs/Tasks/CURRENT_BATCH.md",
-    "currentRecheck": "PASS",
-    "startLine": 545,
-    "endLine": 629,
-    "taskCount": 19,
-    "evidence": "PowerShell extraction from <AGENT_PROMPT id=\"1406\"> through </AGENT_PROMPT> returned START=545, END=629, TASK_COUNT=19."
-  },
-  "questUrpProfile": {
-    "path": "Assets/_Project/Data/URP_Quest_VR.asset",
-    "lineEvidence": {
-      "name": 13,
-      "depthTexture": 22,
-      "opaqueTexture": 23,
-      "msaa": 28,
-      "renderScale": 29,
-      "additionalLightsPerObject": 48,
-      "shadowDistance": 57,
-      "shadowCascadeCount": 58,
-      "volumeProfileCleared": 95
-    },
-    "values": {
-      "depthTexture": 1,
-      "opaqueTexture": 0,
-      "msaa": 2,
-      "renderScale": 0.85,
-      "additionalLightsPerObject": 1,
-      "shadowDistanceMeters": 18,
-      "shadowCascadeCount": 1,
-      "globalVolumeProfile": null
-    }
-  },
-  "openXrQuest": {
-    "path": "Assets/XR/Settings/OpenXR Package Settings.asset",
-    "lineEvidence": {
-      "foveatedRenderingFeatureAndroidName": 880,
-      "foveatedRenderingFeatureEnabled": 882,
-      "subsampledLayoutEnabled": 894,
-      "androidSettingsName": 1108,
-      "androidRenderModeSinglePassInstanced": 1147,
-      "androidSymmetricProjection": 1155,
-      "androidMultiviewRenderRegionsFinalPass": 1157,
-      "androidSrpFoveationApi": 1159,
-      "metaQuestFeatureAndroidName": 1193,
-      "metaQuestFeatureEnabled": 1195,
-      "metaQuestSymmetricProjection": 1222,
-      "metaQuestMultiviewRenderRegionsFinalPass": 1229
-    }
-  },
-  "foveationDriver": {
-    "path": "Assets/_Project/Scripts/Visor/QuestFoveationDriver.cs",
-    "route": "UnityEngine.XR.XRDisplaySubsystem.foveatedRenderingLevel",
-    "capsProbe": "UnityEngine.Rendering.SystemInfo.foveatedRenderingCaps",
-    "oculusPackageDependency": false,
-    "continuousScaling": {
-      "qualityInput": "HomeostasisBrain.GlobalQualityWeight read in FoveatedRenderCommander.cs:1344",
-      "questFloor": 0.35,
-      "questCeiling": 0.85,
-      "driverMapping": "QuestFoveationDriver.ResolveTargetLevel01 lines 90-109; ResolveSurvivalPressure01 lines 188-192",
-      "commanderApplyLines": "FoveatedRenderCommander.cs:668"
-    }
-  },
-  "defectsFoundAndFixedInReaudit": [
-    {
-      "problem": "Android prebuild configurator ran after graphics/XR validators and did not itself guarantee Quest quality row or Vulkan route.",
-      "fix": "QuestVulkanRenderPipelineConfigurator callbackOrder is -4700; OnPreprocessBuild enforces Quest quality row, Android quality index, SPI, and Vulkan."
-    },
-    {
-      "problem": "Runtime camera guards could force opaque color texture and postprocess on Quest despite URP_Quest_VR m_RequireOpaqueTexture: 0.",
-      "fix": "HectonUrpTextureRequirementsGuard.cs:104 returns before color force; HectonUnderwaterVisuals.cs:1267 returns before color/postprocess force."
-    },
-    {
-      "problem": "Per-camera URP guard performed TryGetComponent from beginCameraRendering on every camera.",
-      "fix": "HectonUrpTextureRequirementsGuard uses a fixed 32-slot camera data cache. Cache-hit path lines 117-127 has no TryGetComponent."
-    },
-    {
-      "problem": "Underwater biome fog blend scheduled a one-sample job using transient DataVault views without write-lock ownership.",
-      "fix": "HectonUnderwaterVisuals now applies a local struct-only visual fake in SlowTick: ApplyBiomeFogBlend lines 3623-3667 and ResolveBiomeFogAupBlend lines 3668-3694. BufferID.UnderwaterBiomeFog* references are absent from HectonUnderwaterVisuals."
-    },
-    {
-      "problem": "Runtime ResolveMainCamera fallback searched transform.root for string child Main Camera.",
-      "fix": "The runtime root.Find fallback was removed; runtime route now relies on cached player/camera owner paths and nearest parent camera fallback."
-    },
-    {
-      "problem": "Foveated telemetry hot path still used a struct object-initializer with the token new.",
-      "fix": "FoveatedRenderCommander.WriteTelemetry now builds FoveatedRenderTelemetryEntry with default plus field assignments at lines 957-980."
-    },
-    {
-      "problem": "Quest renderer kept third-party ShapesRenderFeature active even though first-party runtime code has no active Shapes immediate-mode owner. Vendor AddRenderPasses checks DrawCommand.cBuffersRendering and enqueues ObjectPool<ShapesRenderPass> passes per camera.",
-      "fix": "Quest_VR_Renderer.asset sets ShapesRenderFeature m_Active: 0 at line 293; QuestVulkanRenderPipelineConfigurator strips Contains(name, \"ShapesRenderFeature\") at line 188; QuestVrOptimizationValidator1406 asserts the inactive block at line 104."
-    },
-    {
-      "problem": "Quest renderer YAML had unnecessary renderer feature list/map order drift in the working tree, and FluidAdvectionRenderFeature still enqueued a pass when the cached fluid rendergraph owner was null.",
-      "fix": "Quest_VR_Renderer.asset feature list and m_RendererFeatureMap were normalized to baseline order with 13/13 list-map matches; HectonFluidAdvectionRenderFeature.cs:125-127 now returns before enqueue when _cachedFluidEngine is null."
-    },
-    {
-      "problem": "WristPdaScreenProjectorFeature.AddRenderPasses enqueued the PDA projector pass for Preview, Reflection, and SceneView cameras even though RecordRenderGraph later rejected those camera types.",
-      "fix": "WristPdaScreenProjectorFeature.cs:187-189 now returns before _pass.Setup and renderer.EnqueuePass for Preview, Reflection, and SceneView cameras; QuestVrOptimizationValidator1406.cs:179-185 asserts the guard order."
-    },
-    {
-      "problem": "HectonVRBrownoutFeature.AddRenderPasses did not mirror its RecordRenderGraph camera-type rejection, so Preview, Reflection, and SceneView cameras could reach comfort-state probing before the render graph rejected them.",
-      "fix": "HectonVRBrownoutFeature.cs:426-428 now returns before camera state build, _pass.Setup, and renderer.EnqueuePass for Preview, Reflection, and SceneView cameras; QuestVrOptimizationValidator1406.cs:192-199 asserts the order."
-    },
-    {
-      "problem": "HectonVisorUberPostFeature.AddRenderPasses could clear/setup/enqueue unified noir or stage raw-color reconstruction state for Preview, Reflection, and SceneView cameras before RecordRenderGraph rejected those camera types.",
-      "fix": "HectonVisorUberPostFeature.cs:921-925 now returns before unified-pass setup, reconstruction staging, and renderer.EnqueuePass for Preview, Reflection, and SceneView cameras without clearing game-camera raw-history or pending reconstruction state; QuestVrOptimizationValidator1406.cs:201-210 asserts the order and forbids those clears inside the non-game guard window."
-    }
-  ],
-  "questRendererFeatureAudit": {
-    "path": "Assets/_Project/Data/Quest_VR_Renderer.asset",
-    "rendererFeatureMapIntegrity": {
-      "featureCount": 13,
-      "mapCount": 13,
-      "listMapMatches": true,
-      "behavioralDiff": "Only ShapesRenderFeature m_Active changed from 1 to 0 after map normalization."
-    },
-    "activeFeaturesAfterReaudit": [
-      "HectonVRBrownoutFeature",
-      "HectonFluidAdvectionRenderFeature",
-      "HectonDeferredCausticsFeature",
-      "WristPdaScreenProjectorFeature",
-      "HectonVisorUberPostFeature",
-      "HectonAtmosphereSootFeature"
-    ],
-    "inactiveMobileSurvivalFeatures": [
-      "HectonRetinaDistortionFeature",
-      "HectonVisorFluidDistortionFeature",
-      "HectonScooterVolumetricShaftsFeature",
-      "HectonHalfResParticlesFeature",
-      "HectonAbyssalSsdoFeature",
-      "ShapesRenderFeature",
-      "HectonNoirDepthFogFeature"
-    ],
-    "shapesVendorEvidence": {
-      "source": "Assets/Shapes/Scripts/Runtime/Immediate Mode/ShapesRenderFeature.cs:27-29",
-      "riskTokens": ["DrawCommand.cBuffersRendering", "foreach DrawCommand", "ObjectPool<ShapesRenderPass>.Alloc", "renderer.EnqueuePass"],
-      "firstPartyRuntimeShapesApiUse": "No first-party runtime `using Shapes`, `DrawCommand.cBuffersRendering`, or `ObjectPool<ShapesRenderPass>` hit was found under Assets/_Project/Scripts; only editor/offline baker false-positive field names contained `Shapes`."
-    }
-  },
-  "zeroGcStaticScan": {
-    "tool": "PowerShell regex over explicit line ranges",
-    "patterns": ["new", "string.Format", ".ToString(", "LINQ query tokens", "foreach", "StartCoroutine", "GetComponent(", "TryGetComponent(", "FindObjectOfType/GameObject.Find/Camera.main"],
-    "results": [
-      {"slice": "QuestFoveationDriver.ResolveAndApply", "path": "Assets/_Project/Scripts/Visor/QuestFoveationDriver.cs", "lines": "40-180", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
-      {"slice": "FoveatedRenderCommander.WriteTelemetry", "path": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs", "lines": "936-990", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
-      {"slice": "FoveatedRenderCommander.ApplyDisplayState", "path": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs", "lines": "656-688", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
-      {"slice": "FoveatedRenderCommander.TelemetryWriteLock", "path": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs", "lines": "1196-1227", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
-      {"slice": "FoveatedRenderCommander.GlobalQualityWeight", "path": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs", "lines": "1343-1348", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
-      {"slice": "UrpTextureGuard.CameraRequirements", "path": "Assets/_Project/Scripts/Core/HectonUrpTextureRequirementsGuard.cs", "lines": "87-115", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
-      {"slice": "UrpTextureGuard.CameraDataCacheHitPath", "path": "Assets/_Project/Scripts/Core/HectonUrpTextureRequirementsGuard.cs", "lines": "117-127", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
-      {"slice": "UrpTextureGuard.CameraDataCacheMissPath", "path": "Assets/_Project/Scripts/Core/HectonUrpTextureRequirementsGuard.cs", "lines": "129-153", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 1, "sceneSearch": 0},
-      {"slice": "UnderwaterVisuals.CameraTextureRequirements", "path": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs", "lines": "1256-1288", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
-      {"slice": "UnderwaterVisuals.BiomeFogVisualFake", "path": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs", "lines": "3623-3719", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
-      {"slice": "FluidAdvectionRenderFeature.AddRenderPassesGuard", "path": "Assets/_Project/Scripts/Visor/HectonFluidAdvectionRenderFeature.cs", "lines": "120-135", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
-      {"slice": "WristPdaScreenProjectorFeature.AddRenderPassesGuard", "path": "Assets/_Project/Scripts/UI/WristPdaScreenProjectorFeature.cs", "lines": "182-192", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
-      {"slice": "HectonVRBrownoutFeature.AddRenderPassesGuard", "path": "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs", "lines": "421-435", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
-      {"slice": "HectonVisorUberPostFeature.AddRenderPassesGuard", "path": "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs", "lines": "912-986", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0}
-    ]
-  },
-  "dataSovereignty": {
-    "migratedFieldsBy1406": "none",
-    "removedUnsafeBiomeFogVaultRoute": true,
-    "removedBufferIdsFromHectonUnderwaterVisuals": [
-      "BufferID.UnderwaterBiomeFogSamples",
-      "BufferID.UnderwaterBiomeFogSources",
-      "BufferID.UnderwaterBiomeFogFromAup",
-      "BufferID.UnderwaterBiomeFogToAup",
-      "BufferID.UnderwaterBiomeFogPlayerAup",
-      "BufferID.UnderwaterBiomeFogResults"
-    ],
-    "existingSecuredBufferId": "BufferID.FoveatedRenderBlackBox",
-    "existingSecuredSystemId": "SystemID.GraphicsScalability",
-    "tryAcquireWriteLock": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:1205",
-    "releaseInFinally": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:986-988",
-    "releaseWrapper": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:1221-1225",
-    "failedValidationRelease": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:1216",
-    "dumpPath": "Docs/AgentLogs/Dump_1406.bin"
-  },
-  "unmanagedStructLayoutProof": {
-    "FoveatedRenderTelemetryEntry": {
-      "path": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:146",
-      "sizeBytes": 64,
-      "offsets": {
-        "Frame": 0,
-        "Sequence": 4,
-        "TargetLevel01": 8,
-        "AppliedLevel01": 12,
-        "SystemStress01": 16,
-        "GpuUtil01": 20,
-        "GpuTimeMs": 24,
-        "EyeWidth": 28,
-        "EyeHeight": 32,
-        "Flags": 36,
-        "Caps": 40,
-        "TargetLevelCode": 44,
-        "AppliedLevelCode": 45,
-        "Mode": 46,
-        "PressureLevel": 47,
-        "FoveatedPressureTier": 48,
-        "ThermalSeverity": 49,
-        "DisplayCount": 50,
-        "VaultGeneration": 52,
-        "Pad0": 56,
-        "Pad7": 63
-      }
-    },
-    "BiomeTransitionSample": {"path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs:81", "sizeBytes": 8},
-    "BiomeTransitionFogSource": {"path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs:91", "sizeBytes": 32},
-    "BiomeTransitionFogResult": {"path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs:101", "sizeBytes": 64},
-    "AbsoluteUniversePositionBlit128": {"path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs:572", "sizeBytes": 48}
-  },
-  "validation": {
-    "promptExtraction": "PASS_START_545_END_629_TASK_COUNT_19",
-    "currentBatchPrompt1406": "FOUND",
-    "braceBalance": "PASS",
-    "gitDiffCheck": "PASS_crlf_warnings_only",
-    "yamlStatic": "PASS",
-    "questRendererFeatureMap": "PASS_13_OF_13_LIST_MAP_MATCH",
-    "pdaProjectorAddRenderPassGuard": "PASS_CAMERA_TYPE_SKIP_BEFORE_SETUP_AND_ENQUEUE",
-    "brownoutAddRenderPassGuard": "PASS_CAMERA_TYPE_SKIP_BEFORE_STATE_BUILD_SETUP_AND_ENQUEUE",
-    "visorUberPostAddRenderPassGuard": "PASS_CAMERA_TYPE_SKIP_WITHOUT_CLEARING_GAME_CAMERA_PENDING_RECONSTRUCTION_STATE",
-    "editorValidatorScript": "created_not_executed",
-    "unityImport": "NOT_RUN",
-    "playMode": "NOT_RUN",
-    "questDeviceProfiler": "NOT_RUN",
-    "dotnetBuild": "NOT_RUN_BLOCKED_BY_CPU",
-    "cpuTotalPercent": 100,
-    "cscCount": 1,
-    "dotnetCount": 1,
-    "vbcsCompilerCount": 0
-  },
-  "estimatedGpuSavingsMicroseconds": {
-    "msaa4xTo2x": "800-1500",
-    "renderScale1To085": "1800-3500",
-    "shadowCascade2To1": "300-900",
-    "foveationSubsampledAndMvpvv": "1000-3000",
-    "questShapesImmediateModeStrip": "unknown_no_profile_removes_third_party_per_camera_enqueue_path",
-    "wristPdaNonGameCameraEnqueueGuard": "unknown_no_profile_avoids_noop_pass_enqueue_for_preview_reflection_sceneview_cameras",
-    "brownoutNonGameCameraEnqueueGuard": "unknown_no_profile_avoids_noop_comfort_state_probe_and_pass_enqueue_for_preview_reflection_sceneview_cameras",
-    "visorUberPostNonGameCameraEnqueueGuard": "unknown_no_profile_avoids_noop_noir_or_reconstruction_pass_setup_for_preview_reflection_sceneview_cameras_while_preserving_game_camera_pending_reconstruction_state",
-    "globalBloomVolumeRemoved": "600-1600",
-    "note": "estimates_only_no_profiler_or_headset_capture"
-  },
-  "sha256": [
-    {"path": "Assets/_Project/Data/URP_Quest_VR.asset", "sha256": "de1e4dd91cfe90b91bc68d0e8e2e525c71dcc3da3b0d295a7410ea85cb6e1d02"},
-    {"path": "Assets/XR/Settings/OpenXR Package Settings.asset", "sha256": "9696e2e51307626aec23bf10d77e25e30c7595b72bc9b43f734467a907e7c69f"},
-    {"path": "ProjectSettings/QualitySettings.asset", "sha256": "a2f72e12cbdfd318a53647b47543f2b0c160557600555a59a46c93abce523292"},
-    {"path": "Assets/_Project/Data/Quest_VR_Renderer.asset", "sha256": "8d5745d87f0fb5297ed27fe6e4c09b1555439ea3c17be0586108b995e1f47d9e"},
-    {"path": "Assets/_Project/Scripts/Visor/QuestFoveationDriver.cs", "sha256": "2f87c283edbf06732734512f2c8972803e682b7a73b8bcc12ec1acfd02b20994"},
-    {"path": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs", "sha256": "f94cdaaff40e5554d5e625c0be7d865f7a97216ee0fa63975e770e1a3d1dd265"},
-    {"path": "Assets/_Project/Scripts/Editor/QuestVrOptimizationValidator1406.cs", "sha256": "4f53772c452a93aa1c4d8adff29f2c6460e66c1c0285df261a1233620eef25bd"},
-    {"path": "Assets/_Project/Scripts/Editor/Build/QuestVulkanRenderPipelineConfigurator.cs", "sha256": "26960e9b841997c8d1919e5d3189a675695fe0a2e136e9dbba8a811a9bec24ba"},
-    {"path": "Assets/_Project/Scripts/Editor/Build/XrPlatformReadinessValidator.cs", "sha256": "bf08a6de99d7790e69a2aaf3a25130b7b0d374d3ba141beebbde6638ef812e3c"},
-    {"path": "Assets/_Project/Scripts/Core/HectonUrpTextureRequirementsGuard.cs", "sha256": "7ff3823d64621cca7491e411d8202660dd33b4bd4ae400ea5b80c9b4759eea73"},
-    {"path": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs", "sha256": "3ea0fd9b6f2ae2c6f5b49664596283b7a1d23f8836ef1deda451033849dba532"},
-    {"path": "Assets/_Project/Scripts/Visor/HectonFluidAdvectionRenderFeature.cs", "sha256": "b8307a5602fac796d48662cdd055b107162729aa6dea3f647de2d73aa00b2fb1"},
-    {"path": "Assets/_Project/Scripts/UI/WristPdaScreenProjectorFeature.cs", "sha256": "30316080fdc2652be4241c04525d257c3aba7ab6b63f76789c01d5227f487b73"},
-    {"path": "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs", "sha256": "a7bbfcba466213319fe9e04b64b6eb736919bd23ca899a92aa5317c55bee9f2a"},
-    {"path": "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs", "sha256": "a978735a74837c8e88798a6bb8a8a3c0273044bae976e01b36f0af07df69168e"},
-    {"path": "Assets/Shapes/Scripts/Runtime/Immediate Mode/ShapesRenderFeature.cs", "sha256": "d08c4b50428ecd450617c433832b37485ea350d35d60742e5d102b6e9e0a3c35"}
-  ]
+    "agentId":  "1406",
+    "role":  "QUEST_URP_QUALITY_CONFIGURATOR_AND_VR_FOVEATION_DRIVER",
+    "status":  "PENDING_VERIFICATION",
+    "generatedAt":  "2026-05-28",
+    "evidenceType":  "static_analysis_only_no_unity_import_no_playmode_no_quest_device_profiler",
+    "promptExtraction":  {
+                             "path":  "Docs/Tasks/CURRENT_BATCH.md",
+                             "currentRecheck":  "PASS_CURRENT_BATCH_1406_FOUND_ATTRIBUTES_AWARE",
+                             "startLine":  545,
+                             "endLine":  629,
+                             "taskCount":  19,
+                             "evidence":  "PowerShell attributes-aware extraction from \u003cAGENT_PROMPT ... id=\"1406\" ...\u003e through \u003c/AGENT_PROMPT\u003e returned START_LINE=545 END_LINE=629 TASK_COUNT=19 on 2026-05-28. Exact literal \u003cAGENT_PROMPT id=\"1406\"\u003e is not the live tag because the tag contains role/chat_name attributes."
+                         },
+    "questUrpProfile":  {
+                            "path":  "Assets/_Project/Data/URP_Quest_VR.asset",
+                            "lineEvidence":  {
+                                                 "name":  13,
+                                                 "depthTexture":  22,
+                                                 "opaqueTexture":  23,
+                                                 "msaa":  28,
+                                                 "renderScale":  29,
+                                                 "additionalLightsPerObject":  48,
+                                                 "shadowDistance":  57,
+                                                 "shadowCascadeCount":  58,
+                                                 "volumeProfileCleared":  95
+                                             },
+                            "values":  {
+                                           "depthTexture":  1,
+                                           "opaqueTexture":  0,
+                                           "msaa":  2,
+                                           "renderScale":  0.85,
+                                           "additionalLightsPerObject":  1,
+                                           "shadowDistanceMeters":  18,
+                                           "shadowCascadeCount":  1,
+                                           "globalVolumeProfile":  null
+                                       }
+                        },
+    "openXrQuest":  {
+                        "path":  "Assets/XR/Settings/OpenXR Package Settings.asset",
+                        "lineEvidence":  {
+                                             "foveatedRenderingFeatureAndroidName":  880,
+                                             "foveatedRenderingFeatureEnabled":  882,
+                                             "subsampledLayoutEnabled":  894,
+                                             "androidSettingsName":  1108,
+                                             "androidRenderModeSinglePassInstanced":  1147,
+                                             "androidSymmetricProjection":  1155,
+                                             "androidMultiviewRenderRegionsFinalPass":  1157,
+                                             "androidSrpFoveationApi":  1159,
+                                             "metaQuestFeatureAndroidName":  1193,
+                                             "metaQuestFeatureEnabled":  1195,
+                                             "metaQuestSymmetricProjection":  1222,
+                                             "metaQuestMultiviewRenderRegionsFinalPass":  1229
+                                         }
+                    },
+    "foveationDriver":  {
+                            "path":  "Assets/_Project/Scripts/Visor/QuestFoveationDriver.cs",
+                            "route":  "UnityEngine.XR.XRDisplaySubsystem.foveatedRenderingLevel",
+                            "capsProbe":  "UnityEngine.Rendering.SystemInfo.foveatedRenderingCaps",
+                            "oculusPackageDependency":  false,
+                            "continuousScaling":  {
+                                                      "qualityInput":  "HomeostasisBrain.GlobalQualityWeight read in FoveatedRenderCommander.cs:1344",
+                                                      "questFloor":  0.35,
+                                                      "questCeiling":  0.85,
+                                                      "driverMapping":  "QuestFoveationDriver.ResolveTargetLevel01 lines 90-109; ResolveSurvivalPressure01 lines 188-192",
+                                                      "commanderApplyLines":  "FoveatedRenderCommander.cs:668"
+                                                  }
+                        },
+    "defectsFoundAndFixedInReaudit":  [
+                                          {
+                                              "problem":  "Android prebuild configurator ran after graphics/XR validators and did not itself guarantee Quest quality row or Vulkan route.",
+                                              "fix":  "QuestVulkanRenderPipelineConfigurator callbackOrder is -4700; OnPreprocessBuild enforces Quest quality row, Android quality index, SPI, and Vulkan."
+                                          },
+                                          {
+                                              "problem":  "Runtime camera guards could force opaque color texture and postprocess on Quest despite URP_Quest_VR m_RequireOpaqueTexture: 0.",
+                                              "fix":  "HectonUrpTextureRequirementsGuard.cs:104 returns before color force; HectonUnderwaterVisuals.cs:1267 returns before color/postprocess force."
+                                          },
+                                          {
+                                              "problem":  "Per-camera URP guard performed TryGetComponent from beginCameraRendering on every camera.",
+                                              "fix":  "HectonUrpTextureRequirementsGuard uses a fixed 32-slot camera data cache. Cache-hit path lines 117-127 has no TryGetComponent."
+                                          },
+                                          {
+                                              "problem":  "Underwater biome fog blend scheduled a one-sample job using transient DataVault views without write-lock ownership.",
+                                              "fix":  "HectonUnderwaterVisuals now applies a local struct-only visual fake in SlowTick: ApplyBiomeFogBlend lines 3623-3667 and ResolveBiomeFogAupBlend lines 3668-3694. BufferID.UnderwaterBiomeFog* references are absent from HectonUnderwaterVisuals."
+                                          },
+                                          {
+                                              "problem":  "Runtime ResolveMainCamera fallback searched transform.root for string child Main Camera.",
+                                              "fix":  "The runtime root.Find fallback was removed; runtime route now relies on cached player/camera owner paths and nearest parent camera fallback."
+                                          },
+                                          {
+                                              "problem":  "Foveated telemetry hot path still used a struct object-initializer with the token new.",
+                                              "fix":  "FoveatedRenderCommander.WriteTelemetry now builds FoveatedRenderTelemetryEntry with default plus field assignments at lines 957-980."
+                                          },
+                                          {
+                                              "problem":  "FoveatedRenderCommander.TryAcquireTelemetryWriteBuffer released an acquired DataVault write lock on failed post-acquire validation outside a local finally block.",
+                                              "fix":  "FoveatedRenderCommander.cs:1199-1231 now uses releaseOnExit inside try/finally: successful validation transfers lock ownership to WriteTelemetry; failed validation releases in the local finally. QuestVrOptimizationValidator1406.cs:361-390 asserts both the failed-validation finally and the transferred-lock WriteTelemetry finally."
+                                          },
+                                          {
+                                              "problem":  "FoveatedRenderCommander.ApplyPolicy called Quest2 classification and Quest-family string-token classification as separate routes. Generic Quest-family tokens could leave classification pending, so Android render policy could repeat SystemInfo/XRSettings string scans on later policy commits.",
+                                              "fix":  "FoveatedRenderCommander.cs:482-485 now calls one cached RefreshQuestRuntimeClass route. FoveatedRenderCommander.cs:1474-1500 caches Quest-family classification and completes generic Quest-family tokens as family=true, Quest2-lock=false. QuestVrOptimizationValidator1406.cs:294-299 asserts the cached route and forbids the old per-policy string-scan route."
+                                          },
+                                          {
+                                              "problem":  "Quest renderer kept third-party ShapesRenderFeature active even though first-party runtime code has no active Shapes immediate-mode owner. Vendor AddRenderPasses checks DrawCommand.cBuffersRendering and enqueues ObjectPool\u003cShapesRenderPass\u003e passes per camera.",
+                                              "fix":  "Quest_VR_Renderer.asset sets ShapesRenderFeature m_Active: 0 at line 293; QuestVulkanRenderPipelineConfigurator strips Contains(name, \"ShapesRenderFeature\") at line 188; QuestVrOptimizationValidator1406 asserts the inactive block at line 119."
+                                          },
+                                          {
+                                              "problem":  "Quest renderer YAML had unnecessary renderer feature list/map order drift in the working tree, and FluidAdvectionRenderFeature still enqueued a pass when the cached fluid rendergraph owner was null.",
+                                              "fix":  "Quest_VR_Renderer.asset feature list and m_RendererFeatureMap were normalized to baseline order with 13/13 list-map matches; HectonFluidAdvectionRenderFeature.cs:128-130 returns before enqueue when _cachedFluidEngine is null, and lines 47 plus 136 reject overlay cameras before owner claim/setup."
+                                          },
+                                          {
+                                              "problem":  "WristPdaScreenProjectorFeature.AddRenderPasses enqueued the PDA projector pass for Preview, Reflection, and SceneView cameras even though RecordRenderGraph later rejected those camera types.",
+                                              "fix":  "WristPdaScreenProjectorFeature.cs:193-198 now returns before _pass.Setup and renderer.EnqueuePass for non-game and overlay cameras; QuestVrOptimizationValidator1406.cs:194-212 asserts the guard order."
+                                          },
+                                          {
+                                              "problem":  "WristPdaScreenProjectorFeature bound the PDA atlas with data.Material.SetTexture inside the RenderGraph render func, so the atlas texture was a hidden external dependency rather than a declared RenderGraph read.",
+                                              "fix":  "WristHologramHudRuntime_PdaScreenProjector.cs:235 and 700-750 cache an RTHandle for the atlas on the owner cold graphics-buffer setup path; TryGetActivePdaProjectionResources exposes that RTHandle at lines 1578-1604. WristPdaScreenProjectorFeature.cs:105 imports it, line 123 declares builder.UseTexture read access, and line 137 binds it through context.cmd.SetGlobalTexture."
+                                          },
+                                          {
+                                              "problem":  "HectonVRBrownoutFeature.AddRenderPasses did not mirror its RecordRenderGraph camera-type rejection, so Preview, Reflection, and SceneView cameras could reach comfort-state probing before the render graph rejected them.",
+                                              "fix":  "HectonVRBrownoutFeature.cs:414-418 now returns before camera state build, _pass.Setup, and renderer.EnqueuePass for Preview, Reflection, SceneView, and overlay cameras; QuestVrOptimizationValidator1406.cs:215-225 asserts the order."
+                                          },
+                                          {
+                                              "problem":  "HectonVisorUberPostFeature.AddRenderPasses could clear/setup/enqueue unified noir or stage raw-color reconstruction state for Preview, Reflection, and SceneView cameras before RecordRenderGraph rejected those camera types.",
+                                              "fix":  "HectonVisorUberPostFeature.cs:890-898 now returns before unified-pass setup, reconstruction staging, and renderer.EnqueuePass for Preview, Reflection, SceneView, and overlay cameras without clearing game-camera raw-history or pending reconstruction state; QuestVrOptimizationValidator1406.cs:231-247 asserts the order and forbids those clears inside the non-game and overlay guard windows."
+                                          },
+                                          {
+                                              "problem":  "HectonVisorUberPostFeature.ResolveDepthlessTBDRPath could reach Quest/Vulkan device-model string classification from the per-frame depthless TBDR decision path.",
+                                              "fix":  "HectonVisorUberPostFeature.cs:810-811 stores cached platform classification; Create calls RefreshDepthlessTBDRPlatformCandidate at line 835; ResolveDepthlessTBDRPath lines 2504-2515 only reads cached booleans and XR active state. Static window proof: SystemInfo.deviceModel=false and IndexOf=false between ResolveDepthlessTBDRPath and RefreshDepthlessTBDRPlatformCandidate."
+                                          },
+                                          {
+                                              "problem":  "HectonDeferredCausticsFeature.AddRenderPasses could enqueue the deferred caustics pass even when AbyssalDeferredCausticsRuntime had not published a valid constant buffer; RecordRenderGraph rejected it later as a no-op.",
+                                              "fix":  "HectonDeferredCausticsFeature.cs:167-170 now rejects overlay cameras before claiming the active constant buffer and checks AbyssalDeferredCausticsRuntime.TryGetActiveConstantBuffer before _pass.Setup and renderer.EnqueuePass; RecordRenderGraph lines 70-73 also reject overlay cameras before importing the constant buffer."
+                                          },
+                                          {
+                                              "problem":  "HectonAtmosphereSootFeature could enqueue active soot for the game camera after its GPU constants buffer became unavailable; RecordRenderGraph rejected it later after setup/state work.",
+                                              "fix":  "HectonAtmosphereSootFeature.cs:102-105 exposes HasPreparedResources without allocation, and AddRenderPasses lines 424-427 now returns before runtime state build, setup, and enqueue for overlay cameras or unavailable GPU constants; QuestVrOptimizationValidator1406.cs:269-286 asserts the guard order."
+                                          },
+                                          {
+                                              "problem":  "HectonAtmosphereSootFeature consumed fixed soot radius/dither/darken values without the continuous HomeostasisBrain.GlobalQualityWeight scaler required by the rendering pillar.",
+                                              "fix":  "HectonAtmosphereSootFeature.cs:484-493 applies a continuous quality curve before RuntimeState publish; line 511 reads HomeostasisBrain.GlobalQualityWeight. Low quality reduces soot radius/dither/darken pressure; high quality restores or slightly enriches the visual without changing gameplay truth or DTO layout."
+                                          },
+                                          {
+                                              "problem":  "Active Quest fullscreen/presentation features still accepted overlay camera stack entries after non-game camera rejection, so XR camera stacks could repeat Brownout, DeferredCaustics, AtmosphereSoot, and UberPost work on overlay cameras.",
+                                              "fix":  "Added CameraRenderType.Base guards before texture, constant-buffer, runtime-state, setup, or enqueue work: HectonVRBrownoutFeature.cs:126 and 417; HectonDeferredCausticsFeature.cs:70 and 167; HectonAtmosphereSootFeature.cs:124 and 424; HectonVisorUberPostFeature.cs:338 and 895. Static order checks report PASS for all eight guard-before-work routes."
+                                          },
+                                          {
+                                              "problem":  "APEX zero-GC text audit still found `new RuntimeState(` tokens in active Quest fullscreen setup routes. These were value-type constructor calls, not managed allocations, but they weakened the required exact text proof.",
+                                              "fix":  "HectonVRBrownoutFeature.cs:50 and HectonVisorUberPostFeature.cs:171 now use mutable private RuntimeState structs; HectonVRBrownoutFeature.cs:436-474 and HectonVisorUberPostFeature.cs:2254-2347 build state with `default` plus field assignments. QuestVrOptimizationValidator1406.cs:222-224 and 240-242 assert `runtimeState = default;`, forbid `new RuntimeState(`, and forbid `private readonly struct RuntimeState` for those active paths."
+                                          },
+                                          {
+                                              "problem":  "Expanded visor-domain scan still found `new RuntimeState(` tokens in secondary/inactive visor renderer features: BIOS diagnostic, retina distortion, and visor fluid distortion.",
+                                              "fix":  "HectonBiosDiagnosticFeature.cs:42,283-287; HectonRetinaDistortionFeature.cs:69,488-493; and HectonVisorFluidDistortionFeature.cs:124,1082-1100 now use `default` plus field assignments. `rg -n \"new RuntimeState\\(|private readonly struct RuntimeState\" Assets/_Project/Scripts/Visor` returns no hits."
+                                          },
+                                          {
+                                              "problem":  "WristHologramHudRuntime_PdaScreenProjector.TryAcquirePdaProjectionVaultBuffer released an acquired SystemID.UI DataVault write lock on failed post-acquire buffer validation through a direct release call instead of a local finally block.",
+                                              "fix":  "WristHologramHudRuntime_PdaScreenProjector.cs:575 acquires with TryAcquireWriteLock; lines 581-599 now use releaseOnExit inside try/finally so valid buffers transfer ownership and failed validation releases at line 598. QuestVrOptimizationValidator1406.cs:209-220 asserts the acquire and finally-release sequence."
+                                          },
+                                          {
+                                              "problem":  "AbyssalDeferredCausticsRuntime.TryAcquireVaultWriteBuffer released an acquired OwnerSystemId write lock on failed post-acquire validation through a direct release call.",
+                                              "fix":  "AbyssalDeferredCausticsRuntime.cs:1444 acquires the lock; lines 1449-1464 now release failed validation through local try/finally. QuestVrOptimizationValidator1406.cs:270-287 asserts the sequence."
+                                          },
+                                          {
+                                              "problem":  "HectonUberNoirRuntimeBridge.TryAcquireTelemetryWriteBuffer released an acquired GraphicsScalability telemetry lock directly when post-acquire validation failed.",
+                                              "fix":  "HectonUberNoirRuntimeBridge.cs:541 acquires the telemetry lock; lines 546-563 now release failed validation through local try/finally. QuestVrOptimizationValidator1406.cs:318-329 asserts the sequence."
+                                          },
+                                          {
+                                              "problem":  "HectonVolumetricParticulateFogFeature.TryAcquireWriteBuffer released an acquired OwnerSystemId write lock directly when post-acquire validation failed.",
+                                              "fix":  "HectonVolumetricParticulateFogFeature.cs:2136 acquires the buffer; lines 2141-2158 now use local try/finally for failed validation release. QuestVrOptimizationValidator1406.cs:330-341 asserts the sequence."
+                                          },
+                                          {
+                                              "problem":  "DynamicDecalVaultRuntime.TryAcquireDynamicDecalVaultBuffer combined handle validation, TryAcquireWriteLock, compaction validation, and buffer validation in one condition, so a failed acquire could still call ReleaseDynamicDecalVaultBuffer.",
+                                              "fix":  "DynamicDecalVaultRuntime.cs:1399-1404 now returns immediately when handle validation or TryAcquireWriteLock fails; only post-acquire validation uses releaseOnExit/finally at lines 1406-1423. QuestVrOptimizationValidator1406.cs:342-356 asserts acquire-before-finally release."
+                                          },
+                                          {
+                                              "problem":  "HectonBilateralDrsUpscalerRuntime.TryAcquireVaultWriteBuffer released an acquired GraphicsScalability write lock directly when post-acquire validation failed.",
+                                              "fix":  "HectonBilateralDrsUpscalerRuntime.cs:1278 acquires the lock; lines 1283-1300 now release failed validation through local try/finally. QuestVrOptimizationValidator1406.cs:339-349 asserts the sequence."
+                                          },
+                                          {
+                                              "problem":  "DiegeticVisorLensRuntime.TryAcquireVisorWriteBuffer released an acquired Vfx write lock directly when post-acquire validation failed.",
+                                              "fix":  "DiegeticVisorLensRuntime.cs:860 acquires the lock; lines 865-882 now release failed validation through local try/finally. QuestVrOptimizationValidator1406.cs:374-384 asserts the sequence. Existing lifecycle rebind diff in this file was preserved."
+                                          },
+                                          {
+                                              "problem":  "AbyssalDeferredCausticsRuntime.LoadLightingProfilesCsv acquired csv scratch and profiles in one combined condition, then released the scratch handle in the failed branch. If the first acquire failed, that branch attempted release against an unacquired scratch handle; if the second acquire failed, scratch release was outside the established lock-flag/finally proof route.",
+                                              "fix":  "AbyssalDeferredCausticsRuntime.cs:367 acquires csv scratch alone, :372 sets scratchLocked only after success, :377 acquires profiles separately, :382 sets profilesLocked only after success, and :399-404 releases only locked buffers in finally."
+                                          },
+                                          {
+                                              "problem":  "HectonVisorUberPostFeature.Noir.RecordRenderGraph relied on parent AddRenderPasses overlay filtering and lacked its own CameraRenderType.Base guard before activeColorTexture access.",
+                                              "fix":  "HectonVisorUberPostFeature.Noir.cs:144 now returns unless cameraData.renderType is Base; source texture use is at :147, so the pass is fail-closed if invoked directly or by a future enqueue path."
+                                          },
+                                          {
+                                              "problem":  "HectonVisorUberPostFeature.RecordRenderGraph called BindStaticPostTextures, which mutated material texture state with hidden RenderGraph dependencies for crack, lens dirt, blue noise, and VR comfort mask textures.",
+                                              "fix":  "HectonVisorUberPostFeature.cs:460-503 imports static post textures into RenderGraph, declares builder.UseTexture reads, and binds through RasterCommandBuffer.SetGlobalTexture. BindStaticPostTextures and material SetTexture calls are absent; RTHandle wrappers are cached at :591-651 and released at :1122."
+                                          },
+                                          {
+                                              "problem":  "HectonVisorUberPostFeature raw-color reconstruction request path could call renderCamera.TryGetComponent from AddRenderPasses through TryResolveHistoryReadAccess when temporal history was requested.",
+                                              "fix":  "HectonVisorUberPostFeature.cs:996-998 injects renderingData.cameraData.historyManager directly. TryResolveHistoryReadAccess, ClearRawColorHistoryAccessCache, and renderCamera.TryGetComponent are absent from the file."
+                                          },
+                                          {
+                                              "problem":  "Quest URP asset removed global volume, but Player prefab cameras still had renderPostProcessing enabled. HectonUrpTextureRequirementsGuard returned early on Quest survival after depth preservation, so pre-enabled camera postprocessing could remain active.",
+                                              "fix":  "HectonUrpTextureRequirementsGuard.cs:104-114 now forces Quest survival base cameras to CameraOverrideOption.Off for opaque color, requiresColorTexture=false, and renderPostProcessing=false before returning. Non-Quest full-ocean compatibility still forces color/post at :118-124."
+                                          },
+                                          {
+                                              "problem":  "Modified UberPost and unified Noir RenderGraph slices still contained value-type new TextureDesc(sourceDesc) tokens, which were allocation-free but weak for exact text audits.",
+                                              "fix":  "HectonVisorUberPostFeature.cs:379 and :451 plus HectonVisorUberPostFeature.Noir.cs:152 now use TextureDesc struct copy from sourceDesc without a new token."
+                                          },
+                                          {
+                                              "problem":  "FoveatedRenderCommander.Render applied UI-camera fail-closed logic to fixed Quest foveation as well as gaze-tracked foveation, so XR camera stacks could toggle XRDisplaySubsystem foveation off/on across UI/base camera boundaries.",
+                                              "fix":  "FoveatedRenderCommander.cs:330-339 now returns before camera lookup and ApplyDisplayState unless _targetMode is GazeTracked; fixed Quest foveation keeps a stable display state across camera stacks. QuestVrOptimizationValidator1406.cs:462-475 asserts the guard and sequence."
+                                          },
+                                          {
+                                              "problem":  "Active and adjacent first-party RenderGraph features still used TextureDesc copy constructors (`new TextureDesc(sourceDesc)` or descriptor-copy variants) in runtime render paths. Unity package source shows the copy constructor is only `this = input`, so the tokens were behavior-neutral but weakened APEX hot-path text evidence.",
+                                              "fix":  "Replaced copy constructors with direct struct assignment in active Quest paths: Brownout :139, AtmosphereSoot :137, DeferredCaustics :82, PDA Projector :94. Extended the same behavior-preserving cleanup to adjacent visor/render features including AbyssalSSDO :207/:220/:223, ScooterVolumetricShafts :369/:382/:385/:391, and VoxelSSAO :147. QuestVrOptimizationValidator1406.cs:500-533 now asserts no runtime descriptor copy-constructor tokens under Visor/Rendering/UI roots."
+                                          }
+                                      ],
+    "questRendererFeatureAudit":  {
+                                      "path":  "Assets/_Project/Data/Quest_VR_Renderer.asset",
+                                      "rendererFeatureMapIntegrity":  {
+                                                                          "featureCount":  13,
+                                                                          "mapCount":  13,
+                                                                          "listMapMatches":  true,
+                                                                          "behavioralDiff":  "Only ShapesRenderFeature m_Active changed from 1 to 0 after map normalization."
+                                                                      },
+                                      "activeFeaturesAfterReaudit":  [
+                                                                         "HectonVRBrownoutFeature",
+                                                                         "HectonFluidAdvectionRenderFeature",
+                                                                         "HectonDeferredCausticsFeature",
+                                                                         "WristPdaScreenProjectorFeature",
+                                                                         "HectonVisorUberPostFeature",
+                                                                         "HectonAtmosphereSootFeature"
+                                                                     ],
+                                      "inactiveMobileSurvivalFeatures":  [
+                                                                             "HectonRetinaDistortionFeature",
+                                                                             "HectonVisorFluidDistortionFeature",
+                                                                             "HectonScooterVolumetricShaftsFeature",
+                                                                             "HectonHalfResParticlesFeature",
+                                                                             "HectonAbyssalSsdoFeature",
+                                                                             "ShapesRenderFeature",
+                                                                             "HectonNoirDepthFogFeature"
+                                                                         ],
+                                      "shapesVendorEvidence":  {
+                                                                   "source":  "Assets/Shapes/Scripts/Runtime/Immediate Mode/ShapesRenderFeature.cs:27-29",
+                                                                   "riskTokens":  [
+                                                                                      "DrawCommand.cBuffersRendering",
+                                                                                      "foreach DrawCommand",
+                                                                                      "ObjectPool\u003cShapesRenderPass\u003e.Alloc",
+                                                                                      "renderer.EnqueuePass"
+                                                                                  ],
+                                                                   "firstPartyRuntimeShapesApiUse":  "No first-party runtime `using Shapes`, `DrawCommand.cBuffersRendering`, or `ObjectPool\u003cShapesRenderPass\u003e` hit was found under Assets/_Project/Scripts; only editor/offline baker false-positive field names contained `Shapes`."
+                                                               }
+                                  },
+    "zeroGcStaticScan":  {
+                             "tool":  "PowerShell regex over explicit line ranges",
+                             "patterns":  [
+                                              "new_reference",
+                                              "new_any",
+                                              "string.Format",
+                                              ".ToString(",
+                                              "LINQ query tokens",
+                                              "foreach",
+                                              "StartCoroutine",
+                                              "GetComponent(",
+                                              "TryGetComponent(",
+                                              "FindObjectOfType/GameObject.Find/Camera.main",
+                                              "IndexOf(",
+                                              "Material.SetTexture"
+                                          ],
+                             "results":  [
+                                             {
+                                                 "slice":  "QuestFoveationDriver.ResolveAndApply",
+                                                 "path":  "Assets/_Project/Scripts/Visor/QuestFoveationDriver.cs",
+                                                 "lines":  "40-180",
+                                                 "new":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "FoveatedRenderCommander.WriteTelemetry",
+                                                 "path":  "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs",
+                                                 "lines":  "938-992",
+                                                 "new":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "FoveatedRenderCommander.ApplyPolicyAndDisplay",
+                                                 "path":  "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs",
+                                                 "lines":  "476-691",
+                                                 "new":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "FoveatedRenderCommander.QuestRuntimeRefresh",
+                                                 "path":  "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs",
+                                                 "lines":  "1436-1541",
+                                                 "new":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "FoveatedRenderCommander.TelemetryWriteLock",
+                                                 "path":  "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs",
+                                                 "lines":  "1199-1239",
+                                                 "new":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "FoveatedRenderCommander.GlobalQualityWeight",
+                                                 "path":  "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs",
+                                                 "lines":  "1343-1348",
+                                                 "new":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "UrpTextureGuard.CameraRequirements",
+                                                 "path":  "Assets/_Project/Scripts/Core/HectonUrpTextureRequirementsGuard.cs",
+                                                 "lines":  "87-115",
+                                                 "new":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "UrpTextureGuard.CameraDataCacheHitPath",
+                                                 "path":  "Assets/_Project/Scripts/Core/HectonUrpTextureRequirementsGuard.cs",
+                                                 "lines":  "117-127",
+                                                 "new":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "UrpTextureGuard.CameraDataCacheMissPath",
+                                                 "path":  "Assets/_Project/Scripts/Core/HectonUrpTextureRequirementsGuard.cs",
+                                                 "lines":  "129-153",
+                                                 "new":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  1,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "UnderwaterVisuals.CameraTextureRequirements",
+                                                 "path":  "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
+                                                 "lines":  "1256-1288",
+                                                 "new":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "UnderwaterVisuals.BiomeFogVisualFake",
+                                                 "path":  "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
+                                                 "lines":  "3623-3719",
+                                                 "new":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "FluidAdvectionRenderFeature.RecordRenderGraphBaseGuard",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonFluidAdvectionRenderFeature.cs",
+                                                 "lines":  "39-55",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "FluidAdvectionRenderFeature.AddRenderPassesBaseGuard",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonFluidAdvectionRenderFeature.cs",
+                                                 "lines":  "124-141",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "WristPdaScreenProjectorFeature.RecordRenderGraphAtlasRG",
+                                                 "path":  "Assets/_Project/Scripts/UI/WristPdaScreenProjectorFeature.cs",
+                                                 "lines":  "58-139",
+                                                 "new":  0,
+                                                 "newAny":  1,
+                                                 "valueTypeNew":  "TextureDesc struct at line 94 only",
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "WristPdaScreenProjectorFeature.AddRenderPassesBaseGuard",
+                                                 "path":  "Assets/_Project/Scripts/UI/WristPdaScreenProjectorFeature.cs",
+                                                 "lines":  "186-201",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "WristHologramHudRuntime.TryGetPdaResourcesAccessor",
+                                                 "path":  "Assets/_Project/Scripts/UI/WristHologramHudRuntime_PdaScreenProjector.cs",
+                                                 "lines":  "1578-1604",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "WristHologramHudRuntime.PdaVaultWriteLockHelper",
+                                                 "path":  "Assets/_Project/Scripts/UI/WristHologramHudRuntime_PdaScreenProjector.cs",
+                                                 "lines":  "564-599",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "AbyssalDeferredCausticsRuntime.VaultWriteBufferHelper",
+                                                 "path":  "Assets/_Project/Scripts/Rendering/AbyssalCaustics/AbyssalDeferredCausticsRuntime.cs",
+                                                 "lines":  "1433-1466",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonUberNoirRuntimeBridge.TelemetryWriteBufferHelper",
+                                                 "path":  "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
+                                                 "lines":  "532-565",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonVolumetricParticulateFogFeature.WriteBufferHelper",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonVolumetricParticulateFogFeature.cs",
+                                                 "lines":  "2128-2161",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "DynamicDecalVaultRuntime.VaultWriteBufferHelper",
+                                                 "path":  "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+                                                 "lines":  "1392-1425",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonVRBrownoutFeature.RecordRenderGraphBaseGuard",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs",
+                                                 "lines":  "118-130",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonVRBrownoutFeature.AddRenderPassesBaseGuard",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs",
+                                                 "lines":  "414-425",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonVRBrownoutFeature.TryBuildRuntimeState",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs",
+                                                 "lines":  "436-474",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "newRuntimeState":  0,
+                                                 "newReference":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonVisorUberPostFeature.RecordRenderGraphBaseGuard",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs",
+                                                 "lines":  "330-344",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonVisorUberPostFeature.AddRenderPassesBaseGuard",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs",
+                                                 "lines":  "890-914",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonVisorUberPostFeature.TryBuildRuntimeState",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs",
+                                                 "lines":  "2254-2347",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "newRuntimeState":  0,
+                                                 "newReference":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonBiosDiagnosticFeature.RuntimeStateAssignment",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonBiosDiagnosticFeature.cs",
+                                                 "lines":  "283-287",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "newRuntimeState":  0,
+                                                 "newReference":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonRetinaDistortionFeature.RuntimeStateAssignment",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonRetinaDistortionFeature.cs",
+                                                 "lines":  "488-493",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "newRuntimeState":  0,
+                                                 "newReference":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonVisorFluidDistortionFeature.RuntimeStateAssignment",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs",
+                                                 "lines":  "1082-1100",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "newRuntimeState":  0,
+                                                 "newReference":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonVisorUberPostFeature.ResolveDepthlessTBDRPath",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs",
+                                                 "lines":  "2504-2515",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonDeferredCausticsFeature.RecordRenderGraphBaseGuard",
+                                                 "path":  "Assets/_Project/Scripts/Rendering/AbyssalCaustics/HectonDeferredCausticsFeature.cs",
+                                                 "lines":  "58-79",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonDeferredCausticsFeature.AddRenderPassesBaseGuard",
+                                                 "path":  "Assets/_Project/Scripts/Rendering/AbyssalCaustics/HectonDeferredCausticsFeature.cs",
+                                                 "lines":  "160-170",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonAtmosphereSootFeature.RecordRenderGraphBaseGuard",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonAtmosphereSootFeature.cs",
+                                                 "lines":  "112-130",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonAtmosphereSootFeature.AddRenderPassesBaseGuard",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonAtmosphereSootFeature.cs",
+                                                 "lines":  "415-430",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonAtmosphereSootFeature.TryBuildRuntimeStateQuality",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonAtmosphereSootFeature.cs",
+                                                 "lines":  "468-513",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonBilateralDrsUpscalerRuntime.VaultWriteBufferHelper",
+                                                 "path":  "Assets/_Project/Scripts/Rendering/BilateralDrs/HectonBilateralDrsUpscalerRuntime.cs",
+                                                 "lines":  "1266-1301",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "DiegeticVisorLensRuntime.VisorWriteBufferHelper",
+                                                 "path":  "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs",
+                                                 "lines":  "848-884",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "AbyssalDeferredCausticsRuntime.LoadLightingProfilesCsvDualLock",
+                                                 "path":  "Assets/_Project/Scripts/Rendering/AbyssalCaustics/AbyssalDeferredCausticsRuntime.cs",
+                                                 "lines":  "357-405",
+                                                 "new":  0,
+                                                 "newAny":  1,
+                                                 "valueTypeNew":  "ReadOnlySpan\u003cbyte\u003e pointer span at line 391, editor-only CSV parse; no reference allocation token",
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonVisorUberPostFeature.NoirBaseGuard",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs",
+                                                 "lines":  "136-154",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonVisorUberPostFeature.RecordRenderGraphStaticTextures",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs",
+                                                 "lines":  "338-512",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonVisorUberPostFeature.StaticTextureHandleCache",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs",
+                                                 "lines":  "591-668",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonVisorUberPostFeature.HistoryReadAccessInjection",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs",
+                                                 "lines":  "990-1000",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "HectonVisorUberPostFeature.HistoryRegistration",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs",
+                                                 "lines":  "1152-1180",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "UrpTextureGuard.QuestCameraPostOff",
+                                                 "path":  "Assets/_Project/Scripts/Core/HectonUrpTextureRequirementsGuard.cs",
+                                                 "lines":  "87-122",
+                                                 "new":  0,
+                                                 "newAny":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "indexOf":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "FoveatedRenderCommander.RenderUiSuppressionPath",
+                                                 "path":  "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs",
+                                                 "lines":  "325-377",
+                                                 "new_reference":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "coroutine":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "subsystemManagerGetSubsystems":  0,
+                                                 "applyDisplayState":  2,
+                                                 "note":  "ApplyDisplayState remains only in gaze-tracked UI exemption branch after fixed-mode early return."
+                                             },
+                                             {
+                                                 "slice":  "FoveatedRenderCommander.FixedFoveationEarlyReturn",
+                                                 "path":  "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs",
+                                                 "lines":  "330-339",
+                                                 "new_reference":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "applyDisplayState":  0,
+                                                 "globalRenderContextCurrentCamera":  0,
+                                                 "note":  "Fixed foveation exits before camera lookup or hardware foveation apply."
+                                             },
+                                             {
+                                                 "slice":  "Brownout.RecordRenderGraphDescriptorCopy",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs",
+                                                 "lines":  "126-150",
+                                                 "new_reference":  0,
+                                                 "newTextureDesc":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "AtmosphereSoot.RecordRenderGraphDescriptorCopy",
+                                                 "path":  "Assets/_Project/Scripts/Visor/HectonAtmosphereSootFeature.cs",
+                                                 "lines":  "124-150",
+                                                 "new_reference":  0,
+                                                 "newTextureDesc":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "DeferredCaustics.RecordRenderGraphDescriptorCopy",
+                                                 "path":  "Assets/_Project/Scripts/Rendering/AbyssalCaustics/HectonDeferredCausticsFeature.cs",
+                                                 "lines":  "70-98",
+                                                 "new_reference":  0,
+                                                 "newTextureDesc":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "PdaProjector.RecordRenderGraphDescriptorCopy",
+                                                 "path":  "Assets/_Project/Scripts/UI/WristPdaScreenProjectorFeature.cs",
+                                                 "lines":  "85-113",
+                                                 "new_reference":  0,
+                                                 "newTextureDesc":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreach":  0,
+                                                 "getComponent":  0,
+                                                 "tryGetComponent":  0,
+                                                 "sceneSearch":  0,
+                                                 "materialSetTexture":  0
+                                             },
+                                             {
+                                                 "slice":  "RuntimeRenderGraphTextureDescDescriptorCopyBroadScan",
+                                                 "path":  "Assets/_Project/Scripts/Visor;Assets/_Project/Scripts/Rendering;Assets/_Project/Scripts/UI",
+                                                 "lines":  "all_runtime_cs_non_editor",
+                                                 "newTextureDescDescriptorCopy":  0,
+                                                 "command":  "rg -n \"new TextureDesc\\\\([A-Za-z_][A-Za-z0-9_]*Desc\\\\)\" roots -g !Editor",
+                                                 "evidence":  "NO_HITS"
+                                             }
+                                         ]
+                         },
+    "dataSovereignty":  {
+                            "migratedFieldsBy1406":  "none",
+                            "removedUnsafeBiomeFogVaultRoute":  true,
+                            "removedBufferIdsFromHectonUnderwaterVisuals":  [
+                                                                                "BufferID.UnderwaterBiomeFogSamples",
+                                                                                "BufferID.UnderwaterBiomeFogSources",
+                                                                                "BufferID.UnderwaterBiomeFogFromAup",
+                                                                                "BufferID.UnderwaterBiomeFogToAup",
+                                                                                "BufferID.UnderwaterBiomeFogPlayerAup",
+                                                                                "BufferID.UnderwaterBiomeFogResults"
+                                                                            ],
+                            "existingSecuredBufferId":  "BufferID.FoveatedRenderBlackBox",
+                            "existingSecuredSystemId":  "SystemID.GraphicsScalability",
+                            "tryAcquireWriteLock":  "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:1209",
+                            "releaseInFinally":  "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:990-992",
+                            "releaseWrapper":  "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:1234-1238",
+                            "failedValidationReleaseInFinally":  "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:1227-1230",
+                            "pdaProjectionSecuredBufferIds":  [
+                                                                  "(BufferID)PdaProjectionVaultIds.State = 348730",
+                                                                  "(BufferID)PdaProjectionVaultIds.Input = 348731",
+                                                                  "(BufferID)PdaProjectionVaultIds.TelemetryRing = 348732",
+                                                                  "(BufferID)PdaProjectionVaultIds.TelemetryCursor = 348733",
+                                                                  "(BufferID)PdaProjectionVaultIds.Tuning = 348734",
+                                                                  "(BufferID)PdaProjectionVaultIds.InterfaceProfiles = 348735",
+                                                                  "(BufferID)PdaProjectionVaultIds.CsvScratch = 348736 editor-only"
+                                                              ],
+                            "pdaProjectionTryAcquireWriteLock":  "Assets/_Project/Scripts/UI/WristHologramHudRuntime_PdaScreenProjector.cs:575",
+                            "pdaProjectionFailedValidationReleaseInFinally":  "Assets/_Project/Scripts/UI/WristHologramHudRuntime_PdaScreenProjector.cs:595-598",
+                            "pdaProjectionBulkReleaseInCallerFinally":  "Assets/_Project/Scripts/UI/WristHologramHudRuntime_PdaScreenProjector.cs:532-560 calls ReleasePdaProjectionAcquiredBuffers only from finally when acquisition chain fails; normal frame release is in finally at lines 319-361.",
+                            "additionalRenderingWriteLockHelpersCorrected":  [
+                                                                                 "AbyssalDeferredCausticsRuntime.cs:1444 acquire, 1449-1464 failed validation finally",
+                                                                                 "HectonUberNoirRuntimeBridge.cs:541 acquire, 546-563 failed validation finally",
+                                                                                 "HectonVolumetricParticulateFogFeature.cs:2136 acquire, 2141-2158 failed validation finally",
+                                                                                 "DynamicDecalVaultRuntime.cs:1399-1404 acquire gate, 1406-1423 post-acquire validation finally",
+                                                                                 "HectonBilateralDrsUpscalerRuntime.cs:1278 acquire, 1283-1300 failed validation finally",
+                                                                                 "DiegeticVisorLensRuntime.cs:860 acquire, 865-882 failed validation finally",
+                                                                                 "AbyssalDeferredCausticsRuntime.LoadLightingProfilesCsv csv scratch/profiles dual acquire: csv acquire line 367, scratchLocked line 372, profiles acquire line 377, profilesLocked line 382, release-only-locked finally lines 399-404"
+                                                                             ],
+                            "validatorProof":  "Assets/_Project/Scripts/Editor/QuestVrOptimizationValidator1406.cs:167-184,263-304,307-352,374-437,420-449",
+                            "dumpPath":  "Docs/AgentLogs/Dump_1406.bin",
+                            "bilateralDrsSecuredBufferIds":  [
+                                                                 "BufferID.Shinobu236BilateralDrsParams",
+                                                                 "BufferID.Shinobu236BilateralDrsTuning",
+                                                                 "BufferID.Shinobu236BilateralDrsTelemetry",
+                                                                 "BufferID.Shinobu236BilateralDrsTelemetryCursor",
+                                                                 "BufferID.Shinobu236BilateralDrsProfiles",
+                                                                 "BufferID.Shinobu236BilateralDrsMockState",
+                                                                 "BufferID.Shinobu236BilateralDrsCsvScratch"
+                                                             ],
+                            "diegeticVisorSecuredBufferIds":  [
+                                                                  "StateBufferId = (BufferID)71020",
+                                                                  "TuningBufferId = (BufferID)71021",
+                                                                  "PhysiologyBufferId = (BufferID)71022",
+                                                                  "EnvironmentBufferId = (BufferID)71023",
+                                                                  "GpuGlobalsBufferId = (BufferID)71024",
+                                                                  "TelemetryRingBufferId = (BufferID)71025",
+                                                                  "TelemetryCursorBufferId = (BufferID)71026",
+                                                                  "CsvByteBufferId = (BufferID)71027",
+                                                                  "BinaryProbeByteBufferId = (BufferID)71028",
+                                                                  "NanFlagBufferId = (BufferID)71029"
+                                                              ]
+                        },
+    "unmanagedStructLayoutProof":  {
+                                       "FoveatedRenderTelemetryEntry":  {
+                                                                            "path":  "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:146",
+                                                                            "sizeBytes":  64,
+                                                                            "offsets":  {
+                                                                                            "Frame":  0,
+                                                                                            "Sequence":  4,
+                                                                                            "TargetLevel01":  8,
+                                                                                            "AppliedLevel01":  12,
+                                                                                            "SystemStress01":  16,
+                                                                                            "GpuUtil01":  20,
+                                                                                            "GpuTimeMs":  24,
+                                                                                            "EyeWidth":  28,
+                                                                                            "EyeHeight":  32,
+                                                                                            "Flags":  36,
+                                                                                            "Caps":  40,
+                                                                                            "TargetLevelCode":  44,
+                                                                                            "AppliedLevelCode":  45,
+                                                                                            "Mode":  46,
+                                                                                            "PressureLevel":  47,
+                                                                                            "FoveatedPressureTier":  48,
+                                                                                            "ThermalSeverity":  49,
+                                                                                            "DisplayCount":  50,
+                                                                                            "VaultGeneration":  52,
+                                                                                            "Pad0":  56,
+                                                                                            "Pad7":  63
+                                                                                        }
+                                                                        },
+                                       "PdaProjectionDTOs":  {
+                                                                 "path":  "Assets/_Project/Scripts/UI/WristHologramHudRuntime_PdaScreenProjector.cs:33-123",
+                                                                 "PdaStateDTO":  {
+                                                                                     "sizeBytes":  80,
+                                                                                     "offsets":  {
+                                                                                                     "LocalToWorld":  0,
+                                                                                                     "ActiveTabHashID":  64,
+                                                                                                     "BootSequenceProgress01":  68,
+                                                                                                     "PdaFlags":  72,
+                                                                                                     "Pad76":  76,
+                                                                                                     "Pad79":  79
+                                                                                                 }
+                                                                                 },
+                                                                 "PdaProjectionInputDTO":  {
+                                                                                               "sizeBytes":  112,
+                                                                                               "offsets":  {
+                                                                                                               "WristAup":  0,
+                                                                                                               "CameraAup":  24,
+                                                                                                               "WristRotation":  48,
+                                                                                                               "LocalScreenOffset":  64,
+                                                                                                               "ScreenWidthMeters":  76,
+                                                                                                               "ScreenHeightMeters":  80,
+                                                                                                               "BootSequenceProgress01":  84,
+                                                                                                               "ActiveTabHashID":  88,
+                                                                                                               "PdaFlags":  92,
+                                                                                                               "GlassRefractionIndex":  96,
+                                                                                                               "ScreenCurvatureScalar":  100,
+                                                                                                               "GlobalQualityWeight01":  104,
+                                                                                                               "Pad108":  108,
+                                                                                                               "Pad111":  111
+                                                                                                           }
+                                                                                           },
+                                                                 "PdaProjectionTuningDTO":  {
+                                                                                                "sizeBytes":  64,
+                                                                                                "offsets":  {
+                                                                                                                "Params0":  0,
+                                                                                                                "Params1":  16,
+                                                                                                                "AtlasFallbackRect":  32,
+                                                                                                                "VisualParams":  48
+                                                                                                            }
+                                                                                            },
+                                                                 "PdaInterfaceProfileDTO":  {
+                                                                                                "sizeBytes":  32,
+                                                                                                "offsets":  {
+                                                                                                                "UvRect":  0,
+                                                                                                                "TabHashID":  16,
+                                                                                                                "Flags":  20,
+                                                                                                                "Pad24":  24,
+                                                                                                                "Pad31":  31
+                                                                                                            }
+                                                                                            },
+                                                                 "PdaProjectionTelemetryEntry":  {
+                                                                                                     "sizeBytes":  64,
+                                                                                                     "offsets":  {
+                                                                                                                     "FrameIndex":  0,
+                                                                                                                     "Flags":  4,
+                                                                                                                     "ActiveTabHashID":  8,
+                                                                                                                     "JobMicrosecondsQ16":  12,
+                                                                                                                     "LocalizedDistanceMeters":  16,
+                                                                                                                     "BootSequenceProgress01":  20,
+                                                                                                                     "QualityWeight01":  24,
+                                                                                                                     "TelemetryCursor":  28,
+                                                                                                                     "MatrixHash":  32,
+                                                                                                                     "ProfileHash":  36,
+                                                                                                                     "ScreenWidthMeters":  40,
+                                                                                                                     "ScreenHeightMeters":  44,
+                                                                                                                     "GlassRefractionIndex":  48,
+                                                                                                                     "ScreenCurvatureScalar":  52,
+                                                                                                                     "GlobalQualityWeight01":  56,
+                                                                                                                     "PdaFlags":  60
+                                                                                                                 }
+                                                                                                 },
+                                                                 "PdaProjectionGlobalsDTO":  {
+                                                                                                 "sizeBytes":  64,
+                                                                                                 "offsets":  {
+                                                                                                                 "ScreenParams":  0,
+                                                                                                                 "RefractionParams":  16,
+                                                                                                                 "AtlasRect":  32,
+                                                                                                                 "VisualParams":  48
+                                                                                                             }
+                                                                                             },
+                                                                 "PdaProjectionBlackBoxDumpHeader":  {
+                                                                                                         "sizeBytes":  64,
+                                                                                                         "offsets":  {
+                                                                                                                         "Magic":  0,
+                                                                                                                         "Version":  4,
+                                                                                                                         "FrameIndex":  8,
+                                                                                                                         "Flags":  12,
+                                                                                                                         "TelemetryCapacity":  16,
+                                                                                                                         "TelemetryCursor":  20,
+                                                                                                                         "TelemetryEntrySizeBytes":  24,
+                                                                                                                         "PayloadBytes":  28,
+                                                                                                                         "TelemetryValidCount":  32,
+                                                                                                                         "TelemetryStartIndex":  36,
+                                                                                                                         "Pad40":  40,
+                                                                                                                         "Pad63":  63
+                                                                                                                     }
+                                                                                                     }
+                                                             },
+                                       "BiomeTransitionSample":  {
+                                                                     "path":  "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs:81",
+                                                                     "sizeBytes":  8
+                                                                 },
+                                       "BiomeTransitionFogSource":  {
+                                                                        "path":  "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs:91",
+                                                                        "sizeBytes":  32
+                                                                    },
+                                       "BiomeTransitionFogResult":  {
+                                                                        "path":  "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs:101",
+                                                                        "sizeBytes":  64
+                                                                    },
+                                       "AbsoluteUniversePositionBlit128":  {
+                                                                               "path":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs:572",
+                                                                               "sizeBytes":  48
+                                                                           }
+                                   },
+    "validation":  {
+                       "promptExtraction":  "PASS_CURRENT_BATCH_1406_FOUND_ATTRIBUTES_AWARE_START_545_END_629_TASK_COUNT_19",
+                       "currentBatchPrompt1406":  "PASS_START_LINE_545_END_LINE_629_TASK_COUNT_19_ATTRIBUTES_AWARE_TAG_MATCH",
+                       "braceBalance":  "PASS_5_TOUCHED_FILES_BRACES_BALANCED",
+                       "gitDiffCheck":  "PASS_WARNINGS_ONLY_LF_TO_CRLF_NO_WHITESPACE_ERRORS",
+                       "yamlStatic":  "PASS",
+                       "questRendererFeatureMap":  "PASS_13_OF_13_LIST_MAP_MATCH",
+                       "pdaProjectorAddRenderPassGuard":  "PASS_CAMERA_TYPE_SKIP_BEFORE_SETUP_AND_ENQUEUE",
+                       "pdaProjectorRenderGraphAtlasDependency":  "PASS_RTHandle_IMPORTED_AND_DECLARED_WITH_BUILDER_USETEXTURE",
+                       "pdaProjectionDataVaultFinally":  "PASS_STATIC_SEQUENCE_ASSERTIONS_IN_VALIDATOR_NOT_EXECUTED_IN_UNITY",
+                       "fluidAdvectionBaseCameraGuard":  "PASS_RECORDGRAPH_AND_ADDRENDERPASSES_SKIP_OVERLAY_CAMERAS",
+                       "brownoutAddRenderPassGuard":  "PASS_CAMERA_TYPE_SKIP_BEFORE_STATE_BUILD_SETUP_AND_ENQUEUE",
+                       "brownoutBaseCameraGuard":  "PASS_RECORDGRAPH_AND_ADDRENDERPASSES_SKIP_OVERLAY_CAMERAS_BEFORE_TEXTURE_OR_STATE_WORK",
+                       "brownoutRuntimeStateNoNew":  "PASS_TRYBUILD_LINES_436_474_NEW_ANY_0_NEW_RUNTIMESTATE_0_NEW_REFERENCE_0",
+                       "visorUberPostAddRenderPassGuard":  "PASS_CAMERA_TYPE_SKIP_WITHOUT_CLEARING_GAME_CAMERA_PENDING_RECONSTRUCTION_STATE",
+                       "visorUberPostBaseCameraGuard":  "PASS_RECORDGRAPH_AND_ADDRENDERPASSES_SKIP_OVERLAY_CAMERAS_WITHOUT_CLEARING_GAME_CAMERA_PENDING_RECONSTRUCTION_STATE",
+                       "visorUberPostRuntimeStateNoNew":  "PASS_TRYBUILD_LINES_2254_2347_NEW_ANY_0_NEW_RUNTIMESTATE_0_NEW_REFERENCE_0",
+                       "visorDomainRuntimeStateNoNew":  "PASS_RG_NO_HITS_FOR_NEW_RUNTIMESTATE_OR_PRIVATE_READONLY_STRUCT_RUNTIMESTATE_UNDER_ASSETS_PROJECT_SCRIPTS_VISOR",
+                       "visorUberPostDepthlessTBDRClassificationCache":  "PASS_HOT_RESOLVE_WINDOW_HAS_NO_SYSTEMINFO_DEVICEMODEL_OR_INDEXOF",
+                       "deferredCausticsAddRenderPassGuard":  "PASS_ACTIVE_CONSTANT_BUFFER_REQUIRED_BEFORE_SETUP_AND_ENQUEUE",
+                       "deferredCausticsBaseCameraGuard":  "PASS_RECORDGRAPH_AND_ADDRENDERPASSES_SKIP_OVERLAY_CAMERAS_BEFORE_CONSTANT_BUFFER_CLAIM",
+                       "deferredCausticsRuntimeDataVaultFinally":  "PASS_STATIC_SEQUENCE_ASSERTIONS_IN_VALIDATOR_NOT_EXECUTED_IN_UNITY",
+                       "additionalRenderingDomainDataVaultFinally":  "PASS_STATIC_SEQUENCE_ASSERTIONS_FOR_UBERNOIR_BILATERALDRS_VOLUMETRICFOG_DYNAMICDECAL_DIEGETICVISOR_NOT_EXECUTED_IN_UNITY",
+                       "atmosphereSootAddRenderPassGuard":  "PASS_GAME_CAMERA_AND_GPU_RESOURCE_GUARDS_BEFORE_RUNTIME_STATE_SETUP_AND_ENQUEUE",
+                       "atmosphereSootBaseCameraGuard":  "PASS_RECORDGRAPH_AND_ADDRENDERPASSES_SKIP_OVERLAY_CAMERAS_BEFORE_TEXTURE_OR_RESOURCE_WORK",
+                       "atmosphereSootContinuousQualityScaling":  "PASS_HOMEOSTASISBRAIN_GLOBALQUALITYWEIGHT_CURVE_BEFORE_RUNTIME_STATE_PUBLISH",
+                       "foveatedTelemetryDataVaultFinally":  "PASS_STATIC_SEQUENCE_ASSERTIONS_IN_VALIDATOR_NOT_EXECUTED_IN_UNITY",
+                       "questRuntimeClassificationCache":  "PASS_STATIC_ASSERTIONS_APPLYPOLICY_USES_REFRESH_QUEST_RUNTIME_CLASS_AND_GENERIC_QUEST_FAMILY_COMPLETES_CLASSIFICATION",
+                       "editorValidatorScript":  "updated_not_executed",
+                       "unityImport":  "NOT_RUN",
+                       "playMode":  "NOT_RUN",
+                       "questDeviceProfiler":  "NOT_RUN",
+                       "dotnetBuild":  "RUN_FAILED_EXTERNAL_DOMAIN_ERRORS",
+                       "dotnetBuildCommand":  "dotnet build Hecton8.Editor.csproj --no-restore -v:minimal /m:1",
+                       "dotnetBuildExitCode":  1,
+                       "dotnetBuildElapsed":  "00:03:04.78",
+                       "dotnetBuildFailureDump":  "Docs/AgentLogs/Dump_1406_compile_failure_20260528.txt",
+                       "dotnetBuildFailurePrimaryErrors":  [
+                                                               "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:7363 CS0019 uint == BufferID",
+                                                               "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1287-1314 CS8168/CS8350 acquiredCount ref escape"
+                                                           ],
+                       "cpuTotalPercent":  100,
+                       "cscCount":  0,
+                       "dotnetCount":  1,
+                       "vbcsCompilerCount":  0,
+                       "postBuildCpuTotalPercent":  15.5,
+                       "postBuildCscCount":  0,
+                       "postBuildDotnetCount":  0,
+                       "postBuildVbcsCompilerCount":  0,
+                       "postRuntimeStateCleanupBuildGate":  "SKIPPED_CPU_44_0_CSC_0_DOTNET_0_VBCS_1_BUILD_ALLOWED_FALSE",
+                       "postVisorDomainCleanupBuildGate":  "SKIPPED_CPU_83_6_CSC_0_DOTNET_1_VBCS_1_BUILD_ALLOWED_FALSE",
+                       "postPdaVaultLockCleanupBuildGate":  "SKIPPED_CPU_76_CSC_0_DOTNET_0_VBCS_0_BUILD_ALLOWED_FALSE",
+                       "postAdditionalDataVaultCleanupBuildGate":  "SKIPPED_CPU_63_CSC_0_DOTNET_1_VBCS_0_BUILD_ALLOWED_FALSE",
+                       "bilateralDrsDataVaultFinally":  "PASS_STATIC_SEQUENCE_ASSERTIONS_IN_VALIDATOR_NOT_EXECUTED_IN_UNITY",
+                       "diegeticVisorLensDataVaultFinally":  "PASS_STATIC_SEQUENCE_ASSERTIONS_IN_VALIDATOR_NOT_EXECUTED_IN_UNITY",
+                       "postBilateralDiegeticVaultCleanupBuildGate":  "SKIPPED_CPU_82_CSC_0_DOTNET_0_VBCS_0_BUILD_ALLOWED_FALSE",
+                       "deferredCausticsCsvDualLockFinally":  "PASS_LINES_367_372_377_382_399_404_ACQUIRE_FLAGS_BEFORE_FINALLY_RELEASE_NO_UNACQUIRED_SCRATCH_RELEASE",
+                       "visorUberPostNoirPassBaseCameraGuard":  "PASS_NOIR_LINE_144_CAMERA_RENDER_TYPE_BASE_BEFORE_SOURCE_TEXTURE_LINE_147",
+                       "visorUberPostStaticTexturesRenderGraphDependency":  "PASS_LINES_460_503_AND_591_651_IMPORT_USE_AND_BIND_STATIC_POST_TEXTURES_WITHOUT_MATERIAL_SETTEXTURE",
+                       "visorUberPostHistoryReadAccessInjection":  "PASS_LINES_996_998_USE_RENDERING_DATA_CAMERA_HISTORY_MANAGER_AND_RENDER_CAMERA_TRYGETCOMPONENT_ABSENT",
+                       "questCameraPostProcessDisable":  "PASS_LINES_104_114_FORCE_QUEST_CAMERA_OPAQUE_COLOR_AND_RENDER_POSTPROCESSING_OFF",
+                       "visorUberPostTextureDescNoNewToken":  "PASS_UBER_LINES_379_451_AND_NOIR_LINE_152_USE_STRUCT_COPY_SOURCE_DESC_NO_NEW_TEXTUREDESC_TOKEN",
+                       "postLoop24BuildGate":  "SKIPPED_CPU_100_CSC_0_DOTNET_1_VBCS_0_BUILD_ALLOWED_FALSE_LAST_ACTUAL_BUILD_FAILED_EXTERNAL_DOMAIN_ERRORS",
+                       "foveatedFixedUiSuppressionGuard":  "PASS_LINES_330_339_FIXED_MODE_RETURNS_BEFORE_CAMERA_LOOKUP_AND_APPLYDISPLAYSTATE_ZERO_IN_FIXED_BRANCH",
+                       "postLoop25BuildGate":  "SKIPPED_CPU_57_CSC_0_DOTNET_0_VBCS_1_BUILD_ALLOWED_FALSE",
+                       "postLoop25DiffCheck":  "PASS_WARNINGS_ONLY_LF_TO_CRLF_NO_WHITESPACE_ERRORS",
+                       "postLoop25PromptExtraction":  "PASS_START_LINE_545_END_LINE_629_TASK_COUNT_19_ATTRIBUTES_AWARE_1",
+                       "postLoop25FinalBuildGate":  "SKIPPED_CPU_100_CSC_0_DOTNET_1_VBCS_0_BUILD_ALLOWED_FALSE",
+                       "activeQuestTextureDescCopyConstructors":  "PASS_BROWNOUT_SOOT_CAUSTICS_PDA_DESCRIPTOR_SLICES_NEW_TEXTUREDESC_0",
+                       "runtimeTextureDescDescriptorCopyBroadScan":  "PASS_NO_HITS_FOR_NEW_TEXTUREDESC_DESCRIPTOR_COPY_IN_VISOR_RENDERING_UI_NON_EDITOR",
+                       "unityTextureDescCopyConstructorEquivalence":  "PASS_PACKAGE_SOURCE_RenderGraphResourceTexture.cs_439_442_COPY_CTOR_IS_THIS_EQUALS_INPUT",
+                       "postLoop26FinalBuildGate":  "SKIPPED_CPU_100_CSC_0_DOTNET_0_VBCS_0_BUILD_ALLOWED_FALSE"
+                   },
+    "estimatedGpuSavingsMicroseconds":  {
+                                            "msaa4xTo2x":  "800-1500",
+                                            "renderScale1To085":  "1800-3500",
+                                            "shadowCascade2To1":  "300-900",
+                                            "foveationSubsampledAndMvpvv":  "1000-3000",
+                                            "questShapesImmediateModeStrip":  "unknown_no_profile_removes_third_party_per_camera_enqueue_path",
+                                            "fluidAdvectionOverlayCameraGuard":  "unknown_no_profile_avoids_duplicate_compute dispatch claim on overlay camera stacks",
+                                            "wristPdaNonGameCameraEnqueueGuard":  "unknown_no_profile_avoids_noop_pass_enqueue_for_preview_reflection_sceneview_overlay_cameras",
+                                            "wristPdaAtlasRenderGraphDependency":  "correctness fix_declares atlas read dependency_no claimed microsecond savings",
+                                            "brownoutNonGameCameraEnqueueGuard":  "unknown_no_profile_avoids_noop_comfort_state_probe_and_pass_enqueue_for_preview_reflection_sceneview_cameras",
+                                            "brownoutOverlayCameraGuard":  "unknown_no_profile_avoids_duplicate comfort fullscreen pass work on XR overlay camera stacks",
+                                            "visorUberPostNonGameCameraEnqueueGuard":  "unknown_no_profile_avoids_noop_noir_or_reconstruction_pass_setup_for_preview_reflection_sceneview_cameras_while_preserving_game_camera_pending_reconstruction_state",
+                                            "visorUberPostOverlayCameraGuard":  "unknown_no_profile_avoids duplicate noir/reconstruction fullscreen pass work on XR overlay camera stacks while preserving pending game-camera state",
+                                            "visorUberPostDepthlessClassificationCache":  "unknown_no_profile_removes device model string scan from per-frame resolve path",
+                                            "deferredCausticsOverlayCameraGuard":  "unknown_no_profile_avoids duplicate deferred caustics constant-buffer claim and composite pass on XR overlay camera stacks",
+                                            "atmosphereSootOverlayCameraGuard":  "unknown_no_profile_avoids duplicate soot fullscreen pass work on XR overlay camera stacks",
+                                            "atmosphereSootContinuousQualityScaling":  "unknown_no_profile_scales radius_dither_darken presentation pressure continuously",
+                                            "globalBloomVolumeRemoved":  "600-1600",
+                                            "note":  "estimates_only_no_profiler_or_headset_capture",
+                                            "questFixedFoveationCameraStackStability":  "unknown_no_profile_avoids XRDisplaySubsystem foveation property churn on UI/base camera stacks for fixed Quest foveation",
+                                            "textureDescCopyConstructorCleanup":  "0_runtime_behavior_change_expected; evidence cleanup only because Unity copy ctor is this=input"
+                                        },
+    "sha256":  [
+                   {
+                       "path":  "Assets/_Project/Data/URP_Quest_VR.asset",
+                       "sha256":  "de1e4dd91cfe90b91bc68d0e8e2e525c71dcc3da3b0d295a7410ea85cb6e1d02"
+                   },
+                   {
+                       "path":  "Assets/XR/Settings/OpenXR Package Settings.asset",
+                       "sha256":  "9696e2e51307626aec23bf10d77e25e30c7595b72bc9b43f734467a907e7c69f"
+                   },
+                   {
+                       "path":  "ProjectSettings/QualitySettings.asset",
+                       "sha256":  "a2f72e12cbdfd318a53647b47543f2b0c160557600555a59a46c93abce523292"
+                   },
+                   {
+                       "path":  "Assets/_Project/Data/Quest_VR_Renderer.asset",
+                       "sha256":  "ce8aae6512ef1cbc3162872754b835406dde43c5943fb8591141003aa8482668"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/QuestFoveationDriver.cs",
+                       "sha256":  "2f87c283edbf06732734512f2c8972803e682b7a73b8bcc12ec1acfd02b20994"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs",
+                       "sha256":  "17412caf3d05089076abc83b9ea13c17245b3b3dc42274851c29d0c5df65739f"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Editor/Build/QuestVulkanRenderPipelineConfigurator.cs",
+                       "sha256":  "26960e9b841997c8d1919e5d3189a675695fe0a2e136e9dbba8a811a9bec24ba"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Editor/Build/XrPlatformReadinessValidator.cs",
+                       "sha256":  "bf08a6de99d7790e69a2aaf3a25130b7b0d374d3ba141beebbde6638ef812e3c"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Core/HectonUrpTextureRequirementsGuard.cs",
+                       "sha256":  "e0d067e0bf2c4387f964bf332c71dcbcd552cd05317fc8df425cfea23c7c2048"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
+                       "sha256":  "3ea0fd9b6f2ae2c6f5b49664596283b7a1d23f8836ef1deda451033849dba532"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonFluidAdvectionRenderFeature.cs",
+                       "sha256":  "06f82e0440c232a75b1c2b342229d201ac9886cd46c518ae8160620003c59724"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/UI/WristPdaScreenProjectorFeature.cs",
+                       "sha256":  "0da3b656c62af038fe9e887bf680e02fca1a57c5ccdb72fd8faa30dbf02b3486"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/UI/WristHologramHudRuntime_PdaScreenProjector.cs",
+                       "sha256":  "570a068111575cd68349ff2123ddfa8c6d7d17307737d2e023778d6f6c15b557"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs",
+                       "sha256":  "e05b4589a77627cccdfb6c3cafaf04190279eb694604ce3618416643c4c13f55"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs",
+                       "sha256":  "4fee986aeef57126c832b87fbcf6c2dbfa928a7cc1c9cf06005ca5a812fdfcb5"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonBiosDiagnosticFeature.cs",
+                       "sha256":  "1b1e208aac4bec788a39f5694ce423cc2a3ce0ba36c4b5afe44ac96745b526a3"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonRetinaDistortionFeature.cs",
+                       "sha256":  "0d6b83ad53d4ecb383d1c9abc59022584438115f6d396fe74012f153dfd9cdcc"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs",
+                       "sha256":  "4713d6f8edd2094e0c53aa9b4d3815fdaa351979fe6499b35c1d04cf8d21885a"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Rendering/AbyssalCaustics/HectonDeferredCausticsFeature.cs",
+                       "sha256":  "0dc5f79126a93ad2b259b2314ea527b55d4ef7755c4804c1ae48831c942752a2"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Rendering/AbyssalCaustics/AbyssalDeferredCausticsRuntime.cs",
+                       "sha256":  "9fdabfbead71cb1d32ffe8b2a98be3306f8882363b0e480b0727636af579516a"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
+                       "sha256":  "b078f23f2997c5eff79a17e9eb3edea6a3cb9d152f62ca58d3dd9bf7e57b3c3b"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonVolumetricParticulateFogFeature.cs",
+                       "sha256":  "48683f6749f37e947c8bff0a82e7e71a3418fc1322fe216c9c524aa7d3a260b3"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+                       "sha256":  "cb81cb1eecd1d72da843675d0f3305bcce469ed81781291b18ce0864c26db5e0"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonAtmosphereSootFeature.cs",
+                       "sha256":  "2f6906b61d9586328df50a355785d785be0554d7f949bb5178ab5ea7be3bf54d"
+                   },
+                   {
+                       "path":  "Assets/Shapes/Scripts/Runtime/Immediate Mode/ShapesRenderFeature.cs",
+                       "sha256":  "d08c4b50428ecd450617c433832b37485ea350d35d60742e5d102b6e9e0a3c35"
+                   },
+                   {
+                       "path":  "Docs/AgentLogs/Dump_1406_compile_failure_20260528.txt",
+                       "sha256":  "d831e238915a75cb1554937db38bd9e196f8bbe1e1a23d3213225edcb05283e0"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs",
+                       "sha256":  "95b54ee65ed46c20fbca6fd23c12bddf02b170cf874908fa7e45db9effade5fe"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Rendering/BilateralDrs/HectonBilateralDrsUpscalerRuntime.cs",
+                       "sha256":  "48fe1de1ce87961c7a9e4e51bc48b8bf00fe5ae88f721678a76cbcfb495940a2"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Editor/QuestVrOptimizationValidator1406.cs",
+                       "sha256":  "b479a63ca03def7b85f574da74a8185bb278d1547aa999178ae496b3a490d948"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs",
+                       "sha256":  "be4be030bf29492c796aa6f97a1bcd00052ccb301f0e65174b475351a9b21b23"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonAbyssalSsdoFeature.cs",
+                       "sha256":  "0b591c90b9a1a990b366f0f38a89a9bd7cbd66986c83ef79c694f81c552c25d0"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonBiolumSSGIFeature.cs",
+                       "sha256":  "bb97858e06a043a5ac87d33a8125d41634dd7082b1afeccffd7b2091d99a453b"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/DeferredDecalPass.cs",
+                       "sha256":  "85bfb734b91f965aac549368549b87aa322e5b458dac40ebf9561ace74b73fb9"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonDryVolumeFeature.cs",
+                       "sha256":  "c675e00b3022850a28fafdc21cd482853ebfe2d303ca75cff20dafb623bee031"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonHalfResParticlesFeature.cs",
+                       "sha256":  "8d21d44d4ea2acdabff1e6cd7bd5b9ab14d8db510fd33a092d388d25b25764f3"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonNoirDepthFogFeature.cs",
+                       "sha256":  "0c3a8ae1d0235f0b4a89dd7cc25d1d08c756f27fc756f7b45919f5328a0dcee2"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonScooterVolumetricShaftsFeature.cs",
+                       "sha256":  "0c2eabbd2c084b8bb258a6ad86bc4dcb2070880e36ebda91c0cb982ba3bca5bd"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonStochasticSsrFeature.cs",
+                       "sha256":  "3d1d8dae3af5a1bc5efce7dc170d97f939fe22855fab55f89b7669bfc750d6c9"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonSonarPointCloudFeature.cs",
+                       "sha256":  "95ca3e60400b11e2b4a2cd064012f556f849852f33e15736364b6af948912a24"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonScannerProjectionFeature.cs",
+                       "sha256":  "663d4a3309fb4aa31c5e05a623819c1a4557341a7f0b19e0914790082cbc8427"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs",
+                       "sha256":  "29951720d22e4c891028d812541d548a083124bd61238282a9348ff2bfb3aad2"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonVoxelSsaoFeature.cs",
+                       "sha256":  "812f79517aabbc093d0f5542165bb371498ad0f8e243864fdeed3da35b9b903f"
+                   }
+               ]
 }

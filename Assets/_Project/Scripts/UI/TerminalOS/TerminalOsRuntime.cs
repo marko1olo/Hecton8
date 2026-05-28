@@ -958,7 +958,7 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _input = GlobalRegistry.Input;
-            _vault = GlobalRegistry.DataVault;
+            BindDataVaultForLifecycle(GlobalRegistry.DataVault, _vault);
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             _cachedPlayerContext = playerContext;
             RefreshRuntimeOriginSnapshotForOwner();
@@ -1069,10 +1069,12 @@ namespace Hecton8.UI
                     }
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
-                    if (!ReferenceEquals(_vault, currentService))
+                    IDataVault nextVault = currentService is IDataVault dataVault ? dataVault : null;
+                    if (!ReferenceEquals(_vault, nextVault))
                     {
-                        DisposeNativeResources();
-                        _vault = currentService as IDataVault;
+                        CompleteJobsForTeardown();
+                        IDataVault previousVault = previousService is IDataVault oldVault ? oldVault : null;
+                        BindDataVaultForLifecycle(nextVault, previousVault);
                         _bindingsDirty = true;
                     }
                     break;
@@ -1237,6 +1239,8 @@ namespace Hecton8.UI
                 return;
 
             handle = vault.EnsureGenerationHandle<T>(bufferId, length, SystemID.UI, options);
+            if (!IsExactVaultHandle(in handle, bufferId))
+                handle = default;
         }
 
         private bool ValidateNativeBuffers()
@@ -1291,7 +1295,7 @@ namespace Hecton8.UI
         private bool TryOpenVaultBuffer<T>(ref VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
-            if (_vault == null || _vault.IsCompactionFenceActive || !IsValidVaultHandle(in handle))
+            if (_vault == null || _vault.IsCompactionFenceActive || !IsTerminalOsVaultHandle(in handle))
                 return false;
 
             return _vault.TryResolveHandle(in handle, out buffer) &&
@@ -1302,7 +1306,7 @@ namespace Hecton8.UI
         private bool TryReadVaultBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
-            if (_vault == null || _vault.IsCompactionFenceActive || !IsValidVaultHandle(in handle))
+            if (_vault == null || _vault.IsCompactionFenceActive || !IsTerminalOsVaultHandle(in handle))
                 return false;
 
             return _vault.TryReadHandle(in handle, out buffer) &&
@@ -1310,9 +1314,53 @@ namespace Hecton8.UI
                    buffer.IsCreated;
         }
 
-        private static bool IsValidVaultHandle<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
+        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId)
+            where T : unmanaged
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)SystemID.UI &&
+                   handle.Generation != 0u;
+        }
+
+        private static bool IsTerminalOsVaultHandle<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
+        {
+            return handle.SystemID == (uint)SystemID.UI &&
+                   handle.Generation != 0u &&
+                   IsTerminalOsBufferId(handle.BufferID);
+        }
+
+        private static bool IsTerminalOsBufferId(uint bufferId)
+        {
+            switch (bufferId)
+            {
+                case unchecked((uint)(int)TerminalStatesBufferId):
+                case unchecked((uint)(int)ScreenCommandsBufferId):
+                case unchecked((uint)(int)GlyphUvsBufferId):
+                case unchecked((uint)(int)TerminalPositionsBufferId):
+                case unchecked((uint)(int)TerminalForwardsBufferId):
+                case unchecked((uint)(int)DirtyIndicesBufferId):
+                case unchecked((uint)(int)TelemetryRingBufferId):
+                case unchecked((uint)(int)MockPowerBufferId):
+                case unchecked((uint)(int)MockDamageBufferId):
+                case unchecked((uint)(int)MockPowerStatusBufferId):
+                case unchecked((uint)(int)ButtonAabbBufferId):
+                case unchecked((uint)(int)PanelInstancesBufferId):
+                case unchecked((uint)(int)TerminalClickScratchBufferId):
+                case unchecked((uint)(int)TerminalPlanesBufferId):
+                case unchecked((uint)(int)GazeRayBufferId):
+                case unchecked((uint)(int)TerminalInteractionsBufferId):
+                case unchecked((uint)(int)DecryptionPuzzlesBufferId):
+                case unchecked((uint)(int)DecryptionTerminalsBufferId):
+                case unchecked((uint)(int)DecryptionKnobInputBufferId):
+                case unchecked((uint)(int)DecryptionTelemetryRingBufferId):
+                case unchecked((uint)(int)TerminalInputStatesBufferId):
+                case unchecked((uint)(int)TerminalInputTelemetryRingBufferId):
+                case unchecked((uint)(int)TerminalInputTuningBufferId):
+                case unchecked((uint)(int)TerminalInputRowHashesBufferId):
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         private void InitializeTerminalState()
@@ -3799,6 +3847,21 @@ namespace Hecton8.UI
             _nextNativeResourceRetryFrame = 0;
         }
 
+        private void BindDataVaultForLifecycle(IDataVault nextVault, IDataVault previousVault)
+        {
+            if (ReferenceEquals(_vault, nextVault))
+                return;
+
+            IDataVault releaseVault = _vault ?? previousVault;
+            ReleaseVaultHandles(releaseVault);
+            ClearVaultHandles();
+            _nativeResourcesReady = false;
+            _vault = nextVault;
+            _terminalCount = 0;
+            _buttonCount = 0;
+            _nextNativeResourceRetryFrame = 0;
+        }
+
         private void DisposeDecryptionDumpWriter()
         {
             DecryptionBlackBoxDumpWriter writer = _decryptionDumpWriter;
@@ -3855,36 +3918,36 @@ namespace Hecton8.UI
 
         private void ReleaseVaultHandles(IDataVault vault)
         {
-            ReleaseVaultHandle(vault, ref _terminalStatesHandle);
-            ReleaseVaultHandle(vault, ref _screenCommandsHandle);
-            ReleaseVaultHandle(vault, ref _glyphUvsHandle);
-            ReleaseVaultHandle(vault, ref _terminalPositionsHandle);
-            ReleaseVaultHandle(vault, ref _terminalForwardHandle);
-            ReleaseVaultHandle(vault, ref _dirtyIndicesHandle);
-            ReleaseVaultHandle(vault, ref _telemetryRingHandle);
-            ReleaseVaultHandle(vault, ref _mockPowerSignalHandle);
-            ReleaseVaultHandle(vault, ref _mockDamageSignalHandle);
-            ReleaseVaultHandle(vault, ref _mockPowerStatusSignalHandle);
-            ReleaseVaultHandle(vault, ref _buttonAabbHandle);
-            ReleaseVaultHandle(vault, ref _panelInstancesHandle);
-            ReleaseVaultHandle(vault, ref _clickScratchHandle);
-            ReleaseVaultHandle(vault, ref _terminalPlanesHandle);
-            ReleaseVaultHandle(vault, ref _gazeRayHandle);
-            ReleaseVaultHandle(vault, ref _terminalInteractionsHandle);
+            ReleaseVaultHandle(vault, ref _terminalStatesHandle, TerminalStatesBufferId);
+            ReleaseVaultHandle(vault, ref _screenCommandsHandle, ScreenCommandsBufferId);
+            ReleaseVaultHandle(vault, ref _glyphUvsHandle, GlyphUvsBufferId);
+            ReleaseVaultHandle(vault, ref _terminalPositionsHandle, TerminalPositionsBufferId);
+            ReleaseVaultHandle(vault, ref _terminalForwardHandle, TerminalForwardsBufferId);
+            ReleaseVaultHandle(vault, ref _dirtyIndicesHandle, DirtyIndicesBufferId);
+            ReleaseVaultHandle(vault, ref _telemetryRingHandle, TelemetryRingBufferId);
+            ReleaseVaultHandle(vault, ref _mockPowerSignalHandle, MockPowerBufferId);
+            ReleaseVaultHandle(vault, ref _mockDamageSignalHandle, MockDamageBufferId);
+            ReleaseVaultHandle(vault, ref _mockPowerStatusSignalHandle, MockPowerStatusBufferId);
+            ReleaseVaultHandle(vault, ref _buttonAabbHandle, ButtonAabbBufferId);
+            ReleaseVaultHandle(vault, ref _panelInstancesHandle, PanelInstancesBufferId);
+            ReleaseVaultHandle(vault, ref _clickScratchHandle, TerminalClickScratchBufferId);
+            ReleaseVaultHandle(vault, ref _terminalPlanesHandle, TerminalPlanesBufferId);
+            ReleaseVaultHandle(vault, ref _gazeRayHandle, GazeRayBufferId);
+            ReleaseVaultHandle(vault, ref _terminalInteractionsHandle, TerminalInteractionsBufferId);
             ReleaseTerminalProjectionVaultHandles(vault);
-            ReleaseVaultHandle(vault, ref _decryptionPuzzlesHandle);
-            ReleaseVaultHandle(vault, ref _decryptionTerminalsHandle);
-            ReleaseVaultHandle(vault, ref _decryptionKnobInputHandle);
-            ReleaseVaultHandle(vault, ref _decryptionTelemetryRingHandle);
+            ReleaseVaultHandle(vault, ref _decryptionPuzzlesHandle, DecryptionPuzzlesBufferId);
+            ReleaseVaultHandle(vault, ref _decryptionTerminalsHandle, DecryptionTerminalsBufferId);
+            ReleaseVaultHandle(vault, ref _decryptionKnobInputHandle, DecryptionKnobInputBufferId);
+            ReleaseVaultHandle(vault, ref _decryptionTelemetryRingHandle, DecryptionTelemetryRingBufferId);
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId)
             where T : unmanaged
         {
-            if (vault != null &&
-                handle.BufferID != 0u &&
-                handle.Generation != 0u &&
-                handle.SystemID == (uint)SystemID.UI)
+            if (vault != null && IsExactVaultHandle(in handle, expectedBufferId))
             {
                 vault.ReleaseBuffer(in handle);
             }

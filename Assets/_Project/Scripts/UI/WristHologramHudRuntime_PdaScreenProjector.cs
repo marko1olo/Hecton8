@@ -5,11 +5,13 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Data;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 using AbsoluteUniversePosition = Hecton8.World.AbsoluteUniversePosition;
 using Debug = UnityEngine.Debug;
 
@@ -230,6 +232,8 @@ namespace Hecton8.UI
         private GraphicsBuffer _pdaProjectionGlobalsBufferA;
         private GraphicsBuffer _pdaProjectionGlobalsBufferB;
         private GraphicsBuffer _pdaProjectionActiveGlobalsBuffer;
+        private RTHandle _pdaProjectionAtlasHandle;
+        private Texture _pdaProjectionAtlasHandleSource;
         private float4x4 _lastPdaProjectionMatrix;
         private uint _pdaProjectionActiveTabHash = 0x50444100u;
         private uint _pdaProjectionFlags;
@@ -574,16 +578,25 @@ namespace Hecton8.UI
                 return false;
             }
 
-            if (!vault.IsCompactionFenceActive &&
-                buffer.IsCreated &&
-                buffer.Length >= requiredLength)
+            bool releaseOnExit = true;
+            try
             {
-                return true;
-            }
+                if (!vault.IsCompactionFenceActive &&
+                    buffer.IsCreated &&
+                    buffer.Length >= requiredLength)
+                {
+                    releaseOnExit = false;
+                    return true;
+                }
 
-            vault.ReleaseWriteLock(in handle, SystemID.UI);
-            buffer = default;
-            return false;
+                buffer = default;
+                return false;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                    vault.ReleaseWriteLock(in handle, SystemID.UI);
+            }
         }
 
         private void ReleasePdaProjectionAcquiredBuffers(uint acquiredMask)
@@ -684,11 +697,13 @@ namespace Hecton8.UI
             EnsurePdaProjectionBuffer(ref _pdaProjectionStateBufferB, PdaProjectionStateCapacity, UnsafeUtility.SizeOf<PdaStateDTO>(), GraphicsBuffer.Target.Structured);
             EnsurePdaProjectionBuffer(ref _pdaProjectionGlobalsBufferA, 1, PdaProjectionGlobalsStrideBytes, GraphicsBuffer.Target.Constant);
             EnsurePdaProjectionBuffer(ref _pdaProjectionGlobalsBufferB, 1, PdaProjectionGlobalsStrideBytes, GraphicsBuffer.Target.Constant);
+            bool atlasReady = EnsurePdaProjectionAtlasHandle();
             _pdaProjectionGraphicsBuffersReady =
                 IsValidPdaProjectionBuffer(_pdaProjectionStateBufferA, 1) &&
                 IsValidPdaProjectionBuffer(_pdaProjectionStateBufferB, 1) &&
                 IsValidPdaProjectionBuffer(_pdaProjectionGlobalsBufferA, 1) &&
-                IsValidPdaProjectionBuffer(_pdaProjectionGlobalsBufferB, 1);
+                IsValidPdaProjectionBuffer(_pdaProjectionGlobalsBufferB, 1) &&
+                atlasReady;
             return _pdaProjectionGraphicsBuffersReady;
         }
 
@@ -716,12 +731,38 @@ namespace Hecton8.UI
             return buffer != null && buffer.IsValid() && buffer.count >= requiredCount;
         }
 
+        private bool EnsurePdaProjectionAtlasHandle()
+        {
+            Texture source = ResolvePdaProjectionAtlasTexture();
+            if (source == null)
+                return false;
+
+            if (_pdaProjectionAtlasHandle != null &&
+                ReferenceEquals(_pdaProjectionAtlasHandleSource, source))
+            {
+                return true;
+            }
+
+            RTHandles.Release(_pdaProjectionAtlasHandle);
+            _pdaProjectionAtlasHandle = RTHandles.Alloc(source); // COLD ALLOC: RTHandle[atlas] - cached PDA atlas import handle for RenderGraph declaration - owner: WristHologramHudRuntime
+            _pdaProjectionAtlasHandleSource = source;
+            return _pdaProjectionAtlasHandle != null;
+        }
+
+        private Texture ResolvePdaProjectionAtlasTexture()
+        {
+            return pdaInterfaceAtlas != null ? pdaInterfaceAtlas : fontAtlasTexture != null ? fontAtlasTexture : Texture2D.whiteTexture;
+        }
+
         private void ReleasePdaProjectionGraphicsBuffers()
         {
             ReleaseGraphicsBuffer(ref _pdaProjectionStateBufferA);
             ReleaseGraphicsBuffer(ref _pdaProjectionStateBufferB);
             ReleaseGraphicsBuffer(ref _pdaProjectionGlobalsBufferA);
             ReleaseGraphicsBuffer(ref _pdaProjectionGlobalsBufferB);
+            RTHandles.Release(_pdaProjectionAtlasHandle);
+            _pdaProjectionAtlasHandle = null;
+            _pdaProjectionAtlasHandleSource = null;
             _pdaProjectionActiveStateBuffer = null;
             _pdaProjectionActiveGlobalsBuffer = null;
             _pdaProjectionGraphicsPathSupported = false;
@@ -1537,7 +1578,7 @@ namespace Hecton8.UI
         public static bool TryGetActivePdaProjectionResources(
             out GraphicsBuffer stateBuffer,
             out GraphicsBuffer globalsBuffer,
-            out Texture atlasTexture)
+            out RTHandle atlasTexture)
         {
             stateBuffer = null;
             globalsBuffer = null;
@@ -1549,6 +1590,7 @@ namespace Hecton8.UI
                 !runtime._pdaProjectionGpuPayloadValid ||
                 runtime._pdaProjectionActiveStateBuffer == null ||
                 runtime._pdaProjectionActiveGlobalsBuffer == null ||
+                runtime._pdaProjectionAtlasHandle == null ||
                 !runtime._pdaProjectionActiveStateBuffer.IsValid() ||
                 !runtime._pdaProjectionActiveGlobalsBuffer.IsValid())
             {
@@ -1557,7 +1599,7 @@ namespace Hecton8.UI
 
             stateBuffer = runtime._pdaProjectionActiveStateBuffer;
             globalsBuffer = runtime._pdaProjectionActiveGlobalsBuffer;
-            atlasTexture = runtime.pdaInterfaceAtlas != null ? runtime.pdaInterfaceAtlas : runtime.fontAtlasTexture != null ? runtime.fontAtlasTexture : Texture2D.whiteTexture;
+            atlasTexture = runtime._pdaProjectionAtlasHandle;
             return true;
         }
 

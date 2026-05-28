@@ -867,7 +867,8 @@ namespace Hecton8.UI.Navigation
                     _fastCadenceAccumulatedDelta = 0f;
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
-                    RebindDataVaultForLifecycle(currentService as IDataVault);
+                    IDataVault nextVault = currentService is IDataVault dataVault ? dataVault : null;
+                    RebindDataVaultForLifecycle(nextVault);
                     break;
             }
         }

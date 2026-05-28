@@ -7,9 +7,17 @@
 #include "../OceanConstants.hlsl"
 
 RWTexture2DArray<float> _LD_TexArray_Target;
+uint _CrestClearWidth;
+uint _CrestClearHeight;
+uint _CrestClearDepth;
 
 [numthreads(THREAD_GROUP_SIZE_X, THREAD_GROUP_SIZE_Y, 1)]
 void ClearToBlack(uint3 id : SV_DispatchThreadID)
 {
+	if (id.x >= _CrestClearWidth || id.y >= _CrestClearHeight || id.z >= _CrestClearDepth)
+	{
+		return;
+	}
+
 	_LD_TexArray_Target[id] = 0.0;
 }

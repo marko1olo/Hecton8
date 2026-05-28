@@ -1,0 +1,55 @@
+{
+  "agent_id": "AUDIT_NATIVE_STATE",
+  "dump_type": "compile_timeout_forensics",
+  "created_local_date": "2026-05-28",
+  "scope": [
+    "Assets/_Project/Scripts/AI/Ambient/AmbientBiotaDirector.cs",
+    "Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs"
+  ],
+  "pre_build_guard": {
+    "first_cpu_sample_percent": 100,
+    "first_compiler_process_sample_exit_code": 1,
+    "first_active_compiler_processes_reported": 0,
+    "first_decision": "do not build",
+    "second_cpu_sample_percent": 47,
+    "second_compiler_process_sample_exit_code": 1,
+    "second_active_compiler_processes_reported": 0,
+    "second_decision": "one build allowed by guard"
+  },
+  "build": {
+    "command": "dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
+    "timeout_milliseconds": 244019,
+    "exit_code": 124,
+    "stdout": "command timed out after 244019 milliseconds",
+    "stderr": "",
+    "result": "no compile-green proof"
+  },
+  "processes_after_timeout": [
+    {
+      "pid": 53816,
+      "name": "dotnet.exe",
+      "command_line": "\"C:\\Program Files\\dotnet\\dotnet.exe\" build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
+      "creation_time": "2026-05-28T21:32:28+04:00",
+      "action": "killed"
+    },
+    {
+      "pid": 51936,
+      "name": "VBCSCompiler.exe",
+      "command_line": "\"C:\\Program Files\\dotnet\\sdk\\10.0.202\\Roslyn\\bincore\\VBCSCompiler.exe\" \"-pipename:fseurL98FVDm925O4z8+Hu6Deac9ci3SIHxcy7WM1RM\"",
+      "creation_time": "2026-05-28T21:35:58+04:00",
+      "action": "killed"
+    }
+  ],
+  "post_kill_guard": {
+    "compiler_process_sample_exit_code": 1,
+    "active_compiler_processes_reported": 0,
+    "cpu_sample_percent": 100
+  },
+  "static_verification_survived_timeout": {
+    "bad_pattern_scan_matches": 0,
+    "zero_gc_diff_scan_matches": 0,
+    "layout_diff_scan_matches": 0,
+    "git_diff_check_exit_code": 0
+  },
+  "status": "PENDING_COMPILE_AND_RUNTIME_VERIFICATION"
+}

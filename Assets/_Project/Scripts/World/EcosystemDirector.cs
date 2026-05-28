@@ -2131,20 +2131,22 @@ namespace Hecton8.World
 
         internal void CaptureSaveSnapshot()
         {
+            _saveSnapshotSectorCount = 0;
+            _saveSnapshotBiomassRunCount = 0;
+            if (!IsInitialized)
+                return;
+
+            CompleteScheduledSimulation(forceComplete: true);
+            CompleteScheduledMacroSwarmTravel(forceComplete: true);
+            ApplyPendingBiomassImpacts();
+            SyncPendingHibernatedFaunaPopulationRecords();
+            CaptureBiomassSaveRuns();
+
             if (!_saveSnapshotSectors.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<EcosystemSectorSaveRecord> saveSectors))
                 return;
 
             try
             {
-                _saveSnapshotSectorCount = 0;
-                _saveSnapshotBiomassRunCount = 0;
-                if (!IsInitialized)
-                    return;
-
-                CompleteScheduledSimulation(forceComplete: true);
-                CompleteScheduledMacroSwarmTravel(forceComplete: true);
-                ApplyPendingBiomassImpacts();
-                SyncPendingHibernatedFaunaPopulationRecords();
                 if (_sectorFrontStates.TryResolveReadOnly(out NativeArray<SectorPopulationState>.ReadOnly sectorFrontStates))
                 {
                     int sectorCount = math.min(_activeSectorCount, sectorFrontStates.Length);
@@ -2160,7 +2162,6 @@ namespace Hecton8.World
                     }
                 }
 
-                CaptureBiomassSaveRuns();
                 if (_saveSnapshotBiomassRuns.TryResolveReadOnly(out NativeArray<EcosystemBiomassSaveRun>.ReadOnly biomassRuns))
                 {
                     int runCount = math.min(_saveSnapshotBiomassRunCount, biomassRuns.Length);
@@ -4159,9 +4160,8 @@ namespace Hecton8.World
             if (writeTicks == _faunaGeneticsCsvLastWriteTicks)
                 return false;
 
+            int byteCount = 0;
             bool scratchLocked = false;
-            bool profilesLocked = false;
-            bool tuningLocked = false;
             if (!_faunaGeneticsCsvScratch.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<byte> csvScratch))
                 return false;
 
@@ -4171,14 +4171,54 @@ namespace Hecton8.World
                 if (fileInfo.Length > csvScratch.Length)
                     return false;
 
-                int byteCount = TryReadFileIntoScratch(path, csvScratch);
-                if (byteCount <= 0)
-                    return false;
+                byteCount = TryReadFileIntoScratch(path, csvScratch);
+            }
+            finally
+            {
+                if (scratchLocked)
+                    _faunaGeneticsCsvScratch.ReleaseWriteLock(SystemID.AIEcology);
+            }
 
+            if (byteCount <= 0 ||
+                !_faunaGeneticsCsvScratch.TryResolveReadOnly(out NativeArray<byte>.ReadOnly csvScratchRead) ||
+                csvScratchRead.Length < byteCount)
+            {
+                return false;
+            }
+
+            FaunaGeneticsTuningDTO tuning = FaunaGeneticsTuningDTO.CreateDefault();
+            if (_faunaGeneticsTuning.TryResolveReadOnly(out NativeArray<FaunaGeneticsTuningDTO>.ReadOnly tuningRead) &&
+                tuningRead.Length > 0 &&
+                tuningRead[0].StateHash != 0u)
+            {
+                tuning = tuningRead[0];
+            }
+
+            int updatedCount = 0;
+            bool profilesLocked = false;
+            try
+            {
                 if (!_faunaGeneticsProfiles.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<FaunaGeneticsProfileDTO> profiles))
                     return false;
 
                 profilesLocked = true;
+                unsafe
+                {
+                    byte* bytes = (byte*)csvScratchRead.GetUnsafeReadOnlyPtr();
+                    ReadOnlySpan<byte> csv = new ReadOnlySpan<byte>(bytes, byteCount);
+                    if (!FaunaGeneticsProfileCsv.TryApplyProfiles(csv, profiles, ref tuning, out updatedCount))
+                        return false;
+                }
+            }
+            finally
+            {
+                if (profilesLocked)
+                    _faunaGeneticsProfiles.ReleaseWriteLock(SystemID.AIEcology);
+            }
+
+            bool tuningLocked = false;
+            try
+            {
                 if (!_faunaGeneticsTuning.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<FaunaGeneticsTuningDTO> tuningRecords))
                     return false;
 
@@ -4186,20 +4226,9 @@ namespace Hecton8.World
                 if (tuningRecords.Length <= 0)
                     return false;
 
-                FaunaGeneticsTuningDTO tuning = tuningRecords[0].StateHash != 0u
-                    ? tuningRecords[0]
-                    : FaunaGeneticsTuningDTO.CreateDefault();
-                unsafe
-                {
-                    byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr<byte>(csvScratch);
-                    ReadOnlySpan<byte> csv = new ReadOnlySpan<byte>(bytes, byteCount);
-                    if (!FaunaGeneticsProfileCsv.TryApplyProfiles(csv, profiles, ref tuning, out int updatedCount))
-                        return false;
-
-                    tuningRecords[0] = tuning;
-                    _lastFaunaGeneticsProfileCount = updatedCount;
-                    _faunaGeneticsCsvLastWriteTicks = writeTicks;
-                }
+                tuningRecords[0] = tuning;
+                _lastFaunaGeneticsProfileCount = updatedCount;
+                _faunaGeneticsCsvLastWriteTicks = writeTicks;
 
                 return true;
             }
@@ -4207,10 +4236,6 @@ namespace Hecton8.World
             {
                 if (tuningLocked)
                     _faunaGeneticsTuning.ReleaseWriteLock(SystemID.AIEcology);
-                if (profilesLocked)
-                    _faunaGeneticsProfiles.ReleaseWriteLock(SystemID.AIEcology);
-                if (scratchLocked)
-                    _faunaGeneticsCsvScratch.ReleaseWriteLock(SystemID.AIEcology);
             }
         }
 #endif
@@ -7620,48 +7645,8 @@ namespace Hecton8.World
             if (!TryLockMacroSwarmTravelJobBuffers())
                 return;
 
-            bool radiationLocked = false;
-            bool toxicityLocked = false;
-            bool brineLocked = false;
-            bool resultsLocked = false;
-            NativeArray<float> mutationRadiation = default;
-            NativeArray<float> mutationToxicity = default;
-            NativeArray<float> mutationBrine = default;
-            NativeArray<byte> mutationResults = default;
             try
             {
-                if (_macroSwarmMutationRadiation.IsCreated)
-                {
-                    if (!_macroSwarmMutationRadiation.TryAcquireWriteLock(SystemID.AIEcology, out mutationRadiation))
-                        return;
-
-                    radiationLocked = true;
-                }
-
-                if (_macroSwarmMutationToxicity.IsCreated)
-                {
-                    if (!_macroSwarmMutationToxicity.TryAcquireWriteLock(SystemID.AIEcology, out mutationToxicity))
-                        return;
-
-                    toxicityLocked = true;
-                }
-
-                if (_macroSwarmMutationBrine.IsCreated)
-                {
-                    if (!_macroSwarmMutationBrine.TryAcquireWriteLock(SystemID.AIEcology, out mutationBrine))
-                        return;
-
-                    brineLocked = true;
-                }
-
-                if (_macroSwarmMutationResults.IsCreated)
-                {
-                    if (!_macroSwarmMutationResults.TryAcquireWriteLock(SystemID.AIEcology, out mutationResults))
-                        return;
-
-                    resultsLocked = true;
-                }
-
                 if (_macroSwarms.IsCreated)
                 {
                     for (int i = 0; i < _macroSwarms.Length; i++)
@@ -7680,29 +7665,10 @@ namespace Hecton8.World
                         _macroSwarmCounters[i] = 0;
                 }
 
-                if (radiationLocked)
-                {
-                    for (int i = 0; i < mutationRadiation.Length; i++)
-                        mutationRadiation[i] = 0f;
-                }
-
-                if (toxicityLocked)
-                {
-                    for (int i = 0; i < mutationToxicity.Length; i++)
-                        mutationToxicity[i] = 0f;
-                }
-
-                if (brineLocked)
-                {
-                    for (int i = 0; i < mutationBrine.Length; i++)
-                        mutationBrine[i] = 0f;
-                }
-
-                if (resultsLocked)
-                {
-                    for (int i = 0; i < mutationResults.Length; i++)
-                        mutationResults[i] = 0;
-                }
+                ClearVaultFloatBuffer(_macroSwarmMutationRadiation, MacroSwarmCapacity);
+                ClearVaultFloatBuffer(_macroSwarmMutationToxicity, MacroSwarmCapacity);
+                ClearVaultFloatBuffer(_macroSwarmMutationBrine, MacroSwarmCapacity);
+                ClearVaultByteBuffer(_macroSwarmMutationResults, MacroSwarmCapacity);
 
                 if (_macroHydrationScratch.IsCreated)
                     _macroHydrationScratchCount = 0;
@@ -7711,14 +7677,6 @@ namespace Hecton8.World
             }
             finally
             {
-                if (resultsLocked)
-                    _macroSwarmMutationResults.ReleaseWriteLock(SystemID.AIEcology);
-                if (brineLocked)
-                    _macroSwarmMutationBrine.ReleaseWriteLock(SystemID.AIEcology);
-                if (toxicityLocked)
-                    _macroSwarmMutationToxicity.ReleaseWriteLock(SystemID.AIEcology);
-                if (radiationLocked)
-                    _macroSwarmMutationRadiation.ReleaseWriteLock(SystemID.AIEcology);
                 UnlockMacroSwarmTravelJobBuffers();
             }
 
@@ -7729,37 +7687,59 @@ namespace Hecton8.World
             _lastSectorResidencySignalDrainFrame = -1;
         }
 
+        private static void ClearVaultFloatBuffer(VaultBufferView<float> buffer, int maxCount)
+        {
+            if (!buffer.IsCreated)
+                return;
+
+            bool locked = false;
+            try
+            {
+                if (!buffer.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<float> values))
+                    return;
+
+                locked = true;
+                int count = maxCount > 0 ? math.min(maxCount, values.Length) : values.Length;
+                for (int i = 0; i < count; i++)
+                    values[i] = 0f;
+            }
+            finally
+            {
+                if (locked)
+                    buffer.ReleaseWriteLock(SystemID.AIEcology);
+            }
+        }
+
+        private static void ClearVaultByteBuffer(VaultBufferView<byte> buffer, int maxCount)
+        {
+            if (!buffer.IsCreated)
+                return;
+
+            bool locked = false;
+            try
+            {
+                if (!buffer.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<byte> values))
+                    return;
+
+                locked = true;
+                int count = maxCount > 0 ? math.min(maxCount, values.Length) : values.Length;
+                for (int i = 0; i < count; i++)
+                    values[i] = 0;
+            }
+            finally
+            {
+                if (locked)
+                    buffer.ReleaseWriteLock(SystemID.AIEcology);
+            }
+        }
+
         private void ClearHeadlessRuntimeState()
         {
             if (!TryLockSectorSolveJobBuffers())
                 return;
 
-            bool radiationLocked = false;
-            bool toxicityLocked = false;
-            bool brineLocked = false;
-            bool resultsLocked = false;
-            NativeArray<float> mutationRadiation = default;
-            NativeArray<float> mutationToxicity = default;
-            NativeArray<float> mutationBrine = default;
-            NativeArray<byte> mutationResults = default;
             try
             {
-                if (!_headlessEntities.MutationRadiation.TryAcquireWriteLock(SystemID.AIEcology, out mutationRadiation))
-                    return;
-                radiationLocked = true;
-
-                if (!_headlessEntities.MutationToxicity.TryAcquireWriteLock(SystemID.AIEcology, out mutationToxicity))
-                    return;
-                toxicityLocked = true;
-
-                if (!_headlessEntities.MutationBrine.TryAcquireWriteLock(SystemID.AIEcology, out mutationBrine))
-                    return;
-                brineLocked = true;
-
-                if (!_headlessEntities.MutationResults.TryAcquireWriteLock(SystemID.AIEcology, out mutationResults))
-                    return;
-                resultsLocked = true;
-
                 int capacity = _sectorFrontStates.IsCreated ? _sectorFrontStates.Length : 0;
                 NativeArray<float3> positions = _headlessEntities.Positions;
                 NativeArray<byte> speciesIds = _headlessEntities.SpeciesID;
@@ -7790,28 +7770,17 @@ namespace Hecton8.World
                         sectorIds[i] = 0;
                     if (faunaGenomes.IsCreated)
                         faunaGenomes[i] = 0UL;
-                    if (mutationRadiation.IsCreated)
-                        mutationRadiation[i] = 0f;
-                    if (mutationToxicity.IsCreated)
-                        mutationToxicity[i] = 0f;
-                    if (mutationBrine.IsCreated)
-                        mutationBrine[i] = 0f;
                     if (mutationStableHashes.IsCreated)
                         mutationStableHashes[i] = 0u;
-                    if (mutationResults.IsCreated)
-                        mutationResults[i] = 0;
                 }
+
+                ClearVaultFloatBuffer(_headlessEntities.MutationRadiation, capacity);
+                ClearVaultFloatBuffer(_headlessEntities.MutationToxicity, capacity);
+                ClearVaultFloatBuffer(_headlessEntities.MutationBrine, capacity);
+                ClearVaultByteBuffer(_headlessEntities.MutationResults, capacity);
             }
             finally
             {
-                if (resultsLocked)
-                    _headlessEntities.MutationResults.ReleaseWriteLock(SystemID.AIEcology);
-                if (brineLocked)
-                    _headlessEntities.MutationBrine.ReleaseWriteLock(SystemID.AIEcology);
-                if (toxicityLocked)
-                    _headlessEntities.MutationToxicity.ReleaseWriteLock(SystemID.AIEcology);
-                if (radiationLocked)
-                    _headlessEntities.MutationRadiation.ReleaseWriteLock(SystemID.AIEcology);
                 UnlockSectorSolveJobBuffers();
             }
         }

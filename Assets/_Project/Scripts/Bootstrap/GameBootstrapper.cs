@@ -3425,12 +3425,8 @@ namespace Hecton8.Bootstrap
             if (string.IsNullOrEmpty(collectionQuality))
                 return true;
 
-            string[] qualityNames = QualitySettings.names;
-            int qualityLevel = QualitySettings.GetQualityLevel();
-            if (qualityNames == null || (uint)qualityLevel >= (uint)qualityNames.Length)
-                return false;
-
-            return string.Equals(collectionQuality, qualityNames[qualityLevel], StringComparison.Ordinal);
+            // Legacy collection labels are informational; runtime quality is continuous and owned by HomeostasisBrain.
+            return true;
         }
 
         private static bool TryResolveGraphicsStateCollectionPath(string configuredPath, out string resolvedPath)

@@ -697,8 +697,11 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-50)]
-    public sealed class EndingSystem : MonoBehaviour, ISaveable, ISlowTickable, IAtlasSignalEventListener, IGlobalRegistryHotSwapListener, IEndingRuntimeService
+    public sealed class EndingSystem : MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, IAtlasSignalEventListener, IGlobalRegistryHotSwapListener, IEndingRuntimeService
     {
+        private const int PendingNotificationCapacity = 4;
+        private const int PendingNotificationCharCapacity = 512;
+
         // ----------------------------------------------------------
         //  INSPECTOR
         // ----------------------------------------------------------
@@ -727,6 +730,7 @@ namespace Hecton8.Gameplay
         private static readonly uint _endingShutdownDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(EndingShutdownDiscoveryId);
         private static readonly uint _endingLeaveDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(EndingLeaveDiscoveryId);
         private static readonly uint _endingAmplifyDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(EndingAmplifyDiscoveryId);
+        private static readonly int _atlasSignalStrengthShaderId = Shader.PropertyToID("_AtlasSignalStrength");
 
         // ----------------------------------------------------------
         //  SINGLETON
@@ -740,6 +744,7 @@ namespace Hecton8.Gameplay
         private bool _conditionMet;
         private bool _endingComplete;
         private bool _registered;
+        private bool _lateFrameRegistered;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
         private HectonSurvivalSystem _survivalSystem;
@@ -750,6 +755,28 @@ namespace Hecton8.Gameplay
         private ISaveService _saveService;
         private ILocalizationTextReadModel _localization;
         private uint _endingQuestHash;
+        private bool _pendingAtlasSignalStrengthDirty;
+        private float _pendingAtlasSignalStrength;
+        private PendingNotificationRequest _pendingNotification0;
+        private PendingNotificationRequest _pendingNotification1;
+        private PendingNotificationRequest _pendingNotification2;
+        private PendingNotificationRequest _pendingNotification3;
+        private byte _pendingNotificationCount;
+
+        private unsafe struct PendingNotificationRequest
+        {
+            public ushort Length;
+            public byte Severity;
+            public byte IsDirty;
+            public fixed char Characters[PendingNotificationCharCapacity];
+
+            public void Clear()
+            {
+                Length = 0;
+                Severity = 0;
+                IsDirty = 0;
+            }
+        }
 
         // ----------------------------------------------------------
         //  ISaveable
@@ -790,6 +817,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             TryUnregisterHotSwapListener();
+            TryUnregisterLateFrameTick();
             TryUnregister();
             TryUnregisterService();
             TryUnregisterSaveParticipant();
@@ -801,6 +829,7 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             TryUnregisterHotSwapListener();
+            TryUnregisterLateFrameTick();
             TryUnregister();
             TryUnregisterService();
         }
@@ -831,11 +860,21 @@ namespace Hecton8.Gameplay
 
             NarrativeEvents.TryRaiseDiscoveryMade(_atlasCoreReachedDiscoveryHash);
 
-            NotificationEvents.TryPushWarning(ResolveLocalizedSpan(
-                LocalizationKeys.ENDING_CORE_REACHED,
-                "ATLAS-6 CORE DETECTED. TERMINAL ACTIVE. SELECT AN ACTION."));
+            QueueNotification(
+                ResolveLocalizedSpan(
+                    LocalizationKeys.ENDING_CORE_REACHED,
+                    "ATLAS-6 CORE DETECTED. TERMINAL ACTIVE. SELECT AN ACTION."),
+                NotificationEventSeverity.Warning);
 
             LogEndingConditionMet();
+        }
+
+        public void LateFrameTick()
+        {
+            FlushQueuedAtlasSignalStrength();
+            FlushQueuedNotifications();
+            if (!_pendingAtlasSignalStrengthDirty && _pendingNotificationCount == 0)
+                TryUnregisterLateFrameTick();
         }
 
         private void TryRegister()
@@ -855,6 +894,132 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_lateFrameRegistered || !Application.isPlaying)
+                return;
+
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameRegistered = false;
+            }
+
+            ClearQueuedPresentation();
+        }
+
+        private void QueueAtlasSignalStrength(float strength01)
+        {
+            _pendingAtlasSignalStrength = Mathf.Clamp01(strength01);
+            _pendingAtlasSignalStrengthDirty = true;
+            TryRegisterLateFrameTick();
+        }
+
+        private void FlushQueuedAtlasSignalStrength()
+        {
+            if (!_pendingAtlasSignalStrengthDirty)
+                return;
+
+            _pendingAtlasSignalStrengthDirty = false;
+            Shader.SetGlobalFloat(_atlasSignalStrengthShaderId, _pendingAtlasSignalStrength);
+        }
+
+        private unsafe bool QueueNotification(ReadOnlySpan<char> message, NotificationEventSeverity severity)
+        {
+            if (message.IsEmpty || message.Length > PendingNotificationCharCapacity)
+                return false;
+            if (_pendingNotificationCount >= PendingNotificationCapacity)
+                return false;
+
+            ref PendingNotificationRequest request = ref GetPendingNotificationSlot(_pendingNotificationCount);
+            fixed (char* destination = request.Characters)
+            {
+                for (int i = 0; i < message.Length; i++)
+                    destination[i] = message[i];
+            }
+
+            request.Length = (ushort)message.Length;
+            request.Severity = (byte)severity;
+            request.IsDirty = 1;
+            _pendingNotificationCount++;
+            TryRegisterLateFrameTick();
+            return true;
+        }
+
+        private unsafe void FlushQueuedNotifications()
+        {
+            int count = _pendingNotificationCount;
+            _pendingNotificationCount = 0;
+
+            for (int i = 0; i < count; i++)
+            {
+                ref PendingNotificationRequest request = ref GetPendingNotificationSlot(i);
+                if (request.IsDirty == 0 || request.Length == 0)
+                {
+                    request.Clear();
+                    continue;
+                }
+
+                ushort length = request.Length;
+                byte severity = request.Severity;
+                request.Clear();
+
+                fixed (char* characters = request.Characters)
+                {
+                    ReadOnlySpan<char> message =
+                        System.Runtime.InteropServices.MemoryMarshal.CreateReadOnlySpan(ref characters[0], length);
+                    uint messageHash = NotificationEvents.RegisterMessage(message);
+                    if (messageHash == 0u)
+                        continue;
+
+                    if (severity == (byte)NotificationEventSeverity.Warning)
+                    {
+                        NotificationEvents.TryPushRegisteredWarning(messageHash);
+                        continue;
+                    }
+
+                    if (severity == (byte)NotificationEventSeverity.Critical)
+                    {
+                        NotificationEvents.TryPushRegisteredCritical(messageHash);
+                        continue;
+                    }
+
+                    NotificationEvents.TryPushRegisteredInfo(messageHash);
+                }
+            }
+        }
+
+        private void ClearQueuedPresentation()
+        {
+            _pendingAtlasSignalStrengthDirty = false;
+            _pendingAtlasSignalStrength = 0f;
+            _pendingNotificationCount = 0;
+            _pendingNotification0.Clear();
+            _pendingNotification1.Clear();
+            _pendingNotification2.Clear();
+            _pendingNotification3.Clear();
+        }
+
+        private ref PendingNotificationRequest GetPendingNotificationSlot(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return ref _pendingNotification0;
+                case 1:
+                    return ref _pendingNotification1;
+                case 2:
+                    return ref _pendingNotification2;
+                default:
+                    return ref _pendingNotification3;
+            }
         }
 
         private bool TryRegisterService()
@@ -920,8 +1085,13 @@ namespace Hecton8.Gameplay
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _registered = false;
+                    _lateFrameRegistered = false;
                     if (currentService != null && isActiveAndEnabled)
+                    {
                         TryRegister();
+                        if (_pendingAtlasSignalStrengthDirty || _pendingNotificationCount > 0)
+                            TryRegisterLateFrameTick();
+                    }
                     break;
                 case GlobalRegistryServiceSlot.AtlasSignalRuntime:
                     _atlasSignal = currentService as IAtlasSignalReadModel;
@@ -1061,9 +1231,11 @@ namespace Hecton8.Gameplay
 
             NarrativeEvents.TryRaiseDiscoveryMade(_endingShutdownDiscoveryHash);
 
-            NotificationEvents.TryPushWarning(ResolveLocalizedSpan(
-                LocalizationKeys.ENDING_SHUTDOWN_COMPLETE,
-                "ATLAS-6 SHUT DOWN. SIGNAL TERMINATED. THE CORPORATION WILL GET THE DATA. TERRAFORMING CONTINUES."));
+            QueueNotification(
+                ResolveLocalizedSpan(
+                    LocalizationKeys.ENDING_SHUTDOWN_COMPLETE,
+                    "ATLAS-6 SHUT DOWN. SIGNAL TERMINATED. THE CORPORATION WILL GET THE DATA. TERRAFORMING CONTINUES."),
+                NotificationEventSeverity.Warning);
         }
 
         private void ExecuteLeave()
@@ -1071,9 +1243,11 @@ namespace Hecton8.Gameplay
             // Atlas-6 prodolzhaet rabotu. Signal aktiven.
             NarrativeEvents.TryRaiseDiscoveryMade(_endingLeaveDiscoveryHash);
 
-            NotificationEvents.TryPushInfo(ResolveLocalizedSpan(
-                LocalizationKeys.ENDING_LEAVE_COMPLETE,
-                "ATLAS-6 REMAINS ACTIVE. SIGNAL LIVE. LIFE IS PROTECTED - UNTIL THE SIGNAL IS FOUND."));
+            QueueNotification(
+                ResolveLocalizedSpan(
+                    LocalizationKeys.ENDING_LEAVE_COMPLETE,
+                    "ATLAS-6 REMAINS ACTIVE. SIGNAL LIVE. LIFE IS PROTECTED - UNTIL THE SIGNAL IS FOUND."),
+                NotificationEventSeverity.Info);
         }
 
         private void ExecuteAmplify()
@@ -1085,13 +1259,13 @@ namespace Hecton8.Gameplay
 
             NarrativeEvents.TryRaiseDiscoveryMade(_endingAmplifyDiscoveryHash);
 
-            // Publikuem v sheyder — maksimalnaya intensivnost signala
-            Shader.SetGlobalFloat(
-                Shader.PropertyToID("_AtlasSignalStrength"), 1f);
+            QueueAtlasSignalStrength(1f);
 
-            NotificationEvents.TryPushWarning(ResolveLocalizedSpan(
-                LocalizationKeys.ENDING_AMPLIFY_COMPLETE,
-                "SIGNAL AMPLIFIED. THE WHOLE SECTOR CAN HEAR IT. ATLAS-6 IS ENDING THE PROGRAM. THE TRUTH IS OUT. CONSEQUENCES UNPREDICTABLE."));
+            QueueNotification(
+                ResolveLocalizedSpan(
+                    LocalizationKeys.ENDING_AMPLIFY_COMPLETE,
+                    "SIGNAL AMPLIFIED. THE WHOLE SECTOR CAN HEAR IT. ATLAS-6 IS ENDING THE PROGRAM. THE TRUTH IS OUT. CONSEQUENCES UNPREDICTABLE."),
+                NotificationEventSeverity.Warning);
         }
 
         private void CacheQuestHash()

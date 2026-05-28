@@ -1323,7 +1323,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            public bool TryGetOrCreate(long key, out TileRuntimeState value)
+            public bool TryAcquireOrCreate(long key, out TileRuntimeState value)
             {
                 int index = FindIndex(key);
                 if (index >= 0)
@@ -7976,7 +7976,7 @@ namespace Hecton8.World
                 oldChunkCountZ = existingState.ChunkCountZ;
             }
 
-            if (!_tileStates.TryGetOrCreate(tileKey, out TileRuntimeState state) || state == null)
+            if (!_tileStates.TryAcquireOrCreate(tileKey, out TileRuntimeState state) || state == null)
             {
                 RecordChunkQueueCapacityExceeded(_tileStates.Capacity, _tileStates.Count);
                 return;
@@ -8545,7 +8545,6 @@ namespace Hecton8.World
             if (heightTexture == null)
                 return false;
 
-            terrainData.SyncHeightmap();
             AsyncGPUReadbackRequest request = AsyncGPUReadback.Request(heightTexture, 0, TextureFormat.R16);
             state.PendingCacheBufferIndex = writeBufferIndex;
             state.HeightReadbackRequest = request;

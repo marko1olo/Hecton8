@@ -130,13 +130,16 @@ namespace Hecton8.Data.Editor
                                                    arena.Contains("Thread.Yield();", StringComparison.Ordinal) &&
                                                    !arena.Contains("return vault.ReleaseWriteLock(in handle, owner);\r\n#endif", StringComparison.Ordinal) &&
                                                    !arena.Contains("return vault.ReleaseWriteLock(in handle, owner);\n#endif", StringComparison.Ordinal);
-            bool dataVaultDeferredWriterReleaseReturnsFalse =
-                (globalDataVault.Contains("_ = QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID);\r\n                return false;", StringComparison.Ordinal) ||
-                 globalDataVault.Contains("_ = QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID);\n                return false;", StringComparison.Ordinal)) &&
-                (globalDataVault.Contains("_ = QueueDeferredWriterRelease(bufferKey, offsetBytes, ResolveActiveLockBit((BufferID)bufferKey), 0);\r\n                return false;", StringComparison.Ordinal) ||
-                 globalDataVault.Contains("_ = QueueDeferredWriterRelease(bufferKey, offsetBytes, ResolveActiveLockBit((BufferID)bufferKey), 0);\n                return false;", StringComparison.Ordinal)) &&
-                !globalDataVault.Contains("return QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID);", StringComparison.Ordinal) &&
-                !globalDataVault.Contains("return QueueDeferredWriterRelease(bufferKey, offsetBytes, ResolveActiveLockBit((BufferID)bufferKey), 0);", StringComparison.Ordinal);
+            bool dataVaultDeferredWriterReleaseQueueContract =
+                globalDataVault.Contains("return QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID);", StringComparison.Ordinal) &&
+                globalDataVault.Contains("return QueueDeferredWriterRelease(bufferKey, offsetBytes, ResolveActiveLockBit((BufferID)bufferKey), 0);", StringComparison.Ordinal) &&
+                globalDataVault.Contains("if (kind == DeferredReleaseKindWriter)", StringComparison.Ordinal) &&
+                globalDataVault.Contains("enqueueGateAcquired = Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate, 1, 0) == 0", StringComparison.Ordinal) &&
+                globalDataVault.Contains("Volatile.Write(ref _deferredReleaseEnqueueGate, 0)", StringComparison.Ordinal) &&
+                globalDataVault.Contains("pending->Kind == DeferredReleaseKindWriter", StringComparison.Ordinal) &&
+                !globalDataVault.Contains("pending->Kind == kind", StringComparison.Ordinal) &&
+                !globalDataVault.Contains("while (Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate", StringComparison.Ordinal) &&
+                !globalDataVault.Contains("Thread.SpinWait", StringComparison.Ordinal);
             bool ownerLocalDumpRoute = arena.Contains("Dump_1404.bin", StringComparison.Ordinal) &&
                                        arena.Contains("Application.persistentDataPath", StringComparison.Ordinal) &&
                                        arena.Contains("WriteTelemetryDumpAndroid", StringComparison.Ordinal) &&
@@ -241,7 +244,7 @@ namespace Hecton8.Data.Editor
             AppendJson(builder, "rawJniFindClassWithoutAndroidJavaClass", rawJniClassLookup, true);
             AppendJson(builder, "rawJniPendingExceptionFencePresent", rawJniExceptionFence, true);
             AppendJson(builder, "writerReleaseRetryCrossPlatformPresent", writerReleaseRetryCrossPlatform, true);
-            AppendJson(builder, "globalDataVaultDeferredWriterReleaseReturnsFalse", dataVaultDeferredWriterReleaseReturnsFalse, true);
+            AppendJson(builder, "globalDataVaultDeferredWriterReleaseQueueContract", dataVaultDeferredWriterReleaseQueueContract, true);
             AppendJson(builder, "ownerLocalDump1404OnlyRoutePresent", ownerLocalDumpRoute, true);
             AppendJson(builder, "androidReleaseNativeDumpRoutePresent", ownerLocalDumpRoute && nativePresence, true);
             AppendJson(builder, "androidReleaseManagedDumpIoAbsent", !arena.Contains("System.IO.Path.Combine(Application.persistentDataPath", StringComparison.Ordinal), true);

@@ -77,25 +77,25 @@ namespace Hecton8.Construction
             bool resultLocked = false;
             try
             {
-                if (!vault.TryAcquireWriteLock(in s_EdgeOffsetsHandle, OwnerSystem, out edgeOffsets))
+                if (!TryAcquireWriteBuffer(vault, in s_EdgeOffsetsHandle, EdgeOffsetsBufferId, out edgeOffsets))
                     return false;
                 edgeOffsetsLocked = true;
-                if (!vault.TryAcquireWriteLock(in s_EdgeDestinationsHandle, OwnerSystem, out edgeDestinations))
+                if (!TryAcquireWriteBuffer(vault, in s_EdgeDestinationsHandle, EdgeDestinationsBufferId, out edgeDestinations))
                     return false;
                 edgeDestinationsLocked = true;
-                if (!vault.TryAcquireWriteLock(in s_EdgeWriteCursorHandle, OwnerSystem, out edgeWriteCursor))
+                if (!TryAcquireWriteBuffer(vault, in s_EdgeWriteCursorHandle, EdgeWriteCursorBufferId, out edgeWriteCursor))
                     return false;
                 edgeWriteCursorLocked = true;
-                if (!vault.TryAcquireWriteLock(in s_StorageCapacityByNodeHandle, OwnerSystem, out storageCapacityByNode))
+                if (!TryAcquireWriteBuffer(vault, in s_StorageCapacityByNodeHandle, StorageCapacityByNodeBufferId, out storageCapacityByNode))
                     return false;
                 storageCapacityLocked = true;
-                if (!vault.TryAcquireWriteLock(in s_VisitedHandle, OwnerSystem, out visited))
+                if (!TryAcquireWriteBuffer(vault, in s_VisitedHandle, VisitedBufferId, out visited))
                     return false;
                 visitedLocked = true;
-                if (!vault.TryAcquireWriteLock(in s_QueueHandle, OwnerSystem, out queue))
+                if (!TryAcquireWriteBuffer(vault, in s_QueueHandle, QueueBufferId, out queue))
                     return false;
                 queueLocked = true;
-                if (!vault.TryAcquireWriteLock(in s_ResultNodeIndexHandle, OwnerSystem, out resultNodeIndex))
+                if (!TryAcquireWriteBuffer(vault, in s_ResultNodeIndexHandle, ResultNodeIndexBufferId, out resultNodeIndex))
                     return false;
                 resultLocked = true;
 
@@ -135,13 +135,13 @@ namespace Hecton8.Construction
         {
             if (vault != null)
             {
-                ReleaseBuffer(vault, ref s_EdgeOffsetsHandle);
-                ReleaseBuffer(vault, ref s_EdgeDestinationsHandle);
-                ReleaseBuffer(vault, ref s_EdgeWriteCursorHandle);
-                ReleaseBuffer(vault, ref s_StorageCapacityByNodeHandle);
-                ReleaseBuffer(vault, ref s_VisitedHandle);
-                ReleaseBuffer(vault, ref s_QueueHandle);
-                ReleaseBuffer(vault, ref s_ResultNodeIndexHandle);
+                ReleaseBuffer(vault, ref s_EdgeOffsetsHandle, EdgeOffsetsBufferId);
+                ReleaseBuffer(vault, ref s_EdgeDestinationsHandle, EdgeDestinationsBufferId);
+                ReleaseBuffer(vault, ref s_EdgeWriteCursorHandle, EdgeWriteCursorBufferId);
+                ReleaseBuffer(vault, ref s_StorageCapacityByNodeHandle, StorageCapacityByNodeBufferId);
+                ReleaseBuffer(vault, ref s_VisitedHandle, VisitedBufferId);
+                ReleaseBuffer(vault, ref s_QueueHandle, QueueBufferId);
+                ReleaseBuffer(vault, ref s_ResultNodeIndexHandle, ResultNodeIndexBufferId);
                 return;
             }
 
@@ -159,13 +159,13 @@ namespace Hecton8.Construction
             if (vault == null)
                 return;
 
-            ReleaseWriteLock(vault, in s_ResultNodeIndexHandle);
-            ReleaseWriteLock(vault, in s_QueueHandle);
-            ReleaseWriteLock(vault, in s_VisitedHandle);
-            ReleaseWriteLock(vault, in s_StorageCapacityByNodeHandle);
-            ReleaseWriteLock(vault, in s_EdgeWriteCursorHandle);
-            ReleaseWriteLock(vault, in s_EdgeDestinationsHandle);
-            ReleaseWriteLock(vault, in s_EdgeOffsetsHandle);
+            ReleaseWriteLock(vault, in s_ResultNodeIndexHandle, ResultNodeIndexBufferId);
+            ReleaseWriteLock(vault, in s_QueueHandle, QueueBufferId);
+            ReleaseWriteLock(vault, in s_VisitedHandle, VisitedBufferId);
+            ReleaseWriteLock(vault, in s_StorageCapacityByNodeHandle, StorageCapacityByNodeBufferId);
+            ReleaseWriteLock(vault, in s_EdgeWriteCursorHandle, EdgeWriteCursorBufferId);
+            ReleaseWriteLock(vault, in s_EdgeDestinationsHandle, EdgeDestinationsBufferId);
+            ReleaseWriteLock(vault, in s_EdgeOffsetsHandle, EdgeOffsetsBufferId);
         }
 
         private static void ReleaseWriteLocks(
@@ -182,19 +182,19 @@ namespace Hecton8.Construction
                 return;
 
             if (resultLocked)
-                ReleaseWriteLock(vault, in s_ResultNodeIndexHandle);
+                ReleaseWriteLock(vault, in s_ResultNodeIndexHandle, ResultNodeIndexBufferId);
             if (queueLocked)
-                ReleaseWriteLock(vault, in s_QueueHandle);
+                ReleaseWriteLock(vault, in s_QueueHandle, QueueBufferId);
             if (visitedLocked)
-                ReleaseWriteLock(vault, in s_VisitedHandle);
+                ReleaseWriteLock(vault, in s_VisitedHandle, VisitedBufferId);
             if (storageCapacityLocked)
-                ReleaseWriteLock(vault, in s_StorageCapacityByNodeHandle);
+                ReleaseWriteLock(vault, in s_StorageCapacityByNodeHandle, StorageCapacityByNodeBufferId);
             if (edgeWriteCursorLocked)
-                ReleaseWriteLock(vault, in s_EdgeWriteCursorHandle);
+                ReleaseWriteLock(vault, in s_EdgeWriteCursorHandle, EdgeWriteCursorBufferId);
             if (edgeDestinationsLocked)
-                ReleaseWriteLock(vault, in s_EdgeDestinationsHandle);
+                ReleaseWriteLock(vault, in s_EdgeDestinationsHandle, EdgeDestinationsBufferId);
             if (edgeOffsetsLocked)
-                ReleaseWriteLock(vault, in s_EdgeOffsetsHandle);
+                ReleaseWriteLock(vault, in s_EdgeOffsetsHandle, EdgeOffsetsBufferId);
         }
 
         private static bool TryEnsureHandle<T>(
@@ -204,7 +204,7 @@ namespace Hecton8.Construction
             int requiredLength) where T : struct
         {
             int safeLength = math.max(1, requiredLength);
-            if (IsHandleCreated(in handle) &&
+            if (IsRouteScratchHandle(in handle, bufferId) &&
                 vault.TryReadHandle(in handle, out NativeArray<T> existing) &&
                 existing.IsCreated &&
                 existing.Length >= safeLength)
@@ -217,31 +217,50 @@ namespace Hecton8.Construction
                 safeLength,
                 OwnerSystem,
                 NativeArrayOptions.ClearMemory);
-            return IsHandleCreated(in handle) &&
+            return IsRouteScratchHandle(in handle, bufferId) &&
                    vault.TryReadHandle(in handle, out existing) &&
                    existing.IsCreated &&
                    existing.Length >= safeLength;
         }
 
-        private static void ReleaseWriteLock<T>(IDataVault vault, in VaultGenerationHandle<T> handle) where T : struct
+        private static bool TryAcquireWriteBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            out NativeArray<T> buffer) where T : struct
         {
-            if (!IsHandleCreated(in handle))
+            buffer = default;
+            return IsRouteScratchHandle(in handle, expectedBufferId) &&
+                   vault.TryAcquireWriteLock(in handle, OwnerSystem, out buffer);
+        }
+
+        private static void ReleaseWriteLock<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
+        {
+            if (!IsRouteScratchHandle(in handle, expectedBufferId))
                 return;
 
             vault.ReleaseWriteLock(in handle, OwnerSystem);
         }
 
-        private static void ReleaseBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        private static void ReleaseBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
         {
-            if (IsHandleCreated(in handle))
+            if (IsRouteScratchHandle(in handle, expectedBufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
         }
 
-        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsRouteScratchHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)OwnerSystem &&
+                   handle.Generation != 0u;
         }
     }
 }

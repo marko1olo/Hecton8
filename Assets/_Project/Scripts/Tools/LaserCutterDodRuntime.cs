@@ -614,10 +614,12 @@ namespace Hecton8.Tools
             entry = default;
             if (_dataVault == null ||
                 !ReadBoundBuffer(
+                    LaserCutterDodConstants.TelemetryRingBuffer,
                     LaserCutterDodConstants.BlackBoxFrameCount,
                     ref _telemetryRingHandle,
                     out NativeArray<LaserCutTelemetryEntry> telemetry) ||
                 !ReadBoundBuffer(
+                    LaserCutterDodConstants.TelemetryCursorBuffer,
                     1,
                     ref _telemetryCursorHandle,
                     out NativeArray<int> cursor) ||
@@ -642,6 +644,7 @@ namespace Hecton8.Tools
             tuning = default;
             if (_dataVault == null ||
                 !ReadBoundBuffer(
+                    LaserCutterDodConstants.TuningBuffer,
                     1,
                     ref _tuningHandle,
                     out NativeArray<LaserCutterTuningDTO> tuningBuffer) ||
@@ -727,6 +730,7 @@ namespace Hecton8.Tools
             hit = default;
             if (_dataVault == null ||
                 !ReadBoundBuffer(
+                    LaserCutterDodConstants.HitResultsBuffer,
                     LaserCutterDodConstants.MaxHitResults,
                     ref _hitResultsHandle,
                     out NativeArray<LaserCutHitDTO> hitResults) ||
@@ -829,21 +833,21 @@ namespace Hecton8.Tools
             requestCount = default;
             telemetryCursor = default;
             counters = default;
-            return ReadBoundBuffer(LaserCutterDodConstants.MaxRequests, ref _requestsHandle, out requests) &&
-                   ReadBoundBuffer(LaserCutterDodConstants.MaxRequests, ref _requestMetasHandle, out requestMetas) &&
-                   ReadBoundBuffer(1, ref _requestCountHandle, out requestCount) &&
-                   ReadBoundBuffer(1, ref _telemetryCursorHandle, out telemetryCursor) &&
-                   ReadBoundBuffer(1, ref _countersHandle, out counters);
+            return ReadBoundBuffer(LaserCutterDodConstants.RequestsBuffer, LaserCutterDodConstants.MaxRequests, ref _requestsHandle, out requests) &&
+                   ReadBoundBuffer(LaserCutterDodConstants.RequestMetaBuffer, LaserCutterDodConstants.MaxRequests, ref _requestMetasHandle, out requestMetas) &&
+                   ReadBoundBuffer(LaserCutterDodConstants.RequestCountBuffer, 1, ref _requestCountHandle, out requestCount) &&
+                   ReadBoundBuffer(LaserCutterDodConstants.TelemetryCursorBuffer, 1, ref _telemetryCursorHandle, out telemetryCursor) &&
+                   ReadBoundBuffer(LaserCutterDodConstants.CountersBuffer, 1, ref _countersHandle, out counters);
         }
 
-        private static bool ReadBoundBuffer<T>(int requiredLength, ref VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
+        private static bool ReadBoundBuffer<T>(BufferID bufferId, int requiredLength, ref VaultGenerationHandle<T> handle, out NativeArray<T> buffer)
             where T : struct
         {
             buffer = default;
             IDataVault vault = _dataVault;
             return vault != null &&
                    !vault.IsCompactionFenceActive &&
-                   IsHandleCreated(in handle) &&
+                   IsLaserCutterVaultHandle(in handle, bufferId) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    !vault.IsCompactionFenceActive &&
                    buffer.IsCreated &&
@@ -858,7 +862,7 @@ namespace Hecton8.Tools
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            if (IsHandleCreated(in handle) &&
+            if (IsLaserCutterVaultHandle(in handle, bufferId) &&
                 vault.TryResolveHandle(in handle, out buffer) &&
                 !vault.IsCompactionFenceActive &&
                 buffer.IsCreated &&
@@ -873,10 +877,13 @@ namespace Hecton8.Tools
             if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
                 return false;
 
-            if (IsHandleCreated(in handle))
+            if (IsLaserCutterVaultHandle(in handle, bufferId))
             {
-                if (handle.SystemID == (uint)SystemID.GameplayTools)
-                    vault.ReleaseBuffer(in handle);
+                vault.ReleaseBuffer(in handle);
+                handle = default;
+            }
+            else
+            {
                 handle = default;
             }
 
@@ -888,13 +895,15 @@ namespace Hecton8.Tools
                 requiredLength,
                 SystemID.GameplayTools,
                 NativeArrayOptions.ClearMemory);
-            if (!IsHandleCreated(in acquired) ||
+            if (!IsLaserCutterVaultHandle(in acquired, bufferId) ||
                 vault.IsCompactionFenceActive ||
                 !vault.TryResolveHandle(in acquired, out buffer) ||
                 vault.IsCompactionFenceActive ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
+                if (IsLaserCutterVaultHandle(in acquired, bufferId))
+                    vault.ReleaseBuffer(in acquired);
                 return false;
             }
 
@@ -906,6 +915,7 @@ namespace Hecton8.Tools
         {
             if (_dataVault != null &&
                 ReadBoundBuffer(
+                    LaserCutterDodConstants.TuningBuffer,
                     1,
                     ref _tuningHandle,
                     out NativeArray<LaserCutterTuningDTO> tuningBuffer) &&
@@ -1149,7 +1159,7 @@ namespace Hecton8.Tools
         {
             IDataVault vault = _dataVault;
             if (vault != null &&
-                IsHandleCreated(in _scalabilityStateHandle) &&
+                IsScalabilityStateHandle(in _scalabilityStateHandle) &&
                 vault.TryResolveHandle(in _scalabilityStateHandle, out NativeArray<ScalabilityStateDTO> states) &&
                 states.IsCreated &&
                 states.Length > 0 &&
@@ -1282,7 +1292,7 @@ namespace Hecton8.Tools
                 return false;
             }
 
-            if (!ReadBoundBuffer(requiredLength, ref _sdfSnapshotHandle, out snapshot))
+            if (!ReadBoundBuffer(LaserCutterDodConstants.SdfSnapshotBuffer, requiredLength, ref _sdfSnapshotHandle, out snapshot))
                 return false;
 
             for (int i = 0; i < requiredLength; i++)
@@ -1499,7 +1509,7 @@ namespace Hecton8.Tools
                 return;
             }
 
-            if (IsHandleCreated(in _scalabilityStateHandle) &&
+            if (IsScalabilityStateHandle(in _scalabilityStateHandle) &&
                 vault.TryResolveHandle(in _scalabilityStateHandle, out NativeArray<ScalabilityStateDTO> states) &&
                 states.IsCreated &&
                 states.Length > 0)
@@ -1546,9 +1556,18 @@ namespace Hecton8.Tools
             requestCount[0] = 0;
         }
 
-        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsLaserCutterVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)SystemID.GameplayTools &&
+                   handle.Generation != 0u;
+        }
+
+        private static bool IsScalabilityStateHandle(in VaultGenerationHandle<ScalabilityStateDTO> handle)
+        {
+            return handle.BufferID == (uint)BufferID.ShinobuScalabilityState &&
+                   handle.SystemID == (uint)SystemID.GraphicsScalability &&
+                   handle.Generation != 0u;
         }
 
         private static void ClearHandles()
@@ -1606,23 +1625,23 @@ namespace Hecton8.Tools
             _scheduledEvaluationCount = 0;
             _scheduledEvaluationCursorBase = 0u;
 
-            ReleaseVaultHandle(vault, ref _requestsHandle);
-            ReleaseVaultHandle(vault, ref _requestMetasHandle);
-            ReleaseVaultHandle(vault, ref _requestCountHandle);
-            ReleaseVaultHandle(vault, ref _sdfProbeHitsHandle);
-            ReleaseVaultHandle(vault, ref _hitResultsHandle);
-            ReleaseVaultHandle(vault, ref _deformationHandle);
-            ReleaseVaultHandle(vault, ref _batteryDrainHandle);
-            ReleaseVaultHandle(vault, ref _glowDecalHandle);
-            ReleaseVaultHandle(vault, ref _impactVfxHandle);
-            ReleaseVaultHandle(vault, ref _cooldownHandle);
-            ReleaseVaultHandle(vault, ref _telemetryRingHandle);
-            ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
-            ReleaseVaultHandle(vault, ref _tuningHandle);
-            ReleaseVaultHandle(vault, ref _specHandle);
-            ReleaseVaultHandle(vault, ref _csvScratchHandle);
-            ReleaseVaultHandle(vault, ref _sdfSnapshotHandle);
-            ReleaseVaultHandle(vault, ref _countersHandle);
+            ReleaseVaultHandle(vault, LaserCutterDodConstants.RequestsBuffer, ref _requestsHandle);
+            ReleaseVaultHandle(vault, LaserCutterDodConstants.RequestMetaBuffer, ref _requestMetasHandle);
+            ReleaseVaultHandle(vault, LaserCutterDodConstants.RequestCountBuffer, ref _requestCountHandle);
+            ReleaseVaultHandle(vault, LaserCutterDodConstants.SdfProbeHitsBuffer, ref _sdfProbeHitsHandle);
+            ReleaseVaultHandle(vault, LaserCutterDodConstants.HitResultsBuffer, ref _hitResultsHandle);
+            ReleaseVaultHandle(vault, LaserCutterDodConstants.DeformationBuffer, ref _deformationHandle);
+            ReleaseVaultHandle(vault, LaserCutterDodConstants.BatteryDrainBuffer, ref _batteryDrainHandle);
+            ReleaseVaultHandle(vault, LaserCutterDodConstants.GlowDecalBuffer, ref _glowDecalHandle);
+            ReleaseVaultHandle(vault, LaserCutterDodConstants.ImpactVfxBuffer, ref _impactVfxHandle);
+            ReleaseVaultHandle(vault, LaserCutterDodConstants.CooldownBuffer, ref _cooldownHandle);
+            ReleaseVaultHandle(vault, LaserCutterDodConstants.TelemetryRingBuffer, ref _telemetryRingHandle);
+            ReleaseVaultHandle(vault, LaserCutterDodConstants.TelemetryCursorBuffer, ref _telemetryCursorHandle);
+            ReleaseVaultHandle(vault, LaserCutterDodConstants.TuningBuffer, ref _tuningHandle);
+            ReleaseVaultHandle(vault, LaserCutterDodConstants.SpecBuffer, ref _specHandle);
+            ReleaseVaultHandle(vault, LaserCutterDodConstants.CsvScratchBuffer, ref _csvScratchHandle);
+            ReleaseVaultHandle(vault, LaserCutterDodConstants.SdfSnapshotBuffer, ref _sdfSnapshotHandle);
+            ReleaseVaultHandle(vault, LaserCutterDodConstants.CountersBuffer, ref _countersHandle);
         }
 
         private static void ReleaseSdfReadLease(
@@ -1639,16 +1658,15 @@ namespace Hecton8.Tools
             leaseLocked = false;
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        private static void ReleaseVaultHandle<T>(IDataVault vault, BufferID bufferId, ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (!IsHandleCreated(in handle))
+            if (!IsLaserCutterVaultHandle(in handle, bufferId))
             {
                 handle = default;
                 return;
             }
 
-            if (handle.SystemID == (uint)SystemID.GameplayTools)
-                vault.ReleaseBuffer(in handle);
+            vault.ReleaseBuffer(in handle);
             handle = default;
         }
 

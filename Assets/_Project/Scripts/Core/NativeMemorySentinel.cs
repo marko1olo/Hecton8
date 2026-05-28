@@ -104,30 +104,51 @@ namespace Hecton8.Core
         private static readonly uint _staleBufferCrimeHash = unchecked((uint)LocHash.Compute(StaleBufferCrimePrefix));
         private static readonly uint _persistentFragmentationRiskHash = unchecked((uint)LocHash.Compute(PersistentFragmentationRiskPrefix));
 
+        [StructLayout(LayoutKind.Explicit, Size = 304)]
         private struct NativeAllocationRecord
         {
-            public int Id;
-            internal IntPtr Pointer;
-            public long Bytes;
-            public int AllocationFrame;
-            public NativeAllocationLifetime Lifetime;
-            public Allocator Allocator;
-            public uint OwnerHash;
-            public uint LabelHash;
-            public bool LeakReported;
-            public string Owner;
-            public string Label;
-            public string StackTrace;
+            [FieldOffset(0)] internal IntPtr Pointer;
+            [FieldOffset(8)] public long Bytes;
+            [FieldOffset(16)] public FixedString128Bytes Owner;
+            [FieldOffset(144)] public FixedString128Bytes Label;
+            [FieldOffset(272)] public int Id;
+            [FieldOffset(276)] public int AllocationFrame;
+            [FieldOffset(280)] public Allocator Allocator;
+            [FieldOffset(284)] public uint OwnerHash;
+            [FieldOffset(288)] public uint LabelHash;
+            [FieldOffset(292)] public NativeAllocationLifetime Lifetime;
+            [FieldOffset(293)] private byte _leakReported;
+            [FieldOffset(294)] private ushort _pad0;
+            [FieldOffset(296)] private uint _pad1;
+            [FieldOffset(300)] private uint _pad2;
+
+            public bool LeakReported
+            {
+                get => _leakReported != 0;
+                set => _leakReported = value ? (byte)1 : (byte)0;
+            }
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 288)]
         private struct PersistentReallocationRecord
         {
-            public string Owner;
-            public string Label;
-            public long LastBytes;
-            public int ReallocationCount;
-            public float WindowStartTime;
-            public bool Reported;
+            [FieldOffset(0)] public FixedString128Bytes Owner;
+            [FieldOffset(128)] public FixedString128Bytes Label;
+            [FieldOffset(256)] public long LastBytes;
+            [FieldOffset(264)] public uint OwnerHash;
+            [FieldOffset(268)] public uint LabelHash;
+            [FieldOffset(272)] public int ReallocationCount;
+            [FieldOffset(276)] public float WindowStartTime;
+            [FieldOffset(280)] private byte _reported;
+            [FieldOffset(281)] private byte _pad0;
+            [FieldOffset(282)] private ushort _pad1;
+            [FieldOffset(284)] private uint _pad2;
+
+            public bool Reported
+            {
+                get => _reported != 0;
+                set => _reported = value ? (byte)1 : (byte)0;
+            }
         }
 
         // COLD ALLOC: NativeAllocationRecord[1024] - persistent native allocation ownership registry - owner: NativeMemorySentinel
@@ -171,27 +192,34 @@ namespace Hecton8.Core
             if (!destination.IsCreated)
                 return 0;
 
-            int writeIndex = 0;
-            int count = Volatile.Read(ref _count);
-            for (int i = 0; i < count && writeIndex < destination.Length; i++)
+            EnterMutationGate();
+            try
             {
-                NativeAllocationRecord record = _records[i];
-                if (!CanCopySnapshotSource(in record, excludedOwnerHash))
-                    continue;
-
-                destination[writeIndex++] = new NativeAllocationSnapshotSource
+                int writeIndex = 0;
+                int count = _count;
+                for (int i = 0; i < count && writeIndex < destination.Length; i++)
                 {
-                    SourcePointerValue = unchecked((ulong)record.Pointer.ToInt64()),
-                    Bytes = record.Bytes,
-                    OwnerHash = record.OwnerHash,
-                    LabelHash = record.LabelHash,
-                    AllocationFrame = record.AllocationFrame,
-                    Lifetime = (byte)record.Lifetime,
-                    Allocator = (byte)record.Allocator
-                };
-            }
+                    NativeAllocationRecord record = _records[i];
+                    if (!CanCopySnapshotSource(in record, excludedOwnerHash))
+                        continue;
 
-            return writeIndex;
+                    NativeAllocationSnapshotSource snapshot = default;
+                    snapshot.SourcePointerValue = unchecked((ulong)record.Pointer.ToInt64());
+                    snapshot.Bytes = record.Bytes;
+                    snapshot.OwnerHash = record.OwnerHash;
+                    snapshot.LabelHash = record.LabelHash;
+                    snapshot.AllocationFrame = record.AllocationFrame;
+                    snapshot.Lifetime = (byte)record.Lifetime;
+                    snapshot.Allocator = (byte)record.Allocator;
+                    destination[writeIndex++] = snapshot;
+                }
+
+                return writeIndex;
+            }
+            finally
+            {
+                ExitMutationGate();
+            }
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -211,11 +239,11 @@ namespace Hecton8.Core
         /// </summary>
         public static void ResetForSubsystemReload()
         {
+            Interlocked.Exchange(ref _mutationGate, 0);
             int activeBeforeReset = Volatile.Read(ref _count);
             if (activeBeforeReset > 0)
                 throw new FatalMemoryLeakException(BuildFatalLeakMessage("SubsystemRegistration", activeBeforeReset));
 
-            Interlocked.Exchange(ref _mutationGate, 0);
             EnterMutationGate();
             try
             {
@@ -499,98 +527,99 @@ namespace Hecton8.Core
             if (bytes <= 0L)
                 return 0;
 
-            EnterMutationGate();
-            try
-            {
             IntPtr pointerValue = (IntPtr)pointer;
             uint ownerHash = ComputeStableHash(owner);
             uint labelHash = ComputeStableHash(label);
-            for (int i = 0; i < _count; i++)
+            FixedString128Bytes ownerFixed = ToFixedString128(owner);
+            FixedString128Bytes labelFixed = ToFixedString128(label);
+
+            EnterMutationGate();
+            try
             {
-                NativeAllocationRecord existing = _records[i];
-                bool pointerMatches = pointerValue != IntPtr.Zero && existing.Pointer == pointerValue;
-                bool pointerlessOwnerMatches =
-                    coalescePointerlessOwnerLabel &&
-                    pointerValue == IntPtr.Zero &&
-                    existing.Pointer == IntPtr.Zero &&
-                    string.Equals(existing.Owner, owner, StringComparison.Ordinal) &&
-                    string.Equals(existing.Label, label, StringComparison.Ordinal);
-                if (pointerMatches || pointerlessOwnerMatches)
+                for (int i = 0; i < _count; i++)
                 {
-                    bool recordChanged = false;
-                    if (existing.Bytes != bytes)
+                    NativeAllocationRecord existing = _records[i];
+                    bool pointerMatches = pointerValue != IntPtr.Zero && existing.Pointer == pointerValue;
+                    bool pointerlessOwnerMatches =
+                        coalescePointerlessOwnerLabel &&
+                        pointerValue == IntPtr.Zero &&
+                        existing.Pointer == IntPtr.Zero &&
+                        existing.OwnerHash == ownerHash &&
+                        existing.LabelHash == labelHash &&
+                        FixedStringEquals(in existing.Owner, in ownerFixed) &&
+                        FixedStringEquals(in existing.Label, in labelFixed);
+                    if (pointerMatches || pointerlessOwnerMatches)
                     {
-                        TrackPersistentReallocation(owner, label, bytes, lifetime);
-                        _trackedBytes += bytes - existing.Bytes;
-                        existing.Bytes = bytes;
-                        recordChanged = true;
+                        bool recordChanged = false;
+                        if (existing.Bytes != bytes)
+                        {
+                            TrackPersistentReallocation(owner, label, bytes, lifetime);
+                            _trackedBytes += bytes - existing.Bytes;
+                            existing.Bytes = bytes;
+                            recordChanged = true;
+                        }
+
+                        if (existing.Lifetime != lifetime)
+                        {
+                            AdjustTransientAllocationCount(existing.Lifetime, -1);
+                            AdjustTransientAllocationCount(lifetime, 1);
+                            existing.Lifetime = lifetime;
+                            existing.Allocator = ResolveAllocator(lifetime);
+                            existing.AllocationFrame = ResolveCurrentFrame(0);
+                            recordChanged = true;
+                        }
+
+                        if (existing.LeakReported)
+                        {
+                            existing.LeakReported = false;
+                            existing.AllocationFrame = ResolveCurrentFrame(existing.AllocationFrame);
+                            recordChanged = true;
+                        }
+
+                        if (existing.OwnerHash != ownerHash || existing.LabelHash != labelHash)
+                        {
+                            existing.OwnerHash = ownerHash;
+                            existing.LabelHash = labelHash;
+                            recordChanged = true;
+                        }
+
+                        if (recordChanged)
+                            _records[i] = existing;
+
+                        return existing.Id;
                     }
-
-                    if (existing.Lifetime != lifetime)
-                    {
-                        AdjustTransientAllocationCount(existing.Lifetime, -1);
-                        AdjustTransientAllocationCount(lifetime, 1);
-                        existing.Lifetime = lifetime;
-                        existing.Allocator = ResolveAllocator(lifetime);
-                        existing.AllocationFrame = ResolveCurrentFrame(0);
-                        existing.StackTrace = CaptureStackTrace(lifetime);
-                        recordChanged = true;
-                    }
-
-                    if (existing.LeakReported)
-                    {
-                        existing.LeakReported = false;
-                        existing.AllocationFrame = ResolveCurrentFrame(existing.AllocationFrame);
-                        existing.StackTrace = CaptureStackTrace(existing.Lifetime);
-                        recordChanged = true;
-                    }
-
-                    if (existing.OwnerHash != ownerHash || existing.LabelHash != labelHash)
-                    {
-                        existing.OwnerHash = ownerHash;
-                        existing.LabelHash = labelHash;
-                        recordChanged = true;
-                    }
-
-                    if (recordChanged)
-                        _records[i] = existing;
-
-                    return existing.Id;
                 }
-            }
 
-            if (_count >= MaxTrackedAllocations)
-            {
-                PublishPerformanceWarningNoReentry(
-                    _criticalMemoryViolationHash,
-                    _nativeMemoryContextHash,
-                    MaxTrackedAllocations);
+                if (_count >= MaxTrackedAllocations)
+                {
+                    PublishPerformanceWarningNoReentry(
+                        _criticalMemoryViolationHash,
+                        _nativeMemoryContextHash,
+                        MaxTrackedAllocations);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationRegistryCapacityMessage);
+                    Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationRegistryCapacityMessage);
 #endif
-                return 0;
-            }
+                    return 0;
+                }
 
-            int id = _nextId++;
-            TrackPersistentReallocation(owner, label, bytes, lifetime);
+                int id = _nextId++;
+                TrackPersistentReallocation(owner, label, bytes, lifetime);
 
-            _records[_count++] = new NativeAllocationRecord
-            {
-                Id = id,
-                Pointer = pointerValue,
-                Bytes = bytes,
-                AllocationFrame = ResolveCurrentFrame(0),
-                Lifetime = lifetime,
-                Allocator = ResolveAllocator(lifetime),
-                OwnerHash = ownerHash,
-                LabelHash = labelHash,
-                Owner = owner,
-                Label = label,
-                StackTrace = CaptureStackTrace(lifetime)
-            };
-            _trackedBytes += bytes;
-            AdjustTransientAllocationCount(lifetime, 1);
-            return id;
+                NativeAllocationRecord record = default;
+                record.Id = id;
+                record.Pointer = pointerValue;
+                record.Bytes = bytes;
+                record.AllocationFrame = ResolveCurrentFrame(0);
+                record.Lifetime = lifetime;
+                record.Allocator = ResolveAllocator(lifetime);
+                record.OwnerHash = ownerHash;
+                record.LabelHash = labelHash;
+                record.Owner = ownerFixed;
+                record.Label = labelFixed;
+                _records[_count++] = record;
+                _trackedBytes += bytes;
+                AdjustTransientAllocationCount(lifetime, 1);
+                return id;
             }
             finally
             {
@@ -716,13 +745,21 @@ namespace Hecton8.Core
         /// </summary>
         public static void Unregister(string owner, string label)
         {
+            uint ownerHash = ComputeStableHash(owner);
+            uint labelHash = ComputeStableHash(label);
+            FixedString128Bytes ownerFixed = ToFixedString128(owner);
+            FixedString128Bytes labelFixed = ToFixedString128(label);
+
             EnterMutationGate();
             try
             {
                 for (int i = _count - 1; i >= 0; i--)
                 {
-                    if (!string.Equals(_records[i].Owner, owner, StringComparison.Ordinal) ||
-                        !string.Equals(_records[i].Label, label, StringComparison.Ordinal))
+                    NativeAllocationRecord record = _records[i];
+                    if (record.OwnerHash != ownerHash ||
+                        record.LabelHash != labelHash ||
+                        !FixedStringEquals(in record.Owner, in ownerFixed) ||
+                        !FixedStringEquals(in record.Label, in labelFixed))
                     {
                         continue;
                     }
@@ -833,16 +870,15 @@ namespace Hecton8.Core
                         : record.Allocator;
                     H8Memory.ReleaseSentinelReapedRaw(record.Pointer.ToPointer(), allocator);
                     RuntimeWatchdog.ReportNativeLeakReaped(
-                        ComputeStableHash(record.Owner),
-                        ComputeStableHash(record.Label),
+                        record.OwnerHash,
+                        record.LabelHash,
                         record.Bytes);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Hecton8.Core.H8Debug.LogError(
                         NativeLeakReapedMessage +
                         " context=" + context +
-                        " owner=" + record.Owner +
-                        " label=" + record.Label +
-                        "\n" + record.StackTrace);
+                        " ownerHash=" + record.OwnerHash +
+                        " labelHash=" + record.LabelHash);
 #endif
                     RemoveAt(i);
                     reaped++;
@@ -935,7 +971,7 @@ namespace Hecton8.Core
                         warningHash,
                         _nativeMemoryContextHash,
                         retentionFrames);
-                    uint allocationHash = ComputeOwnerLabelHash(record.Owner, record.Label);
+                    uint allocationHash = ComputeOwnerLabelHash(record.OwnerHash, record.LabelHash);
                     if (record.Lifetime == NativeAllocationLifetime.TempJob)
                     {
                         CrashTelemetryBuffer.ReportStaleBufferCrime(allocationHash, retentionFrames, record.Bytes);
@@ -998,23 +1034,31 @@ namespace Hecton8.Core
             builder.Append(context ?? string.Empty);
             builder.Append(" active=");
             builder.Append(activeCount);
-            builder.Append(" trackedBytes=");
-            builder.Append(Volatile.Read(ref _trackedBytes));
 
-            int count = Volatile.Read(ref _count);
-            for (int i = 0; i < count; i++)
+            EnterMutationGate();
+            try
             {
-                NativeAllocationRecord record = _records[i];
-                builder.Append(" | id=");
-                builder.Append(record.Id);
-                builder.Append(" owner=");
-                builder.Append(record.Owner ?? string.Empty);
-                builder.Append(" label=");
-                builder.Append(record.Label ?? string.Empty);
-                builder.Append(" bytes=");
-                builder.Append(record.Bytes);
-                builder.Append(" lifetime=");
-                builder.Append((byte)record.Lifetime);
+                builder.Append(" trackedBytes=");
+                builder.Append(_trackedBytes);
+                int count = _count;
+                for (int i = 0; i < count; i++)
+                {
+                    NativeAllocationRecord record = _records[i];
+                    builder.Append(" | id=");
+                    builder.Append(record.Id);
+                    builder.Append(" owner=");
+                    AppendFixedString(builder, in record.Owner);
+                    builder.Append(" label=");
+                    AppendFixedString(builder, in record.Label);
+                    builder.Append(" bytes=");
+                    builder.Append(record.Bytes);
+                    builder.Append(" lifetime=");
+                    builder.Append((byte)record.Lifetime);
+                }
+            }
+            finally
+            {
+                ExitMutationGate();
             }
 
             return builder.ToString();
@@ -1059,6 +1103,11 @@ namespace Hecton8.Core
             if (bytes <= 0L)
                 return;
 
+            uint ownerHash = ComputeStableHash(owner);
+            uint labelHash = ComputeStableHash(label);
+            FixedString128Bytes ownerFixed = ToFixedString128(owner);
+            FixedString128Bytes labelFixed = ToFixedString128(label);
+
             EnterMutationGate();
             try
             {
@@ -1066,8 +1115,10 @@ namespace Hecton8.Core
                 {
                     NativeAllocationRecord record = _records[i];
                     if (record.Pointer != IntPtr.Zero ||
-                        !string.Equals(record.Owner, owner, StringComparison.Ordinal) ||
-                        !string.Equals(record.Label, label, StringComparison.Ordinal))
+                        record.OwnerHash != ownerHash ||
+                        record.LabelHash != labelHash ||
+                        !FixedStringEquals(in record.Owner, in ownerFixed) ||
+                        !FixedStringEquals(in record.Label, in labelFixed))
                     {
                         continue;
                     }
@@ -1115,21 +1166,28 @@ namespace Hecton8.Core
                 return;
 
             float now = ResolveCurrentUnscaledTime();
-            int recordIndex = FindPersistentReallocationRecord(owner, label);
+            uint ownerHash = ComputeStableHash(owner);
+            uint labelHash = ComputeStableHash(label);
+            FixedString128Bytes ownerFixed = ToFixedString128(owner);
+            FixedString128Bytes labelFixed = ToFixedString128(label);
+            int recordIndex = FindPersistentReallocationRecord(
+                in ownerFixed,
+                in labelFixed,
+                ownerHash,
+                labelHash);
             if (recordIndex < 0)
             {
                 if (_persistentReallocationRecordCount >= MaxPersistentReallocationRecords)
                     return;
 
-                _persistentReallocationRecords[_persistentReallocationRecordCount++] = new PersistentReallocationRecord
-                {
-                    Owner = owner,
-                    Label = label,
-                    LastBytes = bytes,
-                    ReallocationCount = 0,
-                    WindowStartTime = now,
-                    Reported = false
-                };
+                PersistentReallocationRecord freshRecord = default;
+                freshRecord.Owner = ownerFixed;
+                freshRecord.Label = labelFixed;
+                freshRecord.OwnerHash = ownerHash;
+                freshRecord.LabelHash = labelHash;
+                freshRecord.LastBytes = bytes;
+                freshRecord.WindowStartTime = now;
+                _persistentReallocationRecords[_persistentReallocationRecordCount++] = freshRecord;
                 return;
             }
 
@@ -1152,7 +1210,7 @@ namespace Hecton8.Core
             if (!record.Reported && record.ReallocationCount > PersistentReallocationThreshold)
             {
                 record.Reported = true;
-                uint allocationHash = ComputeOwnerLabelHash(owner, label);
+                uint allocationHash = ComputeOwnerLabelHash(ownerHash, labelHash);
                 PublishPerformanceWarningNoReentry(
                     _persistentFragmentationRiskHash,
                     allocationHash,
@@ -1208,6 +1266,34 @@ namespace Hecton8.Core
                 : unchecked((uint)LocHash.Compute(value));
         }
 
+        private static FixedString128Bytes ToFixedString128(string value)
+        {
+            FixedString128Bytes fixedValue = default;
+            if (!string.IsNullOrEmpty(value))
+                fixedValue.CopyFromTruncated(value);
+            return fixedValue;
+        }
+
+        private static bool FixedStringEquals(in FixedString128Bytes left, in FixedString128Bytes right)
+        {
+            if (left.Length != right.Length)
+                return false;
+
+            for (int i = 0; i < left.Length; i++)
+            {
+                if (left[i] != right[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static void AppendFixedString(StringBuilder builder, in FixedString128Bytes value)
+        {
+            for (int i = 0; i < value.Length; i++)
+                builder.Append((char)value[i]);
+        }
+
         public static void ReportQueueOverflow(uint warningHash, uint overflowCount, uint contextHash)
         {
             PublishPerformanceWarningNoReentry(warningHash, contextHash, overflowCount);
@@ -1234,13 +1320,19 @@ namespace Hecton8.Core
             }
         }
 
-        private static int FindPersistentReallocationRecord(string owner, string label)
+        private static int FindPersistentReallocationRecord(
+            in FixedString128Bytes owner,
+            in FixedString128Bytes label,
+            uint ownerHash,
+            uint labelHash)
         {
             for (int i = 0; i < _persistentReallocationRecordCount; i++)
             {
                 PersistentReallocationRecord record = _persistentReallocationRecords[i];
-                if (string.Equals(record.Owner, owner, StringComparison.Ordinal) &&
-                    string.Equals(record.Label, label, StringComparison.Ordinal))
+                if (record.OwnerHash == ownerHash &&
+                    record.LabelHash == labelHash &&
+                    FixedStringEquals(in record.Owner, in owner) &&
+                    FixedStringEquals(in record.Label, in label))
                 {
                     return i;
                 }
@@ -1256,10 +1348,8 @@ namespace Hecton8.Core
                    lifetime == NativeAllocationLifetime.Permanent;
         }
 
-        private static uint ComputeOwnerLabelHash(string owner, string label)
+        private static uint ComputeOwnerLabelHash(uint ownerHash, uint labelHash)
         {
-            uint ownerHash = unchecked((uint)LocHash.Compute(owner ?? string.Empty));
-            uint labelHash = unchecked((uint)LocHash.Compute(label ?? string.Empty));
             return ownerHash ^ (labelHash * 16777619u);
         }
 
@@ -1300,19 +1390,5 @@ namespace Hecton8.Core
             return safeCapacity * bytesPerEntry;
         }
 
-        private static string CaptureStackTrace(NativeAllocationLifetime lifetime)
-        {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (lifetime == NativeAllocationLifetime.Temp ||
-                lifetime == NativeAllocationLifetime.TempJob)
-            {
-                return string.Empty;
-            }
-
-            return StackTraceUtility.ExtractStackTrace();
-#else
-            return string.Empty;
-#endif
-        }
     }
 }

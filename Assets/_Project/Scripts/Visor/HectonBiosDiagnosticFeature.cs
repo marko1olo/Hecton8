@@ -39,18 +39,11 @@ namespace Hecton8.Visor
             [Range(0f, 1f)] public float scanlineStrength = 0.48f;
         }
 
-        private readonly struct RuntimeState
+        private struct RuntimeState
         {
-            public RuntimeState(float intensity, bool hasLoot, Vector4 lootSphereAup)
-            {
-                Intensity = intensity;
-                HasLoot = hasLoot ? (byte)1 : (byte)0;
-                LootSphereAup = lootSphereAup;
-            }
-
-            public readonly float Intensity;
-            public readonly byte HasLoot;
-            public readonly Vector4 LootSphereAup;
+            public float Intensity;
+            public byte HasLoot;
+            public Vector4 LootSphereAup;
         }
 
         private sealed class DiagnosticPass : ScriptableRenderPass
@@ -112,7 +105,7 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                TextureDesc destinationDesc = new TextureDesc(sourceDesc);
+                TextureDesc destinationDesc = sourceDesc;
                 destinationDesc.name = "_HectonBiosDiagnostic";
                 destinationDesc.clearBuffer = false;
                 destinationDesc.depthBufferBits = DepthBits.None;
@@ -287,7 +280,11 @@ namespace Hecton8.Visor
                 _lootCacheInitialized = true;
             }
 
-            _pass.Setup(settings, _material, new RuntimeState(intensity, _cachedHasLoot, _cachedLootSphereAup));
+            RuntimeState runtimeState = default;
+            runtimeState.Intensity = intensity;
+            runtimeState.HasLoot = _cachedHasLoot ? (byte)1 : (byte)0;
+            runtimeState.LootSphereAup = _cachedLootSphereAup;
+            _pass.Setup(settings, _material, runtimeState);
             renderer.EnqueuePass(_pass);
         }
 

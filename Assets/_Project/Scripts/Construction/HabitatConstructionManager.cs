@@ -620,12 +620,12 @@ namespace Hecton8.Construction
 
         private void ClearSocketLookupForInvalidation()
         {
-            if (_catalogVault == null || _socketLookupHandle.BufferID == 0u)
+            if (_catalogVault == null || !IsIntegrityVaultHandle(in _socketLookupHandle, IntegritySocketLookupBufferId))
                 return;
 
             if ((_lockedValidationBufferMask & IntegritySocketLookupLockBit) != 0u)
             {
-                if (_catalogVault.TryResolveHandle(in _socketLookupHandle, out NativeArray<SocketLookupSlot> lockedLookup))
+                if (TryResolveValidationVaultBuffer(in _socketLookupHandle, IntegritySocketLookupBufferId, out NativeArray<SocketLookupSlot> lockedLookup))
                     ClearSocketLookup(lockedLookup);
                 return;
             }
@@ -639,7 +639,8 @@ namespace Hecton8.Construction
             }
             finally
             {
-                _catalogVault.ReleaseWriteLock(in _socketLookupHandle, SystemID.Construction);
+                if (IsIntegrityVaultHandle(in _socketLookupHandle, IntegritySocketLookupBufferId))
+                    _catalogVault.ReleaseWriteLock(in _socketLookupHandle, SystemID.Construction);
             }
         }
 
@@ -1294,16 +1295,16 @@ namespace Hecton8.Construction
             if (_catalogVault == null)
                 return false;
 
-            return _catalogVault.TryResolveHandle(in _nodeBufferHandle, out graphBuffers.Nodes) &&
-                   _catalogVault.TryResolveHandle(in _adjacencyRangesHandle, out graphBuffers.AdjacencyRanges) &&
-                   _catalogVault.TryResolveHandle(in _adjacencyHandle, out graphBuffers.Adjacency) &&
-                   _catalogVault.TryResolveHandle(in _queueBufferHandle, out graphBuffers.Queue) &&
-                   _catalogVault.TryResolveHandle(in _depthBufferHandle, out graphBuffers.Depths) &&
-                   _catalogVault.TryResolveHandle(in _resultBufferHandle, out graphBuffers.Result) &&
-                   _catalogVault.TryResolveHandle(in _adjacencyDegreeScratchHandle, out graphBuffers.AdjacencyCounts) &&
-                   _catalogVault.TryResolveHandle(in _adjacencyWriteScratchHandle, out graphBuffers.AdjacencyWrites) &&
-                   _catalogVault.TryResolveHandle(in _connectionBufferHandle, out graphBuffers.Connections) &&
-                   _catalogVault.TryResolveHandle(in _socketLookupHandle, out graphBuffers.SocketLookup) &&
+            return TryResolveValidationVaultBuffer(in _nodeBufferHandle, IntegrityNodeBufferId, out graphBuffers.Nodes) &&
+                   TryResolveValidationVaultBuffer(in _adjacencyRangesHandle, IntegrityRangeBufferId, out graphBuffers.AdjacencyRanges) &&
+                   TryResolveValidationVaultBuffer(in _adjacencyHandle, IntegrityAdjacencyBufferId, out graphBuffers.Adjacency) &&
+                   TryResolveValidationVaultBuffer(in _queueBufferHandle, IntegrityQueueBufferId, out graphBuffers.Queue) &&
+                   TryResolveValidationVaultBuffer(in _depthBufferHandle, IntegrityDepthBufferId, out graphBuffers.Depths) &&
+                   TryResolveValidationVaultBuffer(in _resultBufferHandle, IntegrityResultBufferId, out graphBuffers.Result) &&
+                   TryResolveValidationVaultBuffer(in _adjacencyDegreeScratchHandle, IntegrityDegreeScratchBufferId, out graphBuffers.AdjacencyCounts) &&
+                   TryResolveValidationVaultBuffer(in _adjacencyWriteScratchHandle, IntegrityWriteScratchBufferId, out graphBuffers.AdjacencyWrites) &&
+                   TryResolveValidationVaultBuffer(in _connectionBufferHandle, IntegrityConnectionBufferId, out graphBuffers.Connections) &&
+                   TryResolveValidationVaultBuffer(in _socketLookupHandle, IntegritySocketLookupBufferId, out graphBuffers.SocketLookup) &&
                    graphBuffers.Nodes.IsCreated &&
                    graphBuffers.AdjacencyRanges.IsCreated &&
                    graphBuffers.Adjacency.IsCreated &&
@@ -1322,16 +1323,16 @@ namespace Hecton8.Construction
             if (_catalogVault == null)
                 return false;
 
-            return _catalogVault.TryReadHandle(in _nodeBufferHandle, out graphBuffers.Nodes) &&
-                   _catalogVault.TryReadHandle(in _adjacencyRangesHandle, out graphBuffers.AdjacencyRanges) &&
-                   _catalogVault.TryReadHandle(in _adjacencyHandle, out graphBuffers.Adjacency) &&
-                   _catalogVault.TryReadHandle(in _queueBufferHandle, out graphBuffers.Queue) &&
-                   _catalogVault.TryReadHandle(in _depthBufferHandle, out graphBuffers.Depths) &&
-                   _catalogVault.TryReadHandle(in _resultBufferHandle, out graphBuffers.Result) &&
-                   _catalogVault.TryReadHandle(in _adjacencyDegreeScratchHandle, out graphBuffers.AdjacencyCounts) &&
-                   _catalogVault.TryReadHandle(in _adjacencyWriteScratchHandle, out graphBuffers.AdjacencyWrites) &&
-                   _catalogVault.TryReadHandle(in _connectionBufferHandle, out graphBuffers.Connections) &&
-                   _catalogVault.TryReadHandle(in _socketLookupHandle, out graphBuffers.SocketLookup) &&
+            return TryReadValidationVaultBuffer(in _nodeBufferHandle, IntegrityNodeBufferId, out graphBuffers.Nodes) &&
+                   TryReadValidationVaultBuffer(in _adjacencyRangesHandle, IntegrityRangeBufferId, out graphBuffers.AdjacencyRanges) &&
+                   TryReadValidationVaultBuffer(in _adjacencyHandle, IntegrityAdjacencyBufferId, out graphBuffers.Adjacency) &&
+                   TryReadValidationVaultBuffer(in _queueBufferHandle, IntegrityQueueBufferId, out graphBuffers.Queue) &&
+                   TryReadValidationVaultBuffer(in _depthBufferHandle, IntegrityDepthBufferId, out graphBuffers.Depths) &&
+                   TryReadValidationVaultBuffer(in _resultBufferHandle, IntegrityResultBufferId, out graphBuffers.Result) &&
+                   TryReadValidationVaultBuffer(in _adjacencyDegreeScratchHandle, IntegrityDegreeScratchBufferId, out graphBuffers.AdjacencyCounts) &&
+                   TryReadValidationVaultBuffer(in _adjacencyWriteScratchHandle, IntegrityWriteScratchBufferId, out graphBuffers.AdjacencyWrites) &&
+                   TryReadValidationVaultBuffer(in _connectionBufferHandle, IntegrityConnectionBufferId, out graphBuffers.Connections) &&
+                   TryReadValidationVaultBuffer(in _socketLookupHandle, IntegritySocketLookupBufferId, out graphBuffers.SocketLookup) &&
                    graphBuffers.Nodes.IsCreated &&
                    graphBuffers.AdjacencyRanges.IsCreated &&
                    graphBuffers.Adjacency.IsCreated &&
@@ -1348,7 +1349,7 @@ namespace Hecton8.Construction
         {
             resultBuffer = default;
             return _catalogVault != null &&
-                   _catalogVault.TryResolveHandle(in _resultBufferHandle, out resultBuffer) &&
+                   TryResolveValidationVaultBuffer(in _resultBufferHandle, IntegrityResultBufferId, out resultBuffer) &&
                    resultBuffer.IsCreated &&
                    resultBuffer.Length > 0;
         }
@@ -1358,7 +1359,7 @@ namespace Hecton8.Construction
             if (_catalogVault == null)
                 return default;
 
-            if (handle.BufferID != 0u &&
+            if (IsIntegrityVaultHandle(in handle, bufferId) &&
                 _catalogVault.TryReadHandle(in handle, out NativeArray<T> existing) &&
                 existing.IsCreated &&
                 existing.Length >= requiredLength)
@@ -1366,7 +1367,7 @@ namespace Hecton8.Construction
                 return handle;
             }
 
-            if (handle.BufferID != 0u)
+            if (IsIntegrityVaultHandle(in handle, bufferId))
                 _catalogVault.ReleaseBuffer(in handle);
 
             return _catalogVault.EnsureGenerationHandle<T>(
@@ -1400,16 +1401,16 @@ namespace Hecton8.Construction
                 return;
             }
 
-            ReleaseVaultHandle(ref _nodeBufferHandle);
-            ReleaseVaultHandle(ref _adjacencyRangesHandle);
-            ReleaseVaultHandle(ref _adjacencyHandle);
-            ReleaseVaultHandle(ref _queueBufferHandle);
-            ReleaseVaultHandle(ref _depthBufferHandle);
-            ReleaseVaultHandle(ref _resultBufferHandle);
-            ReleaseVaultHandle(ref _adjacencyDegreeScratchHandle);
-            ReleaseVaultHandle(ref _adjacencyWriteScratchHandle);
-            ReleaseVaultHandle(ref _connectionBufferHandle);
-            ReleaseVaultHandle(ref _socketLookupHandle);
+            ReleaseVaultHandle(ref _nodeBufferHandle, IntegrityNodeBufferId);
+            ReleaseVaultHandle(ref _adjacencyRangesHandle, IntegrityRangeBufferId);
+            ReleaseVaultHandle(ref _adjacencyHandle, IntegrityAdjacencyBufferId);
+            ReleaseVaultHandle(ref _queueBufferHandle, IntegrityQueueBufferId);
+            ReleaseVaultHandle(ref _depthBufferHandle, IntegrityDepthBufferId);
+            ReleaseVaultHandle(ref _resultBufferHandle, IntegrityResultBufferId);
+            ReleaseVaultHandle(ref _adjacencyDegreeScratchHandle, IntegrityDegreeScratchBufferId);
+            ReleaseVaultHandle(ref _adjacencyWriteScratchHandle, IntegrityWriteScratchBufferId);
+            ReleaseVaultHandle(ref _connectionBufferHandle, IntegrityConnectionBufferId);
+            ReleaseVaultHandle(ref _socketLookupHandle, IntegritySocketLookupBufferId);
             _nodeCapacity = 0;
             _adjacencyCapacity = 0;
             _connectionCapacity = 0;
@@ -1418,12 +1419,43 @@ namespace Hecton8.Construction
             _socketLookupCount = 0;
         }
 
-        private void ReleaseVaultHandle<T>(ref VaultGenerationHandle<T> handle) where T : struct
+        private bool TryResolveValidationVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            out NativeArray<T> buffer) where T : struct
         {
-            if (handle.BufferID != 0u)
+            buffer = default;
+            return _catalogVault != null &&
+                   IsIntegrityVaultHandle(in handle, bufferId) &&
+                   _catalogVault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
+        private bool TryReadValidationVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            return _catalogVault != null &&
+                   IsIntegrityVaultHandle(in handle, bufferId) &&
+                   _catalogVault.TryReadHandle(in handle, out buffer) &&
+                   buffer.IsCreated;
+        }
+
+        private void ReleaseVaultHandle<T>(ref VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            if (IsIntegrityVaultHandle(in handle, bufferId))
                 _catalogVault.ReleaseBuffer(in handle);
 
             handle = default;
+        }
+
+        private static bool IsIntegrityVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)SystemID.Construction &&
+                   handle.Generation != 0u;
         }
 
         private bool TryLockValidationBuffers()

@@ -25,6 +25,11 @@ using UnityEngine;
 
 namespace Hecton8.World
 {
+    internal static class PersistentWorldVaultMutationGuards
+    {
+        public const ulong CollectionMutationGuardMask = 1UL << 49;
+    }
+
     [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct AbsoluteUniversePosition
@@ -1253,16 +1258,18 @@ namespace Hecton8.World
             if (!IsCreated || _vault == null)
                 return false;
 
-            bool itemsLocked = _vault.TryAcquireWriteLock(in _itemsHandle, _owner, out NativeArray<T> items);
-            if (!itemsLocked)
+            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            if (!mutationGuarded)
                 return false;
 
-            bool countLocked = false;
             try
             {
-                countLocked = _vault.TryAcquireWriteLock(in _countHandle, _owner, out NativeArray<int> count);
-                if (!countLocked || count.Length <= 0)
+                if (!_vault.TryResolveHandle(in _itemsHandle, out NativeArray<T> items) ||
+                    !_vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
+                    count.Length <= 0)
+                {
                     return false;
+                }
 
                 int length = math.clamp(count[0], 0, math.min(_capacity, items.Length));
                 if (length >= _capacity || length >= items.Length)
@@ -1274,9 +1281,8 @@ namespace Hecton8.World
             }
             finally
             {
-                if (countLocked)
-                    _vault.ReleaseWriteLock(in _countHandle, _owner);
-                _vault.ReleaseWriteLock(in _itemsHandle, _owner);
+                if (mutationGuarded)
+                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 
@@ -1285,16 +1291,18 @@ namespace Hecton8.World
             if (!IsCreated || _vault == null)
                 return;
 
-            bool itemsLocked = _vault.TryAcquireWriteLock(in _itemsHandle, _owner, out NativeArray<T> items);
-            if (!itemsLocked)
+            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            if (!mutationGuarded)
                 return;
 
-            bool countLocked = false;
             try
             {
-                countLocked = _vault.TryAcquireWriteLock(in _countHandle, _owner, out NativeArray<int> count);
-                if (!countLocked || count.Length <= 0)
+                if (!_vault.TryResolveHandle(in _itemsHandle, out NativeArray<T> items) ||
+                    !_vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
+                    count.Length <= 0)
+                {
                     return;
+                }
 
                 int length = math.clamp(count[0], 0, math.min(_capacity, items.Length));
                 if ((uint)index >= (uint)length)
@@ -1307,9 +1315,8 @@ namespace Hecton8.World
             }
             finally
             {
-                if (countLocked)
-                    _vault.ReleaseWriteLock(in _countHandle, _owner);
-                _vault.ReleaseWriteLock(in _itemsHandle, _owner);
+                if (mutationGuarded)
+                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 
@@ -1434,30 +1441,30 @@ namespace Hecton8.World
             if (!IsCreated || _vault == null)
                 return false;
 
-            bool statesLocked = _vault.TryAcquireWriteLock(in _statesHandle, _owner, out NativeArray<byte> states);
-            if (!statesLocked)
+            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            if (!mutationGuarded)
                 return false;
 
-            bool countLocked = false;
             try
             {
-                countLocked = _vault.TryAcquireWriteLock(in _countHandle, _owner, out NativeArray<int> count);
+                if (!_vault.TryResolveHandle(in _statesHandle, out NativeArray<byte> states) ||
+                    !_vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
+                    count.Length <= 0)
+                {
+                    return false;
+                }
+
                 int stateCount = math.min(_capacity, states.Length);
                 for (int i = 0; i < stateCount; i++)
                     states[i] = 0;
-                if (countLocked && count.Length > 0)
-                {
-                    count[0] = 0;
-                    return true;
-                }
 
-                return false;
+                count[0] = 0;
+                return true;
             }
             finally
             {
-                if (countLocked)
-                    _vault.ReleaseWriteLock(in _countHandle, _owner);
-                _vault.ReleaseWriteLock(in _statesHandle, _owner);
+                if (mutationGuarded)
+                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 
@@ -1518,20 +1525,20 @@ namespace Hecton8.World
             if (!IsCreated || _vault == null)
                 return false;
 
-            bool keysLocked = _vault.TryAcquireWriteLock(in _keysHandle, _owner, out NativeArray<TKey> keys);
-            if (!keysLocked)
+            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            if (!mutationGuarded)
                 return false;
 
-            bool valuesLocked = false;
-            bool statesLocked = false;
-            bool countLocked = false;
             try
             {
-                valuesLocked = _vault.TryAcquireWriteLock(in _valuesHandle, _owner, out NativeArray<TValue> values);
-                statesLocked = _vault.TryAcquireWriteLock(in _statesHandle, _owner, out NativeArray<byte> states);
-                countLocked = _vault.TryAcquireWriteLock(in _countHandle, _owner, out NativeArray<int> count);
-                if (!valuesLocked || !statesLocked || !countLocked || count.Length <= 0)
+                if (!_vault.TryResolveHandle(in _keysHandle, out NativeArray<TKey> keys) ||
+                    !_vault.TryResolveHandle(in _valuesHandle, out NativeArray<TValue> values) ||
+                    !_vault.TryResolveHandle(in _statesHandle, out NativeArray<byte> states) ||
+                    !_vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
+                    count.Length <= 0)
+                {
                     return false;
+                }
 
                 int capacity = math.min(_capacity, math.min(keys.Length, math.min(values.Length, states.Length)));
                 if (capacity <= 0)
@@ -1585,13 +1592,8 @@ namespace Hecton8.World
             }
             finally
             {
-                if (countLocked)
-                    _vault.ReleaseWriteLock(in _countHandle, _owner);
-                if (statesLocked)
-                    _vault.ReleaseWriteLock(in _statesHandle, _owner);
-                if (valuesLocked)
-                    _vault.ReleaseWriteLock(in _valuesHandle, _owner);
-                _vault.ReleaseWriteLock(in _keysHandle, _owner);
+                if (mutationGuarded)
+                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 
@@ -1600,20 +1602,20 @@ namespace Hecton8.World
             if (!IsCreated || _vault == null)
                 return false;
 
-            bool keysLocked = _vault.TryAcquireWriteLock(in _keysHandle, _owner, out NativeArray<TKey> keys);
-            if (!keysLocked)
+            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            if (!mutationGuarded)
                 return false;
 
-            bool valuesLocked = false;
-            bool statesLocked = false;
-            bool countLocked = false;
             try
             {
-                valuesLocked = _vault.TryAcquireWriteLock(in _valuesHandle, _owner, out NativeArray<TValue> values);
-                statesLocked = _vault.TryAcquireWriteLock(in _statesHandle, _owner, out NativeArray<byte> states);
-                countLocked = _vault.TryAcquireWriteLock(in _countHandle, _owner, out NativeArray<int> count);
-                if (!valuesLocked || !statesLocked || !countLocked || count.Length <= 0)
+                if (!_vault.TryResolveHandle(in _keysHandle, out NativeArray<TKey> keys) ||
+                    !_vault.TryResolveHandle(in _valuesHandle, out NativeArray<TValue> values) ||
+                    !_vault.TryResolveHandle(in _statesHandle, out NativeArray<byte> states) ||
+                    !_vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
+                    count.Length <= 0)
+                {
                     return false;
+                }
 
                 int capacity = math.min(_capacity, math.min(keys.Length, math.min(values.Length, states.Length)));
                 if (capacity <= 0)
@@ -1671,13 +1673,8 @@ namespace Hecton8.World
             }
             finally
             {
-                if (countLocked)
-                    _vault.ReleaseWriteLock(in _countHandle, _owner);
-                if (statesLocked)
-                    _vault.ReleaseWriteLock(in _statesHandle, _owner);
-                if (valuesLocked)
-                    _vault.ReleaseWriteLock(in _valuesHandle, _owner);
-                _vault.ReleaseWriteLock(in _keysHandle, _owner);
+                if (mutationGuarded)
+                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 
@@ -1689,20 +1686,20 @@ namespace Hecton8.World
             if (!IsCreated || _vault == null)
                 return false;
 
-            bool keysLocked = _vault.TryAcquireWriteLock(in _keysHandle, _owner, out NativeArray<TKey> keys);
-            if (!keysLocked)
+            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            if (!mutationGuarded)
                 return false;
 
-            bool valuesLocked = false;
-            bool statesLocked = false;
-            bool countLocked = false;
             try
             {
-                valuesLocked = _vault.TryAcquireWriteLock(in _valuesHandle, _owner, out NativeArray<TValue> values);
-                statesLocked = _vault.TryAcquireWriteLock(in _statesHandle, _owner, out NativeArray<byte> states);
-                countLocked = _vault.TryAcquireWriteLock(in _countHandle, _owner, out NativeArray<int> count);
-                if (!valuesLocked || !statesLocked || !countLocked || count.Length <= 0)
+                if (!_vault.TryResolveHandle(in _keysHandle, out NativeArray<TKey> keys) ||
+                    !_vault.TryResolveHandle(in _valuesHandle, out NativeArray<TValue> values) ||
+                    !_vault.TryResolveHandle(in _statesHandle, out NativeArray<byte> states) ||
+                    !_vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
+                    count.Length <= 0)
+                {
                     return false;
+                }
 
                 int capacity = math.min(_capacity, math.min(keys.Length, math.min(values.Length, states.Length)));
                 if (capacity <= 0)
@@ -1752,13 +1749,8 @@ namespace Hecton8.World
             }
             finally
             {
-                if (countLocked)
-                    _vault.ReleaseWriteLock(in _countHandle, _owner);
-                if (statesLocked)
-                    _vault.ReleaseWriteLock(in _statesHandle, _owner);
-                if (valuesLocked)
-                    _vault.ReleaseWriteLock(in _valuesHandle, _owner);
-                _vault.ReleaseWriteLock(in _keysHandle, _owner);
+                if (mutationGuarded)
+                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 
@@ -1767,19 +1759,19 @@ namespace Hecton8.World
             if (!IsCreated || _vault == null)
                 return false;
 
-            if (!_vault.TryReadOnlyHandle(in _keysHandle, out NativeArray<TKey>.ReadOnly keys))
+            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            if (!mutationGuarded)
                 return false;
 
-            bool statesLocked = _vault.TryAcquireWriteLock(in _statesHandle, _owner, out NativeArray<byte> states);
-            if (!statesLocked)
-                return false;
-
-            bool countLocked = false;
             try
             {
-                countLocked = _vault.TryAcquireWriteLock(in _countHandle, _owner, out NativeArray<int> count);
-                if (!countLocked || count.Length <= 0)
+                if (!_vault.TryResolveHandle(in _keysHandle, out NativeArray<TKey> keys) ||
+                    !_vault.TryResolveHandle(in _statesHandle, out NativeArray<byte> states) ||
+                    !_vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
+                    count.Length <= 0)
+                {
                     return false;
+                }
 
                 int capacity = math.min(_capacity, math.min(keys.Length, states.Length));
                 if (capacity <= 0)
@@ -1808,9 +1800,8 @@ namespace Hecton8.World
             }
             finally
             {
-                if (countLocked)
-                    _vault.ReleaseWriteLock(in _countHandle, _owner);
-                _vault.ReleaseWriteLock(in _statesHandle, _owner);
+                if (mutationGuarded)
+                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 
@@ -2015,18 +2006,19 @@ namespace Hecton8.World
             if (!IsCreated || _vault == null)
                 return false;
 
-            bool keysLocked = _vault.TryAcquireWriteLock(in _keysHandle, _owner, out NativeArray<TKey> keys);
-            if (!keysLocked)
+            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            if (!mutationGuarded)
                 return false;
 
-            bool valuesLocked = false;
-            bool countLocked = false;
             try
             {
-                valuesLocked = _vault.TryAcquireWriteLock(in _valuesHandle, _owner, out NativeArray<TValue> values);
-                countLocked = _vault.TryAcquireWriteLock(in _countHandle, _owner, out NativeArray<int> count);
-                if (!valuesLocked || !countLocked || count.Length <= 0)
+                if (!_vault.TryResolveHandle(in _keysHandle, out NativeArray<TKey> keys) ||
+                    !_vault.TryResolveHandle(in _valuesHandle, out NativeArray<TValue> values) ||
+                    !_vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
+                    count.Length <= 0)
+                {
                     return false;
+                }
 
                 int length = math.clamp(count[0], 0, math.min(_capacity, math.min(keys.Length, values.Length)));
                 if (length >= _capacity || length >= keys.Length || length >= values.Length)
@@ -2039,11 +2031,8 @@ namespace Hecton8.World
             }
             finally
             {
-                if (countLocked)
-                    _vault.ReleaseWriteLock(in _countHandle, _owner);
-                if (valuesLocked)
-                    _vault.ReleaseWriteLock(in _valuesHandle, _owner);
-                _vault.ReleaseWriteLock(in _keysHandle, _owner);
+                if (mutationGuarded)
+                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 
@@ -2076,18 +2065,19 @@ namespace Hecton8.World
             if (!IsCreated || _vault == null)
                 return false;
 
-            bool keysLocked = _vault.TryAcquireWriteLock(in _keysHandle, _owner, out NativeArray<TKey> keys);
-            if (!keysLocked)
+            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            if (!mutationGuarded)
                 return false;
 
-            bool valuesLocked = false;
-            bool countLocked = false;
             try
             {
-                valuesLocked = _vault.TryAcquireWriteLock(in _valuesHandle, _owner, out NativeArray<TValue> values);
-                countLocked = _vault.TryAcquireWriteLock(in _countHandle, _owner, out NativeArray<int> count);
-                if (!valuesLocked || !countLocked || count.Length <= 0)
+                if (!_vault.TryResolveHandle(in _keysHandle, out NativeArray<TKey> keys) ||
+                    !_vault.TryResolveHandle(in _valuesHandle, out NativeArray<TValue> values) ||
+                    !_vault.TryResolveHandle(in _countHandle, out NativeArray<int> count) ||
+                    count.Length <= 0)
+                {
                     return false;
+                }
 
                 int length = math.clamp(count[0], 0, math.min(_capacity, math.min(keys.Length, values.Length)));
                 for (int i = 0; i < length; i++)
@@ -2108,11 +2098,8 @@ namespace Hecton8.World
             }
             finally
             {
-                if (countLocked)
-                    _vault.ReleaseWriteLock(in _countHandle, _owner);
-                if (valuesLocked)
-                    _vault.ReleaseWriteLock(in _valuesHandle, _owner);
-                _vault.ReleaseWriteLock(in _keysHandle, _owner);
+                if (mutationGuarded)
+                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
     }
@@ -2190,16 +2177,18 @@ namespace Hecton8.World
             if (!IsCreated || _vault == null)
                 return false;
 
-            bool valuesLocked = _vault.TryAcquireWriteLock(in _valuesHandle, _owner, out NativeArray<T> values);
-            if (!valuesLocked)
+            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            if (!mutationGuarded)
                 return false;
 
-            bool stateLocked = false;
             try
             {
-                stateLocked = _vault.TryAcquireWriteLock(in _stateHandle, _owner, out NativeArray<int> state);
-                if (!stateLocked || state.Length < 2)
+                if (!_vault.TryResolveHandle(in _valuesHandle, out NativeArray<T> values) ||
+                    !_vault.TryResolveHandle(in _stateHandle, out NativeArray<int> state) ||
+                    state.Length < 2)
+                {
                     return false;
+                }
 
                 int head = math.clamp(state[0], 0, _capacity - 1);
                 int count = math.clamp(state[1], 0, _capacity);
@@ -2214,9 +2203,8 @@ namespace Hecton8.World
             }
             finally
             {
-                if (stateLocked)
-                    _vault.ReleaseWriteLock(in _stateHandle, _owner);
-                _vault.ReleaseWriteLock(in _valuesHandle, _owner);
+                if (mutationGuarded)
+                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 
@@ -2226,16 +2214,18 @@ namespace Hecton8.World
             if (!IsCreated || _vault == null)
                 return false;
 
-            bool valuesLocked = _vault.TryAcquireWriteLock(in _valuesHandle, _owner, out NativeArray<T> values);
-            if (!valuesLocked)
+            bool mutationGuarded = _vault.TryAcquireMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
+            if (!mutationGuarded)
                 return false;
 
-            bool stateLocked = false;
             try
             {
-                stateLocked = _vault.TryAcquireWriteLock(in _stateHandle, _owner, out NativeArray<int> state);
-                if (!stateLocked || state.Length < 2)
+                if (!_vault.TryResolveHandle(in _valuesHandle, out NativeArray<T> values) ||
+                    !_vault.TryResolveHandle(in _stateHandle, out NativeArray<int> state) ||
+                    state.Length < 2)
+                {
                     return false;
+                }
 
                 int head = math.clamp(state[0], 0, _capacity - 1);
                 int count = math.clamp(state[1], 0, _capacity);
@@ -2250,9 +2240,8 @@ namespace Hecton8.World
             }
             finally
             {
-                if (stateLocked)
-                    _vault.ReleaseWriteLock(in _stateHandle, _owner);
-                _vault.ReleaseWriteLock(in _valuesHandle, _owner);
+                if (mutationGuarded)
+                    _vault.ReleaseMutationGuard(PersistentWorldVaultMutationGuards.CollectionMutationGuardMask);
             }
         }
 

@@ -91,6 +91,7 @@ namespace Hecton8.World
         private const uint ChunkFadeMaterialMissingWarningHash = 0xBBEEF2CDu;
         private const uint ChunkFadeMaterialPoolMissingWarningHash = 0x8D4A6E29u;
         private const uint ChunkFadePendingQueueFullWarningHash = 0x6F9D2C41u;
+        private const uint VolumeDespawnPendingQueueFullWarningHash = 0xBA71E4D3u;
         // COLD ALLOC: Material[32] - pooled voxel chunk fade material clones; owner: HectonVoxelStreamingBridge.
         private readonly Material[] _chunkFadeMaterialPool = new Material[MaxChunkFadeStateCapacity];
         // COLD ALLOC: bool[32] - pooled fade material occupancy flags; owner: HectonVoxelStreamingBridge.
@@ -366,9 +367,8 @@ namespace Hecton8.World
         {
             if (_pendingDespawnKeyCount >= _pendingDespawnKeys.Length)
             {
-                FlushPendingDespawns();
-                if (_pendingDespawnKeyCount >= _pendingDespawnKeys.Length)
-                    return;
+                PublishChunkFadeWarning(VolumeDespawnPendingQueueFullWarningHash, key, 1f);
+                return;
             }
 
             _pendingDespawnKeys[_pendingDespawnKeyCount++] = key;
