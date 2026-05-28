@@ -3767,7 +3767,8 @@ namespace Hecton8.Physics
                 return math.saturate(globalWeight);
 
             float tierOrdinal = math.clamp((int)TetherManager.SanitizeQualityTier(qualityTier), (int)HectonQualityTier.Low, (int)HectonQualityTier.Ultra);
-            return math.saturate((tierOrdinal - (int)HectonQualityTier.Low) * math.rcp((int)HectonQualityTier.Ultra - (int)HectonQualityTier.Low));
+            const float qualityTierRange = (int)HectonQualityTier.Ultra - (int)HectonQualityTier.Low;
+            return math.saturate((tierOrdinal - (int)HectonQualityTier.Low) * math.rcp(qualityTierRange));
         }
 
         private static float Smooth01(float value)

@@ -115,6 +115,7 @@ namespace Hecton8.Tests.Editor
 
             Assert.That(source, Does.Contain("ResolveTautLineVisualCurveWeight"));
             Assert.That(source, Does.Contain("math.lerp(straightPoint, _verletPositions[i], curveWeight01)"));
+            Assert.That(source, Does.Contain("const float qualityTierRange"));
             Assert.That(source, Does.Not.Contain("ShouldUseLowTierTautLineVisualFake"));
             Assert.That(source, Does.Not.Contain("return collapseWeight > 0f"));
             Assert.That(source, Does.Not.Contain("switch (TetherManager.SanitizeQualityTier"));

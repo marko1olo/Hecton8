@@ -1,8 +1,8 @@
 ﻿{
-    "generatedAt":  "2026-05-28T21:45:33.2574162+04:00",
+    "generatedAt":  "2026-05-28T22:19:23.5575283+04:00",
     "agent":  "1401",
-    "scope":  "modified production hot/event methods after Candice animation/VFX/player override continuation",
-    "methodCount":  61,
+    "scope":  "modified production hot/event methods after Candice drop/timer continuation",
+    "methodCount":  78,
     "totals":  {
                    "hotNewReferenceTypeCount":  0,
                    "valueTypeNewCount":  14,
@@ -1360,6 +1360,380 @@
                         "arrayResizeCount":  0,
                         "findWithTagCount":  0,
                         "throwNewExceptionCount":  0
+                    },
+                    {
+                        "file":  "Assets/Candice AI for Games/Scripts/TriggerNextScene.cs",
+                        "method":  "Update",
+                        "startLine":  47,
+                        "endLine":  64,
+                        "newReferenceTypeCount":  0,
+                        "valueTypeNewCount":  0,
+                        "newTypes":  [
+
+                                     ],
+                        "stringFormatCount":  0,
+                        "toStringCount":  0,
+                        "linqQueryTokenCount":  0,
+                        "foreachCount":  0,
+                        "instantiateCount":  0,
+                        "destroyCount":  0,
+                        "startCoroutineCount":  0,
+                        "sendMessageCount":  0,
+                        "arrayResizeCount":  0,
+                        "findWithTagCount":  0,
+                        "throwNewExceptionCount":  0
+                    },
+                    {
+                        "file":  "Assets/Candice AI for Games/Scripts/TriggerNextScene.cs",
+                        "method":  "OnTriggerEnter",
+                        "startLine":  77,
+                        "endLine":  91,
+                        "newReferenceTypeCount":  0,
+                        "valueTypeNewCount":  0,
+                        "newTypes":  [
+
+                                     ],
+                        "stringFormatCount":  0,
+                        "toStringCount":  0,
+                        "linqQueryTokenCount":  0,
+                        "foreachCount":  0,
+                        "instantiateCount":  0,
+                        "destroyCount":  0,
+                        "startCoroutineCount":  0,
+                        "sendMessageCount":  0,
+                        "arrayResizeCount":  0,
+                        "findWithTagCount":  0,
+                        "throwNewExceptionCount":  0
+                    },
+                    {
+                        "file":  "Assets/Candice AI for Games/Scripts/TriggerNextScene.cs",
+                        "method":  "OnCollisionEnter",
+                        "startLine":  93,
+                        "endLine":  105,
+                        "newReferenceTypeCount":  0,
+                        "valueTypeNewCount":  0,
+                        "newTypes":  [
+
+                                     ],
+                        "stringFormatCount":  0,
+                        "toStringCount":  0,
+                        "linqQueryTokenCount":  0,
+                        "foreachCount":  0,
+                        "instantiateCount":  0,
+                        "destroyCount":  0,
+                        "startCoroutineCount":  0,
+                        "sendMessageCount":  0,
+                        "arrayResizeCount":  0,
+                        "findWithTagCount":  0,
+                        "throwNewExceptionCount":  0
+                    },
+                    {
+                        "file":  "Assets/Candice AI for Games/Scripts/TriggerNextScene.cs",
+                        "method":  "ScheduleLoadNextScene",
+                        "startLine":  41,
+                        "endLine":  49,
+                        "newReferenceTypeCount":  0,
+                        "valueTypeNewCount":  0,
+                        "newTypes":  [
+
+                                     ],
+                        "stringFormatCount":  0,
+                        "toStringCount":  0,
+                        "linqQueryTokenCount":  0,
+                        "foreachCount":  0,
+                        "instantiateCount":  0,
+                        "destroyCount":  0,
+                        "startCoroutineCount":  0,
+                        "sendMessageCount":  0,
+                        "arrayResizeCount":  0,
+                        "findWithTagCount":  0,
+                        "throwNewExceptionCount":  0
+                    },
+                    {
+                        "file":  "Assets/Candice AI for Games/Scripts/TimedDestroy.cs",
+                        "method":  "Update",
+                        "startLine":  18,
+                        "endLine":  25,
+                        "newReferenceTypeCount":  0,
+                        "valueTypeNewCount":  0,
+                        "newTypes":  [
+
+                                     ],
+                        "stringFormatCount":  0,
+                        "toStringCount":  0,
+                        "linqQueryTokenCount":  0,
+                        "foreachCount":  0,
+                        "instantiateCount":  0,
+                        "destroyCount":  0,
+                        "startCoroutineCount":  0,
+                        "sendMessageCount":  0,
+                        "arrayResizeCount":  0,
+                        "findWithTagCount":  0,
+                        "throwNewExceptionCount":  0
+                    },
+                    {
+                        "file":  "Assets/Candice AI for Games/Scripts/Libs/Utilities/SelfDestruct.cs",
+                        "method":  "Update",
+                        "startLine":  17,
+                        "endLine":  24,
+                        "newReferenceTypeCount":  0,
+                        "valueTypeNewCount":  0,
+                        "newTypes":  [
+
+                                     ],
+                        "stringFormatCount":  0,
+                        "toStringCount":  0,
+                        "linqQueryTokenCount":  0,
+                        "foreachCount":  0,
+                        "instantiateCount":  0,
+                        "destroyCount":  0,
+                        "startCoroutineCount":  0,
+                        "sendMessageCount":  0,
+                        "arrayResizeCount":  0,
+                        "findWithTagCount":  0,
+                        "throwNewExceptionCount":  0
+                    },
+                    {
+                        "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Inventory/CandiceDrop.cs",
+                        "method":  "Update",
+                        "startLine":  162,
+                        "endLine":  167,
+                        "newReferenceTypeCount":  0,
+                        "valueTypeNewCount":  0,
+                        "newTypes":  [
+
+                                     ],
+                        "stringFormatCount":  0,
+                        "toStringCount":  0,
+                        "linqQueryTokenCount":  0,
+                        "foreachCount":  0,
+                        "instantiateCount":  0,
+                        "destroyCount":  0,
+                        "startCoroutineCount":  0,
+                        "sendMessageCount":  0,
+                        "arrayResizeCount":  0,
+                        "findWithTagCount":  0,
+                        "throwNewExceptionCount":  0
+                    },
+                    {
+                        "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Inventory/CandiceDrop.cs",
+                        "method":  "AssessDrop",
+                        "startLine":  74,
+                        "endLine":  159,
+                        "newReferenceTypeCount":  0,
+                        "valueTypeNewCount":  0,
+                        "newTypes":  [
+
+                                     ],
+                        "stringFormatCount":  0,
+                        "toStringCount":  0,
+                        "linqQueryTokenCount":  0,
+                        "foreachCount":  0,
+                        "instantiateCount":  0,
+                        "destroyCount":  0,
+                        "startCoroutineCount":  0,
+                        "sendMessageCount":  0,
+                        "arrayResizeCount":  0,
+                        "findWithTagCount":  0,
+                        "throwNewExceptionCount":  0
+                    },
+                    {
+                        "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Inventory/CandiceDrop.cs",
+                        "method":  "OnTriggerEnter",
+                        "startLine":  169,
+                        "endLine":  175,
+                        "newReferenceTypeCount":  0,
+                        "valueTypeNewCount":  0,
+                        "newTypes":  [
+
+                                     ],
+                        "stringFormatCount":  0,
+                        "toStringCount":  0,
+                        "linqQueryTokenCount":  0,
+                        "foreachCount":  0,
+                        "instantiateCount":  0,
+                        "destroyCount":  0,
+                        "startCoroutineCount":  0,
+                        "sendMessageCount":  0,
+                        "arrayResizeCount":  0,
+                        "findWithTagCount":  0,
+                        "throwNewExceptionCount":  0
+                    },
+                    {
+                        "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Inventory/CandiceDrop.cs",
+                        "method":  "ActivateVfx",
+                        "startLine":  155,
+                        "endLine":  163,
+                        "newReferenceTypeCount":  0,
+                        "valueTypeNewCount":  0,
+                        "newTypes":  [
+
+                                     ],
+                        "stringFormatCount":  0,
+                        "toStringCount":  0,
+                        "linqQueryTokenCount":  0,
+                        "foreachCount":  0,
+                        "instantiateCount":  0,
+                        "destroyCount":  0,
+                        "startCoroutineCount":  0,
+                        "sendMessageCount":  0,
+                        "arrayResizeCount":  0,
+                        "findWithTagCount":  0,
+                        "throwNewExceptionCount":  0
+                    },
+                    {
+                        "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Inventory/CandiceDrop.cs",
+                        "method":  "ProcessVfxTimers",
+                        "startLine":  164,
+                        "endLine":  169,
+                        "newReferenceTypeCount":  0,
+                        "valueTypeNewCount":  0,
+                        "newTypes":  [
+
+                                     ],
+                        "stringFormatCount":  0,
+                        "toStringCount":  0,
+                        "linqQueryTokenCount":  0,
+                        "foreachCount":  0,
+                        "instantiateCount":  0,
+                        "destroyCount":  0,
+                        "startCoroutineCount":  0,
+                        "sendMessageCount":  0,
+                        "arrayResizeCount":  0,
+                        "findWithTagCount":  0,
+                        "throwNewExceptionCount":  0
+                    },
+                    {
+                        "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Inventory/CandiceDrop.cs",
+                        "method":  "ScheduleRevert",
+                        "startLine":  121,
+                        "endLine":  126,
+                        "newReferenceTypeCount":  0,
+                        "valueTypeNewCount":  0,
+                        "newTypes":  [
+
+                                     ],
+                        "stringFormatCount":  0,
+                        "toStringCount":  0,
+                        "linqQueryTokenCount":  0,
+                        "foreachCount":  0,
+                        "instantiateCount":  0,
+                        "destroyCount":  0,
+                        "startCoroutineCount":  0,
+                        "sendMessageCount":  0,
+                        "arrayResizeCount":  0,
+                        "findWithTagCount":  0,
+                        "throwNewExceptionCount":  0
+                    },
+                    {
+                        "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Inventory/CandiceDrop.cs",
+                        "method":  "ProcessRevert",
+                        "startLine":  165,
+                        "endLine":  169,
+                        "newReferenceTypeCount":  0,
+                        "valueTypeNewCount":  0,
+                        "newTypes":  [
+
+                                     ],
+                        "stringFormatCount":  0,
+                        "toStringCount":  0,
+                        "linqQueryTokenCount":  0,
+                        "foreachCount":  0,
+                        "instantiateCount":  0,
+                        "destroyCount":  0,
+                        "startCoroutineCount":  0,
+                        "sendMessageCount":  0,
+                        "arrayResizeCount":  0,
+                        "findWithTagCount":  0,
+                        "throwNewExceptionCount":  0
+                    },
+                    {
+                        "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Inventory/CandiceDrop.cs",
+                        "method":  "ConsumeDrop",
+                        "startLine":  157,
+                        "endLine":  163,
+                        "newReferenceTypeCount":  0,
+                        "valueTypeNewCount":  0,
+                        "newTypes":  [
+
+                                     ],
+                        "stringFormatCount":  0,
+                        "toStringCount":  0,
+                        "linqQueryTokenCount":  0,
+                        "foreachCount":  0,
+                        "instantiateCount":  0,
+                        "destroyCount":  0,
+                        "startCoroutineCount":  0,
+                        "sendMessageCount":  0,
+                        "arrayResizeCount":  0,
+                        "findWithTagCount":  0,
+                        "throwNewExceptionCount":  0
+                    },
+                    {
+                        "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Inventory/CandiceDrop.cs",
+                        "method":  "ProcessDeactivate",
+                        "startLine":  166,
+                        "endLine":  169,
+                        "newReferenceTypeCount":  0,
+                        "valueTypeNewCount":  0,
+                        "newTypes":  [
+
+                                     ],
+                        "stringFormatCount":  0,
+                        "toStringCount":  0,
+                        "linqQueryTokenCount":  0,
+                        "foreachCount":  0,
+                        "instantiateCount":  0,
+                        "destroyCount":  0,
+                        "startCoroutineCount":  0,
+                        "sendMessageCount":  0,
+                        "arrayResizeCount":  0,
+                        "findWithTagCount":  0,
+                        "throwNewExceptionCount":  0
+                    },
+                    {
+                        "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Inventory/CandiceDrop.cs",
+                        "method":  "SetDropCollisionEnabled",
+                        "startLine":  69,
+                        "endLine":  75,
+                        "newReferenceTypeCount":  0,
+                        "valueTypeNewCount":  0,
+                        "newTypes":  [
+
+                                     ],
+                        "stringFormatCount":  0,
+                        "toStringCount":  0,
+                        "linqQueryTokenCount":  0,
+                        "foreachCount":  0,
+                        "instantiateCount":  0,
+                        "destroyCount":  0,
+                        "startCoroutineCount":  0,
+                        "sendMessageCount":  0,
+                        "arrayResizeCount":  0,
+                        "findWithTagCount":  0,
+                        "throwNewExceptionCount":  0
+                    },
+                    {
+                        "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Inventory/CandiceDrop.cs",
+                        "method":  "SetDropVisualEnabled",
+                        "startLine":  70,
+                        "endLine":  75,
+                        "newReferenceTypeCount":  0,
+                        "valueTypeNewCount":  0,
+                        "newTypes":  [
+
+                                     ],
+                        "stringFormatCount":  0,
+                        "toStringCount":  0,
+                        "linqQueryTokenCount":  0,
+                        "foreachCount":  0,
+                        "instantiateCount":  0,
+                        "destroyCount":  0,
+                        "startCoroutineCount":  0,
+                        "sendMessageCount":  0,
+                        "arrayResizeCount":  0,
+                        "findWithTagCount":  0,
+                        "throwNewExceptionCount":  0
                     }
                 ],
     "coldAllocationExceptions":  [
@@ -1390,6 +1764,26 @@
                                          "reason":  "Legacy coroutine API kept for compatibility; CandiceAnimationManager hot path no longer calls StartCoroutine/GenericCombo",
                                          "allowedNewTokens":  [
                                                                   "WaitForSeconds"
+                                                              ]
+                                     },
+                                     {
+                                         "file":  "Assets/Candice AI for Games/Scripts/TriggerNextScene.cs",
+                                         "method":  "BuildCountdownLabels",
+                                         "reason":  "COLD countdown string cache; Update/trigger methods do not call ToString or StartCoroutine",
+                                         "allowedNewTokens":  [
+                                                                  "string[]"
+                                                              ]
+                                     },
+                                     {
+                                         "file":  "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Inventory/CandiceDrop.cs",
+                                         "method":  "Start/CacheDropComponents",
+                                         "reason":  "COLD drop component and VFX slot snapshots only",
+                                         "allowedNewTokens":  [
+                                                                  "CandiceUI",
+                                                                  "Transform[]",
+                                                                  "float[]",
+                                                                  "Renderer[]",
+                                                                  "Collider[]"
                                                               ]
                                      }
                                  ],
