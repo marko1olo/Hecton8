@@ -6090,113 +6090,37 @@ namespace Hecton8.Construction
             if (!EnsureGraphHandles(safeNodeLength, safeEdgeLength))
                 return false;
 
-            int acquiredCount = 0;
-            IDataVault ignoredVault;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatGraphNodesBufferId,
-                    safeNodeLength,
-                    in _nodesHandle,
-                    out graph.Nodes,
-                    out vault))
-                return false;
-
-            acquiredCount++;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatGraphEdgeOffsetsBufferId,
-                    safeNodeLength + 1,
-                    in _edgeOffsetsHandle,
-                    out graph.EdgeOffsets,
-                    out ignoredVault))
+            vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(HabitatGraphMutationGuardMask))
             {
-                ReleaseGraphWriteLocks(vault, acquiredCount);
+                vault = null;
                 return false;
             }
 
-            acquiredCount++;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatGraphEdgeDestinationsBufferId,
-                    safeEdgeLength,
-                    in _edgeDestinationsHandle,
-                    out graph.EdgeDestinations,
-                    out ignoredVault))
+            bool acquired = false;
+            try
             {
-                ReleaseGraphWriteLocks(vault, acquiredCount);
-                return false;
+                acquired =
+                    TryOpenHabitatVaultBuffer(vault, in _nodesHandle, HabitatGraphNodesBufferId, safeNodeLength, out graph.Nodes) &&
+                    TryOpenHabitatVaultBuffer(vault, in _edgeOffsetsHandle, HabitatGraphEdgeOffsetsBufferId, safeNodeLength + 1, out graph.EdgeOffsets) &&
+                    TryOpenHabitatVaultBuffer(vault, in _edgeDestinationsHandle, HabitatGraphEdgeDestinationsBufferId, safeEdgeLength, out graph.EdgeDestinations) &&
+                    TryOpenHabitatVaultBuffer(vault, in _edgeResistanceHandle, HabitatGraphEdgeResistanceBufferId, safeEdgeLength, out graph.EdgeResistance) &&
+                    TryOpenHabitatVaultBuffer(vault, in _edgeWriteCursorHandle, HabitatGraphEdgeWriteCursorBufferId, safeNodeLength, out graph.EdgeWriteCursor) &&
+                    TryOpenHabitatVaultBuffer(vault, in _anchorReachabilityHandle, HabitatGraphAnchorReachabilityBufferId, safeNodeLength, out graph.AnchorReachability) &&
+                    TryOpenHabitatVaultBuffer(vault, in _traversalVisitedHandle, HabitatGraphTraversalVisitedBufferId, safeNodeLength, out graph.TraversalVisited) &&
+                    TryOpenHabitatVaultBuffer(vault, in _anchorTraversalQueueHandle, HabitatGraphAnchorTraversalQueueBufferId, safeNodeLength, out graph.AnchorTraversalQueue) &&
+                    TryOpenHabitatVaultBuffer(vault, in _edgeFlagsHandle, HabitatGraphEdgeFlagsBufferId, safeEdgeLength, out graph.EdgeFlags);
+                return acquired;
             }
-
-            acquiredCount++;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatGraphEdgeResistanceBufferId,
-                    safeEdgeLength,
-                    in _edgeResistanceHandle,
-                    out graph.EdgeResistance,
-                    out ignoredVault))
+            finally
             {
-                ReleaseGraphWriteLocks(vault, acquiredCount);
-                return false;
+                if (!acquired)
+                {
+                    vault.ReleaseMutationGuard(HabitatGraphMutationGuardMask);
+                    graph = default;
+                    vault = null;
+                }
             }
-
-            acquiredCount++;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatGraphEdgeWriteCursorBufferId,
-                    safeNodeLength,
-                    in _edgeWriteCursorHandle,
-                    out graph.EdgeWriteCursor,
-                    out ignoredVault))
-            {
-                ReleaseGraphWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatGraphAnchorReachabilityBufferId,
-                    safeNodeLength,
-                    in _anchorReachabilityHandle,
-                    out graph.AnchorReachability,
-                    out ignoredVault))
-            {
-                ReleaseGraphWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatGraphTraversalVisitedBufferId,
-                    safeNodeLength,
-                    in _traversalVisitedHandle,
-                    out graph.TraversalVisited,
-                    out ignoredVault))
-            {
-                ReleaseGraphWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatGraphAnchorTraversalQueueBufferId,
-                    safeNodeLength,
-                    in _anchorTraversalQueueHandle,
-                    out graph.AnchorTraversalQueue,
-                    out ignoredVault))
-            {
-                ReleaseGraphWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            acquiredCount++;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatGraphEdgeFlagsBufferId,
-                    safeEdgeLength,
-                    in _edgeFlagsHandle,
-                    out graph.EdgeFlags,
-                    out ignoredVault))
-            {
-                ReleaseGraphWriteLocks(vault, acquiredCount);
-                return false;
-            }
-
-            return true;
         }
 
         private bool TryAcquireFloodGraphJobBuffers(
@@ -6212,53 +6136,32 @@ namespace Hecton8.Construction
             if (!EnsureGraphHandles(safeNodeLength, safeEdgeLength))
                 return false;
 
-            int acquiredCount = 0;
-            IDataVault ignoredVault;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatGraphEdgeOffsetsBufferId,
-                    safeNodeLength + 1,
-                    in _edgeOffsetsHandle,
-                    out graph.EdgeOffsets,
-                    out vault))
-                return false;
-
-            acquiredCount++;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatGraphEdgeDestinationsBufferId,
-                    safeEdgeLength,
-                    in _edgeDestinationsHandle,
-                    out graph.EdgeDestinations,
-                    out ignoredVault))
+            vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(HabitatGraphMutationGuardMask))
             {
-                ReleaseFloodGraphWriteLocks(vault, acquiredCount);
+                vault = null;
                 return false;
             }
 
-            acquiredCount++;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatGraphEdgeResistanceBufferId,
-                    safeEdgeLength,
-                    in _edgeResistanceHandle,
-                    out graph.EdgeResistance,
-                    out ignoredVault))
+            bool acquired = false;
+            try
             {
-                ReleaseFloodGraphWriteLocks(vault, acquiredCount);
-                return false;
+                acquired =
+                    TryOpenHabitatVaultBuffer(vault, in _edgeOffsetsHandle, HabitatGraphEdgeOffsetsBufferId, safeNodeLength + 1, out graph.EdgeOffsets) &&
+                    TryOpenHabitatVaultBuffer(vault, in _edgeDestinationsHandle, HabitatGraphEdgeDestinationsBufferId, safeEdgeLength, out graph.EdgeDestinations) &&
+                    TryOpenHabitatVaultBuffer(vault, in _edgeResistanceHandle, HabitatGraphEdgeResistanceBufferId, safeEdgeLength, out graph.EdgeResistance) &&
+                    TryOpenHabitatVaultBuffer(vault, in _edgeFlagsHandle, HabitatGraphEdgeFlagsBufferId, safeEdgeLength, out graph.EdgeFlags);
+                return acquired;
             }
-
-            acquiredCount++;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatGraphEdgeFlagsBufferId,
-                    safeEdgeLength,
-                    in _edgeFlagsHandle,
-                    out graph.EdgeFlags,
-                    out ignoredVault))
+            finally
             {
-                ReleaseFloodGraphWriteLocks(vault, acquiredCount);
-                return false;
+                if (!acquired)
+                {
+                    vault.ReleaseMutationGuard(HabitatGraphMutationGuardMask);
+                    graph = default;
+                    vault = null;
+                }
             }
-
-            return true;
         }
 
         private void ReleaseGraphWriteLocks(IDataVault vault)
@@ -6271,24 +6174,7 @@ namespace Hecton8.Construction
             if (vault == null || acquiredCount <= 0)
                 return;
 
-            if (acquiredCount >= 9)
-                vault.ReleaseWriteLock(in _edgeFlagsHandle, SystemID.Construction);
-            if (acquiredCount >= 8)
-                vault.ReleaseWriteLock(in _anchorTraversalQueueHandle, SystemID.Construction);
-            if (acquiredCount >= 7)
-                vault.ReleaseWriteLock(in _traversalVisitedHandle, SystemID.Construction);
-            if (acquiredCount >= 6)
-                vault.ReleaseWriteLock(in _anchorReachabilityHandle, SystemID.Construction);
-            if (acquiredCount >= 5)
-                vault.ReleaseWriteLock(in _edgeWriteCursorHandle, SystemID.Construction);
-            if (acquiredCount >= 4)
-                vault.ReleaseWriteLock(in _edgeResistanceHandle, SystemID.Construction);
-            if (acquiredCount >= 3)
-                vault.ReleaseWriteLock(in _edgeDestinationsHandle, SystemID.Construction);
-            if (acquiredCount >= 2)
-                vault.ReleaseWriteLock(in _edgeOffsetsHandle, SystemID.Construction);
-            if (acquiredCount >= 1)
-                vault.ReleaseWriteLock(in _nodesHandle, SystemID.Construction);
+            vault.ReleaseMutationGuard(HabitatGraphMutationGuardMask);
         }
 
         private void ReleaseFloodGraphWriteLocks(IDataVault vault, int acquiredCount)
@@ -6296,14 +6182,7 @@ namespace Hecton8.Construction
             if (vault == null || acquiredCount <= 0)
                 return;
 
-            if (acquiredCount >= 4)
-                vault.ReleaseWriteLock(in _edgeFlagsHandle, SystemID.Construction);
-            if (acquiredCount >= 3)
-                vault.ReleaseWriteLock(in _edgeResistanceHandle, SystemID.Construction);
-            if (acquiredCount >= 2)
-                vault.ReleaseWriteLock(in _edgeDestinationsHandle, SystemID.Construction);
-            if (acquiredCount >= 1)
-                vault.ReleaseWriteLock(in _edgeOffsetsHandle, SystemID.Construction);
+            vault.ReleaseMutationGuard(HabitatGraphMutationGuardMask);
         }
 
         private void ReleaseFloodPropagationGraphWriteLocks()
