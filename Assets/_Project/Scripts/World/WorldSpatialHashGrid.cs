@@ -239,11 +239,13 @@ namespace Hecton8.World
         private static bool _hasLastFarUnloadPlayerAup;
         private static int _lastValidationFrame = -ValidationCadenceFrames;
         private static bool _lastResultBufferSaturated;
+        private static bool _lastStaleHandleObserved;
 
         internal static int ActiveEntityCount => _nativeHash != null ? _nativeHash.EntryCount : _entryCount;
         internal static HectonSpatialHash.QueryStats LastNativeQueryStats => _nativeHash != null ? _nativeHash.LastQueryStats : default;
         internal static bool LastNativeQuerySaturated => _nativeHash != null && _nativeHash.LastQueryStats.IsSaturated;
         internal static bool LastResultBufferSaturated => _lastResultBufferSaturated;
+        internal static bool LastStaleHandleObserved => _lastStaleHandleObserved;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -269,6 +271,7 @@ namespace Hecton8.World
             _lastAcousticDensityFrame = -AcousticDensityMapCadenceFrames;
             _transientSignalWriteIndex = 0;
             _lastResultBufferSaturated = false;
+            _lastStaleHandleObserved = false;
             for (int i = 0; i < _transientSignals.Length; i++)
                 _transientSignals[i] = default;
         }
@@ -797,13 +800,13 @@ namespace Hecton8.World
                 int handle = _queryHandles[i];
                 if (!TryGetEntry(handle, out Entry entry))
                 {
-                    DropNativeOnlyHandle(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
                 if (!IsEntryQueryEligible(entry))
                 {
-                    Unregister(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
@@ -898,13 +901,13 @@ namespace Hecton8.World
                 int handle = _queryHandles[i];
                 if (!TryGetEntry(handle, out Entry entry))
                 {
-                    DropNativeOnlyHandle(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
                 if (!IsEntryQueryEligible(entry))
                 {
-                    Unregister(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
@@ -997,13 +1000,13 @@ namespace Hecton8.World
                 int handle = _queryHandles[i];
                 if (!TryGetEntry(handle, out Entry entry))
                 {
-                    DropNativeOnlyHandle(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
                 if (!IsEntryQueryEligible(entry))
                 {
-                    Unregister(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
@@ -1169,13 +1172,13 @@ namespace Hecton8.World
                 int handle = _queryHandles[i];
                 if (!TryGetEntry(handle, out Entry entry))
                 {
-                    DropNativeOnlyHandle(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
                 if (!IsEntryQueryEligible(entry))
                 {
-                    Unregister(handle);
+                    MarkStaleHandleObserved();
                     continue;
                 }
 
@@ -1673,14 +1676,6 @@ namespace Hecton8.World
                 : 0UL;
         }
 
-        private static void DropNativeOnlyHandle(int handle)
-        {
-            if (handle <= 0 || _nativeHash == null)
-                return;
-
-            _nativeHash.Unregister(handle);
-        }
-
         private static int CollectCandidateHandles(Vector3 origin, float radius, SpatialTargetKind kindMask, ulong interactionFilter = 0UL)
         {
             ResetQueryTelemetry();
@@ -1703,8 +1698,14 @@ namespace Hecton8.World
         private static void ResetQueryTelemetry()
         {
             _lastResultBufferSaturated = false;
+            _lastStaleHandleObserved = false;
             if (_nativeHash != null)
                 _nativeHash.ClearLastQueryStats();
+        }
+
+        private static void MarkStaleHandleObserved()
+        {
+            _lastStaleHandleObserved = true;
         }
 
         private static bool IsEntryQueryEligible(Entry entry)

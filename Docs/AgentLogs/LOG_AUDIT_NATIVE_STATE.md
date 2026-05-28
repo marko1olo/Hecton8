@@ -2251,3 +2251,27 @@ Verification:
 - `ReleaseVisorVaultHandle` is still guarded by `IsVisorVaultHandle`.
 - `git diff --check -- DiegeticVisorLensRuntime.cs` reports only existing LF/CRLF warning.
 - Build/import/profiler/native-ledger proof blocked by external `dotnet` PIDs `32028` and `33780`, CPU `100%`.
+
+## 2026-05-28 - Volumetric Particulate Fog Native Lifecycle Pass
+
+What was wrong:
+- `VolumetricFogPass` used nonzero `BufferID` and raw Vault calls for four owned `SystemID.Vfx` fog lanes.
+- `ReleaseVaultHandles` could release stale or foreign descriptors through `_vault`.
+- Read/write/dump paths did not consistently prove expected buffer, owner, and generation before resolving or locking.
+
+What was done:
+- Added owner-filtered helpers for fog params, point lights, telemetry ring, and extinction profiles.
+- Read, write-lock, release, dump, and `HasNativeState` paths now require expected `BufferID`, `SystemID.Vfx`, and generation.
+- Invalid handles are replaced by allocation without releasing foreign descriptors.
+
+Cinematic cheats used:
+- None. Existing Dear Lie proxy, raymarch scale, RenderGraph textures, and point-light GPU upload behavior are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us; fix is descriptor validation and cold release hygiene only.
+
+Verification:
+- Grep for raw private-handle `TryReadOnlyHandle`, `TryAcquireWriteLock`, `ReleaseBuffer`, direct `_vault = GlobalRegistry.DataVault/currentService`, and old `BufferID == 0u` gates returns no hits.
+- `git diff --check -- HectonVolumetricParticulateFogFeature.cs` reports only existing LF/CRLF warning.
+- Build/import/profiler/native-ledger proof blocked by external `dotnet` PID `66408`, CPU `85%`.

@@ -197,7 +197,7 @@ namespace Hecton8.SaveSystem
             public NativeArray<byte> SavePayloadBuffer;
             public NativeArray<byte> CompressedSaveBuffer;
             public NativeArray<byte> SaveStagingBuffer;
-            public NativeArray<byte> WfcOutpostGrid;
+            public VaultGenerationHandle<byte> WfcOutpostGridHandle;
             public NativeArray<ulong> WfcOutpostPackedWords;
             public NativeArray<ulong> WfcOutpostRestoreWords;
             public NativeArray<byte> WfcOutpostPayloadBuffer;
@@ -326,7 +326,7 @@ namespace Hecton8.SaveSystem
                 DisposeNativeArrayBestEffort(ref SavePayloadBuffer, ref firstException, sentinelLabel: nameof(SavePayloadBuffer));
                 DisposeNativeArrayBestEffort(ref CompressedSaveBuffer, ref firstException, sentinelLabel: nameof(CompressedSaveBuffer));
                 DisposeNativeArrayBestEffort(ref SaveStagingBuffer, ref firstException, sentinelLabel: nameof(SaveStagingBuffer));
-                WfcOutpostGrid = default;
+                WfcOutpostGridHandle = default;
                 DisposeNativeArrayBestEffort(ref WfcOutpostPackedWords, ref firstException, sentinelLabel: nameof(WfcOutpostPackedWords));
                 DisposeNativeArrayBestEffort(ref WfcOutpostRestoreWords, ref firstException, sentinelLabel: nameof(WfcOutpostRestoreWords));
                 DisposeNativeArrayBestEffort(ref WfcOutpostPayloadBuffer, ref firstException, sentinelLabel: nameof(WfcOutpostPayloadBuffer));
@@ -522,7 +522,7 @@ namespace Hecton8.SaveSystem
         private ref NativeArray<byte> _savePayloadBuffer => ref _nativeBuffers.SavePayloadBuffer;
         private ref NativeArray<byte> _compressedSaveBuffer => ref _nativeBuffers.CompressedSaveBuffer;
         private ref NativeArray<byte> _saveStagingBuffer => ref _nativeBuffers.SaveStagingBuffer;
-        private ref NativeArray<byte> _wfcOutpostGrid => ref _nativeBuffers.WfcOutpostGrid;
+        private ref VaultGenerationHandle<byte> _wfcOutpostGridHandle => ref _nativeBuffers.WfcOutpostGridHandle;
         private ref NativeArray<ulong> _wfcOutpostPackedWords => ref _nativeBuffers.WfcOutpostPackedWords;
         private ref NativeArray<ulong> _wfcOutpostRestoreWords => ref _nativeBuffers.WfcOutpostRestoreWords;
         private ref NativeArray<byte> _wfcOutpostPayloadBuffer => ref _nativeBuffers.WfcOutpostPayloadBuffer;
@@ -1443,7 +1443,7 @@ namespace Hecton8.SaveSystem
             if (!_wfcOutpostDependenciesReady)
                 ResetWfcOutpostSectorCaches(clearMutableGrid: !dataVaultChanged && _dataVault != null);
 
-            TryEnsureWfcOutpostGrid(out _);
+            TryEnsureWfcOutpostGridHandle(out _);
         }
 
         private bool TryResolveWfcOutpostMacroDatabase(out IMacroDatabaseService macroDatabase)
@@ -1452,39 +1452,76 @@ namespace Hecton8.SaveSystem
             return macroDatabase != null && macroDatabase.IsOpen;
         }
 
-        private bool TryEnsureWfcOutpostGrid(out NativeArray<byte> wfcGrid)
+        private bool TryEnsureWfcOutpostGridHandle(out VaultGenerationHandle<byte> wfcGridHandle)
         {
-            wfcGrid = default;
+            wfcGridHandle = default;
             IDataVault dataVault = _dataVault;
             if (dataVault == null)
             {
+                _wfcOutpostGridHandle = default;
                 _wfcOutpostDependenciesReady = false;
                 return false;
             }
 
-            VaultGenerationHandle<byte> wfcGridHandle = dataVault.EnsureGenerationHandle<byte>(
+            wfcGridHandle = dataVault.EnsureGenerationHandle<byte>(
                 BufferID.WfcOutpostGrid,
                 WfcOutpostPersistenceConstants.CellCount,
                 SystemID.CoreDataVault,
                 NativeArrayOptions.ClearMemory);
             if (wfcGridHandle.BufferID != unchecked((uint)(int)BufferID.WfcOutpostGrid) ||
-                !dataVault.TryResolveHandle(in wfcGridHandle, out wfcGrid))
+                !dataVault.TryResolveHandle(in wfcGridHandle, out NativeArray<byte> wfcGrid))
             {
-                _wfcOutpostGrid = default;
+                _wfcOutpostGridHandle = default;
                 _wfcOutpostDependenciesReady = false;
                 return false;
             }
 
             if (!IsValidWfcOutpostGrid(wfcGrid))
             {
-                _wfcOutpostGrid = default;
+                _wfcOutpostGridHandle = default;
                 _wfcOutpostDependenciesReady = false;
                 return false;
             }
 
-            _wfcOutpostGrid = wfcGrid;
+            _wfcOutpostGridHandle = wfcGridHandle;
             _wfcOutpostDependenciesReady = TryResolveWfcOutpostMacroDatabase(out _) && _dataVault != null;
             return true;
+        }
+
+        private bool TryAcquireWfcOutpostGridWrite(out NativeArray<byte> wfcGrid)
+        {
+            wfcGrid = default;
+            if (!TryEnsureWfcOutpostGridHandle(out VaultGenerationHandle<byte> wfcGridHandle))
+                return false;
+
+            IDataVault dataVault = _dataVault;
+            if (dataVault == null ||
+                !dataVault.TryAcquireWriteLock(in wfcGridHandle, SystemID.CoreDataVault, out wfcGrid))
+            {
+                return false;
+            }
+
+            if (IsValidWfcOutpostGrid(wfcGrid))
+                return true;
+
+            dataVault.ReleaseWriteLock(in wfcGridHandle, SystemID.CoreDataVault);
+            wfcGrid = default;
+            return false;
+        }
+
+        private void ReleaseWfcOutpostGridWrite()
+        {
+            IDataVault dataVault = _dataVault;
+            if (dataVault == null || !IsWfcOutpostGridHandleCreated(in _wfcOutpostGridHandle))
+                return;
+
+            dataVault.ReleaseWriteLock(in _wfcOutpostGridHandle, SystemID.CoreDataVault);
+        }
+
+        private static bool IsWfcOutpostGridHandleCreated(in VaultGenerationHandle<byte> handle)
+        {
+            return handle.BufferID == unchecked((uint)(int)BufferID.WfcOutpostGrid) &&
+                   handle.Generation != 0u;
         }
 
         private void EnsureWfcOutpostNativeBuffers()

@@ -107,6 +107,21 @@ namespace Hecton8.Tests.Editor
             Assert.That(flush, Does.Contain("_pendingScalabilityShaderDirtyFlags = 0u"));
         }
 
+        [Test]
+        public void GlobalRegistry_MathPrecisionTransition_QueuesShaderStateUntilVisualSync()
+        {
+            string registry = File.ReadAllText(GlobalRegistryPath());
+
+            AssertNoShaderPresentationWrite(registry, "TickMathPrecisionTransition");
+            AssertNoShaderPresentationWrite(registry, "ApplyMathPrecisionShaderState");
+            AssertNoShaderPresentationWrite(registry, "QueueMathPrecisionShaderState");
+
+            string flush = ExtractMethodBody(registry, "FlushMathPrecisionShaderState");
+            Assert.Greater(Count(flush, @"\bShader\.SetGlobal"), 0);
+            Assert.Greater(Count(flush, @"\bShader\.(?:EnableKeyword|DisableKeyword)"), 0);
+            Assert.That(flush, Does.Contain("_mathPrecisionShaderDirty"));
+        }
+
         private static string RuntimeScriptsRoot()
         {
             return Path.Combine(ProjectRoot(), "Assets", "_Project", "Scripts");
@@ -125,6 +140,11 @@ namespace Hecton8.Tests.Editor
         private static string HomeostasisScalabilityPath()
         {
             return Path.Combine(RuntimeScriptsRoot(), "Core", "HomeostasisBrain.ScalabilityDictator.cs");
+        }
+
+        private static string GlobalRegistryPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Core", "GlobalRegistry.cs");
         }
 
         private static string ProjectRoot()
@@ -152,6 +172,12 @@ namespace Hecton8.Tests.Editor
         {
             string body = ExtractMethodBody(text, methodName);
             Assert.AreEqual(0, Count(body, @"\bShader\.SetGlobal"), methodName + " shader global write");
+        }
+
+        private static void AssertNoShaderPresentationWrite(string text, string methodName)
+        {
+            string body = ExtractMethodBody(text, methodName);
+            Assert.AreEqual(0, Count(body, @"\bShader\.(?:SetGlobal|EnableKeyword|DisableKeyword)"), methodName + " shader presentation write");
         }
 
         private static string ExtractMethodBody(string text, string methodName)

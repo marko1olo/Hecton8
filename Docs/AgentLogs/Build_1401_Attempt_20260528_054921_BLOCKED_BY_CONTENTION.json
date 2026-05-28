@@ -1,0 +1,70 @@
+﻿{
+    "agent":  "1401",
+    "timestamp":  "20260528_054921",
+    "dryRun":  false,
+    "maxCpuPercent":  50,
+    "cpuLoadPercent":  100,
+    "compilerProcesses":  [
+                              {
+                                  "name":  "dotnet",
+                                  "id":  66408,
+                                  "cpu":  57.375
+                              }
+                          ],
+    "blockedByContention":  true,
+    "projects":  [
+                     {
+                         "name":  "CandiceAIforGames.Runtime",
+                         "path":  null,
+                         "exists":  false
+                     },
+                     {
+                         "name":  "CandiceAIforGames.Editor",
+                         "path":  null,
+                         "exists":  false
+                     },
+                     {
+                         "name":  "AmplifyImpostors.Runtime",
+                         "path":  "C:\\hades\\Hecton8\\AmplifyImpostors.Runtime.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "name":  "AmplifyImpostors.Editor",
+                         "path":  "C:\\hades\\Hecton8\\AmplifyImpostors.Editor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "name":  "TechniePhysicsCreator",
+                         "path":  "C:\\hades\\Hecton8\\TechniePhysicsCreator.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "name":  "Technie.PhysicsCreator.Updater",
+                         "path":  "C:\\hades\\Hecton8\\Technie.PhysicsCreator.Updater.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "name":  "DarkTonic.MasterAudio.Runtime",
+                         "path":  null,
+                         "exists":  false
+                     },
+                     {
+                         "name":  "DarkTonic.MasterAudio.Examples",
+                         "path":  null,
+                         "exists":  false
+                     },
+                     {
+                         "name":  "DarkTonic.MasterAudio.Editor",
+                         "path":  null,
+                         "exists":  false
+                     },
+                     {
+                         "name":  "RelationsInspector.Editor",
+                         "path":  null,
+                         "exists":  false
+                     }
+                 ],
+    "attempts":  [
+
+                 ]
+}
