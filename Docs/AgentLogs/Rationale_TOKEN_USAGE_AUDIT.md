@@ -148,3 +148,11 @@ Solution: Kill only the orphaned token-audit process, add `CodexTokenUsageFastRe
 Rejected Alternatives: Starting a second full replay was rejected because it would double disk/CPU pressure. Reporting stale 2026-05-27 totals was rejected because new JSONL deltas were available. Token-only charts were rejected because the request explicitly asked for broader project metrics.
 Scalability potential: Low/Middle/High/Ultra runtime tiers are unaffected. The audit path now scales under heavy parallel-agent churn while still preserving the slower full snapshot path for later exact rebaseline.
 Hardware Impact: 0 us runtime gain. Audit wall time reduced from >20 minutes stalled to about 3 minutes for token fast refresh and about 5.5 minutes for chart generation.
+
+## Decision 27 - 2026-05-28 apex verification boundary
+
+Problem: The prior final answer contained correct high-level numbers, but it did not provide a standalone apex verification artifact with self-scan counts, exact hashes, CPU compile-throttle sample, and explicit evidence-class downgrades.
+Solution: Add `Tools/TokenUsageApexVerification_20260528.py` and generate `Docs/Reports/TOKEN_USAGE_APEX_VERIFICATION_2026-05-28.json/.md/.sha256`. The verifier scans owned offline tooling with Python string/comment literals excluded, validates 29 PNG charts, parses JSON reports, hashes source/report artifacts, and marks runtime 0 B/frame as pending because no Unity profiler/GCMonitor run occurred.
+Rejected Alternatives: Claiming Zero-GC completion from text search was rejected. Claiming DataVault compliance without a DataVault migration was rejected. Re-running dotnet build was rejected because TOKEN_USAGE_AUDIT did not touch runtime code and compile throttling forbids unnecessary dotnet/csc load.
+Scalability potential: Runtime Low/Middle/High/Ultra tiers are unaffected. Verification quality improves because future token/report refreshes can reuse a deterministic, hash-backed artifact instead of chat-only proof.
+Hardware Impact: 0 us runtime gain. Audit safety gain: false runtime claims reduced to explicit `PENDING_RUNTIME_VERIFICATION_FOR_ANY_RUNTIME_CLAIM`.

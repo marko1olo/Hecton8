@@ -1,0 +1,932 @@
+﻿{
+  "schema": "hecton8.token_usage_apex_verification.v1",
+  "generated_at_utc": "2026-05-28T08:19:24.203047+00:00",
+  "generated_at_samara": "2026-05-28T12:19:24.203066+04:00",
+  "agent_id": "TOKEN_USAGE_AUDIT",
+  "domain": "offline Codex token telemetry, pricing evidence, dashboards, and documentation artifacts",
+  "evidence_class": "STATIC_SOURCE_AND_STATIC_DOC_PLUS_PYTHON_BYTECODE_COMPILE",
+  "mandates_consulted": [
+    "OPT_Zero_GC_Policy_AllocFree_Mandate.txt",
+    "QA_Evidence_Text_Filter_Audit.txt",
+    "DBG_Telemetry_Crash_Reporting_PostMortem.txt",
+    "OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt",
+    "OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt",
+    "ARCH_Global_Registry_ServiceLocator_DI_Init.txt",
+    "ARCH_Signal_Lane_Segregation.txt",
+    "DATA_Runtime_Struct_Layout_ARM64.txt"
+  ],
+  "owned_runtime_csharp_files": [],
+  "owned_executable_files": [
+    {
+      "path": "Tools/CodexTokenUsageAudit_20260525.py",
+      "sha256": "0deb8a5ec931ca980b7761c966aa1d78698d92d593f53617d5cb088260b0153d",
+      "line_count": 1543,
+      "python_ast_counts": {
+        "For": 74,
+        "ListComp": 12,
+        "DictComp": 16,
+        "SetComp": 0,
+        "GeneratorExp": 16,
+        "Call": 1064,
+        "Lambda": 18,
+        "Await": 0,
+        "Yield": 1
+      },
+      "function_ranges": [
+        {
+          "name": "zero_usage",
+          "line": 53,
+          "end_line": 54
+        },
+        {
+          "name": "parse_ts",
+          "line": 57,
+          "end_line": 71
+        },
+        {
+          "name": "has_usage",
+          "line": 74,
+          "end_line": 75
+        },
+        {
+          "name": "add_usage",
+          "line": 78,
+          "end_line": 83
+        },
+        {
+          "name": "positive_delta",
+          "line": 86,
+          "end_line": 87
+        },
+        {
+          "name": "sub_usage",
+          "line": 90,
+          "end_line": 91
+        },
+        {
+          "name": "clone_usage",
+          "line": 94,
+          "end_line": 95
+        },
+        {
+          "name": "usage_cost",
+          "line": 98,
+          "end_line": 108
+        },
+        {
+          "name": "normalize_model",
+          "line": 111,
+          "end_line": 115
+        },
+        {
+          "name": "model_from_payload",
+          "line": 118,
+          "end_line": 125
+        },
+        {
+          "name": "effort_from_payload",
+          "line": 128,
+          "end_line": 136
+        },
+        {
+          "name": "percentile",
+          "line": 139,
+          "end_line": 144
+        },
+        {
+          "name": "gini",
+          "line": 147,
+          "end_line": 156
+        },
+        {
+          "name": "fmt_int",
+          "line": 159,
+          "end_line": 160
+        },
+        {
+          "name": "fmt_money",
+          "line": 163,
+          "end_line": 164
+        },
+        {
+          "name": "week_key",
+          "line": 167,
+          "end_line": 169
+        },
+        {
+          "name": "collect_jsonl_files",
+          "line": 172,
+          "end_line": 183
+        },
+        {
+          "name": "read_file_record",
+          "line": 186,
+          "end_line": 252
+        },
+        {
+          "name": "read_increment_events",
+          "line": 255,
+          "end_line": 297
+        },
+        {
+          "name": "iter_project_files",
+          "line": 300,
+          "end_line": 305
+        },
+        {
+          "name": "count_text_metrics",
+          "line": 308,
+          "end_line": 346
+        },
+        {
+          "name": "count_loc",
+          "line": 349,
+          "end_line": 384
+        },
+        {
+          "name": "usage_map_costs",
+          "line": 387,
+          "end_line": 388
+        },
+        {
+          "name": "observed_costs_by_period",
+          "line": 391,
+          "end_line": 412
+        },
+        {
+          "name": "freeze_nested_usage",
+          "line": 415,
+          "end_line": 419
+        },
+        {
+          "name": "top_usage_rows",
+          "line": 422,
+          "end_line": 426
+        },
+        {
+          "name": "find_previous_report_path",
+          "line": 429,
+          "end_line": 439
+        },
+        {
+          "name": "previous_snapshot_delta",
+          "line": 442,
+          "end_line": 547
+        },
+        {
+          "name": "price_delta",
+          "line": 455,
+          "end_line": 458
+        },
+        {
+          "name": "per_hour",
+          "line": 473,
+          "end_line": 476
+        },
+        {
+          "name": "per_day",
+          "line": 478,
+          "end_line": 480
+        },
+        {
+          "name": "per_minute",
+          "line": 482,
+          "end_line": 484
+        },
+        {
+          "name": "per_second",
+          "line": 486,
+          "end_line": 488
+        },
+        {
+          "name": "per_positive_unit",
+          "line": 490,
+          "end_line": 493
+        },
+        {
+          "name": "session_report_row",
+          "line": 550,
+          "end_line": 583
+        },
+        {
+          "name": "model_effort_cost_rows",
+          "line": 586,
+          "end_line": 622
+        },
+        {
+          "name": "build_report",
+          "line": 625,
+          "end_line": 1076
+        },
+        {
+          "name": "usage_rows",
+          "line": 1079,
+          "end_line": 1083
+        },
+        {
+          "name": "fmt_optional_number",
+          "line": 1086,
+          "end_line": 1089
+        },
+        {
+          "name": "fmt_optional_money",
+          "line": 1092,
+          "end_line": 1095
+        },
+        {
+          "name": "append_velocity_table",
+          "line": 1098,
+          "end_line": 1132
+        },
+        {
+          "name": "write_reports",
+          "line": 1135,
+          "end_line": 1452
+        },
+        {
+          "name": "append_audit_files",
+          "line": 1455,
+          "end_line": 1500
+        },
+        {
+          "name": "main",
+          "line": 1503,
+          "end_line": 1539
+        }
+      ],
+      "hot_path_symbol_hits": [],
+      "csharp_hot_forbidden_text_hits": [],
+      "global_authority_text_hits": [],
+      "evidence_note": "Offline Python tooling. Python AST allocations are not Unity runtime GC evidence."
+    },
+    {
+      "path": "Tools/CodexTokenUsageFastRefresh_20260528.py",
+      "sha256": "a3c101bc996b9d05c8840d3407fb7f187383ce6e5805d5b249f39cf13918256c",
+      "line_count": 446,
+      "python_ast_counts": {
+        "For": 9,
+        "ListComp": 0,
+        "DictComp": 10,
+        "SetComp": 1,
+        "GeneratorExp": 0,
+        "Call": 253,
+        "Lambda": 0,
+        "Await": 0,
+        "Yield": 0
+      },
+      "function_ranges": [
+        {
+          "name": "load_audit_module",
+          "line": 33,
+          "end_line": 37
+        },
+        {
+          "name": "zero_usage",
+          "line": 43,
+          "end_line": 44
+        },
+        {
+          "name": "clone_usage",
+          "line": 47,
+          "end_line": 48
+        },
+        {
+          "name": "add_usage",
+          "line": 51,
+          "end_line": 54
+        },
+        {
+          "name": "sub_usage",
+          "line": 57,
+          "end_line": 58
+        },
+        {
+          "name": "parse_ts",
+          "line": 61,
+          "end_line": 62
+        },
+        {
+          "name": "fmt_int",
+          "line": 65,
+          "end_line": 66
+        },
+        {
+          "name": "fmt_money",
+          "line": 69,
+          "end_line": 70
+        },
+        {
+          "name": "find_previous_report",
+          "line": 73,
+          "end_line": 79
+        },
+        {
+          "name": "read_previous",
+          "line": 82,
+          "end_line": 84
+        },
+        {
+          "name": "usage_cost",
+          "line": 87,
+          "end_line": 96
+        },
+        {
+          "name": "price_row",
+          "line": 99,
+          "end_line": 102
+        },
+        {
+          "name": "no_cache_cost",
+          "line": 105,
+          "end_line": 106
+        },
+        {
+          "name": "usage_map_costs",
+          "line": 109,
+          "end_line": 110
+        },
+        {
+          "name": "merge_period_map",
+          "line": 113,
+          "end_line": 117
+        },
+        {
+          "name": "week_key",
+          "line": 120,
+          "end_line": 122
+        },
+        {
+          "name": "update_scope_economics",
+          "line": 125,
+          "end_line": 148
+        },
+        {
+          "name": "per_hour",
+          "line": 151,
+          "end_line": 154
+        },
+        {
+          "name": "build_velocity",
+          "line": 157,
+          "end_line": 205
+        },
+        {
+          "name": "per_day",
+          "line": 160,
+          "end_line": 162
+        },
+        {
+          "name": "per_minute",
+          "line": 164,
+          "end_line": 166
+        },
+        {
+          "name": "per_second",
+          "line": 168,
+          "end_line": 170
+        },
+        {
+          "name": "per_unit",
+          "line": 172,
+          "end_line": 175
+        },
+        {
+          "name": "build_report",
+          "line": 208,
+          "end_line": 340
+        },
+        {
+          "name": "write_reports",
+          "line": 343,
+          "end_line": 425
+        },
+        {
+          "name": "main",
+          "line": 428,
+          "end_line": 442
+        }
+      ],
+      "hot_path_symbol_hits": [],
+      "csharp_hot_forbidden_text_hits": [],
+      "global_authority_text_hits": [],
+      "evidence_note": "Offline Python tooling. Python AST allocations are not Unity runtime GC evidence."
+    },
+    {
+      "path": "Tools/ProjectMetricsDashboard_20260528.py",
+      "sha256": "a0500b863c016fe8b6941e15e1c5403ce1a4e364926a21b6cb787ea0d8c44d3f",
+      "line_count": 488,
+      "python_ast_counts": {
+        "For": 10,
+        "ListComp": 22,
+        "DictComp": 3,
+        "SetComp": 0,
+        "GeneratorExp": 0,
+        "Call": 320,
+        "Lambda": 8,
+        "Await": 0,
+        "Yield": 1
+      },
+      "function_ranges": [
+        {
+          "name": "read_json",
+          "line": 70,
+          "end_line": 71
+        },
+        {
+          "name": "write_bom",
+          "line": 74,
+          "end_line": 76
+        },
+        {
+          "name": "fmt_int",
+          "line": 79,
+          "end_line": 80
+        },
+        {
+          "name": "fmt_money",
+          "line": 83,
+          "end_line": 84
+        },
+        {
+          "name": "usage_cost",
+          "line": 87,
+          "end_line": 92
+        },
+        {
+          "name": "period_rows",
+          "line": 95,
+          "end_line": 108
+        },
+        {
+          "name": "parse_hour",
+          "line": 111,
+          "end_line": 112
+        },
+        {
+          "name": "fill_recent_hours",
+          "line": 115,
+          "end_line": 130
+        },
+        {
+          "name": "configure_axes",
+          "line": 133,
+          "end_line": 137
+        },
+        {
+          "name": "label_period_axis",
+          "line": 140,
+          "end_line": 146
+        },
+        {
+          "name": "save_current_figure",
+          "line": 149,
+          "end_line": 155
+        },
+        {
+          "name": "add_line_chart",
+          "line": 158,
+          "end_line": 166
+        },
+        {
+          "name": "add_multi_line_chart",
+          "line": 169,
+          "end_line": 178
+        },
+        {
+          "name": "add_stack_chart",
+          "line": 181,
+          "end_line": 192
+        },
+        {
+          "name": "add_bar_chart",
+          "line": 195,
+          "end_line": 205
+        },
+        {
+          "name": "add_heatmap",
+          "line": 208,
+          "end_line": 218
+        },
+        {
+          "name": "iter_project_files",
+          "line": 221,
+          "end_line": 226
+        },
+        {
+          "name": "text_line_count",
+          "line": 229,
+          "end_line": 234
+        },
+        {
+          "name": "collect_project_metrics",
+          "line": 237,
+          "end_line": 280
+        },
+        {
+          "name": "run_git_log",
+          "line": 283,
+          "end_line": 295
+        },
+        {
+          "name": "collect_git_metrics",
+          "line": 298,
+          "end_line": 339
+        },
+        {
+          "name": "generate_charts",
+          "line": 342,
+          "end_line": 390
+        },
+        {
+          "name": "markdown_report",
+          "line": 393,
+          "end_line": 448
+        },
+        {
+          "name": "main",
+          "line": 451,
+          "end_line": 484
+        }
+      ],
+      "hot_path_symbol_hits": [],
+      "csharp_hot_forbidden_text_hits": [],
+      "global_authority_text_hits": [],
+      "evidence_note": "Offline Python tooling. Python AST allocations are not Unity runtime GC evidence."
+    },
+    {
+      "path": "Tools/TokenUsageApexVerification_20260528.py",
+      "sha256": "bd18bd61bdf07d6a3b04f4100a38e4afad228532a39499e01795bf3bff9e4258",
+      "line_count": 370,
+      "python_ast_counts": {
+        "For": 10,
+        "ListComp": 2,
+        "DictComp": 1,
+        "SetComp": 0,
+        "GeneratorExp": 5,
+        "Call": 126,
+        "Lambda": 2,
+        "Await": 0,
+        "Yield": 0
+      },
+      "function_ranges": [
+        {
+          "name": "rel",
+          "line": 61,
+          "end_line": 62
+        },
+        {
+          "name": "sha256",
+          "line": 65,
+          "end_line": 70
+        },
+        {
+          "name": "read_text",
+          "line": 73,
+          "end_line": 74
+        },
+        {
+          "name": "line_count",
+          "line": 77,
+          "end_line": 80
+        },
+        {
+          "name": "regex_hits",
+          "line": 83,
+          "end_line": 90
+        },
+        {
+          "name": "python_code_regex_hits",
+          "line": 93,
+          "end_line": 115
+        },
+        {
+          "name": "ast_counts",
+          "line": 118,
+          "end_line": 138
+        },
+        {
+          "name": "source_file_report",
+          "line": 141,
+          "end_line": 154
+        },
+        {
+          "name": "load_json",
+          "line": 157,
+          "end_line": 158
+        },
+        {
+          "name": "chart_report",
+          "line": 161,
+          "end_line": 173
+        },
+        {
+          "name": "artifact_report",
+          "line": 176,
+          "end_line": 185
+        },
+        {
+          "name": "command_log_stub",
+          "line": 188,
+          "end_line": 198
+        },
+        {
+          "name": "build_report",
+          "line": 201,
+          "end_line": 286
+        },
+        {
+          "name": "write_bom",
+          "line": 289,
+          "end_line": 290
+        },
+        {
+          "name": "write_markdown",
+          "line": 293,
+          "end_line": 343
+        },
+        {
+          "name": "main",
+          "line": 346,
+          "end_line": 366
+        }
+      ],
+      "hot_path_symbol_hits": [],
+      "csharp_hot_forbidden_text_hits": [],
+      "global_authority_text_hits": [],
+      "evidence_note": "Offline Python tooling. Python AST allocations are not Unity runtime GC evidence."
+    }
+  ],
+  "owned_artifacts": [
+    {
+      "path": "Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-28.json",
+      "sha256": "9dabab3032221ffb823c42c181635b51606de54f1b8b0aec4049f1741856b674",
+      "bytes": 561331,
+      "line_count": 9276
+    },
+    {
+      "path": "Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-28.md",
+      "sha256": "03403865e41716912b1a2cfc0d7b4ab3a0f25ec3fce0c08a5c8f6b94405aaeff",
+      "bytes": 1753,
+      "line_count": 51
+    },
+    {
+      "path": "Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-28.json",
+      "sha256": "4c68107ee801033f4464640515a4217cbf0fc3813f380ea1564da0374cafb156",
+      "bytes": 70419,
+      "line_count": 3231
+    },
+    {
+      "path": "Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-28.md",
+      "sha256": "495d623b484d07b7df3e16ca21cf7f5960890fed81c9302835635550229e4e4d",
+      "bytes": 6701,
+      "line_count": 184
+    }
+  ],
+  "chart_artifacts": [
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/bytes_by_extension.png",
+      "sha256": "ba2435c44e2a5307f1f50ef837d0daa077caed719c535e82e5bfe5b8dfc81d3c",
+      "bytes": 76374,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/daily_cost.png",
+      "sha256": "3efb62896996233cdc239dec6ef4428b3d8b922ca96a4f404fa060d5db4b6181",
+      "bytes": 95049,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/daily_io_stack.png",
+      "sha256": "f9e9aa6c0bd28c8ff3d1cfab116a57b636ff233bed8c0db095ad75bccc9b1d18",
+      "bytes": 85288,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/daily_output_reasoning.png",
+      "sha256": "d9bac3d388da40d2e07725068db2a033b41e5a6107b8bba1937877cf961ebad1",
+      "bytes": 120503,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/daily_ratios.png",
+      "sha256": "fedff498fcded2d64f50c94a54d21d5ac19182c9d42d20d78c83e3f964861a05",
+      "bytes": 109743,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/daily_total_tokens.png",
+      "sha256": "5d4d3ecfd1cb9fd3cd735743ca1177bdde0cadafbc3a968c37cd953086369772",
+      "bytes": 85741,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/docs_artifact_counts.png",
+      "sha256": "05d09674bc98a60f3db4a627f2f72bfa81013785e95121b976d354e7fe712630",
+      "bytes": 82100,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/file_counts_by_extension.png",
+      "sha256": "8474605f0897fc8ca01d68f1721d74c5e87498732def3c7fcb2c4e96abfb58f0",
+      "bytes": 90736,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/file_counts_by_root.png",
+      "sha256": "79f2581cbd61dee492d24bbf1352eb414800c87e66b300676295c840c7de25ac",
+      "bytes": 112490,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/git_churn_by_day.png",
+      "sha256": "1bc2f1ce1065e587b11b4073d016988bce31b06e2f75747494885113e80b0e3a",
+      "bytes": 92581,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/git_churn_by_week.png",
+      "sha256": "da468069b40633bb649e303fbd61b08dff90c121fa42f124a70de1c5e9ab0be2",
+      "bytes": 74576,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/git_commit_weekday_hour_heatmap.png",
+      "sha256": "2127ef4a33afe6a614d6468f96afd759dcb84d7f4108c1067ab57ad340bd140e",
+      "bytes": 54440,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/git_commits_by_day.png",
+      "sha256": "7a8314e5be76bb669392198523706750ed32678dc845e251f36e7370cc542122",
+      "bytes": 87600,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/git_commits_by_week.png",
+      "sha256": "99c229a4dd6a81bd1d37fcc7238154836858ab64eee8730c43a750b2377c6a1b",
+      "bytes": 81766,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/git_insertions_deletions_by_day.png",
+      "sha256": "77ca188f1d736ab5b9d9ba59190f30f76fe6db74c5a966738479f3d3ee5bb668",
+      "bytes": 98099,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/hourly_cost_last_96h.png",
+      "sha256": "55f559e114b704aec9006a0a67474a99a5c16a14df64420f77bf2fb0a88d9981",
+      "bytes": 167206,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/hourly_io_stack_last_96h.png",
+      "sha256": "b9c514ceb4184ffd083a4d232b4df12608b75f7e4f699f152db517c426040c75",
+      "bytes": 149189,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/hourly_output_reasoning_last_96h.png",
+      "sha256": "740a34ab6dcd5db9ab4a663ae5218bd28b2b387f04e515cd25c1178047d1504e",
+      "bytes": 212146,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/hourly_ratios_last_96h.png",
+      "sha256": "7f7c644961cceb5794b29964e248bd73d1ed15283ff994677571854db38fe836",
+      "bytes": 173676,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/hourly_total_tokens_last_96h.png",
+      "sha256": "b4f6adba150ed384afb392845f7b74a13e5ac5c847f56eea6bd696d34f6f8c1c",
+      "bytes": 164645,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/model_effort_cost_top20.png",
+      "sha256": "e786dc82f0e19255cf289cd4d52967f3243351f8d4d1e802ddda1b07d67f2867",
+      "bytes": 91059,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/model_effort_tokens_top20.png",
+      "sha256": "3a688a4ff3942e51ed06a2b24d0903add597a63f862c42b56f07ed901904d59e",
+      "bytes": 91805,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/project_lines_by_scope.png",
+      "sha256": "e685f3e1e825a003ce032bcd7998ee56832dcd932ee7441f508c9c42315549d9",
+      "bytes": 91721,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/token_density_by_scope.png",
+      "sha256": "1722916e82f481e97334b1be6b674cbd6848444d4055ac20465125606d20f5a5",
+      "bytes": 94413,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/top_cwd_total_tokens.png",
+      "sha256": "56b69540d34e42da40a3c41911a9ae5bea4241806dfd9949ed065222c13e9b6e",
+      "bytes": 55149,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/top_sessions_total_tokens.png",
+      "sha256": "d69640f9f1548a1b2905376aba879452c864926df69ff2523ff5695d1b17277f",
+      "bytes": 79849,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/weekly_cost.png",
+      "sha256": "5f0576f1bfb1a3a20197a502563e7d842e7afd9a905a45f4bf07ce3ffc82a4a9",
+      "bytes": 85291,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/weekly_io_stack.png",
+      "sha256": "a04a13f121df796da2af881ccf47ea84e3960c6dc102d1a691ca6840e1a4e5f3",
+      "bytes": 79609,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-28/weekly_total_tokens.png",
+      "sha256": "a8555b1a2906fe1dc7204415153c61253023f36c861e031913813be6629ae4f6",
+      "bytes": 70080,
+      "png_signature_ok": true
+    }
+  ],
+  "zero_gc_self_audit": {
+    "runtime_hot_path_changed": false,
+    "runtime_profiler_gc_proof": "ABSENT",
+    "status": "PENDING_RUNTIME_VERIFICATION_FOR_ANY_RUNTIME_CLAIM",
+    "static_hot_path_symbol_hits_in_owned_tooling": 0,
+    "static_csharp_hot_forbidden_hits_in_owned_tooling": 0,
+    "interpretation": "No owned Unity runtime C# hot path was edited by this domain. Static scan over owned tooling found no Unity hot-path methods or C# hot-path forbidden text. This does not prove runtime 0 B/frame."
+  },
+  "data_sovereignty_self_audit": {
+    "migrated_to_global_data_vault": false,
+    "buffer_id_constants_secured": [],
+    "try_acquire_write_lock_sites": [],
+    "release_write_lock_finally_sites": [],
+    "static_global_authority_hits_in_owned_tooling": 0,
+    "interpretation": "No GlobalDataVault, SignalBus, GlobalRegistry, BufferID, or HomeostasisBrain route was added by TOKEN_USAGE_AUDIT. Data sovereignty route proof is not applicable."
+  },
+  "cinematic_cheat_and_scalability_audit": {
+    "runtime_simulation_added": false,
+    "global_quality_weight_runtime_requirement_applicable": false,
+    "binary_quality_switches_in_owned_tooling": [],
+    "interpretation": "The work generated offline charts/reports. It did not add water/light/fog/physics/runtime visual systems, so fake-first and continuous GlobalQualityWeight scaling are not invoked."
+  },
+  "token_report_headline": {
+    "total_tokens": 110159445798,
+    "input_tokens": 109776871191,
+    "cached_input_tokens": 105482603520,
+    "output_tokens": 381541007,
+    "reasoning_output_tokens": 119780195,
+    "sessions_with_usage": 2856,
+    "gpt_5_5_standard_api_equivalent_usd": 85658.870325,
+    "delta_total_tokens": 1915058255,
+    "tokens_per_hour": 297297721.32858646,
+    "tokens_per_second": 82582.70036905179,
+    "gpt_5_5_standard_usd_per_hour": 228.26438423437068
+  },
+  "official_pricing_sources_checked": [
+    {
+      "url": "https://developers.openai.com/api/docs/pricing",
+      "fact_used": "GPT-5.5 standard short-context public API-equivalent pricing: input $5.00, cached input $0.50, output $30.00 per 1M tokens."
+    },
+    {
+      "url": "https://developers.openai.com/api/docs/guides/prompt-caching",
+      "fact_used": "Cached token counters and prompt-cache behavior are treated as separate cached input accounting; report remains API-equivalent, not invoice proof."
+    }
+  ],
+  "dashboard_integrity": {
+    "dashboard_json": "Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-28.json",
+    "dashboard_markdown": "Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-28.md",
+    "chart_count_reported": 29,
+    "chart_count_on_disk": 29,
+    "all_png_signatures_ok": true,
+    "all_png_non_empty": true
+  },
+  "compilation_resource_throttling": {
+    "dotnet_build_invoked_by_token_usage_audit": false,
+    "unity_build_invoked_by_token_usage_audit": false,
+    "final_compile_check": "python -m py_compile Tools/CodexTokenUsageAudit_20260525.py Tools/CodexTokenUsageFastRefresh_20260528.py Tools/ProjectMetricsDashboard_20260528.py Tools/TokenUsageApexVerification_20260528.py",
+    "cpu_sample_before_final_compile": {
+      "sampled_at_samara": "2026-05-28T12:13:45.8127797+04:00",
+      "cpu_total_percent": 20,
+      "dotnet_or_csc_process_count": 0,
+      "dotnet_or_csc_processes": [],
+      "note": "Sample taken before final python -m py_compile after verifier patch. No dotnet build invoked by TOKEN_USAGE_AUDIT."
+    },
+    "throttling_interpretation": "Compilation throttling rule targets dotnet/csc/Unity. This pass used Python bytecode compile only after sampling CPU and dotnet/csc process state."
+  },
+  "known_faults": [
+    "No Unity Editor import, PlayMode, profiler, GCMonitor, player build, RenderDoc, or device capture was run by TOKEN_USAGE_AUDIT.",
+    "Full all-time token replay exceeded 20 minutes under live parallel-agent churn; 2026-05-28 report uses fast incremental evidence from the 2026-05-27 full snapshot plus post-cutoff JSONL deltas.",
+    "Workspace remains live-dirty from other agents after remote push; those changes are outside TOKEN_USAGE_AUDIT ownership."
+  ]
+}

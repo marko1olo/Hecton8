@@ -272,3 +272,42 @@ Cinematic Cheats used:
 Exact Microseconds saved:
 - 0 runtime microseconds. Audit-only tooling and documentation.
 - Audit wall time avoided: full replay was still running after 20 minutes; fast token refresh completed in about 186 seconds.
+
+## 2026-05-28 12:14 Europe/Samara - Apex verification pass
+
+What was wrong:
+- Prior proof was split across chat, command output, generated report files, and git history.
+- There was no standalone machine-readable apex verification artifact for TOKEN_USAGE_AUDIT.
+- Zero-GC and DataVault claims needed explicit evidence-class downgrades because this domain changed offline Python tooling and docs, not Unity runtime hot paths.
+
+What was done:
+- Added `Tools/TokenUsageApexVerification_20260528.py`.
+- Generated `Docs/Reports/TOKEN_USAGE_APEX_CPU_SAMPLE_2026-05-28.json`.
+- Generated `Docs/Reports/TOKEN_USAGE_APEX_VERIFICATION_2026-05-28.json`.
+- Generated `Docs/Reports/TOKEN_USAGE_APEX_VERIFICATION_2026-05-28.md`.
+- Generated SHA files for both apex verification outputs.
+
+Proof:
+- Final JSON SHA-256: `35e82aea75bb4b2ef9cb79a215add562c21806c2142ecc2220a8c89b57001d24`.
+- Markdown SHA-256: `426aa9620f2d766244ca8090a3e9b3b71bd239b61947577cfa3ae034702cece3`.
+- Token report JSON SHA-256: `9dabab3032221ffb823c42c181635b51606de54f1b8b0aec4049f1741856b674`.
+- Dashboard JSON SHA-256: `4c68107ee801033f4464640515a4217cbf0fc3813f380ea1564da0374cafb156`.
+- Static hot-path symbol hits in owned tooling: 0.
+- Static C# hot-path forbidden text hits in owned tooling: 0.
+- Static GlobalDataVault/SignalBus/GlobalRegistry route hits in owned tooling code tokens: 0.
+- Chart count on disk: 29.
+- PNG signature check: all true.
+- CPU sample before final Python compile: 20% total CPU, 0 dotnet/csc processes.
+- Final compile check: `python -m py_compile Tools\CodexTokenUsageAudit_20260525.py Tools\CodexTokenUsageFastRefresh_20260528.py Tools\ProjectMetricsDashboard_20260528.py Tools\TokenUsageApexVerification_20260528.py`.
+
+Known faults:
+- No Unity Editor import, PlayMode, profiler, GCMonitor, player build, RenderDoc, or device capture was run by TOKEN_USAGE_AUDIT.
+- Runtime 0 B/frame remains `PENDING_RUNTIME_VERIFICATION_FOR_ANY_RUNTIME_CLAIM`.
+- DataVault lock proof is not applicable: TOKEN_USAGE_AUDIT migrated no fields to GlobalDataVault and secured no BufferID constants.
+- Workspace was live-dirty from other agents after push; those files are outside TOKEN_USAGE_AUDIT ownership.
+
+Cinematic Cheats used:
+- Evidence fake-first: static/doc/hash proof for offline audit tooling instead of pretending a runtime simulation/profiler claim exists.
+
+Exact Microseconds saved:
+- 0 runtime microseconds. Audit-only verification.
