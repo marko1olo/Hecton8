@@ -11,7 +11,7 @@
       "sampleUtc": "2026-05-28T01:41:52Z"
     },
     "sample": {
-      "cpuLoadPercent": 99.422646,
+      "cpuLoadPercent": 74.326591,
       "cscCount": 0,
       "dotnetBuild": "BLOCKED_BY_CONTENTION",
       "dotnetCount": 1,
@@ -60,7 +60,7 @@
       }
     }
   },
-  "generatedUtc": "2026-05-28T01:42:02Z",
+  "generatedUtc": "2026-05-28T01:45:57Z",
   "knownResidualRisk": [
     "GlobalDataVault release APIs now queue a fixed-size unmanaged deferred-release request if the block mutation gate is busy. Runtime drain is static-only verified; compiler and Unity runtime proof are still pending.",
     "Project-wide scanner still reports loop-shaped and nested-lock candidates outside the edited window; they are report-ranked but not all fixed in this pass."
@@ -68,7 +68,7 @@
   "modifiedFileHashes": {
     "destructibleOrganic": "3b5ece0ee93d4d29404396a104a9d784bc587e30b37f61b470151370ee3765ad",
     "failClosedEditTest": "9c3d246955985c340790c69d307dac781e1174c5f39a0cf7c4fc619ab48981d1",
-    "globalDataVault": "1bf5afd57181118d831f9502afb2b76439c7b058bfb85db18b35d1acfd94f243"
+    "globalDataVault": "a0233a4e583874e84a7425741dcdf21bd21a7bf3ec6a2b282eb7076c1d32d4e4"
   },
   "nestedLockAuditModifiedWindows": {
     "destructibleLockedCopyWindowNestedTryLockCalls": 0,
@@ -86,6 +86,18 @@
   "role": "ATOMIC_LOCK_CONTENTION_AND_FAIL_CLOSED_COORDINATOR",
   "zeroGcTextScan": {
     "blocks": [
+      {
+        "endLine": 1449,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 141,
+        "linqHits": [],
+        "name": "private bool TryOpenAliasBuffer<T>(BufferID bufferId, SystemID requester, out NativeArray<T> buffer) where T : struct",
+        "referenceNewTextHits": [],
+        "startLine": 1309,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
       {
         "endLine": 4704,
         "forbiddenHitCount": 0,

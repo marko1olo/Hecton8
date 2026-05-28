@@ -6,7 +6,7 @@
     "dotnetBuild": "BLOCKED_BY_CONTENTION",
     "dotnetCount": 1,
     "sampleCommand": "Get-Counter \"\\Processor(_Total)\\% Processor Time\" plus Get-Process dotnet/csc",
-    "sampleUtc": "2026-05-28T01:41:52Z"
+    "sampleUtc": "2026-05-28T01:46:34Z"
   },
   "failClosedProof": {
     "apexTryFinallyProof": "Descriptor lock line 5044, try line 5052, loot lock line 5054, finally line 5090, descriptor unlock line 5096; releaseInsideFinally=true.",
@@ -15,7 +15,7 @@
     "globalDataVault": "TryEnterBlockMutationGate false now records RecordLockContentionFault(key) and returns false immediately. ClearActiveLockBitIfUnused no longer spins. Release paths use TryEnterReleaseMutationGate with no wait loop.",
     "zeroGc": "No string, collection, Debug.Log, exception, LINQ, or allocation in RecordLockContentionFault."
   },
-  "generatedUtc": "2026-05-28T01:41:52Z",
+  "generatedUtc": "2026-05-28T01:46:34Z",
   "implementedChanges": [
     {
       "change": "Removed bounded Thread.SpinWait from ClearActiveLockBitIfUnused; added O(1) numeric contention telemetry; split release gate from acquire gate so releases can clear already-held locks without compaction-fence wait.",
@@ -62,6 +62,12 @@
       "file": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
       "line": 2638,
       "reason": "prevents editor/runtime container-check exceptions inside drain from leaving _blockMutationGate permanently held"
+    },
+    {
+      "change": "TryOpenAliasBuffer contention on TryEnterBlockMutationGate now records numeric lock contention fault instead of dumping PhiVod black-box files.",
+      "file": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+      "line": 1357,
+      "reason": "gate contention is not corruption; fail-closed path must not perform directory/file IO or managed string work"
     }
   ],
   "ledgerSummary": {
@@ -34392,7 +34398,7 @@
   "modifiedFiles": [
     {
       "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-      "sha256": "1bf5afd57181118d831f9502afb2b76439c7b058bfb85db18b35d1acfd94f243"
+      "sha256": "a0233a4e583874e84a7425741dcdf21bd21a7bf3ec6a2b282eb7076c1d32d4e4"
     },
     {
       "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
@@ -34412,7 +34418,7 @@
     },
     {
       "path": "Docs/Reports/agent1413_apex_verifier.py",
-      "sha256": "db9e48738423c983d4edf84dabfaf35f8dc341b463fd1f7b3b7688dc19cfc912"
+      "sha256": "d32312469b43f054207e17576d5698ca94dcd4b7d94fe04778990e8c76f94bec"
     },
     {
       "path": "Docs/Reports/LOCK_CONTENTION_SPAN_LEDGER_1413.json",
@@ -34420,7 +34426,7 @@
     },
     {
       "path": "Docs/Reports/LOCK_CONTENTION_APEX_VERIFICATION_1413.json",
-      "sha256": "6eee74aa25e501a716f7343cb80c4b7787a6e95f6156d43c2c9867865e34b7a7"
+      "sha256": "7b228fd14365d3303efe48ef2552c1f453986e5a52510fdd1f27e98d436def69"
     }
   ],
   "nestedLockAudit": {
@@ -34586,14 +34592,18 @@
     "deferredReleaseStructSizeBytes": 32,
     "diffCheck": "passed with CRLF warnings only",
     "diffCheckAfterLoop13": "passed with CRLF warnings only",
+    "diffCheckAfterLoop14": "passed with CRLF warnings only",
     "modifiedWindowNestedLocks": 0,
     "mutationGateDrainFaultRelease": "TryEnterBlockMutationGate and TryEnterReleaseMutationGate wrap DrainDeferredReleaseRequestsLocked in release-on-catch guards; normal path still has no spin/wait.",
     "rgGlobalDataVaultSpinWait": "no Thread.SpinWait remains in GlobalDataVault.cs",
     "rgGlobalDataVaultWaits": "no Thread.SpinWait/Task.Delay/retry wait loop in GlobalDataVault; Thread.Sleep(1) remains only in dispose-time memory sentry flush.",
     "rgGlobalDataVaultWaitsAfterLoop13": "no Thread.SpinWait/Task.Delay/retry wait loop in GlobalDataVault; catch entries are release-on-fault guards, not waits.",
+    "rgGlobalDataVaultWaitsAfterLoop14": "no Thread.SpinWait/Task.Delay/retry wait loop in GlobalDataVault.",
+    "tryOpenAliasBufferContentionFailClosed": "TryOpenAliasBuffer line 1357 gate-failure branch records RecordLockContentionFault(key) and returns false; corruption branches still dump black-box evidence.",
     "unityTestRunner": "NOT RUN",
     "zeroGcTextScanIncludesTryDrainDeferredReleaseRequests": true,
     "zeroGcTextScanIncludesTryEnterBlockMutationGate": true,
+    "zeroGcTextScanIncludesTryOpenAliasBuffer": true,
     "zeroGcTextScanTotalForbiddenHits": 0
   },
   "status": "PENDING COMPILER/UNITY RUNTIME VERIFICATION"

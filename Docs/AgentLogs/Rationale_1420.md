@@ -51,7 +51,7 @@ Hardware Impact: Saved one full project build on saturated CPU; exact time not c
 
 ## Decision 007: APEX Evidence Recheck
 Problem: Final verification required exact proof, not a prose completion claim, and the first case-insensitive scanner counted `math.select` as a false LINQ `.Select` hit.
-Solution: Reran the Zero-GC scan with `-CaseSensitive`, producing 0 matches for `new Native*`, `Allocator.Persistent`, `foreach`, LINQ `.Where/.Select/.ToList/.ToArray`, `string.Format`, `.ToString`, interpolated strings, and literal string concatenation. Final report artifact hash is pending final hash update after Decision 012.
+Solution: Reran the Zero-GC scan with `-CaseSensitive`, producing 0 matches for `new Native*`, `Allocator.Persistent`, `foreach`, LINQ `.Where/.Select/.ToList/.ToArray`, `string.Format`, `.ToString`, interpolated strings, and literal string concatenation. Final report artifact hash is `A5BC4B05270E37EACF4FBBC0CAE008725A9E7E3C69856C462084639F749E3A9C`.
 Rejected Alternatives: Editing the runtime to silence a false positive, or launching a build while CPU/process gates were closed.
 Scalability potential: No runtime cost. Keeps Low/Middle/High/Ultra truth routes unchanged and preserves continuous `GlobalQualityWeight` scaling instead of binary quality switches.
 Hardware Impact: 0 us runtime. Build avoided on host with active `dotnet` PID 32028; final CPU sample was 41.88%, but active-dotnet rule still blocked a new build.

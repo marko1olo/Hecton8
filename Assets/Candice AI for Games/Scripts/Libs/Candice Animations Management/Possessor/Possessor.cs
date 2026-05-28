@@ -17,7 +17,9 @@ public class Possessor : MonoBehaviour
     private GameObject[] projectiles;
     [HideInInspector]
     public CandiceAnimationManager animationManager;
-    private Transform vsfx;       
+    private Transform vsfx;
+    private const string ProjectileTag = "Projectile";
+    private const string CandiceVsfxTag = "CandiceVSFX";
     
 
     // Start is called before the first frame update
@@ -27,9 +29,14 @@ public class Possessor : MonoBehaviour
             animationManager = gameObject.AddComponent(typeof(CandiceAnimationManager)) as CandiceAnimationManager;
         }
         vsfx = transform.Find("VSFX");
-        foreach (Transform fx in vsfx) {
-            if (fx.gameObject.tag == "CandiceVSFX") {
-                fx.gameObject.SetActive(false);
+        if (vsfx != null)
+        {
+            for (int i = 0; i < vsfx.childCount; i++)
+            {
+                Transform fx = vsfx.GetChild(i);
+                if (fx.CompareTag(CandiceVsfxTag)) {
+                    fx.gameObject.SetActive(false);
+                }
             }
         }
     }
@@ -40,37 +47,23 @@ public class Possessor : MonoBehaviour
         if (animationManager.EvaluateInput("Possess", false, true, false)) {
             //if can possess nearest projectile
             if (PlayerCanPossessProjectile) {
-                projectiles = GameObject.FindGameObjectsWithTag("Projectile");
-                if (projectiles != null && PossessableObjects.Length < 3)
+                GameObject projectile = GameObject.FindWithTag(ProjectileTag);
+                if (projectile != null && PossessableObjects.Length < 3)
                 {
-                    Array.Resize<GameObject>(ref projectiles, 1);
                     Array.Resize<GameObject>(ref PossessableObjects, PossessableObjects.Length + 1);
-                    projectiles.CopyTo(PossessableObjects, PossessableObjects.Length - 1);
-
+                    PossessableObjects[PossessableObjects.Length - 1] = projectile;
                 }
             }
             //now cycle through all assigned possessed
-            foreach (GameObject possessed in PossessableObjects) {
+            for (int i = 0; i < PossessableObjects.Length; i++) {
+                GameObject possessed = PossessableObjects[i];
 
                 if (possessed != null)
                 {
                     if (!possessed.activeSelf)
                     {
                         //in case you are not active, set yourself active                        
-                        if (Array.IndexOf(PossessableObjects, possessed)  <= PossessableObjects.Length-1)
-                        {
-                            possessed.SetActive(true);
-                        }
-                        else {
-                            CandiceAIPlayerController controller = possessed.GetComponent<CandiceAIPlayerController>();
-                            if (controller != null)
-                            {
-                                if (!controller.enabled)
-                                {
-                                    controller.enabled = true;
-                                }
-                            }
-                        }
+                        possessed.SetActive(true);
                         Transform camParent = possessed.transform.Find("CameraParent");                        
                         if (camParent != null)
                         {
@@ -82,15 +75,19 @@ public class Possessor : MonoBehaviour
                         }
                         if (vsfx == null)
                         {
-                            vsfx = possessed.transform.Find("VSFX").transform;
+                            vsfx = possessed.transform.Find("VSFX");
                         }
-                        foreach (Transform fx in vsfx)
+                        if (vsfx != null)
                         {
-                            if (fx.gameObject.tag == "CandiceVSFX")
+                            for (int fxIndex = 0; fxIndex < vsfx.childCount; fxIndex++)
                             {
-                                GameObject thisfx = Instantiate(fx.gameObject, possessed.transform.position, Quaternion.identity);
-                                thisfx.SetActive(true);
-                                Destroy(thisfx, 5f);
+                                Transform fx = vsfx.GetChild(fxIndex);
+                                if (fx.CompareTag(CandiceVsfxTag))
+                                {
+                                    GameObject thisfx = Instantiate(fx.gameObject, possessed.transform.position, Quaternion.identity);
+                                    thisfx.SetActive(true);
+                                    Destroy(thisfx, 5f);
+                                }
                             }
                         }
 
@@ -99,7 +96,7 @@ public class Possessor : MonoBehaviour
                     {
                         //if you are already active
                         possessed.SetActive(false);
-                        if (possessed.tag == "Projectile")
+                        if (possessed.CompareTag(ProjectileTag))
                         {
                             Destroy(possessed, ProjectilePossessionTimer);
                         }
@@ -112,17 +109,6 @@ public class Possessor : MonoBehaviour
 
 
             }
-
-            //quick ui check
-            //remove later
-            GameObject rendp1 = GameObject.Find("Renderer P1");
-            GameObject rendp2 = GameObject.Find("Renderer P2");
-            if (rendp1 != null && rendp2 != null)
-            {
-                /*rendp1.GetComponent<LincolnCpp.HUDIndicator.IndicatorRenderer>().camera = Camera.main;
-                rendp2.GetComponent<LincolnCpp.HUDIndicator.IndicatorRenderer>().camera = Camera.main;*/        
-            }
-
         }
     }
 }

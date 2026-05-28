@@ -180,5 +180,9 @@
                                 "No Unity runtime profiler run",
                                 "No GCMonitor sample",
                                 "dotnet build blocked by out-of-domain XRPass compile dependency before final success"
-                            ]
+                            ],
+    "ast_audit_report":  {
+                             "path":  "Docs/Reports/UI_STRING_ALLOCATION_AST_AUDIT_1423.json",
+                             "sha256":  "02A9F0C2B692A238373663A28E9327CB4A990B051B43B49AA6E9459AEAF47CD4"
+                         }
 }
