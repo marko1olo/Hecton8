@@ -280,6 +280,9 @@ namespace Hecton8.Construction
         private const BufferID HabitatGraphTraversalVisitedBufferId = (BufferID)72137;
         private const BufferID HabitatGraphAnchorTraversalQueueBufferId = (BufferID)72138;
         private const BufferID HabitatGraphEdgeFlagsBufferId = (BufferID)72139;
+        private const ulong HabitatGraphMutationGuardMask = 0x0000000000000FF8UL;
+        private const ulong HabitatFloodRoomMutationGuardMask = 0x0000000080000007UL;
+        private const ulong HabitatModuleStressMutationGuardMask = 0x0000000078000000UL;
         private const uint FloodBlackBoxMagic = 0x48464C44u; // "HFLD"
         private const uint FloodBlackBoxVersion = 3u;
         private const uint FloodBlackBoxNonFiniteFlag = 1u << 0;
