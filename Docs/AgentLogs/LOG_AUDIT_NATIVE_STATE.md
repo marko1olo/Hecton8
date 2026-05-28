@@ -3705,3 +3705,33 @@ Evidence:
 - `git diff --check`: exit `0`, LF/CRLF warnings only.
 - Build/import/profiler: one build attempt ran after CPU dropped to `47%` and no compiler processes were active. `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` timed out after `244019 ms` with exit `124`; orphaned `dotnet` PID `53816` and `VBCSCompiler` PID `51936` were killed. Post-kill compiler scan was empty, CPU was `100%`. Unity import, Play Mode, profiler, GCMonitor, and native ledger proof were not run.
 - Failure dump: `Docs/AgentLogs/Dump_AUDIT_NATIVE_STATE_BUILD_TIMEOUT_AI_AMBIENT_ECOSYSTEM_20260528.json`, SHA-256 `400AE15289A0D89A1AA6DE57928440A6D2ECA2D9AA2EC9CB76ED76D96673CF16`.
+
+## 2026-05-28 - AI Symbiosis / EcosystemBalancer Exact Vault Gates
+
+What was wrong:
+- `ShinobuFloraFaunaSymbiosisSolver` still used direct DataVault hot-swap casts, generic nonzero handle checks, ownerless resolve/release, and branch-only partial `TryLockBuffer` release.
+- `ShinobuEcosystemBalancer` still used direct DataVault hot-swap casts, generic same-owner resolve/release helpers, macro external handle validation without exact BufferID, and branch-only 28-lane job-lock release.
+
+What was done:
+- Added exact `BufferID + SystemID.AIEcology + generation` gates for owned handle reuse, resolve, and release in both files.
+- Kept external lanes owner-honest: `ShinobuSeedShipAnomalyField=70700` is exact BufferID only in the symbiosis reader, with ownership left to `SeedShipAnomalyRuntime`; `ShinobuMacroEcosystemSectorFront=70433` is exact BufferID + generation in the ecosystem macro read.
+- Converted both partial job-lock acquisition paths and both teardown unlock paths to `try/finally`.
+
+Cinematic cheats used:
+- No physical simulation added.
+- Existing symbiosis/ecosystem data fakes, emergency flow, flocking, spatial grid, GPU upload, and continuous `GlobalQualityWeight` scaling preserved.
+
+Exact microseconds saved:
+- Measured: `0 us`.
+- Expected steady-frame delta: `0 us`; predicates and finally blocks wrap existing Vault operations.
+
+Evidence:
+- Artifact: `Docs/AgentLogs/APEX_AUDIT_NATIVE_STATE_AI_ECOSYSTEM_SYMBIOSIS_BALANCER_EXACT_GATES_20260528.json`
+- SHA-256: pending final recompute after log append.
+- Symbiosis owned BufferIDs: `70415-70432`; ambient borrow/claim lanes `70400`, `70401`; external anomaly field `70700`.
+- Ecosystem owned BufferIDs: `70400-70414`, `70443-70459`, `70474-70476`; external macro sector front `70433`.
+- Bad-pattern scan: `0` hits.
+- Staged diff Zero-GC/layout scans before checkpoint: `0` hits.
+- Final source scan: no string/LINQ/foreach hits; one pre-existing cold forensic `new Thread` remains outside patched hot paths.
+- `git diff --check`: exit `0`.
+- Build/import/profiler: not run. Compiler process samples were empty, but CPU sampled `99%` then `65%`, so `dotnet build` was blocked by resource throttle.
