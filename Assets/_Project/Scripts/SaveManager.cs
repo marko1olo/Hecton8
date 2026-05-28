@@ -1693,43 +1693,51 @@ namespace Hecton8.SaveSystem
                     dirtySectors[dirtySectorCount++] = signal.SectorHash;
             }
 
-            for (int sectorIndex = 0; sectorIndex < dirtySectorCount; sectorIndex++)
+            try
             {
-                if (!hasGrid)
+                for (int sectorIndex = 0; sectorIndex < dirtySectorCount; sectorIndex++)
                 {
-                    if (!TryEnsureWfcOutpostGrid(out wfcGrid))
+                    if (!hasGrid)
                     {
-                        RecordWfcOutpostEventBlackBox(
-                            WfcOutpostBlackBoxOperationPersist,
-                            WfcOutpostPersistenceStatus.InvalidGrid,
-                            dirtySectors[sectorIndex]);
-                        return;
+                        if (!TryAcquireWfcOutpostGridWrite(out wfcGrid))
+                        {
+                            RecordWfcOutpostEventBlackBox(
+                                WfcOutpostBlackBoxOperationPersist,
+                                WfcOutpostPersistenceStatus.InvalidGrid,
+                                dirtySectors[sectorIndex]);
+                            return;
+                        }
+
+                        hasGrid = true;
                     }
 
-                    hasGrid = true;
-                }
+                    ulong dirtySectorHash = dirtySectors[sectorIndex];
+                    uint dirtyFrame = 0u;
+                    bool hasDirtySignal = false;
+                    PrepareWfcOutpostMutableGridForSector(dirtySectorHash, wfcGrid);
 
-                ulong dirtySectorHash = dirtySectors[sectorIndex];
-                uint dirtyFrame = 0u;
-                bool hasDirtySignal = false;
-                PrepareWfcOutpostMutableGridForSector(dirtySectorHash, wfcGrid);
-
-                for (int signalIndex = 0; signalIndex < signals.Length; signalIndex++)
-                {
-                    WfcOutpostStateChangedSignal signal = signals[signalIndex];
-                    if (signal.SectorHash != dirtySectorHash ||
-                        !IsPersistableWfcOutpostStateSignal(in signal))
+                    for (int signalIndex = 0; signalIndex < signals.Length; signalIndex++)
                     {
-                        continue;
+                        WfcOutpostStateChangedSignal signal = signals[signalIndex];
+                        if (signal.SectorHash != dirtySectorHash ||
+                            !IsPersistableWfcOutpostStateSignal(in signal))
+                        {
+                            continue;
+                        }
+
+                        wfcGrid[signal.CellIndex] = (byte)(signal.CurrentFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
+                        dirtyFrame = signal.Frame;
+                        hasDirtySignal = true;
                     }
 
-                    wfcGrid[signal.CellIndex] = (byte)(signal.CurrentFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
-                    dirtyFrame = signal.Frame;
-                    hasDirtySignal = true;
+                    if (hasDirtySignal)
+                        TryPersistWfcOutpostStateSnapshotInternal(dirtySectorHash, wfcGrid, dirtyFrame, out _);
                 }
-
-                if (hasDirtySignal)
-                    TryPersistWfcOutpostStateSnapshotInternal(dirtySectorHash, wfcGrid, dirtyFrame, out _);
+            }
+            finally
+            {
+                if (hasGrid)
+                    ReleaseWfcOutpostGridWrite();
             }
         }
 
@@ -1744,49 +1752,57 @@ namespace Hecton8.SaveSystem
 
             NativeArray<byte> wfcGrid = default;
             bool hasGrid = false;
-            for (int i = 0; i < signals.Length; i++)
+            try
             {
-                WfcOutpostStateChangedSignal firstSignal = signals[i];
-                if (!IsPersistableWfcOutpostStateSignal(in firstSignal) ||
-                    HasEarlierWfcOutpostSectorSignal(signals, i, firstSignal.SectorHash))
+                for (int i = 0; i < signals.Length; i++)
                 {
-                    continue;
-                }
-
-                if (!hasGrid)
-                {
-                    if (!TryEnsureWfcOutpostGrid(out wfcGrid))
-                    {
-                        RecordWfcOutpostEventBlackBox(
-                            WfcOutpostBlackBoxOperationPersist,
-                            WfcOutpostPersistenceStatus.InvalidGrid,
-                            firstSignal.SectorHash);
-                        return;
-                    }
-
-                    hasGrid = true;
-                }
-
-                uint dirtyFrame = 0u;
-                bool hasDirtySignal = false;
-                PrepareWfcOutpostMutableGridForSector(firstSignal.SectorHash, wfcGrid);
-
-                for (int signalIndex = i; signalIndex < signals.Length; signalIndex++)
-                {
-                    WfcOutpostStateChangedSignal signal = signals[signalIndex];
-                    if (signal.SectorHash != firstSignal.SectorHash ||
-                        !IsPersistableWfcOutpostStateSignal(in signal))
+                    WfcOutpostStateChangedSignal firstSignal = signals[i];
+                    if (!IsPersistableWfcOutpostStateSignal(in firstSignal) ||
+                        HasEarlierWfcOutpostSectorSignal(signals, i, firstSignal.SectorHash))
                     {
                         continue;
                     }
 
-                    wfcGrid[signal.CellIndex] = (byte)(signal.CurrentFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
-                    dirtyFrame = signal.Frame;
-                    hasDirtySignal = true;
-                }
+                    if (!hasGrid)
+                    {
+                        if (!TryAcquireWfcOutpostGridWrite(out wfcGrid))
+                        {
+                            RecordWfcOutpostEventBlackBox(
+                                WfcOutpostBlackBoxOperationPersist,
+                                WfcOutpostPersistenceStatus.InvalidGrid,
+                                firstSignal.SectorHash);
+                            return;
+                        }
 
-                if (hasDirtySignal)
-                    TryPersistWfcOutpostStateSnapshotInternal(firstSignal.SectorHash, wfcGrid, dirtyFrame, out _);
+                        hasGrid = true;
+                    }
+
+                    uint dirtyFrame = 0u;
+                    bool hasDirtySignal = false;
+                    PrepareWfcOutpostMutableGridForSector(firstSignal.SectorHash, wfcGrid);
+
+                    for (int signalIndex = i; signalIndex < signals.Length; signalIndex++)
+                    {
+                        WfcOutpostStateChangedSignal signal = signals[signalIndex];
+                        if (signal.SectorHash != firstSignal.SectorHash ||
+                            !IsPersistableWfcOutpostStateSignal(in signal))
+                        {
+                            continue;
+                        }
+
+                        wfcGrid[signal.CellIndex] = (byte)(signal.CurrentFlags & WfcOutpostPersistenceConstants.MutableFlagMask);
+                        dirtyFrame = signal.Frame;
+                        hasDirtySignal = true;
+                    }
+
+                    if (hasDirtySignal)
+                        TryPersistWfcOutpostStateSnapshotInternal(firstSignal.SectorHash, wfcGrid, dirtyFrame, out _);
+                }
+            }
+            finally
+            {
+                if (hasGrid)
+                    ReleaseWfcOutpostGridWrite();
             }
         }
 

@@ -1,7 +1,7 @@
 {
   "agent_id": "1408",
   "role": "MAIN_THREAD_SYNCHRONOUS_JOB_BLOCKER_PURGER",
-  "status": "STATIC_PASS_WORLD_RUNTIME_SYNC_CLEAN_THREAT_FLOW_SNAPSHOT_REPAIRED_BUILD_BLOCKED_BY_CONTENTION",
+  "status": "STATIC_PASS_WORLD_RUNTIME_SYNC_CLEAN_THREAT_FLOW_GPR_STAGING_REPAIRED_BUILD_BLOCKED_BY_CONTENTION",
   "generated_at_local": "2026-05-28",
   "domain": "Echelon 3 / World vegetation residency and flow-field async execution",
   "scope": {
@@ -172,7 +172,7 @@
       "system": "ground_penetrating_radar",
       "stored_handle": "_radarJobHandle",
       "producer_chain": "GroundRadarRaymarchJob schedules as a worker IJob. Ore SoA reads are registered through IWorldResourceSpawnerReadDependencySink; when no sink exists, ore arrays are dropped and the scan fails closed.",
-      "completion_gate": "CompleteRadarJob uses DispatcherJobFence.TryComplete before CommitCompletedScan, then releases SDF and GPR DataVault buffer locks in finally."
+      "completion_gate": "CompleteRadarJob uses DispatcherJobFence.TryComplete before CommitCompletedScan(ref pending), publishes staged results through short DataVault write locks, then releases SDF lock and TempJob staging arrays in finally."
     },
     {
       "system": "abyssal_path",
@@ -182,9 +182,9 @@
     }
   ],
   "datavault_lifetime": {
-    "finding": "No new DataVault fields were migrated. Vegetation jobs publish through existing BufferID lanes after dispatcher fences. Threat propagation, flow-field solving, and abyssal A* no longer capture live ecosystem threat DataVault arrays across frames. GPR now keeps existing TryLockBuffer locks until scheduled raymarch completion.",
-    "job_memory_owner": "Vegetation TempJob/H8Memory pending structs stay alive until dispatcher-fenced completion; threat propagation releases PreviousThreat in ReleaseThreatPropagationPendingJob; flow-field solving releases ThreatGridSnapshot in ReleaseFlowFieldPendingJob; abyssal A* threat snapshots are released through pathSourceHandle; GPR persistent Vault buffers remain locked while the worker owns slices.",
-    "publish_order": "vegetation: fence -> TryCopyVegetationMemorySnapshot -> metadata update -> Release*PendingJob in finally; abyssal path: Schedule A*/StringPull -> CompleteAbyssalPathJob fence -> CommitAbyssalPathResult -> ReleaseAbyssalPathPendingJob in finally; GPR: ScheduleRadarJob locks -> job.Schedule -> CompleteRadarJob fence -> CommitCompletedScan -> UnlockSdfSnapshotBuffer/ReleaseScanJobBufferLocks in finally",
+    "finding": "No new DataVault fields were migrated. Vegetation jobs publish through existing BufferID lanes after dispatcher fences. Threat propagation, flow-field solving, and abyssal A* no longer capture live ecosystem threat DataVault arrays across frames. GPR now copies current pings into H8Memory TempJob staging arrays before scheduling and publishes back to DataVault only after dispatcher completion.",
+    "job_memory_owner": "Vegetation TempJob/H8Memory pending structs stay alive until dispatcher-fenced completion; threat propagation releases PreviousThreat in ReleaseThreatPropagationPendingJob; flow-field solving releases ThreatGridSnapshot in ReleaseFlowFieldPendingJob; abyssal A* threat snapshots are released through pathSourceHandle; GPR raymarch owns RadarPendingJob TempJob arrays until CompleteRadarJob finally releases them through ReleaseRadarPendingJob.",
+    "publish_order": "vegetation: fence -> TryCopyVegetationMemorySnapshot -> metadata update -> Release*PendingJob in finally; abyssal path: Schedule A*/StringPull -> CompleteAbyssalPathJob fence -> CommitAbyssalPathResult -> ReleaseAbyssalPathPendingJob in finally; GPR: TryCopyCurrentGprStateToPending short buffer lock -> job.Schedule -> CompleteRadarJob fence -> CommitCompletedScan(ref pending) -> TryPublishRadarPendingJob write locks/finally releases -> ReleaseRadarPendingJob in finally",
     "rejected_alternative": "Holding DataVault write locks across asynchronous worker execution."
   },
   "zero_gc_proof": {
@@ -249,7 +249,7 @@
     "on_disable": "forces threat, flow, and thermal completion before DisposeThreatGridState, DisposeFlowFieldState, DisposeThermalGridState, and native aggregate disposal",
     "on_destroy": "same forced completion order as OnDisable",
     "chunk_cancellation": "CompleteAndReleaseChunkBuildJob force-fences pending chunk jobs before ReleaseChunkBuildPendingJob",
-    "ground_radar": "Dispose calls CompleteRadarJob(forceComplete: true) before clearing DataVault handles; CompleteRadarJob releases SDF and GPR buffer locks in finally.",
+    "ground_radar": "Dispose calls CompleteRadarJob(forceComplete: true) before clearing DataVault handles; CompleteRadarJob releases the SDF lock and RadarPendingJob staging arrays in finally; TryPublishRadarPendingJob releases every acquired DataVault write lock in finally.",
     "test_artifact": "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs"
   },
   "test_artifacts": [
@@ -263,6 +263,7 @@
         "LateFrameAndTeardown_AreTheExplicitVegetationCompletionGates",
         "StaticHotPathAudit_RejectsSynchronousTokensOutsideLateFrameAndTeardown",
         "GroundRadarScheduling_DefersReadbackUntilDispatcherCompletion",
+        "GroundRadarRaymarch_UsesTempStagingAndShortWriteLockPublish",
         "AbyssalPathScheduling_DefersReadbackUntilDispatcherCompletion",
         "AbyssalPathBudgets_UseContinuousGlobalQualityWeight",
         "HlodReadAndSlowTickPaths_DoNotCompleteJobsOutsideDispatcherGate"
@@ -274,17 +275,12 @@
     "attempted": false,
     "status": "BLOCKED_BY_CONTENTION",
     "preflight": {
-      "cpu_load_percent": 100,
+      "cpu_load_percent": 40,
       "active_compiler_or_build_processes": [
         {
-          "process": "csc",
-          "pid": 8756,
-          "cpu": 5.640625
-        },
-        {
           "process": "dotnet",
-          "pid": 55080,
-          "cpu": 524.09375
+          "pid": 52972,
+          "cpu": 7.6875
         }
       ]
     },
@@ -296,9 +292,9 @@
     "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs": "EB4286FBEB69A2A8CC329057043FF316BE8B880207B26F42C5EEA91C20017FDA",
     "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs": "BBFB5B4533AD8FC489B5F020F35C7C8F5DACAED4D46ED383B8D4F7B34C1BD6C2",
     "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs": "C4A21741B3B96160DD17340B5DDE9676DD566556655D21E7DD208B423139DFE1",
-    "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs": "383511C4888FA69BD3F5136916451455B86C86D78344028751F5FB94914E6C64",
+    "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs": "264A5F22B3A87A8FD48B2AB44556B8602DF3FBF0A8EA15F1661EF48578D24A74",
     "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs": "46BC451FBA753FFEC07213CFE75116C94F112731CD85D97372EE8FCA5A6E00F2",
-    "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs": "5C7D56DA9222C8E68B4832D0C97783A7237B2680DBF9E43912F9C2683811C758",
+    "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs": "0D569A043CE425CF6666703682E5685F5092D484DFC0ACE48B816C25646F97B7",
     "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs.meta": "F464826D1A9DC097662CDBFAF77F88BD9ED76A319EE4C105AE9D8B94274B71FF"
   }
 }
