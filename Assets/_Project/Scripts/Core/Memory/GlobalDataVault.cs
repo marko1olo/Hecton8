@@ -495,6 +495,7 @@ namespace Hecton8.Core.Memory
 
         private UnsafeHashMap<int, IntPtr> _buffers;
         private UnsafeHashMap<int, VaultBufferMeta> _metadata;
+        private UnsafeHashMap<int, uint> _metadataGenerationByBufferId;
         private NativeArray<VaultBufferMeta> _metadataByBufferId;
         private NativeList<int> _keys;
         private NativeList<VaultArenaBlock> _blocks;
@@ -672,6 +673,7 @@ namespace Hecton8.Core.Memory
                 return;
             _buffers = new UnsafeHashMap<int, IntPtr>(safeCapacity, Allocator.Persistent);
             _metadata = new UnsafeHashMap<int, VaultBufferMeta>(safeCapacity, Allocator.Persistent);
+            _metadataGenerationByBufferId = new UnsafeHashMap<int, uint>(safeCapacity, Allocator.Persistent);
             _metadataByBufferId = H8Memory.Allocate<VaultBufferMeta>(
                 MaxGenerationHandleCapacity,
                 SystemID.CoreDataVault,
@@ -841,6 +843,7 @@ namespace Hecton8.Core.Memory
             return
                 _buffers.IsCreated &&
                 _metadata.IsCreated &&
+                _metadataGenerationByBufferId.IsCreated &&
                 _metadataByBufferId.IsCreated &&
                 _keys.IsCreated &&
                 _blocks.IsCreated &&

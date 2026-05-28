@@ -1,86 +1,92 @@
 ﻿{
     "agentId":  "1411",
     "role":  "DOUBLE_BUFFERED_GRAPHICS_BUFFER_AND_PCIE_BANDWIDTH_GUARD",
-    "status":  "STATIC_VERIFIED_BUILD_BLOCKED_BY_CPU_CONTENTION",
+    "domain":  "Echelon 7 GPU Architecture and PCIe Upload Bandwidth Guard",
+    "status":  "STATIC_VERIFIED_BUILD_BLOCKED_BY_CPU_DOTNET_CONTENTION",
+    "generatedAtLocal":  "2026-05-28T05:51:01.5393676+04:00",
     "promptXmlTaskCount":  20,
     "mandatoryConstraintCount":  6,
     "selfAuditQuestionCount":  4,
     "internalChecklistCount":  20,
     "apexVerificationPath":  "Docs/Reports/PCIE_BANDWIDTH_APEX_VERIFICATION_1411.json",
     "buildPolicy":  {
-                        "reason":  "CPU load exceeded 50 percent; build intentionally not launched.",
+                        "sampledAtLocal":  "2026-05-28T05:51:01.3765005+04:00",
+                        "cpuLoadPercentAtGate":  24,
+                        "cscProcessCountAtGate":  0,
                         "dotnetProcessCountAtGate":  1,
-                        "cscProcessCountAtGate":  1,
-                        "cpuLoadPercentAtGate":  100,
+                        "VBCSCompilerProcessCountAtGate":  0,
                         "dotnetBuildRun":  false,
-                        "VBCSCompilerProcessCountAtGate":  0
+                        "buildAllowed":  false,
+                        "reason":  "Build intentionally not launched because CPU/process gate failed."
                     },
     "redundantBytesEliminatedPerFrame":  {
                                              "formula":  "instanceCount * (Matrix4x4 64B + HectonVegetationInstanceData 64B)",
+                                             "vegetationInstances":  10000,
                                              "oldBytesPerUnchangedFrame":  1280000,
                                              "newBytesPerUnchangedFrame":  0,
-                                             "eliminatedBytesPerUnchangedFrame":  1280000,
-                                             "vegetationInstances":  10000
+                                             "eliminatedBytesPerUnchangedFrame":  1280000
                                          },
     "dirtyPageMath":  {
+                          "pageSizeInstances":  256,
                           "matrixStrideBytes":  64,
+                          "metadataStrideBytes":  64,
                           "fullMatrixLaneBytesAt100000Instances":  6400000,
                           "fullMatrixPageBytes":  16384,
-                          "metadataStrideBytes":  64,
-                          "lastPageIndexFor100000Instances":  390,
-                          "fullMatrixAndMetadataPageBytes":  32768,
-                          "lastMatrixPageBytesForIndex99999":  10240,
-                          "lastPageElementCountForIndex99999":  160,
-                          "pageSizeInstances":  256,
                           "fullMetadataPageBytes":  16384,
+                          "fullMatrixAndMetadataPageBytes":  32768,
+                          "lastPageIndexFor100000Instances":  390,
+                          "lastPageElementCountForIndex99999":  160,
+                          "lastMatrixPageBytesForIndex99999":  10240,
                           "fullLaneToFullPageReductionRatio":  390.625
                       },
     "systemsConverted":  [
                              {
-                                 "changes":  [
-                                                 "ContentRevision added to native read token.",
-                                                 "Unchanged BufferIndex/InstanceCount/ContentRevision skips PCIe upload.",
-                                                 "Renderer-owned matrix and metadata staging use A/B GraphicsBuffer pairs.",
-                                                 "Dirty page backlogs are GlobalDataVault byte buffers 74603-74606, not persistent NativeArray fields.",
-                                                 "Dirty uploads publish only when selected back buffer has no deferred dirty pages."
-                                             ],
+                                 "system":  "HectonIndirectVegetationRenderer native source upload",
                                  "files":  [
                                                "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
                                                "Assets/_Project/Scripts/World/HectonIndirectVegetationContracts.cs",
-                                               "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs"
+                                               "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+                                               "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+                                               "Assets/_Project/Scripts/World/VegetationMemoryPool.cs"
                                            ],
-                                 "system":  "HectonIndirectVegetationRenderer native source upload"
+                                 "changes":  [
+                                                 "Unchanged BufferIndex/InstanceCount/ContentRevision skips PCIe upload.",
+                                                 "Renderer-owned matrix and metadata staging use A/B GraphicsBuffer pairs.",
+                                                 "Renderer dirty page backlogs are GlobalDataVault byte buffers 74603-74606.",
+                                                 "MapMagic aggregate producer dirty pages are GlobalDataVault byte buffers 74607-74614.",
+                                                 "Dirty uploads publish only when selected write buffer has no deferred dirty pages."
+                                             ]
                              },
                              {
-                                 "changes":  [
-                                                 "ResolveDirtyPageCount, MarkDirtyPage, ClearDirtyPages, and dirty upload stats added.",
-                                                 "UploadNativeArrayDirtyPages uses LockBufferForWrite\u003cT\u003e(startIndex,count).",
-                                                 "Adjacent dirty pages coalesce into one mapped span.",
-                                                 "UnsafeMemoryCopyGuard.TryMemCpy guards destination byte capacity."
-                                             ],
+                                 "system":  "Shared mapped upload primitive",
                                  "files":  [
                                                "Assets/_Project/Scripts/Core/SystemDispatcher.cs"
                                            ],
-                                 "system":  "Shared mapped upload primitive"
+                                 "changes":  [
+                                                 "MarkDirtyPageRange and ResolveFirstDirtyPageBytes added.",
+                                                 "UploadNativeArrayDirtyPages uses LockBufferForWrite\u003cT\u003e(startIndex,count).",
+                                                 "Adjacent dirty pages coalesce into one mapped span.",
+                                                 "UnsafeMemoryCopyGuard.TryMemCpy guards destination byte capacity."
+                                             ]
                              },
                              {
-                                 "changes":  [
-                                                 "UploadRange now uses LockBufferForWrite\u003cT\u003e(safeStart,safeCount).",
-                                                 "Position/velocity debris buffers now use CreateStructuredLockBuffer\u003cT\u003e.",
-                                                 "SetData removed from carve debris upload helper."
-                                             ],
+                                 "system":  "Carve debris VFX upload range",
                                  "files":  [
                                                "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs"
                                            ],
-                                 "system":  "Carve debris VFX upload range"
+                                 "changes":  [
+                                                 "UploadRange uses LockBufferForWrite\u003cT\u003e(safeStart,safeCount).",
+                                                 "Position/velocity debris buffers use CreateStructuredLockBuffer\u003cT\u003e.",
+                                                 "SetData removed from carve debris upload helper."
+                                             ]
                              }
                          ],
     "zeroGcProof":  {
                         "scan":  [
                                      {
-                                         "region":  "CoreResolveFirstDirtyPageBytes",
+                                         "region":  "CoreMarkDirtyPageRange",
                                          "path":  "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-                                         "lineRange":  "7242-7268",
+                                         "lineRange":  "7222-7243",
                                          "counts":  {
                                                         "rawNew":  0,
                                                         "newArray":  0,
@@ -92,6 +98,57 @@
                                          "rawNewLines":  [
 
                                                          ],
+                                         "newArrayLines":  [
+
+                                                           ],
+                                         "stringFormatLines":  [
+
+                                                               ],
+                                         "toStringLines":  [
+
+                                                           ],
+                                         "foreachLines":  [
+
+                                                          ],
+                                         "linqLines":  [
+
+                                                       ],
+                                         "newReferenceTypeCandidateCount":  0,
+                                         "newReferenceTypeCandidateLines":  [
+
+                                                                            ],
+                                         "forbiddenManagedHotPathCount":  0
+                                     },
+                                     {
+                                         "region":  "CoreResolveFirstDirtyPageBytes",
+                                         "path":  "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+                                         "lineRange":  "7266-7290",
+                                         "counts":  {
+                                                        "rawNew":  0,
+                                                        "newArray":  0,
+                                                        "stringFormat":  0,
+                                                        "toString":  0,
+                                                        "foreachLoop":  0,
+                                                        "linqCalls":  0
+                                                    },
+                                         "rawNewLines":  [
+
+                                                         ],
+                                         "newArrayLines":  [
+
+                                                           ],
+                                         "stringFormatLines":  [
+
+                                                               ],
+                                         "toStringLines":  [
+
+                                                           ],
+                                         "foreachLines":  [
+
+                                                          ],
+                                         "linqLines":  [
+
+                                                       ],
                                          "newReferenceTypeCandidateCount":  0,
                                          "newReferenceTypeCandidateLines":  [
 
@@ -101,28 +158,7 @@
                                      {
                                          "region":  "CoreDirtyUploadUtility",
                                          "path":  "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-                                         "lineRange":  "7281-7499",
-                                         "counts":  {
-                                                        "rawNew":  1,
-                                                        "newArray":  0,
-                                                        "stringFormat":  0,
-                                                        "toString":  0,
-                                                        "foreachLoop":  0,
-                                                        "linqCalls":  0
-                                                    },
-                                         "rawNewLines":  [
-                                                             "7497:return new PageUploadStats"
-                                                         ],
-                                         "newReferenceTypeCandidateCount":  0,
-                                         "newReferenceTypeCandidateLines":  [
-
-                                                                            ],
-                                         "forbiddenManagedHotPathCount":  0
-                                     },
-                                     {
-                                         "region":  "NativeReadBufferContract",
-                                         "path":  "Assets/_Project/Scripts/World/HectonIndirectVegetationContracts.cs",
-                                         "lineRange":  "530-647",
+                                         "lineRange":  "7305-7502",
                                          "counts":  {
                                                         "rawNew":  0,
                                                         "newArray":  0,
@@ -134,6 +170,21 @@
                                          "rawNewLines":  [
 
                                                          ],
+                                         "newArrayLines":  [
+
+                                                           ],
+                                         "stringFormatLines":  [
+
+                                                               ],
+                                         "toStringLines":  [
+
+                                                           ],
+                                         "foreachLines":  [
+
+                                                          ],
+                                         "linqLines":  [
+
+                                                       ],
                                          "newReferenceTypeCandidateCount":  0,
                                          "newReferenceTypeCandidateLines":  [
 
@@ -141,177 +192,9 @@
                                          "forbiddenManagedHotPathCount":  0
                                      },
                                      {
-                                         "region":  "RendererNativeUploadBinding",
-                                         "path":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
-                                         "lineRange":  "2010-2120",
-                                         "counts":  {
-                                                        "rawNew":  0,
-                                                        "newArray":  0,
-                                                        "stringFormat":  0,
-                                                        "toString":  0,
-                                                        "foreachLoop":  0,
-                                                        "linqCalls":  0
-                                                    },
-                                         "rawNewLines":  [
-
-                                                         ],
-                                         "newReferenceTypeCandidateCount":  0,
-                                         "newReferenceTypeCandidateLines":  [
-
-                                                                            ],
-                                         "forbiddenManagedHotPathCount":  0
-                                     },
-                                     {
-                                         "region":  "RendererSourceSync",
-                                         "path":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
-                                         "lineRange":  "5115-5160",
-                                         "counts":  {
-                                                        "rawNew":  0,
-                                                        "newArray":  0,
-                                                        "stringFormat":  0,
-                                                        "toString":  0,
-                                                        "foreachLoop":  0,
-                                                        "linqCalls":  0
-                                                    },
-                                         "rawNewLines":  [
-
-                                                         ],
-                                         "newReferenceTypeCandidateCount":  0,
-                                         "newReferenceTypeCandidateLines":  [
-
-                                                                            ],
-                                         "forbiddenManagedHotPathCount":  0
-                                     },
-                                     {
-                                         "region":  "RendererDirtyVaultAllocation",
-                                         "path":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
-                                         "lineRange":  "5427-5453",
-                                         "counts":  {
-                                                        "rawNew":  0,
-                                                        "newArray":  0,
-                                                        "stringFormat":  0,
-                                                        "toString":  0,
-                                                        "foreachLoop":  0,
-                                                        "linqCalls":  0
-                                                    },
-                                         "rawNewLines":  [
-
-                                                         ],
-                                         "newReferenceTypeCandidateCount":  0,
-                                         "newReferenceTypeCandidateLines":  [
-
-                                                                            ],
-                                         "forbiddenManagedHotPathCount":  0
-                                     },
-                                     {
-                                         "region":  "RendererClearUploadedDirtyPages",
-                                         "path":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
-                                         "lineRange":  "5543-5567",
-                                         "counts":  {
-                                                        "rawNew":  0,
-                                                        "newArray":  0,
-                                                        "stringFormat":  0,
-                                                        "toString":  0,
-                                                        "foreachLoop":  0,
-                                                        "linqCalls":  0
-                                                    },
-                                         "rawNewLines":  [
-
-                                                         ],
-                                         "newReferenceTypeCandidateCount":  0,
-                                         "newReferenceTypeCandidateLines":  [
-
-                                                                            ],
-                                         "forbiddenManagedHotPathCount":  0
-                                     },
-                                     {
-                                         "region":  "RendererDirtyBacklogReadOnly",
-                                         "path":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
-                                         "lineRange":  "5580-5618",
-                                         "counts":  {
-                                                        "rawNew":  0,
-                                                        "newArray":  0,
-                                                        "stringFormat":  0,
-                                                        "toString":  0,
-                                                        "foreachLoop":  0,
-                                                        "linqCalls":  0
-                                                    },
-                                         "rawNewLines":  [
-
-                                                         ],
-                                         "newReferenceTypeCandidateCount":  0,
-                                         "newReferenceTypeCandidateLines":  [
-
-                                                                            ],
-                                         "forbiddenManagedHotPathCount":  0
-                                     },
-                                     {
-                                         "region":  "RendererDirtyVaultLockRelease",
-                                         "path":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
-                                         "lineRange":  "5620-5708",
-                                         "counts":  {
-                                                        "rawNew":  0,
-                                                        "newArray":  0,
-                                                        "stringFormat":  0,
-                                                        "toString":  0,
-                                                        "foreachLoop":  0,
-                                                        "linqCalls":  0
-                                                    },
-                                         "rawNewLines":  [
-
-                                                         ],
-                                         "newReferenceTypeCandidateCount":  0,
-                                         "newReferenceTypeCandidateLines":  [
-
-                                                                            ],
-                                         "forbiddenManagedHotPathCount":  0
-                                     },
-                                     {
-                                         "region":  "RendererDirtyPageLoopAndBudget",
-                                         "path":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
-                                         "lineRange":  "5711-5741",
-                                         "counts":  {
-                                                        "rawNew":  0,
-                                                        "newArray":  0,
-                                                        "stringFormat":  0,
-                                                        "toString":  0,
-                                                        "foreachLoop":  0,
-                                                        "linqCalls":  0
-                                                    },
-                                         "rawNewLines":  [
-
-                                                         ],
-                                         "newReferenceTypeCandidateCount":  0,
-                                         "newReferenceTypeCandidateLines":  [
-
-                                                                            ],
-                                         "forbiddenManagedHotPathCount":  0
-                                     },
-                                     {
-                                         "region":  "MapMagicNativeReadTokenPublication",
+                                         "region":  "MapMagicDirtyPageBufferAllocation",
                                          "path":  "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
-                                         "lineRange":  "7407-7433",
-                                         "counts":  {
-                                                        "rawNew":  1,
-                                                        "newArray":  0,
-                                                        "stringFormat":  0,
-                                                        "toString":  0,
-                                                        "foreachLoop":  0,
-                                                        "linqCalls":  0
-                                                    },
-                                         "rawNewLines":  [
-                                                             "7424:readBuffer = new HectonIndirectVegetationNativeReadBuffer("
-                                                         ],
-                                         "newReferenceTypeCandidateCount":  0,
-                                         "newReferenceTypeCandidateLines":  [
-
-                                                                            ],
-                                         "forbiddenManagedHotPathCount":  0
-                                     },
-                                     {
-                                         "region":  "CarveDebrisLockCapableBufferCreation",
-                                         "path":  "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs",
-                                         "lineRange":  "801-807",
+                                         "lineRange":  "7052-7109",
                                          "counts":  {
                                                         "rawNew":  0,
                                                         "newArray":  0,
@@ -323,6 +206,201 @@
                                          "rawNewLines":  [
 
                                                          ],
+                                         "newArrayLines":  [
+
+                                                           ],
+                                         "stringFormatLines":  [
+
+                                                               ],
+                                         "toStringLines":  [
+
+                                                           ],
+                                         "foreachLines":  [
+
+                                                          ],
+                                         "linqLines":  [
+
+                                                       ],
+                                         "newReferenceTypeCandidateCount":  0,
+                                         "newReferenceTypeCandidateLines":  [
+
+                                                                            ],
+                                         "forbiddenManagedHotPathCount":  0
+                                     },
+                                     {
+                                         "region":  "MapMagicDirtyPageLocksAndResolvers",
+                                         "path":  "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+                                         "lineRange":  "7372-7483",
+                                         "counts":  {
+                                                        "rawNew":  0,
+                                                        "newArray":  0,
+                                                        "stringFormat":  0,
+                                                        "toString":  0,
+                                                        "foreachLoop":  0,
+                                                        "linqCalls":  0
+                                                    },
+                                         "rawNewLines":  [
+
+                                                         ],
+                                         "newArrayLines":  [
+
+                                                           ],
+                                         "stringFormatLines":  [
+
+                                                               ],
+                                         "toStringLines":  [
+
+                                                           ],
+                                         "foreachLines":  [
+
+                                                          ],
+                                         "linqLines":  [
+
+                                                       ],
+                                         "newReferenceTypeCandidateCount":  0,
+                                         "newReferenceTypeCandidateLines":  [
+
+                                                                            ],
+                                         "forbiddenManagedHotPathCount":  0
+                                     },
+                                     {
+                                         "region":  "MapMagicNativeReadTokenDirtyPages",
+                                         "path":  "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+                                         "lineRange":  "7566-7612",
+                                         "counts":  {
+                                                        "rawNew":  1,
+                                                        "newArray":  0,
+                                                        "stringFormat":  0,
+                                                        "toString":  0,
+                                                        "foreachLoop":  0,
+                                                        "linqCalls":  0
+                                                    },
+                                         "rawNewLines":  [
+                                                             "7599:readBuffer = new HectonIndirectVegetationNativeReadBuffer("
+                                                         ],
+                                         "newArrayLines":  [
+
+                                                           ],
+                                         "stringFormatLines":  [
+
+                                                               ],
+                                         "toStringLines":  [
+
+                                                           ],
+                                         "foreachLines":  [
+
+                                                          ],
+                                         "linqLines":  [
+
+                                                       ],
+                                         "newReferenceTypeCandidateCount":  0,
+                                         "newReferenceTypeCandidateLines":  [
+
+                                                                            ],
+                                         "forbiddenManagedHotPathCount":  0
+                                     },
+                                     {
+                                         "region":  "VegetationAggregateRebuildDirtyMarking",
+                                         "path":  "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+                                         "lineRange":  "270-432",
+                                         "counts":  {
+                                                        "rawNew":  0,
+                                                        "newArray":  0,
+                                                        "stringFormat":  0,
+                                                        "toString":  0,
+                                                        "foreachLoop":  0,
+                                                        "linqCalls":  0
+                                                    },
+                                         "rawNewLines":  [
+
+                                                         ],
+                                         "newArrayLines":  [
+
+                                                           ],
+                                         "stringFormatLines":  [
+
+                                                               ],
+                                         "toStringLines":  [
+
+                                                           ],
+                                         "foreachLines":  [
+
+                                                          ],
+                                         "linqLines":  [
+
+                                                       ],
+                                         "newReferenceTypeCandidateCount":  0,
+                                         "newReferenceTypeCandidateLines":  [
+
+                                                                            ],
+                                         "forbiddenManagedHotPathCount":  0
+                                     },
+                                     {
+                                         "region":  "RendererNativeUploadBindingAndSourceAbsorption",
+                                         "path":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+                                         "lineRange":  "2018-2185",
+                                         "counts":  {
+                                                        "rawNew":  0,
+                                                        "newArray":  0,
+                                                        "stringFormat":  0,
+                                                        "toString":  0,
+                                                        "foreachLoop":  0,
+                                                        "linqCalls":  0
+                                                    },
+                                         "rawNewLines":  [
+
+                                                         ],
+                                         "newArrayLines":  [
+
+                                                           ],
+                                         "stringFormatLines":  [
+
+                                                               ],
+                                         "toStringLines":  [
+
+                                                           ],
+                                         "foreachLines":  [
+
+                                                          ],
+                                         "linqLines":  [
+
+                                                       ],
+                                         "newReferenceTypeCandidateCount":  0,
+                                         "newReferenceTypeCandidateLines":  [
+
+                                                                            ],
+                                         "forbiddenManagedHotPathCount":  0
+                                     },
+                                     {
+                                         "region":  "RendererDirtyBacklogAndLockRelease",
+                                         "path":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+                                         "lineRange":  "5610-5739",
+                                         "counts":  {
+                                                        "rawNew":  0,
+                                                        "newArray":  0,
+                                                        "stringFormat":  0,
+                                                        "toString":  0,
+                                                        "foreachLoop":  0,
+                                                        "linqCalls":  0
+                                                    },
+                                         "rawNewLines":  [
+
+                                                         ],
+                                         "newArrayLines":  [
+
+                                                           ],
+                                         "stringFormatLines":  [
+
+                                                               ],
+                                         "toStringLines":  [
+
+                                                           ],
+                                         "foreachLines":  [
+
+                                                          ],
+                                         "linqLines":  [
+
+                                                       ],
                                          "newReferenceTypeCandidateCount":  0,
                                          "newReferenceTypeCandidateLines":  [
 
@@ -332,7 +410,7 @@
                                      {
                                          "region":  "CarveDebrisMappedUploadRange",
                                          "path":  "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs",
-                                         "lineRange":  "2219-2235",
+                                         "lineRange":  "2208-2237",
                                          "counts":  {
                                                         "rawNew":  0,
                                                         "newArray":  0,
@@ -344,6 +422,21 @@
                                          "rawNewLines":  [
 
                                                          ],
+                                         "newArrayLines":  [
+
+                                                           ],
+                                         "stringFormatLines":  [
+
+                                                               ],
+                                         "toStringLines":  [
+
+                                                           ],
+                                         "foreachLines":  [
+
+                                                          ],
+                                         "linqLines":  [
+
+                                                       ],
                                          "newReferenceTypeCandidateCount":  0,
                                          "newReferenceTypeCandidateLines":  [
 
@@ -354,80 +447,101 @@
                         "forbiddenManagedHotPathCount":  0
                     },
     "dataSovereigntyProof":  {
-                                 "finallyReleaseLines":  [
-                                                             "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:2117-2119",
-                                                             "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:5564-5566",
-                                                             "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:5674-5682",
-                                                             "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:5686-5708"
-                                                         ],
                                  "migratedToGlobalDataVault":  true,
-                                 "handles":  [
-                                                 "_uploadedMatrixDirtyPagesAHandle",
-                                                 "_uploadedMatrixDirtyPagesBHandle",
-                                                 "_uploadedDataDirtyPagesAHandle",
-                                                 "_uploadedDataDirtyPagesBHandle"
-                                             ],
-                                 "tryAcquireWriteLockLines":  [
-                                                                  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:5647",
-                                                                  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:5650",
-                                                                  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:5653",
-                                                                  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:5656"
+                                 "rendererDirtyBufferIds":  {
+                                                                "NativeUploadMatrixDirtyPagesAId":  74603,
+                                                                "NativeUploadMatrixDirtyPagesBId":  74604,
+                                                                "NativeUploadDataDirtyPagesAId":  74605,
+                                                                "NativeUploadDataDirtyPagesBId":  74606
+                                                            },
+                                 "mapMagicProducerDirtyBufferIds":  {
+                                                                        "SurfaceAggregateFrontMatrixDirtyPagesId":  74607,
+                                                                        "SurfaceAggregateFrontMetadataDirtyPagesId":  74608,
+                                                                        "SurfaceAggregateBackMatrixDirtyPagesId":  74609,
+                                                                        "SurfaceAggregateBackMetadataDirtyPagesId":  74610,
+                                                                        "UnderwaterAggregateFrontMatrixDirtyPagesId":  74611,
+                                                                        "UnderwaterAggregateFrontMetadataDirtyPagesId":  74612,
+                                                                        "UnderwaterAggregateBackMatrixDirtyPagesId":  74613,
+                                                                        "UnderwaterAggregateBackMetadataDirtyPagesId":  74614
+                                                                    },
+                                 "tryAcquireWriteLockProof":  [
+                                                                  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:5677 _uploadedMatrixDirtyPagesAHandle",
+                                                                  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:5680 _uploadedMatrixDirtyPagesBHandle",
+                                                                  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:5683 _uploadedDataDirtyPagesAHandle",
+                                                                  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:5686 _uploadedDataDirtyPagesBHandle",
+                                                                  "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs:7394-7408 producer dirty pages delegate to TryAcquireVegetationMemoryBuffer",
+                                                                  "Assets/_Project/Scripts/World/VegetationMemorySovereigntyRuntime.cs:300-302 direct vault.TryAcquireWriteLock check for delegated producer buffers"
                                                               ],
-                                 "bufferIds":  {
-                                                   "NativeUploadMatrixDirtyPagesAId":  74603,
-                                                   "NativeUploadMatrixDirtyPagesBId":  74604,
-                                                   "NativeUploadDataDirtyPagesAId":  74605,
-                                                   "NativeUploadDataDirtyPagesBId":  74606
-                                               }
+                                 "finallyReleaseProof":  [
+                                                             "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:2125-2128 renderer dirty upload success path",
+                                                             "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:5594-5597 renderer clear path",
+                                                             "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:5702-5712 renderer partial-acquire failure",
+                                                             "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:5716-5739 renderer release method",
+                                                             "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs:330-335 surface producer dirty lock release",
+                                                             "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs:421-426 underwater producer dirty lock release",
+                                                             "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs:7417-7428 producer partial-acquire failure release",
+                                                             "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs:7432-7441 producer release method",
+                                                             "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs:7155-7164 ensure-buffer write lock release"
+                                                         ]
                              },
     "continuousQualityScaling":  {
-                                     "budgetLine":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:5737-5741 ResolveNativeUploadBudgetBytes",
+                                     "qualitySourceLine":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:2385 HomeostasisBrain.GlobalQualityWeight",
+                                     "budgetLine":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:5755-5759 ResolveNativeUploadBudgetBytes",
                                      "formula":  "Mathf.RoundToInt(math.lerp(32 KiB, 2 MiB, Smooth01(GlobalQualityWeight)))",
-                                     "qualitySourceLine":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:2355 HomeostasisBrain.GlobalQualityWeight",
-                                     "binaryLowEndSwitchMatches":  0,
+                                     "minBytes":  32768,
                                      "maxBytes":  2097152,
-                                     "minBytes":  32768
+                                     "binaryLowEndSwitchMatchesInTouchedFiles":  0,
+                                     "low":  "32 KiB visual-sync budget, deferred dirty pages, old coherent front remains bound.",
+                                     "middle":  "Coalesced dirty page runs drain over normal budget without full source upload.",
+                                     "high":  "Most changed pages drain in one visual sync.",
+                                     "ultra":  "Saved PCIe budget can fund richer visual metadata without changing gameplay truth or DTO layout."
                                  },
+    "producerDirtyContract":  {
+                                  "status":  "PATCHED_STATIC_ONLY",
+                                  "dirtyPageSize":  256,
+                                  "bufferIdLines":  "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs:121-129",
+                                  "rebuildMarkingLines":  [
+                                                              "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs:270-352",
+                                                              "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs:361-432"
+                                                          ],
+                                  "readTokenLines":  "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs:7566-7612",
+                                  "rendererAbsorptionLines":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:2048-2056,2173-2185"
+                              },
+    "mappedUploadProof":  {
+                              "vegetationPointerMathLines":  "Assets/_Project/Scripts/Core/SystemDispatcher.cs:7481-7487",
+                              "carveDebrisPointerMathLines":  "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs:2224-2229",
+                              "finallyUnlockLines":  [
+                                                         "Assets/_Project/Scripts/Core/SystemDispatcher.cs:7500",
+                                                         "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs:2233-2236"
+                                                     ]
+                          },
     "verification":  {
-                         "apexVerificationPath":  "Docs/Reports/PCIE_BANDWIDTH_APEX_VERIFICATION_1411.json",
-                         "unityEditorSelfTestExecutionReason":  "No Unity Editor invocation was launched in this shell-only pass.",
-                         "astAuditPath":  "Docs/Reports/PCIE_BANDWIDTH_AST_AUDIT_1411.json",
                          "unsafePointerMathScanner":  "PASS",
-                         "gitDiffCheck":  "PASS_WITH_CRLF_WARNINGS_ONLY",
+                         "astAuditPath":  "Docs/Reports/PCIE_BANDWIDTH_AST_AUDIT_1411.json",
+                         "gitDiffCheck":  "PASS",
                          "braceBalance":  "PASS",
-                         "unityEditorSelfTestExecuted":  false
+                         "dotnetBuildRun":  false,
+                         "unityEditorSelfTestExecuted":  false,
+                         "unityEditorSelfTestExecutionReason":  "No Unity Editor invocation was launched in this shell-only pass."
                      },
     "remainingRisks":  [
-                           "MapMagic aggregate source currently has no real per-page dirty masks, so live vegetation receives coarse revision-skip immediately and page-granular path when future producers supply dirty pages.",
-                           "AbyssalThermalManager reset-time smoke particle SetData remains a candidate for later mapped conversion if reset frequency is proven hot.",
-                           "Full C# compile was not run because CPU gate was 100 percent and one dotnet process was active.",
-                           "Unity Editor self-test has not been executed; self-test code is static evidence only until run inside Editor."
+                           "Full C# compile was not run because CPU gate failed: CPU/process contention is documented in compilationThrottle.",
+                           "Unity Editor self-test has not been executed; PcieBandwidthGuard1411SelfTest remains static evidence until run in Editor.",
+                           "Aggregate producer marks copied chunk ranges dirty, not semantic per-instance mutation deltas; this is intentional because the rebuild writes contiguous copied ranges."
                        ],
     "modifiedFilesSha256":  {
-                                "Assets/_Project/Scripts/Core/SystemDispatcher.cs":  "885450A5163A4B9B603AE6D83589B0CC5FDB4B25640668F62226756CB9402961",
+                                "Assets/_Project/Scripts/Core/SystemDispatcher.cs":  "48DF633BAECC68E5201750C5B7795562216629110C8E62CB2673EEEEB76E6371",
                                 "Assets/_Project/Scripts/World/HectonIndirectVegetationContracts.cs":  "C2DD6796E9BB6AFD64FB9CE0BDE74FA7E33E1B34A998BA975259D66A3BAE98B2",
-                                "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs":  "3C97574372F41ED784F9A3179F8C4C3F4DD879B5C52F6FBF0D5D31B55A1F8D55",
-                                "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs":  "C4A21741B3B96160DD17340B5DDE9676DD566556655D21E7DD208B423139DFE1",
+                                "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs":  "D7B4EEFBF7B8B9E57D4073D86725CFF43FDBE0CCD18CDB0E3F20C276FFA027FF",
+                                "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs":  "95C5A99FD73CEC8A53EBE354F9DE713C33FD8BCAFCEECC8802F6BB94F50F5723",
+                                "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs":  "99E688C680B5D94B96452B76A57A9369B458979FC05B70B422195B0E12D9C4FE",
+                                "Assets/_Project/Scripts/World/VegetationMemoryPool.cs":  "7DECA6066CD204C851C2E3F6246CC9DB4BEFF06A5F0BE23B7FDF23CC87241545",
                                 "Assets/_Project/Scripts/World/PcieBandwidthGuard1411SelfTest.cs":  "C46CFE06DCBC5B055D0CD26DC0BD0F517F5444AF0B9E9AA51D1183DE7C3F1670",
                                 "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs":  "A8C3EAFC0820310309C7F778D1939199E9FCE585F2D407D8D7499C03AFA5D250",
-                                "Docs/Reports/Agent1411_UnsafePointerMathScanner.ps1":  "E00BC8AA40967D3595214A06E90FAB256C9A79B862299878623D830DB71FF1E1",
-                                "Docs/Reports/PCIE_BANDWIDTH_AST_AUDIT_1411.json":  "AEB878BC49BBF2FE93C1488C28F252308479610BE34091D9032FE8FF075300BB",
-                                "Docs/Tasks/Status_1411.md":  "A6E1E3EE880B803CCA174E8BE5457ABD567B601A4CB843B6468181CCB0179874",
-                                "Docs/AgentLogs/Rationale_1411.md":  "6384A4B296D040C850705F7BA62B6FC5F1CC5431996BA617B51392936CE1D42F"
-                            },
-    "combinedBudgetGuard":  {
-                                "status":  "PATCHED_STATIC_ONLY",
-                                "problem":  "Metadata dirty lane could upload one progress page after matrix lane had consumed the continuous visual-sync byte budget.",
-                                "guardLines":  [
-                                                   "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:2073-2085",
-                                                   "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs:2096-2102"
-                                               ],
-                                "helperLine":  "Assets/_Project/Scripts/Core/SystemDispatcher.cs:7242-7268 ResolveFirstDirtyPageBytes\u003cT\u003e",
-                                "selfTestLines":  [
-                                                      "Assets/_Project/Scripts/World/PcieBandwidthGuard1411SelfTest.cs:30",
-                                                      "Assets/_Project/Scripts/World/PcieBandwidthGuard1411SelfTest.cs:101-133"
-                                                  ],
-                                "lowTierExample":  "32 KiB budget: two 16 KiB matrix pages consume budget; 16 KiB metadata page defers instead of uploading 48 KiB total.",
-                                "progressException":  "If matrix uploads zero bytes and metadata is the only dirty lane, metadata may upload one page to avoid starvation."
+                                "Docs/Reports/Agent1411_UnsafePointerMathScanner.ps1":  "884BCD84554A1CFD7D42483D926025213CD061628D36830F9D5ED2911B644B05",
+                                "Docs/Reports/PCIE_BANDWIDTH_AST_AUDIT_1411.json":  "92FBAC87873F27428B18D4297B27C07E7240C7639920D30D886E2299FD7D553C",
+                                "Docs/Tasks/Status_1411.md":  "3A114289F0208B50922A41B0A3F7E8BDF43E7B72AE20D585F9DF8E1F7A009CD8",
+                                "Docs/AgentLogs/Rationale_1411.md":  "30B7748ACA4B9EEE7201A6E8DEE1A7744CA6FCC97471F37660DC2452FD9983E6",
+                                "Docs/AgentLogs/LOG_1411.md":  "D594D506551A5EBE86C14831A5292B0FDFE2BAB06200CD85B4F83942C363D3B0"
                             }
 }
