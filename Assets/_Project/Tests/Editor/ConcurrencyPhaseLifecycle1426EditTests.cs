@@ -233,6 +233,24 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void AupOriginShiftSchedule_UsesSingleGuardForScheduledJobViews()
+        {
+            string text = File.ReadAllText(AupOriginShiftCoordinatorPath());
+            string schedule = ExtractMethodBody(text, "ScheduleVaultOriginRebase");
+            string release = ExtractMethodBody(text, "ReleaseScheduledRebaseLocks");
+            string marker = ExtractMethodBody(text, "TryMarkScheduledBuffer");
+
+            Assert.That(text, Does.Contain("RebaseScheduleMutationGuardMask"));
+            Assert.That(schedule, Does.Contain("TryAcquireMutationGuard(RebaseScheduleMutationGuardMask)"));
+            Assert.That(schedule, Does.Contain("TryOpenVaultBuffer(vault, in _runtimeStateHandle"));
+            Assert.That(schedule, Does.Not.Contain("TryAcquireWriteView(vault, in _runtimeStateHandle"));
+            Assert.AreEqual(0, Count(schedule, @"\b(?:TryLockBuffer|TryUnlockBuffer)\b"), "AUP scheduled job buffer pins");
+            Assert.That(release, Does.Contain("ReleaseMutationGuard(RebaseScheduleMutationGuardMask)"));
+            Assert.AreEqual(0, Count(release, @"\b(?:TryLockBuffer|TryUnlockBuffer|ReleaseWriteLock)\b"), "AUP scheduled release pins");
+            Assert.AreEqual(0, Count(marker, @"\b(?:TryLockBuffer|TryAcquireWriteLock)\b"), "AUP marker lock acquisition");
+        }
+
+        [Test]
         public void MockSequentialVaultLocks_ReverseOrderContention_FailsClosedWithoutDeadlock()
         {
             const int iterations = 512;
@@ -345,6 +363,11 @@ namespace Hecton8.Tests.Editor
         private static string ModuloSimulationBucketerPath()
         {
             return Path.Combine(RuntimeScriptsRoot(), "Core", "Bucketing", "ModuloSimulationBucketer.cs");
+        }
+
+        private static string AupOriginShiftCoordinatorPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Core", "Origin", "AupOriginShiftCoordinator.cs");
         }
 
         private static string ProjectRoot()

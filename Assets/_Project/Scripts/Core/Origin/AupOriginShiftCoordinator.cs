@@ -1192,7 +1192,7 @@ namespace Hecton8.Core
             {
                 int ownBatchCount = ResolveHistoricalBatchCount(arrays.HistoricalPoints, historicalCount, startIndex, requestedCount, out _);
                 if (ownBatchCount > 0 &&
-                    TryLockScheduledBuffer(vault, MockHistoricalPointsBuffer, ScheduleLockHistoricalFlag, ref info))
+                    TryMarkScheduledBuffer(ScheduleLockHistoricalFlag, ref info))
                 {
                     if (!TryOpenVaultBuffer(vault, in _historicalPointsHandle, MockHistoricalPointsBuffer, MockHistoricalPointCapacity, out NativeArray<float3> historicalJobPoints))
                         return dependency;
@@ -1256,7 +1256,7 @@ namespace Hecton8.Core
             if (count <= 0)
                 return dependency;
 
-            if (!TryLockScheduledBuffer(vault, bufferId, scheduleLockFlag, ref info))
+            if (!TryMarkScheduledBuffer(scheduleLockFlag, ref info))
                 return dependency;
 
             if (!TryOpenExistingVaultBuffer(vault, bufferId, 1, out points))
@@ -1539,7 +1539,7 @@ namespace Hecton8.Core
             if (batchCount <= 0)
                 return dependency;
 
-            if (!TryLockScheduledBuffer(vault, BufferID.VaultHotEntityData, ScheduleLockHotEntityFlag, ref info))
+            if (!TryMarkScheduledBuffer(ScheduleLockHotEntityFlag, ref info))
                 return dependency;
 
             if (!TryOpenExistingVaultBuffer(vault, BufferID.VaultHotEntityData, 1, out hotEntities))
