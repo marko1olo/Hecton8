@@ -28,7 +28,8 @@ namespace Hecton.Localization
         [Tooltip("For signage that should stay in all-caps regardless of language.")]
         [SerializeField] private bool forceUppercase = true;
 
-        private const int DefaultSignBufferCapacity = 64;
+        private const int DefaultSignBufferCapacity = 128;
+        private const int EllipsisWidth = 3;
 
         private Transform _cachedTransform;
         private Vector3 _absoluteUniversePosition;
@@ -122,8 +123,8 @@ namespace Hecton.Localization
                 sourceLength = _fallbackLength;
             }
 
-            PrepareDisplayBuffer(sourceBuffer, sourceLength, found, out char[] displayBuffer, out int displayLength);
-            targetText.isRightToLeftText = false;
+            PrepareDisplayBuffer(sourceBuffer, sourceLength, out char[] displayBuffer, out int displayLength);
+            targetText.isRightToLeftText = LocalizationManager.IsRightToLeftLanguage(LocRegistry.ActiveLanguage);
             targetText.SetCharArray(displayBuffer, 0, displayLength);
             targetText.SetVerticesDirty();
             targetText.SetLayoutDirty();
@@ -146,9 +147,8 @@ namespace Hecton.Localization
             else
                 fallback = ReadOnlySpan<char>.Empty;
 
-            _fallbackBuffer = EnsureBuffer(_fallbackBuffer, fallback.Length);
-            fallback.CopyTo(_fallbackBuffer);
-            _fallbackLength = fallback.Length;
+            _fallbackBuffer = EnsureBuffer(_fallbackBuffer);
+            _fallbackLength = CopySpanFailClosed(fallback, _fallbackBuffer, _tableKeyHash);
         }
 
         private char[] EnsureFallbackBuffer()
@@ -156,56 +156,102 @@ namespace Hecton.Localization
             if (_fallbackBuffer == null)
                 CacheLocalizationBuffers();
 
-            _fallbackBuffer = EnsureBuffer(_fallbackBuffer, _fallbackLength);
             return _fallbackBuffer;
         }
 
         private void PrepareDisplayBuffer(
             char[] sourceBuffer,
             int sourceLength,
-            bool sourceAlreadyBabelVisual,
             out char[] displayBuffer,
             out int displayLength)
         {
-            displayLength = sourceLength < 0 ? 0 : sourceLength;
-            if (sourceBuffer != null && displayLength > sourceBuffer.Length)
-                displayLength = sourceBuffer.Length;
+            int sourceCapacity = sourceBuffer != null ? sourceBuffer.Length : 0;
+            int safeLength = math.clamp(sourceLength, 0, sourceCapacity);
+            bool needsTruncation = safeLength > DefaultSignBufferCapacity;
+            displayLength = needsTruncation ? DefaultSignBufferCapacity : safeLength;
 
-            bool needsCopy = forceUppercase ||
-                             (!sourceAlreadyBabelVisual && LocalizationManager.IsRightToLeftLanguage(LocRegistry.ActiveLanguage));
+            bool needsCopy = forceUppercase || needsTruncation || sourceBuffer == null;
             if (!needsCopy)
             {
-                if (sourceBuffer == null)
-                    _signBuffer = EnsureBuffer(_signBuffer, 1);
-
-                displayBuffer = sourceBuffer ?? _signBuffer;
+                displayBuffer = sourceBuffer;
                 return;
             }
 
-            _signBuffer = EnsureBuffer(_signBuffer, displayLength);
-            for (int i = 0; i < displayLength; i++)
+            _signBuffer = EnsureBuffer(_signBuffer);
+            int copyLimit = needsTruncation && DefaultSignBufferCapacity > EllipsisWidth
+                ? DefaultSignBufferCapacity - EllipsisWidth
+                : displayLength;
+            int cursor = 0;
+            for (; cursor < copyLimit; cursor++)
             {
-                char current = sourceBuffer != null && i < sourceBuffer.Length ? sourceBuffer[i] : '\0';
-                _signBuffer[i] = forceUppercase ? char.ToUpperInvariant(current) : current;
+                char current = sourceBuffer != null && cursor < sourceBuffer.Length ? sourceBuffer[cursor] : '\0';
+                _signBuffer[cursor] = forceUppercase ? char.ToUpperInvariant(current) : current;
             }
 
-            if (!sourceAlreadyBabelVisual && LocalizationManager.IsRightToLeftLanguage(LocRegistry.ActiveLanguage))
-                RTLProcessor.TryReverseVisualOrderInPlace(_signBuffer, displayLength);
+            if (needsTruncation)
+            {
+                AppendAsciiEllipsis(_signBuffer, ref cursor);
+                Hecton8.UI.BabelSubtitleSyncRuntime.RecordUIOptimizationFailure(
+                    unchecked((uint)_tableKeyHash),
+                    Hecton8.UI.UIOptimizationFailureCode.TextBufferOverflow,
+                    safeLength,
+                    cursor,
+                    DefaultSignBufferCapacity,
+                    0u);
+            }
 
+            displayLength = cursor;
             displayBuffer = _signBuffer;
         }
 
-        private static char[] EnsureBuffer(char[] buffer, int requiredLength)
+        private static char[] EnsureBuffer(char[] buffer)
         {
-            int required = requiredLength <= 0 ? 1 : requiredLength;
-            if (buffer != null && buffer.Length >= required)
+            if (buffer != null && buffer.Length == DefaultSignBufferCapacity)
                 return buffer;
 
-            int capacity = DefaultSignBufferCapacity;
-            while (capacity < required)
-                capacity <<= 1;
+            return new char[DefaultSignBufferCapacity]; // COLD ALLOC: char[128] - fixed localized world sign staging buffer - owner: LocalizedWorldSign
+        }
 
-            return new char[capacity]; // COLD ALLOC: char[capacity] - localized world sign fallback/display buffer - owner: LocalizedWorldSign
+        private static int CopySpanFailClosed(ReadOnlySpan<char> source, char[] destination, int keyHash)
+        {
+            int safeLength = math.min(source.Length, destination.Length);
+            int copyLimit = source.Length > destination.Length && destination.Length > EllipsisWidth
+                ? destination.Length - EllipsisWidth
+                : safeLength;
+
+            for (int i = 0; i < copyLimit; i++)
+                destination[i] = source[i];
+
+            int cursor = copyLimit;
+            if (source.Length > destination.Length)
+            {
+                AppendAsciiEllipsis(destination, ref cursor);
+                Hecton8.UI.BabelSubtitleSyncRuntime.RecordUIOptimizationFailure(
+                    unchecked((uint)keyHash),
+                    Hecton8.UI.UIOptimizationFailureCode.TextBufferOverflow,
+                    source.Length,
+                    cursor,
+                    destination.Length,
+                    0u);
+            }
+
+            return cursor;
+        }
+
+        private static void AppendAsciiEllipsis(char[] destination, ref int cursor)
+        {
+            int capacity = destination != null ? destination.Length : 0;
+            if (capacity <= 0)
+            {
+                cursor = 0;
+                return;
+            }
+
+            int ellipsisCount = math.min(EllipsisWidth, capacity);
+            int start = capacity - ellipsisCount;
+            cursor = math.clamp(cursor, 0, start);
+            for (int i = 0; i < ellipsisCount; i++)
+                destination[cursor++] = '.';
         }
 
         private void CacheTransformAndAup()

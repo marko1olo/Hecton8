@@ -1705,6 +1705,9 @@ namespace Hecton8.AI.Ecosystem
                 return;
             }
 
+            if (!TryLockJobBuffers(vault))
+                return;
+
             if (!TryResolveBuffers(
                     vault,
                     out NativeArray<AmbientEntityDTO> entities,
@@ -1724,14 +1727,13 @@ namespace Hecton8.AI.Ecosystem
                     out NativeArray<int> spatialHashBucketHeads,
                     out NativeArray<int> spatialHashNext))
             {
+                UnlockJobBuffers();
                 return;
             }
 
-            if (!TryLockJobBuffers(vault))
-                return;
-
             JobHandle scheduledHandle = default;
             bool scheduledWork = false;
+            bool keepLocksForScheduledJob = false;
             try
             {
                 ShinobuEcosystemTuning tuning = ShinobuEcosystemTuning.Sanitize(tuningArray[0]);
@@ -1768,6 +1770,7 @@ namespace Hecton8.AI.Ecosystem
                 _scheduledPipelineKind = ScheduledPipelineMacro;
                 _jobScheduled = true;
                 _jobLocksHeld = true;
+                keepLocksForScheduledJob = true;
                 H8Memory.RegisterActiveJob(SystemID.AIEcology, _activeJobHandle);
             }
             catch (InvalidOperationException)
@@ -1778,14 +1781,16 @@ namespace Hecton8.AI.Ecosystem
                     _scheduledPipelineKind = ScheduledPipelineMacro;
                     _jobScheduled = true;
                     _jobLocksHeld = true;
+                    keepLocksForScheduledJob = true;
                     H8Memory.RegisterActiveJob(SystemID.AIEcology, _activeJobHandle);
-                }
-                else
-                {
-                    UnlockJobBuffers();
                 }
 
                 GlobalTelemetryBus.PublishPerformanceWarning(0x534D4143u, SourceHash, 0f);
+            }
+            finally
+            {
+                if (!keepLocksForScheduledJob)
+                    UnlockJobBuffers();
             }
         }
 

@@ -3,9 +3,11 @@ using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Scavenging;
+using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
@@ -172,6 +174,7 @@ namespace Hecton8.World
         private const int AcousticDensityMapCellCount = AcousticDensityMapAxis * AcousticDensityMapAxis * AcousticDensityMapAxis;
         private const int AcousticDensityMapCadenceFrames = 10;
         private const float AcousticDensityMapRadiusMeters = 160f;
+        private const BufferID AcousticDensityMapBufferId = BufferID.WorldSpatialAcousticDensityMap;
         private const float AcousticTransientDecayScale = 0.85f;
         private const float AcousticTransientMinimumIntensity = 0.01f;
         private const int SpatialHashCompactionCapacityThreshold = 50000;
@@ -230,8 +233,8 @@ namespace Hecton8.World
         private static readonly byte[] _farUnloadResultMask = new byte[MaxSpatialMaintenanceEntryCapacity];
         private static int _farUnloadCount;
         private static int _farUnloadHandleScratchCount;
-        // COLD ALLOC: float[512] - managed 8x8x8 transient acoustic density payload - owner: WorldSpatialHashGrid
-        private static readonly float[] _acousticDensityMap = new float[AcousticDensityMapCellCount];
+        private static IDataVault _acousticDensityVault;
+        private static VaultGenerationHandle<float> _acousticDensityMapHandle;
         private static bool _hasAcousticDensityMap;
         private static int _lastAcousticDensityFrame = -AcousticDensityMapCadenceFrames;
         private static int _transientSignalWriteIndex;
@@ -1341,15 +1344,15 @@ namespace Hecton8.World
         }
 
         public static bool TryGetAcousticDensityMap(
-            out float[] densityMap,
+            out NativeArray<float>.ReadOnly densityMap,
             out Vector3Int dimensions)
         {
-            densityMap = null;
+            densityMap = default;
             dimensions = new Vector3Int(AcousticDensityMapAxis, AcousticDensityMapAxis, AcousticDensityMapAxis);
-            if (!_hasAcousticDensityMap)
+            if (!_hasAcousticDensityMap ||
+                !TryResolveAcousticDensityMapReadOnly(out densityMap))
                 return false;
 
-            densityMap = _acousticDensityMap;
             return true;
         }
 
@@ -1369,23 +1372,46 @@ namespace Hecton8.World
                 return false;
             }
 
-            int sampleCount = math.min(_acousticDensityMap.Length, requestedSampleCount);
-            if (sampleCount <= 0 || sampleCount != _acousticDensityMap.Length)
+            if (!TryResolveAcousticDensityVault(out IDataVault vault) ||
+                !IsAcousticDensityMapHandle(in _acousticDensityMapHandle))
                 return false;
 
-            destination.SetPixelData(_acousticDensityMap, 0);
-
-            float peak = 0f;
-            for (int i = 0; i < sampleCount; i++)
+            bool locked = false;
+            try
             {
-                float sample = _acousticDensityMap[i];
-                if (sample > peak)
-                    peak = sample;
-            }
+                if (!vault.TryAcquireWriteLock(in _acousticDensityMapHandle, SystemID.WorldSpatialHash, out NativeArray<float> densityMap))
+                    return false;
 
-            uploadedSampleCount = sampleCount;
-            peakIntensity = math.saturate(peak);
-            return true;
+                locked = true;
+                if (!densityMap.IsCreated ||
+                    densityMap.Length < AcousticDensityMapCellCount)
+                {
+                    return false;
+                }
+
+                int sampleCount = math.min(densityMap.Length, requestedSampleCount);
+                if (sampleCount <= 0 || sampleCount != AcousticDensityMapCellCount)
+                    return false;
+
+                destination.SetPixelData(densityMap, 0);
+
+                float peak = 0f;
+                for (int i = 0; i < sampleCount; i++)
+                {
+                    float sample = densityMap[i];
+                    if (sample > peak)
+                        peak = sample;
+                }
+
+                uploadedSampleCount = sampleCount;
+                peakIntensity = math.saturate(peak);
+                return true;
+            }
+            finally
+            {
+                if (locked)
+                    vault.ReleaseWriteLock(in _acousticDensityMapHandle, SystemID.WorldSpatialHash);
+            }
         }
 
         public static bool IsHandleCurrent(int handle)
@@ -1769,8 +1795,30 @@ namespace Hecton8.World
         {
             if (_hasAcousticDensityMap)
             {
-                for (int i = 0; i < _acousticDensityMap.Length; i++)
-                    _acousticDensityMap[i] = 0f;
+                IDataVault vault = null;
+                bool locked = false;
+                try
+                {
+                    if (!TryResolveAcousticDensityVault(out vault) ||
+                        !IsAcousticDensityMapHandle(in _acousticDensityMapHandle))
+                        return;
+
+                    if (!vault.TryAcquireWriteLock(in _acousticDensityMapHandle, SystemID.WorldSpatialHash, out NativeArray<float> densityMap))
+                        return;
+
+                    locked = true;
+                    if (!densityMap.IsCreated)
+                        return;
+
+                    int cellCount = math.min(densityMap.Length, AcousticDensityMapCellCount);
+                    for (int i = 0; i < cellCount; i++)
+                        densityMap[i] = 0f;
+                }
+                finally
+                {
+                    if (locked)
+                        vault.ReleaseWriteLock(in _acousticDensityMapHandle, SystemID.WorldSpatialHash);
+                }
             }
 
             _lastAcousticDensityFrame = -AcousticDensityMapCadenceFrames;
@@ -2005,24 +2053,47 @@ namespace Hecton8.World
             _farUnloadHandleScratchCount = 0;
         }
 
-        private static void EnsureAcousticDensityMap()
+        private static bool EnsureAcousticDensityMap()
         {
-            if (_hasAcousticDensityMap)
-                return;
+            if (!TryResolveAcousticDensityVault(out IDataVault vault) ||
+                vault.IsCompactionFenceActive)
+            {
+                return false;
+            }
 
-            for (int i = 0; i < _acousticDensityMap.Length; i++)
-                _acousticDensityMap[i] = 0f;
-            _hasAcousticDensityMap = true;
+            if (IsAcousticDensityMapHandle(in _acousticDensityMapHandle) &&
+                vault.TryResolveHandle(in _acousticDensityMapHandle, out NativeArray<float> existing) &&
+                existing.IsCreated &&
+                existing.Length >= AcousticDensityMapCellCount)
+            {
+                return true;
+            }
+
+            _acousticDensityMapHandle = vault.EnsureGenerationHandle<float>(
+                AcousticDensityMapBufferId,
+                AcousticDensityMapCellCount,
+                SystemID.WorldSpatialHash,
+                NativeArrayOptions.ClearMemory);
+
+            if (!IsAcousticDensityMapHandle(in _acousticDensityMapHandle) ||
+                !vault.TryResolveHandle(in _acousticDensityMapHandle, out NativeArray<float> densityMap) ||
+                !densityMap.IsCreated ||
+                densityMap.Length < AcousticDensityMapCellCount)
+            {
+                _acousticDensityMapHandle = default;
+                _hasAcousticDensityMap = false;
+                return false;
+            }
+
+            return true;
         }
 
         private static void DisposeAcousticDensityMap()
         {
-            if (_hasAcousticDensityMap)
-            {
-                for (int i = 0; i < _acousticDensityMap.Length; i++)
-                    _acousticDensityMap[i] = 0f;
-                _hasAcousticDensityMap = false;
-            }
+            ClearAcousticDensityMapForOriginShift();
+            _hasAcousticDensityMap = false;
+            _acousticDensityMapHandle = default;
+            _acousticDensityVault = null;
         }
 
         private static void BuildAcousticDensityMap(int currentFrame)
@@ -2039,22 +2110,85 @@ namespace Hecton8.World
             if (!IsFiniteRuntimePosition(listenerPosition))
                 return;
 
-            EnsureAcousticDensityMap();
+            if (!EnsureAcousticDensityMap())
+                return;
+
             using (_acousticDensityProfilerMarker.Auto())
             {
                 double currentTimestamp = RuntimeNowSeconds();
                 if (!IsFiniteDouble(currentTimestamp))
                     return;
 
-                _nativeHash.BuildAcousticDensityMap(
-                    in listenerAup,
-                    AcousticDensityMapRadiusMeters,
-                    currentTimestamp,
-                    _acousticDensityMap,
-                    new int3(AcousticDensityMapAxis, AcousticDensityMapAxis, AcousticDensityMapAxis),
-                    (uint)SpatialTransientEventType.AcousticImpulse);
-                _lastAcousticDensityFrame = currentFrame;
+                IDataVault vault = _acousticDensityVault;
+                bool locked = false;
+                try
+                {
+                    if (vault == null)
+                        return;
+
+                    if (!vault.TryAcquireWriteLock(in _acousticDensityMapHandle, SystemID.WorldSpatialHash, out NativeArray<float> densityMap))
+                        return;
+
+                    locked = true;
+                    if (!densityMap.IsCreated ||
+                        densityMap.Length < AcousticDensityMapCellCount)
+                    {
+                        return;
+                    }
+
+                    _nativeHash.BuildAcousticDensityMap(
+                        in listenerAup,
+                        AcousticDensityMapRadiusMeters,
+                        currentTimestamp,
+                        densityMap,
+                        new int3(AcousticDensityMapAxis, AcousticDensityMapAxis, AcousticDensityMapAxis),
+                        (uint)SpatialTransientEventType.AcousticImpulse);
+                    _hasAcousticDensityMap = true;
+                    _lastAcousticDensityFrame = currentFrame;
+                }
+                finally
+                {
+                    if (locked)
+                        vault.ReleaseWriteLock(in _acousticDensityMapHandle, SystemID.WorldSpatialHash);
+                }
             }
+        }
+
+        private static bool TryResolveAcousticDensityVault(out IDataVault vault)
+        {
+            vault = _acousticDensityVault;
+            if (vault != null)
+                return true;
+
+            vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return false;
+
+            _acousticDensityVault = vault;
+            return true;
+        }
+
+        private static bool TryResolveAcousticDensityMapReadOnly(out NativeArray<float>.ReadOnly densityMap)
+        {
+            densityMap = default;
+            if (!TryResolveAcousticDensityVault(out IDataVault vault) ||
+                !IsAcousticDensityMapHandle(in _acousticDensityMapHandle) ||
+                !vault.TryReadOnlyHandle(in _acousticDensityMapHandle, out densityMap) ||
+                !densityMap.IsCreated ||
+                densityMap.Length < AcousticDensityMapCellCount)
+            {
+                densityMap = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsAcousticDensityMapHandle(in VaultGenerationHandle<float> handle)
+        {
+            return handle.BufferID == (uint)AcousticDensityMapBufferId &&
+                   handle.SystemID == (uint)SystemID.WorldSpatialHash &&
+                   handle.Generation != 0u;
         }
 
         private static bool TryResolveActivePlayerAup(out AbsoluteUniversePosition playerAup)

@@ -1,7 +1,6 @@
 ﻿{
     "agent_id":  "1423",
     "role":  "ZERO_GC_SUBTITLES_AND_BABEL_LOCALIZATION_COMPILER",
-    "generated_local":  "2026-05-28T05:42:48+04:00",
     "source_files_changed":  [
                                  {
                                      "path":  "Assets/_Project/Scripts/Core/Contracts/BabelLocalizationContract.cs",
@@ -58,7 +57,7 @@
                                  {
                                      "path":  "Assets/_Project/Scripts/LocRegistry.cs",
                                      "exists":  true,
-                                     "sha256":  "0373500D2E9922E80FD36D48D7D287E19B1816609ECEFA4E429670BFDE6E055B",
+                                     "sha256":  "EA6D91974BEBD1BEE214EF1ED1E69978D4ED929083D61AB0E7B811BC9A052104",
                                      "counts":  {
                                                     "string_format":  0,
                                                     "tmp_text_assignment":  0,
@@ -71,7 +70,7 @@
                                  {
                                      "path":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
                                      "exists":  true,
-                                     "sha256":  "307C447476BF3C02B8267D8DA643F6AB594AB812E092E3A4CB35A3693C0C6BD6",
+                                     "sha256":  "A56BD6C648B6A0A4C8F2E7FF71F69351FE65B33138D5818B7940BF55DDB2CA29",
                                      "counts":  {
                                                     "string_format":  0,
                                                     "tmp_text_assignment":  0,
@@ -84,7 +83,7 @@
                                  {
                                      "path":  "Assets/_Project/Scripts/UI/TmpTextNoAlloc.cs",
                                      "exists":  true,
-                                     "sha256":  "AD4DF42A151E811A70FA51F87085E011BF170CBB9185D1E0E532ECD9CB0F7063",
+                                     "sha256":  "294DFCA23D14A8E5B304CEC53CC6376D1CC7190086B37D9FD9071FD999FE63E7",
                                      "counts":  {
                                                     "string_format":  0,
                                                     "tmp_text_assignment":  0,
@@ -97,7 +96,7 @@
                                  {
                                      "path":  "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs",
                                      "exists":  true,
-                                     "sha256":  "DE985B18946DEF6D15CDE7DD4B2291D6AE3620682540199776BA5D6680281588",
+                                     "sha256":  "726201C59AFBA6AB0FA0C8A7350DC6B5D76B10617B4D528840CDB87C41B6E0C3",
                                      "counts":  {
                                                     "string_format":  0,
                                                     "tmp_text_assignment":  0,
@@ -163,11 +162,11 @@
                         "test_file":  "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs",
                         "iterations":  500,
                         "runtime_gc_bytes":  null,
-                        "runtime_gc_status":  "NOT_MEASURED_BUILD_BLOCKED_BY_CPU_THROTTLE"
+                        "runtime_gc_status":  "NOT_MEASURED_BUILD_BLOCKED_BY_OUT_OF_DOMAIN_XRPASS"
                     },
     "compilation_status":  {
                                "dotnet_build_launched":  true,
-                               "reason":  "dotnet build Hecton8.Core.csproj launched after CPU 44.12 percent and no csc.exe; build failed on pre-existing/out-of-domain XRPass reference errors in Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs lines 437 and 476.",
+                               "reason":  "dotnet build Hecton8.Core.csproj launched exactly once after CPU 44.12 percent and no csc.exe; build failed on out-of-domain XRPass reference errors. APEX recheck sampled CPU 67 percent and no csc.exe, so no second build was launched.",
                                "csc_process_detected":  false,
                                "exit_code":  1,
                                "command":  "dotnet build C:\\hades\\Hecton8\\Hecton8.Core.csproj --nologo",
@@ -183,6 +182,128 @@
                             ],
     "ast_audit_report":  {
                              "path":  "Docs/Reports/UI_STRING_ALLOCATION_AST_AUDIT_1423.json",
-                             "sha256":  "02A9F0C2B692A238373663A28E9327CB4A990B051B43B49AA6E9459AEAF47CD4"
-                         }
+                             "sha256":  "D3121EA00D189DFBD1C31A7DA4F26F8BB507E1FF8DF4B212448A95B6CEF2D902"
+                         },
+    "apex_verification_report":  {
+                                     "path":  "Docs/Reports/UI_ZERO_GC_APEX_VERIFICATION_1423.json",
+                                     "sha256":  "F860CEAE374E1C8D4C6F2C7E657CE2F9D6A2A547AB5C9A41A591D16396606977",
+                                     "current_cpu_sample_percent":  67,
+                                     "final_build_launched":  false
+                                 },
+    "generated_local":  "2026-05-28T14:00:32.7229736+04:00",
+    "continuation_audit_2026_05_28":  {
+                                          "path":  "Docs/Reports/UI_ZERO_GC_CONTINUATION_AUDIT_1423.json",
+                                          "sha256":  "B2A869217C094F8DB46A74030276BF1BD3045C76F8D7F7C84CDFFB900B43721B",
+                                          "ast_audit_path":  "Docs/Reports/UI_STRING_ALLOCATION_AST_AUDIT_1423.json",
+                                          "ast_audit_sha256":  "6C22B4A674DB925EFA7CCE31477247AF7C938E152BF5A3B2D24E21BD13279355",
+                                          "apex_report_path":  "Docs/Reports/UI_ZERO_GC_APEX_VERIFICATION_1423.json",
+                                          "source_changes":  [
+                                                                 "Added Assets/_Project/Scripts/UI/BabelRichTextLodPolicy.cs and .meta",
+                                                                 "Deleted Assets/_Project/Scripts/RTLProcessor.cs and .meta",
+                                                                 "Removed manual RTL reversal from LocRegistry and LocalizedWorldSign",
+                                                                 "Routed subtitle/label rich text stripping through continuous GlobalQualityWeight policy",
+                                                                 "Added RTL sink and finally lease release to PDADataArchaeologyDecryptLabel"
+                                                             ],
+                                          "scan_total_forbidden_hits":  0,
+                                          "build_decision":  "NO_BUILD: CPU 65%, csc 0, active dotnet build-related process PID 66444 (AmplifyImpostors.Editor.csproj); previous build already blocked by out-of-domain XRPass errors.",
+                                          "runtime_gc_bytes_for_500_subtitle_test":  null,
+                                          "runtime_gc_status":  "NOT_MEASURED_BUILD_BLOCKED"
+                                      },
+    "polish_verification_2026_05_28":  {
+                                           "path":  "Docs/Reports/UI_ZERO_GC_POLISH_VERIFICATION_1423.json",
+                                           "sha256":  "D6A670EBDCD571DA07470B60AA24D6C2C00D5394E76104881DEC2F196C73034F",
+                                           "localized_world_sign":  "FAIL_CLOSED_FIXED_128_CHARS",
+                                           "broad_scan_files":  152,
+                                           "forbidden_string_hits":  0,
+                                           "foreach_hits":  0,
+                                           "scene_search_hits":  0,
+                                           "build_decision":  "NO_BUILD: CPU 68%, csc 0, active dotnet build Hecton8.slnx PID 22412"
+                                       },
+    "continuation3_audit_2026_05_28":  {
+                                           "path":  "Docs/Reports/UI_ZERO_GC_CONTINUATION3_AUDIT_1423.json",
+                                           "sha256":  "EE60C4F2275803FFB82460459034CF967294F51AA12A38B56991242F63B12971",
+                                           "tmp_text_no_alloc_sha256":  "294DFCA23D14A8E5B304CEC53CC6376D1CC7190086B37D9FD9071FD999FE63E7",
+                                           "lease_finally_repair":  [
+                                                                        "TmpTextNoAlloc.cs:34-41",
+                                                                        "TmpTextNoAlloc.cs:50-57",
+                                                                        "TmpTextNoAlloc.cs:65-72"
+                                                                    ],
+                                           "broad_scan_files":  155,
+                                           "forbidden_string_hits":  0,
+                                           "foreach_hits":  0,
+                                           "scene_search_hits":  0,
+                                           "build_decision":  "NO_BUILD: CPU 60%, active dotnet build Hecton8.slnx PID 25684 and VBCSCompiler.exe PID 27088",
+                                           "runtime_gc_bytes_for_500_subtitle_test":  null,
+                                           "runtime_gc_status":  "NOT_MEASURED_ACTIVE_BUILD_AND_COMPILER_PROCESS"
+                                       },
+    "continuation4_audit_2026_05_28":  {
+                                           "path":  "Docs/Reports/UI_ZERO_GC_CONTINUATION4_AUDIT_1423.json",
+                                           "sha256":  "E9F6FF525D63DB90BB217A5BCC0099D6E9C4633D0925F61905F04FB31E2BBE16",
+                                           "locregistry_sha256":  "F52855376E96616DA02C1BF6AEEC0F3C360EB642EAA8092205F51BEB3CB7F354",
+                                           "babel_subtitle_sync_runtime_sha256":  "A56BD6C648B6A0A4C8F2E7FF71F69351FE65B33138D5818B7940BF55DDB2CA29",
+                                           "tmp_text_no_alloc_sha256":  "294DFCA23D14A8E5B304CEC53CC6376D1CC7190086B37D9FD9071FD999FE63E7",
+                                           "modified_hot_path_scan_counts":  {
+                                                                                 "linq_methods":  0,
+                                                                                 "new_string":  0,
+                                                                                 "tmp_text_assignment":  0,
+                                                                                 "string_builder":  0,
+                                                                                 "set_text_call":  0,
+                                                                                 "foreach":  0,
+                                                                                 "string_format":  0,
+                                                                                 "array_resize":  0,
+                                                                                 "to_string_call":  0,
+                                                                                 "linq_using":  0
+                                                                             },
+                                           "broad_non_editor_domain_scan_files":  155,
+                                           "broad_non_editor_domain_scan_forbidden_counts":  {
+                                                                                                 "new_string":  0,
+                                                                                                 "tmp_text_assignment":  0,
+                                                                                                 "string_builder":  0,
+                                                                                                 "set_text_call":  0,
+                                                                                                 "foreach":  0,
+                                                                                                 "string_format":  0,
+                                                                                                 "array_resize":  0,
+                                                                                                 "to_string_call":  0,
+                                                                                                 "linq_using":  0
+                                                                                             },
+                                           "datavault_lock_repair":  "TryAcquireSubtitleWriteBuffer post-acquire failure release now guarded by releaseOnExit finally at BabelSubtitleSyncRuntime.cs:681-698.",
+                                           "build_decision":  "NO_BUILD: samples CPU 100 with VBCSCompiler.exe/PID 18948 after dotnet PID 38260; CPU 87 with no compiler process; final gate CPU 96 with csc.exe PID 63300 and dotnet.exe PID 53008.",
+                                           "runtime_gc_bytes_for_500_subtitle_test":  null,
+                                           "runtime_gc_status":  "NOT_MEASURED_CPU_THROTTLED_AND_PROJECT_PREVIOUSLY_BLOCKED_BY_XRPASS"
+                                       },
+    "continuation5_audit_2026_05_28":  {
+                                           "path":  "Docs/Reports/UI_ZERO_GC_CONTINUATION5_AUDIT_1423.json",
+                                           "sha256":  "3D829F1DBF8EA3EDE9F4EF000345171D88BCB100A6A1EB2EE014DC6EB4B27C11",
+                                           "locregistry_sha256":  "EA6D91974BEBD1BEE214EF1ED1E69978D4ED929083D61AB0E7B811BC9A052104",
+                                           "pda_decrypt_label_sha256":  "2748B2DFD6A460002CB7EC8B2BFE661667EB15BB62FACBD7284F081F98A2EE99",
+                                           "editor_regression_sha256":  "726201C59AFBA6AB0FA0C8A7350DC6B5D76B10617B4D528840CDB87C41B6E0C3",
+                                           "modified_hot_path_scan_counts":  {
+                                                                                 "linq_methods":  0,
+                                                                                 "new_string":  0,
+                                                                                 "tmp_text_assignment":  0,
+                                                                                 "string_builder":  0,
+                                                                                 "set_text_call":  0,
+                                                                                 "foreach":  0,
+                                                                                 "string_format":  0,
+                                                                                 "array_resize":  0,
+                                                                                 "to_string_call":  0,
+                                                                                 "linq_using":  0
+                                                                             },
+                                           "broad_non_editor_domain_scan_files":  155,
+                                           "broad_non_editor_domain_scan_forbidden_counts":  {
+                                                                                                 "new_string":  0,
+                                                                                                 "tmp_text_assignment":  0,
+                                                                                                 "string_builder":  0,
+                                                                                                 "set_text_call":  0,
+                                                                                                 "foreach":  0,
+                                                                                                 "string_format":  0,
+                                                                                                 "array_resize":  0,
+                                                                                                 "to_string_call":  0,
+                                                                                                 "linq_using":  0
+                                                                                             },
+                                           "read_purity_repair":  "TryGetLocalizedSpan now uses IsValidUtf8SliceNoRefresh; PDA decrypt label no longer calls GetLength before TryGetVisualBuffer.",
+                                           "build_decision":  "NO_BUILD: CPU 65 with no compiler/dotnet, then CPU 100 with active dotnet.exe PID 67140.",
+                                           "runtime_gc_bytes_for_500_subtitle_test":  null,
+                                           "runtime_gc_status":  "NOT_MEASURED_CPU_THROTTLED_AND_PROJECT_PREVIOUSLY_BLOCKED_BY_XRPASS"
+                                       }
 }

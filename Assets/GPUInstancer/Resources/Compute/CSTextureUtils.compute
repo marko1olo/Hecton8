@@ -42,6 +42,9 @@ void CSCopyTexture(uint3 id : SV_DispatchThreadID)
 [numthreads(GPUI_THREADS_2D, GPUI_THREADS_2D, 1)]
 void CSReduceTexture(uint3 id : SV_DispatchThreadID)
 {
+    if (sourceSizeX == 0 || sourceSizeY == 0 || destinationSizeX == 0 || destinationSizeY == 0)
+        return;
+
     uint indexX = id.x + offsetX;
     if (indexX >= destinationSizeX || id.y >= destinationSizeY)
         return;

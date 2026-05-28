@@ -1,6 +1,6 @@
 # Rationale 1412 - LIVE_DATAVAULT_COMPACTION_STRESS_FUZZER
 
-Status: CODED / FINAL BUILD BLOCKED BY CONTENTION
+Status: CODED / CORE BUILD GREEN / FUZZER ASMDEF COMPILE PENDING
 
 ## Decision 000 - Ledger Initialization
 Problem: Agent state must survive context compression and prove fresh batch hygiene.
@@ -225,3 +225,52 @@ Solution: Stored the running `Task[]` in `FuzzerState` and queued exactly one lo
 Rejected Alternatives: Immediate disposal after timeout; rejected as unsafe because Burst/job aliases may still exist. Permanent leak on every timeout; rejected because a failing editor stress test should still clean up if late task completion makes it safe.
 Scalability potential: No gameplay tier change. Low/Middle/High/Ultra stress profiles still scale through `GlobalQualityWeight`; deferred cleanup only runs on failed timeout paths.
 Hardware Impact: One failure-path long-running managed task. Low-end machines avoid use-after-free and avoid permanent native leak if delayed worker completion occurs; player runtime remains unaffected.
+
+## Decision 032 - Direct Compaction Must Receive Active Mask
+Problem: `ForceCompactionPulse()` sampled `Vault.ActiveBurstLockMask` and passed it into public `FrostTickDefrag`, but the reflected private `TryRunLiveCompactionSlice(uint)` still received `0u`. That weakened the exact pin-vs-direct-compaction scenario the fuzzer is supposed to attack.
+Solution: Changed the direct invocation to `direct(activeMask)`. The public and reflected compaction paths now consume the same sampled active lock mask inside the fuzzer harness.
+Rejected Alternatives: Relying only on block `Reserved0/Reserved1` checks; rejected because `GlobalDataVault.TryRunLiveCompactionSlice` has explicit `HasActiveBurstLocks(activeBurstLockMask)` gates and the fuzzer must exercise them. Editing `GlobalDataVault`; rejected by assignment boundary.
+Scalability potential: No player-tier change. Low/Middle/High/Ultra fuzzer profiles still scale continuously; the fix improves correctness of collision evidence at every tier.
+Hardware Impact: One integer argument substitution. No additional CPU or memory cost on i3/MX350; player runtime remains excluded by `#if UNITY_EDITOR`.
+
+## Decision 033 - Burst Safety Suppression Justification
+Problem: `ReadWriteStressJob.Failure` used `[NativeDisableContainerSafetyRestriction]` without the three-paragraph proof required by the Native Memory & Job System mandate.
+Solution: Added mandated `SAFETY_JUSTIFICATION_PARAGRAPH_1/2/3` comments proving the per-slot single-writer invariant: `FailureIndex == SlotState.Index`, slot indices are unique, and `slot.Gate` serializes all jobs for that slot.
+Rejected Alternatives: Allocating a `TempJob` failure flag per pin operation; rejected because it adds a hot fuzzer native allocation. Managed exceptions/queues inside Burst; rejected because Burst cannot own managed references.
+Scalability potential: No behavior change. The proof covers all quality-scaled worker/slot counts.
+Hardware Impact: Comments only. No runtime or editor execution cost.
+
+## Decision 034 - Compilation Proof Boundary
+Problem: The build gate opened, but generated project files on disk do not include `Hecton8.Core.Memory.Editor.csproj` and do not list `OOP_MemorySentryConcurrentRelocationFuzzer.cs` in `Hecton8.Core.csproj`, `Hecton8.Editor.csproj`, `Assembly-CSharp-Editor.csproj`, or `Assembly-CSharp.csproj`.
+Solution: Ran exactly one allowed targeted build: `dotnet build Hecton8.Core.csproj --no-restore /m:1 /p:UseSharedCompilation=false` after sampling CPU 17%, csc 0, dotnet 0. Result was 0 errors, 0 warnings, 98.45 seconds. Report and status explicitly mark fuzzer asmdef compile proof as pending Unity project regeneration/import. A later no-more-build gate sampled CPU 99%, csc 0, dotnet 0, so a repeat build is forbidden.
+Rejected Alternatives: Claiming the Core build compiled the fuzzer; rejected because the source file is absent from the generated project graph. Running a second Core build; rejected because it would not verify the modified fuzzer source and would violate the resource-throttling intent.
+Scalability potential: No gameplay tier change. This is verification bookkeeping only.
+Hardware Impact: One compiler run under the permitted gate. Further builds are deferred until Unity regenerates a project graph that actually includes the fuzzer asmdef.
+
+## Decision 035 - Worker Hot-Path Exception Allocation Removal
+Problem: Function-level scans found deterministic mismatch paths in worker methods could allocate managed exceptions through `VerifyPattern()` and pin-job failure handling.
+Solution: Added `TryVerifyPattern()` returning mismatch data by `out` parameters. `WriteLockVerifySlot()` now records `FailureFlagIntegrity`, cancels, and returns. `PinAndScheduleJob()` now records `FailureFlagJobPayload`, cancels, and returns. Cold verification still calls `VerifyPatternOrThrow()` so the false-positive probe can prove the expected exception type outside the worker hot loop.
+Rejected Alternatives: Treating exception allocation as harmless because the fuzzer is editor-only; rejected because the APEX mandate requested zero reference-type `new` in modified hot paths. Removing the false-positive exception type entirely; rejected because Task 16 requires proving mismatch-specific assertion behavior.
+Scalability potential: No tier behavior change. Low/Middle/High/Ultra still scale worker count and job iterations continuously through `GlobalQualityWeight`.
+Hardware Impact: Failure path now avoids managed exception allocation inside worker stress loops; editor-only, player runtime unaffected.
+
+## Decision 036 - Final Evidence Closure
+Problem: The JSON hash sidecar, status ledger, and log still carried stale report hashes after the latest CPU gate and hot-path scan corrections.
+Solution: Updated the report with the latest no-build gate sample, recomputed SHA-256, synchronized the sidecar, status, and final log entry.
+Rejected Alternatives: Leaving old `a66b...` sidecar or placeholder hashes; rejected because the report artifact would not cryptographically match the ledger.
+Scalability potential: No runtime behavior change. Evidence bookkeeping only; Low/Middle/High/Ultra fuzzer profiles remain driven by `GlobalQualityWeight`.
+Hardware Impact: No compiler run launched under CPU 99% load; avoided violating the build-throttle rule on weak host silicon.
+
+## Decision 037 - Timeout And Blackbox Semantics Correction
+Problem: A deeper audit found three remaining evidence defects: timeout failure allocated `TimeoutException` objects, `RecordFailure()` wrote failure bits into the telemetry `ActiveLockMask` field, and a runtime menu execution could overwrite the JSON report without refreshing the `.sha256` sidecar.
+Solution: Timeout path now increments `TimeoutTaskCount` and relies on `FailureFlagTimeout`; `RecordFailure()` samples `Vault.ActiveBurstLockMask` with non-blocking `Monitor.TryEnter(..., 0, ref entered)` and releases in `finally`; `WriteReport()` writes `Docs/Reports/VAULT_COMPACTION_STRESS_REPORT_1412.json.sha256` after the JSON body.
+Rejected Alternatives: Keeping managed timeout exceptions; rejected because a flag/counter already proves incomplete task count without allocation. Blocking on `StructuralGate` during failure telemetry; rejected because timeout reporting must not hang behind the same gate that may be involved in the timeout. Manual-only sidecar refresh; rejected because runtime reports must keep their own cryptographic artifact synchronized.
+Scalability potential: No gameplay-tier behavior change. Low/Middle/High/Ultra fuzzer load remains continuous through `GlobalQualityWeight`; the fix improves failure evidence on every profile.
+Hardware Impact: Removes failure-path managed exception allocation and avoids blocking failure telemetry. Latest build gate sampled CPU 62%, dotnet 0, csc 0, so no compiler was launched because CPU remained above the 50% threshold.
+
+## Decision 038 - Legacy 1310 Fuzzer Quarantine
+Problem: `Assets/_Project/Scripts/Editor/Memory/OOP_MemorySentryConcurrentRelocationFuzzer.cs` remained compiled by default as a legacy 1310 editor menu. It uses raw `Thread[]`, `GlobalDataVault.Create(...)`, writer-lock release outside a guaranteed `finally`, and a disposable vault after bounded joins; a failed join can turn that legacy diagnostic into an editor stability risk unrelated to the 1412 DataVault compaction proof.
+Solution: Added an opt-in define guard: `#if UNITY_EDITOR && HECTON8_ENABLE_LEGACY_MEMORY_FUZZER_1310`. The active 1412 fuzzer remains in `Assets/_Project/Scripts/Core/Memory/Editor/OOP_MemorySentryConcurrentRelocationFuzzer.cs` with bounded cleanup and explicit evidence reporting.
+Rejected Alternatives: Rewriting the 1310 harness into a second active fuzzer; rejected because it duplicates the 1412 domain and increases verification surface. Leaving the legacy menu compiled by default; rejected because it can create raw-thread disposal failures in the same memory domain.
+Scalability potential: No gameplay-tier behavior change. The active fuzzer remains continuous through `GlobalQualityWeight`; the legacy raw-thread path is disabled unless explicitly requested.
+Hardware Impact: Removes a default editor menu that can run a 100000-frame raw-thread memory stress tool on weak machines. Latest build gate sampled CPU 99%, dotnet 1, csc 0, so no compiler was launched.

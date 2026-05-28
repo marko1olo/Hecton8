@@ -9,7 +9,9 @@ ConsumeStructuredBuffer<uint> gpuiTransformationMatrix;
 RWTexture2D<float4> gpuiTransformationMatrixTexture;
 RWStructuredBuffer<uint> argsBuffer;
 uniform uint argsBufferIndex;
+uniform uint argsBufferLength;
 uniform uint maxTextureSize;
+uniform uint textureCapacity;
 
 RWStructuredBuffer<uint4> gpuiInstanceLODData; // lodNo - shadowLodNo - cfLodNo - cfLevel 
 RWTexture2D<float4> gpuiInstanceLODDataTexture;
@@ -18,7 +20,10 @@ uniform uint bufferSize;
 [numthreads(GPUI_THREADS, 1, 1)]
 void CSInstancedBufferToTextureKernel(uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= argsBuffer[argsBufferIndex] || id.x >= bufferSize || maxTextureSize == 0)
+    if (argsBufferIndex >= argsBufferLength || id.x >= bufferSize || id.x >= textureCapacity || maxTextureSize == 0)
+        return;
+
+    if (id.x >= argsBuffer[argsBufferIndex])
         return;
     uint indexX = id.x % maxTextureSize;
     uint indexY = id.x / maxTextureSize;
@@ -37,7 +42,7 @@ void CSInstancedBufferToTextureKernel(uint3 id : SV_DispatchThreadID)
 [numthreads(GPUI_THREADS, 1, 1)]
 void CSBufferToTextureCrossFadeKernel(uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= bufferSize || maxTextureSize == 0)
+    if (id.x >= bufferSize || id.x >= textureCapacity || maxTextureSize == 0)
         return;
     
     gpuiInstanceLODDataTexture[uint2(id.x % maxTextureSize, id.x / maxTextureSize)] = gpuiInstanceLODData[id.x];

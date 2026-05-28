@@ -264,8 +264,7 @@ namespace Hecton8.World
             TileRuntimeState state,
             out NativeArray<byte> sandMask,
             out NativeArray<byte> rockMask,
-            out NativeArray<ushort> heightSamples,
-            bool touchAccess = false)
+            out NativeArray<ushort> heightSamples)
         {
             sandMask = default;
             rockMask = default;
@@ -300,8 +299,6 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (touchAccess)
-                TouchTileCacheState(state);
             return true;
         }
 

@@ -585,8 +585,9 @@ namespace Hecton8.UI.VR
 
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                DisposeNativeState();
-                _dataVault = currentService as IDataVault;
+                IDataVault previousVault = previousService is IDataVault oldVault ? oldVault : null;
+                IDataVault nextVault = currentService is IDataVault vault ? vault : null;
+                RebindDataVaultForLifecycle(nextVault, previousVault);
                 EnsureNativeStateForLifecycle();
             }
         }
@@ -821,14 +822,23 @@ namespace Hecton8.UI.VR
 
         private void DisposeNativeState()
         {
-            if (!_nativeAllocated)
+            if (!_nativeAllocated && !IsExactBlackBoxHandle())
                 return;
 
-            IDataVault vault = _dataVault;
-            if (vault != null && IsExactBlackBoxHandle())
-                vault.ReleaseBuffer(in _blackBoxHandle);
+            ReleaseBlackBoxHandle(_dataVault);
+            ResetNativeStateAfterRelease();
+        }
 
+        private void ResetBlackBoxNativeEpochState()
+        {
             _blackBoxHandle = default;
+            _blackBoxWriteIndex = 0;
+            _blackBoxDumped = false;
+        }
+
+        private void ResetNativeStateAfterRelease()
+        {
+            ResetBlackBoxNativeEpochState();
             _leverAngle = minAngleDegrees;
             _leverVelocity = 0f;
             _leverTarget = minAngleDegrees;
@@ -836,10 +846,36 @@ namespace Hecton8.UI.VR
             _nativeAllocated = false;
         }
 
+        private void RebindDataVaultForLifecycle(IDataVault nextVault, IDataVault fallbackReleaseVault = null)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            ReleaseBlackBoxHandle(_dataVault ?? fallbackReleaseVault);
+            _dataVault = nextVault;
+            ResetNativeStateAfterRelease();
+        }
+
+        private void ReleaseBlackBoxHandle(IDataVault vault)
+        {
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsExactBlackBoxHandle() ||
+                !vault.TryGetGenerationHandle(BlackBoxBufferId, out VaultGenerationHandle<ManualOverrideLeverTelemetryEntry> currentHandle) ||
+                !IsExactBlackBoxHandle(in currentHandle) ||
+                currentHandle.Generation != _blackBoxHandle.Generation)
+            {
+                return;
+            }
+
+            vault.ReleaseBuffer(in _blackBoxHandle);
+        }
+
         private IDataVault CacheDataVaultCold()
         {
-            if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
+            IDataVault registryVault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_dataVault, registryVault))
+                RebindDataVaultForLifecycle(registryVault);
 
             return _dataVault;
         }
@@ -862,8 +898,7 @@ namespace Hecton8.UI.VR
             if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
                 return false;
 
-            if (_blackBoxHandle.BufferID != 0u && _blackBoxHandle.Generation != 0u)
-                vault.ReleaseBuffer(in _blackBoxHandle);
+            ReleaseBlackBoxHandle(vault);
 
             if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
                 return false;
@@ -874,12 +909,16 @@ namespace Hecton8.UI.VR
                 VaultOwnerSystemId,
                 NativeArrayOptions.ClearMemory);
 
-            return !vault.IsCompactionFenceActive &&
-                   IsExactBlackBoxHandle() &&
-                   vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<ManualOverrideLeverTelemetryEntry>.ReadOnly resolved) &&
-                   resolved.IsCreated &&
-                   resolved.Length >= BlackBoxFrameCount &&
-                   !vault.IsCompactionFenceActive;
+            bool ready = !vault.IsCompactionFenceActive &&
+                         IsExactBlackBoxHandle() &&
+                         vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<ManualOverrideLeverTelemetryEntry>.ReadOnly resolved) &&
+                         resolved.IsCreated &&
+                         resolved.Length >= BlackBoxFrameCount &&
+                         !vault.IsCompactionFenceActive;
+            if (!ready)
+                ResetBlackBoxNativeEpochState();
+
+            return ready;
         }
 
         private bool TryAcquireBlackBoxWriteBuffer(out NativeArray<ManualOverrideLeverTelemetryEntry> blackBox)
@@ -938,8 +977,14 @@ namespace Hecton8.UI.VR
 
         private bool IsExactBlackBoxHandle()
         {
-            return _blackBoxHandle.BufferID == unchecked((uint)(int)BlackBoxBufferId) &&
-                   _blackBoxHandle.Generation != 0u;
+            return IsExactBlackBoxHandle(in _blackBoxHandle);
+        }
+
+        private static bool IsExactBlackBoxHandle(in VaultGenerationHandle<ManualOverrideLeverTelemetryEntry> handle)
+        {
+            return handle.BufferID == (uint)BlackBoxBufferId &&
+                   handle.SystemID == (uint)VaultOwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private void TryRegisterReceiver()

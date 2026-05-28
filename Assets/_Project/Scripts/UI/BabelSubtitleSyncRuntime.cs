@@ -436,8 +436,12 @@ namespace Hecton8.UI
         public static bool TryGetLatestTelemetry(out LocalizationTelemetryEntry entry)
         {
             entry = default;
-            if (!EnsureInitialized() || !TryReadOnlyTelemetryBuffer(out NativeArray<LocalizationTelemetryEntry>.ReadOnly telemetry))
+            if (!s_initialized ||
+                s_vault == null ||
+                !TryReadOnlyTelemetryBuffer(out NativeArray<LocalizationTelemetryEntry>.ReadOnly telemetry))
+            {
                 return false;
+            }
 
             int index = s_telemetryCursor - 1;
             if (index < 0)
@@ -453,8 +457,12 @@ namespace Hecton8.UI
         public static bool TryGetLatestUIOptimizationTelemetry(out UIOptimizationTelemetryEntry entry)
         {
             entry = default;
-            if (!EnsureInitialized() || !TryReadOnlyUIOptimizationTelemetryBuffer(out NativeArray<UIOptimizationTelemetryEntry>.ReadOnly telemetry))
+            if (!s_initialized ||
+                s_vault == null ||
+                !TryReadOnlyUIOptimizationTelemetryBuffer(out NativeArray<UIOptimizationTelemetryEntry>.ReadOnly telemetry))
+            {
                 return false;
+            }
 
             int index = s_uiOptimizationTelemetryCursor - 1;
             if (index < 0)
@@ -558,8 +566,8 @@ namespace Hecton8.UI
         public static bool TryGetCue(int index, out SubtitleCueDTO cue)
         {
             cue = default;
-            if (!EnsureInitialized() ||
-                !TryCompletePendingCueEvaluation() ||
+            if (!s_initialized ||
+                s_vault == null ||
                 !TryReadOnlyCueBuffer(out NativeArray<SubtitleCueDTO>.ReadOnly cues) ||
                 (uint)index >= (uint)cues.Length)
             {
@@ -670,16 +678,25 @@ namespace Hecton8.UI
                 return false;
             }
 
-            if (s_vault.IsCompactionFenceActive ||
-                !buffer.IsCreated ||
-                buffer.Length < requiredLength)
+            bool releaseOnExit = true;
+            try
             {
-                s_vault.ReleaseWriteLock(in handle, SystemID.UI);
-                buffer = default;
-                return false;
-            }
+                if (s_vault.IsCompactionFenceActive ||
+                    !buffer.IsCreated ||
+                    buffer.Length < requiredLength)
+                {
+                    buffer = default;
+                    return false;
+                }
 
-            return true;
+                releaseOnExit = false;
+                return true;
+            }
+            finally
+            {
+                if (releaseOnExit)
+                    s_vault.ReleaseWriteLock(in handle, SystemID.UI);
+            }
         }
 
         private static bool IsSubtitleVaultHandle<T>(
@@ -726,14 +743,12 @@ namespace Hecton8.UI
 
         public static float ResolveElapsedSecondsSince(uint startAudioFrame)
         {
-            ResolveAudioClock();
             uint elapsedFrames = unchecked(s_audioFrameClock - startAudioFrame);
             return elapsedFrames / (float)math.max(1, s_sampleRate);
         }
 
         public static float ResolveCurrentAudioTimeSeconds()
         {
-            ResolveAudioClock();
             return s_audioFrameClock / (float)math.max(1, s_sampleRate);
         }
 

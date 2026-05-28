@@ -918,6 +918,12 @@ namespace Hecton8.Visor
                 return;
             }
 
+            CameraType cameraType = renderingData.cameraData.cameraType;
+            if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)
+            {
+                return;
+            }
+
             if (settings.deepSeaNoirUnifiedPass)
             {
                 ClearRawColorHistoryRequest();

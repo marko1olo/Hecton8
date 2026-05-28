@@ -1,0 +1,187 @@
+﻿{
+    "agent_id":  "1423",
+    "role":  "ZERO_GC_SUBTITLES_AND_BABEL_LOCALIZATION_COMPILER",
+    "domain":  "ECHELON 8 PRESENTATION \u0026 UX / Zero-GC Subtitles (Babel), VWS",
+    "generated_local":  "2026-05-28T13:43:40.2472377+04:00",
+    "prompt":  {
+                   "source":  "Docs/Tasks/CURRENT_BATCH.md::\u003cAGENT_PROMPT id=\"1423\"\u003e",
+                   "task_count":  20,
+                   "chars":  20627,
+                   "sha256":  "9C307765413C5548CA5CD5D2CEE58C7E415CC93819BA21AA3C264488E260C8A6"
+               },
+    "source_hashes":  [
+                          {
+                              "path":  "Assets/_Project/Scripts/LocRegistry.cs",
+                              "sha256":  "F52855376E96616DA02C1BF6AEEC0F3C360EB642EAA8092205F51BEB3CB7F354"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+                              "sha256":  "A56BD6C648B6A0A4C8F2E7FF71F69351FE65B33138D5818B7940BF55DDB2CA29"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/TmpTextNoAlloc.cs",
+                              "sha256":  "294DFCA23D14A8E5B304CEC53CC6376D1CC7190086B37D9FD9071FD999FE63E7"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/LocalizedWorldSign.cs",
+                              "sha256":  "CF7A5CDCF19A007734403F16DDFBD0AC263E4189FAAA6F30A3B5E1FA83476F90"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/BabelRichTextLodPolicy.cs",
+                              "sha256":  "6EB320617B68509CC035E77437DB41A1E9DDF656C5BC4E4F552BF4FE0A5D62DC"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+                              "sha256":  "084243DAC5C5A74C3945FEA0F2F290AE13CDB544B6F228CC7F0653E998E4B71B"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/LabelSwapScheduler.cs",
+                              "sha256":  "F3AA4001B0622461AAE3ECA2141284A43C4018D803F8C56391E4A00D3A5F295A"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/PDADataArchaeologyDecryptLabel.cs",
+                              "sha256":  "5A52CF1A61EB475ADA1E26F6E1FA7B17878FE41AB5BE9D1D44A6FEED94264785"
+                          },
+                          {
+                              "path":  "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs",
+                              "sha256":  "AE1B428B01CE1E36B3A286111368BC6B21B9F6396E09DB9E12D207F7235E8D80"
+                          }
+                      ],
+    "defects_found_and_fixed":  [
+                                    {
+                                        "id":  "CONT4-001",
+                                        "defect":  "Babel placeholder overflow previously promoted charCursor to maxGlyphs; tiny buffers below ellipsis capacity could preserve stale previous chars in TMP bridge.",
+                                        "fix":  "LocRegistry clamps charCursor with math.clamp(charCursor,0,maxGlyphs) at lines 1239,1262,1274; editor regression asserts production source no longer contains charCursor = maxGlyphs.",
+                                        "proof_lines":  [
+                                                            "Assets/_Project/Scripts/LocRegistry.cs:1239",
+                                                            "Assets/_Project/Scripts/LocRegistry.cs:1262",
+                                                            "Assets/_Project/Scripts/LocRegistry.cs:1274",
+                                                            "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs:98-105"
+                                                        ]
+                                    },
+                                    {
+                                        "id":  "CONT4-002",
+                                        "defect":  "Read-style localization/Babel getters cold-initialized or mutated telemetry/state.",
+                                        "fix":  "Split pure read functions from tracked decode paths: TryGetLocalizedSpan uses TryFindUtf8Slice; TryGetLatestTelemetry/TryGetLatestUIOptimizationTelemetry/TryGetCue now return false when not initialized and do not EnsureInitialized or complete work; audio time resolves from cached frame clock.",
+                                        "proof_lines":  [
+                                                            "Assets/_Project/Scripts/LocRegistry.cs:877",
+                                                            "Assets/_Project/Scripts/LocRegistry.cs:1129",
+                                                            "Assets/_Project/Scripts/LocRegistry.cs:1876",
+                                                            "Assets/_Project/Scripts/LocRegistry.cs:2670",
+                                                            "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:436",
+                                                            "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:457",
+                                                            "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:566",
+                                                            "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:735",
+                                                            "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:741"
+                                                        ]
+                                    },
+                                    {
+                                        "id":  "CONT4-003",
+                                        "defect":  "TryAcquireSubtitleWriteBuffer released a post-acquire validation failure directly instead of through a finally proof path.",
+                                        "fix":  "Added releaseOnExit try/finally around post-acquire validation; success transfers lock ownership to caller, failure/exception releases in finally.",
+                                        "proof_lines":  [
+                                                            "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:676",
+                                                            "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:681-698"
+                                                        ]
+                                    }
+                                ],
+    "zero_gc_scan":  {
+                         "scanned_files":  8,
+                         "string_format":  0,
+                         "to_string_call":  0,
+                         "tmp_text_assignment":  0,
+                         "set_text_call":  0,
+                         "new_string":  0,
+                         "string_builder":  0,
+                         "array_resize":  0,
+                         "foreach":  0,
+                         "linq_using":  0,
+                         "linq_methods":  0,
+                         "regex_mode":  "PowerShell Select-String -CaseSensitive; assignment pattern uses .text\\s*=(?!=); LINQ methods case-sensitive to avoid Unity.Mathematics math.select/math.all false positives"
+                     },
+    "broad_non_editor_domain_scan":  {
+                                         "scanned_files":  155,
+                                         "roots":  [
+                                                       "Assets/_Project/Scripts/UI",
+                                                       "Assets/_Project/Scripts/Audio",
+                                                       "LocRegistry/LocalizationManager/LocNumericBuffer/ZeroGCFormatter/BabelLocalizationContract/LocalizedWorldSign"
+                                                   ],
+                                         "excluded":  "[/\\\\]Editor[/\\\\]",
+                                         "string_format":  0,
+                                         "to_string_call":  0,
+                                         "tmp_text_assignment":  0,
+                                         "set_text_call":  0,
+                                         "new_string":  0,
+                                         "string_builder":  0,
+                                         "array_resize":  0,
+                                         "foreach":  0,
+                                         "linq_using":  0
+                                     },
+    "datavault":  {
+                      "migrated_buffers":  [
+                                               {
+                                                   "name":  "SubtitleCueStateBufferId",
+                                                   "buffer_id":  15070550
+                                               },
+                                               {
+                                                   "name":  "SubtitleCueTelemetryBufferId",
+                                                   "buffer_id":  15070551
+                                               },
+                                               {
+                                                   "name":  "UIOptimizationTelemetryBufferId",
+                                                   "buffer_id":  15070552
+                                               }
+                                           ],
+                      "try_acquire_write_lock":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:676",
+                      "post_acquire_failure_release":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:681-698 releaseOnExit finally",
+                      "ui_optimization_release":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:517-519 finally",
+                      "other_write_release_finally_lines":  [
+                                                                "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:327-329",
+                                                                "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:391-393",
+                                                                "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:901",
+                                                                "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:1015",
+                                                                "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:1119"
+                                                            ],
+                      "struct_layout":  "UIOptimizationTelemetryEntry UnsafeUtility.SizeOf == 64; offsets Frame=0, AudioFrameClock=4, TokenHash=8, FailureCode=12, Requested=16, Rendered=20, Capacity=24, CueSignalCount=28, GlobalQualityWeight=32, Flags=36, BufferIdTelemetry=40, WriteSequence=44, LastTokenHash=48, MissingTokenHashCount=52, DroppedCueCount=56, _pad0=60, _pad3=63.",
+                      "struct_layout_lines":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:858-875"
+                  },
+    "continuous_scalability":  {
+                                   "global_quality_weight_routes":  [
+                                                                        "BabelRichTextLodPolicy.cs:28-31 retention = saturate(lerp(0.16,1.0,smoothstep(HomeostasisBrain.GlobalQualityWeight)))",
+                                                                        "BabelSubtitleSyncRuntime.cs:755-763 canvas dirty budget = ceil(lerp(2,18,smoothstep(q)))",
+                                                                        "LocRegistry.cs:2776-2788 lookup budget uses ResolveGlobalQualityWeight before fallback stress route"
+                                                                    ],
+                                   "binary_quality_switches_in_modified_hot_files":  0,
+                                   "cinematic_cheat":  "Text presentation uses bounded char buffers, deterministic rich-text retention and TMP logical RTL sink; no physical text simulation or per-glyph job system added."
+                               },
+    "build_throttle":  {
+                           "build_launched_this_continuation":  false,
+                           "samples":  [
+                                           {
+                                               "cpu_percent":  100,
+                                               "compiler_or_dotnet_process":  "VBCSCompiler.exe PID 18948 observed after dotnet PID 38260",
+                                               "action":  "NO_BUILD"
+                                           },
+                                           {
+                                               "cpu_percent":  87,
+                                               "compiler_or_dotnet_process":  "none observed, CPU still above 50",
+                                               "action":  "NO_BUILD"
+                                           },
+                                           {
+                                               "cpu_percent":  96,
+                                               "compiler_or_dotnet_process":  "csc.exe PID 63300 and dotnet.exe PID 53008 observed during final diff-check gate",
+                                               "action":  "NO_BUILD"
+                                           }
+                                       ],
+                           "previous_known_compile_blocker":  "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs XRPass missing at lines 437/476; out of 1423 domain."
+                       },
+    "runtime_verification":  {
+                                 "unity_runtime_profiler":  "ABSENT",
+                                 "gcmonitor_sample":  "ABSENT",
+                                 "dump_1423_bin_exists":  false,
+                                 "status":  "PENDING_VERIFICATION_STATIC_ONLY_AFTER_CONT4"
+                             },
+    "residual_risks":  [
+                           "Legacy read-named compatibility APIs in LocRegistry/LocalizationManager that return or fill char buffers still have side-effecting decode/cache semantics. Explicit Kepler findings were fixed, but a full public API contract rename is larger cross-domain work."
+                       ]
+}

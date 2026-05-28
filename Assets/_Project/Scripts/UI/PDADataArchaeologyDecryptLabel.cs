@@ -106,24 +106,31 @@ namespace Hecton8.UI
 
         private bool RenderHash(int hash, float scrambleIntensity01)
         {
-            int sourceLength = LocRegistry.GetLength(hash);
-            if (sourceLength <= 0)
-                return false;
-
             if (!LocRegistry.TryGetVisualBuffer(hash, out char[] source, out int length))
-                length = sourceLength;
+            {
+                if (source == null || length <= 0)
+                    return false;
+            }
 
             int sourceCapacity = source != null ? source.Length : 0;
             int writeLength = math.min(math.min(length, sourceCapacity), CharBufferPool.SlotCapacity);
             if (writeLength <= 0 || !CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
                 return false;
 
-            Span<char> destination = lease.Buffer.AsSpan(0, writeLength);
-            ReadOnlySpan<char> sourceSpan = source.AsSpan(0, writeLength);
-            Scramble(sourceSpan, destination, _entityHash, _progress01, _scramblePhase, scrambleIntensity01);
+            try
+            {
+                Span<char> destination = lease.Buffer.AsSpan(0, writeLength);
+                ReadOnlySpan<char> sourceSpan = source.AsSpan(0, writeLength);
+                Scramble(sourceSpan, destination, _entityHash, _progress01, _scramblePhase, scrambleIntensity01);
 
-            targetText.SetCharArray(lease.Buffer, 0, writeLength);
-            CharBufferPool.Release(in lease);
+                targetText.isRightToLeftText = LocalizationManager.IsRightToLeftLanguage(LocRegistry.ActiveLanguage);
+                targetText.SetCharArray(lease.Buffer, 0, writeLength);
+            }
+            finally
+            {
+                CharBufferPool.Release(in lease);
+            }
+
             return true;
         }
 

@@ -138,6 +138,11 @@ namespace Hecton8.Gameplay
         private ILocalizationTextReadModel _localizationManager;
         private bool _statusLightDirty;
         private Color _pendingStatusLightColor;
+        private AudioClip _pendingStaticAudio0;
+        private AudioClip _pendingStaticAudio1;
+        private float _pendingStaticAudioVolume0;
+        private float _pendingStaticAudioVolume1;
+        private int _pendingStaticAudioCount;
         private int _emissionPropertyId;
 
         // Track read messages (for persistence)
@@ -252,6 +257,7 @@ namespace Hecton8.Gameplay
             LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregister();
             TryUnregisterHotSwapListener();
+            ClearQueuedStaticAudio();
             ClearWfcOutpostPersistence();
         }
 
@@ -260,6 +266,7 @@ namespace Hecton8.Gameplay
             InteractableRegistry.InvalidateTree(this);
             TryUnregister();
             TryUnregisterHotSwapListener();
+            ClearQueuedStaticAudio();
         }
 
         private void TryRegister()
@@ -373,6 +380,7 @@ namespace Hecton8.Gameplay
         public void LateFrameTick()
         {
             FlushStatusLight();
+            FlushQueuedStaticAudio();
         }
 
         void ILateFrameTickable.LateFrameTick()
@@ -406,10 +414,7 @@ namespace Hecton8.Gameplay
         public void Interact(Transform interactor)
         {
             // Play access sound
-            if (accessSound != null && _audioService != null)
-            {
-                _audioService.PlayStatic2D(accessSound, 0.7f);
-            }
+            QueueStaticAudio(accessSound, 0.7f);
 
             if (_state == TerminalState.NewMessage && _pendingMessageIndex >= 0)
             {
@@ -507,10 +512,7 @@ namespace Hecton8.Gameplay
                 UpdateState();
 
                 // Play new message alert
-                if (newMessageAlertSound != null && _audioService != null)
-                {
-                    _audioService.PlayStatic2D(newMessageAlertSound, 0.8f);
-                }
+                QueueStaticAudio(newMessageAlertSound, 0.8f);
 
                 OnNewMessageReceived?.Invoke(message.messageId);
             }
@@ -886,6 +888,59 @@ namespace Hecton8.Gameplay
             statusLightRenderer.GetPropertyBlock(_mpb);
             _mpb.SetColor(_emissionPropertyId != 0 ? _emissionPropertyId : _EmissionColorID, _pendingStatusLightColor);
             statusLightRenderer.SetPropertyBlock(_mpb);
+        }
+
+        private void QueueStaticAudio(AudioClip clip, float volume)
+        {
+            if (clip == null || _audioService == null)
+                return;
+
+            switch (_pendingStaticAudioCount)
+            {
+                case 0:
+                    _pendingStaticAudio0 = clip;
+                    _pendingStaticAudioVolume0 = Mathf.Clamp01(volume);
+                    _pendingStaticAudioCount = 1;
+                    break;
+                case 1:
+                    _pendingStaticAudio1 = clip;
+                    _pendingStaticAudioVolume1 = Mathf.Clamp01(volume);
+                    _pendingStaticAudioCount = 2;
+                    break;
+                default:
+                    return;
+            }
+        }
+
+        private void FlushQueuedStaticAudio()
+        {
+            int count = _pendingStaticAudioCount;
+            if (count <= 0)
+                return;
+
+            AudioClip clip0 = _pendingStaticAudio0;
+            AudioClip clip1 = _pendingStaticAudio1;
+            float volume0 = _pendingStaticAudioVolume0;
+            float volume1 = _pendingStaticAudioVolume1;
+            ClearQueuedStaticAudio();
+
+            IAudioService audioService = _audioService;
+            if (audioService == null)
+                return;
+
+            if (count > 0 && clip0 != null)
+                audioService.PlayStatic2D(clip0, volume0);
+            if (count > 1 && clip1 != null)
+                audioService.PlayStatic2D(clip1, volume1);
+        }
+
+        private void ClearQueuedStaticAudio()
+        {
+            _pendingStaticAudio0 = null;
+            _pendingStaticAudio1 = null;
+            _pendingStaticAudioVolume0 = 0f;
+            _pendingStaticAudioVolume1 = 0f;
+            _pendingStaticAudioCount = 0;
         }
 
         // ══════════════════════════════════════════════════════════

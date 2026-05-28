@@ -3,8 +3,10 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
@@ -237,7 +239,7 @@ namespace Hecton8.Visor
                 return _brownoutGlobalsBufferA.IsValid() && _brownoutGlobalsBufferB.IsValid();
             }
 
-            private bool UpdateBrownoutGlobals(FeatureSettings settings, RuntimeState runtimeState)
+            private unsafe bool UpdateBrownoutGlobals(FeatureSettings settings, RuntimeState runtimeState)
             {
                 if (!HasBrownoutGlobalsBuffer())
                     return false;
@@ -269,7 +271,10 @@ namespace Hecton8.Visor
                     NativeArray<BrownoutGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<BrownoutGlobalsDTO>(0, 1);
                     try
                     {
-                        mapped[0] = globals;
+                        UnsafeUtility.MemCpy(
+                            NativeArrayUnsafeUtility.GetUnsafePtr(mapped),
+                            UnsafeUtility.AddressOf(ref globals),
+                            VRBrownoutGlobalsStrideBytes);
                     }
                     finally
                     {
@@ -416,6 +421,10 @@ namespace Hecton8.Visor
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             if (settings == null || _pass == null || _material == null)
+                return;
+
+            CameraType cameraType = renderingData.cameraData.cameraType;
+            if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)
                 return;
 
             Camera renderCamera = renderingData.cameraData.camera;

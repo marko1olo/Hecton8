@@ -1,7 +1,9 @@
 ﻿{
     "agentId":  "1407",
-    "generatedAt":  "2026-05-28T05:42:34.6578590+04:00",
+    "generatedAt":  "2026-05-28T12:35:47.4688208+04:00",
     "scope":  "Modified comfort runtime hot paths in HectonVRBrownoutFeature.cs; Editor tests are excluded and counted separately.",
+    "sourcePath":  "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs",
+    "sourceSha256":  "79791AC45FBFEDA985B3A9BB6EE0B20A333519F1D4E8EA691ADF3EC632FC4E76",
     "hotPathAggregate":  {
                              "referenceTypeNewCount":  0,
                              "stringFormatCount":  0,
@@ -12,8 +14,8 @@
     "methodScans":  [
                         {
                             "method":  "RecordRenderGraph",
-                            "startLine":  113,
-                            "endLine":  193,
+                            "startLine":  115,
+                            "endLine":  194,
                             "rawNewCount":  1,
                             "rawNewClassifications":  [
                                                           {
@@ -29,8 +31,8 @@
                         },
                         {
                             "method":  "AddRenderPasses",
-                            "startLine":  416,
-                            "endLine":  427,
+                            "startLine":  420,
+                            "endLine":  431,
                             "rawNewCount":  0,
                             "rawNewClassifications":  [
 
@@ -43,8 +45,8 @@
                         },
                         {
                             "method":  "TryBuildRuntimeState",
-                            "startLine":  436,
-                            "endLine":  473,
+                            "startLine":  441,
+                            "endLine":  477,
                             "rawNewCount":  1,
                             "rawNewClassifications":  [
                                                           {
@@ -60,8 +62,8 @@
                         },
                         {
                             "method":  "IsComfortEligibleCamera",
-                            "startLine":  476,
-                            "endLine":  482,
+                            "startLine":  480,
+                            "endLine":  486,
                             "rawNewCount":  0,
                             "rawNewClassifications":  [
 
@@ -74,8 +76,8 @@
                         },
                         {
                             "method":  "Sanitize01",
-                            "startLine":  485,
-                            "endLine":  488,
+                            "startLine":  489,
+                            "endLine":  492,
                             "rawNewCount":  0,
                             "rawNewClassifications":  [
 
@@ -88,8 +90,8 @@
                         },
                         {
                             "method":  "SanitizeRange",
-                            "startLine":  491,
-                            "endLine":  494,
+                            "startLine":  495,
+                            "endLine":  498,
                             "rawNewCount":  0,
                             "rawNewClassifications":  [
 
@@ -102,8 +104,8 @@
                         },
                         {
                             "method":  "SanitizeVrComfortSignals",
-                            "startLine":  497,
-                            "endLine":  504,
+                            "startLine":  501,
+                            "endLine":  508,
                             "rawNewCount":  1,
                             "rawNewClassifications":  [
                                                           {
@@ -119,8 +121,8 @@
                         },
                         {
                             "method":  "SanitizeVrComfortMotion",
-                            "startLine":  507,
-                            "endLine":  514,
+                            "startLine":  511,
+                            "endLine":  518,
                             "rawNewCount":  1,
                             "rawNewClassifications":  [
                                                           {
@@ -136,8 +138,8 @@
                         },
                         {
                             "method":  "SanitizeVrSomaticComfortState",
-                            "startLine":  517,
-                            "endLine":  524,
+                            "startLine":  521,
+                            "endLine":  528,
                             "rawNewCount":  1,
                             "rawNewClassifications":  [
                                                           {
@@ -153,8 +155,8 @@
                         },
                         {
                             "method":  "HasVrComfortWork",
-                            "startLine":  527,
-                            "endLine":  534,
+                            "startLine":  531,
+                            "endLine":  538,
                             "rawNewCount":  0,
                             "rawNewClassifications":  [
 
@@ -167,8 +169,8 @@
                         },
                         {
                             "method":  "UpdateBrownoutGlobals",
-                            "startLine":  239,
-                            "endLine":  305,
+                            "startLine":  241,
+                            "endLine":  309,
                             "rawNewCount":  3,
                             "rawNewClassifications":  [
                                                           {
@@ -192,8 +194,8 @@
                         },
                         {
                             "method":  "BrownoutGlobalsEqual",
-                            "startLine":  328,
-                            "endLine":  335,
+                            "startLine":  333,
+                            "endLine":  339,
                             "rawNewCount":  0,
                             "rawNewClassifications":  [
 
@@ -207,27 +209,27 @@
                     ],
     "excludedRuntimeNewTokens":  [
                                      {
-                                         "line":  75,
+                                         "line":  76,
                                          "type":  "ProfilingSampler",
                                          "reason":  "outside scanned hot methods: cold setup/resource allocation or serialized settings construction"
                                      },
                                      {
-                                         "line":  224,
+                                         "line":  225,
                                          "type":  "GraphicsBuffer",
                                          "reason":  "outside scanned hot methods: cold setup/resource allocation or serialized settings construction"
                                      },
                                      {
-                                         "line":  229,
+                                         "line":  230,
                                          "type":  "GraphicsBuffer",
                                          "reason":  "outside scanned hot methods: cold setup/resource allocation or serialized settings construction"
                                      },
                                      {
-                                         "line":  389,
+                                         "line":  393,
                                          "type":  "FeatureSettings",
                                          "reason":  "outside scanned hot methods: cold setup/resource allocation or serialized settings construction"
                                      },
                                      {
-                                         "line":  402,
+                                         "line":  406,
                                          "type":  "BrownoutPass",
                                          "reason":  "outside scanned hot methods: cold setup/resource allocation or serialized settings construction"
                                      }
@@ -241,5 +243,15 @@
                                "foreachTokens":  0,
                                "reason":  "Editor NUnit/static test artifact; not runtime render/update hot path."
                            },
-    "conclusion":  "Hot-path text scan reports zero reference-type new, zero string.Format, zero .ToString(), zero LINQ tokens, and zero foreach loops in the modified comfort runtime methods. Raw new tokens inside scanned hot methods are value-type constructions only."
+    "gpuUploadMandateProof":  {
+                                  "lockBufferForWriteLine":  270,
+                                  "memCpyLine":  273,
+                                  "nativeArrayUnsafePtrLine":  274,
+                                  "addressOfLine":  275,
+                                  "finallyLine":  278,
+                                  "unlockBufferAfterWriteLine":  280,
+                                  "oldIndexerAssignmentCount":  0,
+                                  "experimentalRenderingUsingCount":  0
+                              },
+    "conclusion":  "Hot-path declaration-bounded scan reports zero reference-type new, zero string.Format, zero .ToString(), zero LINQ tokens, and zero foreach loops in the modified comfort runtime methods. Raw new tokens inside scanned hot methods are value-type constructions only. GPU constant buffer upload uses LockBufferForWrite plus UnsafeUtility.MemCpy and releases in finally."
 }

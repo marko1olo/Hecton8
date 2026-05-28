@@ -1,266 +1,403 @@
-{
-  "agent": "1419",
-  "role": "ECOSYSTEM_SPATIAL_GRID_AND_SWARM_AUDITOR",
-  "domain": "Echelon 3 / Ecosystem spatial hash + GPU swarm data exchange",
-  "taskCount": 20,
-  "generatedLocal": "2026-05-28T05:36:35.6552124+04:00",
-  "status": "APEX_STATIC_PASS_BUILD_BLOCKED_BY_CPU_LOAD",
-  "authority": {
-    "agentsFile": "C:/hades/Hecton8/AGENTS.md",
-    "domainFile": "C:/hades/Hecton8/Docs/Actual Domains of Project.txt",
-    "batchPrompt": "C:/hades/Hecton8/Docs/Tasks/CURRENT_BATCH.md::<AGENT_PROMPT id=\"1419\">",
-    "domainBoundary": "Echelon 3 owns Ecosystem Director, Fauna Spatial Hash Grid, and Swarm Compute Director routes."
-  },
-  "apexResidualAudit": {
-    "realDefectFound": true,
-    "defect": "EcosystemDirector.PublishFloraPredatorAupBufferImmediate wrote flora/predator AUP staging data through VaultBufferView indexer without an explicit writer lock.",
-    "fix": "VaultBufferView<T> now exposes TryAcquireWriteLock and ReleaseWriteLock; PublishFloraPredatorAupBufferImmediate acquires the write view once, writes the upload lane, uploads through GraphicsBufferUploadUtility, and releases in finally.",
-    "fixedLines": [
-      "Assets/_Project/Scripts/World/EcosystemDirector.cs:450 VaultBufferView<T>.TryAcquireWriteLock",
-      "Assets/_Project/Scripts/World/EcosystemDirector.cs:464 VaultBufferView<T>.ReleaseWriteLock",
-      "Assets/_Project/Scripts/World/EcosystemDirector.cs:5862 PublishFloraPredatorAupBufferImmediate",
-      "Assets/_Project/Scripts/World/EcosystemDirector.cs:5877 _floraPredatorAupUpload.TryAcquireWriteLock(SystemID.AIEcology, out upload)",
-      "Assets/_Project/Scripts/World/EcosystemDirector.cs:5916 finally",
-      "Assets/_Project/Scripts/World/EcosystemDirector.cs:5919 _floraPredatorAupUpload.ReleaseWriteLock(SystemID.AIEcology)"
-    ],
-    "postFixNegativeScan": "rg found no _floraPredatorAupUpload.Resolve(), _floraPredatorAupUpload.IsCreated, or _floraPredatorAupUpload[indexer] usage in PublishFloraPredatorAupBufferImmediate.",
-    "additionalResidualRemoved": "SargassumMicroFaunaBoids previously retained an unused cold managed BoidData[1] staging field at old line 1673 with a stale SetData-staging comment; rg showed no reads/writes, so the field was removed. Post-removal rg found no _singleBoidUpload, SetData staging, UploadNativeArraySetData, or .SetData sites in SargassumMicroFaunaBoids.cs."
-  },
-  "zeroGcHotPathScan": {
-    "scanType": "PowerShell brace-bounded method scan with case-sensitive forbidden-pattern matching",
-    "targetMethodCount": 19,
-    "totals": {
-      "referenceTypeNew": 0,
-      "valueTypeNew": 13,
-      "stringFormat": 0,
-      "toString": 0,
-      "linqQueries": 0,
-      "foreachLoops": 0,
-      "stringConcatOrInterpolation": 0
-    },
-    "scannedMethods": [
-      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:362-665 Tick",
-      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1801-1814 TryFinalizeFrameJobNoWait",
-      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1826-1849 FinishFrameJobCompletion",
-      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1850-1886 UploadCompletedFrameToGpu",
-      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1990-2056 TryLockJobBuffers",
-      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:2068-2099 UnlockLockedJobBuffers",
-      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:2784-2798 DumpBlackBox",
-      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:3445-3546 TryQueueTelemetryDump",
-      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:3909-3985 UploadFromVault",
-      "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:2837-2850 UploadSpawnDataToBoidBuffersVisualSync",
-      "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:6101-6122 UploadSingleBoidToBuffer",
-      "Assets/_Project/Scripts/World/EcosystemDirector.cs:5861-5938 PublishFloraPredatorAupBufferImmediate",
-      "Assets/_Project/Scripts/World/EcosystemDirector.cs:2465-2503 TryGetSectorPopulation",
-      "Assets/_Project/Scripts/World/EcosystemDirector.cs:2504-2541 TryGetBiomassAvailability",
-      "Assets/_Project/Scripts/World/EcosystemDirector.cs:3047-3097 TryGetGlobalBiomassAudit",
-      "Assets/_Project/Scripts/World/EcosystemDirector.cs:3099-3115 TryCopyMacroSwarms",
-      "Assets/_Project/Scripts/World/EcosystemDirector.cs:3117-3149 TryCopyMacroSwarmRadarPings",
-      "Assets/_Project/Scripts/World/EcosystemDirector.cs:3370-3391 IsApexInSector",
-      "Assets/_Project/Scripts/World/EcosystemDirector.cs:3392-3432 TryGetApexPredatorThreat"
-    ],
-    "allowedValueTypeNewLines": [
-      "ShinobuEcosystemBalancer.cs:482 LocalShiftAndSpatialHashJob",
-      "ShinobuEcosystemBalancer.cs:504 QuantizeEntityCoordinatesJob",
-      "ShinobuEcosystemBalancer.cs:516 SortSpatialGridJob",
-      "ShinobuEcosystemBalancer.cs:524 BuildSpatialGridRangesJob",
-      "ShinobuEcosystemBalancer.cs:545 BuildSpatialGridDebugCellsJob",
-      "ShinobuEcosystemBalancer.cs:562 BoidFlockingJob",
-      "ShinobuEcosystemBalancer.cs:582 float3 fallback vector",
-      "ShinobuEcosystemBalancer.cs:599 BuildShinobuRenderPayloadJob",
-      "ShinobuEcosystemBalancer.cs:613 CountTelemetryCountersJob",
-      "EcosystemDirector.cs:5895 float4 upload element",
-      "EcosystemDirector.cs:3087 EcosystemBiomassAuditSample value DTO",
-      "EcosystemDirector.cs:3145 float4 radar ping",
-      "EcosystemDirector.cs:3399 float3 finite-check vector"
-    ],
-    "unmanagedProof": "The only new expressions in scanned hot methods construct job structs or unmanaged value DTOs; no class, managed array, List, Dictionary, string, LINQ, foreach, ToString, or string.Format sites were found."
-  },
-  "dataSovereignty": {
-    "globalDataVaultOwner": "SystemID.AIEcology",
-    "securedBufferIds": [
-      "H8Memory.cs:446 EcosystemFloraPredatorAupUpload = 320",
-      "H8Memory.cs:1138 ShinobuAmbientEntities = 70400",
-      "H8Memory.cs:1139 ShinobuAmbientAups = 70401",
-      "H8Memory.cs:1140 ShinobuAmbientEntitySnapshot = 70402",
-      "H8Memory.cs:1141 ShinobuAmbientAupSnapshot = 70403",
-      "H8Memory.cs:1142 ShinobuEcosystemSectors = 70404",
-      "H8Memory.cs:1143 ShinobuEcosystemTuning = 70405",
-      "H8Memory.cs:1144 ShinobuEcosystemCounters = 70406",
-      "H8Memory.cs:1145 ShinobuEcosystemTelemetryRing = 70407",
-      "H8Memory.cs:1146 ShinobuSpatialHashDebugCells = 70408",
-      "H8Memory.cs:1147 ShinobuRenderMatrices = 70409",
-      "H8Memory.cs:1148 ShinobuRenderCustomData = 70410",
-      "H8Memory.cs:1149 ShinobuSpatialHashBucketHeads = 70411",
-      "H8Memory.cs:1150 ShinobuSpatialHashNext = 70412",
-      "H8Memory.cs:1182 ShinobuSpatialGridEntries = 70448",
-      "H8Memory.cs:1183 ShinobuSpatialGridSortScratch = 70449",
-      "H8Memory.cs:1184 ShinobuSpatialGridBucketRanges = 70450",
-      "H8Memory.cs:1185 ShinobuSpatialGridTelemetryRing = 70451",
-      "H8Memory.cs:1186 ShinobuSpatialGridTelemetryCursor = 70452",
-      "H8Memory.cs:1187 ShinobuSpatialGridTuning = 70453",
-      "H8Memory.cs:1188 ShinobuSpatialGridProfiles = 70454",
-      "H8Memory.cs:1189 ShinobuSpatialGridCsvScratch = 70455",
-      "H8Memory.cs:1191 ShinobuFlockingThreats = 70457",
-      "H8Memory.cs:1192 ShinobuFlockingThreatCount = 70458",
-      "H8Memory.cs:1193 ShinobuFlockingTelemetryRing = 70459",
-      "H8Memory.cs:1194 ShinobuFlockingCounters64 = 70474",
-      "H8Memory.cs:1195 ShinobuSpatialGridDumpSnapshot = 70475",
-      "H8Memory.cs:1196 ShinobuEcosystemDumpSnapshot = 70476",
-      "H8Memory.cs:1211 ShinobuSwarmSpeciesProfiles = 70443",
-      "H8Memory.cs:1212 ShinobuBoidIndirectArgs = 70444",
-      "H8Memory.cs:1213 ShinobuBoidStates = 70445",
-      "H8Memory.cs:1214 ShinobuBoidStateSnapshot = 70446"
-    ],
-    "claimSites": [
-      "ShinobuEcosystemBalancer.cs:970-1130 ClaimVaultHandle/EnsureGenerationHandle for ecosystem, flocking, spatial grid, render, dump, and species profile lanes",
-      "EcosystemDirector.cs:3901 EnsureGenerationHandle<float4>(BufferID.EcosystemFloraPredatorAupUpload, ...)"
-    ],
-    "writerLockProof": [
-      "ShinobuEcosystemBalancer.cs:377 calls TryLockJobBuffers before phase-local view resolution",
-      "ShinobuEcosystemBalancer.cs:660 finally releases unscheduled job pins",
-      "ShinobuEcosystemBalancer.cs:1997-2051 locks 28 job buffer lanes fail-closed",
-      "ShinobuEcosystemBalancer.cs:2069-2099 unlocks the same 28 lanes in reverse order",
-      "ShinobuEcosystemBalancer.cs:3473 TryAcquireWriteLock for ecosystem dump snapshot",
-      "ShinobuEcosystemBalancer.cs:3518 finally and 3521 ReleaseWriteLock for ecosystem dump snapshot",
-      "ShinobuSpatialGridSolver.cs:658 and 662 TryAcquireWriteLock telemetry/cursor",
-      "ShinobuSpatialGridSolver.cs:694 finally and 697/699 ReleaseWriteLock telemetry/cursor",
-      "ShinobuSpatialGridSolver.cs:1570 TryAcquireWriteLock spatial dump snapshot",
-      "ShinobuSpatialGridSolver.cs:1620 finally and 1623 ReleaseWriteLock spatial dump snapshot",
-      "EcosystemDirector.cs:5877 TryAcquireWriteLock flora/predator AUP upload",
-      "EcosystemDirector.cs:5916 finally and 5919 ReleaseWriteLock flora/predator AUP upload",
-      "SargassumMicroFaunaBoids.cs:6113 LockBufferForWrite<BoidData>",
-      "SargassumMicroFaunaBoids.cs:6117 finally and 6120 UnlockBufferAfterWrite<BoidData>"
-    ],
-    "failClosedReadAccessors": [
-      "EcosystemDirector.cs:2465-2503 TryGetSectorPopulation",
-      "EcosystemDirector.cs:2504-2541 TryGetBiomassAvailability",
-      "EcosystemDirector.cs:3047-3097 TryGetGlobalBiomassAudit",
-      "EcosystemDirector.cs:3099-3115 TryCopyMacroSwarms",
-      "EcosystemDirector.cs:3117-3149 TryCopyMacroSwarmRadarPings",
-      "EcosystemDirector.cs:3370-3432 apex sector/threat readers"
-    ]
-  },
-  "gpuUploadAndPcieProof": {
-    "forbiddenScopedCalls": {
-      "ComputeBufferSetData": 0,
-      "GraphicsBufferSetData": 0,
-      "UploadNativeArraySetDataCallSitesInDomain": 0,
-      "note": "SystemDispatcher.cs still contains the legacy UploadNativeArraySetData utility definition at lines 7166-7184; no scoped ecosystem/swarm hot path calls it."
-    },
-    "mappedUploadSites": [
-      "SystemDispatcher.cs:7111-7132 GraphicsBufferUploadUtility.UploadNativeArray uses LockBufferForWrite and UnsafeMemoryCopyGuard.TryMemCpy with finally UnlockBufferAfterWrite",
-      "ShinobuEcosystemBalancer.cs:3939-3977 ShinobuBoidGpuUploadDispatcher.UploadFromVault maps matrix/custom/args buffers and unlocks each lane in finally",
-      "EcosystemDirector.cs:5910 uploads locked flora/predator AUP NativeArray<float4> through GraphicsBufferUploadUtility.UploadNativeArray",
-      "SargassumMicroFaunaBoids.cs:6113-6120 single boid live update uses LockBufferForWrite<BoidData> and finally unlocks"
-    ],
-    "staticMx350Estimate": {
-      "bulk5000BoidUploadSavedMicroseconds": "35-120",
-      "singleBoidUploadSavedMicroseconds": "2-8",
-      "normalTelemetryDumpPathMicroseconds": "0; crash-only background writer"
-    }
-  },
-  "arm64LayoutProof": {
-    "layoutManifest": [
-      "ShinobuEcosystemBalancer.cs:4277 AssertSize<BoidCustomDataDTO>(16)",
-      "ShinobuEcosystemBalancer.cs:4280 AssertSize<FlockingThreatDTO>(32)",
-      "ShinobuEcosystemBalancer.cs:4287 AssertSize<EcosystemTelemetryEntry>(64)",
-      "ShinobuEcosystemBalancer.cs:4293 AssertSize<SpatialGridEntryDTO>(16)",
-      "ShinobuEcosystemBalancer.cs:4294 AssertSize<SpatialGridBucketRangeDTO>(32)",
-      "ShinobuEcosystemBalancer.cs:4313-4318 FlockingThreatDTO offsets 0/12/16/20/24/28",
-      "ShinobuEcosystemBalancer.cs:4355-4358 BoidCustomDataDTO offsets 0/4/8/12",
-      "ShinobuEcosystemBalancer.cs:4405-4421 EcosystemTelemetryEntry offsets 0/4/8/12/16/20/24/28/32/36/40/44/48/52/56/60/62",
-      "ShinobuEcosystemBalancer.cs:4422-4434 SpatialGridEntryDTO and SpatialGridBucketRangeDTO offsets"
-    ],
-    "boidDataGpuGuard": [
-      "SargassumMicroFaunaBoids.cs:823-828 BoidData constants: position 0, velocity 12, panic 24, stateFlags 28, stride 32, align 4",
-      "SargassumMicroFaunaBoids.cs:8430-8435 validates BoidData SizeOf, AlignOf, and Marshal.OffsetOf against those constants"
-    ],
-    "editorHarness": [
-      "EcosystemSwarmVault1419EditTests.cs:41-59 asserts 64B EcosystemTelemetryEntry, 64B SpatialGridTelemetryEntry, 16B SpatialGridEntryDTO, 32B SpatialGridBucketRangeDTO"
-    ]
-  },
-  "continuousScalabilityAndCinematicCheat": {
-    "globalQualityWeightProof": [
-      "ShinobuEcosystemBalancer.cs:2404-2409 ResolveGlobalQualityWeight01 reads config override or HomeostasisBrain.GlobalQualityWeight and saturates it",
-      "ShinobuEcosystemBalancer.cs:473-478 maps quality to neighbor samples, query results, probe count, update stride, and simulation tick delta",
-      "ShinobuEcosystemBalancer.cs:2417-2441 resolves neighbor sample budget, cell probe budget, and update stride through continuous math.lerp/smooth curves",
-      "ShinobuEcosystemBalancer.cs:2489 resolves simulation tick delta continuously",
-      "ShinobuEcosystemBalancer.cs:5130-5334 scales visible cone, neighbor solve weight, emergency flow, panic decay, cell probe limit, adjacent cell radius, and Reynolds force by GlobalQualityWeight",
-      "EcosystemDirector.cs:5274-5298 maps HomeostasisBrain.GlobalQualityWeight into macro swarm diffusion and an encoded byte profile",
-      "SargassumMicroFaunaBoids.cs:6858-6861 encodes HomeostasisBrain.GlobalQualityWeight for signal payloads"
-    ],
-    "binarySwitchScan": {
-      "isLowEndLowEndTokens": 0,
-      "directGlobalQualityWeightIfBranches": 0,
-      "qualityTierEqualityBranches": 0,
-      "note": "QualityTier byte fields are encoded from continuous quality values and used as payload/profile data, not as if(isLowEnd) switches."
-    },
-    "cinematicCheat": "No new physical simulation was added. The flocking visual bias uses SampleEmergencyMockFlow and continuous scalar modulation instead of per-object fluid truth; saved CPU/GPU upload cost buys higher swarm density and visual overkill on high tiers."
-  },
-  "compilationResourceThrottling": {
-    "dotnetBuildExecuted": false,
-    "finalCpuSampleUtc": "2026-05-28T01:40:49.9660188Z",
-    "finalCpuLoadPercent": 100,
-    "finalCompilerOrDotnetProcesses": [
-      {
-        "processName": "csc",
-        "id": 67916,
-        "sampledCpuSeconds": 11.40625
-      },
-      {
-        "processName": "dotnet",
-        "id": 20440,
-        "sampledCpuSeconds": 98.265625
-      }
-    ],
-    "decision": "BLOCKED_BY_CONTENTION_CPU_GT_50",
-    "previousGateState": "Earlier status sample recorded active dotnet id 55080 at CPU 100; final APEX sample recorded csc id 67916 and dotnet id 20440 at CPU 100.",
-    "staticSubstitutes": [
-      "git diff --check exit code 0; CRLF normalization warnings only",
-      "ConvertFrom-Json accepted all 1419 JSON reports",
-      "rg negative scans for forbidden scoped SetData/upload calls, native persistent allocation patterns, stale ShinobuTelemetryEntry code symbols, and binary low-end switches"
-    ]
-  },
-  "blackBoxDumpStatus": {
-    "primaryDumpPath": "Docs/AgentLogs/Dump_1419_EcosystemSwarm.bin",
-    "secondaryDumpPath": "Docs/AgentLogs/Dump_1419_EcosystemSpatialGrid.bin",
-    "dumpFileExistedAtAudit": false,
-    "reason": "No runtime crash, NaN trigger, Unity Play Mode run, or test execution occurred during this static APEX pass; dump route is implemented but no fault artifact was emitted."
-  },
-  "currentModifiedFileHashes": [
-    {
-      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
-      "sha256": "39fb26e987ecdf7c89c56166d7e9a520139a48a86db5a3f35296091e46420374"
-    },
-    {
-      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
-      "sha256": "41d217a5e24dec785c0c7e5da0f74eb198be6923eabd44ee3204ac82ceb40040"
-    },
-    {
-      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-      "sha256": "e91a7a35b34f9fb101d301ced844f88754112e47c77d5ed0e99fe780facfdc12"
-    },
-    {
-      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
-      "sha256": "b6daa5731312a722eb8aca135f8513004f2f67e2291c69b35928ef3a96dd712d"
-    },
-    {
-      "path": "Assets/_Project/Scripts/Editor/AbyssalSwarmTunerWindow.cs",
-      "sha256": "ceeac3630ad4aba660fe5b052d8f8713916c0ec25c6590e71a46be5ac5f70fb3"
-    },
-    {
-      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
-      "sha256": "5244a1a957fc131c908190f6734a54ad2a17a186901d62306faa44384d083657"
-    },
-    {
-      "path": "Assets/_Project/Tests/Editor/EcosystemSwarmVault1419EditTests.cs",
-      "sha256": "19a465d6b9afca631f4601ae571d8f76d9667e86afaf0bb6ba9d16213edf4744"
-    }
-  ],
-  "unresolvedVerificationDebt": [
-    "No dotnet build was executed because the final CPU sample was 100 percent.",
-    "No Unity import, Unity Console, Play Mode, Profiler, GCMonitor, or player-device proof was produced in this pass.",
-    "Runtime GC result remains PENDING VERIFICATION until Unity tests run; static hot-path scan found no managed allocation constructs."
-  ]
+﻿{
+    "reportKind":  "ECOSYSTEM_APEX_FINAL_VERIFICATION_1419",
+    "agentId":  1419,
+    "role":  "ECOSYSTEM_SPATIAL_GRID_AND_SWARM_AUDITOR",
+    "domain":  "Echelon 3 / Ecosystem spatial hash + GPU swarm data exchange",
+    "generatedUtc":  "2026-05-28T10:10:21.0658960Z",
+    "evidenceClass":  "STATIC_SOURCE_ONLY_BUILD_AND_RUNTIME_PENDING",
+    "promptTaskCount":  20,
+    "status":  "APEX_STATIC_PASS_AFTER_LOOP10_WITH_COMPILE_RUNTIME_PENDING",
+    "buildGate":  {
+                      "timestampUtc":  "2026-05-28T10:10:21.0658960Z",
+                      "cpuLoadPercent":  100,
+                      "compilerProcessCount":  1,
+                      "compilerProcesses":  [
+                                                {
+                                                    "id":  10444,
+                                                    "processName":  "dotnet",
+                                                    "cpu":  27.421875,
+                                                    "startTime":  "2026-05-28T14:10:06+04:00"
+                                                }
+                                            ],
+                      "dotnetBuildInvoked":  false,
+                      "blockReason":  "Compilation Resource Throttling gate failed: CPU was 100% and active dotnet process 10444 was present; dotnet build was not invoked."
+                  },
+    "scans":  {
+                  "gitDiffCheck":  {
+                                       "exitCode":  0,
+                                       "result":  "PASS",
+                                       "note":  "Only LF-to-CRLF working-copy warnings were emitted."
+                                   },
+                  "directFaunaGeneticsMutableScan":  {
+                                                         "command":  "rg -n \"_faunaGeneticsTuning\\[0\\]|_faunaGeneticsProfiles\\.Resolve\\(|_faunaGeneticsCsvScratch\\.Resolve\\(\" Assets/_Project/Scripts/World/EcosystemDirector.cs",
+                                                         "exitCode":  1,
+                                                         "matches":  0,
+                                                         "result":  "PASS"
+                                                     },
+                  "scopedForbiddenTextScan":  {
+                                                  "command":  "rg -n \"\\.SetData\\(|UploadNativeArraySetData|string\\.Format|\\.ToString\\(|foreach\\s*\\(|\\.Where\\(|\\.Select\\(|\\.ToList\\(|\\.Any\\(|\\.FirstOrDefault\\(\" \u003cscoped files\u003e",
+                                                  "exitCode":  1,
+                                                  "result":  "NO_MATCHES",
+                                                  "foreach":  0,
+                                                  "stringFormat":  0,
+                                                  "toString":  0,
+                                                  "linqQuery":  0,
+                                                  "setData":  0
+                                              },
+                  "targetedLoop9RangeScan":  {
+                                                 "ranges":  [
+                                                                "EcosystemDirector.cs:4124-4264 FaunaGenetics cold reload and scratch FileStream read",
+                                                                "EcosystemDirector.cs:7802-7824 CompileHeadlessFaunaGenome runtime read-only genetics",
+                                                                "FaunaGenome64.cs:361-399 ResolveProfile overloads"
+                                                            ],
+                                                 "forbidden":  {
+                                                                   "foreach":  0,
+                                                                   "stringFormat":  0,
+                                                                   "toString":  0,
+                                                                   "linqQueries":  0,
+                                                                   "setData":  0
+                                                               },
+                                                 "newExpressions":  {
+                                                                        "hotReferenceNew":  0,
+                                                                        "coldReferenceNew":  2,
+                                                                        "refOrValueStructNew":  3
+                                                                    },
+                                                 "newExpressionLines":  [
+                                                                            "EcosystemDirector.cs:4153 FileInfo cold/editor CSV route",
+                                                                            "EcosystemDirector.cs:4197 ReadOnlySpan\u003cbyte\u003e ref struct over locked scratch buffer",
+                                                                            "EcosystemDirector.cs:4238 FileStream cold/editor CSV route",
+                                                                            "EcosystemDirector.cs:4250 Span\u003cbyte\u003e ref struct over locked scratch buffer",
+                                                                            "EcosystemDirector.cs:7806 double3 value-type sector center"
+                                                                        ]
+                                             },
+                  "compoundAcquireContextScan":  {
+                                                     "command":  "rg -n \u0027TryLock.*JobBuffers...|TryAcquireWriteLock...\u0027 \u003cscoped ecosystem/spatial/swarm files\u003e",
+                                                     "exitCode":  1,
+                                                     "matches":  0,
+                                                     "result":  "PASS"
+                                                 },
+                  "persistentNativeOwnerFieldScan":  {
+                                                         "scopedRegexMatches":  0,
+                                                         "result":  "PASS"
+                                                     },
+                  "managedGpuUploadBridgeScan":  {
+                                                     "uploadNativeArraySetDataMatches":  0,
+                                                     "graphicsBufferSetDataMatches":  0,
+                                                     "result":  "PASS"
+                                                 },
+                  "binaryLowEndSwitchScan":  {
+                                                 "command":  "rg -n \"isLowEnd|lowEnd|LowEnd\" \u003cscoped ecosystem files\u003e",
+                                                 "matches":  0,
+                                                 "result":  "PASS"
+                                             },
+                  "loop10IndexWrapperScan":  {
+                                                 "command":  "rg -n \u0027TryFindIndexEntry\\(_(sector|biomass)IndexEntries|TryUpsertIndexEntry\\(_(sector|biomass)IndexEntries|ClearIndexEntries\\(_(sector|biomass)IndexEntries|ResolveIndexProbeStart|private static .*VaultBufferView\u003cEcosystemIndexEntry\u003e\u0027 Assets/_Project/Scripts/World/EcosystemDirector.cs",
+                                                 "exitCode":  1,
+                                                 "matches":  0,
+                                                 "result":  "PASS"
+                                             },
+                  "loop10RangeScan":  {
+                                          "ranges":  [
+                                                         "EcosystemDirector.cs:547-632 IndexEntry helpers",
+                                                         "EcosystemDirector.cs:2217-2336 Restore explicit views",
+                                                         "EcosystemDirector.cs:5274-5329 Macro diffusion/attraction index views",
+                                                         "EcosystemDirector.cs:6237-6322 Apex overlap split lock",
+                                                         "EcosystemDirector.cs:6664-6828 Hibernation sync and resolve/create slots",
+                                                         "EcosystemDirector.cs:7556-7585 Biomass clear index view",
+                                                         "EcosystemDirector.cs:8047-8067 Index bucket/probe"
+                                                     ],
+                                          "forbidden":  {
+                                                            "foreach":  0,
+                                                            "stringFormat":  0,
+                                                            "toString":  0,
+                                                            "linqQueries":  0,
+                                                            "setData":  0,
+                                                            "referenceNew":  0
+                                                        },
+                                          "result":  "PASS"
+                                      },
+                  "broadReferenceNewAcknowledgement":  {
+                                                           "scopedMatches":  12,
+                                                           "classification":  "static preallocated arrays in WorldSpatialHashGrid and one cold Sargassum deep-biolum array; no Loop 10 modified hot-path reference new matches",
+                                                           "result":  "ACKNOWLEDGED_NOT_HOT_PATH"
+                                                       }
+              },
+    "dataSovereignty":  {
+                            "bufferIdConstants":  [
+                                                      {
+                                                          "name":  "SystemID.WorldSpatialHash",
+                                                          "numeric":  163,
+                                                          "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                          "line":  44
+                                                      },
+                                                      {
+                                                          "name":  "BufferID.SargassumThreatGridUpload",
+                                                          "numeric":  116,
+                                                          "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                          "line":  238
+                                                      },
+                                                      {
+                                                          "name":  "BufferID.WorldSpatialAcousticDensityMap",
+                                                          "numeric":  1419042,
+                                                          "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                          "line":  243
+                                                      },
+                                                      {
+                                                          "name":  "BufferID.EcosystemFaunaGeneticsTelemetry",
+                                                          "numeric":  70510,
+                                                          "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                          "line":  440
+                                                      },
+                                                      {
+                                                          "name":  "BufferID.EcosystemFaunaGeneticsTuning",
+                                                          "numeric":  70511,
+                                                          "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                          "line":  441
+                                                      },
+                                                      {
+                                                          "name":  "BufferID.EcosystemFaunaGeneticsProfiles",
+                                                          "numeric":  70512,
+                                                          "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                          "line":  442
+                                                      },
+                                                      {
+                                                          "name":  "BufferID.EcosystemFaunaGeneticsCsvScratch",
+                                                          "numeric":  70513,
+                                                          "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                          "line":  443
+                                                      },
+                                                      {
+                                                          "name":  "BufferID.ShinobuEcosystemDumpSnapshot",
+                                                          "numeric":  70476,
+                                                          "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                          "line":  1198
+                                                      }
+                                                  ],
+                            "writeLockProof":  [
+                                                   {
+                                                       "buffer":  "EcosystemFaunaGeneticsTuning initialization",
+                                                       "acquire":  "EcosystemDirector.cs:4124",
+                                                       "release":  "EcosystemDirector.cs:4133",
+                                                       "releaseDiscipline":  "finally"
+                                                   },
+                                                   {
+                                                       "buffer":  "EcosystemFaunaGeneticsCsvScratch CSV reload",
+                                                       "acquire":  "EcosystemDirector.cs:4167",
+                                                       "release":  "EcosystemDirector.cs:4215",
+                                                       "releaseDiscipline":  "finally"
+                                                   },
+                                                   {
+                                                       "buffer":  "EcosystemFaunaGeneticsProfiles CSV reload",
+                                                       "acquire":  "EcosystemDirector.cs:4180",
+                                                       "release":  "EcosystemDirector.cs:4213",
+                                                       "releaseDiscipline":  "finally"
+                                                   },
+                                                   {
+                                                       "buffer":  "EcosystemFaunaGeneticsTuning CSV reload",
+                                                       "acquire":  "EcosystemDirector.cs:4184",
+                                                       "release":  "EcosystemDirector.cs:4211",
+                                                       "releaseDiscipline":  "finally"
+                                                   },
+                                                   {
+                                                       "buffer":  "SargassumThreatGridUpload",
+                                                       "acquire":  "SargassumMicroFaunaBoids.cs:3104",
+                                                       "release":  "SargassumMicroFaunaBoids.cs:3131",
+                                                       "releaseDiscipline":  "finally"
+                                                   },
+                                                   {
+                                                       "buffer":  "WorldSpatialAcousticDensityMap upload",
+                                                       "acquire":  "WorldSpatialHashGrid.cs:1382",
+                                                       "release":  "WorldSpatialHashGrid.cs:1413",
+                                                       "releaseDiscipline":  "finally"
+                                                   },
+                                                   {
+                                                       "buffer":  "WorldSpatialAcousticDensityMap clear",
+                                                       "acquire":  "WorldSpatialHashGrid.cs:1806",
+                                                       "release":  "WorldSpatialHashGrid.cs:1820",
+                                                       "releaseDiscipline":  "finally"
+                                                   },
+                                                   {
+                                                       "buffer":  "WorldSpatialAcousticDensityMap build",
+                                                       "acquire":  "WorldSpatialHashGrid.cs:2129",
+                                                       "release":  "WorldSpatialHashGrid.cs:2152",
+                                                       "releaseDiscipline":  "finally"
+                                                   },
+                                                   {
+                                                       "buffer":  "EcosystemSaveSnapshotSectors",
+                                                       "acquire":  "EcosystemDirector.cs:2151",
+                                                       "release":  "EcosystemDirector.cs:2193",
+                                                       "releaseDiscipline":  "finally"
+                                                   },
+                                                   {
+                                                       "buffer":  "EcosystemSaveSnapshotBiomassRuns",
+                                                       "acquire":  "EcosystemDirector.cs:7245",
+                                                       "release":  "EcosystemDirector.cs:7329",
+                                                       "releaseDiscipline":  "finally"
+                                                   },
+                                                   {
+                                                       "buffer":  "EcosystemFaunaGeneticsTelemetry",
+                                                       "acquire":  "EcosystemDirector.cs:5937",
+                                                       "release":  "EcosystemDirector.cs:6008",
+                                                       "releaseDiscipline":  "finally"
+                                                   },
+                                                   {
+                                                       "buffer":  "FloraPredatorAupUpload",
+                                                       "acquire":  "EcosystemDirector.cs:6381",
+                                                       "release":  "EcosystemDirector.cs:6423",
+                                                       "releaseDiscipline":  "finally"
+                                                   },
+                                                   {
+                                                       "buffer":  "PendingBiomassImpacts",
+                                                       "acquire":  "EcosystemDirector.cs:6844,6883,7469",
+                                                       "release":  "EcosystemDirector.cs:6868,6903,7504",
+                                                       "releaseDiscipline":  "finally"
+                                                   },
+                                                   {
+                                                       "buffer":  "MacroMutation scratch lanes",
+                                                       "acquire":  "EcosystemDirector.cs:7542,7550,7558,7566",
+                                                       "release":  "EcosystemDirector.cs:7622,7624,7626,7628",
+                                                       "releaseDiscipline":  "finally reverse order"
+                                                   },
+                                                   {
+                                                       "buffer":  "HeadlessMutation scratch lanes",
+                                                       "acquire":  "EcosystemDirector.cs:7654,7658,7662,7666",
+                                                       "release":  "EcosystemDirector.cs:7715,7717,7719,7721",
+                                                       "releaseDiscipline":  "finally reverse order"
+                                                   },
+                                                   {
+                                                       "buffer":  "Sector index entry mutation route",
+                                                       "acquire":  "TryLockSectorSolveJobBuffers before EcosystemDirector.cs:2217/2312/6699",
+                                                       "release":  "UnlockSectorSolveJobBuffers finally at EcosystemDirector.cs:2234/2337 and caller finally blocks",
+                                                       "releaseDiscipline":  "held-lock guard plus finally"
+                                                   },
+                                                   {
+                                                       "buffer":  "Biomass index entry mutation route",
+                                                       "acquire":  "TryLockMacroSwarmTravelJobBuffers/TryLockSectorSolveJobBuffers before EcosystemDirector.cs:5279/5313/6769/7561",
+                                                       "release":  "UnlockMacroSwarmTravelJobBuffers/UnlockSectorSolveJobBuffers caller finally blocks",
+                                                       "releaseDiscipline":  "held-lock guard plus finally"
+                                                   }
+                                               ],
+                            "readOnlyProof":  [
+                                                  "EcosystemDirector.cs:7816 reads fauna genetics tuning through TryResolveReadOnly in runtime CompileHeadlessFaunaGenome",
+                                                  "EcosystemDirector.cs:7822 reads fauna genetics profiles through TryResolveReadOnly in runtime CompileHeadlessFaunaGenome",
+                                                  "FaunaGenome64.cs:380 adds ResolveProfile(NativeArray\u003cFaunaGeneticsProfileDTO\u003e.ReadOnly, uint)",
+                                                  "EcosystemDirector.cs:2201 GetSaveSnapshotArray returns TryResolveReadOnly plus recordCount",
+                                                  "EcosystemDirector.cs:2214 GetBiomassSaveSnapshotArray returns TryResolveReadOnly plus recordCount",
+                                                  "EcosystemDirector.cs:5866/6102/6142/7131 dump rings through TryResolveReadOnly before FileStream fault write",
+                                                  "SaveManager.cs:3562 consumes GetSaveSnapshotArray(out ecosystemRecordCount), then copies exactly ecosystemRecordCount records",
+                                                  "EcosystemDirector.cs:6668 SyncHibernatedFaunaPopulationRecords resolves _sectorFrontStates through TryResolveReadOnly before registry reconciliation."
+                                              ]
+                        },
+    "layoutProof":  {
+                        "sizeAssertions":  [
+                                               "ShinobuEcosystemBalancer.cs:4281 BoidMatrixDTO=64",
+                                               "ShinobuEcosystemBalancer.cs:4282 BoidCustomDataDTO=16",
+                                               "ShinobuEcosystemBalancer.cs:4285 FlockingThreatDTO=32",
+                                               "ShinobuEcosystemBalancer.cs:4292 EcosystemTelemetryEntry=64",
+                                               "ShinobuEcosystemBalancer.cs:4298 SpatialGridEntryDTO=16",
+                                               "ShinobuEcosystemBalancer.cs:4299 SpatialGridBucketRangeDTO=32",
+                                               "SargassumMicroFaunaBoids.cs:82 BoidData explicit size=32"
+                                           ],
+                        "offsetAssertions":  [
+                                                 "FlockingThreatDTO offsets 0,12,16,20,24,28 at ShinobuEcosystemBalancer.cs:4318-4323",
+                                                 "BoidMatrixDTO offsets 0,16,32,48 at ShinobuEcosystemBalancer.cs:4356-4359",
+                                                 "BoidCustomDataDTO offsets 0,4,8,12 at ShinobuEcosystemBalancer.cs:4360-4363",
+                                                 "EcosystemTelemetryEntry offsets 0..62 at ShinobuEcosystemBalancer.cs:4410-4426",
+                                                 "SpatialGridEntryDTO offsets 0,0,4,8,8 at ShinobuEcosystemBalancer.cs:4427-4431",
+                                                 "SpatialGridBucketRangeDTO offsets 0,4,8,12,16,20,24,28 at ShinobuEcosystemBalancer.cs:4432-4439",
+                                                 "BoidData offsets Position=0 Velocity=12 Panic=24 StateFlags=28 at SargassumMicroFaunaBoids.cs:90-97"
+                                             ]
+                    },
+    "gpuUploadProof":  {
+                           "mappedWrites":  [
+                                                "ShinobuEcosystemBalancer.cs:2585/2589 LockBufferForWrite BoidMatrixDTO plus UnsafeUtility.MemCpy",
+                                                "ShinobuEcosystemBalancer.cs:3944/3948 LockBufferForWrite BoidMatrixDTO plus UnsafeUtility.MemCpy",
+                                                "ShinobuEcosystemBalancer.cs:3959/3963 LockBufferForWrite BoidCustomDataDTO plus UnsafeUtility.MemCpy",
+                                                "SargassumMicroFaunaBoids.cs:4962 LockBufferForWrite\u003cfloat4\u003e predator AUP fallback",
+                                                "SargassumMicroFaunaBoids.cs:6137 LockBufferForWrite\u003cBoidData\u003e single-boid update",
+                                                "SargassumMicroFaunaBoids.cs:7628 LockBufferForWrite\u003cGraphicsBuffer.IndirectDrawIndexedArgs\u003e indirect args"
+                                            ],
+                           "nativeUploads":  [
+                                                 "SargassumMicroFaunaBoids.cs:3121 uploads Vault-locked threatGridUpload NativeArray",
+                                                 "WorldSpatialHashGrid.cs:1396 uploads Vault-locked acoustic density map into Texture3D pixel data"
+                                             ],
+                           "setDataMatchesInScopedFiles":  0
+                       },
+    "scalability":  {
+                        "scalar":  "HomeostasisBrain.GlobalQualityWeight",
+                        "binarySwitchScan":  "rg -n \"isLowEnd|LowEnd|lowEnd\" in scoped ecosystem files returned no matches.",
+                        "continuousLines":  [
+                                                "EcosystemDirector.cs:5755-5779 resolves/smoothsteps HomeostasisBrain.GlobalQualityWeight and encodes quality byte",
+                                                "SargassumMicroFaunaBoids.cs:6874-6883 resolves quality byte for swarm signal payload",
+                                                "FaunaGenome64.cs:558/595 stores and saturates GlobalQualityWeight in explicit tuning DTO",
+                                                "ShinobuEcosystemBalancer.cs:5135/5138/5150/5173/5177/5254/5283/5339 scales cone thresholds, neighbor budget, mock flow, swirl, panic decay, probe count, cell radius, and Reynolds blend"
+                                            ],
+                        "tiers":  {
+                                      "low":  "reduced cadence/probe budget/capacity, same DTO ownership",
+                                      "middle":  "normal spatial and flocking budgets",
+                                      "high":  "higher visual density and neighbor detail",
+                                      "ultra":  "visual overkill through extra flow/curl/reynolds presentation work without changing gameplay truth"
+                                  },
+                        "cinematicCheatProtocol":  "Fish evasion and apex pressure remain cheap visual/vector-field steering and GPU payload scaling, not per-fish physical predator micro-simulation."
+                    },
+    "fixedThisLoop":  [
+                          "SyncHibernatedFaunaPopulationRecords now reads _sectorFrontStates through TryResolveReadOnly and clamps sync budget to the read-only view length.",
+                          "Removed the VaultBufferView\u003cEcosystemIndexEntry\u003e helper overloads that hid mutable Resolve calls; index operations now consume explicit NativeArray views.",
+                          "Unified mutable and read-only index entry probing through ResolveIndexBucket/ResolveIndexProbe; deleted ResolveIndexProbeStart to prevent divergent hash routes.",
+                          "ResolveOrCreateSectorSlot now fails closed unless sector solve buffers are locked; ResolveOrCreateBiomassCellSlot now fails closed unless sector or macro-swarm buffers are locked.",
+                          "RestoreFromLoadedRecords, macro diffusion/attraction, and ClearBiomassRuntimeState now resolve index-entry views explicitly inside lock-held windows.",
+                          "ScheduleApexTerritoryOverlap no longer uses a compound || TryLock guard; hitCount validation and lock acquisition are split."
+                      ],
+    "residualRisks":  [
+                          {
+                              "severity":  "PENDING_COMPILE",
+                              "issue":  "No final dotnet build was executed.",
+                              "reason":  "Latest gate sample at 2026-05-28T10:10:21.0658960Z had CPU 100% and active dotnet process 10444; CPU and process gates both forbade invoking dotnet build."
+                          },
+                          {
+                              "severity":  "PENDING_RUNTIME_PROFILER",
+                              "issue":  "No Unity runtime/Profiler/GC allocation sample was produced.",
+                              "reason":  "Compilation and Unity test execution remain blocked by host contention gate."
+                          },
+                          {
+                              "severity":  "ACKNOWLEDGED_COLD_ALLOCATION",
+                              "issue":  "Cold/static managed allocations remain outside Loop 10 hot paths.",
+                              "reason":  "Broad scan finds static preallocated arrays in WorldSpatialHashGrid and one cold Sargassum deep-biolum array; targeted Loop 10 modified ranges have referenceNew=0."
+                          },
+                          {
+                              "severity":  "NO_CRASH_DUMP_GENERATED",
+                              "issue":  "Docs/AgentLogs/Dump_1419_EcosystemSwarm.bin was not produced in this turn.",
+                              "reason":  "No crash/NaN path was triggered; configured dump route remains the forensic path on fault."
+                          }
+                      ],
+    "modifiedFileHashes":  [
+                               {
+                                   "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                   "sha256":  "16E4DA2E5148BBAD8F4ABC9B524E97151F1B5080A15EDA7C6AB544BA81618BE4"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+                                   "sha256":  "ED62C18A8ECCF5AED09450EC571CF36AEBC3FE44BCE2FD5D01D2854FA8D7276F"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Scripts/World/WorldSpatialHashGrid.cs",
+                                   "sha256":  "8751239B8A7873CB8ED38FEE65C87690E24449427B6D20B4F83F9F6B9E2CF60D"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+                                   "sha256":  "5C5CA4986C4BE479D5CC90FD6A015060E3514A124ED83026EA4AB96C0734991C"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+                                   "sha256":  "A5B8B8992EC343698363FCC6FAE9862607A8E579397CC9610B2316C39D674DFC"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Scripts/Ecosystem/FaunaGenome64.cs",
+                                   "sha256":  "0A9744CCFE50EDCFAAB92C22BF6F8BD2CC66E828C55589F38A49F71787425D21"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Scripts/SaveManager.cs",
+                                   "sha256":  "74D85FA6DDB0D955691FEE99C30F5DB8D3EBE160BC6E3154690E82C3357228E5"
+                               }
+                           ]
 }

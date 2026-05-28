@@ -33,6 +33,12 @@ namespace Hecton8.Editor.ModdingSDK
 
         private Vector2 _scrollPosition;
         private string _lastValidatorSummary = string.Empty;
+        private readonly object _validatorOutputLock = new object();
+        private DiagnosticsProcess _runningValidatorProcess;
+        private StringBuilder _runningValidatorStdout;
+        private StringBuilder _runningValidatorStderr;
+        private bool _runningValidatorCompleted;
+        private int _runningValidatorExitCode = -1;
 
         /// <summary>
         /// Opens the HECTON modding SDK hub window.
@@ -62,12 +68,36 @@ namespace Hecton8.Editor.ModdingSDK
             }
         }
 
+        private void OnDisable()
+        {
+            EditorApplication.update -= PollRunningValidator;
+            if (_runningValidatorProcess == null)
+                return;
+
+            try
+            {
+                if (!_runningValidatorProcess.HasExited)
+                    _runningValidatorProcess.Kill();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("[ModdingSdkHubWindow] Validator cleanup failed: " + exception.Message);
+            }
+            finally
+            {
+                DisposeRunningValidator();
+            }
+        }
+
         private void DrawPrimaryActions()
         {
             EditorGUILayout.LabelField("Public Authoring", EditorStyles.boldLabel);
 
             if (GUILayout.Button("Create External Starter Kit", GUILayout.Height(30f)))
-                CreateExternalStarterKit();
+            {
+                _lastValidatorSummary = CreateExternalStarterKit();
+                Repaint();
+            }
 
             if (GUILayout.Button("Open Starter Kit Workbench", GUILayout.Height(28f)))
                 ExternalStarterKitWorkbenchWindow.ShowWindow();
@@ -141,19 +171,32 @@ namespace Hecton8.Editor.ModdingSDK
         {
             EditorGUILayout.LabelField("Validation", EditorStyles.boldLabel);
 
+            EditorGUI.BeginDisabledGroup(IsValidatorRunning);
             if (GUILayout.Button("Run Static Mod API Validator", GUILayout.Height(30f)))
                 RunStaticValidator();
+            EditorGUI.EndDisabledGroup();
 
             if (!string.IsNullOrWhiteSpace(_lastValidatorSummary))
                 EditorGUILayout.HelpBox(_lastValidatorSummary, MessageType.Info);
+
+            if (IsValidatorRunning)
+                EditorGUILayout.HelpBox("Static validator running.", MessageType.Info);
         }
 
         private void RunStaticValidator()
         {
+            if (IsValidatorRunning)
+            {
+                _lastValidatorSummary = "Static validator already running.";
+                Repaint();
+                return;
+            }
+
             string scriptPath = ResolveProjectPath(StaticValidatorPath);
             if (!File.Exists(scriptPath))
             {
                 _lastValidatorSummary = "Missing validator: " + scriptPath;
+                Repaint();
                 return;
             }
 
@@ -170,30 +213,117 @@ namespace Hecton8.Editor.ModdingSDK
                     CreateNoWindow = true
                 };
 
-                using (DiagnosticsProcess process = DiagnosticsProcess.Start(startInfo))
+                DiagnosticsProcess process = new DiagnosticsProcess
                 {
-                    if (process == null)
-                    {
-                        _lastValidatorSummary = "Validator process did not start.";
-                        return;
-                    }
+                    StartInfo = startInfo,
+                    EnableRaisingEvents = true
+                };
 
-                    string stdout = process.StandardOutput.ReadToEnd();
-                    string stderr = process.StandardError.ReadToEnd();
-                    process.WaitForExit();
-                    _lastValidatorSummary = BuildValidatorSummary(process.ExitCode, stdout, stderr);
+                _runningValidatorStdout = new StringBuilder(2048);
+                _runningValidatorStderr = new StringBuilder(2048);
+                _runningValidatorCompleted = false;
+                _runningValidatorExitCode = -1;
+                _runningValidatorProcess = process;
+
+                process.OutputDataReceived += (sender, args) => AppendValidatorOutput(_runningValidatorStdout, args.Data);
+                process.ErrorDataReceived += (sender, args) => AppendValidatorOutput(_runningValidatorStderr, args.Data);
+                process.Exited += (sender, args) => MarkValidatorCompleted();
+
+                if (!process.Start())
+                {
+                    _lastValidatorSummary = "Validator process did not start.";
+                    DisposeRunningValidator();
+                    Repaint();
+                    return;
                 }
+
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+                _lastValidatorSummary = "Static validator running.";
+                EditorApplication.update -= PollRunningValidator;
+                EditorApplication.update += PollRunningValidator;
             }
             catch (Exception exception)
             {
                 _lastValidatorSummary = "Validator launch failed: " + exception.Message;
+                DisposeRunningValidator();
                 Debug.LogError("[ModdingSdkHubWindow] Static validator launch failed: " + exception);
             }
 
             Repaint();
         }
 
-        internal static void CreateExternalStarterKit()
+        private bool IsValidatorRunning
+        {
+            get { return _runningValidatorProcess != null; }
+        }
+
+        private void AppendValidatorOutput(StringBuilder builder, string line)
+        {
+            if (builder == null || line == null)
+                return;
+
+            lock (_validatorOutputLock)
+            {
+                builder.AppendLine(line);
+            }
+        }
+
+        private void MarkValidatorCompleted()
+        {
+            DiagnosticsProcess process = _runningValidatorProcess;
+            if (process == null)
+                return;
+
+            try
+            {
+                _runningValidatorExitCode = process.ExitCode;
+            }
+            catch
+            {
+                _runningValidatorExitCode = -1;
+            }
+
+            _runningValidatorCompleted = true;
+        }
+
+        private void PollRunningValidator()
+        {
+            if (!_runningValidatorCompleted)
+                return;
+
+            EditorApplication.update -= PollRunningValidator;
+
+            string stdout;
+            string stderr;
+            lock (_validatorOutputLock)
+            {
+                stdout = _runningValidatorStdout != null ? _runningValidatorStdout.ToString() : string.Empty;
+                stderr = _runningValidatorStderr != null ? _runningValidatorStderr.ToString() : string.Empty;
+            }
+
+            int exitCode = _runningValidatorExitCode;
+            _lastValidatorSummary = BuildValidatorSummary(exitCode, stdout, stderr);
+            DisposeRunningValidator();
+            Repaint();
+        }
+
+        private void DisposeRunningValidator()
+        {
+            EditorApplication.update -= PollRunningValidator;
+            if (_runningValidatorProcess != null)
+            {
+                _runningValidatorProcess.Dispose();
+                _runningValidatorProcess = null;
+            }
+
+            _runningValidatorStdout = null;
+            _runningValidatorStderr = null;
+            _runningValidatorCompleted = false;
+            _runningValidatorExitCode = -1;
+        }
+
+        internal static string CreateExternalStarterKit()
         {
             string rootPath = ResolveProjectPath(ExternalStarterKitRoot);
 
@@ -213,6 +343,7 @@ namespace Hecton8.Editor.ModdingSDK
 
                 int createdCount = 0;
                 createdCount += WriteTextFileIfMissing(Path.Combine(rootPath, "README.md"), BuildStarterKitReadme());
+                createdCount += WriteTextFileIfMissing(Path.Combine(rootPath, "h8mod.ps1"), BuildStarterKitLauncherScript());
                 createdCount += WriteTextFileIfMissing(Path.Combine(rootPath, "mod.h8manifest.json"), BuildAuthoringManifestTemplate());
                 createdCount += WriteTextFileIfMissing(Path.Combine(rootPath, "mod.json"), BuildRuntimeManifestTemplate());
                 createdCount += WriteTextFileIfMissing(Path.Combine(rootPath, "Content", "README.md"), BuildContentReadme());
@@ -239,19 +370,19 @@ namespace Hecton8.Editor.ModdingSDK
                 createdCount += CopyReferenceFileIfMissing(AllowedOpcodesReferencePath, Path.Combine(rootPath, "Reference", "allowed_opcodes.csv"));
                 createdCount += CopyReferenceFileIfMissing(KernelTuningProfilesReferencePath, Path.Combine(rootPath, "Reference", "kernel_tuning_profiles.csv"));
 
-                _lastValidatorSummary =
+                string summary =
                     "External starter kit ready: " + rootPath + global::System.Environment.NewLine +
                     "Files created: " + createdCount + global::System.Environment.NewLine +
                     "Existing files were not overwritten.";
                 EditorUtility.RevealInFinder(rootPath);
+                return summary;
             }
             catch (Exception exception)
             {
-                _lastValidatorSummary = "External starter kit creation failed: " + exception.Message;
+                string summary = "External starter kit creation failed: " + exception.Message;
                 Debug.LogError("[ModdingSdkHubWindow] External starter kit creation failed: " + exception);
+                return summary;
             }
-
-            Repaint();
         }
 
         private static string BuildValidatorSummary(int exitCode, string stdout, string stderr)
@@ -302,11 +433,15 @@ namespace Hecton8.Editor.ModdingSDK
                 global::System.Environment.NewLine +
                 "First setup:" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
-                "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1 -Id com.yourname.mod -DisplayName \"Your Mod\" -Author \"YourName\" -Version 0.1.0" + global::System.Environment.NewLine +
+                "powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action setup -Id com.yourname.mod -DisplayName \"Your Mod\" -Author \"YourName\" -Version 0.1.0" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
                 "After edits:" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
-                "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1" + global::System.Environment.NewLine +
+                "powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action prepare" + global::System.Environment.NewLine +
+                global::System.Environment.NewLine +
+                "Optional menu:" + global::System.Environment.NewLine +
+                global::System.Environment.NewLine +
+                "powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
                 "Use pwsh instead of powershell on macOS/Linux with PowerShell 7. The tools normalize child paths internally; do not rewrite the folder layout per platform." + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
@@ -326,6 +461,7 @@ namespace Hecton8.Editor.ModdingSDK
                 global::System.Environment.NewLine +
                 "Files:" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
+                "- h8mod.ps1: root no-Unity launcher for setup, validate, review, prepare, and opcode discovery. It delegates to Tools/*.ps1 and is not a second package contract." + global::System.Environment.NewLine +
                 "- mod.h8manifest.json: authoring manifest for Workbench/CLI style tools." + global::System.Environment.NewLine +
                 "- mod.json: loader compatibility manifest; EntryAssembly and EntryType stay empty in envelope-only mode." + global::System.Environment.NewLine +
                 "- Graphs/main.h8graph.json: command graph draft. Empty graph emits no packets. Non-empty nodes must use opcode hex tokens or comment aliases from Reference/allowed_opcodes.csv." + global::System.Environment.NewLine +
@@ -342,6 +478,171 @@ namespace Hecton8.Editor.ModdingSDK
                 "- Tools/validate_structure.ps1: local no-Unity structure validator for required files, canonical IDs, manifest parity, graph opcode allowlist checks, graph budget parity, envelope-only flags, and managed-entry disablement." + global::System.Environment.NewLine +
                 "- Tools/build_review_manifest.ps1: local no-Unity review manifest builder that validates first, then writes Reports/review_manifest.json with package identity, sorted file paths, byte counts, total bytes, explicit source limits, and SHA-256 hashes for submission/review. It rejects more than 256 source files, any source file over 4194304 bytes, or more than 33554432 total source bytes before hashing." + global::System.Environment.NewLine +
                 "- Tools/set_mod_identity.ps1: local no-Unity identity helper that safely writes matching mod id/name/author/version values into both manifests, then validates the folder." + global::System.Environment.NewLine;
+        }
+
+        private static string BuildStarterKitLauncherScript()
+        {
+            StringBuilder builder = new StringBuilder(6144);
+            builder.AppendLine("param(");
+            builder.AppendLine("    [ValidateSet('menu','setup','validate','review','prepare','opcodes','opcodes-json')]");
+            builder.AppendLine("    [string]$Action = 'menu',");
+            builder.AppendLine("    [string]$Id = '',");
+            builder.AppendLine("    [string]$DisplayName = '',");
+            builder.AppendLine("    [string]$Author = '',");
+            builder.AppendLine("    [string]$Version = ''");
+            builder.AppendLine(")");
+            builder.AppendLine();
+            builder.AppendLine("$ErrorActionPreference = 'Stop'");
+            builder.AppendLine();
+            builder.AppendLine("function Fail([string]$Message) {");
+            builder.AppendLine("    Write-Error ('[H8MOD] ' + $Message)");
+            builder.AppendLine("    exit 1");
+            builder.AppendLine("}");
+            builder.AppendLine();
+            builder.AppendLine("function Join-StarterPath {");
+            builder.AppendLine("    param(");
+            builder.AppendLine("        [string]$BasePath,");
+            builder.AppendLine("        [Parameter(ValueFromRemainingArguments = $true)]");
+            builder.AppendLine("        [string[]]$Segments");
+            builder.AppendLine("    )");
+            builder.AppendLine();
+            builder.AppendLine("    $current = $BasePath");
+            builder.AppendLine("    foreach ($segment in $Segments) {");
+            builder.AppendLine("        foreach ($part in ($segment.Replace('\\','/') -split '/')) {");
+            builder.AppendLine("            if (-not [string]::IsNullOrWhiteSpace($part)) {");
+            builder.AppendLine("                $current = Join-Path $current $part");
+            builder.AppendLine("            }");
+            builder.AppendLine("        }");
+            builder.AppendLine("    }");
+            builder.AppendLine("    return $current");
+            builder.AppendLine("}");
+            builder.AppendLine();
+            builder.AppendLine("function Resolve-StarterTool([string]$RelativePath) {");
+            builder.AppendLine("    $tool = Join-StarterPath $Root $RelativePath");
+            builder.AppendLine("    if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) {");
+            builder.AppendLine("        Fail ('Missing starter tool: ' + $RelativePath)");
+            builder.AppendLine("    }");
+            builder.AppendLine("    return $tool");
+            builder.AppendLine("}");
+            builder.AppendLine();
+            builder.AppendLine("function Complete-StarterTool {");
+            builder.AppendLine("    if (-not $?) {");
+            builder.AppendLine("        exit 1");
+            builder.AppendLine("    }");
+            builder.AppendLine("    if ($global:LASTEXITCODE -ne 0) {");
+            builder.AppendLine("        exit $global:LASTEXITCODE");
+            builder.AppendLine("    }");
+            builder.AppendLine("}");
+            builder.AppendLine();
+            builder.AppendLine("function Invoke-Validate {");
+            builder.AppendLine("    $tool = Resolve-StarterTool 'Tools/validate_structure.ps1'");
+            builder.AppendLine("    $global:LASTEXITCODE = 0");
+            builder.AppendLine("    & $tool -Root $Root");
+            builder.AppendLine("    Complete-StarterTool");
+            builder.AppendLine("}");
+            builder.AppendLine();
+            builder.AppendLine("function Invoke-Review {");
+            builder.AppendLine("    $tool = Resolve-StarterTool 'Tools/build_review_manifest.ps1'");
+            builder.AppendLine("    $global:LASTEXITCODE = 0");
+            builder.AppendLine("    & $tool -Root $Root");
+            builder.AppendLine("    Complete-StarterTool");
+            builder.AppendLine("}");
+            builder.AppendLine();
+            builder.AppendLine("function Invoke-PrepareExisting {");
+            builder.AppendLine("    $tool = Resolve-StarterTool 'Tools/prepare_mod.ps1'");
+            builder.AppendLine("    $global:LASTEXITCODE = 0");
+            builder.AppendLine("    & $tool -Root $Root");
+            builder.AppendLine("    Complete-StarterTool");
+            builder.AppendLine("}");
+            builder.AppendLine();
+            builder.AppendLine("function Invoke-Opcodes([bool]$Json) {");
+            builder.AppendLine("    $tool = Resolve-StarterTool 'Tools/list_allowed_opcodes.ps1'");
+            builder.AppendLine("    $global:LASTEXITCODE = 0");
+            builder.AppendLine("    if ($Json) {");
+            builder.AppendLine("        & $tool -Root $Root -Json");
+            builder.AppendLine("    } else {");
+            builder.AppendLine("        & $tool -Root $Root");
+            builder.AppendLine("    }");
+            builder.AppendLine("    Complete-StarterTool");
+            builder.AppendLine("}");
+            builder.AppendLine();
+            builder.AppendLine("function Require-SetupValue([string]$Value, [string]$Name) {");
+            builder.AppendLine("    if ([string]::IsNullOrWhiteSpace($Value)) {");
+            builder.AppendLine("        Fail ($Name + ' is required for setup. Provide -' + $Name + ' or run menu mode.')");
+            builder.AppendLine("    }");
+            builder.AppendLine("    return $Value");
+            builder.AppendLine("}");
+            builder.AppendLine();
+            builder.AppendLine("function Read-SetupValue([string]$Value, [string]$Prompt) {");
+            builder.AppendLine("    if (-not [string]::IsNullOrWhiteSpace($Value)) {");
+            builder.AppendLine("        return $Value");
+            builder.AppendLine("    }");
+            builder.AppendLine("    return Read-Host $Prompt");
+            builder.AppendLine("}");
+            builder.AppendLine();
+            builder.AppendLine("function Invoke-Setup([bool]$PromptForMissingValues) {");
+            builder.AppendLine("    $setupId = $Id");
+            builder.AppendLine("    $setupDisplayName = $DisplayName");
+            builder.AppendLine("    $setupAuthor = $Author");
+            builder.AppendLine("    $setupVersion = $Version");
+            builder.AppendLine();
+            builder.AppendLine("    if ($PromptForMissingValues) {");
+            builder.AppendLine("        $setupId = Read-SetupValue $setupId 'Mod id, example com.yourname.mod'");
+            builder.AppendLine("        $setupDisplayName = Read-SetupValue $setupDisplayName 'Display name'");
+            builder.AppendLine("        $setupAuthor = Read-SetupValue $setupAuthor 'Author'");
+            builder.AppendLine("        $setupVersion = Read-SetupValue $setupVersion 'Version, example 0.1.0'");
+            builder.AppendLine("    } else {");
+            builder.AppendLine("        $setupId = Require-SetupValue $setupId 'Id'");
+            builder.AppendLine("        $setupDisplayName = Require-SetupValue $setupDisplayName 'DisplayName'");
+            builder.AppendLine("        $setupAuthor = Require-SetupValue $setupAuthor 'Author'");
+            builder.AppendLine("        $setupVersion = Require-SetupValue $setupVersion 'Version'");
+            builder.AppendLine("    }");
+            builder.AppendLine();
+            builder.AppendLine("    $tool = Resolve-StarterTool 'Tools/prepare_mod.ps1'");
+            builder.AppendLine("    $global:LASTEXITCODE = 0");
+            builder.AppendLine("    & $tool -Root $Root -Id $setupId -DisplayName $setupDisplayName -Author $setupAuthor -Version $setupVersion");
+            builder.AppendLine("    Complete-StarterTool");
+            builder.AppendLine("}");
+            builder.AppendLine();
+            builder.AppendLine("function Show-Menu {");
+            builder.AppendLine("    Write-Host ''");
+            builder.AppendLine("    Write-Host 'HECTON-8 External Starter Kit'");
+            builder.AppendLine("    Write-Host '1 setup identity + build review'");
+            builder.AppendLine("    Write-Host '2 validate structure'");
+            builder.AppendLine("    Write-Host '3 build review manifest'");
+            builder.AppendLine("    Write-Host '4 prepare existing manifest'");
+            builder.AppendLine("    Write-Host '5 list graph opcodes'");
+            builder.AppendLine("    Write-Host '6 list graph opcodes JSON'");
+            builder.AppendLine("    Write-Host 'q quit'");
+            builder.AppendLine("    Write-Host ''");
+            builder.AppendLine("    $choice = Read-Host 'Select action'");
+            builder.AppendLine();
+            builder.AppendLine("    switch ($choice) {");
+            builder.AppendLine("        '1' { Invoke-Setup $true }");
+            builder.AppendLine("        '2' { Invoke-Validate }");
+            builder.AppendLine("        '3' { Invoke-Review }");
+            builder.AppendLine("        '4' { Invoke-PrepareExisting }");
+            builder.AppendLine("        '5' { Invoke-Opcodes $false }");
+            builder.AppendLine("        '6' { Invoke-Opcodes $true }");
+            builder.AppendLine("        'q' { return }");
+            builder.AppendLine("        'Q' { return }");
+            builder.AppendLine("        default { Fail ('Unknown menu action: ' + $choice) }");
+            builder.AppendLine("    }");
+            builder.AppendLine("}");
+            builder.AppendLine();
+            builder.AppendLine("$Root = Split-Path -Parent $MyInvocation.MyCommand.Path");
+            builder.AppendLine();
+            builder.AppendLine("switch ($Action) {");
+            builder.AppendLine("    'menu' { Show-Menu }");
+            builder.AppendLine("    'setup' { Invoke-Setup $false }");
+            builder.AppendLine("    'validate' { Invoke-Validate }");
+            builder.AppendLine("    'review' { Invoke-Review }");
+            builder.AppendLine("    'prepare' { Invoke-PrepareExisting }");
+            builder.AppendLine("    'opcodes' { Invoke-Opcodes $false }");
+            builder.AppendLine("    'opcodes-json' { Invoke-Opcodes $true }");
+            builder.AppendLine("    default { Fail ('Unsupported action: ' + $Action) }");
+            builder.AppendLine("}");
+            return builder.ToString();
         }
 
         private static string BuildAuthoringManifestTemplate()
@@ -646,13 +947,15 @@ namespace Hecton8.Editor.ModdingSDK
                 global::System.Environment.NewLine +
                 "Fast path for a copied starter kit:" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
-                "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1 -Id com.yourname.mod -DisplayName \"Your Mod\" -Author \"YourName\" -Version 0.1.0" + global::System.Environment.NewLine +
+                "powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action setup -Id com.yourname.mod -DisplayName \"Your Mod\" -Author \"YourName\" -Version 0.1.0" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
                 "Normal edit-review loop:" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
-                "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1" + global::System.Environment.NewLine +
+                "powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action prepare" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
                 "Use pwsh instead of powershell on macOS/Linux with PowerShell 7. The scripts normalize child paths internally; do not rewrite Tools/, Reports/, or .vscode/ paths per platform." + global::System.Environment.NewLine +
+                global::System.Environment.NewLine +
+                "The root h8mod.ps1 launcher is the preferred no-Unity entry point for humans. It delegates to these Tools/*.ps1 scripts and does not add a second validation contract." + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
                 "prepare_mod.ps1 runs identity setup only when -Id is provided. Without -Id it validates the existing manifests and rebuilds Reports/review_manifest.json for the normal edit-review loop." + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
@@ -667,6 +970,12 @@ namespace Hecton8.Editor.ModdingSDK
                 global::System.Environment.NewLine +
                 "Command:" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
+                "powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1" + global::System.Environment.NewLine +
+                "powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action validate" + global::System.Environment.NewLine +
+                "powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action review" + global::System.Environment.NewLine +
+                "powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action prepare" + global::System.Environment.NewLine +
+                "powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action opcodes" + global::System.Environment.NewLine +
+                "powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action opcodes-json" + global::System.Environment.NewLine +
                 "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/validate_structure.ps1" + global::System.Environment.NewLine +
                 "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/list_allowed_opcodes.ps1" + global::System.Environment.NewLine +
                 "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/list_allowed_opcodes.ps1 -Json" + global::System.Environment.NewLine +
@@ -1239,6 +1548,7 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine("@('Content','Graphs','Tables','Locales','Generated','Reports','Reference','Schemas','Tools','.vscode') | ForEach-Object { Require-Directory $_ }");
             builder.AppendLine("@(");
             builder.AppendLine("    'README.md',");
+            builder.AppendLine("    'h8mod.ps1',");
             builder.AppendLine("    'mod.h8manifest.json',");
             builder.AppendLine("    'mod.json',");
             builder.AppendLine("    'Content/README.md',");

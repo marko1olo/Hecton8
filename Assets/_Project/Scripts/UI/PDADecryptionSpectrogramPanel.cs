@@ -37,6 +37,7 @@ namespace Hecton8.UI
         private const uint ToolHash = 0x53434E52u; // SCNR
         private const float ShaderFloatEpsilon = 0.0001f;
         private const string TelemetryDumpPath = "Docs/AgentLogs/Dump_MINIGAME_FREQUENCY_TUNING.bin";
+        private const SystemID VaultOwnerSystemId = SystemID.UI;
 
         private static readonly int LocalToWorldId = Shader.PropertyToID("_HectonFrequencyTuningLocalToWorld");
         private static readonly int TubeRadiusId = Shader.PropertyToID("_HectonFrequencyTuningTubeRadius");
@@ -286,10 +287,10 @@ namespace Hecton8.UI
             finally
             {
                 IDataVault vault = _cachedDataVault;
-                if (telemetryLocked && vault != null && IsVaultHandleCreated(in _telemetryRingHandle))
-                    vault.ReleaseWriteLock(in _telemetryRingHandle, SystemID.UI);
-                if (vault != null && IsVaultHandleCreated(in _stageTargetsHandle))
-                    vault.ReleaseWriteLock(in _stageTargetsHandle, SystemID.UI);
+                if (telemetryLocked && vault != null && IsExactVaultHandle(in _telemetryRingHandle, BufferID.PdaFrequencyTelemetryRing))
+                    vault.ReleaseWriteLock(in _telemetryRingHandle, VaultOwnerSystemId);
+                if (vault != null && IsExactVaultHandle(in _stageTargetsHandle, BufferID.PdaFrequencyStageTargets))
+                    vault.ReleaseWriteLock(in _stageTargetsHandle, VaultOwnerSystemId);
             }
         }
 
@@ -327,15 +328,13 @@ namespace Hecton8.UI
                 return false;
             }
 
-            uint expectedBufferId = unchecked((uint)(int)bufferId);
-            if (IsVaultHandleCreated(in handle) &&
-                handle.BufferID == expectedBufferId &&
+            if (IsExactVaultHandle(in handle, bufferId) &&
                 TryAcquireExistingVaultWriteBuffer(vault, in handle, requiredLength, out buffer))
             {
                 return true;
             }
 
-            if (IsVaultHandleCreated(in handle))
+            if (IsExactVaultHandle(in handle, bufferId))
                 vault.ReleaseBuffer(in handle);
 
             if (vault.IsCompactionFenceActive)
@@ -345,9 +344,8 @@ namespace Hecton8.UI
                 return false;
             }
 
-            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.UI, options);
-            return IsVaultHandleCreated(in handle) &&
-                   handle.BufferID == expectedBufferId &&
+            handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystemId, options);
+            return IsExactVaultHandle(in handle, bufferId) &&
                    TryAcquireExistingVaultWriteBuffer(vault, in handle, requiredLength, out buffer);
         }
 
@@ -361,7 +359,7 @@ namespace Hecton8.UI
             if (vault == null ||
                 requiredLength <= 0 ||
                 vault.IsCompactionFenceActive ||
-                !vault.TryAcquireWriteLock(in handle, SystemID.UI, out buffer))
+                !vault.TryAcquireWriteLock(in handle, VaultOwnerSystemId, out buffer))
             {
                 return false;
             }
@@ -373,7 +371,7 @@ namespace Hecton8.UI
                 return true;
             }
 
-            vault.ReleaseWriteLock(in handle, SystemID.UI);
+            vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
             buffer = default;
             return false;
         }
@@ -385,7 +383,7 @@ namespace Hecton8.UI
             if (vault == null ||
                 index < 0 ||
                 index >= StageCount ||
-                !IsVaultHandleCreated(in _stageTargetsHandle) ||
+                !IsExactVaultHandle(in _stageTargetsHandle, BufferID.PdaFrequencyStageTargets) ||
                 vault.IsCompactionFenceActive ||
                 !vault.TryReadOnlyHandle(in _stageTargetsHandle, out NativeArray<FrequencyTuningStageTarget>.ReadOnly stageTargets) ||
                 vault.IsCompactionFenceActive ||
@@ -406,7 +404,7 @@ namespace Hecton8.UI
             if (vault == null ||
                 index < 0 ||
                 index >= TelemetryCapacity ||
-                !IsVaultHandleCreated(in _telemetryRingHandle) ||
+                !IsExactVaultHandle(in _telemetryRingHandle, BufferID.PdaFrequencyTelemetryRing) ||
                 vault.IsCompactionFenceActive ||
                 !vault.TryReadOnlyHandle(in _telemetryRingHandle, out NativeArray<FrequencyTuningTelemetryEntry>.ReadOnly telemetryRing) ||
                 vault.IsCompactionFenceActive ||
@@ -420,15 +418,17 @@ namespace Hecton8.UI
             return true;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
+        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : unmanaged
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == (uint)expectedBufferId &&
+                   handle.SystemID == (uint)VaultOwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
-        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle, BufferID expectedBufferId)
             where T : unmanaged
         {
-            if (vault != null && handle.BufferID != 0u)
+            if (vault != null && IsExactVaultHandle(in handle, expectedBufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
@@ -821,14 +821,14 @@ namespace Hecton8.UI
             finally
             {
                 IDataVault vault = _cachedDataVault;
-                if (vault != null && IsVaultHandleCreated(in _telemetryRingHandle))
-                    vault.ReleaseWriteLock(in _telemetryRingHandle, SystemID.UI);
+                if (vault != null && IsExactVaultHandle(in _telemetryRingHandle, BufferID.PdaFrequencyTelemetryRing))
+                    vault.ReleaseWriteLock(in _telemetryRingHandle, VaultOwnerSystemId);
             }
         }
 
         private void DumpTelemetryCold()
         {
-            if (!IsVaultHandleCreated(in _telemetryRingHandle))
+            if (!IsExactVaultHandle(in _telemetryRingHandle, BufferID.PdaFrequencyTelemetryRing))
                 return;
 
             try
@@ -894,8 +894,8 @@ namespace Hecton8.UI
             finally
             {
                 IDataVault vault = _cachedDataVault;
-                if (vault != null && IsVaultHandleCreated(in _stageTargetsHandle))
-                    vault.ReleaseWriteLock(in _stageTargetsHandle, SystemID.UI);
+                if (vault != null && IsExactVaultHandle(in _stageTargetsHandle, BufferID.PdaFrequencyStageTargets))
+                    vault.ReleaseWriteLock(in _stageTargetsHandle, VaultOwnerSystemId);
             }
         }
 
@@ -982,13 +982,9 @@ namespace Hecton8.UI
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.DataVault:
-                    IDataVault previousVault = previousService as IDataVault ?? _cachedDataVault;
-                    if (!ReferenceEquals(previousVault, currentService))
-                    {
-                        ReleaseNativeBuffers(previousVault);
-                    }
-
-                    _cachedDataVault = currentService as IDataVault;
+                    IDataVault previousVault = previousService is IDataVault oldVault ? oldVault : _cachedDataVault;
+                    IDataVault nextVault = currentService is IDataVault currentVault ? currentVault : null;
+                    BindDataVaultForLifecycle(nextVault, previousVault);
                     _nativeReady = false;
                     _nativeResourcesDirty = true;
                     break;
@@ -1000,9 +996,18 @@ namespace Hecton8.UI
 
         private void RefreshCachedRegistryServices()
         {
-            _cachedDataVault = GlobalRegistry.DataVault;
+            BindDataVaultForLifecycle(GlobalRegistry.DataVault);
             _cachedInputService = GlobalRegistry.Input;
             RefreshCachedQualityPolicy(rebuildResourcesOnPointChange: false);
+        }
+
+        private void BindDataVaultForLifecycle(IDataVault nextVault, IDataVault previousVault = null)
+        {
+            IDataVault releaseVault = previousVault ?? _cachedDataVault;
+            if (!ReferenceEquals(_cachedDataVault, nextVault))
+                ReleaseNativeBuffers(releaseVault);
+
+            _cachedDataVault = nextVault;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1048,8 +1053,8 @@ namespace Hecton8.UI
 
         private void ReleaseNativeBuffers(IDataVault vault)
         {
-            ReleaseVaultBuffer(vault, ref _stageTargetsHandle);
-            ReleaseVaultBuffer(vault, ref _telemetryRingHandle);
+            ReleaseVaultBuffer(vault, ref _stageTargetsHandle, BufferID.PdaFrequencyStageTargets);
+            ReleaseVaultBuffer(vault, ref _telemetryRingHandle, BufferID.PdaFrequencyTelemetryRing);
         }
 
         private void DisposeGraphicsResources()

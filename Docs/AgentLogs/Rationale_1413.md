@@ -146,3 +146,47 @@ Solution: Replaced that branch with `RecordLockContentionFault(key)` and `return
 Rejected Alternatives: Remove all dumps from `TryOpenAliasBuffer`. Rejected because real corruption must keep black-box proof. Rejected async dump request on contention because even request escalation is unnecessary for a routine busy gate.
 Scalability potential: Low devices avoid filesystem work on alias-open contention. Middle/High/Ultra keep identical truth behavior; no `GlobalQualityWeight` usage because alias lock correctness is not visual fidelity.
 Hardware Impact: Contended alias-open path now performs only numeric fault writes and returns. Runtime microseconds remain PENDING COMPILER/UNITY RUNTIME VERIFICATION.
+
+## R18 - External-View Publish Rollback Containment
+
+Problem: In `TryEnsureVaultBuffer`, the new allocation path created a buffer and metadata, then attempted `MarkExternalView`. If that publish step failed because the mutation gate was busy, the cleanup removed `_buffers`, metadata, and key routing, then attempted `TryFreeBlockRollback` while the gate was already unavailable. This can strand an occupied arena block without metadata.
+Solution: On external-view publish failure after a successful new allocation, keep the registered buffer/metadata route, record numeric contention, and return false. A retry can publish the view against the existing buffer. Other corruption branches still remove/rollback and dump forensic evidence.
+Rejected Alternatives: Retry or spin for the view publish. Rejected because fail-closed forbids waits. Rejected rollback under known gate contention because it can fail for the same reason and is worse than preserving the buffer route.
+Scalability potential: Low devices avoid orphaned memory after transient contention. Middle/High/Ultra keep deterministic buffer ownership. `GlobalQualityWeight` remains unused because ownership truth is not scalable fidelity.
+Hardware Impact: Removes one rollback attempt from a known-contention branch and prevents orphan block risk. Runtime microseconds remain PENDING COMPILER/UNITY RUNTIME VERIFICATION.
+
+## R19 - Throttled Assembly-CSharp Compiler Proof
+
+Problem: Native/unmanaged `GlobalDataVault` edits required at least one syntax and assembly proof, but project rules forbid compiler load while CPU exceeds 50% or active `dotnet`/`csc` processes exist.
+Solution: Waited for a clean gate sample, then ran exactly one minimal compile: `dotnet build "C:\hades\Hecton8\Assembly-CSharp.csproj" --no-restore -v:minimal /m:1`. Pre-build sample was CPU `27.641788%`, `dotnetCount=0`, `cscCount=0`. Build result: `0 Warning(s)`, `0 Error(s)`, elapsed `48.80s`.
+Rejected Alternatives: Solution-wide build, restore, repeated compiler probes, or Unity Test Runner launch. Rejected because they would add unnecessary CPU pressure and broader cross-agent contention.
+Scalability potential: Verification-only change. Runtime Low/Middle/High/Ultra behavior is unchanged. `GlobalQualityWeight` still does not affect vault ownership, DTO layout, release correctness, or authority routes.
+Hardware Impact: Compiler proof only. Runtime/editor behavior remains `PENDING UNITY RUNTIME VERIFICATION`; no profiler microsecond claim is made.
+
+## R20 - Evidence Hash Reconciliation
+
+Problem: After log/rationale updates and filesystem line-ending state, the current on-disk `GlobalDataVault.cs` SHA-256 no longer matched the hash embedded in the previous APEX JSON. A stale hash invalidates the final evidence chain even if source semantics did not change.
+Solution: Rechecked raw file hashes, corrected `LOCK_CONTENTION_OPTIMIZATION_REPORT_1413.json.modifiedFiles`, and regenerated `LOCK_CONTENTION_APEX_VERIFICATION_1413.json`. Current `GlobalDataVault.cs` SHA-256 is `0d0599170f98d1c4dacf76e452d1a3401cd85e7a1ef8f320f04b0e0d5691d86e`; current APEX SHA-256 is `61cbc71a6a8cbafe2c75702321b43b68a11f5fea04406fbf27041bc708c54822`.
+Rejected Alternatives: Report the old hash as "close enough" or leave hash drift unexplained. Rejected because the APEX protocol requires byte-exact evidence, not semantic intent.
+Scalability potential: Verification-only. Runtime Low/Middle/High/Ultra behavior is unchanged.
+Hardware Impact: No runtime effect. The post-APEX sample was CPU `88.088131%`, `dotnetCount=2`, `cscCount=0`; no extra build/test was launched.
+
+## R21 - Cross-Agent Deferred Release Contract Reconciliation
+
+Problem: Current `QueueDeferredRelease` contains writer-only de-duplication. That is consistent with 1413 count-preservation, and current `ArenaAllocatorSentinel1414EditTests.cs:90` now asserts `StringAssert.Contains("if (kind == DeferredReleaseKindWriter)", queue)`. The remaining issue is documentation drift and the tokenless retry edge case.
+Solution: Keep writer-only coalescing. Update the 1413 report/verifier evidence to match the active code and test contract. Record the remaining API limitation explicitly: with no per-acquire token, a caller that retries `TryUnlockBuffer` after accepted `true` can enqueue multiple buffer-pin releases.
+Rejected Alternatives: Coalesce all buffer-pin releases. Rejected because `TryLockBuffer` increments `Reserved1` for same-owner pins; all-kind coalescing can leak legitimate nested/same-owner pins. Adding a tokenized lock handle was rejected for this polish pass because it is a public API and caller migration problem, not a surgical proof correction.
+Scalability potential: Low tier preserves buffer-pin count semantics without waits. Middle/High/Ultra keep the same unmanaged ring. `GlobalQualityWeight` remains irrelevant because memory ownership is authority truth, not visual fidelity.
+Hardware Impact: No code-path change in this loop. The honest residual retry risk is now documented instead of falsely reported as solved.
+
+Evidence: APEX regenerated at `2026-05-28T09:59:18Z` with `totalForbiddenHits=0`, `hasWriterOnlyFilter=true`, `hasSerializedScanGate=true`, and `matchesArenaAllocator1414EditorContract=true`. Final hashes: `GlobalDataVault.cs` = `b35073e0f7ad2e833767c0b3f6b3139a05942bd9b416bc77c8f373b9a3d74aac`; APEX JSON = `bd30901deb1e6e10df4ec5efe39299864f6c201a90eac81559de59cbeff29114`. Post-regeneration sample was CPU `91.810825%`, `dotnetCount=1`, `cscCount=0`; no extra build/test was launched.
+
+## R22 - TryAllocatePublishedBuffer Evidence Closure
+
+Problem: Parallel edits moved new-buffer allocation and rollback into `TryAllocatePublishedBuffer<T>`, but the APEX zero-GC scanner still covered only `TryEnsureVaultBuffer<T>`. That left a proof gap over the actual gate-owned allocation/cleanup method.
+Solution: Added `TryAllocatePublishedBuffer<T>` to `agent1413_apex_verifier.py` hot-window scanning and regenerated APEX. Current proof: method lines 1270-1375, lineCount 106, forbiddenHitCount 0. Static rollback proof: gate acquisition at line 1283, cleanup `finally` at lines 1357-1374, `FreeBlockLocked` at line 1368, `ReleaseBlockMutationGate()` at line 1373.
+Rejected Alternatives: Treat the caller `TryEnsureVaultBuffer<T>` scan as sufficient. Rejected because the rollback logic now lives in the callee and must be directly scanned. Runtime-code rewrite was also rejected because the current method already keeps cleanup under the held gate.
+Scalability potential: Low/Middle/High/Ultra behavior is unchanged. This is evidence closure for ownership truth; `GlobalQualityWeight` must not scale allocation ownership, DTO layout, or release semantics.
+Hardware Impact: No runtime code change. Verification rerun was host-side JSON/static scan only. Build remained blocked by an active dotnet process despite CPU below 50%.
+
+Evidence: APEX regenerated at `2026-05-28T10:12:41Z`; `totalForbiddenHits=0`; runtime sample CPU `48.971125%`, `dotnetCount=1`, `cscCount=0`. Final hashes: optimization report = `a4f45e1c3625774b9e917bdb6848b2f1c5dae7844dd016edb7c5e6342aa4b537`; APEX JSON = `79500eb84222fb46fb039e4e50ebf6ddd608c759c14dd655eb1185583ac72b8a`; verifier script = `8a5ff144a662564b16db0a6e9c8d71ae1796ec2c2befa66c1501ef26e24ccc25`; `GlobalDataVault.cs` = `b35073e0f7ad2e833767c0b3f6b3139a05942bd9b416bc77c8f373b9a3d74aac`.

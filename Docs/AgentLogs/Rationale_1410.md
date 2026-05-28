@@ -106,3 +106,51 @@ Solution: Manually traced the root. `Execute` at line 804 calls `IsVisibleInDark
 Rejected Alternatives: Leave the JSON with `confirmedReadbackFindings = 1`; rejected because it would falsely mark a GPU readback fault. Silence the candidate entirely; rejected because scanner limitations must remain visible.
 Scalability potential: No runtime change. The static proof now separates real phase violations from scanner imprecision for weak, middle, high, and ultra hardware.
 Hardware Impact: Offline verification only. Latest scan cost: 247460347 microseconds. Runtime impact is zero.
+
+## Decision 014 - GlobalRegistry Math Precision Visual Sync Deferral
+
+Problem: A bounded APEX recheck found a real core route: `SystemDispatcher.RunDispatcherUpdate` calls `FrameTimeWatchdog.TickMathPrecisionTransition`, which delegates to `GlobalRegistry.TickMathPrecisionTransition`. The unacceptable version of that route wrote `_H8MathLodLowBlend` with `Shader.SetGlobalFloat` before the dispatcher reached visual sync.
+Solution: Keep math precision transition truth as primitive `int` state during dispatcher update. Stage `_pendingMathPrecisionShaderLevel`, `_pendingMathPrecisionShaderLowBlendMilli`, and `_mathPrecisionShaderDirty`; drain them through `GlobalRegistry.FlushMathPrecisionShaderState()` from `SystemDispatcher.RunDispatcherLateFrame`.
+Rejected Alternatives: Move the entire transition ticker to LateFrame; rejected because C# math precision state is dispatcher authority and may be read as frame state. Leave the shader write in update because it is only one scalar; rejected because phase doctrine forbids presentation upload before visual sync.
+Scalability potential: Low/middle/high/ultra keep the same continuous 60-frame math-precision ramp while GPU keyword/global publication is isolated to the presentation phase.
+Hardware Impact: Removes a pre-simulation driver submission risk on i3/MX350. Runtime microseconds are not claimed without profiler proof. Static rg-first recheck cost: 1200105 microseconds.
+
+## Decision 015 - DistanceMath Shader LOD Visual Sync Deferral
+
+Problem: Recheck3 found a real missed route: `RuntimeWatchdog.Tick -> FrameTimeWatchdog.Tick -> DistanceMath.PushShaderMathLod` and `LODSystemManager.ApplyQualityPreset -> DistanceMath.PushShaderMathLod` reached `Shader.SetGlobalFloat` outside visual sync.
+Solution: Convert `DistanceMath.PushShaderMathLod` into a staging API. It writes `_pendingShaderMode`, `_pendingShaderWeight`, and `_hasPendingShaderState`; `SystemDispatcher.RunDispatcherLateFrame` drains the upload through `DistanceMath.FlushVisualSyncShaderState()`.
+Rejected Alternatives: Keep `DistanceMath` immediate because it is a low-level helper; rejected because helper APIs are still phase-visible when called by `Tick`. Move `FrameTimeWatchdog.Tick` to LateFrame; rejected because its quality truth and telemetry remain dispatcher/update authority.
+Scalability potential: Low uses cheap math/far distance approximation; middle and high get continuous quality weights; ultra keeps visual-overkill shader state without changing gameplay truth.
+Hardware Impact: Removes a pre-visual-sync shader global/keyword upload route. Transfer is enum + float + bool only. Static recheck3 scan cost: 466615 microseconds.
+
+## Decision 016 - Logistics Highlight LateFrame Staging
+
+Problem: `LogicSpannerTool.OnEquip/OnUnequip` called `ConnectionSplineBatchRenderer.SetLogisticsPathHighlightActive`, which directly wrote `_HectonLogisticsPathHighlight` through `Shader.SetGlobalFloat` during a gameplay event.
+Solution: Stage the requested highlight state in `s_pendingLogisticsPathHighlightActive` plus `s_logisticsPathHighlightDirty`. `ConnectionSplineBatchRenderer.LateFrameTick` calls `FlushLogisticsPathHighlightState()` and performs the single shader upload there.
+Rejected Alternatives: Treat OnEquip/OnUnequip as harmless lifecycle; rejected because equipment events occur during gameplay and can be driven by input cadence. Use a managed delegate/event queue; rejected because it would allocate or hide route ownership.
+Scalability potential: Low/middle/high/ultra share one cheap shader bool route. Strong devices can spend visual budget in the renderer batches, not in event-time driver calls.
+Hardware Impact: Removes one direct event-time GPU upload path. Runtime transfer adds two static bool fields only; no managed allocation tokens in stage/flush methods.
+
+## Decision 017 - Build Gate Revalidated After Recheck3
+
+Problem: After recheck3 code edits, a final build would be justified only if host contention cleared.
+Solution: Sampled CPU and compiler processes immediately before the build decision. Latest sample was CPU 57% with active `dotnet` PID 30904 and `csc` PID 45636, so build remained blocked and no `dotnet build` was launched.
+Rejected Alternatives: Start a second compiler anyway because static proof is strong; rejected because the explicit rule blocks when CPU is above 50% or when compiler processes are active.
+Scalability potential: Development-host protection only; preserves shared throughput for parallel agents.
+Hardware Impact: Runtime impact is none. Validation remains static until the compiler gate clears.
+
+## Decision 018 - Spectrum Public Sonar Presentation Deferral
+
+Problem: `SpectrumSystem.TriggerActiveSonarPing` could call `EmitSonarPulse`, which directly wrote sonar shader globals and could call `IAudioService.PlayStatic2D` through `TryPlayAbyssalAnchorReturn`. That route is player/input cadence, not guaranteed visual sync.
+Solution: Stage sonar mode, primary/echo pulse, reveal, lidar, passive radar, acoustic mapping, and abyssal return audio into primitive/`Vector4` fields. `LateFrameTick` now calls `FlushQueuedSpectrumShaderGlobals()` and `FlushQueuedSpectrumAudio()` after visual state evaluation.
+Rejected Alternatives: Treat sonar ping as harmless because it is "visual only"; rejected because shader/audio API calls still cross into presentation backends. Move gameplay sonar effects to LateFrame; rejected because energy drain, spatial signals, acoustic pings, and AUP discovery are gameplay/domain truth and must keep their owner route.
+Scalability potential: Low tier keeps cheap screen-space pulse scalars and delayed audio. Middle/high/ultra keep the same queue but can spend visual currency inside the late-frame sonar shader payload, with `SpectrumSystem.ResolveActiveSonarGeoQualityWeight()` continuously reading `HomeostasisBrain.GlobalQualityWeight`.
+Hardware Impact: i3/MX350 avoids event-time GPU/audio backend submission from active sonar. Runtime microseconds are not claimed without profiler capture. Static recheck4 hot rows report reference `new` 0, `string.Format` 0, `.ToString()` 0, LINQ 0, `foreach` 0.
+
+## Decision 019 - Recheck4 Build Gate Blocked
+
+Problem: Recheck4 edited `SpectrumSystem` and the editor regression tests, so a final build would be useful only if the host compilation gate allowed it.
+Solution: Sampled CPU/processes before build. CPU was 90%, with active `csc` PID 63300 and `dotnet` PID 53008. Wrote `Docs/Reports/DISPATCHER_BUILD_GATE_1410.json` and did not invoke `dotnet build`.
+Rejected Alternatives: Start a build during compiler contention to satisfy optics; rejected by explicit batch and AGENTS throttling rule.
+Scalability potential: Development-host protection only; preserves parallel agent throughput.
+Hardware Impact: Runtime impact is none. Validation remains static until CPU <= 50% and compiler processes are absent.

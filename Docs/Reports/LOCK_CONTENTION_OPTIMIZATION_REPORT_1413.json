@@ -2,12 +2,21 @@
   "agentId": "1413",
   "apexHashPolicy": "LOCK_CONTENTION_APEX_VERIFICATION_1413.json is hashed after generation in final evidence; it is not embedded in optimization report modifiedFiles to avoid a self-referential stale hash.",
   "compilationThrottle": {
-    "cpuLoadPercent": 100,
-    "cscCount": 0,
-    "dotnetBuild": "BLOCKED_BY_CONTENTION",
-    "dotnetCount": 1,
+    "dotnetBuild": "PASSED",
+    "dotnetBuildCommand": "dotnet build \"C:\\hades\\Hecton8\\Assembly-CSharp.csproj\" --no-restore -v:minimal /m:1",
+    "dotnetBuildLaunchedByAgent1413": true,
+    "elapsedSeconds": 48.8,
+    "errors": 0,
+    "maxCpuWorkers": 1,
+    "noRestore": true,
+    "preBuildCpuLoadPercent": 27.641788,
+    "preBuildCscCount": 0,
+    "preBuildDotnetCount": 0,
     "sampleCommand": "Get-Counter \"\\Processor(_Total)\\% Processor Time\" plus Get-Process dotnet/csc",
-    "sampleUtc": "2026-05-28T01:46:34Z"
+    "sampleUtc": "2026-05-28T09:30:01Z",
+    "target": "Assembly-CSharp.csproj",
+    "unityTestRunnerLaunchedByAgent1413": false,
+    "warnings": 0
   },
   "failClosedProof": {
     "apexTryFinallyProof": "Descriptor lock line 5044, try line 5052, loot lock line 5054, finally line 5090, descriptor unlock line 5096; releaseInsideFinally=true.",
@@ -16,7 +25,7 @@
     "globalDataVault": "TryEnterBlockMutationGate false now records RecordLockContentionFault(key) and returns false immediately. ClearActiveLockBitIfUnused no longer spins. Release paths use TryEnterReleaseMutationGate with no wait loop.",
     "zeroGc": "No string, collection, Debug.Log, exception, LINQ, or allocation in RecordLockContentionFault."
   },
-  "generatedUtc": "2026-05-28T01:46:56Z",
+  "generatedUtc": "2026-05-28T09:30:01Z",
   "implementedChanges": [
     {
       "change": "Removed bounded Thread.SpinWait from ClearActiveLockBitIfUnused; added O(1) numeric contention telemetry; split release gate from acquire gate so releases can clear already-held locks without compaction-fence wait.",
@@ -69,6 +78,18 @@
       "file": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
       "line": 1357,
       "reason": "gate contention is not corruption; fail-closed path must not perform directory/file IO or managed string work"
+    },
+    {
+      "change": "New-buffer external-view publish failure no longer removes metadata/buffer keys and attempts rollback while the mutation gate is busy.",
+      "file": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+      "line": 1294,
+      "reason": "prevents a fail-closed MarkExternalView contention from orphaning an occupied arena block without metadata"
+    },
+    {
+      "change": "Remaining direct mutation-gate contention branches now record numeric lock contention faults before returning false or deferring work.",
+      "file": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+      "line": 2016,
+      "reason": "keeps fail-closed contention visible without spin or file-dump escalation"
     }
   ],
   "ledgerSummary": {
@@ -34399,7 +34420,7 @@
   "modifiedFiles": [
     {
       "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-      "sha256": "a0233a4e583874e84a7425741dcdf21bd21a7bf3ec6a2b282eb7076c1d32d4e4"
+      "sha256": "b35073e0f7ad2e833767c0b3f6b3139a05942bd9b416bc77c8f373b9a3d74aac"
     },
     {
       "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
@@ -34419,7 +34440,7 @@
     },
     {
       "path": "Docs/Reports/agent1413_apex_verifier.py",
-      "sha256": "d32312469b43f054207e17576d5698ca94dcd4b7d94fe04778990e8c76f94bec"
+      "sha256": "9e51fb0be2c247c163adbdf273650ecd5e3fde2c3fb93984197bdde6d68615f4"
     },
     {
       "path": "Docs/Reports/LOCK_CONTENTION_SPAN_LEDGER_1413.json",
@@ -34584,19 +34605,26 @@
     "apexHashPolicy": "APEX hashes optimization report in reportHashesBeforeApexWrite; final chat/log provide APEX SHA-256 after write.",
     "apexVerification": "Docs/Reports/LOCK_CONTENTION_APEX_VERIFICATION_1413.json",
     "deferredReleaseAcceptedReturn": "ReleaseWriteLock/TryUnlockBuffer return the QueueDeferredRelease result when the release mutation gate is busy; accepted deferred release returns true, full/invalid queue returns false.",
-    "deferredReleaseDuplicateCoalescing": "QueueDeferredRelease coalesces identical pending writer releases only. Buffer-pin releases are not coalesced because the same owner may hold multiple legitimate pins.",
+    "deferredReleaseDuplicateCoalescing": "QueueDeferredRelease coalesces identical pending writer releases only. Buffer-pin releases are not coalesced because the same owner may hold multiple legitimate pins. Residual API limit: without a per-acquire token, a caller retry after accepted true can enqueue multiple buffer-pin releases.",
     "deferredReleasePreDefragDrain": "TryDrainDeferredReleaseRequests performs one non-blocking mutation-gate acquire and drains pending releases before active-lock checks in defrag, relocation validation, orphan sweep, and arena growth paths.",
     "deferredReleaseStaleRequestGuard": "Queue rejects invalid metadata indexes; buffer-pin drain clears stale owner-mismatch requests as drained to avoid permanent pending-slot leak.",
     "deferredReleaseStructSizeBytes": 32,
     "diffCheck": "passed with CRLF warnings only",
     "diffCheckAfterLoop13": "passed with CRLF warnings only",
     "diffCheckAfterLoop14": "passed with CRLF warnings only",
+    "directMutationGateContentionTelemetry": "TryDrainDeferredReleaseRequests, TryGrowArena, allocation/reallocation/free helpers, MarkExternalView and MarkAliasReader now record numeric contention on gate failure.",
+    "dotnetBuildAssemblyCSharp": "PASSED: Assembly-CSharp -> Temp/CodexBuild/Assembly-CSharp/Assembly-CSharp.dll; 0 warnings, 0 errors; elapsed 48.80s.",
+    "evidenceRefreshAfterLoop15": "Optimization report modifiedFiles regenerated after current working-tree hash audit; code unchanged in this evidence refresh.",
+    "finalCompilationGateSample": "CPU 80.727770, dotnet 1, csc 1; no dotnet build launched.",
     "modifiedWindowNestedLocks": 0,
     "mutationGateDrainFaultRelease": "TryEnterBlockMutationGate and TryEnterReleaseMutationGate wrap DrainDeferredReleaseRequestsLocked in release-on-catch guards; normal path still has no spin/wait.",
+    "newBufferExternalViewContentionRollback": "If MarkExternalView fails after new allocation, the buffer remains registered and the method returns false with numeric contention telemetry; no rollback is attempted while the gate is known busy.",
     "rgGlobalDataVaultSpinWait": "no Thread.SpinWait remains in GlobalDataVault.cs",
     "rgGlobalDataVaultWaits": "no Thread.SpinWait/Task.Delay/retry wait loop in GlobalDataVault; Thread.Sleep(1) remains only in dispose-time memory sentry flush.",
     "rgGlobalDataVaultWaitsAfterLoop13": "no Thread.SpinWait/Task.Delay/retry wait loop in GlobalDataVault; catch entries are release-on-fault guards, not waits.",
     "rgGlobalDataVaultWaitsAfterLoop14": "no Thread.SpinWait/Task.Delay/retry wait loop in GlobalDataVault.",
+    "tryAllocatePublishedBufferZeroGcScan": "TryAllocatePublishedBuffer<T> lines 1270-1375 scanned by APEX; forbidden hit count 0. New-buffer rollback cleanup runs inside the held mutation gate and releases it in finally.",
+    "tryEnsureVaultBufferZeroGcScan": "TryEnsureVaultBuffer<T> lines 1089-1268 scanned by APEX; forbidden hit count 0.",
     "tryOpenAliasBufferContentionFailClosed": "TryOpenAliasBuffer line 1357 gate-failure branch records RecordLockContentionFault(key) and returns false; corruption branches still dump black-box evidence.",
     "unityTestRunner": "NOT RUN",
     "zeroGcTextScanIncludesTryDrainDeferredReleaseRequests": true,
@@ -34604,5 +34632,5 @@
     "zeroGcTextScanIncludesTryOpenAliasBuffer": true,
     "zeroGcTextScanTotalForbiddenHits": 0
   },
-  "status": "PENDING COMPILER/UNITY RUNTIME VERIFICATION"
+  "status": "PENDING UNITY RUNTIME / EDITMODE TEST VERIFICATION"
 }

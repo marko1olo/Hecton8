@@ -929,6 +929,7 @@ namespace Hecton8.Construction
         private static GraphicsBuffer s_DroneVisibleInstanceBuffer;
         private static GraphicsBuffer s_DroneVisibleIndexBuffer;
         private static GraphicsBuffer s_DroneProceduralArgsBuffer;
+        private static GraphicsBuffer s_DroneProceduralArgsUploadBuffer;
         private static GraphicsBuffer s_DroneDefaultColorBuffer;
         private static ComputeShader s_DroneCullingCompute;
         private static ComputeShader s_PhantomDronesCompute;
@@ -6257,7 +6258,14 @@ namespace Hecton8.Construction
                 s_DroneVisibleIndexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Append, HeadlessDroneCapacity, sizeof(int)); // COLD ALLOC: GraphicsBuffer[512] - visible real drone index append buffer for shader indirection/debug - owner: DroneFleetManager
 
             if (s_DroneProceduralArgsBuffer == null)
-                s_DroneProceduralArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, UnsafeUtility.SizeOf<DroneProceduralIndirectArgsDTO>()); // COLD ALLOC: GraphicsBuffer[1] - headless drone procedural indirect draw arguments - owner: DroneFleetManager
+                s_DroneProceduralArgsBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw | GraphicsBuffer.Target.CopyDestination,
+                    1,
+                    UnsafeUtility.SizeOf<DroneProceduralIndirectArgsDTO>()); // COLD ALLOC: GraphicsBuffer[1] - headless drone procedural indirect draw arguments with mapped CPU upload - owner: DroneFleetManager
+            if (s_DroneProceduralArgsUploadBuffer == null)
+                s_DroneProceduralArgsUploadBuffer = GraphicsBufferUploadUtility.CreateRawIndirectUploadStagingBuffer(
+                    1,
+                    UnsafeUtility.SizeOf<DroneProceduralIndirectArgsDTO>()); // COLD ALLOC: GraphicsBuffer[1] - CPU-visible drone procedural args staging, GPU copy source only - owner: DroneFleetManager
 
             EnsureDroneDefaultColorBuffer();
             ResolveDroneCullingKernels();
@@ -6350,6 +6358,12 @@ namespace Hecton8.Construction
             {
                 s_DroneProceduralArgsBuffer.Release();
                 s_DroneProceduralArgsBuffer = null;
+            }
+
+            if (s_DroneProceduralArgsUploadBuffer != null)
+            {
+                s_DroneProceduralArgsUploadBuffer.Release();
+                s_DroneProceduralArgsUploadBuffer = null;
             }
 
             if (s_DroneDefaultColorBuffer != null)
@@ -6612,7 +6626,11 @@ namespace Hecton8.Construction
                 else
                     return;
 
-                GraphicsBufferUploadUtility.UploadNativeArraySetData(s_DroneProceduralArgsBuffer, proceduralArgs, 1);
+                GraphicsBufferUploadUtility.UploadNativeArrayAndCopyWholeBuffer(
+                    s_DroneProceduralArgsUploadBuffer,
+                    s_DroneProceduralArgsBuffer,
+                    proceduralArgs,
+                    1);
                 if (TryRenderGpuCulledFleet(matrixBuffer))
                 {
                     s_DroneMatrixUploadBufferIndex ^= 1;

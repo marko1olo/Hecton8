@@ -1,186 +1,373 @@
-{
-  "agent": "1401",
-  "generatedAt": "2026-05-28T05:51:49.623014+04:00",
-  "evidenceClass": "STATIC_SOURCE",
-  "status": "PENDING_VERIFICATION",
-  "taskCount": 20,
-  "sourceCounts": {
-    "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Animations Management\\Possessor\\Possessor.cs": {
-      "FindGameObjectsWithTag": 0,
-      "GameObjectFind": 0,
-      "tagEquality": 0,
-      "stringFormat": 0,
-      "toString": 0
-    },
-    "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Pathfinding\\CandiceTile.cs": {
-      "FindGameObjectsWithTag": 0,
-      "GameObjectFind": 0,
-      "tagEquality": 0,
-      "stringFormat": 0,
-      "toString": 0
-    },
-    "Assets\\GPUInstancer\\Scripts\\GPUInstancerFloatingOriginHandler.cs": {
-      "FindGameObjectsWithTag": 0,
-      "GameObjectFind": 0,
-      "tagEquality": 0,
-      "stringFormat": 0,
-      "toString": 0
-    },
-    "Assets\\GPUInstancer\\Scripts\\GPUInstancerPrefabManager.cs": {
-      "FindGameObjectsWithTag": 0,
-      "GameObjectFind": 0,
-      "tagEquality": 0,
-      "stringFormat": 0,
-      "toString": 0
-    },
-    "Assets\\GPUInstancer\\Scripts\\GPUInstancerModificationCollider.cs": {
-      "FindGameObjectsWithTag": 0,
-      "GameObjectFind": 0,
-      "tagEquality": 0,
-      "stringFormat": 0,
-      "toString": 0
-    },
-    "Assets\\GPUInstancer\\Scripts\\GPUInstancerGUIInfo.cs": {
-      "FindGameObjectsWithTag": 0,
-      "GameObjectFind": 0,
-      "tagEquality": 0,
-      "stringFormat": 0,
-      "toString": 0
-    },
-    "Assets\\Technie\\PhysicsCreator\\Scripts\\Rigid\\RigidColliderCreator.cs": {
-      "FindGameObjectsWithTag": 0,
-      "GameObjectFind": 0,
-      "tagEquality": 0,
-      "stringFormat": 0,
-      "toString": 0
-    },
-    "Assets\\AmplifyImpostors\\Plugins\\Scripts\\VersionInfo.cs": {
-      "FindGameObjectsWithTag": 0,
-      "GameObjectFind": 0,
-      "tagEquality": 0,
-      "stringFormat": 0,
-      "toString": 0
-    }
-  },
-  "hotPathDeltaScan": "Docs/AgentLogs/VendorHotPathDeltaScan_1401.json",
-  "boundaryAudit": "Docs/AgentLogs/VendorBoundaryAudit_1401.json",
-  "asmdefLeakage": "Docs/AgentLogs/AsmdefLeakage_1401.json",
-  "latestCompileGate": "Docs/AgentLogs/Build_1401_Attempt_20260528_054921_BLOCKED_BY_CONTENTION.json",
-  "latestCompileGateData": {
-    "agent": "1401",
-    "timestamp": "20260528_054921",
-    "dryRun": false,
-    "maxCpuPercent": 50,
-    "cpuLoadPercent": 100,
-    "compilerProcesses": [
-      {
-        "name": "dotnet",
-        "id": 66408,
-        "cpu": 57.375
-      }
-    ],
-    "blockedByContention": true,
-    "projects": [
-      {
-        "name": "CandiceAIforGames.Runtime",
-        "path": null,
-        "exists": false
-      },
-      {
-        "name": "CandiceAIforGames.Editor",
-        "path": null,
-        "exists": false
-      },
-      {
-        "name": "AmplifyImpostors.Runtime",
-        "path": "C:\\hades\\Hecton8\\AmplifyImpostors.Runtime.csproj",
-        "exists": true
-      },
-      {
-        "name": "AmplifyImpostors.Editor",
-        "path": "C:\\hades\\Hecton8\\AmplifyImpostors.Editor.csproj",
-        "exists": true
-      },
-      {
-        "name": "TechniePhysicsCreator",
-        "path": "C:\\hades\\Hecton8\\TechniePhysicsCreator.csproj",
-        "exists": true
-      },
-      {
-        "name": "Technie.PhysicsCreator.Updater",
-        "path": "C:\\hades\\Hecton8\\Technie.PhysicsCreator.Updater.csproj",
-        "exists": true
-      },
-      {
-        "name": "DarkTonic.MasterAudio.Runtime",
-        "path": null,
-        "exists": false
-      },
-      {
-        "name": "DarkTonic.MasterAudio.Examples",
-        "path": null,
-        "exists": false
-      },
-      {
-        "name": "DarkTonic.MasterAudio.Editor",
-        "path": null,
-        "exists": false
-      },
-      {
-        "name": "RelationsInspector.Editor",
-        "path": null,
-        "exists": false
-      }
-    ],
-    "attempts": []
-  },
-  "dataSovereignty": {
-    "globalDataVaultFieldsMigrated": false,
-    "bufferIdConstantsSecured": [],
-    "tryAcquireWriteLockSites": [],
-    "finallyReleaseSites": [],
-    "reason": "1401 changed vendor managed compatibility and import boundaries only; no GlobalDataVault buffers, native containers, unmanaged DTOs, or SignalBus payloads were introduced."
-  },
-  "structLayoutAudit": {
-    "modifiedRuntimeDtos": [],
-    "unmanagedStructOffsetsRequired": false,
-    "reason": "No unmanaged runtime struct, save DTO, SignalBus payload, telemetry entry, NativeArray element, or GPU upload record was created or modified."
-  },
-  "modifiedFileHashes": {
-    "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Save System\\Overrides\\CandiceSQLiteProvider.cs": "f60bd7d9097f74c6028bf5d1b4313e63e4f2518db7ae5b399aa192dc39f288d4",
-    "Assets\\Candice AI for Games\\Scripts\\TriggerNextScene.cs": "e16f37ca835740bd537c46b4305d1a145682e7d076d14fa1f21c68441c415aa3",
-    "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Animations Management\\Possessor\\Possessor.cs": "fe14dadb56b08c5d4a015eb6ba2b7f74e00cf657bbf05cc0623cb7e07967f7fd",
-    "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Pathfinding\\CandiceTile.cs": "52716435fcb67a7d44340933a82c674d6612d5e714cc6b606333f6acfc21de3c",
-    "Assets\\Technie\\PhysicsCreator\\Scripts\\Rigid\\RigidColliderCreator.cs": "111c1ff7f3546d9d8da45c553a924b42bc3534d64f58a9b168a98600cc561923",
-    "Assets\\Technie\\PhysicsCreator\\Plugins\\VHACD\\libvhacd.dll.meta": "fafd72b094951b450ff0505e2d4248fca6f5e809f76057bcc71e259709a73d6d",
-    "Assets\\AmplifyImpostors\\Plugins\\Scripts\\HelperExtensions.cs": "e9ffe989aa30bd2341785cfedd655ed3f2d67fb2fcc579cf427e4da28ca8bb3c",
-    "Assets\\AmplifyImpostors\\Plugins\\Scripts\\Preferences.cs": "dcbab75851a91fccfdc6270597274c454e1a3c5e3aa5b2c1e669fcaff63d2d8b",
-    "Assets\\AmplifyImpostors\\Plugins\\Scripts\\VersionInfo.cs": "8b55809626e9d87363f9b303e032565b0537da09e87f9339b945c75a6720cf73",
-    "Assets\\GPUInstancer\\Scripts\\GPUInstancerDetailManager.cs": "88ae502d5b946e2fbb77eac967dc5116f47dcd06226f361eeacff37e0e0a0c1a",
-    "Assets\\GPUInstancer\\Scripts\\GPUInstancerFloatingOriginHandler.cs": "f6bba6f35806311db64a0eab7aca68adce4ba12596ef0d846ff3fb55aa25ae7a",
-    "Assets\\GPUInstancer\\Scripts\\GPUInstancerPrefabManager.cs": "9277ca90047f433058ef0ac652c65ac93555ca62f053aaf71ef890d0bb5fe04b",
-    "Assets\\GPUInstancer\\Scripts\\GPUInstancerPrefab.cs": "9f76c6a38ff4db64334a7aef93d5036cf2cc1d5db064d07b7ade678d9f277c87",
-    "Assets\\GPUInstancer\\Scripts\\GPUInstancerModificationCollider.cs": "c105083b85f3a1fbd4a30d0eeb383e793e0da4cba64752e1e33b6c3e677216d5",
-    "Assets\\GPUInstancer\\Scripts\\GPUInstancerGUIInfo.cs": "7c8eeaa5fd8256fb3f2111b8f797722bfcce578a97dd0372d9dd96db1b3bc390",
-    "Assets\\Candice AI for Games\\Scripts\\CandiceAIforGames.Runtime.asmdef": "c1d72eed1fb488f01275b7b6efd8f3c142d718f13a387a5ed4deead0c4655218",
-    "Assets\\Candice AI for Games\\Scripts\\Editor\\CandiceAIforGames.Editor.asmdef": "c09789d77e0895ccb52f7c5f7a8bf891b9a74d9bbee45686dcecb161842c62df",
-    "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostors.Runtime.asmdef": "a581cbf08fc7848ef9519d9f86458ea320780b6c0e50dfab6640412e37a55ad2",
-    "Assets\\AmplifyImpostors\\Plugins\\Editor\\AmplifyImpostors.Editor.asmdef": "87d63fce5586ab9c684069a97ad3d1aebf75c5df4111f3142007083c6ebbc8f0",
-    "Assets\\Technie\\PhysicsCreator\\Scripts\\TechniePhysicsCreator.asmdef": "259cfed441de8c00dd8bc2061718f78aee015bb25e690e3a0ab01a2f38a6dbcb",
-    "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\DarkTonic.MasterAudio.Runtime.asmdef": "e3115de00763e2d4360a84ad526e560c1525414e375ba350a30e0f4d43b455e7",
-    "Assets\\Plugins\\DarkTonic\\MasterAudio\\ExampleScenes\\Scripts\\DarkTonic.MasterAudio.Examples.asmdef": "fa754d488ad0ca7df051ae2664c65284abc96899be8cfea0b2ae37dc5292c856",
-    "Assets\\Plugins\\Editor\\DarkTonic\\MasterAudio\\DarkTonic.MasterAudio.Editor.asmdef": "a043eb72554540044af63be1f31d7e00ec904986f7e98cfbb99e3ccbe502a804",
-    "Assets\\Plugins\\Editor\\RelationsInspector\\RelationsInspector.Editor.asmdef": "1d181594895b7e15bfe1c3926197f8078acc3aa8ece3e954c955918b541cf2c5",
-    "Assets\\VendorCompatibilityTests\\Editor\\VendorBridgeEditModeTests.cs": "2008f7b077e1a1f585b718e942425ad9af7da042cea76d7c079e85fdd665442d",
-    "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Events\\EventSounds.cs": "3f5ad825eae13217f513cfeb87661b6d8d784b0b69ed40df5ed8850ac50afed3",
-    "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Settings\\SoundGroupVariation.cs": "86f32ab664272abac6c200b099988b1c8b55a8dc042b4501d688306763ec1c61",
-    "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Singleton\\SingletonScriptable.cs": "7f425a1bdbb3ec21f78a2edf9adee291d65051a5282dd20d8d7b745937713a68",
-    "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Settings\\MasterAudioSettings.cs": "ed35993cbbf727824542753598460db78070a5d41fbe9ae41faf2fdd9352dc79",
-    "Tools\\Run_Guarded_Vendor_Compile_1401.ps1": "9d85d54fef435971ab08ee257ba3f20b7a95c945cc86a01f9666ab9256487164",
-    "Tools\\Assert_Asmdef_Leakage_1401.py": "13e7d576d5180d27e59ea2871c4adeb01f5c2b7283d63f637ff5dd70925f5572",
-    "Docs\\AgentLogs\\CandicePluginImporterAudit_1401.json": "5dfcdb1280776620bbdcded99842deb4bfdaf7dbda999cc9322db2da45ee8c8b",
-    "Docs\\AgentLogs\\VendorBoundaryAudit_1401.json": "29df322fc3067e5572a3ddc03ad6dfff6abcb004a92ec8acd1cd9d1f30900c44",
-    "Docs\\AgentLogs\\VendorHotPathDeltaScan_1401.json": "25f0f7b2d9279c544cfac2cf6d693a657b0a3430a38f8605fbc10c485cbea4ee",
-    "Docs\\AgentLogs\\AsmdefLeakage_1401.json": "6c316efc0d67cc71610e62c2bdc368107da33903aa6508e07d993199551ed99f"
-  }
+﻿{
+    "agent":  "1401",
+    "generatedAt":  "2026-05-28T12:35:52+04:00",
+    "evidenceClass":  "STATIC_SOURCE_PLUS_GUARDED_CLI_COMPILE_ATTEMPT",
+    "status":  "PENDING_VERIFICATION",
+    "taskCount":  20,
+    "lineEvidence":  {
+                         "gpuiTextureWidthLine":  246,
+                         "gpuiLodTextureGuardLine":  250,
+                         "gpuiMatrixTextureGuardLine":  275,
+                         "gpuiShadowBufferGuardLine":  292,
+                         "gpuiShadowTextureGuardLine":  299,
+                         "technieLastModifiedInitializerLine":  128
+                     },
+    "warningDebtPatchedAfterCompileFinding":  {
+                                                  "compileArtifactBeforePatch":  "Docs/AgentLogs/Build_1401_Attempt_20260528_061044_SUMMARY.json",
+                                                  "warningsBeforePatch":  [
+                                                                              "FaceAlignmentBoxFitter.cs CS0169 TriangleBucket.averagedCenter",
+                                                                              "RigidColliderCreator.cs CS0169 RigidColliderCreator.debugMesh",
+                                                                              "SkinnedColliderEditorData.cs CS0649 lastModifiedFrame"
+                                                                          ],
+                                                  "staticAfterPatch":  {
+                                                                           "averagedCenterFieldCount":  0,
+                                                                           "debugMeshFieldDeclarationCount":  0,
+                                                                           "lastModifiedFrameInitialized":  true
+                                                                       },
+                                                  "compileAfterPatch":  "Docs/AgentLogs/Build_1401_Attempt_20260528_123346_BLOCKED_BY_CONTENTION.json",
+                                                  "compileAfterPatchStatus":  "BLOCKED_BY_FIXED_GATE"
+                                              },
+    "apiDriftResiduals":  {
+                              "candiceMonoDataSqlite":  "default branch quarantined by CANDICE_LEGACY_MONO_SQLITE at lines 1-3; legacy branch not active unless explicitly defined",
+                              "technieMeshColliderInflation":  "default branch uses contactOffset; removed inflateMesh/skinWidth calls remain only behind TECHNIE_LEGACY_MESHCOLLIDER_INFLATION",
+                              "amplifyTextureFormat":  "remaining TextureFormat hits are API-required texture encode/import paths; no current CS0618 proof found"
+                          },
+    "hotPathDeltaScan":  "Docs/AgentLogs/VendorHotPathDeltaScan_1401.json",
+    "asmdefLeakage":  "Docs/AgentLogs/AsmdefLeakage_1401.json",
+    "latestCompileGate":  "Docs/AgentLogs/Build_1401_Attempt_20260528_123346_BLOCKED_BY_CONTENTION.json",
+    "latestCompileGateData":  {
+                                  "agent":  "1401",
+                                  "timestamp":  "20260528_123346",
+                                  "dryRun":  false,
+                                  "maxCpuPercent":  50,
+                                  "cpuLoadPercent":  -1,
+                                  "compilerProcesses":  [
+                                                            {
+                                                                "name":  "csc",
+                                                                "id":  33212,
+                                                                "cpu":  19.53125
+                                                            },
+                                                            {
+                                                                "name":  "dotnet",
+                                                                "id":  26840,
+                                                                "cpu":  112.15625
+                                                            }
+                                                        ],
+                                  "compilerProcessCount":  2,
+                                  "blockedByContention":  true,
+                                  "blockReasons":  [
+                                                       "CPU_SAMPLE_UNAVAILABLE",
+                                                       "ACTIVE_COMPILER_PROCESS"
+                                                   ],
+                                  "projects":  [
+                                                   {
+                                                       "name":  "CandiceAIforGames.Runtime",
+                                                       "path":  null,
+                                                       "exists":  false
+                                                   },
+                                                   {
+                                                       "name":  "CandiceAIforGames.Editor",
+                                                       "path":  null,
+                                                       "exists":  false
+                                                   },
+                                                   {
+                                                       "name":  "AmplifyImpostors.Runtime",
+                                                       "path":  "C:\\hades\\Hecton8\\AmplifyImpostors.Runtime.csproj",
+                                                       "exists":  true
+                                                   },
+                                                   {
+                                                       "name":  "AmplifyImpostors.Editor",
+                                                       "path":  "C:\\hades\\Hecton8\\AmplifyImpostors.Editor.csproj",
+                                                       "exists":  true
+                                                   },
+                                                   {
+                                                       "name":  "TechniePhysicsCreator",
+                                                       "path":  "C:\\hades\\Hecton8\\TechniePhysicsCreator.csproj",
+                                                       "exists":  true
+                                                   },
+                                                   {
+                                                       "name":  "Technie.PhysicsCreator.Updater",
+                                                       "path":  "C:\\hades\\Hecton8\\Technie.PhysicsCreator.Updater.csproj",
+                                                       "exists":  true
+                                                   },
+                                                   {
+                                                       "name":  "DarkTonic.MasterAudio.Runtime",
+                                                       "path":  null,
+                                                       "exists":  false
+                                                   },
+                                                   {
+                                                       "name":  "DarkTonic.MasterAudio.Examples",
+                                                       "path":  null,
+                                                       "exists":  false
+                                                   },
+                                                   {
+                                                       "name":  "DarkTonic.MasterAudio.Editor",
+                                                       "path":  null,
+                                                       "exists":  false
+                                                   },
+                                                   {
+                                                       "name":  "RelationsInspector.Editor",
+                                                       "path":  null,
+                                                       "exists":  false
+                                                   }
+                                               ],
+                                  "attempts":  [
+
+                                               ]
+                              },
+    "previousCompileAttemptData":  {
+                                       "agent":  "1401",
+                                       "timestamp":  "20260528_061044",
+                                       "dryRun":  false,
+                                       "maxCpuPercent":  50,
+                                       "cpuLoadPercent":  42,
+                                       "compilerProcesses":  [
+                                                                 {
+                                                                     "name":  "dotnet",
+                                                                     "id":  17912,
+                                                                     "cpu":  54.234375
+                                                                 }
+                                                             ],
+                                       "blockedByContention":  false,
+                                       "projects":  [
+                                                        {
+                                                            "name":  "CandiceAIforGames.Runtime",
+                                                            "path":  null,
+                                                            "exists":  false
+                                                        },
+                                                        {
+                                                            "name":  "CandiceAIforGames.Editor",
+                                                            "path":  null,
+                                                            "exists":  false
+                                                        },
+                                                        {
+                                                            "name":  "AmplifyImpostors.Runtime",
+                                                            "path":  "C:\\hades\\Hecton8\\AmplifyImpostors.Runtime.csproj",
+                                                            "exists":  true
+                                                        },
+                                                        {
+                                                            "name":  "AmplifyImpostors.Editor",
+                                                            "path":  "C:\\hades\\Hecton8\\AmplifyImpostors.Editor.csproj",
+                                                            "exists":  true
+                                                        },
+                                                        {
+                                                            "name":  "TechniePhysicsCreator",
+                                                            "path":  "C:\\hades\\Hecton8\\TechniePhysicsCreator.csproj",
+                                                            "exists":  true
+                                                        },
+                                                        {
+                                                            "name":  "Technie.PhysicsCreator.Updater",
+                                                            "path":  "C:\\hades\\Hecton8\\Technie.PhysicsCreator.Updater.csproj",
+                                                            "exists":  true
+                                                        },
+                                                        {
+                                                            "name":  "DarkTonic.MasterAudio.Runtime",
+                                                            "path":  null,
+                                                            "exists":  false
+                                                        },
+                                                        {
+                                                            "name":  "DarkTonic.MasterAudio.Examples",
+                                                            "path":  null,
+                                                            "exists":  false
+                                                        },
+                                                        {
+                                                            "name":  "DarkTonic.MasterAudio.Editor",
+                                                            "path":  null,
+                                                            "exists":  false
+                                                        },
+                                                        {
+                                                            "name":  "RelationsInspector.Editor",
+                                                            "path":  null,
+                                                            "exists":  false
+                                                        }
+                                                    ],
+                                       "attempts":  [
+                                                        {
+                                                            "name":  "CandiceAIforGames.Runtime",
+                                                            "path":  null,
+                                                            "skipped":  true,
+                                                            "reason":  "PROJECT_FILE_MISSING"
+                                                        },
+                                                        {
+                                                            "name":  "CandiceAIforGames.Editor",
+                                                            "path":  null,
+                                                            "skipped":  true,
+                                                            "reason":  "PROJECT_FILE_MISSING"
+                                                        },
+                                                        {
+                                                            "name":  "AmplifyImpostors.Runtime",
+                                                            "path":  "C:\\hades\\Hecton8\\AmplifyImpostors.Runtime.csproj",
+                                                            "skipped":  false,
+                                                            "exitCode":  0,
+                                                            "logPath":  "Docs\\AgentLogs\\Build_1401_Attempt_20260528_061044_AmplifyImpostors.Runtime.log",
+                                                            "vendorDiagnosticCount":  1,
+                                                            "vendorDiagnostics":  [
+                                                                                      {
+                                                                                          "line":  1,
+                                                                                          "text":  "AmplifyImpostors.Runtime -\u003e C:\\hades\\Hecton8\\Temp\\CodexBuild\\AmplifyImpostors.Runtime\\AmplifyImpostors.Runtime.dll"
+                                                                                      }
+                                                                                  ]
+                                                        },
+                                                        {
+                                                            "name":  "AmplifyImpostors.Editor",
+                                                            "path":  "C:\\hades\\Hecton8\\AmplifyImpostors.Editor.csproj",
+                                                            "skipped":  false,
+                                                            "exitCode":  0,
+                                                            "logPath":  "Docs\\AgentLogs\\Build_1401_Attempt_20260528_061044_AmplifyImpostors.Editor.log",
+                                                            "vendorDiagnosticCount":  2,
+                                                            "vendorDiagnostics":  [
+                                                                                      {
+                                                                                          "line":  1,
+                                                                                          "text":  "AmplifyImpostors.Runtime -\u003e C:\\hades\\Hecton8\\Temp\\CodexBuild\\AmplifyImpostors.Runtime\\AmplifyImpostors.Runtime.dll"
+                                                                                      },
+                                                                                      {
+                                                                                          "line":  2,
+                                                                                          "text":  "AmplifyImpostors.Editor -\u003e C:\\hades\\Hecton8\\Temp\\CodexBuild\\AmplifyImpostors.Editor\\AmplifyImpostors.Editor.dll"
+                                                                                      }
+                                                                                  ]
+                                                        },
+                                                        {
+                                                            "name":  "TechniePhysicsCreator",
+                                                            "path":  "C:\\hades\\Hecton8\\TechniePhysicsCreator.csproj",
+                                                            "skipped":  false,
+                                                            "exitCode":  0,
+                                                            "logPath":  "Docs\\AgentLogs\\Build_1401_Attempt_20260528_061044_TechniePhysicsCreator.log",
+                                                            "vendorDiagnosticCount":  7,
+                                                            "vendorDiagnostics":  [
+                                                                                      {
+                                                                                          "line":  1,
+                                                                                          "text":  "C:\\hades\\Hecton8\\Assets\\Technie\\PhysicsCreator\\Scripts\\Fitters\\FaceAlignmentBoxFitter.cs(40,19): warning CS0169: The field \u0027TriangleBucket.averagedCenter\u0027 is never used [C:\\hades\\Hecton8\\TechniePhysicsCreator.csproj]"
+                                                                                      },
+                                                                                      {
+                                                                                          "line":  2,
+                                                                                          "text":  "C:\\hades\\Hecton8\\Assets\\Technie\\PhysicsCreator\\Scripts\\Rigid\\RigidColliderCreator.cs(58,16): warning CS0169: The field \u0027RigidColliderCreator.debugMesh\u0027 is never used [C:\\hades\\Hecton8\\TechniePhysicsCreator.csproj]"
+                                                                                      },
+                                                                                      {
+                                                                                          "line":  3,
+                                                                                          "text":  "C:\\hades\\Hecton8\\Assets\\Technie\\PhysicsCreator\\Scripts\\Skinned\\SkinnedColliderEditorData.cs(128,15): warning CS0649: Field \u0027SkinnedColliderEditorData.lastModifiedFrame\u0027 is never assigned to, and will always have its default value 0 [C:\\hades\\Hecton8\\TechniePhysicsCreator.csproj]"
+                                                                                      },
+                                                                                      {
+                                                                                          "line":  4,
+                                                                                          "text":  "TechniePhysicsCreator -\u003e C:\\hades\\Hecton8\\Temp\\CodexBuild\\TechniePhysicsCreator\\TechniePhysicsCreator.dll"
+                                                                                      },
+                                                                                      {
+                                                                                          "line":  8,
+                                                                                          "text":  "C:\\hades\\Hecton8\\Assets\\Technie\\PhysicsCreator\\Scripts\\Fitters\\FaceAlignmentBoxFitter.cs(40,19): warning CS0169: The field \u0027TriangleBucket.averagedCenter\u0027 is never used [C:\\hades\\Hecton8\\TechniePhysicsCreator.csproj]"
+                                                                                      },
+                                                                                      {
+                                                                                          "line":  9,
+                                                                                          "text":  "C:\\hades\\Hecton8\\Assets\\Technie\\PhysicsCreator\\Scripts\\Rigid\\RigidColliderCreator.cs(58,16): warning CS0169: The field \u0027RigidColliderCreator.debugMesh\u0027 is never used [C:\\hades\\Hecton8\\TechniePhysicsCreator.csproj]"
+                                                                                      },
+                                                                                      {
+                                                                                          "line":  10,
+                                                                                          "text":  "C:\\hades\\Hecton8\\Assets\\Technie\\PhysicsCreator\\Scripts\\Skinned\\SkinnedColliderEditorData.cs(128,15): warning CS0649: Field \u0027SkinnedColliderEditorData.lastModifiedFrame\u0027 is never assigned to, and will always have its default value 0 [C:\\hades\\Hecton8\\TechniePhysicsCreator.csproj]"
+                                                                                      }
+                                                                                  ]
+                                                        },
+                                                        {
+                                                            "name":  "Technie.PhysicsCreator.Updater",
+                                                            "path":  "C:\\hades\\Hecton8\\Technie.PhysicsCreator.Updater.csproj",
+                                                            "skipped":  false,
+                                                            "exitCode":  0,
+                                                            "logPath":  "Docs\\AgentLogs\\Build_1401_Attempt_20260528_061044_Technie.PhysicsCreator.Updater.log",
+                                                            "vendorDiagnosticCount":  1,
+                                                            "vendorDiagnostics":  [
+                                                                                      {
+                                                                                          "line":  1,
+                                                                                          "text":  "Technie.PhysicsCreator.Updater -\u003e C:\\hades\\Hecton8\\Temp\\CodexBuild\\Technie.PhysicsCreator.Updater\\Technie.PhysicsCreator.Updater.dll"
+                                                                                      }
+                                                                                  ]
+                                                        },
+                                                        {
+                                                            "name":  "DarkTonic.MasterAudio.Runtime",
+                                                            "path":  null,
+                                                            "skipped":  true,
+                                                            "reason":  "PROJECT_FILE_MISSING"
+                                                        },
+                                                        {
+                                                            "name":  "DarkTonic.MasterAudio.Examples",
+                                                            "path":  null,
+                                                            "skipped":  true,
+                                                            "reason":  "PROJECT_FILE_MISSING"
+                                                        },
+                                                        {
+                                                            "name":  "DarkTonic.MasterAudio.Editor",
+                                                            "path":  null,
+                                                            "skipped":  true,
+                                                            "reason":  "PROJECT_FILE_MISSING"
+                                                        },
+                                                        {
+                                                            "name":  "RelationsInspector.Editor",
+                                                            "path":  null,
+                                                            "skipped":  true,
+                                                            "reason":  "PROJECT_FILE_MISSING"
+                                                        }
+                                                    ]
+                                   },
+    "dataSovereignty":  {
+                            "globalDataVaultFieldsMigrated":  false,
+                            "bufferIdConstantsSecured":  [
+
+                                                         ],
+                            "tryAcquireWriteLockSites":  [
+
+                                                         ],
+                            "finallyReleaseSites":  [
+
+                                                    ],
+                            "reason":  "1401 changed vendor managed compatibility, plugin import, asmdef, and GPUI resource guard code only; no GlobalDataVault buffers, locks, native DTOs, or SignalBus payloads were introduced."
+                        },
+    "structLayoutAudit":  {
+                              "modifiedRuntimeDtos":  [
+
+                                                      ],
+                              "unmanagedStructOffsetsRequired":  false,
+                              "reason":  "No unmanaged runtime struct, save DTO, SignalBus payload, telemetry entry, NativeArray element, or GPU upload record was created or modified by 1401 in this recheck."
+                          },
+    "modifiedFileHashes":  {
+                               "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Save System\\Overrides\\CandiceSQLiteProvider.cs":  "f60bd7d9097f74c6028bf5d1b4313e63e4f2518db7ae5b399aa192dc39f288d4",
+                               "Assets\\Candice AI for Games\\Scripts\\TriggerNextScene.cs":  "e16f37ca835740bd537c46b4305d1a145682e7d076d14fa1f21c68441c415aa3",
+                               "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Animations Management\\Possessor\\Possessor.cs":  "fe14dadb56b08c5d4a015eb6ba2b7f74e00cf657bbf05cc0623cb7e07967f7fd",
+                               "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Pathfinding\\CandiceTile.cs":  "52716435fcb67a7d44340933a82c674d6612d5e714cc6b606333f6acfc21de3c",
+                               "Assets\\GPUInstancer\\Scripts\\Core\\Static\\GPUInstancerUtility.cs":  "081443e1ac7ed2135f0dd20cdfba57cac6ee94853105dc3afbacd3507455200b",
+                               "Assets\\GPUInstancer\\Resources\\Compute\\CSInstancedBufferToTexture.compute":  "fb720c995e8fc6fd3439eaf8e0f5e096792ca173f67cbad6ebc3cbe64d66a0a7",
+                               "Assets\\GPUInstancer\\Scripts\\Core\\DataModel\\GPUInstancerConstants.cs":  "d6b47c627b1968f0a0535c320756325ee2c97d349a706cd377ca6907b5dc6d86",
+                               "Assets\\GPUInstancer\\Scripts\\GPUInstancerPrefabManager.cs":  "9277ca90047f433058ef0ac652c65ac93555ca62f053aaf71ef890d0bb5fe04b",
+                               "Assets\\GPUInstancer\\Scripts\\GPUInstancerFloatingOriginHandler.cs":  "f6bba6f35806311db64a0eab7aca68adce4ba12596ef0d846ff3fb55aa25ae7a",
+                               "Assets\\GPUInstancer\\Scripts\\GPUInstancerPrefab.cs":  "9f76c6a38ff4db64334a7aef93d5036cf2cc1d5db064d07b7ade678d9f277c87",
+                               "Assets\\GPUInstancer\\Scripts\\GPUInstancerModificationCollider.cs":  "c105083b85f3a1fbd4a30d0eeb383e793e0da4cba64752e1e33b6c3e677216d5",
+                               "Assets\\GPUInstancer\\Scripts\\GPUInstancerGUIInfo.cs":  "7c8eeaa5fd8256fb3f2111b8f797722bfcce578a97dd0372d9dd96db1b3bc390",
+                               "Assets\\Technie\\PhysicsCreator\\Scripts\\Fitters\\FaceAlignmentBoxFitter.cs":  "a4c6e0063aec1ac79b70161a7d9d729919a7849d4dc8ed8628df2bb2855caf25",
+                               "Assets\\Technie\\PhysicsCreator\\Scripts\\Rigid\\RigidColliderCreator.cs":  "aebedc3a957c607c27bf98bd5cd547cb0f50c5e8c0dc8ec86fe73e1b4e13ae57",
+                               "Assets\\Technie\\PhysicsCreator\\Scripts\\Skinned\\SkinnedColliderEditorData.cs":  "f67f8aade02b8b970285c1169154f101bd2d16e492aa9d0a3181db7c43a63703",
+                               "Assets\\Technie\\PhysicsCreator\\Plugins\\VHACD\\libvhacd.dll.meta":  "fafd72b094951b450ff0505e2d4248fca6f5e809f76057bcc71e259709a73d6d",
+                               "Assets\\AmplifyImpostors\\Plugins\\Scripts\\HelperExtensions.cs":  "e9ffe989aa30bd2341785cfedd655ed3f2d67fb2fcc579cf427e4da28ca8bb3c",
+                               "Assets\\AmplifyImpostors\\Plugins\\Scripts\\Preferences.cs":  "dcbab75851a91fccfdc6270597274c454e1a3c5e3aa5b2c1e669fcaff63d2d8b",
+                               "Assets\\AmplifyImpostors\\Plugins\\Scripts\\VersionInfo.cs":  "8b55809626e9d87363f9b303e032565b0537da09e87f9339b945c75a6720cf73",
+                               "Assets\\Candice AI for Games\\Scripts\\CandiceAIforGames.Runtime.asmdef":  "c1d72eed1fb488f01275b7b6efd8f3c142d718f13a387a5ed4deead0c4655218",
+                               "Assets\\Candice AI for Games\\Scripts\\Editor\\CandiceAIforGames.Editor.asmdef":  "c09789d77e0895ccb52f7c5f7a8bf891b9a74d9bbee45686dcecb161842c62df",
+                               "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostors.Runtime.asmdef":  "a581cbf08fc7848ef9519d9f86458ea320780b6c0e50dfab6640412e37a55ad2",
+                               "Assets\\AmplifyImpostors\\Plugins\\Editor\\AmplifyImpostors.Editor.asmdef":  "87d63fce5586ab9c684069a97ad3d1aebf75c5df4111f3142007083c6ebbc8f0",
+                               "Assets\\Technie\\PhysicsCreator\\Scripts\\TechniePhysicsCreator.asmdef":  "259cfed441de8c00dd8bc2061718f78aee015bb25e690e3a0ab01a2f38a6dbcb",
+                               "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\DarkTonic.MasterAudio.Runtime.asmdef":  "e3115de00763e2d4360a84ad526e560c1525414e375ba350a30e0f4d43b455e7",
+                               "Assets\\Plugins\\DarkTonic\\MasterAudio\\ExampleScenes\\Scripts\\DarkTonic.MasterAudio.Examples.asmdef":  "fa754d488ad0ca7df051ae2664c65284abc96899be8cfea0b2ae37dc5292c856",
+                               "Assets\\Plugins\\Editor\\DarkTonic\\MasterAudio\\DarkTonic.MasterAudio.Editor.asmdef":  "a043eb72554540044af63be1f31d7e00ec904986f7e98cfbb99e3ccbe502a804",
+                               "Assets\\Plugins\\Editor\\RelationsInspector\\RelationsInspector.Editor.asmdef":  "1d181594895b7e15bfe1c3926197f8078acc3aa8ece3e954c955918b541cf2c5",
+                               "Assets\\VendorCompatibilityTests\\Editor\\VendorBridgeEditModeTests.cs":  "2008f7b077e1a1f585b718e942425ad9af7da042cea76d7c079e85fdd665442d",
+                               "Tools\\Run_Guarded_Vendor_Compile_1401.ps1":  "c871a902580140856471ab0b71120a2543b752928a44b7edcc5cfca244a8b307",
+                               "Tools\\Assert_Asmdef_Leakage_1401.py":  "13e7d576d5180d27e59ea2871c4adeb01f5c2b7283d63f637ff5dd70925f5572",
+                               "Docs\\AgentLogs\\VendorHotPathDeltaScan_1401.json":  "2ef65fc7236c9f50258069fa8305e08783c3ad9d49a5c92d2bd3bdc2d9a30f67",
+                               "Docs\\AgentLogs\\AsmdefLeakage_1401.json":  "6c316efc0d67cc71610e62c2bdc368107da33903aa6508e07d993199551ed99f"
+                           },
+    "guardedCompileWrapperAudit":  {
+                                       "file":  "Tools/Run_Guarded_Vendor_Compile_1401.ps1",
+                                       "arrayWrapCompilerProcessesLine":  72,
+                                       "cpuBlockedLine":  73,
+                                       "compilerBlockedLine":  74,
+                                       "compilerProcessCountReportLine":  105,
+                                       "blockReasonsReportLine":  107,
+                                       "parserStatus":  "POWERSHELL_PARSE_OK",
+                                       "latestGate":  "Docs/AgentLogs/Build_1401_Attempt_20260528_123346_BLOCKED_BY_CONTENTION.json",
+                                       "latestGateResult":  "blockedByContention=true; compilerProcessCount=2; attempts=[]"
+                                   }
 }

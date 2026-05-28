@@ -1,0 +1,156 @@
+﻿{
+    "agent_id":  "1423",
+    "role":  "ZERO_GC_SUBTITLES_AND_BABEL_LOCALIZATION_COMPILER",
+    "domain":  "ECHELON 8 PRESENTATION \u0026 UX / Zero-GC Subtitles (Babel), VWS",
+    "generated_local":  "2026-05-28T13:59:38.3060273+04:00",
+    "prompt":  {
+                   "source":  "Docs/Tasks/CURRENT_BATCH.md::\u003cAGENT_PROMPT id=\"1423\"\u003e",
+                   "task_count":  20,
+                   "chars":  20627,
+                   "sha256":  "9C307765413C5548CA5CD5D2CEE58C7E415CC93819BA21AA3C264488E260C8A6"
+               },
+    "source_hashes":  [
+                          {
+                              "path":  "Assets/_Project/Scripts/LocRegistry.cs",
+                              "sha256":  "EA6D91974BEBD1BEE214EF1ED1E69978D4ED929083D61AB0E7B811BC9A052104"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+                              "sha256":  "A56BD6C648B6A0A4C8F2E7FF71F69351FE65B33138D5818B7940BF55DDB2CA29"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/TmpTextNoAlloc.cs",
+                              "sha256":  "294DFCA23D14A8E5B304CEC53CC6376D1CC7190086B37D9FD9071FD999FE63E7"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/LocalizedWorldSign.cs",
+                              "sha256":  "CF7A5CDCF19A007734403F16DDFBD0AC263E4189FAAA6F30A3B5E1FA83476F90"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/BabelRichTextLodPolicy.cs",
+                              "sha256":  "6EB320617B68509CC035E77437DB41A1E9DDF656C5BC4E4F552BF4FE0A5D62DC"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+                              "sha256":  "084243DAC5C5A74C3945FEA0F2F290AE13CDB544B6F228CC7F0653E998E4B71B"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/LabelSwapScheduler.cs",
+                              "sha256":  "F3AA4001B0622461AAE3ECA2141284A43C4018D803F8C56391E4A00D3A5F295A"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/PDADataArchaeologyDecryptLabel.cs",
+                              "sha256":  "2748B2DFD6A460002CB7EC8B2BFE661667EB15BB62FACBD7284F081F98A2EE99"
+                          },
+                          {
+                              "path":  "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs",
+                              "sha256":  "726201C59AFBA6AB0FA0C8A7350DC6B5D76B10617B4D528840CDB87C41B6E0C3"
+                          }
+                      ],
+    "defects_found_and_fixed":  [
+                                    {
+                                        "id":  "CONT5-001",
+                                        "defect":  "TryGetLocalizedSpan still reached IsValidUtf8Slice, whose validation refreshed vault-backed UTF8 bytes through RefreshUtf8BytesFromVault, violating read accessor purity.",
+                                        "fix":  "Added IsValidUtf8SliceNoRefresh and routed TryGetLocalizedSpan through it; decode/write paths retain IsValidUtf8Slice with owner refresh.",
+                                        "proof_lines":  [
+                                                            "Assets/_Project/Scripts/LocRegistry.cs:887",
+                                                            "Assets/_Project/Scripts/LocRegistry.cs:2839-2845"
+                                                        ]
+                                    },
+                                    {
+                                        "id":  "CONT5-002",
+                                        "defect":  "PDADataArchaeologyDecryptLabel.RenderHash performed LocRegistry.GetLength(hash) before TryGetVisualBuffer(hash), causing a double decode/read-style pass for one render.",
+                                        "fix":  "Removed GetLength prepass; one TryGetVisualBuffer call now supplies source and length, including missing-key fallback buffer.",
+                                        "proof_lines":  [
+                                                            "Assets/_Project/Scripts/UI/PDADataArchaeologyDecryptLabel.cs:107-119"
+                                                        ]
+                                    },
+                                    {
+                                        "id":  "CONT5-003",
+                                        "defect":  "No regression test guarded the pure localized span path or PDA double decode removal.",
+                                        "fix":  "Added editor source-regression tests LocalizedSpanReadPath_DoesNotRefreshVaultBackedBytes and PdaDecryptLabel_DoesNotDoubleDecodeLengthBeforeBufferFetch.",
+                                        "proof_lines":  [
+                                                            "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs:108-133"
+                                                        ]
+                                    }
+                                ],
+    "zero_gc_scan":  {
+                         "modified_hot_files":  8,
+                         "string_format":  0,
+                         "to_string_call":  0,
+                         "tmp_text_assignment":  0,
+                         "set_text_call":  0,
+                         "new_string":  0,
+                         "string_builder":  0,
+                         "array_resize":  0,
+                         "foreach":  0,
+                         "linq_using":  0,
+                         "linq_methods":  0
+                     },
+    "broad_non_editor_domain_scan":  {
+                                         "scanned_files":  155,
+                                         "string_format":  0,
+                                         "to_string_call":  0,
+                                         "tmp_text_assignment":  0,
+                                         "set_text_call":  0,
+                                         "new_string":  0,
+                                         "string_builder":  0,
+                                         "array_resize":  0,
+                                         "foreach":  0,
+                                         "linq_using":  0
+                                     },
+    "read_accessor_purity":  {
+                                 "fixed":  "TryGetLocalizedSpan no longer calls RefreshUtf8BytesFromVault transitively.",
+                                 "remaining_residual":  "Legacy compatibility APIs GetRawSpanOrFallback/TryGetRawBuffer/ResolveRaw/GetLength/TryGetLocalizedBuffer still decode into ring buffers by contract. Full rename/migration touches many gameplay/UI call sites and remains cross-domain residual, not silently fixed."
+                             },
+    "datavault":  {
+                      "migrated_buffers":  [
+                                               {
+                                                   "name":  "SubtitleCueStateBufferId",
+                                                   "buffer_id":  15070550
+                                               },
+                                               {
+                                                   "name":  "SubtitleCueTelemetryBufferId",
+                                                   "buffer_id":  15070551
+                                               },
+                                               {
+                                                   "name":  "UIOptimizationTelemetryBufferId",
+                                                   "buffer_id":  15070552
+                                               }
+                                           ],
+                      "try_acquire_write_lock":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:676",
+                      "release_finally":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:681-698 and 517-519",
+                      "struct_layout":  "UIOptimizationTelemetryEntry SizeOf 64 and offsets checked at BabelSubtitleSyncRuntime.cs:858-875"
+                  },
+    "continuous_scalability":  {
+                                   "global_quality_weight_routes":  [
+                                                                        "BabelRichTextLodPolicy.cs:28-31",
+                                                                        "BabelSubtitleSyncRuntime.cs:755-763",
+                                                                        "LocRegistry.cs:2776-2788"
+                                                                    ],
+                                   "binary_quality_switches_in_modified_hot_files":  0,
+                                   "cinematic_cheat":  "Deterministic hash-density rich text retention and bounded text truncation; no physical simulation."
+                               },
+    "build_throttle":  {
+                           "build_launched_this_continuation":  false,
+                           "samples":  [
+                                           {
+                                               "cpu_percent":  65,
+                                               "compiler_or_dotnet_process":  "none",
+                                               "action":  "NO_BUILD_CPU_OVER_50"
+                                           },
+                                           {
+                                               "cpu_percent":  100,
+                                               "compiler_or_dotnet_process":  "dotnet.exe PID 67140",
+                                               "action":  "NO_BUILD_CPU_OVER_50_AND_ACTIVE_DOTNET"
+                                           }
+                                       ],
+                           "previous_known_compile_blocker":  "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs XRPass missing at lines 437/476; out of 1423 domain."
+                       },
+    "runtime_verification":  {
+                                 "unity_runtime_profiler":  "ABSENT",
+                                 "gcmonitor_sample":  "ABSENT",
+                                 "dump_1423_bin_exists":  false,
+                                 "status":  "PENDING_VERIFICATION_STATIC_ONLY_AFTER_CONT5"
+                             }
+}

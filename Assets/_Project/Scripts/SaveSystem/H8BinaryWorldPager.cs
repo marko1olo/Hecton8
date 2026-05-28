@@ -9,6 +9,7 @@ using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
+using Hecton8.SaveSystem;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -1130,9 +1131,48 @@ namespace Hecton8.Core.Persistence.Paging
             TryResolvePagerVaultBuffer(in _hotStateArenaHandle, BufferID.SaveWorldPagerHotState, HotStateMaxBytes, out array);
         }
 
-        private void ResolveTelemetryRing(out NativeArray<H8BinaryWorldPagerTelemetryEntry> array)
+        private bool TryReadTelemetryRing(out NativeArray<H8BinaryWorldPagerTelemetryEntry>.ReadOnly array)
         {
-            TryResolvePagerVaultBuffer(in _telemetryRingHandle, BufferID.SaveWorldPagerTelemetryRing, TelemetryCapacity, out array);
+            return TryReadPagerVaultBuffer(in _telemetryRingHandle, BufferID.SaveWorldPagerTelemetryRing, TelemetryCapacity, out array);
+        }
+
+        private bool TryAcquirePagerVaultWrite<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> array,
+            out IDataVault lockedVault) where T : struct
+        {
+            array = default;
+            lockedVault = null;
+            IDataVault vault = _vault;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                requiredLength <= 0 ||
+                !IsPagerVaultHandle(in handle, bufferId) ||
+                !vault.TryAcquireWriteLock(in handle, VaultOwner, out array))
+            {
+                return false;
+            }
+
+            if (array.IsCreated && array.Length >= requiredLength)
+            {
+                lockedVault = vault;
+                return true;
+            }
+
+            vault.ReleaseWriteLock(in handle, VaultOwner);
+            array = default;
+            return false;
+        }
+
+        private static void ReleasePagerVaultWrite<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            if (vault != null && IsPagerVaultHandle(in handle, bufferId))
+                vault.ReleaseWriteLock(in handle, VaultOwner);
         }
 
         private void StartWorker()
@@ -2906,33 +2946,47 @@ namespace Hecton8.Core.Persistence.Paging
             int directorySlot = -1,
             uint metrics = 0u)
         {
-            ResolveTelemetryRing(out NativeArray<H8BinaryWorldPagerTelemetryEntry> telemetryRing);
-            if (!telemetryRing.IsCreated || telemetryRing.Length < TelemetryCapacity)
-                return;
-
-            int index = Interlocked.Increment(ref _telemetryCursor.Value);
-            if (index == int.MaxValue)
-                Interlocked.Exchange(ref _telemetryCursor.Value, 0);
-
-            int slot = (index & int.MaxValue) % TelemetryCapacity;
-            telemetryRing[slot] = new H8BinaryWorldPagerTelemetryEntry
+            VaultGenerationHandle<H8BinaryWorldPagerTelemetryEntry> telemetryHandle = _telemetryRingHandle;
+            if (!TryAcquirePagerVaultWrite(
+                    in telemetryHandle,
+                    BufferID.SaveWorldPagerTelemetryRing,
+                    TelemetryCapacity,
+                    out NativeArray<H8BinaryWorldPagerTelemetryEntry> telemetryRing,
+                    out IDataVault lockedVault))
             {
-                SectorHash = sectorHash,
-                Offset = offset,
-                Frame = frame,
-                RequestId = requestId,
-                PayloadType = payloadType,
-                PendingWrites = Volatile.Read(ref _pendingWriteCount.Value),
-                PendingReads = Volatile.Read(ref _pendingReadCount.Value),
-                PageFaults = Volatile.Read(ref _pageFaultCount.Value),
-                PayloadBytes = payloadBytes,
-                Operation = operation,
-                Status = status,
-                Flags = unchecked((ushort)flags),
-                TicksUtc = DateTime.UtcNow.Ticks,
-                DirectorySlot = directorySlot,
-                Metrics = metrics
-            };
+                return;
+            }
+
+            try
+            {
+                int index = Interlocked.Increment(ref _telemetryCursor.Value);
+                if (index == int.MaxValue)
+                    Interlocked.Exchange(ref _telemetryCursor.Value, 0);
+
+                int slot = (index & int.MaxValue) % TelemetryCapacity;
+                telemetryRing[slot] = new H8BinaryWorldPagerTelemetryEntry
+                {
+                    SectorHash = sectorHash,
+                    Offset = offset,
+                    Frame = frame,
+                    RequestId = requestId,
+                    PayloadType = payloadType,
+                    PendingWrites = Volatile.Read(ref _pendingWriteCount.Value),
+                    PendingReads = Volatile.Read(ref _pendingReadCount.Value),
+                    PageFaults = Volatile.Read(ref _pageFaultCount.Value),
+                    PayloadBytes = payloadBytes,
+                    Operation = operation,
+                    Status = status,
+                    Flags = unchecked((ushort)flags),
+                    TicksUtc = DateTime.UtcNow.Ticks,
+                    DirectorySlot = directorySlot,
+                    Metrics = metrics
+                };
+            }
+            finally
+            {
+                ReleasePagerVaultWrite(lockedVault, in telemetryHandle, BufferID.SaveWorldPagerTelemetryRing);
+            }
         }
 
         private string ResolveDumpPath()
@@ -2975,37 +3029,50 @@ namespace Hecton8.Core.Persistence.Paging
 
         private unsafe void WriteBlackBoxDumps()
         {
-            ResolveTelemetryRing(out NativeArray<H8BinaryWorldPagerTelemetryEntry> telemetryRing);
-            if (!telemetryRing.IsCreated || string.IsNullOrEmpty(_dumpPath))
+            if (!TryReadTelemetryRing(out NativeArray<H8BinaryWorldPagerTelemetryEntry>.ReadOnly telemetryRing) ||
+                string.IsNullOrEmpty(_dumpPath))
+            {
                 return;
+            }
 
-            WriteBlackBoxDump(_dumpPath);
-            WriteBlackBoxDump(_crashDumpPath);
-            WriteBlackBoxDump(_dumpH8Path);
-            WriteBlackBoxDump(_crashDumpH8Path);
+            WriteBlackBoxDump(_dumpPath, telemetryRing);
+            WriteBlackBoxDump(_crashDumpPath, telemetryRing);
+            WriteBlackBoxDump(_dumpH8Path, telemetryRing);
+            WriteBlackBoxDump(_crashDumpH8Path, telemetryRing);
         }
 
-        private unsafe void WriteBlackBoxDump(string dumpPath)
+        private unsafe void WriteBlackBoxDump(
+            string dumpPath,
+            NativeArray<H8BinaryWorldPagerTelemetryEntry>.ReadOnly telemetryRing)
         {
-            ResolveTelemetryRing(out NativeArray<H8BinaryWorldPagerTelemetryEntry> telemetryRing);
             if (string.IsNullOrEmpty(dumpPath) || !telemetryRing.IsCreated)
                 return;
 
             try
             {
                 HectonPersistentPathPolicy.EnsureParentDirectory(dumpPath);
-                using FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough);
-                Span<byte> header = stackalloc byte[16];
-                fixed (byte* headerPtr = header)
+                const int headerBytes = 16;
+                int entryBytes = UnsafeUtility.SizeOf<H8BinaryWorldPagerTelemetryEntry>();
+                int telemetryBytes = telemetryRing.Length * entryBytes;
+                int dumpBytesLength = headerBytes + telemetryBytes;
+                NativeArray<byte> dumpBytes = default;
+                try
                 {
-                    WriteUInt(headerPtr, 0, 0x444D4838u); // H8MD
-                    WriteInt(headerPtr, 4, TelemetryCapacity);
-                    WriteInt(headerPtr, 8, UnsafeUtility.SizeOf<H8BinaryWorldPagerTelemetryEntry>());
-                    WriteInt(headerPtr, 12, Volatile.Read(ref _telemetryCursor.Value));
+                    dumpBytes = new NativeArray<byte>(dumpBytesLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    byte* dumpPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(dumpBytes);
+                    WriteUInt(dumpPtr, 0, 0x444D4838u); // H8MD
+                    WriteInt(dumpPtr, 4, TelemetryCapacity);
+                    WriteInt(dumpPtr, 8, entryBytes);
+                    WriteInt(dumpPtr, 12, Volatile.Read(ref _telemetryCursor.Value));
+                    UnsafeUtility.MemCpy(dumpPtr + headerBytes, telemetryRing.GetUnsafeReadOnlyPtr(), telemetryBytes);
+                    if (!AsyncWriteManager.WriteAll(dumpPath, dumpPtr, dumpBytesLength, out _))
+                        Interlocked.Increment(ref _ioErrorCount.Value);
                 }
-
-                stream.Write(header);
-                stream.Write(new ReadOnlySpan<byte>(telemetryRing.GetUnsafeReadOnlyPtr(), telemetryRing.Length * UnsafeUtility.SizeOf<H8BinaryWorldPagerTelemetryEntry>()));
+                finally
+                {
+                    if (dumpBytes.IsCreated)
+                        dumpBytes.Dispose();
+                }
             }
             catch (IOException)
             {

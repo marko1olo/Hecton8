@@ -1,0 +1,882 @@
+﻿{
+    "agent_id":  "1423",
+    "role":  "ZERO_GC_SUBTITLES_AND_BABEL_LOCALIZATION_COMPILER",
+    "prompt_extraction":  {
+                              "path":  "Docs/AgentLogs/PromptExtract_1423_APEX2.md",
+                              "sha256":  "F55028A6C93B0B2A2E7102271D88D46C0C957C9FC2F235B2B8050593FD35D4B9",
+                              "task_count":  20
+                          },
+    "apex_self_audit_fix":  {
+                                "problem":  "RecordUIOptimizationFailure was audited for hot failure telemetry. The accepted implementation must not call EnsureInitialized from LocRegistry failure branches.",
+                                "current_source":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:478 returns unless failureCode is non-None, s_initialized is true, and s_vault is non-null.",
+                                "proof_lines":  [
+                                                    "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:470-512",
+                                                    "Assets/_Project/Scripts/LocRegistry.cs:1174",
+                                                    "Assets/_Project/Scripts/LocRegistry.cs:1306",
+                                                    "Assets/_Project/Scripts/LocRegistry.cs:1316"
+                                                ],
+                                "verdict":  "FIXED_OR_CONFIRMED_STATIC: no cold GlobalRegistry/DataVault initialization is entered from UI text failure telemetry."
+                            },
+    "full_file_string_pattern_scan":  {
+                                          "scanned_files":  [
+                                                                {
+                                                                    "path":  "Assets/_Project/Scripts/Core/ZeroGCFormatter.cs",
+                                                                    "sha256":  "DF0E50E0EDEA48D8CE2FADBEE1EB2842C1E27C78D78580D68EDBC52DC8A16CB0",
+                                                                    "counts":  {
+                                                                                   "string_format":  0,
+                                                                                   "to_string":  0,
+                                                                                   "foreach_loop":  0,
+                                                                                   "using_linq":  0,
+                                                                                   "linq_select":  0,
+                                                                                   "linq_where":  0,
+                                                                                   "linq_toarray":  0,
+                                                                                   "linq_tolist":  0,
+                                                                                   "linq_aggregate":  0,
+                                                                                   "tmp_text_assignment":  0,
+                                                                                   "interpolation":  0,
+                                                                                   "string_builder":  0,
+                                                                                   "new_string":  0,
+                                                                                   "array_resize":  0
+                                                                               }
+                                                                },
+                                                                {
+                                                                    "path":  "Assets/_Project/Scripts/LocNumericBuffer.cs",
+                                                                    "sha256":  "E29798E924AED1DAEB42912860B43547341F465D4CC2288FA78552BEED9134A4",
+                                                                    "counts":  {
+                                                                                   "string_format":  0,
+                                                                                   "to_string":  0,
+                                                                                   "foreach_loop":  0,
+                                                                                   "using_linq":  0,
+                                                                                   "linq_select":  0,
+                                                                                   "linq_where":  0,
+                                                                                   "linq_toarray":  0,
+                                                                                   "linq_tolist":  0,
+                                                                                   "linq_aggregate":  0,
+                                                                                   "tmp_text_assignment":  0,
+                                                                                   "interpolation":  0,
+                                                                                   "string_builder":  0,
+                                                                                   "new_string":  0,
+                                                                                   "array_resize":  0
+                                                                               }
+                                                                },
+                                                                {
+                                                                    "path":  "Assets/_Project/Scripts/LocRegistry.cs",
+                                                                    "sha256":  "6057EF78ACBDCA9E27461C65FB5CD507918D29E2BD2E0DC3A8104BD48C9FD6F1",
+                                                                    "counts":  {
+                                                                                   "string_format":  0,
+                                                                                   "to_string":  0,
+                                                                                   "foreach_loop":  0,
+                                                                                   "using_linq":  0,
+                                                                                   "linq_select":  0,
+                                                                                   "linq_where":  0,
+                                                                                   "linq_toarray":  0,
+                                                                                   "linq_tolist":  0,
+                                                                                   "linq_aggregate":  0,
+                                                                                   "tmp_text_assignment":  0,
+                                                                                   "interpolation":  0,
+                                                                                   "string_builder":  0,
+                                                                                   "new_string":  0,
+                                                                                   "array_resize":  0
+                                                                               }
+                                                                },
+                                                                {
+                                                                    "path":  "Assets/_Project/Scripts/LocalizationManager.cs",
+                                                                    "sha256":  "9BD64EB488B606B4E759DC8455F6FC200390E47558A7671D2C4E8C8DA2A50CFB",
+                                                                    "counts":  {
+                                                                                   "string_format":  0,
+                                                                                   "to_string":  0,
+                                                                                   "foreach_loop":  0,
+                                                                                   "using_linq":  0,
+                                                                                   "linq_select":  0,
+                                                                                   "linq_where":  0,
+                                                                                   "linq_toarray":  0,
+                                                                                   "linq_tolist":  0,
+                                                                                   "linq_aggregate":  0,
+                                                                                   "tmp_text_assignment":  0,
+                                                                                   "interpolation":  0,
+                                                                                   "string_builder":  0,
+                                                                                   "new_string":  0,
+                                                                                   "array_resize":  0
+                                                                               }
+                                                                },
+                                                                {
+                                                                    "path":  "Assets/_Project/Scripts/UI/TmpTextNoAlloc.cs",
+                                                                    "sha256":  "C3BCEAB264B6C0C1DB6E58BBE7793A68B13FC279F2D0EE406996AC1A2BD75B11",
+                                                                    "counts":  {
+                                                                                   "string_format":  0,
+                                                                                   "to_string":  0,
+                                                                                   "foreach_loop":  0,
+                                                                                   "using_linq":  0,
+                                                                                   "linq_select":  0,
+                                                                                   "linq_where":  0,
+                                                                                   "linq_toarray":  0,
+                                                                                   "linq_tolist":  0,
+                                                                                   "linq_aggregate":  0,
+                                                                                   "tmp_text_assignment":  0,
+                                                                                   "interpolation":  0,
+                                                                                   "string_builder":  0,
+                                                                                   "new_string":  0,
+                                                                                   "array_resize":  0
+                                                                               }
+                                                                },
+                                                                {
+                                                                    "path":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+                                                                    "sha256":  "CE492BB53D0A04FA8AA90D99678FCE260D2DDD68E3A7F9292EAA84CB93FFE5F3",
+                                                                    "counts":  {
+                                                                                   "string_format":  0,
+                                                                                   "to_string":  0,
+                                                                                   "foreach_loop":  0,
+                                                                                   "using_linq":  0,
+                                                                                   "linq_select":  0,
+                                                                                   "linq_where":  0,
+                                                                                   "linq_toarray":  0,
+                                                                                   "linq_tolist":  0,
+                                                                                   "linq_aggregate":  0,
+                                                                                   "tmp_text_assignment":  0,
+                                                                                   "interpolation":  0,
+                                                                                   "string_builder":  0,
+                                                                                   "new_string":  0,
+                                                                                   "array_resize":  0
+                                                                               }
+                                                                },
+                                                                {
+                                                                    "path":  "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+                                                                    "sha256":  "084243DAC5C5A74C3945FEA0F2F290AE13CDB544B6F228CC7F0653E998E4B71B",
+                                                                    "counts":  {
+                                                                                   "string_format":  0,
+                                                                                   "to_string":  0,
+                                                                                   "foreach_loop":  0,
+                                                                                   "using_linq":  0,
+                                                                                   "linq_select":  0,
+                                                                                   "linq_where":  0,
+                                                                                   "linq_toarray":  0,
+                                                                                   "linq_tolist":  0,
+                                                                                   "linq_aggregate":  0,
+                                                                                   "tmp_text_assignment":  0,
+                                                                                   "interpolation":  0,
+                                                                                   "string_builder":  0,
+                                                                                   "new_string":  0,
+                                                                                   "array_resize":  0
+                                                                               }
+                                                                },
+                                                                {
+                                                                    "path":  "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+                                                                    "sha256":  "85EF4850D6FA0D4764FD928866A4AED2F774664DF2ACCF40AD5E1ADB9F2BBF16",
+                                                                    "counts":  {
+                                                                                   "string_format":  0,
+                                                                                   "to_string":  0,
+                                                                                   "foreach_loop":  0,
+                                                                                   "using_linq":  0,
+                                                                                   "linq_select":  0,
+                                                                                   "linq_where":  0,
+                                                                                   "linq_toarray":  0,
+                                                                                   "linq_tolist":  0,
+                                                                                   "linq_aggregate":  0,
+                                                                                   "tmp_text_assignment":  0,
+                                                                                   "interpolation":  0,
+                                                                                   "string_builder":  0,
+                                                                                   "new_string":  0,
+                                                                                   "array_resize":  0
+                                                                               }
+                                                                },
+                                                                {
+                                                                    "path":  "Assets/_Project/Scripts/Core/Contracts/BabelLocalizationContract.cs",
+                                                                    "sha256":  "08124D34399C8F54138C9F181114ABA9FF74B7FF9C5CF100E0E40BA7C2449E24",
+                                                                    "counts":  {
+                                                                                   "string_format":  0,
+                                                                                   "to_string":  0,
+                                                                                   "foreach_loop":  0,
+                                                                                   "using_linq":  0,
+                                                                                   "linq_select":  0,
+                                                                                   "linq_where":  0,
+                                                                                   "linq_toarray":  0,
+                                                                                   "linq_tolist":  0,
+                                                                                   "linq_aggregate":  0,
+                                                                                   "tmp_text_assignment":  0,
+                                                                                   "interpolation":  0,
+                                                                                   "string_builder":  0,
+                                                                                   "new_string":  0,
+                                                                                   "array_resize":  0
+                                                                               }
+                                                                }
+                                                            ],
+                                          "verdict":  "PASS_ZERO_FOR_string.Format_ToString_foreach_LINQ_TMP_text_assignment_interpolation_StringBuilder_new_string_ArrayResize_in_scanned_runtime_files",
+                                          "note":  "Reference-type new is intentionally not judged at whole-file level because these files contain cold constructors, GameObject creation, FileStream dumps, and prewarmed arrays. Hot-method new analysis is below."
+                                      },
+    "hot_method_static_scan":  {
+                                   "methods":  [
+                                                   {
+                                                       "method":  "ZeroGCFormatter.FastIntToChars(int)",
+                                                       "path":  "Assets/_Project/Scripts/Core/ZeroGCFormatter.cs",
+                                                       "line_start":  28,
+                                                       "line_end":  38,
+                                                       "counts":  {
+                                                                      "string_format":  0,
+                                                                      "to_string":  0,
+                                                                      "foreach_loop":  0,
+                                                                      "using_linq":  0,
+                                                                      "linq_select":  0,
+                                                                      "linq_where":  0,
+                                                                      "linq_toarray":  0,
+                                                                      "linq_tolist":  0,
+                                                                      "linq_aggregate":  0,
+                                                                      "tmp_text_assignment":  0,
+                                                                      "interpolation":  0,
+                                                                      "new_string":  0
+                                                                  },
+                                                       "new_total":  0,
+                                                       "new_value_type_or_struct":  [
+
+                                                                                    ],
+                                                       "new_reference_suspects":  [
+
+                                                                                  ],
+                                                       "verdict":  "PASS_STATIC_HOT_METHOD"
+                                                   },
+                                                   {
+                                                       "method":  "ZeroGCFormatter.TryFormatFloat(float,int)",
+                                                       "path":  "Assets/_Project/Scripts/Core/ZeroGCFormatter.cs",
+                                                       "line_start":  106,
+                                                       "line_end":  137,
+                                                       "counts":  {
+                                                                      "string_format":  0,
+                                                                      "to_string":  0,
+                                                                      "foreach_loop":  0,
+                                                                      "using_linq":  0,
+                                                                      "linq_select":  0,
+                                                                      "linq_where":  0,
+                                                                      "linq_toarray":  0,
+                                                                      "linq_tolist":  0,
+                                                                      "linq_aggregate":  0,
+                                                                      "tmp_text_assignment":  0,
+                                                                      "interpolation":  0,
+                                                                      "new_string":  0
+                                                                  },
+                                                       "new_total":  0,
+                                                       "new_value_type_or_struct":  [
+
+                                                                                    ],
+                                                       "new_reference_suspects":  [
+
+                                                                                  ],
+                                                       "verdict":  "PASS_STATIC_HOT_METHOD"
+                                                   },
+                                                   {
+                                                       "method":  "ZeroGCFormatter.AppendToSpanTruncated",
+                                                       "path":  "Assets/_Project/Scripts/Core/ZeroGCFormatter.cs",
+                                                       "line_start":  184,
+                                                       "line_end":  219,
+                                                       "counts":  {
+                                                                      "string_format":  0,
+                                                                      "to_string":  0,
+                                                                      "foreach_loop":  0,
+                                                                      "using_linq":  0,
+                                                                      "linq_select":  0,
+                                                                      "linq_where":  0,
+                                                                      "linq_toarray":  0,
+                                                                      "linq_tolist":  0,
+                                                                      "linq_aggregate":  0,
+                                                                      "tmp_text_assignment":  0,
+                                                                      "interpolation":  0,
+                                                                      "new_string":  0
+                                                                  },
+                                                       "new_total":  0,
+                                                       "new_value_type_or_struct":  [
+
+                                                                                    ],
+                                                       "new_reference_suspects":  [
+
+                                                                                  ],
+                                                       "verdict":  "PASS_STATIC_HOT_METHOD"
+                                                   },
+                                                   {
+                                                       "method":  "ZeroGCFormatter.AppendAsciiEllipsis",
+                                                       "path":  "Assets/_Project/Scripts/Core/ZeroGCFormatter.cs",
+                                                       "line_start":  222,
+                                                       "line_end":  250,
+                                                       "counts":  {
+                                                                      "string_format":  0,
+                                                                      "to_string":  0,
+                                                                      "foreach_loop":  0,
+                                                                      "using_linq":  0,
+                                                                      "linq_select":  0,
+                                                                      "linq_where":  0,
+                                                                      "linq_toarray":  0,
+                                                                      "linq_tolist":  0,
+                                                                      "linq_aggregate":  0,
+                                                                      "tmp_text_assignment":  0,
+                                                                      "interpolation":  0,
+                                                                      "new_string":  0
+                                                                  },
+                                                       "new_total":  0,
+                                                       "new_value_type_or_struct":  [
+
+                                                                                    ],
+                                                       "new_reference_suspects":  [
+
+                                                                                  ],
+                                                       "verdict":  "PASS_STATIC_HOT_METHOD"
+                                                   },
+                                                   {
+                                                       "method":  "LocNumericArg.TryFormat",
+                                                       "path":  "Assets/_Project/Scripts/LocNumericBuffer.cs",
+                                                       "line_start":  46,
+                                                       "line_end":  59,
+                                                       "counts":  {
+                                                                      "string_format":  0,
+                                                                      "to_string":  0,
+                                                                      "foreach_loop":  0,
+                                                                      "using_linq":  0,
+                                                                      "linq_select":  0,
+                                                                      "linq_where":  0,
+                                                                      "linq_toarray":  0,
+                                                                      "linq_tolist":  0,
+                                                                      "linq_aggregate":  0,
+                                                                      "tmp_text_assignment":  0,
+                                                                      "interpolation":  0,
+                                                                      "new_string":  0
+                                                                  },
+                                                       "new_total":  0,
+                                                       "new_value_type_or_struct":  [
+
+                                                                                    ],
+                                                       "new_reference_suspects":  [
+
+                                                                                  ],
+                                                       "verdict":  "PASS_STATIC_HOT_METHOD"
+                                                   },
+                                                   {
+                                                       "method":  "LocNumericBuffer.TryWriteInternal",
+                                                       "path":  "Assets/_Project/Scripts/LocNumericBuffer.cs",
+                                                       "line_start":  311,
+                                                       "line_end":  351,
+                                                       "counts":  {
+                                                                      "string_format":  0,
+                                                                      "to_string":  0,
+                                                                      "foreach_loop":  0,
+                                                                      "using_linq":  0,
+                                                                      "linq_select":  0,
+                                                                      "linq_where":  0,
+                                                                      "linq_toarray":  0,
+                                                                      "linq_tolist":  0,
+                                                                      "linq_aggregate":  0,
+                                                                      "tmp_text_assignment":  0,
+                                                                      "interpolation":  0,
+                                                                      "new_string":  0
+                                                                  },
+                                                       "new_total":  0,
+                                                       "new_value_type_or_struct":  [
+
+                                                                                    ],
+                                                       "new_reference_suspects":  [
+
+                                                                                  ],
+                                                       "verdict":  "PASS_STATIC_HOT_METHOD"
+                                                   },
+                                                   {
+                                                       "method":  "LocRegistry.TryWriteVisualSpanFromUtf8(uint,Span,char,args)",
+                                                       "path":  "Assets/_Project/Scripts/LocRegistry.cs",
+                                                       "line_start":  1073,
+                                                       "line_end":  1082,
+                                                       "counts":  {
+                                                                      "string_format":  0,
+                                                                      "to_string":  0,
+                                                                      "foreach_loop":  0,
+                                                                      "using_linq":  0,
+                                                                      "linq_select":  0,
+                                                                      "linq_where":  0,
+                                                                      "linq_toarray":  0,
+                                                                      "linq_tolist":  0,
+                                                                      "linq_aggregate":  0,
+                                                                      "tmp_text_assignment":  0,
+                                                                      "interpolation":  0,
+                                                                      "new_string":  0
+                                                                  },
+                                                       "new_total":  0,
+                                                       "new_value_type_or_struct":  [
+
+                                                                                    ],
+                                                       "new_reference_suspects":  [
+
+                                                                                  ],
+                                                       "verdict":  "PASS_STATIC_HOT_METHOD"
+                                                   },
+                                                   {
+                                                       "method":  "LocRegistry.DecodeUtf8VisualSpan",
+                                                       "path":  "Assets/_Project/Scripts/LocRegistry.cs",
+                                                       "line_start":  1160,
+                                                       "line_end":  1411,
+                                                       "counts":  {
+                                                                      "string_format":  0,
+                                                                      "to_string":  0,
+                                                                      "foreach_loop":  0,
+                                                                      "using_linq":  0,
+                                                                      "linq_select":  0,
+                                                                      "linq_where":  0,
+                                                                      "linq_toarray":  0,
+                                                                      "linq_tolist":  0,
+                                                                      "linq_aggregate":  0,
+                                                                      "tmp_text_assignment":  0,
+                                                                      "interpolation":  0,
+                                                                      "new_string":  0
+                                                                  },
+                                                       "new_total":  0,
+                                                       "new_value_type_or_struct":  [
+
+                                                                                    ],
+                                                       "new_reference_suspects":  [
+
+                                                                                  ],
+                                                       "verdict":  "PASS_STATIC_HOT_METHOD"
+                                                   },
+                                                   {
+                                                       "method":  "LocRegistry.TryWriteBraceFormatPlaceholder",
+                                                       "path":  "Assets/_Project/Scripts/LocRegistry.cs",
+                                                       "line_start":  1350,
+                                                       "line_end":  1389,
+                                                       "counts":  {
+                                                                      "string_format":  0,
+                                                                      "to_string":  0,
+                                                                      "foreach_loop":  0,
+                                                                      "using_linq":  0,
+                                                                      "linq_select":  0,
+                                                                      "linq_where":  0,
+                                                                      "linq_toarray":  0,
+                                                                      "linq_tolist":  0,
+                                                                      "linq_aggregate":  0,
+                                                                      "tmp_text_assignment":  0,
+                                                                      "interpolation":  0,
+                                                                      "new_string":  0
+                                                                  },
+                                                       "new_total":  0,
+                                                       "new_value_type_or_struct":  [
+
+                                                                                    ],
+                                                       "new_reference_suspects":  [
+
+                                                                                  ],
+                                                       "verdict":  "PASS_STATIC_HOT_METHOD"
+                                                   },
+                                                   {
+                                                       "method":  "LocRegistry.AppendEllipsis",
+                                                       "path":  "Assets/_Project/Scripts/LocRegistry.cs",
+                                                       "line_start":  2889,
+                                                       "line_end":  2903,
+                                                       "counts":  {
+                                                                      "string_format":  0,
+                                                                      "to_string":  0,
+                                                                      "foreach_loop":  0,
+                                                                      "using_linq":  0,
+                                                                      "linq_select":  0,
+                                                                      "linq_where":  0,
+                                                                      "linq_toarray":  0,
+                                                                      "linq_tolist":  0,
+                                                                      "linq_aggregate":  0,
+                                                                      "tmp_text_assignment":  0,
+                                                                      "interpolation":  0,
+                                                                      "new_string":  0
+                                                                  },
+                                                       "new_total":  0,
+                                                       "new_value_type_or_struct":  [
+
+                                                                                    ],
+                                                       "new_reference_suspects":  [
+
+                                                                                  ],
+                                                       "verdict":  "PASS_STATIC_HOT_METHOD"
+                                                   },
+                                                   {
+                                                       "method":  "TmpTextNoAlloc.SetLocalized(hash,args)",
+                                                       "path":  "Assets/_Project/Scripts/UI/TmpTextNoAlloc.cs",
+                                                       "line_start":  66,
+                                                       "line_end":  93,
+                                                       "counts":  {
+                                                                      "string_format":  0,
+                                                                      "to_string":  0,
+                                                                      "foreach_loop":  0,
+                                                                      "using_linq":  0,
+                                                                      "linq_select":  0,
+                                                                      "linq_where":  0,
+                                                                      "linq_toarray":  0,
+                                                                      "linq_tolist":  0,
+                                                                      "linq_aggregate":  0,
+                                                                      "tmp_text_assignment":  0,
+                                                                      "interpolation":  0,
+                                                                      "new_string":  0
+                                                                  },
+                                                       "new_total":  0,
+                                                       "new_value_type_or_struct":  [
+
+                                                                                    ],
+                                                       "new_reference_suspects":  [
+
+                                                                                  ],
+                                                       "verdict":  "PASS_STATIC_HOT_METHOD"
+                                                   },
+                                                   {
+                                                       "method":  "BabelSubtitleSyncRuntime.RecordUIOptimizationFailure",
+                                                       "path":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+                                                       "line_start":  470,
+                                                       "line_end":  516,
+                                                       "counts":  {
+                                                                      "string_format":  0,
+                                                                      "to_string":  0,
+                                                                      "foreach_loop":  0,
+                                                                      "using_linq":  0,
+                                                                      "linq_select":  0,
+                                                                      "linq_where":  0,
+                                                                      "linq_toarray":  0,
+                                                                      "linq_tolist":  0,
+                                                                      "linq_aggregate":  0,
+                                                                      "tmp_text_assignment":  0,
+                                                                      "interpolation":  0,
+                                                                      "new_string":  0
+                                                                  },
+                                                       "new_total":  0,
+                                                       "new_value_type_or_struct":  [
+
+                                                                                    ],
+                                                       "new_reference_suspects":  [
+
+                                                                                  ],
+                                                       "verdict":  "PASS_STATIC_HOT_METHOD"
+                                                   },
+                                                   {
+                                                       "method":  "BabelSubtitleSyncRuntime.TryAcquireSubtitleWriteBuffer",
+                                                       "path":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+                                                       "line_start":  657,
+                                                       "line_end":  683,
+                                                       "counts":  {
+                                                                      "string_format":  0,
+                                                                      "to_string":  0,
+                                                                      "foreach_loop":  0,
+                                                                      "using_linq":  0,
+                                                                      "linq_select":  0,
+                                                                      "linq_where":  0,
+                                                                      "linq_toarray":  0,
+                                                                      "linq_tolist":  0,
+                                                                      "linq_aggregate":  0,
+                                                                      "tmp_text_assignment":  0,
+                                                                      "interpolation":  0,
+                                                                      "new_string":  0
+                                                                  },
+                                                       "new_total":  0,
+                                                       "new_value_type_or_struct":  [
+
+                                                                                    ],
+                                                       "new_reference_suspects":  [
+
+                                                                                  ],
+                                                       "verdict":  "PASS_STATIC_HOT_METHOD"
+                                                   },
+                                                   {
+                                                       "method":  "BabelSubtitleSyncRuntime.ResolveCanvasDirtyBudget",
+                                                       "path":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+                                                       "line_start":  740,
+                                                       "line_end":  749,
+                                                       "counts":  {
+                                                                      "string_format":  0,
+                                                                      "to_string":  0,
+                                                                      "foreach_loop":  0,
+                                                                      "using_linq":  0,
+                                                                      "linq_select":  0,
+                                                                      "linq_where":  0,
+                                                                      "linq_toarray":  0,
+                                                                      "linq_tolist":  0,
+                                                                      "linq_aggregate":  0,
+                                                                      "tmp_text_assignment":  0,
+                                                                      "interpolation":  0,
+                                                                      "new_string":  0
+                                                                  },
+                                                       "new_total":  0,
+                                                       "new_value_type_or_struct":  [
+
+                                                                                    ],
+                                                       "new_reference_suspects":  [
+
+                                                                                  ],
+                                                       "verdict":  "PASS_STATIC_HOT_METHOD"
+                                                   },
+                                                   {
+                                                       "method":  "SubtitleManager.DisplaySubtitle(hash,args)",
+                                                       "path":  "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+                                                       "line_start":  466,
+                                                       "line_end":  495,
+                                                       "counts":  {
+                                                                      "string_format":  0,
+                                                                      "to_string":  0,
+                                                                      "foreach_loop":  0,
+                                                                      "using_linq":  0,
+                                                                      "linq_select":  0,
+                                                                      "linq_where":  0,
+                                                                      "linq_toarray":  0,
+                                                                      "linq_tolist":  0,
+                                                                      "linq_aggregate":  0,
+                                                                      "tmp_text_assignment":  0,
+                                                                      "interpolation":  0,
+                                                                      "new_string":  0
+                                                                  },
+                                                       "new_total":  0,
+                                                       "new_value_type_or_struct":  [
+
+                                                                                    ],
+                                                       "new_reference_suspects":  [
+
+                                                                                  ],
+                                                       "verdict":  "PASS_STATIC_HOT_METHOD"
+                                                   },
+                                                   {
+                                                       "method":  "SubtitleManager.ShowSubtitleCommand",
+                                                       "path":  "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+                                                       "line_start":  809,
+                                                       "line_end":  847,
+                                                       "counts":  {
+                                                                      "string_format":  0,
+                                                                      "to_string":  0,
+                                                                      "foreach_loop":  0,
+                                                                      "using_linq":  0,
+                                                                      "linq_select":  0,
+                                                                      "linq_where":  0,
+                                                                      "linq_toarray":  0,
+                                                                      "linq_tolist":  0,
+                                                                      "linq_aggregate":  0,
+                                                                      "tmp_text_assignment":  0,
+                                                                      "interpolation":  0,
+                                                                      "new_string":  0
+                                                                  },
+                                                       "new_total":  1,
+                                                       "new_value_type_or_struct":  [
+                                                                                        {
+                                                                                            "type":  "SubtitleStateDTO",
+                                                                                            "line":  833
+                                                                                        }
+                                                                                    ],
+                                                       "new_reference_suspects":  [
+
+                                                                                  ],
+                                                       "verdict":  "PASS_STATIC_HOT_METHOD"
+                                                   },
+                                                   {
+                                                       "method":  "SubtitleManager.FlushPendingSubtitleSwap",
+                                                       "path":  "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+                                                       "line_start":  1667,
+                                                       "line_end":  1679,
+                                                       "counts":  {
+                                                                      "string_format":  0,
+                                                                      "to_string":  0,
+                                                                      "foreach_loop":  0,
+                                                                      "using_linq":  0,
+                                                                      "linq_select":  0,
+                                                                      "linq_where":  0,
+                                                                      "linq_toarray":  0,
+                                                                      "linq_tolist":  0,
+                                                                      "linq_aggregate":  0,
+                                                                      "tmp_text_assignment":  0,
+                                                                      "interpolation":  0,
+                                                                      "new_string":  0
+                                                                  },
+                                                       "new_total":  0,
+                                                       "new_value_type_or_struct":  [
+
+                                                                                    ],
+                                                       "new_reference_suspects":  [
+
+                                                                                  ],
+                                                       "verdict":  "PASS_STATIC_HOT_METHOD"
+                                                   },
+                                                   {
+                                                       "method":  "VocalWarningSystem.PublishDispatchIfNeeded",
+                                                       "path":  "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+                                                       "line_start":  1179,
+                                                       "line_end":  1242,
+                                                       "counts":  {
+                                                                      "string_format":  0,
+                                                                      "to_string":  0,
+                                                                      "foreach_loop":  0,
+                                                                      "using_linq":  0,
+                                                                      "linq_select":  0,
+                                                                      "linq_where":  0,
+                                                                      "linq_toarray":  0,
+                                                                      "linq_tolist":  0,
+                                                                      "linq_aggregate":  0,
+                                                                      "tmp_text_assignment":  0,
+                                                                      "interpolation":  0,
+                                                                      "new_string":  0
+                                                                  },
+                                                       "new_total":  0,
+                                                       "new_value_type_or_struct":  [
+
+                                                                                    ],
+                                                       "new_reference_suspects":  [
+
+                                                                                  ],
+                                                       "verdict":  "PASS_STATIC_HOT_METHOD"
+                                                   },
+                                                   {
+                                                       "method":  "LocalizationManager.TryWriteLocalized",
+                                                       "path":  "Assets/_Project/Scripts/LocalizationManager.cs",
+                                                       "line_start":  290,
+                                                       "line_end":  293,
+                                                       "counts":  {
+                                                                      "string_format":  0,
+                                                                      "to_string":  0,
+                                                                      "foreach_loop":  0,
+                                                                      "using_linq":  0,
+                                                                      "linq_select":  0,
+                                                                      "linq_where":  0,
+                                                                      "linq_toarray":  0,
+                                                                      "linq_tolist":  0,
+                                                                      "linq_aggregate":  0,
+                                                                      "tmp_text_assignment":  0,
+                                                                      "interpolation":  0,
+                                                                      "new_string":  0
+                                                                  },
+                                                       "new_total":  0,
+                                                       "new_value_type_or_struct":  [
+
+                                                                                    ],
+                                                       "new_reference_suspects":  [
+
+                                                                                  ],
+                                                       "verdict":  "PASS_STATIC_HOT_METHOD"
+                                                   }
+                                               ],
+                                   "aggregate_reference_new_suspects":  0,
+                                   "verdict":  "PASS_ALL_REVIEWED_HOT_METHODS"
+                               },
+    "cursor_and_truncation_proof":  {
+                                        "invariant":  "For any destination length N \u003e= 0, cursor is clamped or rejected before Slice(cursor). Writes advance cursor only by successful TryFormat charsWritten or by bounded CopyTo length \u003c= N-cursor.",
+                                        "zero_length_case":  "LocRegistry.DecodeUtf8VisualSpan returns before any destination slice when destination.Length \u003c= 0 and records TextBufferOverflow.",
+                                        "max_glyph_bound":  "maxGlyphs = min(destination.Length, MaxDecodedGlyphs). Dynamic placeholders write only into destination.Slice(0,maxGlyphs).",
+                                        "overflow_case":  "Recognized ^n/{n[:fmt]} overflow sets formatterOverflow/truncated, charCursor = maxGlyphs, and breaks. AppendEllipsis uses limit=min(buffer.Length,maxGlyphs), safeLength\u003c=limit-3, then writes exactly three ASCII dots.",
+                                        "line_proofs":  [
+                                                            "ZeroGCFormatter.cs:28-37",
+                                                            "ZeroGCFormatter.cs:184-218",
+                                                            "ZeroGCFormatter.cs:222-236",
+                                                            "LocRegistry.cs:1171-1181",
+                                                            "LocRegistry.cs:1189-1191",
+                                                            "LocRegistry.cs:1211-1218",
+                                                            "LocRegistry.cs:1227-1237",
+                                                            "LocRegistry.cs:1285-1290",
+                                                            "LocRegistry.cs:2889-2902"
+                                                        ]
+                                    },
+    "data_sovereignty":  {
+                             "buffers":  [
+                                             {
+                                                 "name":  "SubtitleCueStateBufferId",
+                                                 "value":  15070550,
+                                                 "line":  "BabelSubtitleSyncRuntime.cs:192"
+                                             },
+                                             {
+                                                 "name":  "SubtitleCueTelemetryBufferId",
+                                                 "value":  15070551,
+                                                 "line":  "BabelSubtitleSyncRuntime.cs:193"
+                                             },
+                                             {
+                                                 "name":  "UIOptimizationTelemetryBufferId",
+                                                 "value":  15070552,
+                                                 "line":  "BabelSubtitleSyncRuntime.cs:194"
+                                             }
+                                         ],
+                             "ensure_generation_handle_lines":  [
+                                                                    "BabelSubtitleSyncRuntime.cs:287-302"
+                                                                ],
+                             "write_lock_acquire":  "BabelSubtitleSyncRuntime.cs:668 TryAcquireWriteLock(in handle, SystemID.UI, out buffer)",
+                             "release_proof":  [
+                                                   "BabelSubtitleSyncRuntime.cs:677 releases failed/undersized acquired buffer",
+                                                   "BabelSubtitleSyncRuntime.cs:509-511 releases UIOptimizationTelemetry in finally",
+                                                   "BabelSubtitleSyncRuntime.cs:1104-1106 releases LocalizationTelemetry in finally",
+                                                   "BabelSubtitleSyncRuntime.cs:327-329 releases cue init write lock in finally"
+                                               ],
+                             "try_get_latest_created_usage":  "NONE in agent 1423 code path; UI telemetry uses explicit BufferID handles."
+                         },
+    "struct_offset_proof":  {
+                                "struct":  "UIOptimizationTelemetryEntry",
+                                "declared_size_bytes":  64,
+                                "declaration_lines":  "BabelSubtitleSyncRuntime.cs:146-167",
+                                "runtime_layout_validation_lines":  "BabelSubtitleSyncRuntime.cs:843-859",
+                                "offsets":  {
+                                                "Frame":  0,
+                                                "AudioFrameClock":  4,
+                                                "TokenHash":  8,
+                                                "FailureCode":  12,
+                                                "RequestedCharacters":  16,
+                                                "RenderedCharacters":  20,
+                                                "BufferCapacity":  24,
+                                                "CueSignalCount":  28,
+                                                "GlobalQualityWeight":  32,
+                                                "Flags":  36,
+                                                "BufferIdTelemetry":  40,
+                                                "WriteSequence":  44,
+                                                "LastTokenHash":  48,
+                                                "MissingTokenHashCount":  52,
+                                                "DroppedCueCount":  56,
+                                                "Pad0":  60,
+                                                "Pad3":  63
+                                            }
+                            },
+    "cinematic_and_scalability":  {
+                                      "physical_simulation_added":  "NONE. Text/VWS presentation uses signal DTOs, char buffers, TMP SetCharArray, and numeric telemetry only.",
+                                      "visual_fake_used":  "Fail-closed ASCII ellipsis and optional rich-text stripping are cheap presentation cheats; no physics/particle simulation introduced.",
+                                      "continuous_quality_routes":  [
+                                                                        "BabelSubtitleSyncRuntime.ResolveCanvasDirtyBudget: smoothstep quality then lerp 2..18, lines 740-748",
+                                                                        "BabelSubtitleSyncRuntime.ResolveGlobalQualityWeight saturates HomeostasisBrain.GlobalQualityWeight, lines 1110-1116",
+                                                                        "LocRegistry.ResolveLookupBudgetForCurrentQuality delegates requested count and continuous quality to BabelLookupScalability, lines 2766-2770",
+                                                                        "SubtitleManager richTextWeight derives from GlobalQualityWeight, lines 1152-1157"
+                                                                    ],
+                                      "residual_risk":  "TMP.richText and stripRichText are boolean API endpoints. Current code derives them from a continuous scalar, but strict anti-binary doctrine could demand a future per-cue continuous rich-text budget if visual policy is considered noncompliant."
+                                  },
+    "compilation_resource_throttling":  {
+                                            "dotnet_build_count_by_agent_1423":  1,
+                                            "previous_build_cpu_gate":  {
+                                                                            "cpu_load_percent":  44.12,
+                                                                            "csc_process_detected":  false,
+                                                                            "sampled_for":  "single_dotnet_build_before_previous_compile_check"
+                                                                        },
+                                            "previous_command":  "dotnet build C:\\hades\\Hecton8\\Hecton8.Core.csproj --nologo",
+                                            "previous_result":  "FAILED_OUT_OF_DOMAIN_XRPASS",
+                                            "previous_errors":  [
+                                                                    "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs(437,64): CS0246 XRPass not found",
+                                                                    "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs(476,74): CS0246 XRPass not found"
+                                                                ],
+                                            "apex_sample":  {
+                                                                "cpu_load_percent":  67,
+                                                                "csc_process_count":  0,
+                                                                "sampled_local":  "2026-05-28T05:55:30.6887482+04:00",
+                                                                "action":  "build_not_launched_cpu_above_50_percent_and_previous_xrpass_blocker_unchanged"
+                                                            },
+                                            "final_build_launched":  false
+                                        },
+    "known_unproven_or_faults":  [
+                                     "No Unity runtime profiler run.",
+                                     "No GCMonitor 0B allocation sample.",
+                                     "Editor tests were added but not executed because project compile remains blocked by XRPass.",
+                                     "No Dump_1423.bin exists because no InvalidTextState/runtime NaN/crash was observed in executable runtime."
+                                 ],
+    "generated_local":  "2026-05-28T14:00:33.1320896+04:00",
+    "continuation_audit_2026_05_28":  {
+                                          "path":  "Docs/Reports/UI_ZERO_GC_CONTINUATION_AUDIT_1423.json",
+                                          "sha256":  "B2A869217C094F8DB46A74030276BF1BD3045C76F8D7F7C84CDFFB900B43721B",
+                                          "residual_binary_richtext_risk":  "RESOLVED_STATIC_BY_BabelRichTextLodPolicy",
+                                          "rtl_manual_reversal":  "REMOVED_STATIC_SCAN_ZERO_HITS",
+                                          "final_scan_total_forbidden_hits":  0,
+                                          "build_decision":  "NO_BUILD: CPU 65%, csc 0, active dotnet build-related process 1 (AmplifyImpostors.Editor.csproj PID 66444)"
+                                      },
+    "polish_verification_2026_05_28":  {
+                                           "path":  "Docs/Reports/UI_ZERO_GC_POLISH_VERIFICATION_1423.json",
+                                           "sha256":  "D6A670EBDCD571DA07470B60AA24D6C2C00D5394E76104881DEC2F196C73034F",
+                                           "localized_world_sign":  "FAIL_CLOSED_FIXED_128_CHARS",
+                                           "build_decision":  "NO_BUILD: CPU 68%, csc 0, active dotnet build Hecton8.slnx PID 22412"
+                                       },
+    "continuation4_refresh":  {
+                                  "path":  "Docs/Reports/UI_ZERO_GC_CONTINUATION4_AUDIT_1423.json",
+                                  "sha256":  "E9F6FF525D63DB90BB217A5BCC0099D6E9C4633D0925F61905F04FB31E2BBE16",
+                                  "note":  "Source hashes refreshed after DataVault finally-lock repair; scan counts unchanged by focused case-sensitive recheck."
+                              },
+    "continuation5_refresh":  {
+                                  "path":  "Docs/Reports/UI_ZERO_GC_CONTINUATION5_AUDIT_1423.json",
+                                  "sha256":  "3D829F1DBF8EA3EDE9F4EF000345171D88BCB100A6A1EB2EE014DC6EB4B27C11",
+                                  "note":  "Source hashes refreshed after read-purity no-refresh validation and PDA double-decode repair."
+                              }
+}

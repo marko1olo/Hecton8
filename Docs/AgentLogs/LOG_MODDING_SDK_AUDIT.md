@@ -1910,3 +1910,37 @@ Verification:
 - PASS: scoped `git diff --check`; line-ending warnings only.
 - PASS: touched-file trailing whitespace scan and editor C# ASCII scan.
 - DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` because the resource gate showed CPU `100` and active `dotnet.exe` PID `29008`; no `Temp/UnityLockfile` was present.
+## 2026-05-28 - Pass 63 - Schema 87 Root No-Unity Launcher
+
+What was wrong:
+- External Starter Kit had valid no-Unity tools, but no single root command for random public authors. The first copied-folder workflow still depended on README command copying.
+- Workbench health did not require the public root launcher because the file did not exist.
+
+What was done:
+- Added `ModdingSDK/ExternalStarterKit/h8mod.ps1` with `menu`, `setup`, `validate`, `review`, `prepare`, `opcodes`, and `opcodes-json` actions.
+- Launcher delegates to existing `Tools/*.ps1` scripts; no second validator, no second package contract, no runtime ingress change.
+- SDK Hub generator now writes `h8mod.ps1`; Workbench required-file health includes it and exposes `Open Root Launcher`; local starter validator requires it.
+- Updated `Signal_Schema.json` to revision `87`, static validator root-launcher gates, modding docs, starter README/tool README, and review manifest.
+
+Cinematic Cheats used:
+- None. This is SDK/editor/offline authoring surface only.
+
+Exact Microseconds saved:
+- Runtime frame: `0 us/frame` measured/claimed. No gameplay, render, physics, save, SignalBus, EventBus, NativeQueue, GlobalDataVault, or Burst/job path changed.
+- Authoring friction: one root action replaces raw multi-command lookup; not a frame-time metric.
+
+Verification:
+- PASS: `h8mod.ps1 -Action validate`.
+- PASS: `h8mod.ps1 -Action opcodes`.
+- PASS: `h8mod.ps1 -Action opcodes-json`.
+- PASS: `h8mod.ps1 -Action prepare`.
+- PASS: `h8mod.ps1 -Action review`.
+- PASS: `Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `87`.
+- PASS: review manifest parse -> `25` files, `47352` bytes, `h8mod.ps1` included.
+- PASS: scoped `git diff --check`; line-ending warnings only.
+- PASS: touched-file trailing whitespace scan.
+- PASS: editor C# ASCII scan.
+- DEFERRED: dotnet/Unity compile by resource gate. Latest sample: CPU `97`, active `dotnet.exe` PID `15108`; earlier sample: CPU `78`, no active build process.
+
+Evidence class:
+- STATIC_SOURCE / STATIC_DOC / CLI_SCRIPT. No Unity Console, PlayMode, profiler, player build, or runtime GC proof claimed.

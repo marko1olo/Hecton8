@@ -341,6 +341,14 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 | Frame-phase resolver | `PreSimulationTick()` uses a pure `TryResolveRuntimeBuffers()` route; buffer open/acquire is isolated to `OpenOrAcquireRuntimeBuffers()` | `../Reports/UNITY_HOMEOSTASIS_DATAVAULT_REBIND_PASS_UNKNOWN_20260528.md` |
 | Static proof | `OpenOrAcquireRuntimeBuffers` refs `3`; `TryResolveRuntimeBuffers` refs `4`; `TryResolveHardwareMetrics` refs `0`; touched source brace delta `0` | `../Reports/UNITY_HOMEOSTASIS_DATAVAULT_REBIND_PASS_UNKNOWN_20260528.json` |
 
+## 2026-05-28 APEX Homeostasis Verification
+
+| Area | Fact | Proof |
+|---|---|---|
+| Zero-GC self-audit | Changed ranges `334-345`, `992-1044`, `1047-1080`, and `1187-1207` have `0` hits for reference `new`, `string.Format`, `.ToString()`, LINQ query calls, and `foreach` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HOMEOSTASIS_20260528.json` |
+| Hash proof | APEX JSON SHA-256 is `A6484321E054D644F5EF220EC97F9ABD6679BF89524C5C6B93EEE1886768ADDD`; source report JSON SHA-256 is `C28063C63403175C4679E073561C728A754E0F1E9CE5952F8DF86B5A626EA038` | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HOMEOSTASIS_20260528.json.sha256` |
+| Build throttle | CPU sample was `100%`, active `dotnet.exe` PID `62124`, and this verification launched `0` builds | `../Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HOMEOSTASIS_20260528.json` |
+
 ## Validation
 
 | Validator | Required state |

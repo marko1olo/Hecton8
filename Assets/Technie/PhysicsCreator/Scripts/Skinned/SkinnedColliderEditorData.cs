@@ -125,7 +125,7 @@ namespace Technie.PhysicsCreator.Skinned
 		private int selectedBoneIndex = INVALID_INDEX;
 		private int selectedHullIndex = INVALID_INDEX;
 
-		private int lastModifiedFrame;
+		private int lastModifiedFrame = 0;
 
 		// Source mesh
 		public Mesh sourceMesh;

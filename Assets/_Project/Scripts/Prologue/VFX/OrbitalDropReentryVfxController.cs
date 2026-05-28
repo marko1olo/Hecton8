@@ -24,7 +24,7 @@ namespace Hecton8.Prologue.VFX
     {
         private int _signalPushDropCount;
         private const int TelemetryCapacity = 300;
-        private const int TelemetryEntrySizeBytes = 48;
+        private const int TelemetryEntrySizeBytes = 64;
         private const uint DumpMagic = 0x4F525646u; // ORVF
         private const int DumpVersion = 1;
         private const uint PrologueSequenceSourceHash = PrologueSignalSourceHashes.SequenceDirector;
@@ -931,25 +931,23 @@ namespace Hecton8.Prologue.VFX
                 if (_hasSpatialAnchor)
                     flags |= ReentryVfxStateSignal.FlagSpatialAnchor;
 
-                ReentryVfxTelemetryEntry entry = new ReentryVfxTelemetryEntry
-                {
-                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                    Sequence = _stateSequence,
-                    HydrationSequence = _hydrationSequence,
-                    Heat01 = _heat01,
-                    Opacity01 = _opacity01,
-                    AltitudeMeters = _altitudeMeters,
-                    VelocityMetersPerSecond = _velocityMetersPerSecond,
-                    AmbientBlend01 = _ambientBlend01,
-                    OverlayDistanceMeters = ResolveTelemetryOverlayDistanceMeters(),
-                    Phase = (byte)_phase,
-                    QualityWeightByte = _qualityWeightByte,
-                    Flags = flags,
-                    Reserved = 0,
-                    StateHash = ResolveStateHash(),
-                    SectorHashLo = 0u,
-                    Reserved2 = 0
-                };
+                ReentryVfxTelemetryEntry entry = default;
+                entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+                entry.Sequence = _stateSequence;
+                entry.HydrationSequence = _hydrationSequence;
+                entry.Heat01 = _heat01;
+                entry.Opacity01 = _opacity01;
+                entry.AltitudeMeters = _altitudeMeters;
+                entry.VelocityMetersPerSecond = _velocityMetersPerSecond;
+                entry.AmbientBlend01 = _ambientBlend01;
+                entry.OverlayDistanceMeters = ResolveTelemetryOverlayDistanceMeters();
+                entry.Phase = (byte)_phase;
+                entry.QualityWeightByte = _qualityWeightByte;
+                entry.Flags = flags;
+                entry.Reserved = 0;
+                entry.StateHash = ResolveStateHash();
+                entry.SectorHashLo = 0u;
+                entry.Reserved2 = 0;
 
                 telemetry[_telemetryCursor] = entry;
                 _telemetryCursor = (_telemetryCursor + 1) % TelemetryCapacity;
@@ -1002,34 +1000,23 @@ namespace Hecton8.Prologue.VFX
             {
                 string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Docs", "AgentLogs", DumpFileName));
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(DumpMagic);
-                    writer.Write(DumpVersion);
-                    writer.Write(TelemetryEntrySizeBytes);
-                    writer.Write(TelemetryCapacity);
-                    writer.Write(_telemetryCursor);
-                    writer.Write(_stateSequence);
+                    Span<byte> header = stackalloc byte[24];
+                    WriteUInt32LittleEndian(header.Slice(0, 4), DumpMagic);
+                    WriteInt32LittleEndian(header.Slice(4, 4), DumpVersion);
+                    WriteInt32LittleEndian(header.Slice(8, 4), TelemetryEntrySizeBytes);
+                    WriteInt32LittleEndian(header.Slice(12, 4), TelemetryCapacity);
+                    WriteInt32LittleEndian(header.Slice(16, 4), _telemetryCursor);
+                    WriteUInt16LittleEndian(header.Slice(20, 2), _stateSequence);
+                    stream.Write(header);
+
+                    Span<byte> entryBytes = stackalloc byte[TelemetryEntrySizeBytes];
                     int length = math.min(TelemetryCapacity, telemetry.Length);
                     for (int i = 0; i < length; i++)
                     {
                         ReentryVfxTelemetryEntry entry = telemetry[i];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.Sequence);
-                        writer.Write(entry.HydrationSequence);
-                        writer.Write(entry.Heat01);
-                        writer.Write(entry.Opacity01);
-                        writer.Write(entry.AltitudeMeters);
-                        writer.Write(entry.VelocityMetersPerSecond);
-                        writer.Write(entry.AmbientBlend01);
-                        writer.Write(entry.OverlayDistanceMeters);
-                        writer.Write(entry.Phase);
-                        writer.Write(entry.QualityWeightByte);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.Reserved);
-                        writer.Write(entry.StateHash);
-                        writer.Write(entry.SectorHashLo);
-                        writer.Write(entry.Reserved2);
+                        WriteTelemetryEntry(entryBytes, in entry);
+                        stream.Write(entryBytes);
                     }
                 }
             }
@@ -1039,6 +1026,51 @@ namespace Hecton8.Prologue.VFX
                 Hecton8.Core.H8Debug.LogError("[OrbitalDropReentryVfxController] Black box dump failed: " + exception.Message);
 #endif
             }
+        }
+
+        private static void WriteTelemetryEntry(Span<byte> destination, in ReentryVfxTelemetryEntry entry)
+        {
+            destination.Clear();
+            WriteUInt32LittleEndian(destination.Slice(0, 4), entry.Frame);
+            WriteSingleLittleEndian(destination.Slice(4, 4), entry.Heat01);
+            WriteSingleLittleEndian(destination.Slice(8, 4), entry.Opacity01);
+            WriteSingleLittleEndian(destination.Slice(12, 4), entry.AltitudeMeters);
+            WriteSingleLittleEndian(destination.Slice(16, 4), entry.VelocityMetersPerSecond);
+            WriteSingleLittleEndian(destination.Slice(20, 4), entry.AmbientBlend01);
+            WriteSingleLittleEndian(destination.Slice(24, 4), entry.OverlayDistanceMeters);
+            WriteUInt32LittleEndian(destination.Slice(28, 4), entry.StateHash);
+            WriteUInt32LittleEndian(destination.Slice(32, 4), entry.SectorHashLo);
+            WriteUInt32LittleEndian(destination.Slice(36, 4), entry.Reserved2);
+            WriteUInt16LittleEndian(destination.Slice(40, 2), entry.Sequence);
+            WriteUInt16LittleEndian(destination.Slice(42, 2), entry.HydrationSequence);
+            destination[44] = entry.Phase;
+            destination[45] = entry.QualityWeightByte;
+            destination[46] = entry.Flags;
+            destination[47] = entry.Reserved;
+        }
+
+        private static void WriteSingleLittleEndian(Span<byte> destination, float value)
+        {
+            WriteUInt32LittleEndian(destination, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(Span<byte> destination, int value)
+        {
+            WriteUInt32LittleEndian(destination, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(Span<byte> destination, uint value)
+        {
+            destination[0] = (byte)value;
+            destination[1] = (byte)(value >> 8);
+            destination[2] = (byte)(value >> 16);
+            destination[3] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt16LittleEndian(Span<byte> destination, ushort value)
+        {
+            destination[0] = (byte)value;
+            destination[1] = (byte)(value >> 8);
         }
 
         private float ResolveUnscaledDeltaTime()

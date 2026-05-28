@@ -11,6 +11,7 @@ namespace Hecton8.Data.Editor
     {
         private const string ReportPath = "Docs/Reports/ANDROID_PAL_OPTIMIZATION_REPORT_1404.json";
         private const string MemoryPath = "Assets/_Project/Scripts/Core/Memory/H8Memory.cs";
+        private const string GlobalDataVaultPath = "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs";
         private const string ArenaPath = "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs";
         private const string TypesPath = "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs";
         private const string NativePath = "Assets/Plugins/Android/Native/HectonAndroidAssetBridge.cpp";
@@ -37,6 +38,7 @@ namespace Hecton8.Data.Editor
 
             long start = DateTime.UtcNow.Ticks;
             string memory = ReadRequired(projectRoot, MemoryPath);
+            string globalDataVault = ReadRequired(projectRoot, GlobalDataVaultPath);
             string arena = ReadRequired(projectRoot, ArenaPath);
             string types = ReadRequired(projectRoot, TypesPath);
             string native = ReadRequired(projectRoot, NativePath);
@@ -55,7 +57,17 @@ namespace Hecton8.Data.Editor
                                   native.Contains("H8_WriteTelemetryDump", StringComparison.Ordinal) &&
                                   native.Contains("open(dumpPath", StringComparison.Ordinal) &&
                                   native.Contains("write(fd", StringComparison.Ordinal) &&
-                                  native.Contains("close(fd)", StringComparison.Ordinal);
+                                  native.Contains("close(fd)", StringComparison.Ordinal) &&
+                                  native.Contains("S_ISDIR", StringComparison.Ordinal);
+            bool telemetryDumpChronologicalOrder = arena.Contains("NormalizeTelemetryCursor", StringComparison.Ordinal) &&
+                                                   arena.Contains("int ringIndex = start + i", StringComparison.Ordinal) &&
+                                                   native.Contains("normalizedCursor", StringComparison.Ordinal) &&
+                                                   native.Contains("firstEntryCount", StringComparison.Ordinal) &&
+                                                   native.Contains("entryBytes + normalizedCursor * entrySize", StringComparison.Ordinal);
+            bool dumpTelemetryReadOnlyOnly = arena.Contains("private static void DumpTelemetry", StringComparison.Ordinal) &&
+                                             arena.Contains("if (!TryReadTelemetry(out NativeArray<H8DataMonolithTelemetryEntry>.ReadOnly ring", StringComparison.Ordinal) &&
+                                             !arena.Contains("private static void DumpTelemetry(H8DataBlobLoadStatus status)\n        {\n            if (!EnsureTelemetry()", StringComparison.Ordinal) &&
+                                             !arena.Contains("private static void DumpTelemetry(H8DataBlobLoadStatus status)\r\n        {\r\n            if (!EnsureTelemetry()", StringComparison.Ordinal);
             bool overflowGuard = native.Contains("assetLength < 0 || assetLength != bufferSize", StringComparison.Ordinal);
             bool noNativeHeap = !native.Contains("std::vector", StringComparison.Ordinal) &&
                                 !native.Contains("std::string", StringComparison.Ordinal) &&
@@ -92,6 +104,8 @@ namespace Hecton8.Data.Editor
                                           nativePluginMatrixValidator.Contains("androidIl2CppBackend", StringComparison.Ordinal) &&
                                           nativePluginMatrixValidator.Contains("androidGameActivityManifestValid", StringComparison.Ordinal) &&
                                           nativePluginMatrixValidator.Contains("H8_WriteTelemetryDump", StringComparison.Ordinal) &&
+                                          nativePluginMatrixValidator.Contains("dumpTelemetryReadOnlyOnly", StringComparison.Ordinal) &&
+                                          nativePluginMatrixValidator.Contains("telemetryDumpChronologicalOrder", StringComparison.Ordinal) &&
                                           nativePluginMatrixValidator.Contains("h8bin", StringComparison.Ordinal);
             bool mockJniZeroGuard = arena.Contains("assetManager == IntPtr.Zero", StringComparison.Ordinal) &&
                                     arena.Contains("activity == IntPtr.Zero", StringComparison.Ordinal);
@@ -111,6 +125,18 @@ namespace Hecton8.Data.Editor
                                         arena.Contains("AndroidJNI.ExceptionOccurred()", StringComparison.Ordinal) &&
                                         arena.Contains("AndroidJNI.ExceptionClear()", StringComparison.Ordinal) &&
                                         arena.Contains("AndroidJNI.DeleteLocalRef(exception)", StringComparison.Ordinal);
+            bool writerReleaseRetryCrossPlatform = arena.Contains("private const int DataMonolithWriterReleaseRetryCount = 4;", StringComparison.Ordinal) &&
+                                                   arena.Contains("for (int attempt = 0; attempt < DataMonolithWriterReleaseRetryCount; attempt++)", StringComparison.Ordinal) &&
+                                                   arena.Contains("Thread.Yield();", StringComparison.Ordinal) &&
+                                                   !arena.Contains("return vault.ReleaseWriteLock(in handle, owner);\r\n#endif", StringComparison.Ordinal) &&
+                                                   !arena.Contains("return vault.ReleaseWriteLock(in handle, owner);\n#endif", StringComparison.Ordinal);
+            bool dataVaultDeferredWriterReleaseReturnsFalse =
+                (globalDataVault.Contains("_ = QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID);\r\n                return false;", StringComparison.Ordinal) ||
+                 globalDataVault.Contains("_ = QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID);\n                return false;", StringComparison.Ordinal)) &&
+                (globalDataVault.Contains("_ = QueueDeferredWriterRelease(bufferKey, offsetBytes, ResolveActiveLockBit((BufferID)bufferKey), 0);\r\n                return false;", StringComparison.Ordinal) ||
+                 globalDataVault.Contains("_ = QueueDeferredWriterRelease(bufferKey, offsetBytes, ResolveActiveLockBit((BufferID)bufferKey), 0);\n                return false;", StringComparison.Ordinal)) &&
+                !globalDataVault.Contains("return QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID);", StringComparison.Ordinal) &&
+                !globalDataVault.Contains("return QueueDeferredWriterRelease(bufferKey, offsetBytes, ResolveActiveLockBit((BufferID)bufferKey), 0);", StringComparison.Ordinal);
             bool ownerLocalDumpRoute = arena.Contains("Dump_1404.bin", StringComparison.Ordinal) &&
                                        arena.Contains("Application.persistentDataPath", StringComparison.Ordinal) &&
                                        arena.Contains("WriteTelemetryDumpAndroid", StringComparison.Ordinal) &&
@@ -175,6 +201,9 @@ namespace Hecton8.Data.Editor
                                            types.Contains("[FieldOffset(8)] public long LoadTicks", StringComparison.Ordinal) &&
                                            types.Contains("[FieldOffset(16)] public long IoTicks", StringComparison.Ordinal) &&
                                            types.Contains("[FieldOffset(60)] public uint Reserved3", StringComparison.Ordinal);
+            int explicitStructLayoutDeclarationCount = CountToken(types, "[StructLayout(LayoutKind.Explicit");
+            int fieldOffsetDeclarationCount = CountToken(types, "[FieldOffset(");
+            int unsafeSizeOfCheckCount = CountToken(types, "UnsafeUtility.SizeOf<");
             bool dataVaultBufferIdsPresent = memory.Contains("DataMonolithPayload = 71103", StringComparison.Ordinal) &&
                                              memory.Contains("DataMonolithTelemetryRing = 71104", StringComparison.Ordinal) &&
                                              memory.Contains("DataMonolithTelemetryCursor = 71105", StringComparison.Ordinal);
@@ -186,6 +215,7 @@ namespace Hecton8.Data.Editor
             AppendJson(builder, "evidenceClass", "STATIC_SOURCE", true);
             AppendJson(builder, "status", "PENDING_ANDROID_PLAYER_BUILD", true);
             AppendJson(builder, "memoryPath", MemoryPath, true);
+            AppendJson(builder, "globalDataVaultPath", GlobalDataVaultPath, true);
             AppendJson(builder, "csharpArenaPath", ArenaPath, true);
             AppendJson(builder, "csharpTypesPath", TypesPath, true);
             AppendJson(builder, "nativePluginPath", NativePath, true);
@@ -196,7 +226,10 @@ namespace Hecton8.Data.Editor
             AppendJson(builder, "projectSettingsPath", ProjectSettingsPath, true);
             AppendJson(builder, "nativeLinkageMode", "Unity Android IL2CPP source plugin via DllImport(\"__Internal\"); CMake kept as standalone native reference, not active Gradle root", true);
             AppendJson(builder, "nativeAssetApisPresent", nativePresence, true);
+            AppendJson(builder, "nativeDumpDirectoryIsDirectoryCheckPresent", native.Contains("S_ISDIR", StringComparison.Ordinal), true);
             AppendJson(builder, "bufferOverflowGuardPresent", overflowGuard, true);
+            AppendJson(builder, "telemetryDumpChronologicalOrderPresent", telemetryDumpChronologicalOrder, true);
+            AppendJson(builder, "dumpTelemetryReadOnlyOnly", dumpTelemetryReadOnlyOnly, true);
             AppendJson(builder, "nativeHeapAllocationTokensAbsent", noNativeHeap, true);
             AppendJson(builder, "pInvokeDeclarationsPresent", pInvokePresent, true);
             AppendJson(builder, "androidReferencesGuarded", androidIsolation, true);
@@ -207,6 +240,8 @@ namespace Hecton8.Data.Editor
             AppendJson(builder, "jniNoArgumentArrayAllocationAbsent", noJniArgumentArray, true);
             AppendJson(builder, "rawJniFindClassWithoutAndroidJavaClass", rawJniClassLookup, true);
             AppendJson(builder, "rawJniPendingExceptionFencePresent", rawJniExceptionFence, true);
+            AppendJson(builder, "writerReleaseRetryCrossPlatformPresent", writerReleaseRetryCrossPlatform, true);
+            AppendJson(builder, "globalDataVaultDeferredWriterReleaseReturnsFalse", dataVaultDeferredWriterReleaseReturnsFalse, true);
             AppendJson(builder, "ownerLocalDump1404OnlyRoutePresent", ownerLocalDumpRoute, true);
             AppendJson(builder, "androidReleaseNativeDumpRoutePresent", ownerLocalDumpRoute && nativePresence, true);
             AppendJson(builder, "androidReleaseManagedDumpIoAbsent", !arena.Contains("System.IO.Path.Combine(Application.persistentDataPath", StringComparison.Ordinal), true);
@@ -234,6 +269,9 @@ namespace Hecton8.Data.Editor
             AppendJson(builder, "dump1404PathPresent", dump1404PathPresent, true);
             AppendJson(builder, "layoutAuditValidateBlittableSizesPresent", layoutAuditPresent, true);
             AppendJson(builder, "telemetryEntryExplicitLayoutProofPresent", telemetryLayoutExplicit, true);
+            AppendJson(builder, "explicitStructLayoutDeclarationCount", explicitStructLayoutDeclarationCount, true);
+            AppendJson(builder, "fieldOffsetDeclarationCount", fieldOffsetDeclarationCount, true);
+            AppendJson(builder, "unsafeSizeOfCheckCount", unsafeSizeOfCheckCount, true);
             AppendJson(builder, "telemetryEntryLayoutBytes", "Size=64; Checksum64@0 u64; LoadTicks@8 i64; IoTicks@16 i64; FrameIndex@24 u32; BlobBytes@28 u32; SectionCount@32 u32; LoadStatus@36 u32; PathFlags@40 u32; StateHash@44 u32; Reserved0@48 u32; Reserved1@52 u32; Reserved2@56 u32; Reserved3@60 u32", true);
             AppendJson(builder, "cmakeLinksAndroidAndLog", cmakeLinks, true);
             AppendJson(builder, "h8binNoCompressConfigured", gradleNoCompress, true);
@@ -245,6 +283,7 @@ namespace Hecton8.Data.Editor
             AppendJson(builder, "nativePluginMatrixDataMonolithAndroidGatePresent", nativeMatrixBridgeGate, true);
             AppendJson(builder, "staticScanMicroseconds", elapsedMicroseconds, true);
             AppendJson(builder, "memorySha256", Sha256File(projectRoot, MemoryPath), true);
+            AppendJson(builder, "globalDataVaultSha256", Sha256File(projectRoot, GlobalDataVaultPath), true);
             AppendJson(builder, "csharpSha256", Sha256File(projectRoot, ArenaPath), true);
             AppendJson(builder, "csharpTypesSha256", Sha256File(projectRoot, TypesPath), true);
             AppendJson(builder, "nativeSha256", Sha256File(projectRoot, NativePath), true);
@@ -315,8 +354,41 @@ namespace Hecton8.Data.Editor
 
         private static bool IsAndroidGuard(string directive)
         {
-            return directive.Contains("UNITY_ANDROID", StringComparison.Ordinal) &&
+            return ContainsPositiveDirectiveSymbol(directive, "UNITY_ANDROID") &&
                    directive.Contains("!UNITY_EDITOR", StringComparison.Ordinal);
+        }
+
+        private static bool ContainsPositiveDirectiveSymbol(string directive, string symbol)
+        {
+            int index = 0;
+            while (index < directive.Length)
+            {
+                int found = directive.IndexOf(symbol, index, StringComparison.Ordinal);
+                if (found < 0)
+                    return false;
+
+                int end = found + symbol.Length;
+                bool symbolStart = found == 0 || !IsDirectiveIdentifierChar(directive[found - 1]);
+                bool symbolEnd = end >= directive.Length || !IsDirectiveIdentifierChar(directive[end]);
+                if (symbolStart && symbolEnd)
+                {
+                    int previous = found - 1;
+                    while (previous >= 0 && char.IsWhiteSpace(directive[previous]))
+                        previous--;
+
+                    if (previous < 0 || directive[previous] != '!')
+                        return true;
+                }
+
+                index = end;
+            }
+
+            return false;
+        }
+
+        private static bool IsDirectiveIdentifierChar(char value)
+        {
+            return char.IsLetterOrDigit(value) || value == '_';
         }
 
         private static bool IsInsideAndroidGuard(bool[] stack, int depth)

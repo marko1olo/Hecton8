@@ -122,6 +122,56 @@ namespace Hecton8.Tests.Editor
             Assert.That(flush, Does.Contain("_mathPrecisionShaderDirty"));
         }
 
+        [Test]
+        public void DistanceMath_PushShaderMathLod_QueuesShaderStateUntilVisualSync()
+        {
+            string distanceMath = File.ReadAllText(DistanceMathPath());
+            string dispatcher = File.ReadAllText(SystemDispatcherPath());
+
+            string flush = ExtractMethodBody(distanceMath, "FlushVisualSyncShaderState");
+            string nonFlushSource = distanceMath.Replace(flush, string.Empty);
+
+            Assert.AreEqual(0, Count(nonFlushSource, @"\bShader\.(?:SetGlobal|EnableKeyword|DisableKeyword)"), "DistanceMath shader write outside visual sync flush");
+            Assert.Greater(Count(flush, @"\bShader\.SetGlobal"), 0);
+            Assert.Greater(Count(flush, @"\bShader\.(?:EnableKeyword|DisableKeyword)"), 0);
+            Assert.That(dispatcher, Does.Contain("DistanceMath.FlushVisualSyncShaderState();"));
+        }
+
+        [Test]
+        public void ConnectionSplineBatchRenderer_LogisticsHighlight_QueuesShaderStateUntilVisualSync()
+        {
+            string renderer = File.ReadAllText(ConnectionSplineBatchRendererPath());
+            string dispatcher = File.ReadAllText(SystemDispatcherPath());
+
+            AssertNoShaderPresentationWrite(renderer, "SetLogisticsPathHighlightActive");
+
+            string flush = ExtractMethodBody(renderer, "FlushVisualSyncShaderState");
+            Assert.Greater(Count(flush, @"\bShader\.SetGlobal"), 0);
+            Assert.That(dispatcher, Does.Contain("ConnectionSplineBatchRenderer.FlushVisualSyncShaderState();"));
+        }
+
+        [Test]
+        public void SpectrumSystem_PublicSonarPresentation_QueuesShaderStateUntilLateFrame()
+        {
+            string spectrum = File.ReadAllText(SpectrumSystemPath());
+
+            AssertNoShaderPresentationWrite(spectrum, "ApplyShaderMode");
+            AssertNoShaderPresentationWrite(spectrum, "EmitSonarPulse");
+            AssertNoShaderPresentationWrite(spectrum, "PublishSonarReveal");
+            AssertNoShaderPresentationWrite(spectrum, "PublishScreenSpaceSonarPulse");
+            AssertNoShaderPresentationWrite(spectrum, "HandleAcousticEchoReturned");
+            AssertNoShaderPresentationWrite(spectrum, "HandlePingReturnSignal");
+            AssertNoShaderPresentationWrite(spectrum, "ClearSonarSnapshot");
+            AssertNoShaderPresentationWrite(spectrum, "PublishPassiveRadarShaderState");
+            AssertNoAudioPresentationWrite(spectrum, "TryPlayAbyssalAnchorReturn");
+
+            string lateFrame = ExtractMethodBody(spectrum, "LateFrameTick");
+            string flush = ExtractMethodBody(spectrum, "FlushQueuedSpectrumShaderGlobals");
+            Assert.That(lateFrame, Does.Contain("FlushQueuedSpectrumShaderGlobals();"));
+            Assert.That(lateFrame, Does.Contain("FlushQueuedSpectrumAudio();"));
+            Assert.Greater(Count(flush, @"\bShader\.SetGlobal"), 0);
+        }
+
         private static string RuntimeScriptsRoot()
         {
             return Path.Combine(ProjectRoot(), "Assets", "_Project", "Scripts");
@@ -145,6 +195,26 @@ namespace Hecton8.Tests.Editor
         private static string GlobalRegistryPath()
         {
             return Path.Combine(RuntimeScriptsRoot(), "Core", "GlobalRegistry.cs");
+        }
+
+        private static string DistanceMathPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Core", "DistanceMath.cs");
+        }
+
+        private static string SystemDispatcherPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Core", "SystemDispatcher.cs");
+        }
+
+        private static string ConnectionSplineBatchRendererPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Core", "ConnectionSplineBatchRenderer.cs");
+        }
+
+        private static string SpectrumSystemPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Visor", "SpectrumSystem.cs");
         }
 
         private static string ProjectRoot()
@@ -178,6 +248,12 @@ namespace Hecton8.Tests.Editor
         {
             string body = ExtractMethodBody(text, methodName);
             Assert.AreEqual(0, Count(body, @"\bShader\.(?:SetGlobal|EnableKeyword|DisableKeyword)"), methodName + " shader presentation write");
+        }
+
+        private static void AssertNoAudioPresentationWrite(string text, string methodName)
+        {
+            string body = ExtractMethodBody(text, methodName);
+            Assert.AreEqual(0, Count(body, @"\bPlayStatic2D\s*\(|\bAudioSource\.Play\s*\(|\.PlayOneShot\s*\("), methodName + " audio presentation write");
         }
 
         private static string ExtractMethodBody(string text, string methodName)

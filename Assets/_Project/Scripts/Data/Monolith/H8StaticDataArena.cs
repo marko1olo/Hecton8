@@ -51,10 +51,10 @@ namespace Hecton8.Data
 #if UNITY_EDITOR
         private const int EditorHotReloadSnapshotChunkBytes = 64 * 1024;
 #endif
+        private const int DataMonolithWriterReleaseRetryCount = 4;
 #if UNITY_ANDROID && !UNITY_EDITOR
         private const int AndroidAssetMissing = -4;
         private const int AndroidPersistentPathUtf8Capacity = 1024;
-        private const int DataMonolithWriterReleaseRetryCount = 4;
 #endif
 #if (UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN) && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
         private const uint NativeGenericRead = 0x80000000u;
@@ -2923,7 +2923,6 @@ namespace Hecton8.Data
             if (vault == null || handle.BufferID == 0u || owner == SystemID.Unknown)
                 return false;
 
-#if UNITY_ANDROID && !UNITY_EDITOR
             for (int attempt = 0; attempt < DataMonolithWriterReleaseRetryCount; attempt++)
             {
                 if (vault.ReleaseWriteLock(in handle, owner))
@@ -2933,9 +2932,6 @@ namespace Hecton8.Data
             }
 
             return false;
-#else
-            return vault.ReleaseWriteLock(in handle, owner);
-#endif
         }
 
         private static bool TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly arena)
@@ -3091,22 +3087,22 @@ namespace Hecton8.Data
 
         private static void DumpTelemetry(H8DataBlobLoadStatus status)
         {
-            if (!EnsureTelemetry() ||
-                !TryReadTelemetry(out NativeArray<H8DataMonolithTelemetryEntry>.ReadOnly ring, out NativeArray<int>.ReadOnly cursor))
+            if (!TryReadTelemetry(out NativeArray<H8DataMonolithTelemetryEntry>.ReadOnly ring, out NativeArray<int>.ReadOnly cursor))
             {
                 return;
             }
 
+            int telemetryCursor = NormalizeTelemetryCursor(cursor[0]);
 #if !UNITY_EDITOR && !DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
-            WriteTelemetryDumpsWin32(status, ring, cursor[0]);
+            WriteTelemetryDumpsWin32(status, ring, telemetryCursor);
 #elif UNITY_ANDROID && !UNITY_EDITOR
-            WriteTelemetryDumpAndroid(status, ring, cursor[0]);
+            WriteTelemetryDumpAndroid(status, ring, telemetryCursor);
 #elif UNITY_EDITOR || DEVELOPMENT_BUILD
             try
             {
                 string folder = System.IO.Path.GetFullPath("Docs/AgentLogs");
                 System.IO.Directory.CreateDirectory(folder);
-                WriteTelemetryDump(System.IO.Path.Combine(folder, "Dump_1404.bin"), status, ring, cursor[0]);
+                WriteTelemetryDump(System.IO.Path.Combine(folder, "Dump_1404.bin"), status, ring, telemetryCursor);
             }
             catch (IOException)
             {
@@ -3127,6 +3123,11 @@ namespace Hecton8.Data
             {
             }
 #endif
+        }
+
+        private static int NormalizeTelemetryCursor(int cursor)
+        {
+            return (uint)cursor < H8DataLayoutConstants.TelemetryRingCapacity ? cursor : 0;
         }
 
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -3250,9 +3251,14 @@ namespace Hecton8.Data
             writer.Write(cursor);
             writer.Write(H8DataLayoutConstants.TelemetryRingCapacity);
             writer.Write(UnsafeUtility.SizeOf<H8DataMonolithTelemetryEntry>());
+            int start = NormalizeTelemetryCursor(cursor);
             for (int i = 0; i < H8DataLayoutConstants.TelemetryRingCapacity; i++)
             {
-                H8DataMonolithTelemetryEntry entry = ring[i];
+                int ringIndex = start + i;
+                if (ringIndex >= H8DataLayoutConstants.TelemetryRingCapacity)
+                    ringIndex -= H8DataLayoutConstants.TelemetryRingCapacity;
+
+                H8DataMonolithTelemetryEntry entry = ring[ringIndex];
                 writer.Write(entry.Checksum64);
                 writer.Write(entry.LoadTicks);
                 writer.Write(entry.IoTicks);
@@ -3340,9 +3346,14 @@ namespace Hecton8.Data
             }
 
             byte* entryBytes = stackalloc byte[H8DataLayoutConstants.TelemetryEntrySize];
+            int start = NormalizeTelemetryCursor(cursor);
             for (int i = 0; i < H8DataLayoutConstants.TelemetryRingCapacity; i++)
             {
-                H8DataMonolithTelemetryEntry entry = ring[i];
+                int ringIndex = start + i;
+                if (ringIndex >= H8DataLayoutConstants.TelemetryRingCapacity)
+                    ringIndex -= H8DataLayoutConstants.TelemetryRingCapacity;
+
+                H8DataMonolithTelemetryEntry entry = ring[ringIndex];
                 int entryOffset = 0;
                 WriteUInt64Le(entryBytes, ref entryOffset, entry.Checksum64);
                 WriteInt64Le(entryBytes, ref entryOffset, entry.LoadTicks);

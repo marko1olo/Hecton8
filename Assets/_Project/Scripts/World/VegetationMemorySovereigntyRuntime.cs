@@ -369,22 +369,6 @@ namespace Hecton8.World
                 return true;
             }
 
-            bool compactionActive = vault != null && vault.IsCompactionFenceActive;
-            RecordVegetationMemoryTelemetry(
-                bufferId,
-                handle.Generation,
-                requiredLength,
-                buffer.IsCreated ? buffer.Length : 0,
-                0,
-                0f,
-                compactionActive
-                    ? VegetationMemoryTelemetryCode.CompactionFenceActive
-                    : VegetationMemoryTelemetryCode.VaultResolveFailed,
-                VegetationMemoryTelemetryPhase.Defrag,
-                compactionActive
-                    ? VegetationMemorySovereigntyConstants.FlagCompactionFence
-                    : VegetationMemorySovereigntyConstants.FlagStaleHandle,
-                default);
             buffer = default;
             return false;
         }
@@ -409,22 +393,6 @@ namespace Hecton8.World
                 return true;
             }
 
-            bool compactionActive = vault != null && vault.IsCompactionFenceActive;
-            RecordVegetationMemoryTelemetry(
-                bufferId,
-                handle.Generation,
-                requiredLength,
-                buffer.IsCreated ? buffer.Length : 0,
-                0,
-                0f,
-                compactionActive
-                    ? VegetationMemoryTelemetryCode.CompactionFenceActive
-                    : VegetationMemoryTelemetryCode.VaultResolveFailed,
-                VegetationMemoryTelemetryPhase.Defrag,
-                compactionActive
-                    ? VegetationMemorySovereigntyConstants.FlagCompactionFence
-                    : VegetationMemorySovereigntyConstants.FlagStaleHandle,
-                default);
             buffer = default;
             return false;
         }

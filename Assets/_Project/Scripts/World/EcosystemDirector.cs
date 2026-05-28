@@ -234,6 +234,7 @@ namespace Hecton8.World
         private const int MacroSwarmSignalScratchCapacity = 64;
         private const int MacroSwarmBlackBoxCapacity = 300;
         private const int MacroSwarmVisualBoidsPerBiomassUnit = 64;
+        private const int MacroSwarmTravelJobBufferLockCount = 15;
         private const int FaunaMutationBlackBoxCapacity = 300;
         private const int FaunaGeneticsTelemetryCapacity = 300;
         private const int FaunaGeneticsProfileCapacity = 64;
@@ -449,14 +450,22 @@ namespace Hecton8.World
 
             public bool TryAcquireWriteLock(SystemID systemID, out NativeArray<T> array)
             {
-                if (_vault != null &&
-                    _handle.BufferID != 0u &&
-                    _vault.TryAcquireWriteLock(in _handle, systemID, out array) &&
-                    array.IsCreated)
+                if (_vault == null || _handle.BufferID == 0u)
                 {
-                    return true;
+                    array = default;
+                    return false;
                 }
 
+                if (!_vault.TryAcquireWriteLock(in _handle, systemID, out array))
+                {
+                    array = default;
+                    return false;
+                }
+
+                if (array.IsCreated)
+                    return true;
+
+                _vault.ReleaseWriteLock(in _handle, systemID);
                 array = default;
                 return false;
             }
@@ -545,12 +554,10 @@ namespace Hecton8.World
                 return false;
 
             int capacity = entries.Length;
-            int start = ResolveIndexProbeStart(key, capacity);
+            int start = ResolveIndexBucket(key, capacity);
             for (int probe = 0; probe < capacity; probe++)
             {
-                int index = start + probe;
-                if (index >= capacity)
-                    index -= capacity;
+                int index = ResolveIndexProbe(start, probe, capacity);
 
                 EcosystemIndexEntry entry = entries[index];
                 if (entry.Occupied == 0)
@@ -576,12 +583,10 @@ namespace Hecton8.World
                 return false;
 
             int capacity = entries.Length;
-            int start = ResolveIndexProbeStart(key, capacity);
+            int start = ResolveIndexBucket(key, capacity);
             for (int probe = 0; probe < capacity; probe++)
             {
-                int index = start + probe;
-                if (index >= capacity)
-                    index -= capacity;
+                int index = ResolveIndexProbe(start, probe, capacity);
 
                 EcosystemIndexEntry entry = entries[index];
                 if (entry.Occupied == 0)
@@ -606,12 +611,10 @@ namespace Hecton8.World
                 return false;
 
             int capacity = entries.Length;
-            int start = ResolveIndexProbeStart(key, capacity);
+            int start = ResolveIndexBucket(key, capacity);
             for (int probe = 0; probe < capacity; probe++)
             {
-                int index = start + probe;
-                if (index >= capacity)
-                    index -= capacity;
+                int index = ResolveIndexProbe(start, probe, capacity);
 
                 EcosystemIndexEntry entry = entries[index];
                 if (entry.Occupied == 0 || entry.Key == key)
@@ -627,17 +630,6 @@ namespace Hecton8.World
             }
 
             return false;
-        }
-
-        private static int ResolveIndexProbeStart(long key, int capacity)
-        {
-            ulong hash = (ulong)key;
-            hash ^= hash >> 33;
-            hash *= 0xff51afd7ed558ccdUL;
-            hash ^= hash >> 33;
-            hash *= 0xc4ceb9fe1a85ec53UL;
-            hash ^= hash >> 33;
-            return (int)(hash % (uint)math.max(1, capacity));
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -1367,6 +1359,10 @@ namespace Hecton8.World
         private bool _genomeMutationScheduled;
         private bool _macroSwarmTravelScheduled;
         private bool _apexTerritoryOverlapScheduled;
+        private bool _solveJobLocksHeld;
+        private bool _genomeMutationJobLocksHeld;
+        private bool _macroSwarmTravelJobLocksHeld;
+        private bool _apexTerritoryOverlapJobLocksHeld;
         private bool _populationSolvePendingHibernationSync;
         private float _biomeHostility01;
         private float _biomeGradientBlend01;
@@ -2135,57 +2131,76 @@ namespace Hecton8.World
 
         internal void CaptureSaveSnapshot()
         {
-            if (!_saveSnapshotSectors.IsCreated)
+            if (!_saveSnapshotSectors.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<EcosystemSectorSaveRecord> saveSectors))
                 return;
 
-            _saveSnapshotSectorCount = 0;
-            _saveSnapshotBiomassRunCount = 0;
-            if (!IsInitialized)
-                return;
-
-            CompleteScheduledSimulation(forceComplete: true);
-            CompleteScheduledMacroSwarmTravel(forceComplete: true);
-            ApplyPendingBiomassImpacts();
-            SyncPendingHibernatedFaunaPopulationRecords();
-            for (int sectorIndex = 0; sectorIndex < _activeSectorCount; sectorIndex++)
+            try
             {
-                SectorPopulationState state = _sectorFrontStates[sectorIndex];
-                TryAppendSaveSnapshotSector(new EcosystemSectorSaveRecord
+                _saveSnapshotSectorCount = 0;
+                _saveSnapshotBiomassRunCount = 0;
+                if (!IsInitialized)
+                    return;
+
+                CompleteScheduledSimulation(forceComplete: true);
+                CompleteScheduledMacroSwarmTravel(forceComplete: true);
+                ApplyPendingBiomassImpacts();
+                SyncPendingHibernatedFaunaPopulationRecords();
+                if (_sectorFrontStates.TryResolveReadOnly(out NativeArray<SectorPopulationState>.ReadOnly sectorFrontStates))
                 {
-                    SectorCoord = state.SectorCoord,
-                    PackedPopulations = PackPopulationCounts(state.PreyPopulationRounded, state.PredatorPopulationRounded),
-                    PackedAdaptation = PackAdaptationTraits(state.Fitness, state.SpeedMultiplier, state.CamouflageIndex, maximumSpeedMultiplier)
-                });
-            }
+                    int sectorCount = math.min(_activeSectorCount, sectorFrontStates.Length);
+                    for (int sectorIndex = 0; sectorIndex < sectorCount; sectorIndex++)
+                    {
+                        SectorPopulationState state = sectorFrontStates[sectorIndex];
+                        TryAppendSaveSnapshotSector(saveSectors, new EcosystemSectorSaveRecord
+                        {
+                            SectorCoord = state.SectorCoord,
+                            PackedPopulations = PackPopulationCounts(state.PreyPopulationRounded, state.PredatorPopulationRounded),
+                            PackedAdaptation = PackAdaptationTraits(state.Fitness, state.SpeedMultiplier, state.CamouflageIndex, maximumSpeedMultiplier)
+                        });
+                    }
+                }
 
-            CaptureBiomassSaveRuns();
-            if (_saveSnapshotBiomassRuns.IsCreated)
+                CaptureBiomassSaveRuns();
+                if (_saveSnapshotBiomassRuns.TryResolveReadOnly(out NativeArray<EcosystemBiomassSaveRun>.ReadOnly biomassRuns))
+                {
+                    int runCount = math.min(_saveSnapshotBiomassRunCount, biomassRuns.Length);
+                    for (int runIndex = 0; runIndex < runCount && HasSaveSnapshotSectorCapacity(saveSectors, 1); runIndex++)
+                        TryAppendSaveSnapshotSector(saveSectors, PackBiomassRunAsSectorRecord(biomassRuns[runIndex]));
+                }
+
+                CaptureMacroSwarmSaveRecords(saveSectors);
+                CaptureFaunaGenomeSaveRecords(saveSectors);
+            }
+            finally
             {
-                int runCount = math.min(_saveSnapshotBiomassRunCount, _saveSnapshotBiomassRuns.Length);
-                for (int runIndex = 0; runIndex < runCount && HasSaveSnapshotSectorCapacity(1); runIndex++)
-                    TryAppendSaveSnapshotSector(PackBiomassRunAsSectorRecord(_saveSnapshotBiomassRuns[runIndex]));
+                _saveSnapshotSectors.ReleaseWriteLock(SystemID.AIEcology);
+            }
+        }
+
+        internal NativeArray<EcosystemSectorSaveRecord>.ReadOnly GetSaveSnapshotArray(out int recordCount)
+        {
+            recordCount = 0;
+            if (_saveSnapshotSectorCount <= 0 ||
+                !_saveSnapshotSectors.TryResolveReadOnly(out NativeArray<EcosystemSectorSaveRecord>.ReadOnly snapshot))
+            {
+                return default;
             }
 
-            CaptureMacroSwarmSaveRecords();
-            CaptureFaunaGenomeSaveRecords();
+            recordCount = math.min(_saveSnapshotSectorCount, snapshot.Length);
+            return snapshot;
         }
 
-        internal NativeArray<EcosystemSectorSaveRecord>.ReadOnly GetSaveSnapshotArray()
+        internal NativeArray<EcosystemBiomassSaveRun>.ReadOnly GetBiomassSaveSnapshotArray(out int recordCount)
         {
-            if (!_saveSnapshotSectors.IsCreated || _saveSnapshotSectorCount <= 0)
+            recordCount = 0;
+            if (_saveSnapshotBiomassRunCount <= 0 ||
+                !_saveSnapshotBiomassRuns.TryResolveReadOnly(out NativeArray<EcosystemBiomassSaveRun>.ReadOnly snapshot))
+            {
                 return default;
+            }
 
-            return _saveSnapshotSectors
-                .GetSubArray(0, math.min(_saveSnapshotSectorCount, _saveSnapshotSectors.Length))
-                .AsReadOnly();
-        }
-
-        internal NativeArray<EcosystemBiomassSaveRun>.ReadOnly GetBiomassSaveSnapshotArray()
-        {
-            if (!_saveSnapshotBiomassRuns.IsCreated || _saveSnapshotBiomassRunCount <= 0)
-                return default;
-
-            return _saveSnapshotBiomassRuns.GetSubArray(0, math.min(_saveSnapshotBiomassRunCount, _saveSnapshotBiomassRuns.Length)).AsReadOnly();
+            recordCount = math.min(_saveSnapshotBiomassRunCount, snapshot.Length);
+            return snapshot;
         }
 
         internal unsafe void RestoreFromLoadedRecords(EcosystemSectorSaveRecord[] loadedRecords)
@@ -2194,22 +2209,34 @@ namespace Hecton8.World
                 return;
 
             CompleteScheduledSimulation(forceComplete: true);
-            ClearIndexEntries(_sectorIndexEntries);
-            ClearIndexEntries(_biomassIndexEntries);
-            _coldTickAccumulator = 0f;
-            _solveScheduled = false;
-            _scheduledSolveHandle = default;
+            if (!TryLockSectorSolveJobBuffers())
+                return;
 
-            if (_sectorFrontStates.IsCreated)
+            try
             {
-                void* frontPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks<SectorPopulationState>(_sectorFrontStates.Resolve());
-                UnsafeUtility.MemClear(frontPtr, _sectorFrontStates.Length * UnsafeUtility.SizeOf<SectorPopulationState>());
+                NativeArray<EcosystemIndexEntry> sectorIndexEntries = _sectorIndexEntries.Resolve();
+                NativeArray<SectorPopulationState> sectorFrontStates = _sectorFrontStates.Resolve();
+                NativeArray<SectorPopulationState> sectorBackStates = _sectorBackStates.Resolve();
+                ClearIndexEntries(sectorIndexEntries);
+                _coldTickAccumulator = 0f;
+                _solveScheduled = false;
+                _scheduledSolveHandle = default;
+
+                if (sectorFrontStates.IsCreated)
+                {
+                    void* frontPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks<SectorPopulationState>(sectorFrontStates);
+                    UnsafeUtility.MemClear(frontPtr, sectorFrontStates.Length * UnsafeUtility.SizeOf<SectorPopulationState>());
+                }
+
+                if (sectorBackStates.IsCreated)
+                {
+                    void* backPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks<SectorPopulationState>(sectorBackStates);
+                    UnsafeUtility.MemClear(backPtr, sectorBackStates.Length * UnsafeUtility.SizeOf<SectorPopulationState>());
+                }
             }
-
-            if (_sectorBackStates.IsCreated)
+            finally
             {
-                void* backPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks<SectorPopulationState>(_sectorBackStates.Resolve());
-                UnsafeUtility.MemClear(backPtr, _sectorBackStates.Length * UnsafeUtility.SizeOf<SectorPopulationState>());
+                UnlockSectorSolveJobBuffers();
             }
 
             ClearHeadlessRuntimeState();
@@ -2277,15 +2304,47 @@ namespace Hecton8.World
                     ApexInSector = PackBooleanByte(predatorPopulation > 0)
                 };
 
-                int sectorIndex = _activeSectorCount;
-                _sectorFrontStates[sectorIndex] = restoredState;
-                _sectorBackStates[sectorIndex] = restoredState;
-                WriteHeadlessSlot(sectorIndex, in restoredState);
-                TryUpsertIndexEntry(_sectorIndexEntries, PackSectorKey(saveRecord.SectorCoord), sectorIndex);
-                _activeSectorCount++;
+                if (!TryLockSectorSolveJobBuffers())
+                    continue;
+
+                try
+                {
+                    NativeArray<EcosystemIndexEntry> sectorIndexEntries = _sectorIndexEntries.Resolve();
+                    NativeArray<SectorPopulationState> sectorFrontStates = _sectorFrontStates.Resolve();
+                    NativeArray<SectorPopulationState> sectorBackStates = _sectorBackStates.Resolve();
+                    if (!sectorIndexEntries.IsCreated ||
+                        !sectorFrontStates.IsCreated ||
+                        !sectorBackStates.IsCreated ||
+                        _activeSectorCount >= sectorFrontStates.Length ||
+                        _activeSectorCount >= sectorBackStates.Length)
+                    {
+                        continue;
+                    }
+
+                    int sectorIndex = _activeSectorCount;
+                    sectorFrontStates[sectorIndex] = restoredState;
+                    sectorBackStates[sectorIndex] = restoredState;
+                    WriteHeadlessSlot(sectorIndex, in restoredState);
+                    TryUpsertIndexEntry(sectorIndexEntries, PackSectorKey(saveRecord.SectorCoord), sectorIndex);
+                    _activeSectorCount++;
+                }
+                finally
+                {
+                    UnlockSectorSolveJobBuffers();
+                }
             }
 
-            PublishBiomassTelemetryAndEvents();
+            if (TryLockSectorSolveJobBuffers())
+            {
+                try
+                {
+                    PublishBiomassTelemetryAndEvents();
+                }
+                finally
+                {
+                    UnlockSectorSolveJobBuffers();
+                }
+            }
         }
 
         private void Awake()
@@ -2407,9 +2466,20 @@ namespace Hecton8.World
 
             RefreshMacroSwarmScalabilityCache();
             DrainSectorResidencySignalSnapshots();
-            ApplyMacroSwarmPredatorAttraction();
-            SpawnMacroSwarmDiffusionGradient();
-            PushMacroSwarmBlackBox(0);
+            if (!TryLockMacroSwarmTravelJobBuffers())
+                return;
+
+            try
+            {
+                ApplyMacroSwarmPredatorAttraction();
+                SpawnMacroSwarmDiffusionGradient();
+                PushMacroSwarmBlackBox(0);
+            }
+            finally
+            {
+                UnlockMacroSwarmTravelJobBuffers();
+            }
+
             JobHandle mutationDependency = ScheduleFaunaGenomeMutation();
             ScheduleMacroSwarmTravel(mutationDependency);
         }
@@ -3155,54 +3225,40 @@ namespace Hecton8.World
             if (sectorHash == 0UL || !_macroSwarms.IsCreated || _macroSwarmTravelScheduled)
                 return false;
 
-            IDataVault vault = ResolveDataVault();
-            if (vault == null || !vault.TryOpenMacroDatabasePayload(sectorHash, out MacroDatabasePayloadHandle handle))
-                return false;
-
-            int stride = UnsafeUtility.SizeOf<MacroSwarm>();
-            if (handle.ByteLength < stride || !_macroHydrationScratch.IsCreated)
+            bool releaseMacroLock = false;
+            if (!_macroSwarmTravelJobLocksHeld)
             {
-                PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagInvalid);
-                return false;
+                if (!TryLockMacroSwarmTravelJobBuffers())
+                    return false;
+                releaseMacroLock = true;
             }
 
-            NativeArray<MacroSwarm> scratch = _macroHydrationScratch.Resolve();
-            if (!scratch.IsCreated || scratch.Length <= 0)
+            try
             {
-                PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagInvalid);
-                return false;
-            }
+                IDataVault vault = ResolveDataVault();
+                if (vault == null || !vault.TryOpenMacroDatabasePayload(sectorHash, out MacroDatabasePayloadHandle handle))
+                    return false;
 
-            int cap = ResolveMacroSwarmActiveCap();
-            int invalid = 0;
-            int overflow = 0;
-            int sourceOffset = 0;
-            int scratchBytes = scratch.Length * stride;
-            while (sourceOffset + stride <= handle.ByteLength)
-            {
-                if (_activeMacroSwarmCount >= cap)
+                int stride = UnsafeUtility.SizeOf<MacroSwarm>();
+                if (handle.ByteLength < stride || !_macroHydrationScratch.IsCreated)
                 {
-                    overflow++;
-                    break;
+                    PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagInvalid);
+                    return false;
                 }
 
-                int remainingBytes = handle.ByteLength - sourceOffset;
-                int copyCapacity = remainingBytes < scratchBytes ? remainingBytes : scratchBytes;
-                if (!vault.TryCopyMacroDatabasePayload(
-                        sectorHash,
-                        sourceOffset,
-                        scratch,
-                        copyCapacity,
-                        out int bytesCopied,
-                        out handle) ||
-                    bytesCopied < stride)
+                NativeArray<MacroSwarm> scratch = _macroHydrationScratch.Resolve();
+                if (!scratch.IsCreated || scratch.Length <= 0)
                 {
-                    invalid++;
-                    break;
+                    PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagInvalid);
+                    return false;
                 }
 
-                int copiedSwarmCount = bytesCopied / stride;
-                for (int i = 0; i < copiedSwarmCount; i++)
+                int cap = ResolveMacroSwarmActiveCap();
+                int invalid = 0;
+                int overflow = 0;
+                int sourceOffset = 0;
+                int scratchBytes = scratch.Length * stride;
+                while (sourceOffset + stride <= handle.ByteLength)
                 {
                     if (_activeMacroSwarmCount >= cap)
                     {
@@ -3210,34 +3266,64 @@ namespace Hecton8.World
                         break;
                     }
 
-                    MacroSwarm swarm = scratch[i];
-                    if (!TryNormalizeImportedMacroSwarm(ref swarm, sectorHash))
+                    int remainingBytes = handle.ByteLength - sourceOffset;
+                    int copyCapacity = remainingBytes < scratchBytes ? remainingBytes : scratchBytes;
+                    if (!vault.TryCopyMacroDatabasePayload(
+                            sectorHash,
+                            sourceOffset,
+                            scratch,
+                            copyCapacity,
+                            out int bytesCopied,
+                            out handle) ||
+                        bytesCopied < stride)
                     {
                         invalid++;
-                        continue;
+                        break;
                     }
 
-                    if (HasActiveMacroSwarmRoute(swarm.SectorAup, swarm.TargetSectorAup))
-                        continue;
+                    int copiedSwarmCount = bytesCopied / stride;
+                    for (int i = 0; i < copiedSwarmCount; i++)
+                    {
+                        if (_activeMacroSwarmCount >= cap)
+                        {
+                            overflow++;
+                            break;
+                        }
 
-                    _macroSwarms[_activeMacroSwarmCount++] = swarm;
-                    importedCount++;
+                        MacroSwarm swarm = scratch[i];
+                        if (!TryNormalizeImportedMacroSwarm(ref swarm, sectorHash))
+                        {
+                            invalid++;
+                            continue;
+                        }
+
+                        if (HasActiveMacroSwarmRoute(swarm.SectorAup, swarm.TargetSectorAup))
+                            continue;
+
+                        _macroSwarms[_activeMacroSwarmCount++] = swarm;
+                        importedCount++;
+                    }
+
+                    sourceOffset += copiedSwarmCount * stride;
+                    if (copiedSwarmCount == 0 || _activeMacroSwarmCount >= cap)
+                        break;
                 }
 
-                sourceOffset += copiedSwarmCount * stride;
-                if (copiedSwarmCount == 0 || _activeMacroSwarmCount >= cap)
-                    break;
+                int flags = importedCount > 0 ? MacroSwarmBlackBoxFlagDatabaseHydrated : 0;
+                if (invalid > 0)
+                    flags |= MacroSwarmBlackBoxFlagInvalid;
+                if (overflow > 0)
+                    flags |= MacroSwarmBlackBoxFlagCapacityOverflow;
+                if (flags != 0)
+                    PushMacroSwarmBlackBox(flags);
+
+                return importedCount > 0;
             }
-
-            int flags = importedCount > 0 ? MacroSwarmBlackBoxFlagDatabaseHydrated : 0;
-            if (invalid > 0)
-                flags |= MacroSwarmBlackBoxFlagInvalid;
-            if (overflow > 0)
-                flags |= MacroSwarmBlackBoxFlagCapacityOverflow;
-            if (flags != 0)
-                PushMacroSwarmBlackBox(flags);
-
-            return importedCount > 0;
+            finally
+            {
+                if (releaseMacroLock)
+                    UnlockMacroSwarmTravelJobBuffers();
+            }
         }
 
         /// <inheritdoc />
@@ -3259,31 +3345,41 @@ namespace Hecton8.World
                 return false;
             }
 
-            int2 centerCell = QuantizeBiomassMacroCell(in centerAup);
-            int radiusCells = math.max(1, (int)math.ceil(math.max(1, radiusMetersQ) * InvBiomassMacroCellSizeMeters));
-            int i = 0;
-            while (i < _activeMacroSwarmCount && claimedCount < destination.Length)
-            {
-                MacroSwarm swarm = _macroSwarms[i];
-                int2 delta = swarm.SectorAup - centerCell;
-                if (math.max(math.abs(delta.x), math.abs(delta.y)) > radiusCells)
-                {
-                    i++;
-                    continue;
-                }
-
-                destination[claimedCount++] = swarm;
-                claimedBiomass01 = math.saturate(claimedBiomass01 + math.max(0f, swarm.BiomassValue));
-                RemoveMacroSwarmSwapBack(i);
-            }
-
-            if (claimedCount <= 0)
+            if (!TryLockMacroSwarmTravelJobBuffers())
                 return false;
 
-            _lastMacroSwarmsHydrated = claimedCount;
-            _lastMacroHydratedBoidEstimate = math.max(0, (int)math.round(claimedBiomass01 * MacroSwarmVisualBoidsPerBiomassUnit));
-            PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagActiveHydrated);
-            return true;
+            try
+            {
+                int2 centerCell = QuantizeBiomassMacroCell(in centerAup);
+                int radiusCells = math.max(1, (int)math.ceil(math.max(1, radiusMetersQ) * InvBiomassMacroCellSizeMeters));
+                int i = 0;
+                while (i < _activeMacroSwarmCount && claimedCount < destination.Length)
+                {
+                    MacroSwarm swarm = _macroSwarms[i];
+                    int2 delta = swarm.SectorAup - centerCell;
+                    if (math.max(math.abs(delta.x), math.abs(delta.y)) > radiusCells)
+                    {
+                        i++;
+                        continue;
+                    }
+
+                    destination[claimedCount++] = swarm;
+                    claimedBiomass01 = math.saturate(claimedBiomass01 + math.max(0f, swarm.BiomassValue));
+                    RemoveMacroSwarmSwapBack(i);
+                }
+
+                if (claimedCount <= 0)
+                    return false;
+
+                _lastMacroSwarmsHydrated = claimedCount;
+                _lastMacroHydratedBoidEstimate = math.max(0, (int)math.round(claimedBiomass01 * MacroSwarmVisualBoidsPerBiomassUnit));
+                PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagActiveHydrated);
+                return true;
+            }
+            finally
+            {
+                UnlockMacroSwarmTravelJobBuffers();
+            }
         }
 
         /// <inheritdoc />
@@ -3304,29 +3400,39 @@ namespace Hecton8.World
                 return false;
             }
 
-            int2 sourceCell = QuantizeBiomassMacroCell(in centerAup);
-            int radiusCells = math.max(1, (int)math.ceil(math.max(1, radiusMetersQ) * InvBiomassMacroCellSizeMeters));
-            int2 targetCell = ResolveLowestNeighborMacroCell(sourceCell);
-            if (math.all(targetCell == sourceCell))
-                targetCell += ResolveDeterministicMigrationDirection(sourceCell + radiusCells);
-
-            biomassValue = math.saturate(releasedBoidCount * math.rcp((float)MacroSwarmVisualBoidsPerBiomassUnit));
-            bool appended = TryAppendMacroSwarm(
-                sourceCell,
-                targetCell,
-                biomassValue,
-                ResolveMacroSwarmSpeedCellsPerSecond(),
-                HashMacroSwarm(sourceCell, targetCell, chunkId),
-                flags);
-
-            if (!appended)
-            {
-                biomassValue = 0f;
+            if (!TryLockMacroSwarmTravelJobBuffers())
                 return false;
-            }
 
-            PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagActiveDehydrated);
-            return true;
+            try
+            {
+                int2 sourceCell = QuantizeBiomassMacroCell(in centerAup);
+                int radiusCells = math.max(1, (int)math.ceil(math.max(1, radiusMetersQ) * InvBiomassMacroCellSizeMeters));
+                int2 targetCell = ResolveLowestNeighborMacroCell(sourceCell);
+                if (math.all(targetCell == sourceCell))
+                    targetCell += ResolveDeterministicMigrationDirection(sourceCell + radiusCells);
+
+                biomassValue = math.saturate(releasedBoidCount * math.rcp((float)MacroSwarmVisualBoidsPerBiomassUnit));
+                bool appended = TryAppendMacroSwarm(
+                    sourceCell,
+                    targetCell,
+                    biomassValue,
+                    ResolveMacroSwarmSpeedCellsPerSecond(),
+                    HashMacroSwarm(sourceCell, targetCell, chunkId),
+                    flags);
+
+                if (!appended)
+                {
+                    biomassValue = 0f;
+                    return false;
+                }
+
+                PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagActiveDehydrated);
+                return true;
+            }
+            finally
+            {
+                UnlockMacroSwarmTravelJobBuffers();
+            }
         }
 
         private IDataVault ResolveDataVault()
@@ -3447,17 +3553,27 @@ namespace Hecton8.World
             if (!TryQuantizeSector(worldPosition, out int2 sectorCoord))
                 return;
 
-            int slotIndex = ResolveOrCreateSectorSlot(sectorCoord, seedWithBaseline: true);
-            if (slotIndex < 0)
+            if (!TryLockSectorSolveJobBuffers())
                 return;
 
-            SectorPopulationState state = _sectorFrontStates[slotIndex];
-            state.PreyPopulationRounded = math.max(0, state.PreyPopulationRounded - preyConsumed);
-            state.PreyPopulation = state.PreyPopulationRounded;
-            state.HarvestPressure = math.saturate(state.HarvestPressure + preyConsumed * math.rcp(math.max(1f, maxPreyPopulation)));
-            _sectorFrontStates[slotIndex] = state;
-            _sectorBackStates[slotIndex] = state;
-            WriteHeadlessSlot(slotIndex, in state);
+            try
+            {
+                int slotIndex = ResolveOrCreateSectorSlot(sectorCoord, seedWithBaseline: true);
+                if (slotIndex < 0)
+                    return;
+
+                SectorPopulationState state = _sectorFrontStates[slotIndex];
+                state.PreyPopulationRounded = math.max(0, state.PreyPopulationRounded - preyConsumed);
+                state.PreyPopulation = state.PreyPopulationRounded;
+                state.HarvestPressure = math.saturate(state.HarvestPressure + preyConsumed * math.rcp(math.max(1f, maxPreyPopulation)));
+                _sectorFrontStates[slotIndex] = state;
+                _sectorBackStates[slotIndex] = state;
+                WriteHeadlessSlot(slotIndex, in state);
+            }
+            finally
+            {
+                UnlockSectorSolveJobBuffers();
+            }
         }
 
         /// <summary>
@@ -3487,21 +3603,31 @@ namespace Hecton8.World
             if (!TryQuantizeSector(worldPosition, out int2 sectorCoord))
                 return;
 
-            int slotIndex = ResolveOrCreateSectorSlot(sectorCoord, seedWithBaseline: true);
-            if (slotIndex < 0)
+            if (!TryLockSectorSolveJobBuffers())
                 return;
 
-            SectorPopulationState state = _sectorFrontStates[slotIndex];
-            state.PredatorPopulationRounded = math.max(0, state.PredatorPopulationRounded - 1);
-            state.PredatorPopulation = state.PredatorPopulationRounded;
-            state.ApexInSector = PackBooleanByte(state.PredatorPopulationRounded > 0);
-            int preyBloom = math.max(1, (int)(maxPreyPopulation * InvAlgaeBloomPreyGrowthDivisor));
-            state.PreyPopulationRounded = math.min(maxPreyPopulation, state.PreyPopulationRounded + preyBloom);
-            state.PreyPopulation = state.PreyPopulationRounded;
-            state.HarvestPressure = math.saturate(state.HarvestPressure + 0.15f);
-            _sectorFrontStates[slotIndex] = state;
-            _sectorBackStates[slotIndex] = state;
-            WriteHeadlessSlot(slotIndex, in state);
+            try
+            {
+                int slotIndex = ResolveOrCreateSectorSlot(sectorCoord, seedWithBaseline: true);
+                if (slotIndex < 0)
+                    return;
+
+                SectorPopulationState state = _sectorFrontStates[slotIndex];
+                state.PredatorPopulationRounded = math.max(0, state.PredatorPopulationRounded - 1);
+                state.PredatorPopulation = state.PredatorPopulationRounded;
+                state.ApexInSector = PackBooleanByte(state.PredatorPopulationRounded > 0);
+                int preyBloom = math.max(1, (int)(maxPreyPopulation * InvAlgaeBloomPreyGrowthDivisor));
+                state.PreyPopulationRounded = math.min(maxPreyPopulation, state.PreyPopulationRounded + preyBloom);
+                state.PreyPopulation = state.PreyPopulationRounded;
+                state.HarvestPressure = math.saturate(state.HarvestPressure + 0.15f);
+                _sectorFrontStates[slotIndex] = state;
+                _sectorBackStates[slotIndex] = state;
+                WriteHeadlessSlot(slotIndex, in state);
+            }
+            finally
+            {
+                UnlockSectorSolveJobBuffers();
+            }
         }
 
         /// <summary>
@@ -3993,8 +4119,18 @@ namespace Hecton8.World
 
         private void InitializeFaunaGeneticsVaultState()
         {
-            if (_faunaGeneticsTuning.IsCreated && _faunaGeneticsTuning.Length > 0)
-                _faunaGeneticsTuning[0] = FaunaGeneticsTuningDTO.CreateDefault();
+            if (_faunaGeneticsTuning.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<FaunaGeneticsTuningDTO> tuningRecords))
+            {
+                try
+                {
+                    if (tuningRecords.Length > 0)
+                        tuningRecords[0] = FaunaGeneticsTuningDTO.CreateDefault();
+                }
+                finally
+                {
+                    _faunaGeneticsTuning.ReleaseWriteLock(SystemID.AIEcology);
+                }
+            }
 
             _lastFaunaGeneticsProfileCount = 0;
             _faunaGeneticsCsvLastWriteTicks = 0L;
@@ -4006,14 +4142,6 @@ namespace Hecton8.World
 #if UNITY_EDITOR
         private bool TryReloadFaunaGeneticsProfilesFromCsv()
         {
-            if (!_faunaGeneticsProfiles.IsCreated ||
-                !_faunaGeneticsCsvScratch.IsCreated ||
-                !_faunaGeneticsTuning.IsCreated ||
-                _faunaGeneticsTuning.Length <= 0)
-            {
-                return false;
-            }
-
             string path = ResolveExistingProjectPath(
                 FaunaGeneticsProfilesCsvPrimaryRelativePath,
                 FaunaGeneticsProfilesCsvFallbackRelativePath);
@@ -4022,8 +4150,7 @@ namespace Hecton8.World
 
             FileInfo fileInfo = new FileInfo(path);
             if (!fileInfo.Exists ||
-                fileInfo.Length <= 0L ||
-                fileInfo.Length > _faunaGeneticsCsvScratch.Length)
+                fileInfo.Length <= 0L)
             {
                 return false;
             }
@@ -4032,26 +4159,59 @@ namespace Hecton8.World
             if (writeTicks == _faunaGeneticsCsvLastWriteTicks)
                 return false;
 
-            int byteCount = TryReadFileIntoScratch(path, _faunaGeneticsCsvScratch);
-            if (byteCount <= 0)
+            bool scratchLocked = false;
+            bool profilesLocked = false;
+            bool tuningLocked = false;
+            if (!_faunaGeneticsCsvScratch.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<byte> csvScratch))
                 return false;
 
-            FaunaGeneticsTuningDTO tuning = _faunaGeneticsTuning[0].StateHash != 0u
-                ? _faunaGeneticsTuning[0]
-                : FaunaGeneticsTuningDTO.CreateDefault();
-            unsafe
+            scratchLocked = true;
+            try
             {
-                byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr<byte>(_faunaGeneticsCsvScratch.Resolve());
-                ReadOnlySpan<byte> csv = new ReadOnlySpan<byte>(bytes, byteCount);
-                if (!FaunaGeneticsProfileCsv.TryApplyProfiles(csv, _faunaGeneticsProfiles.Resolve(), ref tuning, out int updatedCount))
+                if (fileInfo.Length > csvScratch.Length)
                     return false;
 
-                _faunaGeneticsTuning[0] = tuning;
-                _lastFaunaGeneticsProfileCount = updatedCount;
-                _faunaGeneticsCsvLastWriteTicks = writeTicks;
-            }
+                int byteCount = TryReadFileIntoScratch(path, csvScratch);
+                if (byteCount <= 0)
+                    return false;
 
-            return true;
+                if (!_faunaGeneticsProfiles.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<FaunaGeneticsProfileDTO> profiles))
+                    return false;
+
+                profilesLocked = true;
+                if (!_faunaGeneticsTuning.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<FaunaGeneticsTuningDTO> tuningRecords))
+                    return false;
+
+                tuningLocked = true;
+                if (tuningRecords.Length <= 0)
+                    return false;
+
+                FaunaGeneticsTuningDTO tuning = tuningRecords[0].StateHash != 0u
+                    ? tuningRecords[0]
+                    : FaunaGeneticsTuningDTO.CreateDefault();
+                unsafe
+                {
+                    byte* bytes = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr<byte>(csvScratch);
+                    ReadOnlySpan<byte> csv = new ReadOnlySpan<byte>(bytes, byteCount);
+                    if (!FaunaGeneticsProfileCsv.TryApplyProfiles(csv, profiles, ref tuning, out int updatedCount))
+                        return false;
+
+                    tuningRecords[0] = tuning;
+                    _lastFaunaGeneticsProfileCount = updatedCount;
+                    _faunaGeneticsCsvLastWriteTicks = writeTicks;
+                }
+
+                return true;
+            }
+            finally
+            {
+                if (tuningLocked)
+                    _faunaGeneticsTuning.ReleaseWriteLock(SystemID.AIEcology);
+                if (profilesLocked)
+                    _faunaGeneticsProfiles.ReleaseWriteLock(SystemID.AIEcology);
+                if (scratchLocked)
+                    _faunaGeneticsCsvScratch.ReleaseWriteLock(SystemID.AIEcology);
+            }
         }
 #endif
 
@@ -4066,9 +4226,8 @@ namespace Hecton8.World
             return File.Exists(fallback) ? fallback : string.Empty;
         }
 
-        private static unsafe int TryReadFileIntoScratch(string path, VaultBufferView<byte> scratch)
+        private static unsafe int TryReadFileIntoScratch(string path, NativeArray<byte> bytes)
         {
-            NativeArray<byte> bytes = scratch.Resolve();
             if (string.IsNullOrEmpty(path) || !bytes.IsCreated || bytes.Length <= 0)
                 return 0;
 
@@ -4127,6 +4286,10 @@ namespace Hecton8.World
             _lastPublishedFloraPredatorAupCount = 0;
             _floraPredatorAupGlobalsDirty = true;
             PublishApexPresenceFake(false);
+            UnlockApexTerritoryOverlapJobBuffers();
+            UnlockMacroSwarmTravelJobBuffers();
+            UnlockGenomeMutationJobBuffers();
+            UnlockSectorSolveJobBuffers();
 
             _sectorFrontStates = default;
             _sectorBackStates = default;
@@ -4365,13 +4528,23 @@ namespace Hecton8.World
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                 return;
 
-            ResolveOrCreateSectorSlot(QuantizeSector(in playerAup), seedWithBaseline: true);
-            int2 macroCell = QuantizeBiomassMacroCell(in playerAup);
-            ResolveOrCreateBiomassCellSlot(macroCell, seedWithBaseline: true);
-            ResolveOrCreateBiomassCellSlot(macroCell + new int2(1, 0), seedWithBaseline: false);
-            ResolveOrCreateBiomassCellSlot(macroCell + new int2(-1, 0), seedWithBaseline: false);
-            ResolveOrCreateBiomassCellSlot(macroCell + new int2(0, 1), seedWithBaseline: false);
-            ResolveOrCreateBiomassCellSlot(macroCell + new int2(0, -1), seedWithBaseline: false);
+            if (!TryLockSectorSolveJobBuffers())
+                return;
+
+            try
+            {
+                ResolveOrCreateSectorSlot(QuantizeSector(in playerAup), seedWithBaseline: true);
+                int2 macroCell = QuantizeBiomassMacroCell(in playerAup);
+                ResolveOrCreateBiomassCellSlot(macroCell, seedWithBaseline: true);
+                ResolveOrCreateBiomassCellSlot(macroCell + new int2(1, 0), seedWithBaseline: false);
+                ResolveOrCreateBiomassCellSlot(macroCell + new int2(-1, 0), seedWithBaseline: false);
+                ResolveOrCreateBiomassCellSlot(macroCell + new int2(0, 1), seedWithBaseline: false);
+                ResolveOrCreateBiomassCellSlot(macroCell + new int2(0, -1), seedWithBaseline: false);
+            }
+            finally
+            {
+                UnlockSectorSolveJobBuffers();
+            }
         }
 
         private void EnsureMigrationNeighborSectorsRegistered()
@@ -4380,26 +4553,36 @@ namespace Hecton8.World
                 return;
 
             int seedSectorCount = _activeSectorCount;
-            for (int sectorIndex = 0; sectorIndex < seedSectorCount && _activeSectorCount < _sectorFrontStates.Length; sectorIndex++)
+            if (!TryLockSectorSolveJobBuffers())
+                return;
+
+            try
             {
-                SectorPopulationState sourceState = _sectorFrontStates[sectorIndex];
-                if (sourceState.PreyPopulationRounded <= 0 && sourceState.PredatorPopulationRounded <= 0)
-                    continue;
+                for (int sectorIndex = 0; sectorIndex < seedSectorCount && _activeSectorCount < _sectorFrontStates.Length; sectorIndex++)
+                {
+                    SectorPopulationState sourceState = _sectorFrontStates[sectorIndex];
+                    if (sourceState.PreyPopulationRounded <= 0 && sourceState.PredatorPopulationRounded <= 0)
+                        continue;
 
-                int2 sectorCoord = sourceState.SectorCoord;
-                ResolveOrCreateSectorSlot(sectorCoord + new int2(1, 0), seedWithBaseline: false);
-                if (_activeSectorCount >= _sectorFrontStates.Length)
-                    break;
+                    int2 sectorCoord = sourceState.SectorCoord;
+                    ResolveOrCreateSectorSlot(sectorCoord + new int2(1, 0), seedWithBaseline: false);
+                    if (_activeSectorCount >= _sectorFrontStates.Length)
+                        break;
 
-                ResolveOrCreateSectorSlot(sectorCoord + new int2(-1, 0), seedWithBaseline: false);
-                if (_activeSectorCount >= _sectorFrontStates.Length)
-                    break;
+                    ResolveOrCreateSectorSlot(sectorCoord + new int2(-1, 0), seedWithBaseline: false);
+                    if (_activeSectorCount >= _sectorFrontStates.Length)
+                        break;
 
-                ResolveOrCreateSectorSlot(sectorCoord + new int2(0, 1), seedWithBaseline: false);
-                if (_activeSectorCount >= _sectorFrontStates.Length)
-                    break;
+                    ResolveOrCreateSectorSlot(sectorCoord + new int2(0, 1), seedWithBaseline: false);
+                    if (_activeSectorCount >= _sectorFrontStates.Length)
+                        break;
 
-                ResolveOrCreateSectorSlot(sectorCoord + new int2(0, -1), seedWithBaseline: false);
+                    ResolveOrCreateSectorSlot(sectorCoord + new int2(0, -1), seedWithBaseline: false);
+                }
+            }
+            finally
+            {
+                UnlockSectorSolveJobBuffers();
             }
         }
 
@@ -4512,78 +4695,317 @@ namespace Hecton8.World
             if (_activeSectorCount <= 0 || _solveScheduled)
                 return;
 
-            var solveJob = new LotkaVolterraPopulationJob
-            {
-                FrontStates = _sectorFrontStates,
-                PreyCounts = _preyFrontCounts,
-                PredatorCounts = _predatorFrontCounts,
-                FoodDensityHeatmapR8 = _sectorFoodHeatmapR8,
-                BackStates = _sectorBackStates,
-                PreyBackCounts = _preyBackCounts,
-                PredatorBackCounts = _predatorBackCounts,
-                HeadlessPositions = _headlessEntities.Positions,
-                HeadlessSpeciesID = _headlessEntities.SpeciesID,
-                HeadlessHunger = _headlessEntities.Hunger,
-                HeadlessSectorCoord = _headlessEntities.SectorCoord,
-                HeadlessSectorID = _headlessEntities.SectorID,
-                FoodDensityHeatmapSize = _sectorFoodHeatmapSize,
-                DeltaSeconds = coldTickIntervalSeconds,
-                PreyBirthRate = preyBirthRatePerSecond,
-                PredationRate = predationRatePerSecond,
-                PredatorGrowthRate = predatorGrowthRatePerSecond,
-                PredatorDeathRate = predatorDeathRatePerSecond,
-                ReproductionFoodThreshold01 = reproductionFoodThreshold01,
-                ReproductionPredatorThreshold = reproductionPredatorThreshold,
-                MutationBitMask = generationMutationBitMask,
-                PreyCapacity = preyPopulationCapacity,
-                MaxPreyPopulation = maxPreyPopulation,
-                MaxPredatorPopulation = maxPredatorPopulation,
-                MaximumSpeedMultiplier = maximumSpeedMultiplier,
-                StarvationComfortPreyPerPredator = starvationComfortPreyPerPredator
-            };
+            if (!TryLockSectorSolveJobBuffers())
+                return;
 
-            int sectorBatchSize = ResolveSectorJobBatchSize(_activeSectorCount);
-            _scheduledSolveHandle = solveJob.Schedule(_activeSectorCount, sectorBatchSize);
-            var migrationJob = new HeadlessThresholdMigrationJob
+            bool keepLocksForScheduledJob = false;
+            try
             {
-                States = _sectorBackStates,
-                FoodDensityHeatmapR8 = _sectorFoodHeatmapR8,
-                Positions = _headlessEntities.Positions,
-                SectorCoord = _headlessEntities.SectorCoord,
-                SectorID = _headlessEntities.SectorID,
-                FoodDensityHeatmapSize = _sectorFoodHeatmapSize,
-                MigrationFoodThreshold01 = migrationFoodThreshold01,
-                MigrationPredatorTolerance = migrationPredatorTolerance
-            };
-            _scheduledSolveHandle = migrationJob.Schedule(_activeSectorCount, sectorBatchSize, _scheduledSolveHandle);
-            if (_activeBiomassCellCount > 0)
-            {
-                var biomassJob = new BiomassLotkaVolterraJob
+                var solveJob = new LotkaVolterraPopulationJob
                 {
-                    PreyFront = _preyBiomassFront,
-                    PredatorFront = _predatorBiomassFront,
-                    CarryingCapacity = _biomassCarryingCapacity,
-                    MacroCellCoords = _biomassMacroCellCoords,
-                    CellIndexEntries = _biomassIndexEntries,
-                    PreyBack = _preyBiomassBack,
-                    PredatorBack = _predatorBiomassBack,
-                    BiomassSumScratch = _biomassSumScratch,
+                    FrontStates = _sectorFrontStates,
+                    PreyCounts = _preyFrontCounts,
+                    PredatorCounts = _predatorFrontCounts,
+                    FoodDensityHeatmapR8 = _sectorFoodHeatmapR8,
+                    BackStates = _sectorBackStates,
+                    PreyBackCounts = _preyBackCounts,
+                    PredatorBackCounts = _predatorBackCounts,
+                    HeadlessPositions = _headlessEntities.Positions,
+                    HeadlessSpeciesID = _headlessEntities.SpeciesID,
+                    HeadlessHunger = _headlessEntities.Hunger,
+                    HeadlessSectorCoord = _headlessEntities.SectorCoord,
+                    HeadlessSectorID = _headlessEntities.SectorID,
+                    FoodDensityHeatmapSize = _sectorFoodHeatmapSize,
                     DeltaSeconds = coldTickIntervalSeconds,
-                    BirthRate = preyBirthRatePerSecond,
-                    PredRate = predationRatePerSecond,
-                    FeedRate = predatorGrowthRatePerSecond,
-                    DeathRate = predatorDeathRatePerSecond,
-                    DiffusionRate = biomassDiffusionRate,
-                    DiffusionWeight = ResolveBiomassDiffusionWeight01()
+                    PreyBirthRate = preyBirthRatePerSecond,
+                    PredationRate = predationRatePerSecond,
+                    PredatorGrowthRate = predatorGrowthRatePerSecond,
+                    PredatorDeathRate = predatorDeathRatePerSecond,
+                    ReproductionFoodThreshold01 = reproductionFoodThreshold01,
+                    ReproductionPredatorThreshold = reproductionPredatorThreshold,
+                    MutationBitMask = generationMutationBitMask,
+                    PreyCapacity = preyPopulationCapacity,
+                    MaxPreyPopulation = maxPreyPopulation,
+                    MaxPredatorPopulation = maxPredatorPopulation,
+                    MaximumSpeedMultiplier = maximumSpeedMultiplier,
+                    StarvationComfortPreyPerPredator = starvationComfortPreyPerPredator
                 };
-                _scheduledSolveHandle = biomassJob.Schedule(_activeBiomassCellCount, ResolveBiomassJobBatchSize(_activeBiomassCellCount), _scheduledSolveHandle);
+
+                int sectorBatchSize = ResolveSectorJobBatchSize(_activeSectorCount);
+                _scheduledSolveHandle = solveJob.Schedule(_activeSectorCount, sectorBatchSize);
+                var migrationJob = new HeadlessThresholdMigrationJob
+                {
+                    States = _sectorBackStates,
+                    FoodDensityHeatmapR8 = _sectorFoodHeatmapR8,
+                    Positions = _headlessEntities.Positions,
+                    SectorCoord = _headlessEntities.SectorCoord,
+                    SectorID = _headlessEntities.SectorID,
+                    FoodDensityHeatmapSize = _sectorFoodHeatmapSize,
+                    MigrationFoodThreshold01 = migrationFoodThreshold01,
+                    MigrationPredatorTolerance = migrationPredatorTolerance
+                };
+                _scheduledSolveHandle = migrationJob.Schedule(_activeSectorCount, sectorBatchSize, _scheduledSolveHandle);
+                if (_activeBiomassCellCount > 0)
+                {
+                    var biomassJob = new BiomassLotkaVolterraJob
+                    {
+                        PreyFront = _preyBiomassFront,
+                        PredatorFront = _predatorBiomassFront,
+                        CarryingCapacity = _biomassCarryingCapacity,
+                        MacroCellCoords = _biomassMacroCellCoords,
+                        CellIndexEntries = _biomassIndexEntries,
+                        PreyBack = _preyBiomassBack,
+                        PredatorBack = _predatorBiomassBack,
+                        BiomassSumScratch = _biomassSumScratch,
+                        DeltaSeconds = coldTickIntervalSeconds,
+                        BirthRate = preyBirthRatePerSecond,
+                        PredRate = predationRatePerSecond,
+                        FeedRate = predatorGrowthRatePerSecond,
+                        DeathRate = predatorDeathRatePerSecond,
+                        DiffusionRate = biomassDiffusionRate,
+                        DiffusionWeight = ResolveBiomassDiffusionWeight01()
+                    };
+                    _scheduledSolveHandle = biomassJob.Schedule(_activeBiomassCellCount, ResolveBiomassJobBatchSize(_activeBiomassCellCount), _scheduledSolveHandle);
+                }
+                _solveScheduled = true;
+                keepLocksForScheduledJob = true;
             }
-            _solveScheduled = true;
+            finally
+            {
+                if (!keepLocksForScheduledJob)
+                    UnlockSectorSolveJobBuffers();
+            }
         }
 
         private bool HasPendingSimulationJob()
         {
-            return _solveScheduled || _genomeMutationScheduled;
+            return _solveScheduled ||
+                   _genomeMutationScheduled ||
+                   _macroSwarmTravelScheduled ||
+                   _apexTerritoryOverlapScheduled;
+        }
+
+        private static bool TryLockAIEcologyBuffer(IDataVault vault, BufferID bufferId, ref int lockedCount)
+        {
+            if (!vault.TryLockBuffer(bufferId, SystemID.AIEcology))
+                return false;
+
+            lockedCount++;
+            return true;
+        }
+
+        private bool TryLockSectorSolveJobBuffers()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || _solveJobLocksHeld)
+                return false;
+
+            int lockedCount = 0;
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemSectorFrontStates, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPreyFrontCounts, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPredatorFrontCounts, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemSectorFoodHeatmapR8, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemSectorBackStates, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPreyBackCounts, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPredatorBackCounts, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemSectorIndexEntries, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessPositions, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessSpeciesId, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessHunger, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessSectorCoord, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessSectorId, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessFaunaGenomes, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessMutationStableHashes, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPreyBiomassFront, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPredatorBiomassFront, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassCarryingCapacity, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassMacroCellCoords, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassIndexEntries, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPreyBiomassBack, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPredatorBiomassBack, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassSumScratch, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassCellFlags, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassBlackBox, ref lockedCount)) { UnlockSectorSolveJobBuffers(vault, lockedCount); return false; }
+
+            _solveJobLocksHeld = true;
+            return true;
+        }
+
+        private void UnlockSectorSolveJobBuffers()
+        {
+            if (!_solveJobLocksHeld)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                UnlockSectorSolveJobBuffers(vault, 25);
+            _solveJobLocksHeld = false;
+        }
+
+        private static void UnlockSectorSolveJobBuffers(IDataVault vault, int lockedCount)
+        {
+            if (lockedCount >= 25) vault.TryUnlockBuffer(BufferID.EcosystemBiomassBlackBox, SystemID.AIEcology);
+            if (lockedCount >= 24) vault.TryUnlockBuffer(BufferID.EcosystemBiomassCellFlags, SystemID.AIEcology);
+            if (lockedCount >= 23) vault.TryUnlockBuffer(BufferID.EcosystemBiomassSumScratch, SystemID.AIEcology);
+            if (lockedCount >= 22) vault.TryUnlockBuffer(BufferID.EcosystemPredatorBiomassBack, SystemID.AIEcology);
+            if (lockedCount >= 21) vault.TryUnlockBuffer(BufferID.EcosystemPreyBiomassBack, SystemID.AIEcology);
+            if (lockedCount >= 20) vault.TryUnlockBuffer(BufferID.EcosystemBiomassIndexEntries, SystemID.AIEcology);
+            if (lockedCount >= 19) vault.TryUnlockBuffer(BufferID.EcosystemBiomassMacroCellCoords, SystemID.AIEcology);
+            if (lockedCount >= 18) vault.TryUnlockBuffer(BufferID.EcosystemBiomassCarryingCapacity, SystemID.AIEcology);
+            if (lockedCount >= 17) vault.TryUnlockBuffer(BufferID.EcosystemPredatorBiomassFront, SystemID.AIEcology);
+            if (lockedCount >= 16) vault.TryUnlockBuffer(BufferID.EcosystemPreyBiomassFront, SystemID.AIEcology);
+            if (lockedCount >= 15) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessMutationStableHashes, SystemID.AIEcology);
+            if (lockedCount >= 14) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessFaunaGenomes, SystemID.AIEcology);
+            if (lockedCount >= 13) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessSectorId, SystemID.AIEcology);
+            if (lockedCount >= 12) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessSectorCoord, SystemID.AIEcology);
+            if (lockedCount >= 11) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessHunger, SystemID.AIEcology);
+            if (lockedCount >= 10) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessSpeciesId, SystemID.AIEcology);
+            if (lockedCount >= 9) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessPositions, SystemID.AIEcology);
+            if (lockedCount >= 8) vault.TryUnlockBuffer(BufferID.EcosystemSectorIndexEntries, SystemID.AIEcology);
+            if (lockedCount >= 7) vault.TryUnlockBuffer(BufferID.EcosystemPredatorBackCounts, SystemID.AIEcology);
+            if (lockedCount >= 6) vault.TryUnlockBuffer(BufferID.EcosystemPreyBackCounts, SystemID.AIEcology);
+            if (lockedCount >= 5) vault.TryUnlockBuffer(BufferID.EcosystemSectorBackStates, SystemID.AIEcology);
+            if (lockedCount >= 4) vault.TryUnlockBuffer(BufferID.EcosystemSectorFoodHeatmapR8, SystemID.AIEcology);
+            if (lockedCount >= 3) vault.TryUnlockBuffer(BufferID.EcosystemPredatorFrontCounts, SystemID.AIEcology);
+            if (lockedCount >= 2) vault.TryUnlockBuffer(BufferID.EcosystemPreyFrontCounts, SystemID.AIEcology);
+            if (lockedCount >= 1) vault.TryUnlockBuffer(BufferID.EcosystemSectorFrontStates, SystemID.AIEcology);
+        }
+
+        private bool TryLockGenomeMutationJobBuffers()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || _genomeMutationJobLocksHeld)
+                return false;
+
+            int lockedCount = 0;
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessFaunaGenomes, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessMutationRadiation, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessMutationToxicity, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessMutationBrine, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessMutationStableHashes, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemHeadlessMutationResults, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroSwarms, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroSwarmMutationRadiation, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroSwarmMutationToxicity, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroSwarmMutationBrine, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroSwarmMutationResults, ref lockedCount)) { UnlockGenomeMutationJobBuffers(vault, lockedCount); return false; }
+
+            _genomeMutationJobLocksHeld = true;
+            return true;
+        }
+
+        private void UnlockGenomeMutationJobBuffers()
+        {
+            if (!_genomeMutationJobLocksHeld)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                UnlockGenomeMutationJobBuffers(vault, 11);
+            _genomeMutationJobLocksHeld = false;
+        }
+
+        private static void UnlockGenomeMutationJobBuffers(IDataVault vault, int lockedCount)
+        {
+            if (lockedCount >= 11) vault.TryUnlockBuffer(BufferID.EcosystemMacroSwarmMutationResults, SystemID.AIEcology);
+            if (lockedCount >= 10) vault.TryUnlockBuffer(BufferID.EcosystemMacroSwarmMutationBrine, SystemID.AIEcology);
+            if (lockedCount >= 9) vault.TryUnlockBuffer(BufferID.EcosystemMacroSwarmMutationToxicity, SystemID.AIEcology);
+            if (lockedCount >= 8) vault.TryUnlockBuffer(BufferID.EcosystemMacroSwarmMutationRadiation, SystemID.AIEcology);
+            if (lockedCount >= 7) vault.TryUnlockBuffer(BufferID.EcosystemMacroSwarms, SystemID.AIEcology);
+            if (lockedCount >= 6) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessMutationResults, SystemID.AIEcology);
+            if (lockedCount >= 5) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessMutationStableHashes, SystemID.AIEcology);
+            if (lockedCount >= 4) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessMutationBrine, SystemID.AIEcology);
+            if (lockedCount >= 3) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessMutationToxicity, SystemID.AIEcology);
+            if (lockedCount >= 2) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessMutationRadiation, SystemID.AIEcology);
+            if (lockedCount >= 1) vault.TryUnlockBuffer(BufferID.EcosystemHeadlessFaunaGenomes, SystemID.AIEcology);
+        }
+
+        private bool TryLockMacroSwarmTravelJobBuffers()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || _macroSwarmTravelJobLocksHeld)
+                return false;
+
+            int lockedCount = 0;
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroSwarms, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroSwarmArrivals, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroSwarmCounters, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroSwarmBlackBox, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroHydrationScratch, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemMacroDehydrationScratch, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPreyBiomassFront, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPreyBiomassBack, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPredatorBiomassFront, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemPredatorBiomassBack, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassCarryingCapacity, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassSumScratch, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassMacroCellCoords, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassIndexEntries, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemBiomassCellFlags, ref lockedCount)) { UnlockMacroSwarmTravelJobBuffers(vault, lockedCount); return false; }
+
+            _macroSwarmTravelJobLocksHeld = true;
+            return true;
+        }
+
+        private void UnlockMacroSwarmTravelJobBuffers()
+        {
+            if (!_macroSwarmTravelJobLocksHeld)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                UnlockMacroSwarmTravelJobBuffers(vault, MacroSwarmTravelJobBufferLockCount);
+            _macroSwarmTravelJobLocksHeld = false;
+        }
+
+        private static void UnlockMacroSwarmTravelJobBuffers(IDataVault vault, int lockedCount)
+        {
+            if (lockedCount >= 15) vault.TryUnlockBuffer(BufferID.EcosystemBiomassCellFlags, SystemID.AIEcology);
+            if (lockedCount >= 14) vault.TryUnlockBuffer(BufferID.EcosystemBiomassIndexEntries, SystemID.AIEcology);
+            if (lockedCount >= 13) vault.TryUnlockBuffer(BufferID.EcosystemBiomassMacroCellCoords, SystemID.AIEcology);
+            if (lockedCount >= 12) vault.TryUnlockBuffer(BufferID.EcosystemBiomassSumScratch, SystemID.AIEcology);
+            if (lockedCount >= 11) vault.TryUnlockBuffer(BufferID.EcosystemBiomassCarryingCapacity, SystemID.AIEcology);
+            if (lockedCount >= 10) vault.TryUnlockBuffer(BufferID.EcosystemPredatorBiomassBack, SystemID.AIEcology);
+            if (lockedCount >= 9) vault.TryUnlockBuffer(BufferID.EcosystemPredatorBiomassFront, SystemID.AIEcology);
+            if (lockedCount >= 8) vault.TryUnlockBuffer(BufferID.EcosystemPreyBiomassBack, SystemID.AIEcology);
+            if (lockedCount >= 7) vault.TryUnlockBuffer(BufferID.EcosystemPreyBiomassFront, SystemID.AIEcology);
+            if (lockedCount >= 6) vault.TryUnlockBuffer(BufferID.EcosystemMacroDehydrationScratch, SystemID.AIEcology);
+            if (lockedCount >= 5) vault.TryUnlockBuffer(BufferID.EcosystemMacroHydrationScratch, SystemID.AIEcology);
+            if (lockedCount >= 4) vault.TryUnlockBuffer(BufferID.EcosystemMacroSwarmBlackBox, SystemID.AIEcology);
+            if (lockedCount >= 3) vault.TryUnlockBuffer(BufferID.EcosystemMacroSwarmCounters, SystemID.AIEcology);
+            if (lockedCount >= 2) vault.TryUnlockBuffer(BufferID.EcosystemMacroSwarmArrivals, SystemID.AIEcology);
+            if (lockedCount >= 1) vault.TryUnlockBuffer(BufferID.EcosystemMacroSwarms, SystemID.AIEcology);
+        }
+
+        private bool TryLockApexTerritoryOverlapJobBuffers()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null || _apexTerritoryOverlapJobLocksHeld)
+                return false;
+
+            int lockedCount = 0;
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemApexTerritorySamples, ref lockedCount)) { UnlockApexTerritoryOverlapJobBuffers(vault, lockedCount); return false; }
+            if (!TryLockAIEcologyBuffer(vault, BufferID.EcosystemApexTerritoryOverlapResults, ref lockedCount)) { UnlockApexTerritoryOverlapJobBuffers(vault, lockedCount); return false; }
+
+            _apexTerritoryOverlapJobLocksHeld = true;
+            return true;
+        }
+
+        private void UnlockApexTerritoryOverlapJobBuffers()
+        {
+            if (!_apexTerritoryOverlapJobLocksHeld)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null)
+                UnlockApexTerritoryOverlapJobBuffers(vault, 2);
+            _apexTerritoryOverlapJobLocksHeld = false;
+        }
+
+        private static void UnlockApexTerritoryOverlapJobBuffers(IDataVault vault, int lockedCount)
+        {
+            if (lockedCount >= 2) vault.TryUnlockBuffer(BufferID.EcosystemApexTerritoryOverlapResults, SystemID.AIEcology);
+            if (lockedCount >= 1) vault.TryUnlockBuffer(BufferID.EcosystemApexTerritorySamples, SystemID.AIEcology);
         }
 
         private void CompleteScheduledSimulation(bool forceComplete)
@@ -4600,31 +5022,38 @@ namespace Hecton8.World
             if (!DispatcherJobSwap.TryComplete(ref _scheduledSolveHandle, forceComplete))
                 return;
 
-            VaultBufferView<SectorPopulationState> stateSwap = _sectorFrontStates;
-            _sectorFrontStates = _sectorBackStates;
-            _sectorBackStates = stateSwap;
-            VaultBufferView<int> preySwap = _preyFrontCounts;
-            _preyFrontCounts = _preyBackCounts;
-            _preyBackCounts = preySwap;
-            VaultBufferView<int> predatorSwap = _predatorFrontCounts;
-            _predatorFrontCounts = _predatorBackCounts;
-            _predatorBackCounts = predatorSwap;
-            if (_activeBiomassCellCount > 0)
+            try
             {
-                VaultBufferView<float> preyBiomassSwap = _preyBiomassFront;
-                _preyBiomassFront = _preyBiomassBack;
-                _preyBiomassBack = preyBiomassSwap;
-                VaultBufferView<float> predatorBiomassSwap = _predatorBiomassFront;
-                _predatorBiomassFront = _predatorBiomassBack;
-                _predatorBiomassBack = predatorBiomassSwap;
+                VaultBufferView<SectorPopulationState> stateSwap = _sectorFrontStates;
+                _sectorFrontStates = _sectorBackStates;
+                _sectorBackStates = stateSwap;
+                VaultBufferView<int> preySwap = _preyFrontCounts;
+                _preyFrontCounts = _preyBackCounts;
+                _preyBackCounts = preySwap;
+                VaultBufferView<int> predatorSwap = _predatorFrontCounts;
+                _predatorFrontCounts = _predatorBackCounts;
+                _predatorBackCounts = predatorSwap;
+                if (_activeBiomassCellCount > 0)
+                {
+                    VaultBufferView<float> preyBiomassSwap = _preyBiomassFront;
+                    _preyBiomassFront = _preyBiomassBack;
+                    _preyBiomassBack = preyBiomassSwap;
+                    VaultBufferView<float> predatorBiomassSwap = _predatorBiomassFront;
+                    _predatorBiomassFront = _predatorBiomassBack;
+                    _predatorBiomassBack = predatorBiomassSwap;
+                }
+                _solveScheduled = false;
+                ApplyPendingBiomassImpacts();
+                PublishBiomassTelemetryAndEvents();
+                RefreshStarvationPressure();
+                _populationSolvePendingHibernationSync = true;
+                _debugHeadlessSectorCount = _activeSectorCount;
+                _debugBiomassCellCount = _activeBiomassCellCount;
             }
-            _solveScheduled = false;
-            ApplyPendingBiomassImpacts();
-            PublishBiomassTelemetryAndEvents();
-            RefreshStarvationPressure();
-            _populationSolvePendingHibernationSync = true;
-            _debugHeadlessSectorCount = _activeSectorCount;
-            _debugBiomassCellCount = _activeBiomassCellCount;
+            finally
+            {
+                UnlockSectorSolveJobBuffers();
+            }
         }
 
         private void DrainSectorResidencySignalSnapshots()
@@ -4633,36 +5062,46 @@ namespace Hecton8.World
             if (_lastSectorResidencySignalDrainFrame == frame || HasPendingSimulationJob() || _macroSwarmTravelScheduled)
                 return;
 
+            if (!TryLockMacroSwarmTravelJobBuffers())
+                return;
+
             _lastSectorResidencySignalDrainFrame = frame;
 
-            ReadOnlySpan<SectorDehydratedSignal> dehydratedSignals = SignalBus<SectorDehydratedSignal>.GetFrameSnapshot();
-            if (_macroDehydrationScratch.IsCreated)
-                _macroDehydrationScratchCount = 0;
-            for (int i = 0; i < dehydratedSignals.Length; i++)
-                StageDehydratedSectorSwarm(in dehydratedSignals[i]);
-
-            if (_macroDehydrationScratch.IsCreated)
+            try
             {
-                int count = math.min(_macroDehydrationScratchCount, _macroDehydrationScratch.Length);
-                for (int i = 0; i < count; i++)
+                ReadOnlySpan<SectorDehydratedSignal> dehydratedSignals = SignalBus<SectorDehydratedSignal>.GetFrameSnapshot();
+                if (_macroDehydrationScratch.IsCreated)
+                    _macroDehydrationScratchCount = 0;
+                for (int i = 0; i < dehydratedSignals.Length; i++)
+                    StageDehydratedSectorSwarm(in dehydratedSignals[i]);
+
+                if (_macroDehydrationScratch.IsCreated)
                 {
-                    MacroSwarm staged = _macroDehydrationScratch[i];
-                    TryAppendMacroSwarm(staged.SectorAup, staged.TargetSectorAup, staged.BiomassValue, staged.Speed, staged.HashId, staged.Flags);
+                    int count = math.min(_macroDehydrationScratchCount, _macroDehydrationScratch.Length);
+                    for (int i = 0; i < count; i++)
+                    {
+                        MacroSwarm staged = _macroDehydrationScratch[i];
+                        TryAppendMacroSwarm(staged.SectorAup, staged.TargetSectorAup, staged.BiomassValue, staged.Speed, staged.HashId, staged.Flags);
+                    }
                 }
-            }
 
-            ReadOnlySpan<MacroDatabaseSectorHydrationSignal> macroDatabaseHydratedSignals = SignalBus<MacroDatabaseSectorHydrationSignal>.GetFrameSnapshot();
-            for (int i = 0; i < macroDatabaseHydratedSignals.Length; i++)
+                ReadOnlySpan<MacroDatabaseSectorHydrationSignal> macroDatabaseHydratedSignals = SignalBus<MacroDatabaseSectorHydrationSignal>.GetFrameSnapshot();
+                for (int i = 0; i < macroDatabaseHydratedSignals.Length; i++)
+                {
+                    if (TryImportMacroSwarmsFromVault(macroDatabaseHydratedSignals[i].SectorHash, out _))
+                        continue;
+
+                    PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagDatabaseHydrated);
+                }
+
+                ReadOnlySpan<SectorResidencyHydratedSignal> hydratedSignals = SignalBus<SectorResidencyHydratedSignal>.GetFrameSnapshot();
+                for (int i = 0; i < hydratedSignals.Length; i++)
+                    HydrateSectorMacroSwarms(in hydratedSignals[i]);
+            }
+            finally
             {
-                if (TryImportMacroSwarmsFromVault(macroDatabaseHydratedSignals[i].SectorHash, out _))
-                    continue;
-
-                PushMacroSwarmBlackBox(MacroSwarmBlackBoxFlagDatabaseHydrated);
+                UnlockMacroSwarmTravelJobBuffers();
             }
-
-            ReadOnlySpan<SectorResidencyHydratedSignal> hydratedSignals = SignalBus<SectorResidencyHydratedSignal>.GetFrameSnapshot();
-            for (int i = 0; i < hydratedSignals.Length; i++)
-                HydrateSectorMacroSwarms(in hydratedSignals[i]);
         }
 
         private void StageDehydratedSectorSwarm(in SectorDehydratedSignal signal)
@@ -4837,7 +5276,8 @@ namespace Hecton8.World
             if (_activeMacroSwarmCount >= ResolveMacroSwarmActiveCap() || HasActiveMacroSwarmRoute(sourceCell, targetCell))
                 return false;
 
-            if (!TryFindIndexEntry(_biomassIndexEntries, PackBiomassCellKey(sourceCell), out int sourceSlot) ||
+            NativeArray<EcosystemIndexEntry> biomassIndexEntries = _biomassIndexEntries.Resolve();
+            if (!TryFindIndexEntry(biomassIndexEntries, PackBiomassCellKey(sourceCell), out int sourceSlot) ||
                 sourceSlot < 0 ||
                 sourceSlot >= _activeBiomassCellCount)
             {
@@ -4870,10 +5310,11 @@ namespace Hecton8.World
 
         private void ApplyMacroSwarmPredatorAttraction()
         {
+            NativeArray<EcosystemIndexEntry> biomassIndexEntries = _biomassIndexEntries.Resolve();
             for (int i = 0; i < _activeMacroSwarmCount; i++)
             {
                 MacroSwarm swarm = _macroSwarms[i];
-                if (!TryFindIndexEntry(_biomassIndexEntries, PackBiomassCellKey(swarm.SectorAup), out int slotIndex) ||
+                if (!TryFindIndexEntry(biomassIndexEntries, PackBiomassCellKey(swarm.SectorAup), out int slotIndex) ||
                     slotIndex < 0 ||
                     slotIndex >= _activeBiomassCellCount)
                 {
@@ -4898,55 +5339,68 @@ namespace Hecton8.World
             if (_genomeMutationScheduled)
                 return default;
 
-            JobHandle dependency = default;
-            bool scheduled = false;
-            uint rollIndex = unchecked(++_faunaGenomeMutationEpoch);
-            if (rollIndex == 0u)
-                rollIndex = unchecked(++_faunaGenomeMutationEpoch);
-            int headlessCount = PrepareHeadlessGenomeMutationInputs();
-            if (headlessCount > 0)
-            {
-                var job = new FaunaGenomeMutationJob
-                {
-                    Genomes = _headlessEntities.FaunaGenomes,
-                    Radiation = _headlessEntities.MutationRadiation,
-                    Toxicity = _headlessEntities.MutationToxicity,
-                    Brine = _headlessEntities.MutationBrine,
-                    StableHashes = _headlessEntities.MutationStableHashes,
-                    MutationResults = _headlessEntities.MutationResults,
-                    RollIndex = rollIndex,
-                    Count = headlessCount
-                };
-                dependency = job.Schedule(headlessCount, ResolveSectorJobBatchSize(headlessCount));
-                _scheduledHeadlessMutationCount = headlessCount;
-                scheduled = true;
-            }
-
-            int macroSwarmCount = PrepareMacroSwarmMutationInputs();
-            if (macroSwarmCount > 0)
-            {
-                var macroJob = new MacroSwarmGenomeMutationJob
-                {
-                    Swarms = _macroSwarms,
-                    Radiation = _macroSwarmMutationRadiation,
-                    Toxicity = _macroSwarmMutationToxicity,
-                    Brine = _macroSwarmMutationBrine,
-                    MutationResults = _macroSwarmMutationResults,
-                    RollIndex = rollIndex,
-                    Count = macroSwarmCount
-                };
-                dependency = macroJob.Schedule(macroSwarmCount, ResolveMacroSwarmMutationBatchSize(macroSwarmCount), dependency);
-                _scheduledMacroSwarmMutationCount = macroSwarmCount;
-                scheduled = true;
-            }
-
-            if (!scheduled)
+            if (!TryLockGenomeMutationJobBuffers())
                 return default;
 
-            _faunaGenomeMutationScheduleTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-            _scheduledGenomeMutationHandle = dependency;
-            _genomeMutationScheduled = true;
-            return dependency;
+            bool keepLocksForScheduledJob = false;
+            try
+            {
+                JobHandle dependency = default;
+                bool scheduled = false;
+                uint rollIndex = unchecked(++_faunaGenomeMutationEpoch);
+                if (rollIndex == 0u)
+                    rollIndex = unchecked(++_faunaGenomeMutationEpoch);
+                int headlessCount = PrepareHeadlessGenomeMutationInputs();
+                if (headlessCount > 0)
+                {
+                    var job = new FaunaGenomeMutationJob
+                    {
+                        Genomes = _headlessEntities.FaunaGenomes,
+                        Radiation = _headlessEntities.MutationRadiation,
+                        Toxicity = _headlessEntities.MutationToxicity,
+                        Brine = _headlessEntities.MutationBrine,
+                        StableHashes = _headlessEntities.MutationStableHashes,
+                        MutationResults = _headlessEntities.MutationResults,
+                        RollIndex = rollIndex,
+                        Count = headlessCount
+                    };
+                    dependency = job.Schedule(headlessCount, ResolveSectorJobBatchSize(headlessCount));
+                    _scheduledHeadlessMutationCount = headlessCount;
+                    scheduled = true;
+                }
+
+                int macroSwarmCount = PrepareMacroSwarmMutationInputs();
+                if (macroSwarmCount > 0)
+                {
+                    var macroJob = new MacroSwarmGenomeMutationJob
+                    {
+                        Swarms = _macroSwarms,
+                        Radiation = _macroSwarmMutationRadiation,
+                        Toxicity = _macroSwarmMutationToxicity,
+                        Brine = _macroSwarmMutationBrine,
+                        MutationResults = _macroSwarmMutationResults,
+                        RollIndex = rollIndex,
+                        Count = macroSwarmCount
+                    };
+                    dependency = macroJob.Schedule(macroSwarmCount, ResolveMacroSwarmMutationBatchSize(macroSwarmCount), dependency);
+                    _scheduledMacroSwarmMutationCount = macroSwarmCount;
+                    scheduled = true;
+                }
+
+                if (!scheduled)
+                    return default;
+
+                _faunaGenomeMutationScheduleTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+                _scheduledGenomeMutationHandle = dependency;
+                _genomeMutationScheduled = true;
+                keepLocksForScheduledJob = true;
+                return dependency;
+            }
+            finally
+            {
+                if (!keepLocksForScheduledJob)
+                    UnlockGenomeMutationJobBuffers();
+            }
         }
 
         private int PrepareHeadlessGenomeMutationInputs()
@@ -5044,66 +5498,73 @@ namespace Hecton8.World
             if (!DispatcherJobSwap.TryComplete(ref _scheduledGenomeMutationHandle, forceComplete))
                 return;
 
-            if (_faunaGenomeMutationScheduleTimestamp != 0L)
+            try
             {
-                long ticks = System.Diagnostics.Stopwatch.GetTimestamp() - _faunaGenomeMutationScheduleTimestamp;
-                if (ticks < 0L)
-                    ticks = 0L;
-                double seconds = ticks / (double)System.Diagnostics.Stopwatch.Frequency;
-                _lastFaunaGenomeBurstMicroseconds = math.isfinite(seconds) ? (float)(seconds * 1000000d) : 0f;
-                _faunaGenomeMutationScheduleTimestamp = 0L;
+                if (_faunaGenomeMutationScheduleTimestamp != 0L)
+                {
+                    long ticks = System.Diagnostics.Stopwatch.GetTimestamp() - _faunaGenomeMutationScheduleTimestamp;
+                    if (ticks < 0L)
+                        ticks = 0L;
+                    double seconds = ticks / (double)System.Diagnostics.Stopwatch.Frequency;
+                    _lastFaunaGenomeBurstMicroseconds = math.isfinite(seconds) ? (float)(seconds * 1000000d) : 0f;
+                    _faunaGenomeMutationScheduleTimestamp = 0L;
+                }
+                else
+                {
+                    _lastFaunaGenomeBurstMicroseconds = 0f;
+                }
+
+                _genomeMutationScheduled = false;
+                int headlessMutated = 0;
+                int macroMutated = 0;
+                uint flags = 0u;
+                float maxRadiation = 0f;
+                float maxToxicity = 0f;
+                float maxBrine = 0f;
+                int headlessCount = math.min(_scheduledHeadlessMutationCount, _headlessEntities.MutationResults.IsCreated ? _headlessEntities.MutationResults.Length : 0);
+                for (int i = 0; i < headlessCount; i++)
+                {
+                    byte result = _headlessEntities.MutationResults[i];
+                    if (result == 0)
+                        continue;
+
+                    headlessMutated++;
+                    flags |= result;
+                    maxRadiation = math.max(maxRadiation, _headlessEntities.MutationRadiation[i]);
+                    maxToxicity = math.max(maxToxicity, _headlessEntities.MutationToxicity[i]);
+                    maxBrine = math.max(maxBrine, _headlessEntities.MutationBrine[i]);
+                }
+
+                int macroCount = math.min(_scheduledMacroSwarmMutationCount, _macroSwarmMutationResults.IsCreated ? _macroSwarmMutationResults.Length : 0);
+                for (int i = 0; i < macroCount; i++)
+                {
+                    byte result = _macroSwarmMutationResults[i];
+                    if (result == 0)
+                        continue;
+
+                    macroMutated++;
+                    flags |= result;
+                    maxRadiation = math.max(maxRadiation, _macroSwarmMutationRadiation[i]);
+                    maxToxicity = math.max(maxToxicity, _macroSwarmMutationToxicity[i]);
+                    maxBrine = math.max(maxBrine, _macroSwarmMutationBrine[i]);
+                }
+
+                _lastHeadlessMutationCount = headlessMutated;
+                _lastMacroSwarmMutationCount = macroMutated;
+                _lastFaunaGenomeCompiledCount = math.max(0, _scheduledHeadlessMutationCount + _scheduledMacroSwarmMutationCount);
+                if (headlessMutated + macroMutated > 0)
+                {
+                    RecordGenomeMutation((byte)(flags & 0xFFu), maxRadiation, maxToxicity, maxBrine, headlessMutated, macroMutated);
+                    PublishBatchFaunaMutatedSignal((byte)(flags & 0xFFu));
+                }
+
+                _scheduledHeadlessMutationCount = 0;
+                _scheduledMacroSwarmMutationCount = 0;
             }
-            else
+            finally
             {
-                _lastFaunaGenomeBurstMicroseconds = 0f;
+                UnlockGenomeMutationJobBuffers();
             }
-
-            _genomeMutationScheduled = false;
-            int headlessMutated = 0;
-            int macroMutated = 0;
-            uint flags = 0u;
-            float maxRadiation = 0f;
-            float maxToxicity = 0f;
-            float maxBrine = 0f;
-            int headlessCount = math.min(_scheduledHeadlessMutationCount, _headlessEntities.MutationResults.IsCreated ? _headlessEntities.MutationResults.Length : 0);
-            for (int i = 0; i < headlessCount; i++)
-            {
-                byte result = _headlessEntities.MutationResults[i];
-                if (result == 0)
-                    continue;
-
-                headlessMutated++;
-                flags |= result;
-                maxRadiation = math.max(maxRadiation, _headlessEntities.MutationRadiation[i]);
-                maxToxicity = math.max(maxToxicity, _headlessEntities.MutationToxicity[i]);
-                maxBrine = math.max(maxBrine, _headlessEntities.MutationBrine[i]);
-            }
-
-            int macroCount = math.min(_scheduledMacroSwarmMutationCount, _macroSwarmMutationResults.IsCreated ? _macroSwarmMutationResults.Length : 0);
-            for (int i = 0; i < macroCount; i++)
-            {
-                byte result = _macroSwarmMutationResults[i];
-                if (result == 0)
-                    continue;
-
-                macroMutated++;
-                flags |= result;
-                maxRadiation = math.max(maxRadiation, _macroSwarmMutationRadiation[i]);
-                maxToxicity = math.max(maxToxicity, _macroSwarmMutationToxicity[i]);
-                maxBrine = math.max(maxBrine, _macroSwarmMutationBrine[i]);
-            }
-
-            _lastHeadlessMutationCount = headlessMutated;
-            _lastMacroSwarmMutationCount = macroMutated;
-            _lastFaunaGenomeCompiledCount = math.max(0, _scheduledHeadlessMutationCount + _scheduledMacroSwarmMutationCount);
-            if (headlessMutated + macroMutated > 0)
-            {
-                RecordGenomeMutation((byte)(flags & 0xFFu), maxRadiation, maxToxicity, maxBrine, headlessMutated, macroMutated);
-                PublishBatchFaunaMutatedSignal((byte)(flags & 0xFFu));
-            }
-
-            _scheduledHeadlessMutationCount = 0;
-            _scheduledMacroSwarmMutationCount = 0;
         }
 
         private void ScheduleMacroSwarmTravel(JobHandle dependency = default)
@@ -5117,17 +5578,30 @@ namespace Hecton8.World
                 return;
             }
 
-            _macroSwarmCounters[0] = math.clamp(_activeMacroSwarmCount, 0, _macroSwarms.Length);
-            _macroSwarmCounters[1] = 0;
-            var job = new MacroSwarmTravelJob
+            if (!TryLockMacroSwarmTravelJobBuffers())
+                return;
+
+            bool keepLocksForScheduledJob = false;
+            try
             {
-                Swarms = _macroSwarms,
-                Arrivals = _macroSwarmArrivals,
-                Counters = _macroSwarmCounters,
-                DeltaSeconds = FrostTickIntervalSeconds
-            };
-            _macroSwarmTravelHandle = job.Schedule(dependency);
-            _macroSwarmTravelScheduled = true;
+                _macroSwarmCounters[0] = math.clamp(_activeMacroSwarmCount, 0, _macroSwarms.Length);
+                _macroSwarmCounters[1] = 0;
+                var job = new MacroSwarmTravelJob
+                {
+                    Swarms = _macroSwarms,
+                    Arrivals = _macroSwarmArrivals,
+                    Counters = _macroSwarmCounters,
+                    DeltaSeconds = FrostTickIntervalSeconds
+                };
+                _macroSwarmTravelHandle = job.Schedule(dependency);
+                _macroSwarmTravelScheduled = true;
+                keepLocksForScheduledJob = true;
+            }
+            finally
+            {
+                if (!keepLocksForScheduledJob)
+                    UnlockMacroSwarmTravelJobBuffers();
+            }
         }
 
         private void CompleteScheduledMacroSwarmTravel(bool forceComplete)
@@ -5138,22 +5612,29 @@ namespace Hecton8.World
             if (!DispatcherJobSwap.TryComplete(ref _macroSwarmTravelHandle, forceComplete))
                 return;
 
-            _macroSwarmTravelScheduled = false;
-            _activeMacroSwarmCount = _macroSwarmCounters.IsCreated && _macroSwarmCounters.Length > 0
-                ? math.clamp(_macroSwarmCounters[0], 0, _macroSwarms.Length)
-                : 0;
-            int arrivalCount = _macroSwarmCounters.IsCreated && _macroSwarmCounters.Length > 1 && _macroSwarmArrivals.IsCreated
-                ? math.clamp(_macroSwarmCounters[1], 0, _macroSwarmArrivals.Length)
-                : 0;
-            _lastMacroSwarmArrivalCount = arrivalCount;
-            for (int i = 0; i < arrivalCount; i++)
+            try
             {
-                MacroSwarmArrival arrival = _macroSwarmArrivals[i];
-                AddPreyBiomassToCell(arrival.TargetSectorAup, arrival.BiomassValue);
-                _macroSwarmArrivals[i] = default;
-            }
+                _macroSwarmTravelScheduled = false;
+                _activeMacroSwarmCount = _macroSwarmCounters.IsCreated && _macroSwarmCounters.Length > 0
+                    ? math.clamp(_macroSwarmCounters[0], 0, _macroSwarms.Length)
+                    : 0;
+                int arrivalCount = _macroSwarmCounters.IsCreated && _macroSwarmCounters.Length > 1 && _macroSwarmArrivals.IsCreated
+                    ? math.clamp(_macroSwarmCounters[1], 0, _macroSwarmArrivals.Length)
+                    : 0;
+                _lastMacroSwarmArrivalCount = arrivalCount;
+                for (int i = 0; i < arrivalCount; i++)
+                {
+                    MacroSwarmArrival arrival = _macroSwarmArrivals[i];
+                    AddPreyBiomassToCell(arrival.TargetSectorAup, arrival.BiomassValue);
+                    _macroSwarmArrivals[i] = default;
+                }
 
-            PushMacroSwarmBlackBox(0);
+                PushMacroSwarmBlackBox(0);
+            }
+            finally
+            {
+                UnlockMacroSwarmTravelJobBuffers();
+            }
         }
 
         private bool TryAppendMacroSwarm(int2 sourceCell, int2 targetCell, float biomassValue, float speed, uint hashId, ushort flags)
@@ -5415,7 +5896,8 @@ namespace Hecton8.World
 
         private unsafe void DumpMacroSwarmBlackBox()
         {
-            if (!_macroSwarmBlackBox.IsCreated || _macroSwarmBlackBox.Length <= 0)
+            if (!_macroSwarmBlackBox.TryResolveReadOnly(out NativeArray<MacroSwarmTelemetryEntry>.ReadOnly macroSwarmBlackBox) ||
+                macroSwarmBlackBox.Length <= 0)
                 return;
 
             try
@@ -5429,7 +5911,7 @@ namespace Hecton8.World
                 using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
                     int entrySize = UnsafeUtility.SizeOf<MacroSwarmTelemetryEntry>();
-                    int entryCapacity = _macroSwarmBlackBox.Length;
+                    int entryCapacity = macroSwarmBlackBox.Length;
                     int entryCount = math.min(math.max(0, _macroSwarmBlackBoxCursor), entryCapacity);
                     int oldestIndex = entryCount == entryCapacity ? _macroSwarmBlackBoxCursor % entryCapacity : 0;
                     const int headerBytes = sizeof(ulong) + (sizeof(int) * 4);
@@ -5443,12 +5925,7 @@ namespace Hecton8.World
                     if (entryCount <= 0)
                         return;
 
-                    byte* dataPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr<MacroSwarmTelemetryEntry>(_macroSwarmBlackBox.Resolve());
-                    int firstCount = math.min(entryCount, entryCapacity - oldestIndex);
-                    stream.Write(new ReadOnlySpan<byte>(dataPtr + oldestIndex * entrySize, firstCount * entrySize));
-                    int secondCount = entryCount - firstCount;
-                    if (secondCount > 0)
-                        stream.Write(new ReadOnlySpan<byte>(dataPtr, secondCount * entrySize));
+                    WriteTelemetryRingEntries(stream, macroSwarmBlackBox, entrySize, entryCount, oldestIndex);
                 }
             }
             catch (Exception)
@@ -5490,61 +5967,81 @@ namespace Hecton8.World
 
         private void PushFaunaGeneticsTelemetryFrame()
         {
-            if (!_faunaGeneticsTelemetry.IsCreated || _faunaGeneticsTelemetry.Length <= 0)
+            if (!_faunaGeneticsTelemetry.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<GeneticsTelemetryEntry> geneticsTelemetry))
                 return;
 
-            NativeArray<ulong> headlessGenomes = _headlessEntities.FaunaGenomes;
-            NativeArray<MacroSwarm> macroSwarms = _macroSwarms;
-            int headlessCount = headlessGenomes.IsCreated ? math.min(_activeSectorCount, headlessGenomes.Length) : 0;
-            int macroCount = macroSwarms.IsCreated ? math.min(_activeMacroSwarmCount, macroSwarms.Length) : 0;
-            int activeCount = 0;
+            bool shouldDump = false;
+            uint frame = 0u;
+            int compiledGenomeCount = 0;
             int invalidCount = 0;
-            int extractionOps = 0;
-            float hueSum = 0f;
-            float sizeSum = 0f;
-            float aggressionSum = 0f;
-            float patternSum = 0f;
-            uint stateHash = 2166136261u;
-            uint patternLo = 0u;
-            uint patternHi = 0u;
-
-            for (int i = 0; i < headlessCount; i++)
-                AccumulateGeneticsTelemetry(headlessGenomes[i], ref activeCount, ref invalidCount, ref extractionOps, ref hueSum, ref sizeSum, ref aggressionSum, ref patternSum, ref stateHash, ref patternLo, ref patternHi);
-
-            for (int i = 0; i < macroCount; i++)
-                AccumulateGeneticsTelemetry(macroSwarms[i].Genome, ref activeCount, ref invalidCount, ref extractionOps, ref hueSum, ref sizeSum, ref aggressionSum, ref patternSum, ref stateHash, ref patternLo, ref patternHi);
-
-            float invCount = activeCount > 0 ? math.rcp((float)activeCount) : 0f;
-            FaunaGeneticsTuningDTO tuning = _faunaGeneticsTuning.IsCreated && _faunaGeneticsTuning.Length > 0
-                ? _faunaGeneticsTuning[0]
-                : default;
-            int compiledGenomeCount = math.max(_lastFaunaGenomeCompiledCount, activeCount);
-            uint frame = ReadDispatcherFrameId();
-            int index = _faunaGeneticsTelemetryCursor % _faunaGeneticsTelemetry.Length;
-            _faunaGeneticsTelemetry[index] = new GeneticsTelemetryEntry
+            try
             {
-                FrameIndex = frame,
-                StateHash = stateHash == 0u ? 1u : stateHash,
-                CompiledGenomeCount = compiledGenomeCount,
-                ActiveGenomeCount = activeCount,
-                ExtractionOperationCount = extractionOps,
-                InvalidMaskCount = invalidCount,
-                AverageHueShift01 = hueSum * invCount,
-                AverageSize01 = sizeSum * invCount,
-                AverageAggression01 = aggressionSum * invCount,
-                AveragePattern01 = patternSum * invCount,
-                BurstExecutionMicroseconds = _lastFaunaGenomeBurstMicroseconds,
-                TuningStateHash = tuning.StateHash,
-                PatternHistogramLo = patternLo,
-                PatternHistogramHi = patternHi,
-                Flags = (uint)math.select(0, 1, invalidCount > 0)
-            };
-            _faunaGeneticsTelemetryCursor++;
+                if (geneticsTelemetry.Length <= 0)
+                    return;
+
+                NativeArray<ulong>.ReadOnly headlessGenomes = default;
+                NativeArray<MacroSwarm>.ReadOnly macroSwarms = default;
+                bool headlessResolved = _headlessEntities.FaunaGenomes.TryResolveReadOnly(out headlessGenomes);
+                bool macroResolved = _macroSwarms.TryResolveReadOnly(out macroSwarms);
+                int headlessCount = headlessResolved ? math.min(_activeSectorCount, headlessGenomes.Length) : 0;
+                int macroCount = macroResolved ? math.min(_activeMacroSwarmCount, macroSwarms.Length) : 0;
+                int activeCount = 0;
+                int extractionOps = 0;
+                float hueSum = 0f;
+                float sizeSum = 0f;
+                float aggressionSum = 0f;
+                float patternSum = 0f;
+                uint stateHash = 2166136261u;
+                uint patternLo = 0u;
+                uint patternHi = 0u;
+
+                for (int i = 0; i < headlessCount; i++)
+                    AccumulateGeneticsTelemetry(headlessGenomes[i], ref activeCount, ref invalidCount, ref extractionOps, ref hueSum, ref sizeSum, ref aggressionSum, ref patternSum, ref stateHash, ref patternLo, ref patternHi);
+
+                for (int i = 0; i < macroCount; i++)
+                    AccumulateGeneticsTelemetry(macroSwarms[i].Genome, ref activeCount, ref invalidCount, ref extractionOps, ref hueSum, ref sizeSum, ref aggressionSum, ref patternSum, ref stateHash, ref patternLo, ref patternHi);
+
+                float invCount = activeCount > 0 ? math.rcp((float)activeCount) : 0f;
+                FaunaGeneticsTuningDTO tuning = default;
+                NativeArray<FaunaGeneticsTuningDTO>.ReadOnly tuningReadOnly;
+                if (_faunaGeneticsTuning.TryResolveReadOnly(out tuningReadOnly) &&
+                    tuningReadOnly.Length > 0)
+                {
+                    tuning = tuningReadOnly[0];
+                }
+
+                compiledGenomeCount = math.max(_lastFaunaGenomeCompiledCount, activeCount);
+                frame = ReadDispatcherFrameId();
+                int index = _faunaGeneticsTelemetryCursor % geneticsTelemetry.Length;
+                geneticsTelemetry[index] = new GeneticsTelemetryEntry
+                {
+                    FrameIndex = frame,
+                    StateHash = stateHash == 0u ? 1u : stateHash,
+                    CompiledGenomeCount = compiledGenomeCount,
+                    ActiveGenomeCount = activeCount,
+                    ExtractionOperationCount = extractionOps,
+                    InvalidMaskCount = invalidCount,
+                    AverageHueShift01 = hueSum * invCount,
+                    AverageSize01 = sizeSum * invCount,
+                    AverageAggression01 = aggressionSum * invCount,
+                    AveragePattern01 = patternSum * invCount,
+                    BurstExecutionMicroseconds = _lastFaunaGenomeBurstMicroseconds,
+                    TuningStateHash = tuning.StateHash,
+                    PatternHistogramLo = patternLo,
+                    PatternHistogramHi = patternHi,
+                    Flags = (uint)math.select(0, 1, invalidCount > 0)
+                };
+                _faunaGeneticsTelemetryCursor++;
+                shouldDump = invalidCount > 0 ||
+                             (compiledGenomeCount > 0 &&
+                              _lastFaunaGenomeBurstMicroseconds > FaunaGeneticsTelemetryBudgetMicroseconds);
+            }
+            finally
+            {
+                _faunaGeneticsTelemetry.ReleaseWriteLock(SystemID.AIEcology);
+            }
 
             int frameInt = unchecked((int)frame);
-            bool shouldDump = invalidCount > 0 ||
-                              (compiledGenomeCount > 0 &&
-                               _lastFaunaGenomeBurstMicroseconds > FaunaGeneticsTelemetryBudgetMicroseconds);
             if (shouldDump && _lastFaunaGeneticsDumpFrame != frameInt)
             {
                 _lastFaunaGeneticsDumpFrame = frameInt;
@@ -5606,9 +6103,37 @@ namespace Hecton8.World
             hi = (hi & ~(0x0Fu << hiShift)) | (hiCount << hiShift);
         }
 
+        private static unsafe void WriteTelemetryRingEntries<T>(
+            FileStream stream,
+            NativeArray<T>.ReadOnly entries,
+            int entrySize,
+            int entryCount,
+            int oldestIndex) where T : struct
+        {
+            if (!entries.IsCreated || entrySize <= 0 || entryCount <= 0)
+                return;
+
+            int entryCapacity = entries.Length;
+            if (entryCapacity <= 0)
+                return;
+
+            byte* entryPtr = stackalloc byte[entrySize];
+            for (int i = 0; i < entryCount; i++)
+            {
+                int entryIndex = oldestIndex + i;
+                if (entryIndex >= entryCapacity)
+                    entryIndex -= entryCapacity;
+
+                T entry = entries[entryIndex];
+                UnsafeUtility.CopyStructureToPtr(ref entry, entryPtr);
+                stream.Write(new ReadOnlySpan<byte>(entryPtr, entrySize));
+            }
+        }
+
         private unsafe void DumpFaunaGeneticsTelemetry()
         {
-            if (!_faunaGeneticsTelemetry.IsCreated || _faunaGeneticsTelemetry.Length <= 0)
+            if (!_faunaGeneticsTelemetry.TryResolveReadOnly(out NativeArray<GeneticsTelemetryEntry>.ReadOnly faunaGeneticsTelemetry) ||
+                faunaGeneticsTelemetry.Length <= 0)
                 return;
 
             try
@@ -5622,7 +6147,7 @@ namespace Hecton8.World
                 using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
                     int entrySize = UnsafeUtility.SizeOf<GeneticsTelemetryEntry>();
-                    int entryCapacity = _faunaGeneticsTelemetry.Length;
+                    int entryCapacity = faunaGeneticsTelemetry.Length;
                     int entryCount = math.min(math.max(0, _faunaGeneticsTelemetryCursor), entryCapacity);
                     int oldestIndex = entryCount == entryCapacity ? _faunaGeneticsTelemetryCursor % entryCapacity : 0;
                     const int headerBytes = sizeof(ulong) + (sizeof(int) * 4);
@@ -5636,12 +6161,7 @@ namespace Hecton8.World
                     if (entryCount <= 0)
                         return;
 
-                    byte* dataPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr<GeneticsTelemetryEntry>(_faunaGeneticsTelemetry.Resolve());
-                    int firstCount = math.min(entryCount, entryCapacity - oldestIndex);
-                    stream.Write(new ReadOnlySpan<byte>(dataPtr + oldestIndex * entrySize, firstCount * entrySize));
-                    int secondCount = entryCount - firstCount;
-                    if (secondCount > 0)
-                        stream.Write(new ReadOnlySpan<byte>(dataPtr, secondCount * entrySize));
+                    WriteTelemetryRingEntries(stream, faunaGeneticsTelemetry, entrySize, entryCount, oldestIndex);
                 }
             }
             catch (Exception)
@@ -5652,7 +6172,8 @@ namespace Hecton8.World
 
         private unsafe void DumpFaunaMutationBlackBox()
         {
-            if (!_faunaMutationBlackBox.IsCreated || _faunaMutationBlackBox.Length <= 0)
+            if (!_faunaMutationBlackBox.TryResolveReadOnly(out NativeArray<FaunaMutationTelemetryEntry>.ReadOnly faunaMutationBlackBox) ||
+                faunaMutationBlackBox.Length <= 0)
                 return;
 
             try
@@ -5666,7 +6187,7 @@ namespace Hecton8.World
                 using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
                     int entrySize = UnsafeUtility.SizeOf<FaunaMutationTelemetryEntry>();
-                    int entryCapacity = _faunaMutationBlackBox.Length;
+                    int entryCapacity = faunaMutationBlackBox.Length;
                     int entryCount = math.min(math.max(0, _faunaMutationBlackBoxCursor), entryCapacity);
                     int oldestIndex = entryCount == entryCapacity ? _faunaMutationBlackBoxCursor % entryCapacity : 0;
                     const int headerBytes = sizeof(ulong) + (sizeof(int) * 4);
@@ -5680,12 +6201,7 @@ namespace Hecton8.World
                     if (entryCount <= 0)
                         return;
 
-                    byte* dataPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr<FaunaMutationTelemetryEntry>(_faunaMutationBlackBox.Resolve());
-                    int firstCount = math.min(entryCount, entryCapacity - oldestIndex);
-                    stream.Write(new ReadOnlySpan<byte>(dataPtr + oldestIndex * entrySize, firstCount * entrySize));
-                    int secondCount = entryCount - firstCount;
-                    if (secondCount > 0)
-                        stream.Write(new ReadOnlySpan<byte>(dataPtr, secondCount * entrySize));
+                    WriteTelemetryRingEntries(stream, faunaMutationBlackBox, entrySize, entryCount, oldestIndex);
                 }
             }
             catch (Exception)
@@ -5733,56 +6249,73 @@ namespace Hecton8.World
                 ApexTerritoryOverlapQueryRadiusMeters,
                 SpatialTargetKind.Bioform,
                 _apexTerritoryOverlapHits);
+
+            if (hitCount <= 0)
+                return;
+
+            if (!TryLockApexTerritoryOverlapJobBuffers())
+                return;
+
             int sampleCount = 0;
-            for (int hitIndex = 0; hitIndex < hitCount && sampleCount < ApexTerritoryOverlapCandidateCapacity; hitIndex++)
+            bool keepLocksForScheduledJob = false;
+            try
             {
-                SpatialQueryHit hit = _apexTerritoryOverlapHits[hitIndex];
-                IFaunaSpatialContact faunaContact = hit.Owner as IFaunaSpatialContact;
-                if (faunaContact == null || faunaContact.IsDead || !faunaContact.IsApexPredatorContact)
-                    continue;
-
-                IFaunaPredationTarget retreatTarget = hit.Owner as IFaunaPredationTarget;
-                if (retreatTarget == null)
-                    continue;
-
-                AbsoluteUniversePosition hitAup = hit.AbsolutePosition;
-                if (!hit.HasAbsolutePosition &&
-                    !TryResolveAupFromRuntimeOrigin(hit.Position, out hitAup))
+                for (int hitIndex = 0; hitIndex < hitCount && sampleCount < ApexTerritoryOverlapCandidateCapacity; hitIndex++)
                 {
-                    continue;
+                    SpatialQueryHit hit = _apexTerritoryOverlapHits[hitIndex];
+                    IFaunaSpatialContact faunaContact = hit.Owner as IFaunaSpatialContact;
+                    if (faunaContact == null || faunaContact.IsDead || !faunaContact.IsApexPredatorContact)
+                        continue;
+
+                    IFaunaPredationTarget retreatTarget = hit.Owner as IFaunaPredationTarget;
+                    if (retreatTarget == null)
+                        continue;
+
+                    AbsoluteUniversePosition hitAup = hit.AbsolutePosition;
+                    if (!hit.HasAbsolutePosition &&
+                        !TryResolveAupFromRuntimeOrigin(hit.Position, out hitAup))
+                    {
+                        continue;
+                    }
+
+                    _apexTerritoryTargets[sampleCount] = retreatTarget;
+                    _apexTerritorySamples[sampleCount] = new ApexTerritorySample
+                    {
+                        PositionAup = hitAup.ToAlignedBlit(),
+                        Radius = faunaContact.ApexTerritoryRadiusMeters,
+                        MassScore = faunaContact.ApexTerritoryMassScore,
+                        BrainIndex = sampleCount,
+                        Padding = 0
+                    };
+                    _apexTerritoryOverlapResults[sampleCount] = default;
+                    sampleCount++;
                 }
 
-                _apexTerritoryTargets[sampleCount] = retreatTarget;
-                _apexTerritorySamples[sampleCount] = new ApexTerritorySample
+                if (sampleCount < 2)
                 {
-                    PositionAup = hitAup.ToAlignedBlit(),
-                    Radius = faunaContact.ApexTerritoryRadiusMeters,
-                    MassScore = faunaContact.ApexTerritoryMassScore,
-                    BrainIndex = sampleCount,
-                    Padding = 0
+                    for (int i = 0; i < sampleCount; i++)
+                        _apexTerritoryTargets[i] = null;
+                    return;
+                }
+
+                var overlapJob = new ApexTerritoryOverlapJob
+                {
+                    Samples = _apexTerritorySamples,
+                    Results = _apexTerritoryOverlapResults,
+                    Count = sampleCount,
+                    OverlapThreshold01 = ApexTerritoryOverlapRetreatThreshold01
                 };
-                _apexTerritoryOverlapResults[sampleCount] = default;
-                sampleCount++;
+
+                _scheduledApexTerritoryOverlapHandle = overlapJob.Schedule(sampleCount, ResolveApexTerritoryBatchSize(sampleCount));
+                _scheduledApexTerritoryOverlapCount = sampleCount;
+                _apexTerritoryOverlapScheduled = true;
+                keepLocksForScheduledJob = true;
             }
-
-            if (sampleCount < 2)
+            finally
             {
-                for (int i = 0; i < sampleCount; i++)
-                    _apexTerritoryTargets[i] = null;
-                return;
+                if (!keepLocksForScheduledJob)
+                    UnlockApexTerritoryOverlapJobBuffers();
             }
-
-            var overlapJob = new ApexTerritoryOverlapJob
-            {
-                Samples = _apexTerritorySamples,
-                Results = _apexTerritoryOverlapResults,
-                Count = sampleCount,
-                OverlapThreshold01 = ApexTerritoryOverlapRetreatThreshold01
-            };
-
-            _scheduledApexTerritoryOverlapHandle = overlapJob.Schedule(sampleCount, ResolveApexTerritoryBatchSize(sampleCount));
-            _scheduledApexTerritoryOverlapCount = sampleCount;
-            _apexTerritoryOverlapScheduled = true;
         }
 
         private static int ResolveSectorJobBatchSize(int count)
@@ -5820,37 +6353,44 @@ namespace Hecton8.World
             if (!DispatcherJobSwap.TryComplete(ref _scheduledApexTerritoryOverlapHandle, forceComplete))
                 return;
 
-            int count = math.min(_scheduledApexTerritoryOverlapCount, ApexTerritoryOverlapCandidateCapacity);
-            for (int i = 0; i < count; i++)
+            try
             {
-                ApexTerritoryOverlapResult result = _apexTerritoryOverlapResults[i];
-                if (result.RetreatBrainIndex < 0 ||
-                    result.RetreatBrainIndex >= count ||
-                    result.RivalBrainIndex < 0 ||
-                    result.RivalBrainIndex >= count ||
-                    result.Overlap01 <= ApexTerritoryOverlapRetreatThreshold01)
+                int count = math.min(_scheduledApexTerritoryOverlapCount, ApexTerritoryOverlapCandidateCapacity);
+                for (int i = 0; i < count; i++)
                 {
-                    continue;
+                    ApexTerritoryOverlapResult result = _apexTerritoryOverlapResults[i];
+                    if (result.RetreatBrainIndex < 0 ||
+                        result.RetreatBrainIndex >= count ||
+                        result.RivalBrainIndex < 0 ||
+                        result.RivalBrainIndex >= count ||
+                        result.Overlap01 <= ApexTerritoryOverlapRetreatThreshold01)
+                    {
+                        continue;
+                    }
+
+                    IFaunaPredationTarget retreatTarget = _apexTerritoryTargets[result.RetreatBrainIndex];
+                    if (retreatTarget == null || retreatTarget.IsDead)
+                        continue;
+
+                    ApexTerritorySample rivalSample = _apexTerritorySamples[result.RivalBrainIndex];
+                    AbsoluteUniversePosition rivalAup = AbsoluteUniversePosition.FromAlignedBlit(in rivalSample.PositionAup);
+                    retreatTarget.ForceApexRetreatFrom(ToVector3(rivalAup.ToRuntimeFloat3()));
                 }
 
-                IFaunaPredationTarget retreatTarget = _apexTerritoryTargets[result.RetreatBrainIndex];
-                if (retreatTarget == null || retreatTarget.IsDead)
-                    continue;
+                for (int i = 0; i < count; i++)
+                {
+                    _apexTerritoryTargets[i] = null;
+                    _apexTerritoryOverlapResults[i] = default;
+                }
 
-                ApexTerritorySample rivalSample = _apexTerritorySamples[result.RivalBrainIndex];
-                AbsoluteUniversePosition rivalAup = AbsoluteUniversePosition.FromAlignedBlit(in rivalSample.PositionAup);
-                retreatTarget.ForceApexRetreatFrom(ToVector3(rivalAup.ToRuntimeFloat3()));
+                _scheduledApexTerritoryOverlapHandle = default;
+                _scheduledApexTerritoryOverlapCount = 0;
+                _apexTerritoryOverlapScheduled = false;
             }
-
-            for (int i = 0; i < count; i++)
+            finally
             {
-                _apexTerritoryTargets[i] = null;
-                _apexTerritoryOverlapResults[i] = default;
+                UnlockApexTerritoryOverlapJobBuffers();
             }
-
-            _scheduledApexTerritoryOverlapHandle = default;
-            _scheduledApexTerritoryOverlapCount = 0;
-            _apexTerritoryOverlapScheduled = false;
         }
 
         private void PublishFloraPredatorAupBuffer(Vector3 queryOrigin)
@@ -6126,19 +6666,25 @@ namespace Hecton8.World
             if (_activeSectorCount <= 0)
                 return;
 
+            if (!_sectorFrontStates.TryResolveReadOnly(out NativeArray<SectorPopulationState>.ReadOnly sectorFrontStates))
+                return;
+
             if (_cachedPersistentWorldRegistry == null)
                 _cachedPersistentWorldRegistry = PersistentWorldRegistry.Instance;
 
             if (_cachedPersistentWorldRegistry == null)
                 return;
 
-            int syncBudget = math.min(HibernationPopulationSyncsPerColdSolve, _activeSectorCount);
+            int syncBudget = math.min(HibernationPopulationSyncsPerColdSolve, math.min(_activeSectorCount, sectorFrontStates.Length));
             for (int i = 0; i < syncBudget; i++)
             {
-                if (_nextHibernationPopulationSyncIndex >= _activeSectorCount)
+                if (_nextHibernationPopulationSyncIndex >= _activeSectorCount ||
+                    _nextHibernationPopulationSyncIndex >= sectorFrontStates.Length)
+                {
                     _nextHibernationPopulationSyncIndex = 0;
+                }
 
-                SectorPopulationState state = _sectorFrontStates[_nextHibernationPopulationSyncIndex];
+                SectorPopulationState state = sectorFrontStates[_nextHibernationPopulationSyncIndex];
                 _cachedPersistentWorldRegistry.ReconcileFaunaHibernationSectorPopulation(
                     state.SectorCoord,
                     state.PreyPopulationRounded,
@@ -6152,24 +6698,40 @@ namespace Hecton8.World
 
         private int ResolveOrCreateSectorSlot(int2 sectorCoord, bool seedWithBaseline = true)
         {
+            if (!_solveJobLocksHeld)
+                return -1;
+
+            NativeArray<EcosystemIndexEntry> sectorIndexEntries = _sectorIndexEntries.Resolve();
+            NativeArray<SectorPopulationState> sectorFrontStates = _sectorFrontStates.Resolve();
+            NativeArray<SectorPopulationState> sectorBackStates = _sectorBackStates.Resolve();
+            if (!sectorIndexEntries.IsCreated ||
+                !sectorFrontStates.IsCreated ||
+                !sectorBackStates.IsCreated)
+            {
+                return -1;
+            }
+
             long packedKey = PackSectorKey(sectorCoord);
-            if (TryFindIndexEntry(_sectorIndexEntries, packedKey, out int existingSlot))
+            if (TryFindIndexEntry(sectorIndexEntries, packedKey, out int existingSlot))
                 return existingSlot;
 
-            if (_activeSectorCount >= _sectorFrontStates.Length)
+            if (_activeSectorCount >= sectorFrontStates.Length ||
+                _activeSectorCount >= sectorBackStates.Length)
+            {
                 return -1;
+            }
 
             int slotIndex = _activeSectorCount;
             _activeSectorCount++;
-            if (!TryUpsertIndexEntry(_sectorIndexEntries, packedKey, slotIndex))
+            if (!TryUpsertIndexEntry(sectorIndexEntries, packedKey, slotIndex))
             {
                 _activeSectorCount--;
                 return -1;
             }
 
             SectorPopulationState seededState = SeedSectorState(sectorCoord, seedWithBaseline);
-            _sectorFrontStates[slotIndex] = seededState;
-            _sectorBackStates[slotIndex] = seededState;
+            sectorFrontStates[slotIndex] = seededState;
+            sectorBackStates[slotIndex] = seededState;
             WriteHeadlessSlot(slotIndex, in seededState);
             return slotIndex;
         }
@@ -6206,33 +6768,67 @@ namespace Hecton8.World
 
         private int ResolveOrCreateBiomassCellSlot(int2 macroCellCoord, bool seedWithBaseline = true)
         {
+            if (!_solveJobLocksHeld && !_macroSwarmTravelJobLocksHeld)
+                return -1;
+
+            NativeArray<EcosystemIndexEntry> biomassIndexEntries = _biomassIndexEntries.Resolve();
+            NativeArray<int2> biomassMacroCellCoords = _biomassMacroCellCoords.Resolve();
+            NativeArray<float> preyFront = _preyBiomassFront.Resolve();
+            NativeArray<float> preyBack = _preyBiomassBack.Resolve();
+            NativeArray<float> predatorFront = _predatorBiomassFront.Resolve();
+            NativeArray<float> predatorBack = _predatorBiomassBack.Resolve();
+            NativeArray<float> carryingCapacity = _biomassCarryingCapacity.Resolve();
+            NativeArray<float> biomassSumScratch = _biomassSumScratch.Resolve();
+            NativeArray<byte> biomassCellFlags = _biomassCellFlags.Resolve();
+            if (!biomassIndexEntries.IsCreated ||
+                !biomassMacroCellCoords.IsCreated ||
+                !preyFront.IsCreated ||
+                !preyBack.IsCreated ||
+                !predatorFront.IsCreated ||
+                !predatorBack.IsCreated ||
+                !carryingCapacity.IsCreated ||
+                !biomassSumScratch.IsCreated ||
+                !biomassCellFlags.IsCreated)
+            {
+                return -1;
+            }
+
             long packedKey = PackBiomassCellKey(macroCellCoord);
-            if (TryFindIndexEntry(_biomassIndexEntries, packedKey, out int existingSlot))
+            if (TryFindIndexEntry(biomassIndexEntries, packedKey, out int existingSlot))
                 return existingSlot;
 
-            if (_activeBiomassCellCount >= _preyBiomassFront.Length)
+            if (_activeBiomassCellCount >= preyFront.Length ||
+                _activeBiomassCellCount >= preyBack.Length ||
+                _activeBiomassCellCount >= predatorFront.Length ||
+                _activeBiomassCellCount >= predatorBack.Length ||
+                _activeBiomassCellCount >= carryingCapacity.Length ||
+                _activeBiomassCellCount >= biomassMacroCellCoords.Length ||
+                _activeBiomassCellCount >= biomassSumScratch.Length ||
+                _activeBiomassCellCount >= biomassCellFlags.Length)
+            {
                 return -1;
+            }
 
             int slotIndex = _activeBiomassCellCount;
             _activeBiomassCellCount++;
-            if (!TryUpsertIndexEntry(_biomassIndexEntries, packedKey, slotIndex))
+            if (!TryUpsertIndexEntry(biomassIndexEntries, packedKey, slotIndex))
             {
                 _activeBiomassCellCount--;
                 return -1;
             }
-            _biomassMacroCellCoords[slotIndex] = macroCellCoord;
+            biomassMacroCellCoords[slotIndex] = macroCellCoord;
 
             float carryingCapacity01 = ResolveBiomassCarryingCapacity01(macroCellCoord);
             float seedScale = seedWithBaseline ? 1f : 0.5f;
             float prey = math.clamp(defaultPreyBiomass01 * carryingCapacity01 * seedScale, 0f, carryingCapacity01);
             float predator = math.clamp(defaultPredatorBiomass01 * carryingCapacity01 * seedScale, 0f, carryingCapacity01);
-            _preyBiomassFront[slotIndex] = prey;
-            _preyBiomassBack[slotIndex] = prey;
-            _predatorBiomassFront[slotIndex] = predator;
-            _predatorBiomassBack[slotIndex] = predator;
-            _biomassCarryingCapacity[slotIndex] = carryingCapacity01;
-            _biomassSumScratch[slotIndex] = prey + predator;
-            _biomassCellFlags[slotIndex] = predator > 0.0001f ? BiomassCellFlagPredatorSeen : (byte)0;
+            preyFront[slotIndex] = prey;
+            preyBack[slotIndex] = prey;
+            predatorFront[slotIndex] = predator;
+            predatorBack[slotIndex] = predator;
+            carryingCapacity[slotIndex] = carryingCapacity01;
+            biomassSumScratch[slotIndex] = prey + predator;
+            biomassCellFlags[slotIndex] = predator > 0.0001f ? BiomassCellFlagPredatorSeen : (byte)0;
             return slotIndex;
         }
 
@@ -6315,36 +6911,90 @@ namespace Hecton8.World
 
             if (HasPendingSimulationJob())
             {
-                if (_pendingBiomassImpactCount >= _pendingBiomassImpacts.Length)
+                TryQueueBiomassImpact(macroCellCoord, kind, amount);
+                return;
+            }
+
+            if (!TryLockMacroSwarmTravelJobBuffers())
+            {
+                TryQueueBiomassImpact(macroCellCoord, kind, amount);
+                return;
+            }
+
+            try
+            {
+                ApplyBiomassImpact(macroCellCoord, kind, amount);
+            }
+            finally
+            {
+                UnlockMacroSwarmTravelJobBuffers();
+            }
+        }
+
+        private bool TryQueueBiomassImpact(int2 macroCellCoord, byte kind, float amount)
+        {
+            if (!_pendingBiomassImpacts.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<BiomassImpactEvent> pendingImpacts))
+                return false;
+
+            try
+            {
+                if (_pendingBiomassImpactCount >= pendingImpacts.Length)
                 {
                     GlobalTelemetryBus.PublishPerformanceWarning(
                         _BiomassTelemetryHash,
                         _EcosystemDirectorContextHash,
                         _pendingBiomassImpactCount);
-                    return;
+                    return false;
                 }
 
-                _pendingBiomassImpacts[_pendingBiomassImpactCount++] = new BiomassImpactEvent
+                pendingImpacts[_pendingBiomassImpactCount++] = new BiomassImpactEvent
                 {
                     MacroCellCoord = macroCellCoord,
                     Amount = math.saturate(amount),
                     Kind = kind
                 };
-                return;
+                return true;
             }
-
-            ApplyBiomassImpact(macroCellCoord, kind, amount);
+            finally
+            {
+                _pendingBiomassImpacts.ReleaseWriteLock(SystemID.AIEcology);
+            }
         }
 
         private void ApplyPendingBiomassImpacts()
         {
-            int count = math.min(_pendingBiomassImpactCount, _pendingBiomassImpacts.IsCreated ? _pendingBiomassImpacts.Length : 0);
-            _pendingBiomassImpactCount = 0;
-            for (int i = 0; i < count; i++)
+            bool releaseMacroLock = false;
+            if (!_solveJobLocksHeld && !_macroSwarmTravelJobLocksHeld)
             {
-                BiomassImpactEvent impact = _pendingBiomassImpacts[i];
-                ApplyBiomassImpact(impact.MacroCellCoord, impact.Kind, impact.Amount);
-                _pendingBiomassImpacts[i] = default;
+                if (!TryLockMacroSwarmTravelJobBuffers())
+                    return;
+
+                releaseMacroLock = true;
+            }
+
+            if (!_pendingBiomassImpacts.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<BiomassImpactEvent> pendingImpacts))
+            {
+                if (releaseMacroLock)
+                    UnlockMacroSwarmTravelJobBuffers();
+                return;
+            }
+
+            try
+            {
+                int count = math.min(_pendingBiomassImpactCount, pendingImpacts.Length);
+                _pendingBiomassImpactCount = 0;
+                for (int i = 0; i < count; i++)
+                {
+                    BiomassImpactEvent impact = pendingImpacts[i];
+                    ApplyBiomassImpact(impact.MacroCellCoord, impact.Kind, impact.Amount);
+                    pendingImpacts[i] = default;
+                }
+            }
+            finally
+            {
+                _pendingBiomassImpacts.ReleaseWriteLock(SystemID.AIEcology);
+                if (releaseMacroLock)
+                    UnlockMacroSwarmTravelJobBuffers();
             }
         }
 
@@ -6570,7 +7220,8 @@ namespace Hecton8.World
 
         private unsafe void DumpBiomassBlackBox()
         {
-            if (!_biomassBlackBox.IsCreated || _biomassBlackBox.Length <= 0)
+            if (!_biomassBlackBox.TryResolveReadOnly(out NativeArray<BiomassTelemetryEntry>.ReadOnly biomassBlackBox) ||
+                biomassBlackBox.Length <= 0)
                 return;
 
             try
@@ -6584,7 +7235,7 @@ namespace Hecton8.World
                 using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
                     int entrySize = UnsafeUtility.SizeOf<BiomassTelemetryEntry>();
-                    int entryCapacity = _biomassBlackBox.Length;
+                    int entryCapacity = biomassBlackBox.Length;
                     int entryCount = math.min(math.max(0, _biomassBlackBoxCursor), entryCapacity);
                     int oldestIndex = entryCount == entryCapacity ? _biomassBlackBoxCursor % entryCapacity : 0;
                     const int headerBytes = sizeof(ulong) + (sizeof(int) * 4);
@@ -6598,12 +7249,7 @@ namespace Hecton8.World
                     if (entryCount <= 0)
                         return;
 
-                    byte* dataPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr<BiomassTelemetryEntry>(_biomassBlackBox.Resolve());
-                    int firstCount = math.min(entryCount, entryCapacity - oldestIndex);
-                    stream.Write(new ReadOnlySpan<byte>(dataPtr + oldestIndex * entrySize, firstCount * entrySize));
-                    int secondCount = entryCount - firstCount;
-                    if (secondCount > 0)
-                        stream.Write(new ReadOnlySpan<byte>(dataPtr, secondCount * entrySize));
+                    WriteTelemetryRingEntries(stream, biomassBlackBox, entrySize, entryCount, oldestIndex);
                 }
             }
             catch (Exception)
@@ -6688,129 +7334,150 @@ namespace Hecton8.World
 
         private void CaptureBiomassSaveRuns()
         {
-            if (!_saveSnapshotBiomassRuns.IsCreated)
+            if (!_saveSnapshotBiomassRuns.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<EcosystemBiomassSaveRun> biomassRuns))
                 return;
 
-            _saveSnapshotBiomassRunCount = 0;
-            int emittedCount = 0;
-            bool hasLastSortedCoord = false;
-            int2 lastSortedCoord = int2.zero;
-            int runLength = 0;
-            int2 runStart = int2.zero;
-            int2 previousCoord = int2.zero;
-            sbyte runPrey = 0;
-            sbyte runPredator = 0;
-            sbyte runCapacity = 0;
-            while (emittedCount < _activeBiomassCellCount)
+            try
             {
-                int bestIndex = -1;
-                int2 bestCoord = int2.zero;
-                for (int i = 0; i < _activeBiomassCellCount; i++)
+                _saveSnapshotBiomassRunCount = 0;
+                if (!_biomassMacroCellCoords.TryResolveReadOnly(out NativeArray<int2>.ReadOnly macroCellCoords) ||
+                    !_preyBiomassFront.TryResolveReadOnly(out NativeArray<float>.ReadOnly preyBiomassFront) ||
+                    !_predatorBiomassFront.TryResolveReadOnly(out NativeArray<float>.ReadOnly predatorBiomassFront) ||
+                    !_biomassCarryingCapacity.TryResolveReadOnly(out NativeArray<float>.ReadOnly biomassCarryingCapacity))
                 {
-                    int2 candidateCoord = _biomassMacroCellCoords[i];
-                    if (!IsBiomassCoordAfter(candidateCoord, lastSortedCoord, hasLastSortedCoord))
-                        continue;
+                    return;
+                }
 
-                    if (bestIndex < 0 || IsBiomassCoordBefore(candidateCoord, bestCoord))
+                int cellCount = math.min(
+                    _activeBiomassCellCount,
+                    math.min(
+                        macroCellCoords.Length,
+                        math.min(preyBiomassFront.Length, math.min(predatorBiomassFront.Length, biomassCarryingCapacity.Length))));
+                int emittedCount = 0;
+                bool hasLastSortedCoord = false;
+                int2 lastSortedCoord = int2.zero;
+                int runLength = 0;
+                int2 runStart = int2.zero;
+                int2 previousCoord = int2.zero;
+                sbyte runPrey = 0;
+                sbyte runPredator = 0;
+                sbyte runCapacity = 0;
+                while (emittedCount < cellCount)
+                {
+                    int bestIndex = -1;
+                    int2 bestCoord = int2.zero;
+                    for (int i = 0; i < cellCount; i++)
                     {
-                        bestIndex = i;
-                        bestCoord = candidateCoord;
+                        int2 candidateCoord = macroCellCoords[i];
+                        if (!IsBiomassCoordAfter(candidateCoord, lastSortedCoord, hasLastSortedCoord))
+                            continue;
+
+                        if (bestIndex < 0 || IsBiomassCoordBefore(candidateCoord, bestCoord))
+                        {
+                            bestIndex = i;
+                            bestCoord = candidateCoord;
+                        }
                     }
+
+                    if (bestIndex < 0)
+                        break;
+
+                    int2 coord = bestCoord;
+                    sbyte preyQ = QuantizeBiomass01(preyBiomassFront[bestIndex]);
+                    sbyte predatorQ = QuantizeBiomass01(predatorBiomassFront[bestIndex]);
+                    sbyte capacityQ = QuantizeBiomass01(biomassCarryingCapacity[bestIndex]);
+                    bool canExtend =
+                        runLength > 0 &&
+                        runLength < byte.MaxValue &&
+                        coord.y == previousCoord.y &&
+                        coord.x == previousCoord.x + 1 &&
+                        preyQ == runPrey &&
+                        predatorQ == runPredator &&
+                        capacityQ == runCapacity;
+                    if (!canExtend)
+                    {
+                        FlushBiomassSaveRun(biomassRuns, runStart, runPrey, runPredator, runCapacity, runLength);
+                        runStart = coord;
+                        runLength = 1;
+                        runPrey = preyQ;
+                        runPredator = predatorQ;
+                        runCapacity = capacityQ;
+                    }
+                    else
+                    {
+                        runLength++;
+                    }
+
+                    previousCoord = coord;
+                    lastSortedCoord = coord;
+                    hasLastSortedCoord = true;
+                    emittedCount++;
                 }
 
-                if (bestIndex < 0)
-                    break;
-
-                int2 coord = bestCoord;
-                sbyte preyQ = QuantizeBiomass01(_preyBiomassFront[bestIndex]);
-                sbyte predatorQ = QuantizeBiomass01(_predatorBiomassFront[bestIndex]);
-                sbyte capacityQ = QuantizeBiomass01(_biomassCarryingCapacity[bestIndex]);
-                bool canExtend =
-                    runLength > 0 &&
-                    runLength < byte.MaxValue &&
-                    coord.y == previousCoord.y &&
-                    coord.x == previousCoord.x + 1 &&
-                    preyQ == runPrey &&
-                    predatorQ == runPredator &&
-                    capacityQ == runCapacity;
-                if (!canExtend)
-                {
-                    FlushBiomassSaveRun(runStart, runPrey, runPredator, runCapacity, runLength);
-                    runStart = coord;
-                    runLength = 1;
-                    runPrey = preyQ;
-                    runPredator = predatorQ;
-                    runCapacity = capacityQ;
-                }
-                else
-                {
-                    runLength++;
-                }
-
-                previousCoord = coord;
-                lastSortedCoord = coord;
-                hasLastSortedCoord = true;
-                emittedCount++;
+                FlushBiomassSaveRun(biomassRuns, runStart, runPrey, runPredator, runCapacity, runLength);
             }
-
-            FlushBiomassSaveRun(runStart, runPrey, runPredator, runCapacity, runLength);
+            finally
+            {
+                _saveSnapshotBiomassRuns.ReleaseWriteLock(SystemID.AIEcology);
+            }
         }
 
-        private void CaptureMacroSwarmSaveRecords()
+        private void CaptureMacroSwarmSaveRecords(NativeArray<EcosystemSectorSaveRecord> saveSectors)
         {
-            if (!_saveSnapshotSectors.IsCreated || !_macroSwarms.IsCreated)
+            if (!_macroSwarms.TryResolveReadOnly(out NativeArray<MacroSwarm>.ReadOnly macroSwarms))
                 return;
 
-            int count = math.min(_activeMacroSwarmCount, _macroSwarms.Length);
-            for (int i = 0; i < count && HasSaveSnapshotSectorCapacity(2); i++)
+            int count = math.min(_activeMacroSwarmCount, macroSwarms.Length);
+            for (int i = 0; i < count && HasSaveSnapshotSectorCapacity(saveSectors, 2); i++)
             {
-                MacroSwarm swarm = _macroSwarms[i];
+                MacroSwarm swarm = macroSwarms[i];
                 if (swarm.HashId == 0u || swarm.BiomassValue <= 0.0001f)
                     continue;
 
-                TryAppendSaveSnapshotSector(PackMacroSwarmHeaderRecord(in swarm));
-                TryAppendSaveSnapshotSector(PackMacroSwarmDetailRecord(in swarm));
+                TryAppendSaveSnapshotSector(saveSectors, PackMacroSwarmHeaderRecord(in swarm));
+                TryAppendSaveSnapshotSector(saveSectors, PackMacroSwarmDetailRecord(in swarm));
             }
         }
 
-        private void CaptureFaunaGenomeSaveRecords()
+        private void CaptureFaunaGenomeSaveRecords(NativeArray<EcosystemSectorSaveRecord> saveSectors)
         {
-            if (!_saveSnapshotSectors.IsCreated)
-                return;
-
-            if (_headlessEntities.FaunaGenomes.IsCreated && _headlessEntities.SectorCoord.IsCreated)
+            if (_headlessEntities.FaunaGenomes.TryResolveReadOnly(out NativeArray<ulong>.ReadOnly faunaGenomes) &&
+                _headlessEntities.SectorCoord.TryResolveReadOnly(out NativeArray<int2>.ReadOnly sectorCoords))
             {
-                int count = math.min(_activeSectorCount, _headlessEntities.FaunaGenomes.Length);
-                for (int i = 0; i < count && HasSaveSnapshotSectorCapacity(2); i++)
+                bool hasStableHashes = _headlessEntities.MutationStableHashes.TryResolveReadOnly(out NativeArray<uint>.ReadOnly mutationStableHashes);
+                int count = math.min(_activeSectorCount, math.min(faunaGenomes.Length, sectorCoords.Length));
+                for (int i = 0; i < count && HasSaveSnapshotSectorCapacity(saveSectors, 2); i++)
                 {
-                    ulong genome = _headlessEntities.FaunaGenomes[i];
+                    ulong genome = faunaGenomes[i];
                     if (!FaunaGenome64.HasContaminatedYield(genome))
                         continue;
 
-                    uint stableHash = _headlessEntities.MutationStableHashes.IsCreated
-                        ? _headlessEntities.MutationStableHashes[i]
-                        : MixSectorBits(_headlessEntities.SectorCoord[i].x, _headlessEntities.SectorCoord[i].y);
-                    TryAppendSaveSnapshotSector(PackFaunaGenomeHeaderRecord(_headlessEntities.SectorCoord[i], stableHash, false));
-                    TryAppendSaveSnapshotSector(PackFaunaGenomeDetailRecord(genome, false));
+                    int2 sectorCoord = sectorCoords[i];
+                    uint stableHash = hasStableHashes && i < mutationStableHashes.Length
+                        ? mutationStableHashes[i]
+                        : MixSectorBits(sectorCoord.x, sectorCoord.y);
+                    TryAppendSaveSnapshotSector(saveSectors, PackFaunaGenomeHeaderRecord(sectorCoord, stableHash, false));
+                    TryAppendSaveSnapshotSector(saveSectors, PackFaunaGenomeDetailRecord(genome, false));
                 }
             }
 
-            if (!_macroSwarms.IsCreated)
+            if (!_macroSwarms.TryResolveReadOnly(out NativeArray<MacroSwarm>.ReadOnly macroSwarms))
                 return;
 
-            int macroCount = math.min(_activeMacroSwarmCount, _macroSwarms.Length);
-            for (int i = 0; i < macroCount && HasSaveSnapshotSectorCapacity(2); i++)
+            int macroCount = math.min(_activeMacroSwarmCount, macroSwarms.Length);
+            for (int i = 0; i < macroCount && HasSaveSnapshotSectorCapacity(saveSectors, 2); i++)
             {
-                MacroSwarm swarm = _macroSwarms[i];
+                MacroSwarm swarm = macroSwarms[i];
                 if (!FaunaGenome64.HasContaminatedYield(swarm.Genome))
                     continue;
 
-                TryAppendSaveSnapshotSector(PackFaunaGenomeHeaderRecord(swarm.SectorAup, swarm.HashId, true));
-                TryAppendSaveSnapshotSector(PackFaunaGenomeDetailRecord(swarm.Genome, true));
+                TryAppendSaveSnapshotSector(saveSectors, PackFaunaGenomeHeaderRecord(swarm.SectorAup, swarm.HashId, true));
+                TryAppendSaveSnapshotSector(saveSectors, PackFaunaGenomeDetailRecord(swarm.Genome, true));
             }
         }
 
         private void FlushBiomassSaveRun(
+            NativeArray<EcosystemBiomassSaveRun> biomassRuns,
             int2 start,
             sbyte preyQ,
             sbyte predatorQ,
@@ -6818,13 +7485,13 @@ namespace Hecton8.World
             int runLength)
         {
             if (runLength <= 0 ||
-                !_saveSnapshotBiomassRuns.IsCreated ||
-                _saveSnapshotBiomassRunCount >= _saveSnapshotBiomassRuns.Length)
+                !biomassRuns.IsCreated ||
+                _saveSnapshotBiomassRunCount >= biomassRuns.Length)
             {
                 return;
             }
 
-            _saveSnapshotBiomassRuns[_saveSnapshotBiomassRunCount++] = new EcosystemBiomassSaveRun
+            biomassRuns[_saveSnapshotBiomassRunCount++] = new EcosystemBiomassSaveRun
             {
                 StartMacroCell = start,
                 PreyBiomassQ = preyQ,
@@ -6834,19 +7501,19 @@ namespace Hecton8.World
             };
         }
 
-        private bool HasSaveSnapshotSectorCapacity(int recordCount)
+        private bool HasSaveSnapshotSectorCapacity(NativeArray<EcosystemSectorSaveRecord> saveSectors, int recordCount)
         {
-            return _saveSnapshotSectors.IsCreated &&
+            return saveSectors.IsCreated &&
                    recordCount >= 0 &&
-                   _saveSnapshotSectorCount <= _saveSnapshotSectors.Length - recordCount;
+                   _saveSnapshotSectorCount <= saveSectors.Length - recordCount;
         }
 
-        private bool TryAppendSaveSnapshotSector(EcosystemSectorSaveRecord record)
+        private bool TryAppendSaveSnapshotSector(NativeArray<EcosystemSectorSaveRecord> saveSectors, EcosystemSectorSaveRecord record)
         {
-            if (!HasSaveSnapshotSectorCapacity(1))
+            if (!HasSaveSnapshotSectorCapacity(saveSectors, 1))
                 return false;
 
-            _saveSnapshotSectors[_saveSnapshotSectorCount++] = record;
+            saveSectors[_saveSnapshotSectorCount++] = record;
             return true;
         }
 
@@ -6855,56 +7522,80 @@ namespace Hecton8.World
             if (!UnpackBiomassRun(saveRecord, out EcosystemBiomassSaveRun run))
                 return;
 
-            int count = math.max(1, run.RunLength);
-            float capacity = math.max(0.1f, DequantizeBiomassQ(run.CarryingCapacityQ));
-            float prey = math.clamp(DequantizeBiomassQ(run.PreyBiomassQ), 0f, capacity);
-            float predator = math.clamp(DequantizeBiomassQ(run.PredatorBiomassQ), 0f, capacity);
-            for (int offset = 0; offset < count && _activeBiomassCellCount < _preyBiomassFront.Length; offset++)
-            {
-                int2 coord = run.StartMacroCell + new int2(offset, 0);
-                int slotIndex = ResolveOrCreateBiomassCellSlot(coord, seedWithBaseline: false);
-                if (slotIndex < 0)
-                    break;
+            if (!TryLockMacroSwarmTravelJobBuffers())
+                return;
 
-                _biomassCarryingCapacity[slotIndex] = capacity;
-                _preyBiomassFront[slotIndex] = prey;
-                _preyBiomassBack[slotIndex] = prey;
-                _predatorBiomassFront[slotIndex] = predator;
-                _predatorBiomassBack[slotIndex] = predator;
-                _biomassSumScratch[slotIndex] = prey + predator;
-                _biomassCellFlags[slotIndex] = predator > 0.0001f ? BiomassCellFlagPredatorSeen : (byte)0;
+            try
+            {
+                int count = math.max(1, run.RunLength);
+                float capacity = math.max(0.1f, DequantizeBiomassQ(run.CarryingCapacityQ));
+                float prey = math.clamp(DequantizeBiomassQ(run.PreyBiomassQ), 0f, capacity);
+                float predator = math.clamp(DequantizeBiomassQ(run.PredatorBiomassQ), 0f, capacity);
+                for (int offset = 0; offset < count && _activeBiomassCellCount < _preyBiomassFront.Length; offset++)
+                {
+                    int2 coord = run.StartMacroCell + new int2(offset, 0);
+                    int slotIndex = ResolveOrCreateBiomassCellSlot(coord, seedWithBaseline: false);
+                    if (slotIndex < 0)
+                        break;
+
+                    _biomassCarryingCapacity[slotIndex] = capacity;
+                    _preyBiomassFront[slotIndex] = prey;
+                    _preyBiomassBack[slotIndex] = prey;
+                    _predatorBiomassFront[slotIndex] = predator;
+                    _predatorBiomassBack[slotIndex] = predator;
+                    _biomassSumScratch[slotIndex] = prey + predator;
+                    _biomassCellFlags[slotIndex] = predator > 0.0001f ? BiomassCellFlagPredatorSeen : (byte)0;
+                }
+            }
+            finally
+            {
+                UnlockMacroSwarmTravelJobBuffers();
             }
         }
 
         private void ClearBiomassRuntimeState()
         {
-            ClearIndexEntries(_biomassIndexEntries);
+            if (!TryLockMacroSwarmTravelJobBuffers())
+                return;
 
-            int capacity = _preyBiomassFront.IsCreated ? _preyBiomassFront.Length : 0;
-            for (int i = 0; i < capacity; i++)
+            bool pendingLocked = _pendingBiomassImpacts.TryAcquireWriteLock(SystemID.AIEcology, out NativeArray<BiomassImpactEvent> pendingImpacts);
+            try
             {
-                if (_preyBiomassFront.IsCreated)
-                    _preyBiomassFront[i] = 0f;
-                if (_preyBiomassBack.IsCreated)
-                    _preyBiomassBack[i] = 0f;
-                if (_predatorBiomassFront.IsCreated)
-                    _predatorBiomassFront[i] = 0f;
-                if (_predatorBiomassBack.IsCreated)
-                    _predatorBiomassBack[i] = 0f;
-                if (_biomassCarryingCapacity.IsCreated)
-                    _biomassCarryingCapacity[i] = 0f;
-                if (_biomassSumScratch.IsCreated)
-                    _biomassSumScratch[i] = 0f;
-                if (_biomassMacroCellCoords.IsCreated)
-                    _biomassMacroCellCoords[i] = int2.zero;
-                if (_biomassCellFlags.IsCreated)
-                    _biomassCellFlags[i] = 0;
+                NativeArray<EcosystemIndexEntry> biomassIndexEntries = _biomassIndexEntries.Resolve();
+                ClearIndexEntries(biomassIndexEntries);
+
+                int capacity = _preyBiomassFront.IsCreated ? _preyBiomassFront.Length : 0;
+                for (int i = 0; i < capacity; i++)
+                {
+                    if (_preyBiomassFront.IsCreated)
+                        _preyBiomassFront[i] = 0f;
+                    if (_preyBiomassBack.IsCreated)
+                        _preyBiomassBack[i] = 0f;
+                    if (_predatorBiomassFront.IsCreated)
+                        _predatorBiomassFront[i] = 0f;
+                    if (_predatorBiomassBack.IsCreated)
+                        _predatorBiomassBack[i] = 0f;
+                    if (_biomassCarryingCapacity.IsCreated)
+                        _biomassCarryingCapacity[i] = 0f;
+                    if (_biomassSumScratch.IsCreated)
+                        _biomassSumScratch[i] = 0f;
+                    if (_biomassMacroCellCoords.IsCreated)
+                        _biomassMacroCellCoords[i] = int2.zero;
+                    if (_biomassCellFlags.IsCreated)
+                        _biomassCellFlags[i] = 0;
+                }
+
+                if (pendingLocked)
+                {
+                    for (int i = 0; i < pendingImpacts.Length; i++)
+                        pendingImpacts[i] = default;
+                }
             }
-
-            if (_pendingBiomassImpacts.IsCreated)
+            finally
             {
-                for (int i = 0; i < _pendingBiomassImpacts.Length; i++)
-                    _pendingBiomassImpacts[i] = default;
+                if (pendingLocked)
+                    _pendingBiomassImpacts.ReleaseWriteLock(SystemID.AIEcology);
+                UnlockMacroSwarmTravelJobBuffers();
             }
 
             _activeBiomassCellCount = 0;
@@ -6923,54 +7614,113 @@ namespace Hecton8.World
             {
                 DispatcherJobFence.TryComplete(ref _macroSwarmTravelHandle, forceComplete: true);
                 _macroSwarmTravelScheduled = false;
+                UnlockMacroSwarmTravelJobBuffers();
             }
 
-            if (_macroSwarms.IsCreated)
+            if (!TryLockMacroSwarmTravelJobBuffers())
+                return;
+
+            bool radiationLocked = false;
+            bool toxicityLocked = false;
+            bool brineLocked = false;
+            bool resultsLocked = false;
+            NativeArray<float> mutationRadiation = default;
+            NativeArray<float> mutationToxicity = default;
+            NativeArray<float> mutationBrine = default;
+            NativeArray<byte> mutationResults = default;
+            try
             {
-                for (int i = 0; i < _macroSwarms.Length; i++)
-                    _macroSwarms[i] = default;
-            }
+                if (_macroSwarmMutationRadiation.IsCreated)
+                {
+                    if (!_macroSwarmMutationRadiation.TryAcquireWriteLock(SystemID.AIEcology, out mutationRadiation))
+                        return;
 
-            if (_macroSwarmArrivals.IsCreated)
+                    radiationLocked = true;
+                }
+
+                if (_macroSwarmMutationToxicity.IsCreated)
+                {
+                    if (!_macroSwarmMutationToxicity.TryAcquireWriteLock(SystemID.AIEcology, out mutationToxicity))
+                        return;
+
+                    toxicityLocked = true;
+                }
+
+                if (_macroSwarmMutationBrine.IsCreated)
+                {
+                    if (!_macroSwarmMutationBrine.TryAcquireWriteLock(SystemID.AIEcology, out mutationBrine))
+                        return;
+
+                    brineLocked = true;
+                }
+
+                if (_macroSwarmMutationResults.IsCreated)
+                {
+                    if (!_macroSwarmMutationResults.TryAcquireWriteLock(SystemID.AIEcology, out mutationResults))
+                        return;
+
+                    resultsLocked = true;
+                }
+
+                if (_macroSwarms.IsCreated)
+                {
+                    for (int i = 0; i < _macroSwarms.Length; i++)
+                        _macroSwarms[i] = default;
+                }
+
+                if (_macroSwarmArrivals.IsCreated)
+                {
+                    for (int i = 0; i < _macroSwarmArrivals.Length; i++)
+                        _macroSwarmArrivals[i] = default;
+                }
+
+                if (_macroSwarmCounters.IsCreated)
+                {
+                    for (int i = 0; i < _macroSwarmCounters.Length; i++)
+                        _macroSwarmCounters[i] = 0;
+                }
+
+                if (radiationLocked)
+                {
+                    for (int i = 0; i < mutationRadiation.Length; i++)
+                        mutationRadiation[i] = 0f;
+                }
+
+                if (toxicityLocked)
+                {
+                    for (int i = 0; i < mutationToxicity.Length; i++)
+                        mutationToxicity[i] = 0f;
+                }
+
+                if (brineLocked)
+                {
+                    for (int i = 0; i < mutationBrine.Length; i++)
+                        mutationBrine[i] = 0f;
+                }
+
+                if (resultsLocked)
+                {
+                    for (int i = 0; i < mutationResults.Length; i++)
+                        mutationResults[i] = 0;
+                }
+
+                if (_macroHydrationScratch.IsCreated)
+                    _macroHydrationScratchCount = 0;
+                if (_macroDehydrationScratch.IsCreated)
+                    _macroDehydrationScratchCount = 0;
+            }
+            finally
             {
-                for (int i = 0; i < _macroSwarmArrivals.Length; i++)
-                    _macroSwarmArrivals[i] = default;
+                if (resultsLocked)
+                    _macroSwarmMutationResults.ReleaseWriteLock(SystemID.AIEcology);
+                if (brineLocked)
+                    _macroSwarmMutationBrine.ReleaseWriteLock(SystemID.AIEcology);
+                if (toxicityLocked)
+                    _macroSwarmMutationToxicity.ReleaseWriteLock(SystemID.AIEcology);
+                if (radiationLocked)
+                    _macroSwarmMutationRadiation.ReleaseWriteLock(SystemID.AIEcology);
+                UnlockMacroSwarmTravelJobBuffers();
             }
-
-            if (_macroSwarmCounters.IsCreated)
-            {
-                for (int i = 0; i < _macroSwarmCounters.Length; i++)
-                    _macroSwarmCounters[i] = 0;
-            }
-
-            if (_macroSwarmMutationRadiation.IsCreated)
-            {
-                for (int i = 0; i < _macroSwarmMutationRadiation.Length; i++)
-                    _macroSwarmMutationRadiation[i] = 0f;
-            }
-
-            if (_macroSwarmMutationToxicity.IsCreated)
-            {
-                for (int i = 0; i < _macroSwarmMutationToxicity.Length; i++)
-                    _macroSwarmMutationToxicity[i] = 0f;
-            }
-
-            if (_macroSwarmMutationBrine.IsCreated)
-            {
-                for (int i = 0; i < _macroSwarmMutationBrine.Length; i++)
-                    _macroSwarmMutationBrine[i] = 0f;
-            }
-
-            if (_macroSwarmMutationResults.IsCreated)
-            {
-                for (int i = 0; i < _macroSwarmMutationResults.Length; i++)
-                    _macroSwarmMutationResults[i] = 0;
-            }
-
-            if (_macroHydrationScratch.IsCreated)
-                _macroHydrationScratchCount = 0;
-            if (_macroDehydrationScratch.IsCreated)
-                _macroDehydrationScratchCount = 0;
 
             _activeMacroSwarmCount = 0;
             _lastMacroSwarmArrivalCount = 0;
@@ -6981,50 +7731,88 @@ namespace Hecton8.World
 
         private void ClearHeadlessRuntimeState()
         {
-            int capacity = _sectorFrontStates.IsCreated ? _sectorFrontStates.Length : 0;
-            NativeArray<float3> positions = _headlessEntities.Positions;
-            NativeArray<byte> speciesIds = _headlessEntities.SpeciesID;
-            NativeArray<byte> hunger = _headlessEntities.Hunger;
-            NativeArray<int2> sectorCoords = _headlessEntities.SectorCoord;
-            NativeArray<int> sectorIds = _headlessEntities.SectorID;
-            NativeArray<ulong> faunaGenomes = _headlessEntities.FaunaGenomes;
-            NativeArray<float> mutationRadiation = _headlessEntities.MutationRadiation;
-            NativeArray<float> mutationToxicity = _headlessEntities.MutationToxicity;
-            NativeArray<float> mutationBrine = _headlessEntities.MutationBrine;
-            NativeArray<uint> mutationStableHashes = _headlessEntities.MutationStableHashes;
-            NativeArray<byte> mutationResults = _headlessEntities.MutationResults;
-            for (int i = 0; i < capacity; i++)
+            if (!TryLockSectorSolveJobBuffers())
+                return;
+
+            bool radiationLocked = false;
+            bool toxicityLocked = false;
+            bool brineLocked = false;
+            bool resultsLocked = false;
+            NativeArray<float> mutationRadiation = default;
+            NativeArray<float> mutationToxicity = default;
+            NativeArray<float> mutationBrine = default;
+            NativeArray<byte> mutationResults = default;
+            try
             {
-                if (_preyFrontCounts.IsCreated)
-                    _preyFrontCounts[i] = 0;
-                if (_preyBackCounts.IsCreated)
-                    _preyBackCounts[i] = 0;
-                if (_predatorFrontCounts.IsCreated)
-                    _predatorFrontCounts[i] = 0;
-                if (_predatorBackCounts.IsCreated)
-                    _predatorBackCounts[i] = 0;
-                if (positions.IsCreated)
-                    positions[i] = float3.zero;
-                if (speciesIds.IsCreated)
-                    speciesIds[i] = 0;
-                if (hunger.IsCreated)
-                    hunger[i] = 0;
-                if (sectorCoords.IsCreated)
-                    sectorCoords[i] = int2.zero;
-                if (sectorIds.IsCreated)
-                    sectorIds[i] = 0;
-                if (faunaGenomes.IsCreated)
-                    faunaGenomes[i] = 0UL;
-                if (mutationRadiation.IsCreated)
-                    mutationRadiation[i] = 0f;
-                if (mutationToxicity.IsCreated)
-                    mutationToxicity[i] = 0f;
-                if (mutationBrine.IsCreated)
-                    mutationBrine[i] = 0f;
-                if (mutationStableHashes.IsCreated)
-                    mutationStableHashes[i] = 0u;
-                if (mutationResults.IsCreated)
-                    mutationResults[i] = 0;
+                if (!_headlessEntities.MutationRadiation.TryAcquireWriteLock(SystemID.AIEcology, out mutationRadiation))
+                    return;
+                radiationLocked = true;
+
+                if (!_headlessEntities.MutationToxicity.TryAcquireWriteLock(SystemID.AIEcology, out mutationToxicity))
+                    return;
+                toxicityLocked = true;
+
+                if (!_headlessEntities.MutationBrine.TryAcquireWriteLock(SystemID.AIEcology, out mutationBrine))
+                    return;
+                brineLocked = true;
+
+                if (!_headlessEntities.MutationResults.TryAcquireWriteLock(SystemID.AIEcology, out mutationResults))
+                    return;
+                resultsLocked = true;
+
+                int capacity = _sectorFrontStates.IsCreated ? _sectorFrontStates.Length : 0;
+                NativeArray<float3> positions = _headlessEntities.Positions;
+                NativeArray<byte> speciesIds = _headlessEntities.SpeciesID;
+                NativeArray<byte> hunger = _headlessEntities.Hunger;
+                NativeArray<int2> sectorCoords = _headlessEntities.SectorCoord;
+                NativeArray<int> sectorIds = _headlessEntities.SectorID;
+                NativeArray<ulong> faunaGenomes = _headlessEntities.FaunaGenomes;
+                NativeArray<uint> mutationStableHashes = _headlessEntities.MutationStableHashes;
+                for (int i = 0; i < capacity; i++)
+                {
+                    if (_preyFrontCounts.IsCreated)
+                        _preyFrontCounts[i] = 0;
+                    if (_preyBackCounts.IsCreated)
+                        _preyBackCounts[i] = 0;
+                    if (_predatorFrontCounts.IsCreated)
+                        _predatorFrontCounts[i] = 0;
+                    if (_predatorBackCounts.IsCreated)
+                        _predatorBackCounts[i] = 0;
+                    if (positions.IsCreated)
+                        positions[i] = float3.zero;
+                    if (speciesIds.IsCreated)
+                        speciesIds[i] = 0;
+                    if (hunger.IsCreated)
+                        hunger[i] = 0;
+                    if (sectorCoords.IsCreated)
+                        sectorCoords[i] = int2.zero;
+                    if (sectorIds.IsCreated)
+                        sectorIds[i] = 0;
+                    if (faunaGenomes.IsCreated)
+                        faunaGenomes[i] = 0UL;
+                    if (mutationRadiation.IsCreated)
+                        mutationRadiation[i] = 0f;
+                    if (mutationToxicity.IsCreated)
+                        mutationToxicity[i] = 0f;
+                    if (mutationBrine.IsCreated)
+                        mutationBrine[i] = 0f;
+                    if (mutationStableHashes.IsCreated)
+                        mutationStableHashes[i] = 0u;
+                    if (mutationResults.IsCreated)
+                        mutationResults[i] = 0;
+                }
+            }
+            finally
+            {
+                if (resultsLocked)
+                    _headlessEntities.MutationResults.ReleaseWriteLock(SystemID.AIEcology);
+                if (brineLocked)
+                    _headlessEntities.MutationBrine.ReleaseWriteLock(SystemID.AIEcology);
+                if (toxicityLocked)
+                    _headlessEntities.MutationToxicity.ReleaseWriteLock(SystemID.AIEcology);
+                if (radiationLocked)
+                    _headlessEntities.MutationRadiation.ReleaseWriteLock(SystemID.AIEcology);
+                UnlockSectorSolveJobBuffers();
             }
         }
 
@@ -7085,11 +7873,15 @@ namespace Hecton8.World
                 speciesHash,
                 (uint)math.max(0, slotIndex));
             ulong mask = FaunaGenome64.CompileGeneticMaskFromSeed(seed);
-            if (!_faunaGeneticsTuning.IsCreated || _faunaGeneticsTuning.Length <= 0)
+            if (!_faunaGeneticsTuning.TryResolveReadOnly(out NativeArray<FaunaGeneticsTuningDTO>.ReadOnly tuningRecords) ||
+                tuningRecords.Length <= 0)
                 return mask;
 
-            FaunaGeneticsTuningDTO tuning = _faunaGeneticsTuning[0];
-            FaunaGeneticsProfileDTO profile = FaunaGenome64.ResolveProfile(_faunaGeneticsProfiles.Resolve(), speciesHash);
+            FaunaGeneticsTuningDTO tuning = tuningRecords[0];
+            FaunaGeneticsProfileDTO profile = default;
+            if (_faunaGeneticsProfiles.TryResolveReadOnly(out NativeArray<FaunaGeneticsProfileDTO>.ReadOnly profiles))
+                profile = FaunaGenome64.ResolveProfile(profiles, speciesHash);
+
             return FaunaGenome64.ApplyTuningAndProfile(mask, in tuning, in profile);
         }
 
@@ -7252,56 +8044,6 @@ namespace Hecton8.World
             return ((long)macroCellCoord.x << 32) | (uint)macroCellCoord.y;
         }
 
-        private static void ClearIndexEntries(VaultBufferView<EcosystemIndexEntry> indexEntries)
-        {
-            if (!indexEntries.IsCreated)
-                return;
-
-            NativeArray<EcosystemIndexEntry> entries = indexEntries.Resolve();
-            if (!entries.IsCreated)
-                return;
-
-            for (int i = 0; i < entries.Length; i++)
-                entries[i] = default;
-        }
-
-        private static bool TryFindIndexEntry(
-            VaultBufferView<EcosystemIndexEntry> indexEntries,
-            long key,
-            out int slot)
-        {
-            return TryFindIndexEntry(indexEntries.Resolve(), key, out slot);
-        }
-
-        private static bool TryUpsertIndexEntry(
-            VaultBufferView<EcosystemIndexEntry> indexEntries,
-            long key,
-            int slot)
-        {
-            NativeArray<EcosystemIndexEntry> entries = indexEntries.Resolve();
-            if (!entries.IsCreated || entries.Length <= 0 || slot < 0)
-                return false;
-
-            int startIndex = ResolveIndexBucket(key, entries.Length);
-            for (int probe = 0; probe < entries.Length; probe++)
-            {
-                int index = ResolveIndexProbe(startIndex, probe, entries.Length);
-                EcosystemIndexEntry entry = entries[index];
-                if (entry.Occupied != 0 && entry.Key != key)
-                    continue;
-
-                entries[index] = new EcosystemIndexEntry
-                {
-                    Key = key,
-                    Slot = slot,
-                    Occupied = 1
-                };
-                return true;
-            }
-
-            return false;
-        }
-
         private static int ResolveIndexBucket(long key, int capacity)
         {
             if (capacity <= 0)
@@ -7445,15 +8187,25 @@ namespace Hecton8.World
             if (!IsMacroSwarmSaveHeader(in header) || !IsMacroSwarmSaveDetail(in detail))
                 return false;
 
-            float biomass = (detail.PackedPopulations & 0x0000FFFFu) * math.rcp((float)ushort.MaxValue);
-            float speed = ((detail.PackedPopulations >> 16) & 0x0000FFFFu) * 0.001f;
-            return TryAppendMacroSwarm(
-                header.SectorCoord,
-                detail.SectorCoord,
-                biomass,
-                math.max(0.001f, speed),
-                header.PackedAdaptation,
-                0);
+            if (!TryLockMacroSwarmTravelJobBuffers())
+                return false;
+
+            try
+            {
+                float biomass = (detail.PackedPopulations & 0x0000FFFFu) * math.rcp((float)ushort.MaxValue);
+                float speed = ((detail.PackedPopulations >> 16) & 0x0000FFFFu) * 0.001f;
+                return TryAppendMacroSwarm(
+                    header.SectorCoord,
+                    detail.SectorCoord,
+                    biomass,
+                    math.max(0.001f, speed),
+                    header.PackedAdaptation,
+                    0);
+            }
+            finally
+            {
+                UnlockMacroSwarmTravelJobBuffers();
+            }
         }
 
         private bool RestoreFaunaGenomeSaveRecords(in EcosystemSectorSaveRecord header, in EcosystemSectorSaveRecord detail)
@@ -7468,31 +8220,51 @@ namespace Hecton8.World
             bool macroSwarm = (header.PackedPopulations & 1u) != 0u || detail.PackedPopulations != 0u;
             if (macroSwarm)
             {
-                for (int i = 0; i < _activeMacroSwarmCount; i++)
-                {
-                    MacroSwarm swarm = _macroSwarms[i];
-                    if (swarm.HashId != header.PackedAdaptation)
-                        continue;
+                if (!TryLockGenomeMutationJobBuffers())
+                    return false;
 
-                    swarm.Genome = genome;
-                    swarm.Flags |= 1;
-                    _macroSwarms[i] = swarm;
-                    return true;
+                try
+                {
+                    for (int i = 0; i < _activeMacroSwarmCount; i++)
+                    {
+                        MacroSwarm swarm = _macroSwarms[i];
+                        if (swarm.HashId != header.PackedAdaptation)
+                            continue;
+
+                        swarm.Genome = genome;
+                        swarm.Flags |= 1;
+                        _macroSwarms[i] = swarm;
+                        return true;
+                    }
+                }
+                finally
+                {
+                    UnlockGenomeMutationJobBuffers();
                 }
 
                 return false;
             }
 
-            int slotIndex = ResolveOrCreateSectorSlot(header.SectorCoord, seedWithBaseline: true);
-            NativeArray<ulong> faunaGenomes = _headlessEntities.FaunaGenomes;
-            if (slotIndex < 0 || !faunaGenomes.IsCreated)
+            if (!TryLockSectorSolveJobBuffers())
                 return false;
 
-            faunaGenomes[slotIndex] = genome;
-            NativeArray<uint> mutationStableHashes = _headlessEntities.MutationStableHashes;
-            if (mutationStableHashes.IsCreated)
-                mutationStableHashes[slotIndex] = header.PackedAdaptation != 0u ? header.PackedAdaptation : MixSectorBits(header.SectorCoord.x, header.SectorCoord.y);
-            return true;
+            try
+            {
+                int slotIndex = ResolveOrCreateSectorSlot(header.SectorCoord, seedWithBaseline: true);
+                NativeArray<ulong> faunaGenomes = _headlessEntities.FaunaGenomes;
+                if (slotIndex < 0 || !faunaGenomes.IsCreated)
+                    return false;
+
+                faunaGenomes[slotIndex] = genome;
+                NativeArray<uint> mutationStableHashes = _headlessEntities.MutationStableHashes;
+                if (mutationStableHashes.IsCreated)
+                    mutationStableHashes[slotIndex] = header.PackedAdaptation != 0u ? header.PackedAdaptation : MixSectorBits(header.SectorCoord.x, header.SectorCoord.y);
+                return true;
+            }
+            finally
+            {
+                UnlockSectorSolveJobBuffers();
+            }
         }
 
         private static bool IsBiomassSaveRecord(in EcosystemSectorSaveRecord saveRecord)

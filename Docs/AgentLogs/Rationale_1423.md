@@ -145,3 +145,131 @@ Solution: Final report records `runtime_gc_bytes = null` and `NOT_MEASURED_BUILD
 Rejected Alternatives: Fake 0B result; hiding build failure; presenting regex audit as profiler proof.
 Scalability potential: Proof schema can accept real low/middle/high/ultra runtime captures later without changing source code.
 Hardware Impact: Report generation estimate 2700000 us. Runtime impact none.
+
+## Decision 019 - APEX Failure Telemetry Hot Path
+
+Problem: APEX self-audit required proof that UI text failure telemetry cannot allocate or cold-initialize dependencies from `LocRegistry` overflow/missing-key branches.
+Solution: Verified `BabelSubtitleSyncRuntime.RecordUIOptimizationFailure` now returns unless `failureCode != None`, `s_initialized == true`, and `s_vault != null`, then acquires `UIOptimizationTelemetryBufferId` through `TryAcquireWriteLock` and releases in a `finally` block. This keeps failure reporting numeric, unmanaged, and non-initializing.
+Rejected Alternatives: Calling `EnsureInitialized()` from every missing localization hash, writing managed `Debug.Log` strings, or resizing the char buffer on overflow.
+Scalability potential: Low tier records only compact failure rows in a fixed 300-frame ring. Middle keeps the same proof lane. High and Ultra can visualize the ring later without changing DTO layout or text ownership.
+Hardware Impact: Static inspection estimate 420000 us. Expected i3/MX350 gain is avoidance of cold GlobalRegistry/DataVault work during subtitle overflow faults; profiler proof absent.
+
+## Decision 020 - APEX Verification Boundary
+
+Problem: The final proof needed exact hashes, hot-method scans, DataVault lock lines, offset lines, and build throttling facts without pretending that static analysis equals runtime allocation evidence.
+Solution: Emitted `Docs/Reports/UI_ZERO_GC_APEX_VERIFICATION_1423.json`, refreshed AST/final reports, and wrote SHA-256 companions. APEX CPU sample was 67.00% with no `csc.exe`, so no second `dotnet build` was launched after the previous out-of-domain `XRPass` failure.
+Rejected Alternatives: Re-running a known-blocked build under CPU >50%, claiming measured 0B allocations, or treating cold whole-file `new` hits as gameplay text hot-path failures.
+Scalability potential: Continuous proof cites `GlobalQualityWeight` routes for canvas dirty budget and lookup budget. Residual risk is documented: TMP `richText` and `stripRichText` are boolean sink APIs derived from a continuous scalar.
+Hardware Impact: Report update estimate 900000 us. Runtime impact none until the project builds and profiler/GCMonitor capture can run.
+
+## Decision 021 - Manual RTL Reversal Removal
+
+Problem: The UI localization mandate forbids manual RTL reversal. Existing Babel paths reversed character order in `LocRegistry`, `LocalizedWorldSign`, and `RTLProcessor`, which can corrupt Arabic/Hebrew shaping, punctuation, and mixed-direction labels while pretending to be zero-GC.
+Solution: Removed `RTLProcessor.cs` and `.meta`, removed `ReverseSpanInPlace`, made `LocRegistry.ResolveVisual` and `TryGetVisualBuffer` return logical TMP-ready text, and set `TMP_Text.isRightToLeftText` at subtitle, label swap, localized world sign, no-alloc TMP helper, and PDA decrypt sinks.
+Rejected Alternatives: Keeping the reversal because it is allocation-free; adding a second custom BiDi implementation; returning a reversed thread-static buffer from `LocRegistry` under the name "visual".
+Scalability potential: Low, middle, high, and ultra devices all use the same correct logical text. Quality can change styling density, not language correctness or text ownership.
+Hardware Impact: Static/source edit estimate 1800000 us. Low-end gain is removal of thread-static reversal buffer growth and per-character reversal work for RTL labels; exact runtime microseconds not measured.
+
+## Decision 022 - Continuous Rich Text Retention
+
+Problem: `SubtitleManager` and `LabelSwapScheduler` used binary rich-text stripping thresholds derived from `GlobalQualityWeight`. This violates the continuous scalability pillar and causes a visible cliff between weak and stronger devices.
+Solution: Added `BabelRichTextLodPolicy`. It computes `retention = saturate(lerp(0.16, 1.0, q*q*(3-2*q)))` where `q = saturate(GlobalQualityWeight)`, then compares a stable per-text hash threshold. Low devices retain a deterministic minority of styling; high devices retain all styling.
+Rejected Alternatives: `if(isLowEnd)` branches, `quality < 0.5f` gates, or enabling/disabling TMP parsing as the primary quality control. TMP parsing stays enabled; the decoded content controls aggregate style density.
+Scalability potential: Low keeps legible text and some styling. Middle increases retained styling smoothly. High reaches full localized styling. Ultra can spend saved budget on presentation effects without changing DTO layout or Babel ownership.
+Hardware Impact: Static/source edit estimate 1600000 us. Expected i3/MX350 gain is lower styled-tag density without a visible binary drop; profiler proof absent.
+
+## Decision 023 - PDA Decrypt Label Lease Safety
+
+Problem: `PDADataArchaeologyDecryptLabel` was the only direct `TryGetVisualBuffer` consumer left after `LocRegistry` stopped returning reversed visual order. It also released `CharBufferPool` leases only after `SetCharArray`, so an exception path could leave the pool slot occupied.
+Solution: Set `targetText.isRightToLeftText` from `LocalizationManager.IsRightToLeftLanguage(LocRegistry.ActiveLanguage)` before `SetCharArray`, and wrapped the acquired lease in `try/finally`. `writeLength` remains `min(length, sourceCapacity, SlotCapacity)`, so both source and destination spans share the same bound.
+Rejected Alternatives: Assuming PDA archaeology names never localize to RTL; adding a managed string fallback for decrypt text; leaving lease release after TMP injection.
+Scalability potential: Low through ultra use the same bounded buffer and same scramble math. Quality already controls scramble intensity continuously; this change only fixes language correctness and pool safety.
+Hardware Impact: Static/source edit estimate 650000 us. Runtime allocation impact is zero by construction; reliability gain is deterministic lease release under failure.
+
+## Decision 024 - Final Build Throttle Compliance
+
+Problem: The continuation edits are compile-sensitive, but the project rule forbids `dotnet build` when CPU is over 50% or another build/compiler process is active.
+Solution: Re-sampled the host before a final build decision. CPU was 65.00%, `csc.exe` count was 0, and one dotnet build-related process was active: `AmplifyImpostors.Editor.csproj` PID 66444. No build was launched. Reports were refreshed with this latest sample.
+Rejected Alternatives: Launching a second build to chase confidence; using the stale earlier 48.00% sample as final evidence; claiming compile success while the known `XRPass` blocker remains.
+Scalability potential: Not runtime-facing. It preserves integration throughput while 20+ agents operate in the same workspace.
+Hardware Impact: System check estimate 1700000 us beyond the first continuation throttle check. Runtime impact none; compile/test status remains pending.
+
+## Decision 025 - Localized World Sign Fail-Closed Buffering
+
+Problem: `LocalizedWorldSign.EnsureBuffer(requiredLength)` could allocate a larger `char[]` when a fallback or localized sign exceeded the current buffer. Even if this is colder than subtitles, it violates the fail-closed localization rule: long translated text must truncate safely, not grow memory at runtime.
+Solution: Replaced growth with fixed 128-char buffers, added `CopySpanFailClosed`, bounded uppercase/display copy, ASCII ellipsis, and numeric `TextBufferOverflow` telemetry via `BabelSubtitleSyncRuntime.RecordUIOptimizationFailure`. Cursor proof: `safeLength = clamp(sourceLength, 0, sourceCapacity)`, `copyLimit <= 125` when truncating, `AppendAsciiEllipsis` clamps `cursor` to `capacity - 3`, so final `cursor <= 128`.
+Rejected Alternatives: Keeping cold growth because it is rare; using `string.Substring`; expanding signs to preserve grammar; adding a physics-like layout solver for long text.
+Scalability potential: Low devices get stable bounded signage. Middle/high/ultra keep the same text truth and can improve typography or visual treatment elsewhere; capacity growth never becomes a quality tier.
+Hardware Impact: Static/source edit estimate 1450000 us. Low-end gain is preventing surprise heap growth on language change or missing-key fallback. Runtime profiler proof absent.
+
+## Decision 026 - Broad Domain Polish Scan
+
+Problem: Previous APEX proof covered modified hot paths. The user requested deeper self-search for hidden domain violations.
+Solution: Scanned 152 non-Editor UI/Audio/Babel runtime C# files for managed string patterns, `foreach`, and scene-search calls. Counts: forbidden string patterns 0, `foreach` 0, scene search 0. Emitted `Docs/Reports/UI_ZERO_GC_POLISH_VERIFICATION_1423.json`. Final build-gate sample was CPU 68.00%, `csc.exe` 0, active `dotnet build Hecton8.slnx` PID 22412, so no new build was launched.
+Rejected Alternatives: Reporting only the old modified-file scan; counting cold `new char[]` field initializers as hot faults; rewriting unrelated UI systems without a real violation.
+Scalability potential: The scan validates the domain-wide runtime text route remains bounded on weak through ultra devices. No new visual feature was added.
+Hardware Impact: Static scan/report estimate 2100000 us; build-throttle check estimate 1600000 us. Runtime impact none.
+
+## Decision 027 - TmpTextNoAlloc Lease Finally Repair
+
+Problem: `TmpTextNoAlloc.Set(ReadOnlySpan<char>)` acquired `CharBufferPool` leases and released them after `TMP_Text.SetCharArray`. If TMP throws during mesh/text ingestion, the release line is skipped and a fixed pool slot remains occupied.
+Solution: Wrapped the `Lease`, `BabelLease`, and `EncyclopediaLease` branches in `try/finally`. The localized hash branch already used `finally`. The copy invariant did not change: `Copy` writes `min(source.Length, destination.Length)`, and `SetCharArray` receives exactly that length.
+Rejected Alternatives: Expanding the pool, adding a managed string fallback, catching/swallowing TMP exceptions, or rewriting every UI sink without a specific lease-safety fault.
+Scalability potential: Low devices avoid progressive pool starvation after rare TMP faults. Middle/high/ultra keep the same fixed-capacity text path; visual fidelity policy remains governed by continuous `GlobalQualityWeight`, not buffer growth.
+Hardware Impact: Static/source edit estimate 520000 us. Runtime allocation delta is zero; reliability gain is deterministic release of occupied pool slots under exception paths.
+
+## Decision 028 - Tiny Buffer Placeholder Overflow Cursor Repair
+
+Problem: The earlier Babel placeholder overflow repair still used `charCursor = maxGlyphs`. When `maxGlyphs < 3`, the ellipsis branch cannot write dots, so promoting cursor to capacity can make the TMP bridge keep stale chars from the previous write length.
+Solution: Replaced the production promotions with `charCursor = math.clamp(charCursor, 0, maxGlyphs)` at `LocRegistry.cs:1239`, `1262`, and `1274`; added an editor regression that asserts production source no longer contains `charCursor = maxGlyphs`.
+Rejected Alternatives: Treating the defect as theoretical; clearing the whole buffer every write; allocating a clean managed string for tiny overflow output.
+Scalability potential: Low devices with tiny emergency buffers fail closed without stale glyphs. Middle/high/ultra use the same invariant; higher quality may change capacity or styling density, not overflow semantics.
+Hardware Impact: Static/source edit estimate 740000 us. Runtime allocation delta is zero; low-end reliability gain is bounded stale-glyph prevention under overflow.
+
+## Decision 029 - Read Accessor Purity Split
+
+Problem: Several read-style APIs violated the global systems doctrine by cold-initializing, completing pending cue work, or mutating localization telemetry during reads.
+Solution: Split pure lookup from tracked decode: `TryGetLocalizedSpan` now uses `TryFindUtf8Slice`, while decode paths call `TrackLocalizedSpanLookupForDecode`. `TryGetLatestTelemetry`, `TryGetLatestUIOptimizationTelemetry`, `TryGetCue`, `ResolveElapsedSecondsSince`, and `ResolveCurrentAudioTimeSeconds` now read cached initialized state only.
+Rejected Alternatives: Leaving hidden mutation because it is convenient for diagnostics; renaming every legacy compatibility API in one pass without a cross-domain route card.
+Scalability potential: Low devices avoid surprise initialization/readback work in diagnostics. Middle/high/ultra can consume immutable snapshots at richer cadence without changing ownership.
+Hardware Impact: Static/source edit estimate 1700000 us. Expected i3/MX350 gain is avoidance of accidental cold work from getter probes; profiler proof absent.
+
+## Decision 030 - DataVault Post-Acquire Lock Finally Proof
+
+Problem: `TryAcquireSubtitleWriteBuffer` acquired a DataVault write lock and, if post-acquire validation failed, released it directly instead of inside a `finally` block. That failed the strict proof requirement even though the branch is short.
+Solution: Added `releaseOnExit` and wrapped post-acquire validation in `try/finally`. Failure or exception releases through `finally`; success sets `releaseOnExit = false` and transfers the still-held lock to the caller, which releases inside its own `finally`.
+Rejected Alternatives: Documenting the direct release as "safe enough"; duplicating validation before lock only; swallowing validation exceptions.
+Scalability potential: Same lock route on low through ultra devices; quality affects telemetry cadence and text presentation, not lock correctness.
+Hardware Impact: Static/source edit estimate 420000 us. Runtime cost is one bool and a `finally` frame on acquisition path; acceptable because write acquisition is already a synchronization boundary.
+
+## Decision 031 - Continuation4 Verification Boundary
+
+Problem: After source repair, the reports and hashes had to reflect current files, but build execution was still forbidden by host load.
+Solution: Emitted `Docs/Reports/UI_ZERO_GC_CONTINUATION4_AUDIT_1423.json` and refreshed AST/APEX/final optimization report hashes. Build was not launched: CPU sampled at 100.00% with `VBCSCompiler.exe` PID 18948 after dotnet PID 38260, then 87.00% with no compiler/dotnet process, then 96.00% with `csc.exe` PID 63300 and `dotnet.exe` PID 53008.
+Rejected Alternatives: Running `dotnet build` under CPU >50%; reporting stale source hashes; claiming runtime GC proof from static scans.
+Scalability potential: Not runtime-facing. The proof preserves integration throughput while other agents/builds use the machine.
+Hardware Impact: Report/check estimate 2100000 us. Runtime impact none; compile/runtime status remains pending until the host and out-of-domain XRPass blocker allow verification.
+
+## Decision 032 - Localized Span No-Refresh Validation
+
+Problem: `TryGetLocalizedSpan` had been split away from telemetry, but it still called `IsValidUtf8Slice`, and that helper refreshed vault-backed UTF-8 bytes through `RefreshUtf8BytesFromVault`. That is a read-side mutation hidden behind a validator.
+Solution: Added `IsValidUtf8SliceNoRefresh` and routed only `TryGetLocalizedSpan` through it. Decode/write paths continue to call `IsValidUtf8Slice`, preserving the owner-refresh behavior where the route is explicitly mutating presentation state.
+Rejected Alternatives: Leaving a transitive refresh in a read accessor; removing refresh from all decode paths and risking stale vault handles during write/decode routes.
+Scalability potential: Low devices avoid accidental DataVault handle refresh during pure byte-span probes. Middle/high/ultra keep the same decode performance and can refresh during owner decode/write phases.
+Hardware Impact: Static/source edit estimate 620000 us. Runtime win is avoidance of hidden DataVault resolution in pure getter probes; profiler proof absent.
+
+## Decision 033 - PDA Decrypt Double Decode Removal
+
+Problem: `PDADataArchaeologyDecryptLabel.RenderHash` called `LocRegistry.GetLength(hash)` before `TryGetVisualBuffer(hash)`. Both route through decode/ring behavior, so one PDA render performed redundant localization work.
+Solution: Removed the length prepass. `TryGetVisualBuffer` already returns source, length, and missing-key fallback. The later `writeLength = min(length, sourceCapacity, SlotCapacity)` bound still proves the TMP write cannot exceed the lease buffer.
+Rejected Alternatives: Keeping double decode because the first call looked like a cheap length read; adding another cached field; allocating a temporary string for decrypted labels.
+Scalability potential: Low devices save one decode route per dirty PDA archaeology label. Middle/high/ultra keep the same scramble math and presentation quality.
+Hardware Impact: Static/source edit estimate 380000 us. Exact frame-time delta not measured.
+
+## Decision 034 - Continuation5 Verification Boundary
+
+Problem: After the read-purity and PDA fixes, artifacts needed fresh hashes, but compile execution was still prohibited.
+Solution: Emitted `Docs/Reports/UI_ZERO_GC_CONTINUATION5_AUDIT_1423.json` and refreshed AST/APEX/final optimization report hashes. Build was not launched: CPU sampled 65.00% with no compiler/dotnet process, then after a 30-second wait sampled 100.00% with `dotnet.exe` PID 67140.
+Rejected Alternatives: Launching `dotnet build` while CPU was above 50%; pretending editor source-regression tests executed; reporting old SHA-256 values.
+Scalability potential: Not runtime-facing. The code changes preserve continuous quality scaling and fixed-buffer text ownership.
+Hardware Impact: Report/check estimate 1600000 us. Runtime verification remains pending.

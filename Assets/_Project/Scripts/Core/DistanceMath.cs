@@ -35,6 +35,9 @@ namespace Hecton8.Core
         private static MathLodMode _lastPushedShaderMode;
         private static float _lastPushedShaderWeight;
         private static bool _hasPushedShaderMode;
+        private static MathLodMode _pendingShaderMode;
+        private static float _pendingShaderWeight;
+        private static bool _hasPendingShaderState;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetShaderCache()
@@ -42,6 +45,9 @@ namespace Hecton8.Core
             _lastPushedShaderMode = MathLodMode.Low;
             _lastPushedShaderWeight = -1f;
             _hasPushedShaderMode = false;
+            _pendingShaderMode = MathLodMode.Low;
+            _pendingShaderWeight = -1f;
+            _hasPendingShaderState = false;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -294,6 +300,41 @@ namespace Hecton8.Core
             PushShaderMathLod(quality, ResolveMathLodMode(quality));
         }
 
+        public static void FlushVisualSyncShaderState()
+        {
+            if (!_hasPendingShaderState)
+                return;
+
+            MathLodMode mode = _pendingShaderMode;
+            float quality = _pendingShaderWeight;
+            _hasPendingShaderState = false;
+
+            if (_hasPushedShaderMode &&
+                _lastPushedShaderMode == mode &&
+                math.abs(_lastPushedShaderWeight - quality) < ShaderQualityEpsilon)
+            {
+                return;
+            }
+
+            bool high = mode == MathLodMode.High;
+            Shader.SetGlobalFloat(_mathLodModePropertyId, high ? 1f : 0f);
+            Shader.SetGlobalFloat(_mathLodWeightPropertyId, quality);
+            Shader.SetGlobalFloat(_mathLodDistanceSqPropertyId, HighQualityDistanceSq);
+            _lastPushedShaderMode = mode;
+            _lastPushedShaderWeight = quality;
+            _hasPushedShaderMode = true;
+
+            if (high)
+            {
+                Shader.EnableKeyword(MathLodHighKeyword);
+                Shader.DisableKeyword(MathLodLowKeyword);
+                return;
+            }
+
+            Shader.DisableKeyword(MathLodHighKeyword);
+            Shader.EnableKeyword(MathLodLowKeyword);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float TriangleSin(float radians)
         {
@@ -307,30 +348,24 @@ namespace Hecton8.Core
         private static void PushShaderMathLod(float globalQualityWeight, MathLodMode legacyMode)
         {
             float quality = SanitizeQualityWeight01(globalQualityWeight);
-            if (_hasPushedShaderMode &&
+            if (_hasPendingShaderState &&
+                _pendingShaderMode == legacyMode &&
+                math.abs(_pendingShaderWeight - quality) < ShaderQualityEpsilon)
+            {
+                return;
+            }
+
+            if (!_hasPendingShaderState &&
+                _hasPushedShaderMode &&
                 _lastPushedShaderMode == legacyMode &&
                 math.abs(_lastPushedShaderWeight - quality) < ShaderQualityEpsilon)
             {
                 return;
             }
 
-            bool high = legacyMode == MathLodMode.High;
-            Shader.SetGlobalFloat(_mathLodModePropertyId, high ? 1f : 0f);
-            Shader.SetGlobalFloat(_mathLodWeightPropertyId, quality);
-            Shader.SetGlobalFloat(_mathLodDistanceSqPropertyId, HighQualityDistanceSq);
-            _lastPushedShaderMode = legacyMode;
-            _lastPushedShaderWeight = quality;
-            _hasPushedShaderMode = true;
-
-            if (high)
-            {
-                Shader.EnableKeyword(MathLodHighKeyword);
-                Shader.DisableKeyword(MathLodLowKeyword);
-                return;
-            }
-
-            Shader.DisableKeyword(MathLodHighKeyword);
-            Shader.EnableKeyword(MathLodLowKeyword);
+            _pendingShaderMode = legacyMode;
+            _pendingShaderWeight = quality;
+            _hasPendingShaderState = true;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

@@ -1,22 +1,34 @@
 ﻿{
     "agentId":  "1407",
-    "sampledAt":  "2026-05-28T05:51:28.2584616+04:00",
-    "cpuLoadPercent":  94,
+    "sampledAt":  "2026-05-28T12:55:35.6511160+04:00",
+    "cpuLoadPercent":  63,
     "compilerProcesses":  [
                               {
-                                  "Id":  12816,
+                                  "Id":  52688,
                                   "ProcessName":  "csc",
-                                  "CPU":  1.9375,
-                                  "StartTime":  "\/Date(1779933088266)\/"
+                                  "CPU":  82.65625,
+                                  "StartTimeIso":  "2026-05-28T12:55:12.6574862+04:00"
                               },
                               {
-                                  "Id":  10056,
+                                  "Id":  52900,
                                   "ProcessName":  "dotnet",
-                                  "CPU":  47.796875,
-                                  "StartTime":  "\/Date(1779933051392)\/"
+                                  "CPU":  28.0625,
+                                  "StartTimeIso":  "2026-05-28T12:54:51.3507151+04:00"
                               }
                           ],
-    "buildInvoked":  false,
+    "dotnetBuildInvoked":  true,
+    "buildAllowedByGate":  null,
+    "gateSampleBeforeInvocationCaptured":  false,
+    "preDelayCpuLoadPercent":  76,
+    "commandTimeoutMs":  904009,
+    "solutionProbe":  {
+                          "hecton8SlnxExists":  true,
+                          "hecton8SlnExists":  false,
+                          "solutionFile":  "Hecton8.slnx"
+                      },
     "buildExitCode":  null,
-    "reason":  "Gate closed: CPU \u003e50 percent or compiler process active; dotnet build not invoked."
+    "buildDurationMs":  null,
+    "dumpPath":  "Docs/AgentLogs/Dump_1407_BuildTimeout.txt",
+    "dumpSha256":  "BE6C250391D651A83EDC4931EF28036AD596215ECE4123D3A086BAE28C498BAE",
+    "reason":  "One delayed build-gate command exceeded the 904009 ms shell timeout after a dotnet process was observed. Exit code and exact gate CPU sample before invocation are not captured; no second build was launched."
 }

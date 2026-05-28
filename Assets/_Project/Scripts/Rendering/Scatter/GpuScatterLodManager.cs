@@ -311,6 +311,7 @@ namespace Hecton8.Rendering.Scatter
         private GraphicsBuffer _activeFloraPhaseSeedBuffer;
         private GraphicsBuffer _activeFloraVisualPayloadBuffer;
         private GraphicsBuffer _argsBuffer;
+        private GraphicsBuffer _argsUploadBuffer;
         private GraphicsBuffer _frameConstantsBufferA;
         private GraphicsBuffer _frameConstantsBufferB;
         private GraphicsBuffer _activeFrameConstantsBuffer;
@@ -680,7 +681,7 @@ namespace Hecton8.Rendering.Scatter
 
         private void RefreshCachedRegistryServices()
         {
-            _registryDataVault = GlobalRegistry.DataVault;
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DataVault, GlobalRegistry.DataVault);
             _nextMissingRegistryRefreshFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + MissingRegistryRefreshStrideFrames;
         }
 
@@ -888,16 +889,17 @@ namespace Hecton8.Rendering.Scatter
 
         private void ReleaseOwnedVaultHandles(IDataVault vault)
         {
-            ReleaseScatterVaultHandle(vault, ref _blackBoxHandle);
-            ReleaseScatterVaultHandle(vault, ref _cpuFrustumPlanesHandle);
-            ReleaseScatterVaultHandle(vault, ref _cpuVisibilityMaskHandle);
+            ReleaseScatterVaultHandle(vault, ref _blackBoxHandle, BufferID.FloraScatterBlackBox);
+            ReleaseScatterVaultHandle(vault, ref _cpuFrustumPlanesHandle, BufferID.FloraScatterCpuFrustumPlanes);
+            ReleaseScatterVaultHandle(vault, ref _cpuVisibilityMaskHandle, BufferID.FloraScatterCpuVisibilityMask);
         }
 
         private static void ReleaseScatterVaultHandle<T>(
             IDataVault vault,
-            ref VaultGenerationHandle<T> handle) where T : struct
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
         {
-            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+            if (vault != null && IsMatchingScatterVaultHandle(in handle, bufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
@@ -927,6 +929,8 @@ namespace Hecton8.Rendering.Scatter
             _metadataDefaultsInitialized = false;
             _auxiliaryShaderLanesInitialized = false;
             _visualPayloadDefaultsInitialized = false;
+            _blackBoxCursor = 0;
+            _blackBoxDumped = false;
             _forceUpload = true;
         }
 
@@ -973,10 +977,19 @@ namespace Hecton8.Rendering.Scatter
             if (_argsBuffer == null)
             {
                 _argsBuffer = new GraphicsBuffer(
-                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw | GraphicsBuffer.Target.CopyDestination,
                     1,
                     GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - indirect flora draw args - owner: GpuScatterLodManager
+                _argsUploadBuffer = GraphicsBufferUploadUtility.CreateRawIndirectUploadStagingBuffer(
+                    1,
+                    GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - CPU-visible indirect flora args staging, GPU copy source only - owner: GpuScatterLodManager
                 InvalidateIndirectArgsCache();
+            }
+            else if (_argsUploadBuffer == null)
+            {
+                _argsUploadBuffer = GraphicsBufferUploadUtility.CreateRawIndirectUploadStagingBuffer(
+                    1,
+                    GraphicsBuffer.IndirectDrawIndexedArgs.size);
             }
 
             if (SystemInfo.supportsSetConstantBuffer &&
@@ -1066,6 +1079,7 @@ namespace Hecton8.Rendering.Scatter
             _activeFloraPhaseSeedBuffer = null;
             _activeFloraVisualPayloadBuffer = null;
             ReleaseBuffer(ref _argsBuffer);
+            ReleaseBuffer(ref _argsUploadBuffer);
             ReleaseBuffer(ref _frameConstantsBufferA);
             ReleaseBuffer(ref _frameConstantsBufferB);
             _activeFrameConstantsBuffer = null;
@@ -1117,7 +1131,7 @@ namespace Hecton8.Rendering.Scatter
                 baseVertexIndex = baseVertex,
                 startInstance = 0u
             };
-            _argsBuffer.SetData(_indirectArgsUpload, 0, 0, 1);
+            GraphicsBufferUploadUtility.UploadArrayAndCopyWholeBuffer(_argsUploadBuffer, _argsBuffer, _indirectArgsUpload, 1);
 
             _boundMesh = mesh;
             _boundIndexCount = indexCount;

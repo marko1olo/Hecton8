@@ -289,8 +289,8 @@ namespace Hecton8.UI
                 return;
             }
 
-            ReleasePrefetchHandle(ref _visibleHashPrefetchHandle);
-            ReleasePrefetchHandle(ref _visibleSlicePrefetchHandle);
+            ReleasePrefetchHandle(ref _visibleHashPrefetchHandle, VisibleHashPrefetchBufferId, _dataVault);
+            ReleasePrefetchHandle(ref _visibleSlicePrefetchHandle, VisibleSlicePrefetchBufferId, _dataVault);
             _visiblePrefetchCapacity = 0;
         }
 
@@ -374,17 +374,27 @@ namespace Hecton8.UI
         {
             CompleteVisibleHashPrefetchForTeardown();
             ReleaseVisiblePrefetchJobBufferLocks();
-            ReleasePrefetchHandle(ref _visibleHashPrefetchHandle);
-            ReleasePrefetchHandle(ref _visibleSlicePrefetchHandle);
+            ReleasePrefetchHandle(ref _visibleHashPrefetchHandle, VisibleHashPrefetchBufferId, _dataVault);
+            ReleasePrefetchHandle(ref _visibleSlicePrefetchHandle, VisibleSlicePrefetchBufferId, _dataVault);
             _visiblePrefetchCapacity = 0;
         }
 
         private IDataVault CacheDataVaultCold()
         {
-            if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
+            IDataVault registryVault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_dataVault, registryVault))
+                BindDataVaultForLifecycle(registryVault);
 
             return _dataVault;
+        }
+
+        private void BindDataVaultForLifecycle(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            DisposePrefetchBuffers();
+            _dataVault = nextVault;
         }
 
         private bool HasPrefetchCapacity(int requiredCapacity)
@@ -414,8 +424,7 @@ namespace Hecton8.UI
                 return true;
             }
 
-            if (handle.BufferID != 0u && handle.Generation != 0u)
-                vault.ReleaseBuffer(in handle);
+            ReleasePrefetchHandle(ref handle, bufferId, vault);
 
             handle = vault.EnsureGenerationHandle<T>(
                 bufferId,
@@ -531,10 +540,12 @@ namespace Hecton8.UI
             _visiblePrefetchBuffersLocked = false;
         }
 
-        private void ReleasePrefetchHandle<T>(ref VaultGenerationHandle<T> handle) where T : unmanaged
+        private void ReleasePrefetchHandle<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            IDataVault vault) where T : unmanaged
         {
-            IDataVault vault = _dataVault;
-            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+            if (vault != null && IsExactVaultHandle(in handle, expectedBufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
@@ -542,7 +553,9 @@ namespace Hecton8.UI
 
         private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : unmanaged
         {
-            return handle.BufferID == unchecked((uint)(int)expectedBufferId) && handle.Generation != 0u;
+            return handle.BufferID == (uint)expectedBufferId &&
+                   handle.SystemID == (uint)VaultOwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private void EvaluatePendingFontReadiness()
@@ -782,8 +795,8 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                DisposePrefetchBuffers();
-                _dataVault = currentService as IDataVault;
+                IDataVault nextVault = currentService is IDataVault vault ? vault : null;
+                BindDataVaultForLifecycle(nextVault);
                 return;
             }
 

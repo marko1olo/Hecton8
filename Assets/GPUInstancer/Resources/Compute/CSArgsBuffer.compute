@@ -5,6 +5,7 @@
 
 uniform RWStructuredBuffer<uint> argsBuffer;
 uniform uint count;
+uniform uint argsBufferLength;
 
 [numthreads(GPUI_THREADS, 1, 1)]
 void CSArgsBufferDoubleInstanceCount(uint2 id : SV_DispatchThreadID)
@@ -12,5 +13,9 @@ void CSArgsBufferDoubleInstanceCount(uint2 id : SV_DispatchThreadID)
     if (id.x >= count)
         return;
 
-    argsBuffer[id.x * 5 + 1] *= 2;
+    uint argsIndex = id.x * 5 + 1;
+    if (argsIndex >= argsBufferLength)
+        return;
+
+    argsBuffer[argsIndex] *= 2;
 }

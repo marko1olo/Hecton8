@@ -39,6 +39,7 @@ namespace Hecton8.Visor
         private const int BlackBoxEntrySizeBytes = 64;
         private const int VisorFluidGlobalsStrideBytes = 128;
         private const int LensComputeGlobalsStrideBytes = 80;
+        private const SystemID BlackBoxOwnerSystemId = SystemID.Vfx;
         private const uint BlackBoxMagic = 0x56535246u;
         private const uint BlackBoxVersion = 1u;
         private const uint BlackBoxFlagPlayerCamera = 1u << 0;
@@ -914,7 +915,7 @@ namespace Hecton8.Visor
         private void OnEnable()
         {
             TryRegisterBlackBoxHotSwapListener();
-            CacheBlackBoxVaultCold(GlobalRegistry.DataVault);
+            BindBlackBoxVaultForLifecycle(GlobalRegistry.DataVault);
             EnsureBlackBoxLeaseCold();
             CacheRenderDependenciesCold();
         }
@@ -938,7 +939,7 @@ namespace Hecton8.Visor
             _pass ??= new VisorFluidPass();
             _pass.PrewarmVisorFluidGlobalsBuffer();
             TryRegisterBlackBoxHotSwapListener();
-            CacheBlackBoxVaultCold(GlobalRegistry.DataVault);
+            BindBlackBoxVaultForLifecycle(GlobalRegistry.DataVault);
             EnsureBlackBoxLeaseCold();
             CacheRenderDependenciesCold();
             Shader shader = settings != null ? settings.shader : null;
@@ -989,8 +990,8 @@ namespace Hecton8.Visor
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                ReleaseBlackBoxLease();
-                CacheBlackBoxVaultCold(currentService as IDataVault);
+                IDataVault nextVault = currentService is IDataVault vault ? vault : null;
+                BindBlackBoxVaultForLifecycle(nextVault);
                 EnsureBlackBoxLeaseCold();
                 return;
             }
@@ -1366,14 +1367,14 @@ namespace Hecton8.Visor
         {
             blackBoxLength = 0;
             IDataVault vault = _dataVault;
-            if (vault == null || vault.IsCompactionFenceActive || !IsVaultHandleCreated(in _blackBoxHandle))
+            if (vault == null || vault.IsCompactionFenceActive || !IsBlackBoxHandle(in _blackBoxHandle))
                 return false;
 
             bool blackBoxLocked = false;
             bool clearDescriptor = false;
             try
             {
-                if (!vault.TryAcquireWriteLock(in _blackBoxHandle, SystemID.Vfx, out NativeArray<VisorRefractionTelemetryEntry> blackBox))
+                if (!vault.TryAcquireWriteLock(in _blackBoxHandle, BlackBoxOwnerSystemId, out NativeArray<VisorRefractionTelemetryEntry> blackBox))
                     return false;
 
                 blackBoxLocked = true;
@@ -1393,7 +1394,7 @@ namespace Hecton8.Visor
             finally
             {
                 if (blackBoxLocked)
-                    vault.ReleaseWriteLock(in _blackBoxHandle, SystemID.Vfx);
+                    vault.ReleaseWriteLock(in _blackBoxHandle, BlackBoxOwnerSystemId);
                 if (clearDescriptor)
                     ClearBlackBoxDescriptor();
             }
@@ -1414,6 +1415,7 @@ namespace Hecton8.Visor
             if (vault.TryGetGenerationHandle(
                     BufferID.VisorRefractionBlackBox,
                     out VaultGenerationHandle<VisorRefractionTelemetryEntry> existingHandle) &&
+                IsBlackBoxHandle(in existingHandle) &&
                 !vault.IsCompactionFenceActive &&
                 vault.TryReadOnlyHandle(in existingHandle, out NativeArray<VisorRefractionTelemetryEntry>.ReadOnly existingBlackBox) &&
                 !vault.IsCompactionFenceActive &&
@@ -1446,7 +1448,7 @@ namespace Hecton8.Visor
                 BufferID.VisorRefractionBlackBox,
                 BlackBoxFrameCount,
                 SystemID.Vfx);
-            if (!IsVaultHandleCreated(in blackBoxHandle) ||
+            if (!IsBlackBoxHandle(in blackBoxHandle) ||
                 vault.IsCompactionFenceActive ||
                 !vault.TryReadOnlyHandle(in blackBoxHandle, out NativeArray<VisorRefractionTelemetryEntry>.ReadOnly blackBox) ||
                 vault.IsCompactionFenceActive ||
@@ -1468,7 +1470,7 @@ namespace Hecton8.Visor
             blackBox = default;
             blackBoxLength = 0;
             if (_dataVault == null ||
-                !IsVaultHandleCreated(in _blackBoxHandle) ||
+                !IsBlackBoxHandle(in _blackBoxHandle) ||
                 _dataVault.IsCompactionFenceActive)
             {
                 return false;
@@ -1488,13 +1490,14 @@ namespace Hecton8.Visor
             return true;
         }
 
-        private void CacheBlackBoxVaultCold(IDataVault vault)
+        private void BindBlackBoxVaultForLifecycle(IDataVault vault)
         {
             if (ReferenceEquals(_dataVault, vault))
                 return;
 
             ReleaseBlackBoxLease();
             _dataVault = vault;
+            ResetBlackBoxNativeEpochState();
         }
 
         private void ReleaseBlackBoxLease()
@@ -1502,11 +1505,12 @@ namespace Hecton8.Visor
             IDataVault vault = _dataVault;
             if (vault != null &&
                 _blackBoxHandleOwned &&
-                IsVaultHandleCreated(in _blackBoxHandle) &&
+                IsBlackBoxHandle(in _blackBoxHandle) &&
                 !vault.IsCompactionFenceActive &&
                 vault.TryGetGenerationHandle(
                     BufferID.VisorRefractionBlackBox,
                     out VaultGenerationHandle<VisorRefractionTelemetryEntry> currentHandle) &&
+                IsBlackBoxHandle(in currentHandle) &&
                 currentHandle.Generation == _blackBoxHandle.Generation)
             {
                 vault.ReleaseBuffer(in _blackBoxHandle);
@@ -1521,6 +1525,12 @@ namespace Hecton8.Visor
             _blackBoxHandle = default;
             _blackBoxVaultGeneration = 0u;
             _blackBoxHandleOwned = false;
+        }
+
+        private void ResetBlackBoxNativeEpochState()
+        {
+            ClearBlackBoxDescriptor();
+            _blackBoxDumped = false;
         }
 
         private void TryRegisterBlackBoxHotSwapListener()
@@ -1540,9 +1550,11 @@ namespace Hecton8.Visor
             _blackBoxHotSwapRegistered = false;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
+        private static bool IsBlackBoxHandle(in VaultGenerationHandle<VisorRefractionTelemetryEntry> handle)
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == (uint)BufferID.VisorRefractionBlackBox &&
+                   handle.SystemID == (uint)BlackBoxOwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private static uint BuildBlackBoxHash(in RuntimeState runtimeState, uint flags)
@@ -1595,7 +1607,7 @@ namespace Hecton8.Visor
         {
             entry = default;
             IDataVault vault = _dataVault;
-            if (vault == null || vault.IsCompactionFenceActive || !IsVaultHandleCreated(in _blackBoxHandle) || index < 0)
+            if (vault == null || vault.IsCompactionFenceActive || !IsBlackBoxHandle(in _blackBoxHandle) || index < 0)
                 return false;
 
             if (!vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<VisorRefractionTelemetryEntry>.ReadOnly blackBox) ||

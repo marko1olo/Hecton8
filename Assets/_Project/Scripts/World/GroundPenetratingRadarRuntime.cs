@@ -27,8 +27,8 @@ namespace Hecton8.World
         private const uint GprSourceHash = 0x4750525Fu; // GPR_
         private const uint GprReturnHash = 0x47505252u; // GPRR
         private const uint TelemetryFaultFlag = 1u << 31;
+        private const uint TelemetryPublishDropFlag = 1u << 30;
         private const uint GroundRadarProceduralVertexCount = 6u;
-        private const BufferID GroundRadarSdfSnapshotBuffer = (BufferID)71339;
         private static readonly int GroundRadarPingsId = Shader.PropertyToID("_GroundRadarPings");
         private static readonly int GroundRadarPulseId = Shader.PropertyToID("_GroundRadarPulse");
         private static readonly int GroundRadarScaleId = Shader.PropertyToID("_GroundRadarScale");
@@ -42,6 +42,7 @@ namespace Hecton8.World
             public NativeArray<float4> PingGpu;
             public NativeArray<int> Counters;
             public NativeArray<float> MaxSignalStrength;
+            public NativeArray<byte> SdfSnapshot;
             public JobHandle Handle;
         }
 
@@ -68,7 +69,6 @@ namespace Hecton8.World
         private VaultGenerationHandle<int> _gprCountersHandle;
         private VaultGenerationHandle<float> _maxSignalStrengthHandle;
         private VaultGenerationHandle<GroundRadarTelemetryEntry> _telemetryRingHandle;
-        private VaultGenerationHandle<byte> _sdfSnapshotHandle;
         private IDataVault _dataVault;
         private GraphicsBuffer _gprPingBufferA;
         private GraphicsBuffer _gprPingBufferB;
@@ -101,7 +101,6 @@ namespace Hecton8.World
         private int _radarJobScheduled;
         private bool _gprReadSnapshotsValid;
         private bool _pendingDataVaultRebind;
-        private bool _radarSdfSnapshotLocked;
         private float _scanTimer;
         private float _pulsePhaseSeconds;
         private float _highestSignalStrength;
@@ -205,7 +204,6 @@ namespace Hecton8.World
             _gprCountersHandle = default;
             _maxSignalStrengthHandle = default;
             _telemetryRingHandle = default;
-            _sdfSnapshotHandle = default;
             _dataVault = null;
             _pendingDataVault = null;
             _pendingDataVaultRebind = false;
@@ -624,6 +622,7 @@ namespace Hecton8.World
             H8Memory.Release(ref pending.PingGpu, SystemID.WorldStreaming);
             H8Memory.Release(ref pending.Counters, SystemID.WorldStreaming);
             H8Memory.Release(ref pending.MaxSignalStrength, SystemID.WorldStreaming);
+            H8Memory.Release(ref pending.SdfSnapshot, SystemID.WorldStreaming);
             pending.Handle = default;
         }
 
@@ -633,37 +632,37 @@ namespace Hecton8.World
             pending.Hits = H8Memory.Allocate<float3>(
                 GroundRadarConstants.MaxPings,
                 SystemID.WorldStreaming,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
             pending.SignalStrength = H8Memory.Allocate<float>(
                 GroundRadarConstants.MaxPings,
                 SystemID.WorldStreaming,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
             pending.AgeSeconds = H8Memory.Allocate<float>(
                 GroundRadarConstants.MaxPings,
                 SystemID.WorldStreaming,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
             pending.OreTypes = H8Memory.Allocate<int>(
                 GroundRadarConstants.MaxPings,
                 SystemID.WorldStreaming,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
             pending.PingGpu = H8Memory.Allocate<float4>(
                 GroundRadarConstants.MaxPings,
                 SystemID.WorldStreaming,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
             pending.Counters = H8Memory.Allocate<int>(
                 4,
                 SystemID.WorldStreaming,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
             pending.MaxSignalStrength = H8Memory.Allocate<float>(
                 1,
                 SystemID.WorldStreaming,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
 
             if (IsRadarPendingJobValid(in pending))
@@ -779,7 +778,6 @@ namespace Hecton8.World
             if (_radarJobScheduled != 0)
                 return;
 
-            bool sdfSnapshotLocked = false;
             bool scheduled = false;
             RadarPendingJob pending = default;
             try
@@ -797,7 +795,7 @@ namespace Hecton8.World
                 float sdfRange = 0f;
 
                 if (scanDue)
-                    TryReadNearestSdf(probeOrigin, out encodedSdf, out gridDimensions, out volumeOrigin, out cellSize, out sdfRange, out sdfSnapshotLocked);
+                    TryStageNearestSdf(probeOrigin, ref pending, out encodedSdf, out gridDimensions, out volumeOrigin, out cellSize, out sdfRange);
 
                 NativeArray<float3>.ReadOnly orePositions = default;
                 NativeArray<int>.ReadOnly oreTypes = default;
@@ -849,8 +847,6 @@ namespace Hecton8.World
                 _radarJob = pending;
                 _radarJobHandle = handle;
                 _radarJobScheduled = 1;
-                _radarSdfSnapshotLocked = sdfSnapshotLocked;
-                sdfSnapshotLocked = false;
                 scheduled = true;
                 pending = default;
 
@@ -862,7 +858,6 @@ namespace Hecton8.World
                 if (!scheduled)
                 {
                     ReleaseRadarPendingJob(ref pending);
-                    UnlockSdfSnapshotBuffer(ref sdfSnapshotLocked);
                 }
             }
         }
@@ -886,9 +881,6 @@ namespace Hecton8.World
             }
             finally
             {
-                bool sdfSnapshotLocked = _radarSdfSnapshotLocked;
-                _radarSdfSnapshotLocked = false;
-                UnlockSdfSnapshotBuffer(ref sdfSnapshotLocked);
                 ReleaseRadarPendingJob(ref pending);
                 _radarJob = default;
                 _radarJobScheduled = 0;
@@ -914,7 +906,10 @@ namespace Hecton8.World
                 : 0f;
 
             if (!TryPublishRadarPendingJob(ref pending))
+            {
+                WriteTelemetry(AdvanceRadarFrameId(), addedCount, rayCount, highestSignalStrength, TelemetryPublishDropFlag);
                 return;
+            }
 
             _activeGprPings = activeCount;
             _highestSignalStrength = highestSignalStrength;
@@ -1049,21 +1044,20 @@ namespace Hecton8.World
             return false;
         }
 
-        private bool TryReadNearestSdf(
+        private bool TryStageNearestSdf(
             float3 probeOrigin,
+            ref RadarPendingJob pending,
             out NativeArray<byte>.ReadOnly encodedSdf,
             out int3 gridDimensions,
             out float3 volumeOrigin,
             out float3 cellSize,
-            out float sdfRange,
-            out bool snapshotLocked)
+            out float sdfRange)
         {
             encodedSdf = default;
             gridDimensions = default;
             volumeOrigin = default;
             cellSize = default;
             sdfRange = 0f;
-            snapshotLocked = false;
 
             Hecton8.Core.Contracts.IVoxelSonarSdfReadModel voxelSdfReadModel = _voxelSdfReadModel;
             Hecton8.Core.Contracts.IVoxelSonarSdfReadLeaseModel leaseModel = _voxelSdfReadLeaseModel;
@@ -1082,7 +1076,6 @@ namespace Hecton8.World
                 return false;
             }
 
-            bool accepted = false;
             bool leaseLocked = true;
             try
             {
@@ -1091,7 +1084,7 @@ namespace Hecton8.World
                     expectedLong > int.MaxValue ||
                     !payload.IsCreated ||
                     payload.Length < expectedLong ||
-                    !TryCopySdfLeaseToSnapshot(payload, (int)expectedLong, out encodedSdf, out snapshotLocked))
+                    !TryStageSdfLeaseToPendingSnapshot(payload, (int)expectedLong, ref pending, out encodedSdf))
                 {
                     return false;
                 }
@@ -1100,73 +1093,42 @@ namespace Hecton8.World
                 volumeOrigin = payloadOrigin;
                 cellSize = payloadCellSize;
                 sdfRange = payloadRange;
-                accepted = true;
                 return true;
             }
             finally
             {
                 if (leaseLocked)
                     leaseModel.ReleaseNearestSonarSdfReadLease(in payloadLease);
-                if (!accepted)
-                    UnlockSdfSnapshotBuffer(ref snapshotLocked);
             }
         }
 
-        private bool TryCopySdfLeaseToSnapshot(
+        private static bool TryStageSdfLeaseToPendingSnapshot(
             NativeArray<byte>.ReadOnly sourceSdf,
             int requiredLength,
-            out NativeArray<byte>.ReadOnly snapshotSdf,
-            out bool snapshotLocked)
+            ref RadarPendingJob pending,
+            out NativeArray<byte>.ReadOnly snapshotSdf)
         {
             snapshotSdf = default;
-            snapshotLocked = false;
             if (!sourceSdf.IsCreated || requiredLength <= 0 || sourceSdf.Length < requiredLength)
                 return false;
 
-            IDataVault vault = _dataVault;
-            if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked)
-                return false;
-
-            if (!IsVaultHandleCreated(in _sdfSnapshotHandle) ||
-                !vault.TryResolveHandle(in _sdfSnapshotHandle, out NativeArray<byte> snapshot) ||
-                vault.IsCompactionFenceActive ||
-                !snapshot.IsCreated ||
-                snapshot.Length < requiredLength)
+            if (!pending.SdfSnapshot.IsCreated || pending.SdfSnapshot.Length < requiredLength)
             {
-                if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
-                    return false;
-
-                _sdfSnapshotHandle = vault.EnsureGenerationHandle<byte>(
-                    GroundRadarSdfSnapshotBuffer,
+                H8Memory.Release(ref pending.SdfSnapshot, SystemID.WorldStreaming);
+                pending.SdfSnapshot = H8Memory.Allocate<byte>(
                     requiredLength,
                     SystemID.WorldStreaming,
-                    NativeArrayOptions.ClearMemory);
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory);
             }
 
-            if (vault.IsCompactionFenceActive ||
-                !vault.TryLockBuffer(GroundRadarSdfSnapshotBuffer, SystemID.WorldStreaming))
+            if (!pending.SdfSnapshot.IsCreated || pending.SdfSnapshot.Length < requiredLength)
                 return false;
-
-            snapshotLocked = true;
-            if (vault.IsCompactionFenceActive)
-            {
-                UnlockSdfSnapshotBuffer(ref snapshotLocked);
-                return false;
-            }
-
-            if (!IsVaultHandleCreated(in _sdfSnapshotHandle) ||
-                !vault.TryResolveHandle(in _sdfSnapshotHandle, out snapshot) ||
-                vault.IsCompactionFenceActive ||
-                !snapshot.IsCreated ||
-                snapshot.Length < requiredLength)
-            {
-                return false;
-            }
 
             for (int i = 0; i < requiredLength; i++)
-                snapshot[i] = sourceSdf[i];
+                pending.SdfSnapshot[i] = sourceSdf[i];
 
-            snapshotSdf = snapshot.AsReadOnly();
+            snapshotSdf = pending.SdfSnapshot.AsReadOnly();
             return true;
         }
 
@@ -1218,18 +1180,6 @@ namespace Hecton8.World
         {
             UnlockScanJobBuffers(_dataVault, _scanJobBufferLockCount);
             _scanJobBufferLockCount = 0;
-        }
-
-        private void UnlockSdfSnapshotBuffer(ref bool locked)
-        {
-            if (!locked)
-                return;
-
-            IDataVault vault = _dataVault;
-            if (vault != null)
-                vault.TryUnlockBuffer(GroundRadarSdfSnapshotBuffer, SystemID.WorldStreaming);
-
-            locked = false;
         }
 
         private static void UnlockScanJobBuffers(IDataVault vault, int locked)

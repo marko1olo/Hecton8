@@ -16,6 +16,7 @@ FILES = {
     "globalDataVault": ROOT / "Assets" / "_Project" / "Scripts" / "Core" / "Memory" / "GlobalDataVault.cs",
     "destructibleOrganic": ROOT / "Assets" / "_Project" / "Scripts" / "World" / "DestructibleOrganicManager.cs",
     "failClosedEditTest": ROOT / "Assets" / "_Project" / "Scripts" / "Core" / "Memory" / "Editor" / "GlobalDataVaultFailClosedEditTests1413.cs",
+    "arenaAllocatorSentinel1414EditTest": ROOT / "Assets" / "_Project" / "Tests" / "Editor" / "ArenaAllocatorSentinel1414EditTests.cs",
 }
 
 FORBIDDEN = {
@@ -120,13 +121,15 @@ def main() -> None:
     organic_text = FILES["destructibleOrganic"].read_text(encoding="utf-8", errors="replace")
 
     hot_blocks = []
+    queue_start, queue_end, queue_body = extract_brace_block(global_text, "private bool QueueDeferredRelease(")
     for signature in (
+        "private bool TryEnsureVaultBuffer<T>(",
+        "private bool TryAllocatePublishedBuffer<T>(",
         "private bool TryOpenAliasBuffer<T>(BufferID bufferId, SystemID requester, out NativeArray<T> buffer) where T : struct",
         "private void RecordLockContentionFault(int key)",
         "private bool TryEnterBlockMutationGate()",
         "private bool TryEnterReleaseMutationGate()",
         "private void ClearActiveLockBitIfUnused(int bit)",
-        "private bool QueueDeferredRelease(",
         "private void DrainDeferredReleaseRequestsLocked()",
         "private bool TryDrainDeferredReleaseRequests()",
         "private bool DrainDeferredWriterReleaseLocked(in DeferredVaultReleaseRequest request)",
@@ -134,6 +137,7 @@ def main() -> None:
     ):
         start, end, body = extract_brace_block(global_text, signature)
         hot_blocks.append(scan_forbidden(signature, start, end, body))
+    hot_blocks.append(scan_forbidden("private bool QueueDeferredRelease(", queue_start, queue_end, queue_body))
 
     organic_start = line_number(organic_text, "if (!vault.TryLockBuffer(OrganicTemplateDescriptorsBufferId, OrganicVaultSystemId))")
     organic_end = line_number(organic_text, "vault.TryUnlockBuffer(OrganicTemplateDescriptorsBufferId, OrganicVaultSystemId);", organic_text.find("if (!vault.TryLockBuffer(OrganicTemplateDescriptorsBufferId, OrganicVaultSystemId))"))
@@ -202,15 +206,25 @@ def main() -> None:
             "destructibleLockedCopyWindowNestedTryLockCalls": count_nested_locks(organic_body) - 2,
             "note": "two top-level acquisitions are sequential in one protected scope; no inner acquisition exists inside the mutation loop body",
         },
+        "deferredReleaseContract": {
+            "dedupePolicy": "QueueDeferredRelease de-duplicates writer releases only; buffer-pin releases preserve one queued record per accepted release call.",
+            "dedupePolicyEvidence": {
+                "hasWriterOnlyFilter": "kind == DeferredReleaseKindWriter" in queue_body,
+                "hasSerializedScanGate": "Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate, 1, 0)" in queue_body,
+                "matchesArenaAllocator1414EditorContract": "StringAssert.Contains(\"if (kind == DeferredReleaseKindWriter)\", queue)" in (ROOT / "Assets" / "_Project" / "Tests" / "Editor" / "ArenaAllocatorSentinel1414EditTests.cs").read_text(encoding="utf-8", errors="replace")
+            },
+            "residualLimit": "A caller that retries TryUnlockBuffer after QueueDeferredRelease already returned true can still enqueue multiple buffer-pin releases. The API has no per-acquire token; compliant callers must treat true as accepted ownership transfer."
+        },
         "compilationResourceThrottling": {
             "source": "agent1413_apex_verifier.py runtime sample; optimization report throttle copied separately",
             "sample": compilation_sample,
             "optimizationReportSample": optimization_report.get("compilationThrottle", {}),
-            "dotnetBuildLaunchedByAgent1413": False,
-            "unityTestRunnerLaunchedByAgent1413": False,
+            "dotnetBuildLaunchedByAgent1413": optimization_report.get("compilationThrottle", {}).get("dotnetBuildLaunchedByAgent1413", False),
+            "unityTestRunnerLaunchedByAgent1413": optimization_report.get("compilationThrottle", {}).get("unityTestRunnerLaunchedByAgent1413", False),
         },
         "knownResidualRisk": [
             "GlobalDataVault release APIs now queue a fixed-size unmanaged deferred-release request if the block mutation gate is busy. Runtime drain is static-only verified; compiler and Unity runtime proof are still pending.",
+            "Deferred release de-duplication is intentionally writer-only to preserve count semantics for multiple same-owner buffer pins. The residual risk is retry after accepted true on tokenless TryUnlockBuffer.",
             "Project-wide scanner still reports loop-shaped and nested-lock candidates outside the edited window; they are report-ranked but not all fixed in this pass.",
         ],
     }

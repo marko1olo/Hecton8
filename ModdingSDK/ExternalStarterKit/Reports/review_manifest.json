@@ -10,8 +10,8 @@
                      "RequiredAPIVersion":  2,
                      "ModPriority":  0
                  },
-    "FileCount":  24,
-    "TotalBytes":  41885,
+    "FileCount":  25,
+    "TotalBytes":  47352,
     "Limits":  {
                    "MaxFiles":  256,
                    "MaxFileBytes":  4194304,
@@ -39,6 +39,11 @@
                       "Sha256":  "47f94f9ca298da001f6e83ab3374ff5a74a80997d09da2bb02f2ebf2e7ba7748"
                   },
                   {
+                      "Path":  "h8mod.ps1",
+                      "Bytes":  4546,
+                      "Sha256":  "de8e80caac3fca62d5707b4f73e8e174000cf5ccb8990f3d1df9ca305eeee045"
+                  },
+                  {
                       "Path":  "Locales/en.h8loc.json",
                       "Bytes":  78,
                       "Sha256":  "a02773914383721694176cc94cd9a53046ef68e57c94926ff09f0eaed2e2d84d"
@@ -55,8 +60,8 @@
                   },
                   {
                       "Path":  "README.md",
-                      "Bytes":  3794,
-                      "Sha256":  "c0566b45ee82399fde534e32697c5d5c15338076c05468b9dd829081c436cad2"
+                      "Bytes":  4063,
+                      "Sha256":  "896c3c3a5fd5f50ce8c39c39dc0d50d8fd0dc8cab451e99b1e009c317ff3c0fd"
                   },
                   {
                       "Path":  "Reference/allowed_opcodes.csv",
@@ -125,8 +130,8 @@
                   },
                   {
                       "Path":  "Tools/README.md",
-                      "Bytes":  2707,
-                      "Sha256":  "6424b9d0f4dc0d607280b69249f7baf56310d3a6b67e4c8ff0bb9bd59df71ddf"
+                      "Bytes":  3342,
+                      "Sha256":  "2e880af4b002e2a69c2af3b37712bcfb53b04bc1c307d980f915db53815a1ead"
                   },
                   {
                       "Path":  "Tools/set_mod_identity.ps1",
@@ -135,8 +140,8 @@
                   },
                   {
                       "Path":  "Tools/validate_structure.ps1",
-                      "Bytes":  11459,
-                      "Sha256":  "da8ed1aea3c34e026196014a3c3646be8a91a1f29f1eec40ab7aa6951b91953e"
+                      "Bytes":  11476,
+                      "Sha256":  "ea990805a418e0e7ba091ec0bf2d9da59262344324452d3cf0da4b80fe5ff795"
                   }
               ]
 }

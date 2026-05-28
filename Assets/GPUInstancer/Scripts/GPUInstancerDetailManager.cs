@@ -232,31 +232,54 @@ namespace GPUInstancer
             base.RemoveInstancesInsideBounds(bounds, offset, prototypeFilter);
             if (spData != null && !initalizingInstances)
             {
+                if (terrain == null || terrain.terrainData == null || spData.cellRowAndCollumnCountPerTerrain <= 0)
+                    return;
+
                 int detailMapSize = terrain.terrainData.detailResolution / spData.cellRowAndCollumnCountPerTerrain;
+                if (detailMapSize <= 0)
+                    return;
+
                 float unitSizeX = terrain.terrainData.size.x / spData.cellRowAndCollumnCountPerTerrain / detailMapSize;
                 float unitSizeZ = terrain.terrainData.size.z / spData.cellRowAndCollumnCountPerTerrain / detailMapSize;
+                if (unitSizeX <= 0f || unitSizeZ <= 0f)
+                    return;
+
                 int sizeX = Mathf.CeilToInt((bounds.extents.x * 2 + offset) / unitSizeX);
                 int sizeZ = Mathf.CeilToInt((bounds.extents.z * 2 + offset) / unitSizeZ);
+                List<GPUInstancerCell> cellList = spData.GetCellList();
+                int cellCount = cellList != null ? cellList.Count : 0;
+                int prototypeCount = prototypeList != null ? prototypeList.Count : 0;
 
-                foreach (GPUInstancerDetailCell detailCell in spData.GetCellList())
+                for (int c = 0; c < cellCount; c++)
                 {
+                    GPUInstancerDetailCell detailCell = cellList[c] as GPUInstancerDetailCell;
+                    if (detailCell == null)
+                        continue;
+
                     if (detailCell.cellInnerBounds.Intersects(bounds))
                     {
                         if (detailCell.isActive && detailCell.detailInstanceBuffers != null)
                         {
-                            foreach (int i in detailCell.detailInstanceBuffers.Keys)
+                            for (int i = 0; i < prototypeCount; i++)
                             {
-                                if (prototypeFilter != null && !prototypeFilter.Contains(prototypeList[i]))
+                                if (!IsDetailPrototypeAllowed(i, prototypeFilter))
                                     continue;
-                                GPUInstancerUtility.RemoveInstancesInsideBounds(detailCell.detailInstanceBuffers[i], bounds.center, bounds.extents, offset);
+                                if (!detailCell.detailInstanceBuffers.TryGetValue(i, out ComputeBuffer detailBuffer) || detailBuffer == null)
+                                    continue;
+
+                                GPUInstancerUtility.RemoveInstancesInsideBounds(detailBuffer, bounds.center, bounds.extents, offset);
                             }
                         }
                         int startX = Mathf.FloorToInt((bounds.center.x - bounds.extents.x - detailCell.instanceStartPosition.x - offset) / unitSizeX);
                         int startZ = Mathf.FloorToInt((bounds.center.z - bounds.extents.z - detailCell.instanceStartPosition.z - offset) / unitSizeZ);
 
-                        for (int i = 0; i < detailCell.detailMapData.Count; i++)
+                        int detailMapCount = detailCell.detailMapData != null ? detailCell.detailMapData.Count : 0;
+                        if (prototypeCount < detailMapCount)
+                            detailMapCount = prototypeCount;
+
+                        for (int i = 0; i < detailMapCount; i++)
                         {
-                            if (prototypeFilter != null && !prototypeFilter.Contains(prototypeList[i]))
+                            if (!IsDetailPrototypeAllowed(i, prototypeFilter) || detailCell.detailMapData[i] == null)
                                 continue;
                             for (int y = startZ; y < sizeZ + startZ; y++)
                             {
@@ -283,38 +306,59 @@ namespace GPUInstancer
             //#if UNITY_EDITOR
             //            UnityEngine.Profiling.Profiler.BeginSample("GPUInstancerDetailManager.RemoveInstancesInsideCollider");
             //#endif
+            if (collider == null)
+                return;
+
             base.RemoveInstancesInsideCollider(collider, offset, prototypeFilter);
             if (spData != null && !initalizingInstances)
             {
+                if (terrain == null || terrain.terrainData == null || spData.cellRowAndCollumnCountPerTerrain <= 0)
+                    return;
+
                 Bounds bounds = collider.bounds;
                 int detailMapSize = terrain.terrainData.detailResolution / spData.cellRowAndCollumnCountPerTerrain;
+                if (detailMapSize <= 0)
+                    return;
+
                 float unitSizeX = terrain.terrainData.size.x / spData.cellRowAndCollumnCountPerTerrain / detailMapSize;
                 float unitSizeZ = terrain.terrainData.size.z / spData.cellRowAndCollumnCountPerTerrain / detailMapSize;
+                if (unitSizeX <= 0f || unitSizeZ <= 0f)
+                    return;
+
                 int sizeX = Mathf.CeilToInt((bounds.extents.x * 2 + offset) / unitSizeX);
                 int sizeZ = Mathf.CeilToInt((bounds.extents.z * 2 + offset) / unitSizeZ);
+                List<GPUInstancerCell> cellList = spData.GetCellList();
+                int cellCount = cellList != null ? cellList.Count : 0;
+                int prototypeCount = prototypeList != null ? prototypeList.Count : 0;
 
                 Vector3 testCenter = Vector3.zero;
                 Vector3 closestPoint = Vector3.zero;
 
-                foreach (GPUInstancerDetailCell detailCell in spData.GetCellList())
+                for (int c = 0; c < cellCount; c++)
                 {
+                    GPUInstancerDetailCell detailCell = cellList[c] as GPUInstancerDetailCell;
+                    if (detailCell == null)
+                        continue;
+
                     if (detailCell.cellInnerBounds.Intersects(bounds))
                     {
                         if (detailCell.isActive && detailCell.detailInstanceBuffers != null)
                         {
-                            foreach (int i in detailCell.detailInstanceBuffers.Keys)
+                            for (int i = 0; i < prototypeCount; i++)
                             {
-                                if (prototypeFilter != null && !prototypeFilter.Contains(prototypeList[i]))
+                                if (!IsDetailPrototypeAllowed(i, prototypeFilter))
+                                    continue;
+                                if (!detailCell.detailInstanceBuffers.TryGetValue(i, out ComputeBuffer detailBuffer) || detailBuffer == null)
                                     continue;
 
                                 if (collider is BoxCollider)
-                                    GPUInstancerUtility.RemoveInstancesInsideBoxCollider(detailCell.detailInstanceBuffers[i], (BoxCollider)collider, offset);
+                                    GPUInstancerUtility.RemoveInstancesInsideBoxCollider(detailBuffer, (BoxCollider)collider, offset);
                                 else if (collider is SphereCollider)
-                                    GPUInstancerUtility.RemoveInstancesInsideSphereCollider(detailCell.detailInstanceBuffers[i], (SphereCollider)collider, offset);
+                                    GPUInstancerUtility.RemoveInstancesInsideSphereCollider(detailBuffer, (SphereCollider)collider, offset);
                                 else if (collider is CapsuleCollider)
-                                    GPUInstancerUtility.RemoveInstancesInsideCapsuleCollider(detailCell.detailInstanceBuffers[i], (CapsuleCollider)collider, offset);
+                                    GPUInstancerUtility.RemoveInstancesInsideCapsuleCollider(detailBuffer, (CapsuleCollider)collider, offset);
                                 else
-                                    GPUInstancerUtility.RemoveInstancesInsideBounds(detailCell.detailInstanceBuffers[i], collider.bounds.center, collider.bounds.extents, offset);
+                                    GPUInstancerUtility.RemoveInstancesInsideBounds(detailBuffer, collider.bounds.center, collider.bounds.extents, offset);
                             }
                         }
                         int startX = Mathf.FloorToInt((bounds.center.x - bounds.extents.x - detailCell.instanceStartPosition.x - offset) / unitSizeX);
@@ -335,9 +379,13 @@ namespace GPUInstancer
                                 closestPoint = collider.ClosestPoint(testCenter);
                                 if (Vector3.Distance(closestPoint, testCenter) > unitSizeX + offset)
                                     continue;
-                                for (int i = 0; i < detailCell.detailMapData.Count; i++)
+                                int detailMapCount = detailCell.detailMapData != null ? detailCell.detailMapData.Count : 0;
+                                if (prototypeCount < detailMapCount)
+                                    detailMapCount = prototypeCount;
+
+                                for (int i = 0; i < detailMapCount; i++)
                                 {
-                                    if (prototypeFilter != null && !prototypeFilter.Contains(prototypeList[i]))
+                                    if (!IsDetailPrototypeAllowed(i, prototypeFilter) || detailCell.detailMapData[i] == null)
                                         continue;
                                     detailCell.detailMapData[i][x + y * detailMapSize] = 0;
                                 }
@@ -356,37 +404,45 @@ namespace GPUInstancer
             base.SetGlobalPositionOffset(offsetPosition);
             if (spData != null)
             {
-                foreach (GPUInstancerDetailCell cell in spData.GetCellList())
+                List<GPUInstancerCell> cellList = spData.GetCellList();
+                int cellCount = cellList != null ? cellList.Count : 0;
+                int prototypeCount = prototypeList != null ? prototypeList.Count : 0;
+                Vector4 offsetColumn = new Vector4(offsetPosition.x, offsetPosition.y, offsetPosition.z, 0);
+
+                for (int c = 0; c < cellCount; c++)
                 {
+                    GPUInstancerDetailCell cell = cellList[c] as GPUInstancerDetailCell;
                     if (cell == null)
                         continue;
                     cell.instanceStartPosition += offsetPosition;
                     cell.cellBounds.center += offsetPosition;
                     if (cell.detailInstanceBuffers != null)
                     {
-                        foreach (ComputeBuffer detailBuffer in cell.detailInstanceBuffers.Values)
+                        for (int i = 0; i < prototypeCount; i++)
                         {
-                            if (detailBuffer != null)
-                            {
-                                GPUInstancerConstants.computeRuntimeModification.SetBuffer(GPUInstancerConstants.computeBufferTransformOffsetId,
-                                    GPUInstancerConstants.VisibilityKernelPoperties.INSTANCE_DATA_BUFFER, detailBuffer);
-                                GPUInstancerConstants.computeRuntimeModification.SetInt(
-                                    GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_BUFFER_SIZE, detailBuffer.count);
-                                GPUInstancerConstants.computeRuntimeModification.SetVector(
-                                    GPUInstancerConstants.RuntimeModificationKernelProperties.BUFFER_PARAMETER_POSITION_OFFSET, offsetPosition);
+                            if (!cell.detailInstanceBuffers.TryGetValue(i, out ComputeBuffer detailBuffer) || detailBuffer == null || detailBuffer.count <= 0 || GPUInstancerConstants.computeRuntimeModification == null)
+                                continue;
 
-                                GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeBufferTransformOffsetId,
-                                    GPUInstancerConstants.GetComputeThreadGroupCount(detailBuffer.count), 1, 1);
-                            }
+                            GPUInstancerConstants.computeRuntimeModification.SetBuffer(GPUInstancerConstants.computeBufferTransformOffsetId,
+                                GPUInstancerConstants.VisibilityKernelPoperties.INSTANCE_DATA_BUFFER, detailBuffer);
+                            GPUInstancerConstants.computeRuntimeModification.SetInt(
+                                GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_BUFFER_SIZE, detailBuffer.count);
+                            GPUInstancerConstants.computeRuntimeModification.SetVector(
+                                GPUInstancerConstants.RuntimeModificationKernelProperties.BUFFER_PARAMETER_POSITION_OFFSET, offsetPosition);
+
+                            GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeBufferTransformOffsetId,
+                                GPUInstancerConstants.GetComputeThreadGroupCount(detailBuffer.count), 1, 1);
                         }
                     }
                     if (GPUInstancerConstants.DETAIL_STORE_INSTANCE_DATA && cell.detailInstanceList != null)
                     {
-                        foreach (Matrix4x4[] instanceDataArray in cell.detailInstanceList.Values)
+                        for (int p = 0; p < prototypeCount; p++)
                         {
+                            if (!cell.detailInstanceList.TryGetValue(p, out Matrix4x4[] instanceDataArray) || instanceDataArray == null)
+                                continue;
                             for (int i = 0; i < instanceDataArray.Length; i++)
                             {
-                                instanceDataArray[i].SetColumn(3, instanceDataArray[i].GetColumn(3) + new Vector4(offsetPosition.x, offsetPosition.y, offsetPosition.z, 0));
+                                instanceDataArray[i].SetColumn(3, instanceDataArray[i].GetColumn(3) + offsetColumn);
                             }
                         }
                     }
@@ -403,23 +459,67 @@ namespace GPUInstancer
             return value;
         }
 
+        private static float Frac(float value)
+        {
+            return value - Mathf.Floor(value);
+        }
+
+        private static float RandomFloat(float value)
+        {
+            float x = Frac(Mathf.Abs(value) * 0.1031f);
+            float y = x;
+            float z = x;
+            float d = x * (y + 19.19f) + y * (z + 19.19f) + z * (x + 19.19f);
+            x += d;
+            y += d;
+            z += d;
+            return Frac((x + y) * z);
+        }
+
+        private static Vector2 RandomFloat2(float xValue, float yValue)
+        {
+            float x = Frac(Mathf.Abs(xValue) * 0.1031f);
+            float y = Frac(Mathf.Abs(yValue) * 0.1030f);
+            float z = Frac(Mathf.Abs(xValue) * 0.0973f);
+            float d = x * (y + 19.19f) + y * (z + 19.19f) + z * (x + 19.19f);
+            x += d;
+            y += d;
+            z += d;
+            return new Vector2(Frac((x + y) * z), Frac((x + z) * y));
+        }
+
+        private bool IsDetailPrototypeAllowed(int prototypeIndex, List<GPUInstancerPrototype> prototypeFilter)
+        {
+            if (prototypeList == null || prototypeIndex < 0 || prototypeIndex >= prototypeList.Count)
+                return false;
+
+            return prototypeFilter == null || prototypeFilter.Contains(prototypeList[prototypeIndex]);
+        }
+
         public static Matrix4x4[] GetInstanceDataForDetailPrototype(GPUInstancerDetailPrototype detailPrototype, int[] detailMap, float[] heightMapData,
                                                                 int detailMapSize, int heightMapSize,
                                                                 int detailResolution, int heightResolution,
                                                                 Vector3 startPosition, Vector3 terrainSize,
                                                                 int instanceCount)
         {
-            Matrix4x4[] result = new Matrix4x4[instanceCount];
+            if (instanceCount <= 0)
+                return Array.Empty<Matrix4x4>();
 
-            if (instanceCount == 0)
+            Matrix4x4[] result = new Matrix4x4[instanceCount];
+            if (detailPrototype == null || detailMap == null || heightMapData == null || detailMapSize <= 0 || heightMapSize <= 0 || detailResolution <= 0 || heightResolution <= 0 || terrainSize.x == 0 || terrainSize.y == 0)
                 return result;
 
-            System.Random randomNumberGenerator = new System.Random();
             float detailHeightMapScale = (heightResolution - 1.0f) / detailResolution;
-            int heightDataSize = heightMapSize * heightMapSize;
+            int heightDataSize = heightMapData.Length;
+            int detailMapCapacity = detailMap.Length;
+            if (heightDataSize == 0 || detailMapCapacity == 0)
+                return result;
+
             float sizeDetailXScale = terrainSize.x / detailResolution;
             float sizeDetailZScale = terrainSize.z / detailResolution;
             float normalScale = heightResolution / (terrainSize.x / terrainSize.y);
+            float detailUniqueValue = detailPrototype.GetInstanceID();
+            float detailDensity = detailPrototype.detailDensity;
 
             float px, py, leftBottomH, leftTopH, rightBottomH, rightTopH;
             int heightIndex;
@@ -437,11 +537,35 @@ namespace GPUInstancer
             {
                 for (int x = 0; x < detailMapSize; x++)
                 {
-                    for (int j = 0; j < detailMap[y * detailMapSize + x]; j++) // for the amount of detail at this point and for this prototype
+                    int detailIndex = y * detailMapSize + x;
+                    if (detailIndex >= detailMapCapacity)
+                        return result;
+
+                    int detailCount = detailMap[detailIndex];
+                    for (int j = 0; j < detailCount; j++) // for the amount of detail at this point and for this prototype
                     {
-                        position.x = x + randomNumberGenerator.Range(0f, 0.99f);
+                        if (counter >= result.Length)
+                            return result;
+
+                        float multiplier = (j + 1) * Mathf.Abs(detailUniqueValue);
+                        float cornerPositionX = (x * sizeDetailXScale) + startPosition.x;
+                        float cornerPositionZ = (y * sizeDetailZScale) + startPosition.z;
+                        if (detailDensity < 1.0f)
+                        {
+                            float densityCheck = RandomFloat(((cornerPositionZ + 0.5f) * multiplier) + cornerPositionX);
+                            if (densityCheck > detailDensity)
+                            {
+                                counter++;
+                                continue;
+                            }
+                        }
+
+                        Vector2 randomPoint = RandomFloat2((cornerPositionX + 0.5f) * multiplier, cornerPositionZ + 0.5f);
+                        float randomRotation = RandomFloat(((cornerPositionX + 0.5f) * multiplier) + cornerPositionZ);
+
+                        position.x = x + randomPoint.x;
                         position.y = 0;
-                        position.z = y + randomNumberGenerator.Range(0f, 0.99f);
+                        position.z = y + randomPoint.y;
 
                         // set height
                         px = position.x * detailHeightMapScale;
@@ -464,11 +588,12 @@ namespace GPUInstancer
                         Q.y = leftTopH * normalScale;
                         R.y = rightBottomH * normalScale;
                         terrainPointNormal = Vector3.Cross(Q - R, R - P).normalized;
+                        terrainPointNormal = Vector3.Lerp(Vector3.up, terrainPointNormal, detailPrototype.terrainNormalEffect).normalized;
 
                         rotation.SetFromToRotation(Vector3.up, terrainPointNormal);
-                        rotation *= Quaternion.AngleAxis(randomNumberGenerator.Range(0.0f, 360.0f), Vector3.up);
+                        rotation *= Quaternion.AngleAxis(randomRotation * 360.0f, Vector3.up);
 
-                        float randomScale = randomNumberGenerator.Range(0.0f, 1.0f);
+                        float randomScale = RandomFloat((position.x * multiplier) + position.z);
 
                         float xzScale = detailPrototype.detailScale.x + (detailPrototype.detailScale.y - detailPrototype.detailScale.x) * randomScale;
                         float yScale = detailPrototype.detailScale.z + (detailPrototype.detailScale.w - detailPrototype.detailScale.z) * randomScale;
@@ -486,6 +611,7 @@ namespace GPUInstancer
             return result;
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static Matrix4x4[] GetInstanceDataForDetailPrototypeWithComputeShader(GPUInstancerDetailPrototype detailPrototype, int[] detailMap, float[] heightMapData,
                                                                 int detailMapSize, int heightMapSize,
                                                                 int detailResolution, int heightResolution,
@@ -494,9 +620,11 @@ namespace GPUInstancer
                                                                 ComputeShader grassInstantiationComputeShader, GPUInstancerTerrainSettings terrainSettings,
                                                                 ComputeBuffer counterBuffer, int[] counterData)
         {
-            Matrix4x4[] result = new Matrix4x4[instanceCount];
+            if (instanceCount <= 0)
+                return Array.Empty<Matrix4x4>();
 
-            if (instanceCount == 0)
+            Matrix4x4[] result = new Matrix4x4[instanceCount];
+            if (detailPrototype == null || grassInstantiationComputeShader == null || counterBuffer == null || counterData == null || detailMap == null || heightMapData == null || detailMap.Length <= 0 || heightMapData.Length <= 0)
                 return result;
 
             ComputeBuffer visibilityBuffer;
@@ -511,14 +639,15 @@ namespace GPUInstancer
 
             counterBuffer.SetData(counterData);
 
-            ComputeBuffer detailMapBuffer = new ComputeBuffer(Mathf.CeilToInt(detailMapSize * detailMapSize), GPUInstancerConstants.STRIDE_SIZE_INT);
+            ComputeBuffer detailMapBuffer = new ComputeBuffer(detailMap.Length, GPUInstancerConstants.STRIDE_SIZE_INT);
             detailMapBuffer.SetData(detailMap);
 
             // dispatch compute shader
+            Texture healthyDryNoiseTexture = terrainSettings != null ? terrainSettings.GetHealthyDryNoiseTexture(detailPrototype) : null;
             DispatchDetailComputeShader(grassInstantiationComputeShader, grassInstantiationComputeKernelId,
                 visibilityBuffer, detailMapBuffer, heightMapBuffer,
                 new Vector4(detailMapSize, detailMapSize, heightMapSize, heightMapSize), startPosition, terrainSize, detailResolution, heightResolution, detailPrototype.detailScale,
-                terrainSettings.GetHealthyDryNoiseTexture(detailPrototype), detailPrototype.noiseSpread, detailPrototype.GetInstanceID(), detailPrototype.detailDensity, counterBuffer, detailPrototype.terrainNormalEffect);
+                healthyDryNoiseTexture, detailPrototype.noiseSpread, detailPrototype.GetInstanceID(), detailPrototype.detailDensity, counterBuffer, detailPrototype.terrainNormalEffect);
 
             detailMapBuffer.Release();
 
@@ -529,6 +658,7 @@ namespace GPUInstancer
 
             return result;
         }
+#endif
 
         private static ComputeBuffer GetComputeBufferForDetailPrototypeWithComputeShader(GPUInstancerDetailPrototype detailPrototype,
                                                                 int detailMapSize, int heightMapSize,
@@ -538,7 +668,9 @@ namespace GPUInstancer
                                                                 ComputeShader grassInstantiationComputeShader, GPUInstancerTerrainSettings terrainSettings,
                                                                 ComputeBuffer heightMapBuffer, ComputeBuffer detailMapBuffer, ComputeBuffer counterBuffer, int[] counterData)
         {
-            if (instanceCount == 0)
+            if (detailPrototype == null || instanceCount <= 0 || grassInstantiationComputeShader == null || heightMapBuffer == null || detailMapBuffer == null || counterBuffer == null || counterData == null)
+                return null;
+            if (heightMapBuffer.count <= 0 || detailMapBuffer.count <= 0)
                 return null;
 
             ComputeBuffer visibilityBuffer;
@@ -551,16 +683,22 @@ namespace GPUInstancer
             counterBuffer.SetData(counterData);
 
             // dispatch compute shader
+            Texture healthyDryNoiseTexture = terrainSettings != null ? terrainSettings.GetHealthyDryNoiseTexture(detailPrototype) : null;
             DispatchDetailComputeShader(grassInstantiationComputeShader, grassInstantiationComputeKernelId,
                 visibilityBuffer, detailMapBuffer, heightMapBuffer,
                 new Vector4(detailMapSize, detailMapSize, heightMapSize, heightMapSize), startPosition, terrainSize, detailResolution, heightResolution, detailPrototype.detailScale,
-                terrainSettings.GetHealthyDryNoiseTexture(detailPrototype), detailPrototype.noiseSpread, detailPrototype.GetInstanceID(), detailPrototype.detailDensity, counterBuffer, detailPrototype.terrainNormalEffect);
+                healthyDryNoiseTexture, detailPrototype.noiseSpread, detailPrototype.GetInstanceID(), detailPrototype.detailDensity, counterBuffer, detailPrototype.terrainNormalEffect);
 
             return visibilityBuffer;
         }
 
         private static void DispatchDetailComputeShader(ComputeShader grassComputeShader, int grassInstantiationComputeKernelId, ComputeBuffer visibilityBuffer, ComputeBuffer detailMapBuffer, ComputeBuffer heightMapBuffer, Vector4 detailAndHeightMapSize, Vector3 startPosition, Vector3 terrainSize, int detailResolution, int heightResolution, Vector4 detailScale, Texture healthyDryNoiseTexture, float noiseSpread, int instanceID, float detailDensity, ComputeBuffer counterBuffer, float terrainNormalEffect)
         {
+            if (grassComputeShader == null || visibilityBuffer == null || detailMapBuffer == null || heightMapBuffer == null || counterBuffer == null)
+                return;
+            if (visibilityBuffer.count <= 0 || detailMapBuffer.count <= 0 || heightMapBuffer.count <= 0)
+                return;
+
             // setup compute shader
             grassComputeShader.SetBuffer(grassInstantiationComputeKernelId, GPUInstancerConstants.VisibilityKernelPoperties.INSTANCE_DATA_BUFFER, visibilityBuffer);
             grassComputeShader.SetBuffer(grassInstantiationComputeKernelId, GPUInstancerConstants.GrassKernelProperties.DETAIL_MAP_DATA_BUFFER, detailMapBuffer);
@@ -572,6 +710,7 @@ namespace GPUInstancer
             grassComputeShader.SetVector(GPUInstancerConstants.GrassKernelProperties.TERRAIN_SIZE_DATA, terrainSize);
             grassComputeShader.SetVector(GPUInstancerConstants.GrassKernelProperties.DETAIL_SCALE_DATA, detailScale);
             grassComputeShader.SetVector(GPUInstancerConstants.GrassKernelProperties.DETAIL_AND_HEIGHT_MAP_SIZE_DATA, detailAndHeightMapSize);
+            grassComputeShader.SetInt(GPUInstancerConstants.GrassKernelProperties.HAS_HEALTHY_DRY_NOISE_TEXTURE, healthyDryNoiseTexture != null ? 1 : 0);
             if (healthyDryNoiseTexture != null)
             {
                 grassComputeShader.SetTexture(grassInstantiationComputeKernelId, GPUInstancerConstants.GrassKernelProperties.HEALTHY_DRY_NOISE_TEXTURE, healthyDryNoiseTexture);
@@ -581,6 +720,8 @@ namespace GPUInstancer
             grassComputeShader.SetFloat(GPUInstancerConstants.GrassKernelProperties.DETAIL_DENSITY, detailDensity);
             grassComputeShader.SetFloat(GPUInstancerConstants.GrassKernelProperties.TERRAIN_NORMAL_EFFECT, terrainNormalEffect);
             grassComputeShader.SetInt(GPUInstancerConstants.GrassKernelProperties.INSTANCE_CAPACITY, visibilityBuffer.count);
+            grassComputeShader.SetInt(GPUInstancerConstants.GrassKernelProperties.DETAIL_MAP_CAPACITY, detailMapBuffer.count);
+            grassComputeShader.SetInt(GPUInstancerConstants.GrassKernelProperties.HEIGHT_MAP_CAPACITY, heightMapBuffer.count);
 
             int detailPixelsX = Mathf.CeilToInt(detailAndHeightMapSize.x);
             int detailPixelsY = Mathf.CeilToInt(detailAndHeightMapSize.y);
@@ -760,24 +901,39 @@ namespace GPUInstancer
 
                             for (int r = 0; r < runtimeDatas.Count; r++)
                             {
+                                if (r >= cell.totalDetailCounts.Count)
+                                    continue;
                                 if (cell.totalDetailCounts[r] > 0)
                                 {
+                                    if (cell.heightMapData == null || cell.heightMapData.Length <= 0 || cell.detailMapData == null || r >= cell.detailMapData.Count || cell.detailMapData[r] == null || cell.detailMapData[r].Length <= 0)
+                                        continue;
+
                                     if (!cell.detailInstanceBuffers.ContainsKey(r) || cell.detailInstanceBuffers[r] == null)
                                     {
 #if UNITY_EDITOR
                                         UnityEngine.Profiling.Profiler.BeginSample("GPUInstancerDetailManager.MergeVisibilityBufferFromActiveCellsCoroutine");
 #endif
 
-                                        if (heightMapCell != cell)
+                                        if (heightMapCell != cell || heightMapBuffer == null || heightMapBuffer.count != cell.heightMapData.Length)
                                         {
+                                            if (heightMapBuffer != null && heightMapBuffer.count != cell.heightMapData.Length)
+                                            {
+                                                heightMapBuffer.Release();
+                                                heightMapBuffer = null;
+                                            }
                                             if (heightMapBuffer == null)
                                                 heightMapBuffer = new ComputeBuffer(cell.heightMapData.Length, GPUInstancerConstants.STRIDE_SIZE_INT);
                                             heightMapBuffer.SetData(cell.heightMapData);
                                             heightMapCell = cell;
                                         }
 
+                                        if (detailMapBuffer != null && detailMapBuffer.count != cell.detailMapData[r].Length)
+                                        {
+                                            detailMapBuffer.Release();
+                                            detailMapBuffer = null;
+                                        }
                                         if (detailMapBuffer == null)
-                                            detailMapBuffer = new ComputeBuffer(detailMapSize * detailMapSize, GPUInstancerConstants.STRIDE_SIZE_INT);
+                                            detailMapBuffer = new ComputeBuffer(cell.detailMapData[r].Length, GPUInstancerConstants.STRIDE_SIZE_INT);
                                         detailMapBuffer.SetData(cell.detailMapData[r]);
 
                                         cell.detailInstanceBuffers[r] =
@@ -812,11 +968,13 @@ namespace GPUInstancer
                     {
                         int totalInstanceCount = 0;
 
-                        foreach (GPUInstancerDetailCell cell in spData.activeCellList)
+                        for (int c = 0; c < spData.activeCellList.Count; c++)
                         {
+                            GPUInstancerDetailCell cell = (GPUInstancerDetailCell)spData.activeCellList[c];
                             if (cell != null && cell.totalDetailCounts != null)
                             {
-                                totalInstanceCount += cell.totalDetailCounts[r];
+                                if (r < cell.totalDetailCounts.Count)
+                                    totalInstanceCount += cell.totalDetailCounts[r];
                             }
                         }
 
@@ -838,12 +996,22 @@ namespace GPUInstancer
                         {
                             GPUInstancerDetailCell detailCell = (GPUInstancerDetailCell)spData.activeCellList[c];
 
-                            if (!detailCell.detailInstanceBuffers.ContainsKey(r) || detailCell.detailInstanceBuffers[r] == null)
+                            if (detailCell == null || detailCell.detailInstanceBuffers == null || !detailCell.detailInstanceBuffers.TryGetValue(r, out ComputeBuffer detailInstanceBuffer) || detailInstanceBuffer == null)
                                 continue;
 
-                            _generatingVisibilityBuffer.CopyComputeBuffer(startIndex, detailCell.detailInstanceBuffers[r].count, detailCell.detailInstanceBuffers[r]);
+                            if (startIndex < 0 || startIndex >= _generatingVisibilityBuffer.count)
+                                break;
 
-                            startIndex += detailCell.detailInstanceBuffers[r].count;
+                            int copyCount = detailInstanceBuffer.count;
+                            int remainingCount = _generatingVisibilityBuffer.count - startIndex;
+                            if (copyCount > remainingCount)
+                                copyCount = remainingCount;
+                            if (copyCount <= 0)
+                                continue;
+
+                            _generatingVisibilityBuffer.CopyComputeBuffer(startIndex, copyCount, detailInstanceBuffer);
+
+                            startIndex += copyCount;
 
                             //yield return null;
                         }
@@ -906,8 +1074,8 @@ namespace GPUInstancer
             initalizingInstances = false;
             if (spData == null)
                 return;
-            foreach (GPUInstancerCell cell in spData.activeCellList)
-                cell.isActive = false;
+            for (int i = 0; i < spData.activeCellList.Count; i++)
+                spData.activeCellList[i].isActive = false;
             spData.activeCellList.Clear();
             _triggerEvent = true;
         }
@@ -917,8 +1085,12 @@ namespace GPUInstancer
             GPUInstancerTerrainSettings terrainSettings, Action callback)
         {
             int totalCreated = 0;
-            foreach (GPUInstancerDetailCell cell in spData.GetCellList())
+            List<GPUInstancerCell> cellList = spData.GetCellList();
+            for (int cellIndex = 0; cellIndex < cellList.Count; cellIndex++)
             {
+                GPUInstancerDetailCell cell = cellList[cellIndex] as GPUInstancerDetailCell;
+                if (cell == null)
+                    continue;
                 if (cell.detailMapData == null)
                     continue;
 
@@ -926,8 +1098,14 @@ namespace GPUInstancer
                 for (int i = 0; i < prototypeList.Count; i++)
                 {
                     totalCreated += cell.totalDetailCounts[i];
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    bool useCpuDetailInstanceBake = false;
 #if !UNITY_EDITOR && UNITY_ANDROID
                     if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Vulkan)
+                        useCpuDetailInstanceBake = true;
+#endif
+
+                    if (useCpuDetailInstanceBake)
                     {
                         cell.detailInstanceList[i] = GetInstanceDataForDetailPrototype((GPUInstancerDetailPrototype)prototypeList[i], cell.detailMapData[i], cell.heightMapData,
                             detailMapSize, heightMapSize,
@@ -937,14 +1115,18 @@ namespace GPUInstancer
                     }
                     else
                     {
-#endif
-                    cell.detailInstanceList[i] = GetInstanceDataForDetailPrototypeWithComputeShader((GPUInstancerDetailPrototype)prototypeList[i], cell.detailMapData[i], cell.heightMapData,
+                        cell.detailInstanceList[i] = GetInstanceDataForDetailPrototypeWithComputeShader((GPUInstancerDetailPrototype)prototypeList[i], cell.detailMapData[i], cell.heightMapData,
+                            detailMapSize, heightMapSize,
+                            detailResolution, heightmapResolution,
+                            cell.instanceStartPosition,
+                            terrainSize, cell.totalDetailCounts[i], _grassInstantiationComputeShader, terrainSettings, counterBuffer, counterData);
+                    }
+#else
+                    cell.detailInstanceList[i] = GetInstanceDataForDetailPrototype((GPUInstancerDetailPrototype)prototypeList[i], cell.detailMapData[i], cell.heightMapData,
                         detailMapSize, heightMapSize,
                         detailResolution, heightmapResolution,
                         cell.instanceStartPosition,
-                        terrainSize, cell.totalDetailCounts[i], _grassInstantiationComputeShader, terrainSettings, counterBuffer, counterData);
-#if !UNITY_EDITOR && UNITY_ANDROID
-                    }
+                        terrainSize, cell.totalDetailCounts[i]);
 #endif
                     if (totalCreated >= GPUInstancerConstants.BUFFER_COROUTINE_STEP_NUMBER)
                     {

@@ -73,8 +73,8 @@ Status: PENDING VERIFICATION
   - Microseconds: latest full phase scan elapsed 247460347 us.
 - [ ] Task 15: BATCHED_COMPILATION_AND_EXECUTION_CHECK [BLOCKED_BY_CONTENTION]
   - DOD practice: CPU/process gate written to `Docs/Reports/DISPATCHER_BUILD_GATE_1410.json`.
-  - Rejected alternative: run `dotnet build` during CPU 100% with active compiler process.
-  - Microseconds: build not invoked; latest CPU sample showed 100% and active `dotnet` PID 55080, so CPU and process gates block build.
+  - Rejected alternative: run `dotnet build` during CPU/compiler contention.
+  - Microseconds: build not invoked; latest gate sampled CPU 57% with active `dotnet` PID 30904 and `csc` PID 45636, so CPU and compiler-process gates block build.
 - [x] Task 16: MOCK_DISPATCHER_ORDERING_TEST
   - DOD practice: added `DispatcherPhaseAlignment1410EditTests.MockDispatcherOrder_TickWritesBeforeLateFrameReads_UnmanagedBuffer` using `NativeArray<int>`.
   - Rejected alternative: managed array/list for proof; unmanaged test buffer matches doctrine.
@@ -94,7 +94,7 @@ Status: PENDING VERIFICATION
 - [x] Task 20: AUTOMATED_METRIC_VALIDATOR_REPORT
   - DOD practice: final report written to `Docs/Reports/DISPATCHER_ALIGNMENT_REPORT_1410.json`; report hash written to `.sha256`.
   - Rejected alternative: chat-only completion claim.
-  - Microseconds: report generation completed; final report SHA-256 is `9cd651c091337b2f57c7f5338f6bed824760020e1a592018b0c4630580a62b39`.
+  - Microseconds: report generation completed; latest final report SHA-256 is `abda3f0deb1f940391c84bc1a2f057863e99a13a927c966ee944558bf11af449`.
 
 ## Current Loop
 
@@ -129,4 +129,35 @@ Final state: STATIC PROOF COMPLETE, BUILD BLOCKED BY CPU CONTENTION. No `dotnet 
 - [x] APEX key-only transfer correction.
   - Replaced pending fade managed array transfer with `Unity.Collections.FixedList512Bytes<long>` at `Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs:88`.
   - Text scan result: `_pendingChunkFadeVolumes` occurrences = 0; `long[] _pendingChunkFadeKeys` occurrences = 0; `FixedList512Bytes<long> _pendingChunkFadeKeys` occurrences = 1.
-  - Final report SHA-256: `9cd651c091337b2f57c7f5338f6bed824760020e1a592018b0c4630580a62b39`.
+  - Final report SHA-256 after previous pass: `9cd651c091337b2f57c7f5338f6bed824760020e1a592018b0c4630580a62b39`.
+- [x] APEX recheck2 bounded presentation audit.
+  - Report: `Docs/Reports/DISPATCHER_APEX_RECHECK2_1410.json`.
+  - Scope: runtime scripts under `Assets/_Project/Scripts`; `Editor` folders and `*.Editor.cs` excluded.
+  - Direct hot/magic presentation token lines: 0.
+  - Runtime Unity magic methods: 0.
+  - Editor suffix magic exclusions: 1 (`AnalyticalWaveTunerWindow.Editor.cs`, wrapped in `#if UNITY_EDITOR`).
+  - Microseconds: 1200105 us.
+- [x] Residual GlobalRegistry math-precision shader route verified.
+  - Route found: `SystemDispatcher.RunDispatcherUpdate:5053 -> FrameTimeWatchdog.TickMathPrecisionTransition:68 -> GlobalRegistry.TickMathPrecisionTransition:2978`.
+  - Correct current source state: `GlobalRegistry.TickMathPrecisionTransition` queues primitive `int` shader state at `GlobalRegistry.cs:2999`; `SystemDispatcher.RunDispatcherLateFrame` flushes it at `SystemDispatcher.cs:5425`; `Shader.SetGlobalFloat(_mathLodLowBlendId)` is only in `GlobalRegistry.FlushMathPrecisionShaderState` at `GlobalRegistry.cs:2431`.
+  - Regression test proof: `DispatcherPhaseAlignment1410EditTests.GlobalRegistry_MathPrecisionTransition_QueuesShaderStateUntilVisualSync`.
+  - Latest build gate: CPU 100%, active `dotnet` PID 37472, build not invoked.
+  - Final report SHA-256: `4c82346978a6d07566d316096667dd569d404123d848db8ed00b303d6b3ea8b0`.
+- [x] APEX recheck3 found and fixed additional phase defects.
+  - Report: `Docs/Reports/DISPATCHER_APEX_RECHECK3_1410.json`.
+  - `DistanceMath.PushShaderMathLod` no longer uploads shader globals from `FrameTimeWatchdog.Tick` or `LODSystemManager.ApplyQualityPreset`; it stages `MathLodMode`, `float`, and `bool` fields. `SystemDispatcher.RunDispatcherLateFrame` calls `DistanceMath.FlushVisualSyncShaderState()` at `SystemDispatcher.cs:5426`.
+  - `ConnectionSplineBatchRenderer.SetLogisticsPathHighlightActive` no longer uploads from `LogicSpannerTool.OnEquip/OnUnequip`; it stages a `bool` and dirty flag, then `LateFrameTick` drains `FlushLogisticsPathHighlightState`.
+  - Shader placement proof: `DistanceMath` shader writes outside flush = 0; `DistanceMath` shader writes inside flush = 7; connection highlight stage writes = 0; connection highlight flush writes = 1.
+  - Zero-GC recheck3 scan: 12 rows, every row total forbidden tokens = 0.
+  - Latest build gate: CPU 57%, active `dotnet` PID 30904 and `csc` PID 45636, build not invoked.
+  - Recheck3 report SHA-256: `2a80f6f84137396120740ec85c4a7e1294427b7696bdb738242848f6e4ad3f62`.
+  - Final report SHA-256: `b9e27b5c1dfd5448c0e2d9bf676c9e6882da4884617eeea950d8e6fbcf987dec`.
+- [x] APEX recheck4 found and fixed visor sonar public-route defects.
+  - Report: `Docs/Reports/DISPATCHER_APEX_RECHECK4_1410.json`.
+  - `SpectrumSystem.TriggerActiveSonarPing -> EmitSonarPulse` no longer performs direct shader or audio submission. Shader payloads are staged into primitive/`Vector4` fields and flushed by `SpectrumSystem.FlushQueuedSpectrumShaderGlobals()` from `LateFrameTick`.
+  - `TryPlayAbyssalAnchorReturn` no longer calls `IAudioService.PlayStatic2D` from the ping route. It stages `bool + float`; `FlushQueuedSpectrumAudio()` performs the audio call from `LateFrameTick`.
+  - Zero-GC recheck4 scan: 19 rows, every row has reference `new` 0, `string.Format` 0, `.ToString()` 0, LINQ 0, `foreach` 0.
+  - DataVault proof: no new GlobalDataVault buffers were introduced. Existing Spectrum buffers are `AupDiscoveryGridBufferId=(BufferID)71030` and `ActiveSonarGeoTelemetryRingBufferId=(BufferID)71031`; `TryAcquireWriteLock` lines 2891, 2940, 3656 release in `finally` at lines 2912, 2980, 3686.
+  - Latest build gate: CPU 90%, active `csc` PID 63300 and `dotnet` PID 53008, build not invoked.
+  - Recheck4 report SHA-256: `abda3f0deb1f940391c84bc1a2f057863e99a13a927c966ee944558bf11af449`.
+  - Final report SHA-256: `abda3f0deb1f940391c84bc1a2f057863e99a13a927c966ee944558bf11af449`.

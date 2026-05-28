@@ -319,6 +319,8 @@ namespace Hecton8.Gameplay
         private static JobHandle _statusJobHandle;
         private static bool _damageJobScheduled;
         private static bool _statusJobScheduled;
+        private static bool _damageDispatchPending;
+        private static bool _statusDispatchPending;
         private static bool _telemetryDumpedThisSession;
         private static uint _lastQueueRejectFrame;
         private static uint _lastQueueRejectAnomalyHash;
@@ -446,20 +448,69 @@ namespace Hecton8.Gameplay
             EnsureInitialized();
             if (!CanMutateTargets())
                 return false;
-            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
-                return false;
 
             float safeMaxHealth = math.max(0.0001f, maximumHealth);
             float safeHealth = math.clamp(currentHealth, 0f, safeMaxHealth);
             float3 targetForward = ResolveReceiverForward(receiver);
             float targetHeight = ResolveReceiverHeight(receiver);
-            int slot;
-            if (TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out slot))
+
+            if (!TryResolveArmorPenetrationVaultViews(out _, ensure: true) ||
+                !TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews armorViews, out int armorLockCount))
+                return false;
+
+            bool statusLocked = false;
+            bool targetLocked = false;
+            int targetLockCount = 0;
+            IDataVault statusVault = null;
+            NativeArray<CombatStatusEffectState> statusStates = default;
+            try
             {
-                if (!CanUseExistingTargetSlot(slot, ref views))
+                if (!TryAcquireStatusEffectStatesWriteLock(out statusVault, out statusStates, out statusLocked))
                     return false;
 
+                if (!TryAcquireCombatTargetWriteLocks(out CombatDamageVaultViews views, out targetLockCount))
+                    return false;
+
+                targetLocked = true;
+                int slot;
+                if (TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out slot))
+                {
+                    if (!CanUseExistingTargetSlot(slot, ref views))
+                        return false;
+
+                    if (!SeedTargetArmorProfileLocked(ref armorViews, slot, targetId, kind, armorClass, safeMaxHealth, armorValue, targetHeight))
+                        return false;
+
+                    CaptureReceiverManagedRefs(slot, receiver);
+                    views.Health[slot] = safeHealth;
+                    views.MaxHealth[slot] = safeMaxHealth;
+                    views.InvMaxHealth[slot] = math.rcp(safeMaxHealth);
+                    views.ArmorValues[slot] = QuantizeArmorValue(armorValue);
+                    views.ShieldValues[slot] = math.max(0f, shieldValue);
+                    views.TargetForwardVectors[slot] = targetForward;
+                    views.TargetHeights[slot] = targetHeight;
+                    views.TargetFlags[slot] = PackTargetFlags(kind, armorClass);
+                    RegisterBallisticRootPrimitive(targetId, receiver, targetHeight, armorClass);
+                    return true;
+                }
+
+                if (_targetCount < 0 || _targetCount >= MaxTargets)
+                    return false;
+
+                slot = _targetCount;
+                if (!CanUseRegistrationTargetSlot(slot, ref views))
+                    return false;
+
+                if (!ResetStatusEffectSlotLocked(slot, statusLocked, statusStates) ||
+                    !SeedTargetArmorProfileLocked(ref armorViews, slot, targetId, kind, armorClass, safeMaxHealth, armorValue, targetHeight))
+                    return false;
+
+                if (!TryAddTargetSlotToLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, slot))
+                    return false;
+
+                _targetCount++;
                 CaptureReceiverManagedRefs(slot, receiver);
+                views.InstanceIds[slot] = targetId;
                 views.Health[slot] = safeHealth;
                 views.MaxHealth[slot] = safeMaxHealth;
                 views.InvMaxHealth[slot] = math.rcp(safeMaxHealth);
@@ -468,42 +519,22 @@ namespace Hecton8.Gameplay
                 views.TargetForwardVectors[slot] = targetForward;
                 views.TargetHeights[slot] = targetHeight;
                 views.TargetFlags[slot] = PackTargetFlags(kind, armorClass);
-                SeedTargetArmorProfile(slot, targetId, kind, armorClass, safeMaxHealth, armorValue, targetHeight);
+                views.StatusMasks[slot] = 0u;
+                views.StatusDurations0123[slot] = float4.zero;
+                views.LegacyStatusDurations4567[slot] = float4.zero;
+                views.BrittleDurations[slot] = 0f;
+                views.StatusResults[slot] = default;
+                views.StatusResultActive[slot] = 0;
                 RegisterBallisticRootPrimitive(targetId, receiver, targetHeight, armorClass);
                 return true;
             }
-
-            if (_targetCount < 0 || _targetCount >= MaxTargets)
-                return false;
-
-            slot = _targetCount;
-            if (!CanUseRegistrationTargetSlot(slot, ref views))
-                return false;
-
-            if (!TryAddTargetSlotToLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, slot))
-                return false;
-
-            _targetCount++;
-            CaptureReceiverManagedRefs(slot, receiver);
-            views.InstanceIds[slot] = targetId;
-            views.Health[slot] = safeHealth;
-            views.MaxHealth[slot] = safeMaxHealth;
-            views.InvMaxHealth[slot] = math.rcp(safeMaxHealth);
-            views.ArmorValues[slot] = QuantizeArmorValue(armorValue);
-            views.ShieldValues[slot] = math.max(0f, shieldValue);
-            views.TargetForwardVectors[slot] = targetForward;
-            views.TargetHeights[slot] = targetHeight;
-            views.TargetFlags[slot] = PackTargetFlags(kind, armorClass);
-            SeedTargetArmorProfile(slot, targetId, kind, armorClass, safeMaxHealth, armorValue, targetHeight);
-            views.StatusMasks[slot] = 0u;
-            views.StatusDurations0123[slot] = float4.zero;
-            views.LegacyStatusDurations4567[slot] = float4.zero;
-            views.BrittleDurations[slot] = 0f;
-            views.StatusResults[slot] = default;
-            views.StatusResultActive[slot] = 0;
-            ResetStatusEffectSlot(slot);
-            RegisterBallisticRootPrimitive(targetId, receiver, targetHeight, armorClass);
-            return true;
+            finally
+            {
+                if (targetLocked)
+                    ReleaseCombatTargetWriteLocks(targetLockCount);
+                ReleaseStatusEffectStatesWriteLock(statusVault, statusLocked);
+                ReleaseArmorTargetWriteLocks(armorLockCount);
+            }
         }
 
         public static bool UnregisterTarget(int targetId, IDamageReceiver receiver)
@@ -514,56 +545,88 @@ namespace Hecton8.Gameplay
             if (!CanMutateTargets())
                 return false;
 
-            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+            if (!TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews armorViews, out int armorLockCount))
                 return false;
 
-            int slot;
-            if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out slot))
-                return false;
-
-            if (!CanUseExistingTargetSlot(slot, ref views))
-                return false;
-
-            if (receiver != null && !ReferenceEquals(_receivers[slot], receiver))
-                return false;
-
-            BallisticsRuntime.TombstonePrimitivesForTarget(unchecked((uint)targetId));
-            int lastSlot = _targetCount - 1;
-            if (!CanUseExistingTargetSlot(lastSlot, ref views))
-                return false;
-
-            if (slot != lastSlot && views.InstanceIds[lastSlot] == 0)
-                return false;
-
-            if (slot != lastSlot)
+            bool statusLocked = false;
+            bool targetLocked = false;
+            int targetLockCount = 0;
+            IDataVault statusVault = null;
+            NativeArray<CombatStatusEffectState> statusStates = default;
+            try
             {
-                int movedId = views.InstanceIds[lastSlot];
-                views.InstanceIds[slot] = movedId;
-                views.Health[slot] = views.Health[lastSlot];
-                views.MaxHealth[slot] = views.MaxHealth[lastSlot];
-                views.InvMaxHealth[slot] = views.InvMaxHealth[lastSlot];
-                views.ArmorValues[slot] = views.ArmorValues[lastSlot];
-                views.ShieldValues[slot] = views.ShieldValues[lastSlot];
-                views.MinorDamageAccumulators[slot] = views.MinorDamageAccumulators[lastSlot];
-                views.TargetForwardVectors[slot] = views.TargetForwardVectors[lastSlot];
-                views.TargetHeights[slot] = views.TargetHeights[lastSlot];
-                views.TargetFlags[slot] = views.TargetFlags[lastSlot];
-                MoveTargetArmorState(lastSlot, slot);
-                views.StatusMasks[slot] = views.StatusMasks[lastSlot];
-                views.StatusDurations0123[slot] = views.StatusDurations0123[lastSlot];
-                views.LegacyStatusDurations4567[slot] = views.LegacyStatusDurations4567[lastSlot];
-                views.BrittleDurations[slot] = views.BrittleDurations[lastSlot];
-                views.StatusResults[slot] = views.StatusResults[lastSlot];
-                views.StatusResultActive[slot] = views.StatusResultActive[lastSlot];
-                CopyStatusEffectSlot(slot, lastSlot);
-                _receivers[slot] = _receivers[lastSlot];
-                _receiverTransforms[slot] = _receiverTransforms[lastSlot];
-                _targetBodies[slot] = _targetBodies[lastSlot];
-            }
+                if (!TryAcquireStatusEffectStatesWriteLock(out statusVault, out statusStates, out statusLocked))
+                    return false;
 
-            ClearSlot(lastSlot, ref views);
-            _targetCount = lastSlot;
-            return RebuildTargetLookup(ref views, _targetCount);
+                if (!TryAcquireCombatTargetWriteLocks(out CombatDamageVaultViews views, out targetLockCount))
+                    return false;
+
+                targetLocked = true;
+                int slot;
+                if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out slot))
+                    return false;
+
+                if (!CanUseExistingTargetSlot(slot, ref views))
+                    return false;
+
+                if (receiver != null && !ReferenceEquals(_receivers[slot], receiver))
+                    return false;
+
+                int lastSlot = _targetCount - 1;
+                if (!CanUseExistingTargetSlot(lastSlot, ref views))
+                    return false;
+
+                if (slot != lastSlot && views.InstanceIds[lastSlot] == 0)
+                    return false;
+
+                if (slot != lastSlot)
+                {
+                    if (!MoveTargetSideStateLocked(lastSlot, slot, statusLocked, statusStates, ref armorViews))
+                        return false;
+
+                    int movedId = views.InstanceIds[lastSlot];
+                    views.InstanceIds[slot] = movedId;
+                    views.Health[slot] = views.Health[lastSlot];
+                    views.MaxHealth[slot] = views.MaxHealth[lastSlot];
+                    views.InvMaxHealth[slot] = views.InvMaxHealth[lastSlot];
+                    views.ArmorValues[slot] = views.ArmorValues[lastSlot];
+                    views.ShieldValues[slot] = views.ShieldValues[lastSlot];
+                    views.MinorDamageAccumulators[slot] = views.MinorDamageAccumulators[lastSlot];
+                    views.TargetForwardVectors[slot] = views.TargetForwardVectors[lastSlot];
+                    views.TargetHeights[slot] = views.TargetHeights[lastSlot];
+                    views.TargetFlags[slot] = views.TargetFlags[lastSlot];
+                    views.StatusMasks[slot] = views.StatusMasks[lastSlot];
+                    views.StatusDurations0123[slot] = views.StatusDurations0123[lastSlot];
+                    views.LegacyStatusDurations4567[slot] = views.LegacyStatusDurations4567[lastSlot];
+                    views.BrittleDurations[slot] = views.BrittleDurations[lastSlot];
+                    views.StatusResults[slot] = views.StatusResults[lastSlot];
+                    views.StatusResultActive[slot] = views.StatusResultActive[lastSlot];
+                    _receivers[slot] = _receivers[lastSlot];
+                    _receiverTransforms[slot] = _receiverTransforms[lastSlot];
+                    _targetBodies[slot] = _targetBodies[lastSlot];
+                }
+                else if (!ClearTargetSideStateLocked(lastSlot, statusLocked, statusStates, ref armorViews))
+                {
+                    return false;
+                }
+
+                if (!ClearSlot(lastSlot, ref views))
+                    return false;
+
+                _targetCount = lastSlot;
+                if (!RebuildTargetLookup(ref views, _targetCount))
+                    return false;
+
+                BallisticsRuntime.TombstonePrimitivesForTarget(unchecked((uint)targetId));
+                return true;
+            }
+            finally
+            {
+                if (targetLocked)
+                    ReleaseCombatTargetWriteLocks(targetLockCount);
+                ReleaseStatusEffectStatesWriteLock(statusVault, statusLocked);
+                ReleaseArmorTargetWriteLocks(armorLockCount);
+            }
         }
 
         public static bool IsTargetRegistered(int targetId)
@@ -574,59 +637,96 @@ namespace Hecton8.Gameplay
 
         public static bool SyncTargetHealth(int targetId, float currentHealth, float maximumHealth)
         {
-            if (!CanMutateTargets() ||
-                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+            if (!CanMutateTargets())
                 return false;
 
-            int slot;
-            if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out slot))
+            if (!TryAcquireCombatTargetWriteLocks(out CombatDamageVaultViews views, out int targetLockCount))
                 return false;
 
-            if (!CanUseExistingTargetSlot(slot, ref views))
-                return false;
+            try
+            {
+                int slot;
+                if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out slot))
+                    return false;
 
-            float safeMaxHealth = math.max(0.0001f, maximumHealth);
-            views.Health[slot] = math.clamp(currentHealth, 0f, safeMaxHealth);
-            views.MaxHealth[slot] = safeMaxHealth;
-            views.InvMaxHealth[slot] = math.rcp(safeMaxHealth);
-            return true;
+                if (!CanUseExistingTargetSlot(slot, ref views))
+                    return false;
+
+                float safeMaxHealth = math.max(0.0001f, maximumHealth);
+                views.Health[slot] = math.clamp(currentHealth, 0f, safeMaxHealth);
+                views.MaxHealth[slot] = safeMaxHealth;
+                views.InvMaxHealth[slot] = math.rcp(safeMaxHealth);
+                return true;
+            }
+            finally
+            {
+                ReleaseCombatTargetWriteLocks(targetLockCount);
+            }
         }
 
         public static bool SyncTargetProtection(int targetId, float armorValue, float shieldValue)
         {
-            if (!CanMutateTargets() ||
-                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+            if (!CanMutateTargets())
                 return false;
 
-            if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out int slot))
+            if (!TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews armorViews, out int armorLockCount))
                 return false;
 
-            if (!CanUseExistingTargetSlot(slot, ref views))
-                return false;
+            bool targetLocked = false;
+            int targetLockCount = 0;
+            try
+            {
+                if (!TryAcquireCombatTargetWriteLocks(out CombatDamageVaultViews views, out targetLockCount))
+                    return false;
 
-            views.ArmorValues[slot] = QuantizeArmorValue(armorValue);
-            views.ShieldValues[slot] = math.max(0f, shieldValue);
-            RefreshTargetArmorBase(slot, armorValue);
-            return true;
+                targetLocked = true;
+                if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out int slot))
+                    return false;
+
+                if (!CanUseExistingTargetSlot(slot, ref views))
+                    return false;
+
+                if (!RefreshTargetArmorBaseLocked(ref armorViews, slot, armorValue))
+                    return false;
+
+                views.ArmorValues[slot] = QuantizeArmorValue(armorValue);
+                views.ShieldValues[slot] = math.max(0f, shieldValue);
+                return true;
+            }
+            finally
+            {
+                if (targetLocked)
+                    ReleaseCombatTargetWriteLocks(targetLockCount);
+                ReleaseArmorTargetWriteLocks(armorLockCount);
+            }
         }
 
         public static bool SyncTargetHitProfile(int targetId, Vector3 targetForward, float targetHeight)
         {
-            if (!CanMutateTargets() ||
-                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+            if (!CanMutateTargets())
                 return false;
 
-            if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out int slot))
+            if (!TryAcquireCombatTargetWriteLocks(out CombatDamageVaultViews views, out int targetLockCount))
                 return false;
 
-            if (!CanUseExistingTargetSlot(slot, ref views))
-                return false;
+            try
+            {
+                if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out int slot))
+                    return false;
 
-            views.TargetForwardVectors[slot] = NormalizeOrDefault(
-                new float3(targetForward.x, targetForward.y, targetForward.z),
-                new float3(0f, 0f, 1f));
-            views.TargetHeights[slot] = math.max(0.0001f, targetHeight);
-            return true;
+                if (!CanUseExistingTargetSlot(slot, ref views))
+                    return false;
+
+                views.TargetForwardVectors[slot] = NormalizeOrDefault(
+                    new float3(targetForward.x, targetForward.y, targetForward.z),
+                    new float3(0f, 0f, 1f));
+                views.TargetHeights[slot] = math.max(0.0001f, targetHeight);
+                return true;
+            }
+            finally
+            {
+                ReleaseCombatTargetWriteLocks(targetLockCount);
+            }
         }
 
         public static bool TryGetTargetHealthFraction(int targetId, out float health01)
@@ -689,9 +789,6 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            if (TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, signal.TargetId, out int targetSlot))
-                RefreshTargetHitProfile(targetSlot, ref views);
-
             SanitizeQueuedSignal(in signal, in detail, out CombatDamageRequest queuedSignal, out CombatDamageSignalDetail queuedDetail, out uint ingressAnomalyHash);
             uint packedMeta = PackDamageClassMetaFast(queuedSignal.PackedMeta);
             queuedSignal.PackedMeta = (packedMeta & MetaDetailIndexClearMask) |
@@ -706,25 +803,38 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
+            bool queued = false;
+            bool postLockStorageReject = false;
             try
             {
                 if ((uint)detailIndex >= (uint)damageSignals.Length ||
                     (uint)detailIndex >= (uint)signalDetails.Length ||
                     (uint)detailIndex >= (uint)signalImpactAups.Length)
                 {
-                    PublishQueueRejectAnomaly(TelemetryAnomalyQueueStorage, signal.Amount);
-                    return false;
+                    postLockStorageReject = true;
                 }
-
-                signalDetails[detailIndex] = queuedDetail;
-                signalImpactAups[detailIndex] = math.select(double3.zero, impactAup, new bool3(IsFinite(impactAup)));
-                damageSignals[detailIndex] = queuedSignal;
-                _queuedSignalCount++;
+                else
+                {
+                    signalDetails[detailIndex] = queuedDetail;
+                    signalImpactAups[detailIndex] = math.select(double3.zero, impactAup, new bool3(IsFinite(impactAup)));
+                    damageSignals[detailIndex] = queuedSignal;
+                    _queuedSignalCount++;
+                    queued = true;
+                }
             }
             finally
             {
                 ReleaseDamageIngressWriteLocks(ingressLockCount);
             }
+
+            if (postLockStorageReject)
+            {
+                PublishQueueRejectAnomaly(TelemetryAnomalyQueueStorage, signal.Amount);
+                return false;
+            }
+
+            if (!queued)
+                return false;
 
             if (ingressAnomalyHash != 0u)
                 PublishCombatTelemetryAnomaly(ingressAnomalyHash, queuedSignal.Amount, TelemetrySeverityWarning, TelemetryFlagIngressSanitized);
@@ -755,41 +865,42 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            if (!damageVault.TryAcquireWriteLock(in _damageSignalsHandle, CombatDamageMemoryOwner, out damageSignals))
-                return false;
-            lockedCount = 1;
-
-            if (!damageVault.TryAcquireWriteLock(in _signalDetailsHandle, CombatDamageMemoryOwner, out signalDetails))
+            bool success = false;
+            try
             {
-                ReleaseDamageIngressWriteLocks(lockedCount);
-                return false;
-            }
-            lockedCount = 2;
+                if (!armorVault.TryAcquireWriteLock(in _signalImpactAupsHandle, ArmorMemoryOwner, out signalImpactAups))
+                    return false;
+                lockedCount = 1;
 
-            if (!armorVault.TryAcquireWriteLock(in _signalImpactAupsHandle, ArmorMemoryOwner, out signalImpactAups))
+                if (!damageVault.TryAcquireWriteLock(in _damageSignalsHandle, CombatDamageMemoryOwner, out damageSignals))
+                    return false;
+                lockedCount = 2;
+
+                if (!damageVault.TryAcquireWriteLock(in _signalDetailsHandle, CombatDamageMemoryOwner, out signalDetails))
+                    return false;
+
+                lockedCount = 3;
+                success = true;
+                return true;
+            }
+            finally
             {
-                ReleaseDamageIngressWriteLocks(lockedCount);
-                return false;
+                if (!success)
+                    ReleaseDamageIngressWriteLocks(lockedCount);
             }
-
-            lockedCount = 3;
-            return true;
         }
 
         private static void ReleaseDamageIngressWriteLocks(int lockedCount)
         {
-            IDataVault armorVault = _armorDataVault;
-            if (lockedCount >= 3 && armorVault != null)
-                armorVault.ReleaseWriteLock(in _signalImpactAupsHandle, ArmorMemoryOwner);
-
             IDataVault damageVault = ResolveCombatDataVault(allowColdBootstrap: false);
-            if (damageVault == null)
-                return;
-
-            if (lockedCount >= 2)
+            if (lockedCount >= 3 && damageVault != null)
                 damageVault.ReleaseWriteLock(in _signalDetailsHandle, CombatDamageMemoryOwner);
-            if (lockedCount >= 1)
+            if (lockedCount >= 2 && damageVault != null)
                 damageVault.ReleaseWriteLock(in _damageSignalsHandle, CombatDamageMemoryOwner);
+
+            IDataVault armorVault = _armorDataVault;
+            if (lockedCount >= 1 && armorVault != null)
+                armorVault.ReleaseWriteLock(in _signalImpactAupsHandle, ArmorMemoryOwner);
         }
 
         private static bool CanUseDamageIngressSlot(int detailIndex)
@@ -850,7 +961,6 @@ namespace Hecton8.Gameplay
                 if (!CanUseDamageJobBuffers(ref damageViews, ref statusViews, in armorViews))
                     return;
 
-                RefreshArmorTargetSnapshots(ref armorViews);
                 if (!TryLockCombatDamageVaultBuffersForJobs(out int damageLockedCount))
                     return;
                 if (!TryLockArmorVaultBuffersForJobs())
@@ -865,11 +975,14 @@ namespace Hecton8.Gameplay
                 {
                     if (!TryResolveCombatDamageVaultViews(out damageViews, ensure: false) ||
                         !TryResolveStatusEffectVaultViews(out statusViews, ensure: false) ||
-                        !TryResolveArmorPenetrationVaultViews(out armorViews, ensure: false) ||
-                        !CanUseDamageJobBuffers(ref damageViews, ref statusViews, in armorViews))
+                        !TryResolveArmorPenetrationVaultViews(out armorViews, ensure: false))
                     {
                         return;
                     }
+
+                    RefreshArmorTargetSnapshotsLocked(ref armorViews);
+                    if (!CanUseDamageJobBuffers(ref damageViews, ref statusViews, in armorViews))
+                        return;
 
                     RefreshRuntimePolicy();
                     ClearCounters(ref damageViews);
@@ -1209,18 +1322,18 @@ namespace Hecton8.Gameplay
         {
             BallisticsRuntime.LateFrameTick();
             TryApplyPendingStatusEffectVaultRebind();
-            if (!_damageJobScheduled && !_statusJobScheduled)
+            if (!_damageJobScheduled && !_statusJobScheduled && !_damageDispatchPending && !_statusDispatchPending)
                 return;
 
             using (_lateFrameMarker.Auto())
             {
                 bool completedAny = false;
-                bool completedStatus = false;
                 if (_damageJobScheduled && DispatcherJobSwap.TryComplete(ref _damageJobHandle, forceComplete: false))
                 {
                     _damageJobScheduled = false;
                     FinishArmorPenetrationScheduledCompletion();
                     _queuedSignalCount = 0;
+                    _damageDispatchPending = true;
                     completedAny = true;
                 }
 
@@ -1228,16 +1341,38 @@ namespace Hecton8.Gameplay
                 {
                     _statusJobScheduled = false;
                     CompleteStatusEffectFrame();
+                    _statusDispatchPending = true;
                     completedAny = true;
-                    completedStatus = true;
                 }
 
-                if (!completedAny)
+                if (_damageJobScheduled || _statusJobScheduled)
                     return;
 
-                DispatchResults();
-                if (completedStatus)
-                    DispatchStatusResults();
+                if (!completedAny && !_damageDispatchPending && !_statusDispatchPending)
+                    return;
+
+                if (!TryLockCombatDamageVaultBuffersForJobs(out int dispatchLockedCount))
+                    return;
+
+                try
+                {
+                    if (_damageDispatchPending)
+                    {
+                        DispatchResults();
+                        _damageDispatchPending = false;
+                    }
+
+                    if (_statusDispatchPending)
+                    {
+                        DispatchStatusResults();
+                        _statusDispatchPending = false;
+                    }
+                }
+                finally
+                {
+                    UnlockCombatDamageVaultBuffersForJobs(dispatchLockedCount);
+                }
+
                 TryApplyPendingStatusEffectVaultRebind();
             }
         }
@@ -1290,11 +1425,23 @@ namespace Hecton8.Gameplay
             if (IsCombatDamageVaultInitialized() && _receivers != null)
                 return;
 
-            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: true))
+            if (!TryResolveCombatDamageVaultViews(out _, ensure: true))
                 return;
 
             if (_targetCount <= 0)
-                ClearTargetLookup(views.TargetLookupKeys, views.TargetLookupSlots);
+            {
+                if (!TryAcquireCombatTargetWriteLocks(out CombatDamageVaultViews initViews, out int targetLockCount))
+                    return;
+
+                try
+                {
+                    ClearTargetLookup(initViews.TargetLookupKeys, initViews.TargetLookupSlots);
+                }
+                finally
+                {
+                    ReleaseCombatTargetWriteLocks(targetLockCount);
+                }
+            }
 
             if (!TryInitializeDamageArmorLutLocked())
                 return;
@@ -1605,11 +1752,68 @@ namespace Hecton8.Gameplay
 
             _lastQueueRejectFrame = frame;
             _lastQueueRejectAnomalyHash = anomalyHash;
+            RecordQueueRejectTelemetry(anomalyHash, amount);
             PublishCombatTelemetryAnomaly(
                 anomalyHash,
                 amount,
                 TelemetrySeverityWarning,
                 TelemetryFlagQueueRejected);
+        }
+
+        private static void RecordQueueRejectTelemetry(uint anomalyHash, float amount)
+        {
+            if (anomalyHash == 0u ||
+                !TryAcquireCombatTelemetryWriteLocks(
+                    out NativeArray<CombatTelemetryEntry> telemetryRing,
+                    out NativeArray<uint> telemetryState,
+                    out int telemetryLockCount))
+            {
+                return;
+            }
+
+            try
+            {
+                if (!telemetryRing.IsCreated ||
+                    !telemetryState.IsCreated ||
+                    telemetryRing.Length <= 0 ||
+                    telemetryState.Length < TelemetryStateLength)
+                {
+                    return;
+                }
+
+                int ringLength = math.min(TelemetryFrameCapacity, telemetryRing.Length);
+                if (ringLength <= 0)
+                    return;
+
+                uint writeCursor = telemetryState[TelemetryWriteCursorIndex];
+                int writeIndex = (int)(writeCursor % (uint)ringLength);
+                uint safeAmountBits = math.asuint(math.select(0f, amount, math.isfinite(amount)));
+                telemetryRing[writeIndex] = new CombatTelemetryEntry
+                {
+                    FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
+                    Sequence = writeCursor,
+                    PhaseHash = CombatTelemetryPhaseDamage,
+                    TargetHash = 0u,
+                    SourceHash = 0u,
+                    StatusBits = 0u,
+                    StateHash = math.hash(new uint4(anomalyHash, safeAmountBits, writeCursor, TelemetryFlagQueueRejected)),
+                    AnomalyHash = anomalyHash,
+                    PreviousHealth = 0f,
+                    NextHealth = 0f,
+                    AppliedDamage = math.select(0f, amount, math.isfinite(amount)),
+                    LocalPoint = float3.zero,
+                    Flags = TelemetryFlagQueueRejected,
+                    TraumaLevel = 0,
+                    DirectionOctant = 0,
+                    Reserved = 0u
+                };
+                telemetryState[TelemetryWriteCursorIndex] = writeCursor + 1u;
+                telemetryState[TelemetryLastAnomalyIndex] = anomalyHash;
+            }
+            finally
+            {
+                ReleaseCombatTelemetryWriteLocks(telemetryLockCount);
+            }
         }
 
         private static void TryDumpCombatTelemetry(uint anomalyHash)
@@ -1947,10 +2151,18 @@ namespace Hecton8.Gameplay
 
         private static void ClearCounters()
         {
-            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+            if (!TryLockCombatDamageVaultBuffersForJobs(out int lockedCount))
                 return;
 
-            ClearCounters(ref views);
+            try
+            {
+                if (TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+                    ClearCounters(ref views);
+            }
+            finally
+            {
+                UnlockCombatDamageVaultBuffersForJobs(lockedCount);
+            }
         }
 
         private static void ClearCounters(ref CombatDamageVaultViews views)
@@ -1963,16 +2175,44 @@ namespace Hecton8.Gameplay
                 views.Counters[i] = 0;
         }
 
-        private static void ClearSlot(int slot)
+        private static bool ClearSlot(int slot)
         {
-            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
-                return;
+            if (!TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews armorViews, out int armorLockCount))
+                return false;
 
-            ClearSlot(slot, ref views);
+            bool statusLocked = false;
+            bool targetLocked = false;
+            int targetLockCount = 0;
+            IDataVault statusVault = null;
+            NativeArray<CombatStatusEffectState> statusStates = default;
+            try
+            {
+                if (!TryAcquireStatusEffectStatesWriteLock(out statusVault, out statusStates, out statusLocked))
+                    return false;
+
+                if (!TryAcquireCombatTargetWriteLocks(out CombatDamageVaultViews views, out targetLockCount))
+                    return false;
+
+                targetLocked = true;
+                if (!ClearTargetSideStateLocked(slot, statusLocked, statusStates, ref armorViews))
+                    return false;
+
+                return ClearSlot(slot, ref views);
+            }
+            finally
+            {
+                if (targetLocked)
+                    ReleaseCombatTargetWriteLocks(targetLockCount);
+                ReleaseStatusEffectStatesWriteLock(statusVault, statusLocked);
+                ReleaseArmorTargetWriteLocks(armorLockCount);
+            }
         }
 
-        private static void ClearSlot(int slot, ref CombatDamageVaultViews views)
+        private static bool ClearSlot(int slot, ref CombatDamageVaultViews views)
         {
+            if (!CanUseRegistrationTargetSlot(slot, ref views))
+                return false;
+
             views.InstanceIds[slot] = 0;
             views.Health[slot] = 0f;
             views.MaxHealth[slot] = 0f;
@@ -1983,17 +2223,16 @@ namespace Hecton8.Gameplay
             views.TargetForwardVectors[slot] = float3.zero;
             views.TargetHeights[slot] = 0f;
             views.TargetFlags[slot] = 0u;
-            ClearTargetArmorState(slot);
             views.StatusMasks[slot] = 0u;
             views.StatusDurations0123[slot] = float4.zero;
             views.LegacyStatusDurations4567[slot] = float4.zero;
             views.BrittleDurations[slot] = 0f;
-            ResetStatusEffectSlot(slot);
             views.StatusResults[slot] = default;
             views.StatusResultActive[slot] = 0;
             _receivers[slot] = null;
             _receiverTransforms[slot] = null;
             _targetBodies[slot] = null;
+            return true;
         }
 
         private static void CaptureReceiverManagedRefs(int slot, IDamageReceiver receiver)
@@ -2105,13 +2344,21 @@ namespace Hecton8.Gameplay
 
         private static void RefreshTargetHitProfile(int slot)
         {
-            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+            if (!CanMutateTargets() ||
+                !TryAcquireCombatTargetWriteLocks(out CombatDamageVaultViews views, out int targetLockCount))
                 return;
 
-            RefreshTargetHitProfile(slot, ref views);
+            try
+            {
+                RefreshTargetHitProfileLocked(slot, ref views);
+            }
+            finally
+            {
+                ReleaseCombatTargetWriteLocks(targetLockCount);
+            }
         }
 
-        private static void RefreshTargetHitProfile(int slot, ref CombatDamageVaultViews views)
+        private static void RefreshTargetHitProfileLocked(int slot, ref CombatDamageVaultViews views)
         {
             if (_receivers == null ||
                 (uint)slot >= (uint)_receivers.Length ||
@@ -2327,7 +2574,8 @@ namespace Hecton8.Gameplay
                     float damage = math.max(0f, damageBeforeArmorLut - armorSample.EffectiveArmor);
                     armorMitigatedSum += math.max(0f, damageBeforeArmorLut - damage);
                     armorWeakPointHits += math.select(0u, 1u, armorSample.LutByte <= ArmorWeakPointLutThreshold);
-                    WriteArmorDebugHit(ArmorDebugHits, processed - 1, in signal, in armorSample, ArmorFrameIndex);
+                    if (ShouldCaptureArmorDebugHit(processed - 1, signal.SourceId, VisualQualityWeight01))
+                        WriteArmorDebugHit(ArmorDebugHits, processed - 1, in signal, in armorSample, ArmorFrameIndex);
 
                     CombatStatusEffectState statusState = StatusEffectStates[slot];
                     uint statusMask = (uint)(statusState.StatusEffectMask & uint.MaxValue);
@@ -2674,6 +2922,18 @@ namespace Hecton8.Gameplay
                 return false;
 
             uint hash = math.hash(new uint3(unchecked((uint)slot), unchecked((uint)sourceId), 0xC0BADA7Au));
+            float threshold = (hash & 0xFFFFu) * (1f / 65535f);
+            return threshold <= weight;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool ShouldCaptureArmorDebugHit(int sequence, int sourceId, float visualQualityWeight01)
+        {
+            float weight = SmoothStep01(visualQualityWeight01);
+            if (weight <= 0f)
+                return false;
+
+            uint hash = math.hash(new uint3(unchecked((uint)sequence), unchecked((uint)sourceId), 0xA417D06Au));
             float threshold = (hash & 0xFFFFu) * (1f / 65535f);
             return threshold <= weight;
         }

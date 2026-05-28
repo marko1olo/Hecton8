@@ -1,0 +1,151 @@
+﻿{
+    "agent_id":  "1423",
+    "generated_local":  "2026-05-28T12:52:31.0405635+04:00",
+    "prompt_extraction":  {
+                              "path":  "Docs/Tasks/CURRENT_BATCH.md::\u003cAGENT_PROMPT id=\"1423\"\u003e",
+                              "sha256_utf8_block":  "9C307765413C5548CA5CD5D2CEE58C7E415CC93819BA21AA3C264488E260C8A6",
+                              "task_count":  20,
+                              "characters":  20627,
+                              "extraction_note":  "PowerShell CLI regex extraction; task regex corrected to ^Task NN:"
+                          },
+    "repair":  {
+                   "issue":  "TmpTextNoAlloc.Set(ReadOnlySpan\u003cchar\u003e) released CharBufferPool leases after TMP SetCharArray without finally; TMP exception could strand a pool slot.",
+                   "file":  "Assets/_Project/Scripts/UI/TmpTextNoAlloc.cs",
+                   "lines":  [
+                                 "32-41 Lease branch now releases in finally",
+                                 "48-57 BabelLease branch now releases in finally",
+                                 "63-72 EncyclopediaLease branch now releases in finally",
+                                 "98-114 localized BabelLease branch already releases in finally"
+                             ],
+                   "rejected":  [
+                                    "No API rewrite",
+                                    "No larger buffers",
+                                    "No managed string fallback"
+                                ],
+                   "runtime_allocation_change":  "No new runtime allocations; control-flow only."
+               },
+    "domain_scan":  {
+                        "scanned_file_count":  155,
+                        "roots":  [
+                                      "Assets/_Project/Scripts/UI",
+                                      "Assets/_Project/Scripts/Audio",
+                                      "Babel/Localization root files"
+                                  ],
+                        "excluded":  [
+                                         "**/Editor/**"
+                                     ],
+                        "case_sensitive":  true,
+                        "counts":  {
+                                       "string_format":  0,
+                                       "to_string":  0,
+                                       "tmp_text_assignment":  0,
+                                       "new_string":  0,
+                                       "string_builder":  0,
+                                       "array_resize":  0,
+                                       "foreach_loop":  0,
+                                       "scene_search":  0
+                                   },
+                        "false_positive_note":  "Case-insensitive first pass counted LabelSwapScheduler.cs:51 entry.Text == null as .text assignment; corrected case-sensitive assignment regex count is 0."
+                    },
+    "hot_path_scan":  {
+                          "tmp_text_no_alloc_counts":  {
+                                                           "string_format":  0,
+                                                           "to_string":  0,
+                                                           "foreach_loop":  0,
+                                                           "new_string":  0,
+                                                           "string_builder":  0,
+                                                           "tmp_text_assignment":  0,
+                                                           "array_resize":  0
+                                                       },
+                          "proof_lines":  [
+                                              "TmpTextNoAlloc.cs:36-37 Copy + SetCharArray bounded by destination length",
+                                              "TmpTextNoAlloc.cs:52-53 Babel bridge Copy + SetCharArray bounded by destination length",
+                                              "TmpTextNoAlloc.cs:67-68 Encyclopedia Copy + SetCharArray bounded by destination length",
+                                              "TmpTextNoAlloc.cs:118-126 Copy clamps length = min(source.Length, destination.Length)"
+                                          ]
+                      },
+    "data_sovereignty":  {
+                             "migrated_new_fields_this_pass":  false,
+                             "buffer_ids":  [
+                                                15070550,
+                                                15070551,
+                                                15070552
+                                            ],
+                             "try_acquire_write_lock":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:668",
+                             "finally_releases":  [
+                                                      "BabelSubtitleSyncRuntime.cs:509-511",
+                                                      "BabelSubtitleSyncRuntime.cs:1104-1106"
+                                                  ],
+                             "ui_optimization_entry_layout":  "StructLayout Explicit Size=64; offset proof lines 843-860"
+                         },
+    "scalability":  {
+                        "rich_text_policy":  "retention = saturate(lerp(0.16, 1.0, smoothstep(GlobalQualityWeight))) with stable text-hash threshold",
+                        "binary_low_end_switches_in_repaired_files":  0,
+                        "cinematic_cheat":  "Text fidelity is adjusted by deterministic style density, not physical simulation."
+                    },
+    "build_throttle":  {
+                           "cpu_sample_percent":  60,
+                           "active_dotnet":  "PID=25684 dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
+                           "active_compiler":  "PID=27088 VBCSCompiler.exe",
+                           "build_launched":  false,
+                           "reason":  "CPU sampled at 60% and compiler/build process active; build forbidden by throttling protocol.",
+                           "previous_build_blocker":  "HectonVRBrownoutFeature.cs XRPass missing type lines 437 and 476"
+                       },
+    "source_hashes":  [
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/TmpTextNoAlloc.cs",
+                              "sha256":  "294DFCA23D14A8E5B304CEC53CC6376D1CC7190086B37D9FD9071FD999FE63E7"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/LocalizedWorldSign.cs",
+                              "sha256":  "CF7A5CDCF19A007734403F16DDFBD0AC263E4189FAAA6F30A3B5E1FA83476F90"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/LocRegistry.cs",
+                              "sha256":  "6057EF78ACBDCA9E27461C65FB5CD507918D29E2BD2E0DC3A8104BD48C9FD6F1"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/BabelRichTextLodPolicy.cs",
+                              "sha256":  "6EB320617B68509CC035E77437DB41A1E9DDF656C5BC4E4F552BF4FE0A5D62DC"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+                              "sha256":  "084243DAC5C5A74C3945FEA0F2F290AE13CDB544B6F228CC7F0653E998E4B71B"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/LabelSwapScheduler.cs",
+                              "sha256":  "F3AA4001B0622461AAE3ECA2141284A43C4018D803F8C56391E4A00D3A5F295A"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/PDADataArchaeologyDecryptLabel.cs",
+                              "sha256":  "5A52CF1A61EB475ADA1E26F6E1FA7B17878FE41AB5BE9D1D44A6FEED94264785"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+                              "sha256":  "CE492BB53D0A04FA8AA90D99678FCE260D2DDD68E3A7F9292EAA84CB93FFE5F3"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/LocalizationManager.cs",
+                              "sha256":  "9BD64EB488B606B4E759DC8455F6FC200390E47558A7671D2C4E8C8DA2A50CFB"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/LocNumericBuffer.cs",
+                              "sha256":  "E29798E924AED1DAEB42912860B43547341F465D4CC2288FA78552BEED9134A4"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/Core/Contracts/BabelLocalizationContract.cs",
+                              "sha256":  "08124D34399C8F54138C9F181114ABA9FF74B7FF9C5CF100E0E40BA7C2449E24"
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/Core/ZeroGCFormatter.cs",
+                              "sha256":  "DF0E50E0EDEA48D8CE2FADBEE1EB2842C1E27C78D78580D68EDBC52DC8A16CB0"
+                          }
+                      ],
+    "verification_status":  {
+                                "static_scan":  "PASS",
+                                "build":  "NOT_RERUN_ACTIVE_BUILD_AND_COMPILER_PROCESS",
+                                "runtime_gc":  "ABSENT",
+                                "dump_1423_bin":  "NOT_CREATED_NO_RUNTIME_CRASH_OR_NAN_CAPTURE",
+                                "status":  "PENDING_VERIFICATION"
+                            }
+}

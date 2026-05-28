@@ -3,16 +3,18 @@
 Fast path for a copied starter kit:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1 -Id com.yourname.mod -DisplayName "Your Mod" -Author "YourName" -Version 0.1.0
+powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action setup -Id com.yourname.mod -DisplayName "Your Mod" -Author "YourName" -Version 0.1.0
 ```
 
 Normal edit-review loop:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action prepare
 ```
 
 Use `pwsh` instead of `powershell` on macOS/Linux with PowerShell 7. The scripts normalize child paths internally; do not rewrite `Tools/`, `Reports/`, or `.vscode/` paths per platform.
+
+The root `h8mod.ps1` launcher is the preferred no-Unity entry point for humans. It delegates to these `Tools/*.ps1` scripts and does not add a second validation contract.
 
 `prepare_mod.ps1` runs identity setup only when `-Id` is provided. Without `-Id` it validates the existing manifests and rebuilds `Reports/review_manifest.json` for the normal edit-review loop.
 
@@ -29,6 +31,12 @@ Run `set_mod_identity.ps1` once when you copy the starter kit. It writes the sam
 Command:
 
 ```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action validate
+powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action review
+powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action prepare
+powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action opcodes
+powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action opcodes-json
 powershell -NoProfile -ExecutionPolicy Bypass -File Tools/validate_structure.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File Tools/list_allowed_opcodes.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File Tools/list_allowed_opcodes.ps1 -Json

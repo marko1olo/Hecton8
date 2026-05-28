@@ -1,0 +1,171 @@
+{
+  "agentId": "1408",
+  "role": "MAIN_THREAD_SYNCHRONOUS_JOB_BLOCKER_PURGER",
+  "generatedLocalDate": "2026-05-28",
+  "status": "GPR_DATAVAULT_STAGING_REPAIRED_STATIC_PASS_BUILD_BLOCKED_BY_ACTIVE_DOTNET",
+  "prompt": {
+    "source": "Docs/Tasks/CURRENT_BATCH.md",
+    "agentPromptId": "1408",
+    "extractedBlockLengthBytes": 20153,
+    "taskCount": 20
+  },
+  "primaryFix": {
+    "file": "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+    "problem": "GroundRadarRaymarchJob was scheduled asynchronously but wrote directly into live GlobalDataVault GPR buffers.",
+    "solution": "ScheduleRadarJob now copies current GPR state into RadarPendingJob H8Memory TempJob staging arrays. GroundRadarRaymarchJob writes staging slices. CompleteRadarJob fences the worker, CommitCompletedScan(ref pending) publishes staged results under short DataVault write locks, and finally releases staging arrays.",
+    "lineEvidence": {
+      "RadarPendingJobStruct": 36,
+      "RadarPendingJobField": 88,
+      "TryCreateRadarPendingJob": 630,
+      "TryCopyCurrentGprStateToPending": 676,
+      "TryPublishRadarPendingJob": 711,
+      "ScheduleRadarJobPendingSlices": 822,
+      "CommitCompletedScanAfterFence": 884,
+      "ReleaseRadarPendingJobFinally": 892,
+      "PublishCall": 916
+    }
+  },
+  "zeroGcHotPathAudit": {
+    "scan": "PowerShell signature/body extraction over GPR hot methods.",
+    "results": [
+      {
+        "method": "ScheduleRadarJob",
+        "newTokens": ["GroundRadarRaymarchJob", "NativeSlice<float3>", "NativeSlice<float>", "NativeSlice<float>", "NativeSlice<int>", "NativeSlice<float4>", "NativeSlice<int>", "NativeSlice<float>"],
+        "referenceTypeNewCount": 0,
+        "valueTypeNewCount": 8,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      },
+      {
+        "method": "TryCopyCurrentGprStateToPending",
+        "referenceTypeNewCount": 0,
+        "valueTypeNewCount": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      },
+      {
+        "method": "TryPublishRadarPendingJob",
+        "referenceTypeNewCount": 0,
+        "valueTypeNewCount": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      },
+      {
+        "method": "CommitCompletedScan",
+        "newTokens": ["Bounds", "Vector3"],
+        "referenceTypeNewCount": 0,
+        "valueTypeNewCount": 2,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      },
+      {
+        "method": "AppendMacroSwarmRadarPings",
+        "referenceTypeNewCount": 0,
+        "valueTypeNewCount": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      },
+      {
+        "method": "CompleteRadarJob",
+        "referenceTypeNewCount": 0,
+        "valueTypeNewCount": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      }
+    ]
+  },
+  "dataSovereignty": {
+    "migratedNewGlobalDataVaultFields": false,
+    "securedBufferIds": [
+      "BufferID.GroundRadarHits",
+      "BufferID.GroundRadarSignalStrength",
+      "BufferID.GroundRadarAgeSeconds",
+      "BufferID.GroundRadarOreTypes",
+      "BufferID.GroundRadarPingGpu",
+      "BufferID.GroundRadarCounters",
+      "BufferID.GroundRadarMaxSignalStrength"
+    ],
+    "writeLockChecks": [
+      "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:727 TryAcquireWriteLock _gprHitsHandle",
+      "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:730 TryAcquireWriteLock _gprSignalStrengthHandle",
+      "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:733 TryAcquireWriteLock _gprAgeSecondsHandle",
+      "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:736 TryAcquireWriteLock _gprOreTypesHandle",
+      "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:739 TryAcquireWriteLock _gprPingGpuHandle",
+      "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:742 TryAcquireWriteLock _gprCountersHandle",
+      "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:745 TryAcquireWriteLock _maxSignalStrengthHandle"
+    ],
+    "finallyReleases": [
+      "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:759-773 ReleaseWriteLock for every acquired GPR write lock",
+      "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:889-893 UnlockSdfSnapshotBuffer and ReleaseRadarPendingJob in CompleteRadarJob finally",
+      "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:862-865 failed schedule releases RadarPendingJob and SDF snapshot lock"
+    ],
+    "workerOwnership": "GroundRadarRaymarchJob receives NativeSlice views over RadarPendingJob TempJob arrays only. Public DataVault read-only accessors continue to expose the previous stable snapshot until post-fence publish."
+  },
+  "scalabilityAndCinematicCheat": {
+    "globalQualityWeight": "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:1065 ReadGlobalQualityWeight01 uses HomeostasisBrain.GlobalQualityWeight",
+    "continuousBudget": "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:1070-1083 SelectRayCount and SelectRaymarchStepCount use smoothstep/lerp continuous budgets",
+    "binaryQualitySwitchMatches": 0,
+    "cheatProtocol": "GPR remains a bounded visual/sonar raymarch fake over SDF and ore snapshots, not a physical acoustic simulation."
+  },
+  "staticVerification": {
+    "worldRuntimeSyncScan": {
+      "command": "rg -n \"\\.Run\\(|\\.Complete\\(\" Assets/_Project/Scripts/World -g \"*.cs\" -g \"!**/Editor/**\"",
+      "matches": 0
+    },
+    "writeLockLineScan": {
+      "command": "rg -n \"TryAcquireWriteLock\\(in _gpr|ReleaseWriteLock\\(in _gpr|TryAcquireWriteLock\\(in _maxSignal|ReleaseWriteLock\\(in _maxSignal|NativeSlice<.*>\\(pending\\.\" Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+      "matches": 15
+    },
+    "gitDiffCheck": "scoped agent-file diff check passed with CRLF warnings only; full worktree diff check still fails on unrelated Docs/AgentLogs/Prompt_1407_EXTRACTED.md trailing whitespace"
+  },
+  "testArtifact": {
+    "file": "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs",
+    "addedTest": "GroundRadarRaymarch_UsesTempStagingAndShortWriteLockPublish",
+    "lineEvidence": {
+      "testDeclaration": 175,
+      "pendingSliceAssertions": 182,
+      "copyLockAssertion": 189,
+      "writeLockPublishAssertions": 192
+    },
+    "executionStatus": "not executed; build/test blocked by active dotnet process"
+  },
+  "compilationResourceThrottling": {
+    "dotnetBuildInvocationsThisLoop": 0,
+    "cpuCimPercentBeforeFinalBuildDecision": 93,
+    "activeCompilerOrDotnetProcesses": [
+      {
+        "processName": "csc",
+        "pid": 55760,
+        "cpuSeconds": 1.9375
+      },
+      {
+        "processName": "dotnet",
+        "pid": 37472,
+        "cpuSeconds": 95.03125,
+        "commandLine": "\"dotnet\" build \"MoreMountains.Feedbacks.Editor.csproj\" --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false"
+      }
+    ],
+    "buildStatus": "NOT_LAUNCHED_CPU_OVER_50_AND_ACTIVE_DOTNET_CSC"
+  },
+  "hashes": {
+    "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs": "264A5F22B3A87A8FD48B2AB44556B8602DF3FBF0A8EA15F1661EF48578D24A74",
+    "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs": "0D569A043CE425CF6666703682E5685F5092D484DFC0ACE48B816C25646F97B7"
+  },
+  "residualRisk": {
+    "compileVerified": false,
+    "unityEditModeTestsExecuted": false,
+    "reason": "Project build guard forbids dotnet build while another dotnet process is active."
+  }
+}

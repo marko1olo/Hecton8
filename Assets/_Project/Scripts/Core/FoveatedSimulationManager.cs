@@ -139,6 +139,21 @@ namespace Hecton8.Core
             [FieldOffset(60)] public uint Reserved1;
         }
 
+        private struct FoveatedNativeBuffers
+        {
+            public NativeArray<float3> ScorePositions;
+            public NativeArray<float3> EntityAups;
+            public NativeArray<float> ImportanceScores;
+            public NativeArray<byte> TickRateCodes;
+            public NativeArray<byte> InsideFrustumFlags;
+            public NativeArray<byte> EntitySimTiers;
+            public NativeArray<float> DistancesMeters;
+            public NativeArray<float3> FromPositions;
+            public NativeArray<float3> ToPositions;
+            public NativeArray<float> Alphas;
+            public NativeArray<FoveatedSimulationTelemetryEntry> TelemetryRing;
+        }
+
         private const int ImportanceScoreBatchSize = 32;
         private const int MaxTargets = 512;
         private const float CenterTickIntervalSeconds = 1.0f / 60.0f;
@@ -238,17 +253,6 @@ namespace Hecton8.Core
         private readonly int[] _visualTargetIndices = new int[MaxTargets];
         private TransformAccessArray _visualTransformAccessArray;
         private Transform[] _visualTransformArray = Array.Empty<Transform>();
-        private NativeArray<float3> _jobScorePositions;
-        private NativeArray<float3> _jobEntityAups;
-        private NativeArray<float> _jobImportanceScores;
-        private NativeArray<byte> _jobTickRateCodes;
-        private NativeArray<byte> _jobInsideFrustumFlags;
-        private NativeArray<byte> _jobEntitySimTiers;
-        private NativeArray<float> _jobDistancesMeters;
-        private NativeArray<float3> _jobFromPositions;
-        private NativeArray<float3> _jobToPositions;
-        private NativeArray<float> _jobAlphas;
-        private NativeArray<FoveatedSimulationTelemetryEntry> _telemetryRing;
         private IDataVault _dataVault;
         private IPlayerRuntimeContext _playerContext;
         private VaultGenerationHandle<float3> _jobScorePositionsHandle;
@@ -430,7 +434,7 @@ namespace Hecton8.Core
             target.OnFoveatedTierResolved(FoveatedSimulationTier.Active, 0.0f, false);
             _forceImmediateImportanceRefresh = true;
             _visualTargetCacheDirty = true;
-            EnsureNativeBuffersAllocated();
+            OpenOrAcquireNativeBuffersForOwnerRoute();
         }
 
         public void UnregisterTarget(IFoveatedSimulationTarget target)
@@ -479,7 +483,7 @@ namespace Hecton8.Core
         {
             TryCompleteFrameJobsInternal(forceComplete: false);
             AdvanceFoveatedClock(frameDeltaTime);
-            if (!EnsureNativeBuffersAllocated())
+            if (!TryResolveNativeBuffers(out _))
                 return;
 
             ConsumeAupShiftSignals();
@@ -819,7 +823,7 @@ namespace Hecton8.Core
             if (_targetCount <= 0 || !TryResolveScoringCamera(out Vector3 cameraPosition, out Vector3 cameraForward, out Vector3 cameraUp))
                 return;
 
-            if (!EnsureNativeBuffersAllocated())
+            if (!TryResolveNativeBuffers(out FoveatedNativeBuffers buffers))
                 return;
 
             ResolveScalabilityThresholds(out _activeDistanceMeters, out _frozenDistanceMeters);
@@ -827,20 +831,20 @@ namespace Hecton8.Core
             for (int i = 0; i < _targetCount; i++)
             {
                 Transform simulationTransform = _simulationTransforms[i];
-                _jobScorePositions[i] = simulationTransform != null
+                buffers.ScorePositions[i] = simulationTransform != null
                     ? (float3)simulationTransform.position
                     : float3.zero;
             }
 
             ImportanceScoringJob scoringJob = new ImportanceScoringJob
             {
-                Positions = _jobScorePositions,
-                EntityAups = _jobEntityAups,
-                ImportanceScores = _jobImportanceScores,
-                TickRateCodes = _jobTickRateCodes,
-                InsideFrustumFlags = _jobInsideFrustumFlags,
-                EntitySimTiers = _jobEntitySimTiers,
-                DistancesMeters = _jobDistancesMeters,
+                Positions = buffers.ScorePositions,
+                EntityAups = buffers.EntityAups,
+                ImportanceScores = buffers.ImportanceScores,
+                TickRateCodes = buffers.TickRateCodes,
+                InsideFrustumFlags = buffers.InsideFrustumFlags,
+                EntitySimTiers = buffers.EntitySimTiers,
+                DistancesMeters = buffers.DistancesMeters,
                 CameraPosition = cameraPosition,
                 CameraForward = cameraForward,
                 CameraUp = cameraUp,
@@ -857,6 +861,9 @@ namespace Hecton8.Core
 
         private void ApplyImportanceResults()
         {
+            if (!TryResolveNativeBuffers(out FoveatedNativeBuffers buffers))
+                return;
+
             _tier0Count = 0;
             _tier1Count = 0;
             _tier2Count = 0;
@@ -869,10 +876,10 @@ namespace Hecton8.Core
                 if (target == null)
                     continue;
 
-                float importanceScore = _jobImportanceScores[i];
-                FoveatedTickRate resolvedTickRate = (FoveatedTickRate)_jobTickRateCodes[i];
-                FoveatedSimulationTier resolvedTier = (FoveatedSimulationTier)_jobEntitySimTiers[i];
-                float distanceMeters = _jobDistancesMeters[i];
+                float importanceScore = buffers.ImportanceScores[i];
+                FoveatedTickRate resolvedTickRate = (FoveatedTickRate)buffers.TickRateCodes[i];
+                FoveatedSimulationTier resolvedTier = (FoveatedSimulationTier)buffers.EntitySimTiers[i];
+                float distanceMeters = buffers.DistancesMeters[i];
                 bool tier0Locked = _tier0LockUntilTimes[i] > now;
                 if (tier0Locked)
                 {
@@ -914,7 +921,7 @@ namespace Hecton8.Core
                 _importanceScores[i] = importanceScore;
                 _tickIntervals[i] = ResolveTickInterval(_tickRates[i]);
                 _tickAccumulators[i] = math.min(_tickAccumulators[i], _tickIntervals[i]);
-                target.OnFoveatedCadenceResolved(_tickRates[i], _tickIntervals[i], importanceScore, _jobInsideFrustumFlags[i] != 0);
+                target.OnFoveatedCadenceResolved(_tickRates[i], _tickIntervals[i], importanceScore, buffers.InsideFrustumFlags[i] != 0);
                 target.OnFoveatedTierResolved(resolvedTier, distanceMeters, tier0Locked);
                 AccumulateTierCount(resolvedTier);
                 if (resolvedTier == FoveatedSimulationTier.Frozen &&
@@ -1093,14 +1100,14 @@ namespace Hecton8.Core
 
         private void WriteTelemetryFrame(Vector3 cameraPosition, Vector3 cameraForward)
         {
-            if (!_telemetryRing.IsCreated)
+            if (!TryResolveTelemetryRing(out NativeArray<FoveatedSimulationTelemetryEntry> telemetryRing))
                 return;
 
             if (!IsFinite(cameraPosition) || !IsFinite(cameraForward))
                 DumpTelemetryBlackBoxOnce();
 
             int cursor = _telemetryCursor;
-            _telemetryRing[cursor] = new FoveatedSimulationTelemetryEntry
+            telemetryRing[cursor] = new FoveatedSimulationTelemetryEntry
             {
                 Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                 TargetCount = _targetCount,
@@ -1130,7 +1137,7 @@ namespace Hecton8.Core
 
         private void DumpTelemetryBlackBoxOnce()
         {
-            if (_blackBoxDumped || !_telemetryRing.IsCreated)
+            if (_blackBoxDumped || !TryResolveTelemetryRing(out NativeArray<FoveatedSimulationTelemetryEntry> telemetryRing))
                 return;
 
             _blackBoxDumped = true;
@@ -1148,7 +1155,7 @@ namespace Hecton8.Core
                     writer.Write(_telemetryCursor);
                     for (int i = 0; i < TelemetryCapacity; i++)
                     {
-                        FoveatedSimulationTelemetryEntry entry = _telemetryRing[i];
+                        FoveatedSimulationTelemetryEntry entry = telemetryRing[i];
                         writer.Write(entry.Frame);
                         writer.Write(entry.TargetCount);
                         writer.Write(entry.FrozenEntityCount);
@@ -1284,35 +1291,62 @@ namespace Hecton8.Core
             _visualTargetCacheDirty = false;
         }
 
-        private bool EnsureNativeBuffersAllocated()
+        private bool OpenOrAcquireNativeBuffersForOwnerRoute()
         {
             IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
+            FoveatedNativeBuffers buffers = default;
             bool resolved =
-                TryEnsureVaultArray(vault, ref _jobScorePositionsHandle, FoveatedScorePositionsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobScorePositions) &&
-                TryEnsureVaultArray(vault, ref _jobEntityAupsHandle, FoveatedEntityAupsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobEntityAups) &&
-                TryEnsureVaultArray(vault, ref _jobImportanceScoresHandle, FoveatedImportanceScoresBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobImportanceScores) &&
-                TryEnsureVaultArray(vault, ref _jobTickRateCodesHandle, FoveatedTickRateCodesBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobTickRateCodes) &&
-                TryEnsureVaultArray(vault, ref _jobInsideFrustumFlagsHandle, FoveatedInsideFrustumFlagsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobInsideFrustumFlags) &&
-                TryEnsureVaultArray(vault, ref _jobEntitySimTiersHandle, FoveatedEntitySimTiersBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobEntitySimTiers) &&
-                TryEnsureVaultArray(vault, ref _jobDistancesMetersHandle, FoveatedDistancesMetersBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobDistancesMeters) &&
-                TryEnsureVaultArray(vault, ref _jobFromPositionsHandle, FoveatedFromPositionsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobFromPositions) &&
-                TryEnsureVaultArray(vault, ref _jobToPositionsHandle, FoveatedToPositionsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobToPositions) &&
-                TryEnsureVaultArray(vault, ref _jobAlphasHandle, FoveatedAlphasBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobAlphas) &&
-                TryEnsureVaultArray(vault, ref _telemetryRingHandle, FoveatedTelemetryRingBufferId, TelemetryCapacity, NativeArrayOptions.ClearMemory, out _telemetryRing);
+                OpenOrAcquireVaultArray(vault, ref _jobScorePositionsHandle, FoveatedScorePositionsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out buffers.ScorePositions) &&
+                OpenOrAcquireVaultArray(vault, ref _jobEntityAupsHandle, FoveatedEntityAupsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out buffers.EntityAups) &&
+                OpenOrAcquireVaultArray(vault, ref _jobImportanceScoresHandle, FoveatedImportanceScoresBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out buffers.ImportanceScores) &&
+                OpenOrAcquireVaultArray(vault, ref _jobTickRateCodesHandle, FoveatedTickRateCodesBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out buffers.TickRateCodes) &&
+                OpenOrAcquireVaultArray(vault, ref _jobInsideFrustumFlagsHandle, FoveatedInsideFrustumFlagsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out buffers.InsideFrustumFlags) &&
+                OpenOrAcquireVaultArray(vault, ref _jobEntitySimTiersHandle, FoveatedEntitySimTiersBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out buffers.EntitySimTiers) &&
+                OpenOrAcquireVaultArray(vault, ref _jobDistancesMetersHandle, FoveatedDistancesMetersBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out buffers.DistancesMeters) &&
+                OpenOrAcquireVaultArray(vault, ref _jobFromPositionsHandle, FoveatedFromPositionsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out buffers.FromPositions) &&
+                OpenOrAcquireVaultArray(vault, ref _jobToPositionsHandle, FoveatedToPositionsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out buffers.ToPositions) &&
+                OpenOrAcquireVaultArray(vault, ref _jobAlphasHandle, FoveatedAlphasBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out buffers.Alphas) &&
+                OpenOrAcquireVaultArray(vault, ref _telemetryRingHandle, FoveatedTelemetryRingBufferId, TelemetryCapacity, NativeArrayOptions.ClearMemory, out buffers.TelemetryRing);
 
             if (!resolved)
                 return false;
 
             if (!_nativeMemoryBudgetRegistered)
-                RegisterNativeMemoryBudget();
+                RegisterNativeMemoryBudget(in buffers);
 
             return true;
         }
 
-        private static bool TryEnsureVaultArray<T>(
+        private bool TryResolveNativeBuffers(out FoveatedNativeBuffers buffers)
+        {
+            buffers = default;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            return TryResolveVaultArray(vault, in _jobScorePositionsHandle, MaxTargets, out buffers.ScorePositions) &&
+                   TryResolveVaultArray(vault, in _jobEntityAupsHandle, MaxTargets, out buffers.EntityAups) &&
+                   TryResolveVaultArray(vault, in _jobImportanceScoresHandle, MaxTargets, out buffers.ImportanceScores) &&
+                   TryResolveVaultArray(vault, in _jobTickRateCodesHandle, MaxTargets, out buffers.TickRateCodes) &&
+                   TryResolveVaultArray(vault, in _jobInsideFrustumFlagsHandle, MaxTargets, out buffers.InsideFrustumFlags) &&
+                   TryResolveVaultArray(vault, in _jobEntitySimTiersHandle, MaxTargets, out buffers.EntitySimTiers) &&
+                   TryResolveVaultArray(vault, in _jobDistancesMetersHandle, MaxTargets, out buffers.DistancesMeters) &&
+                   TryResolveVaultArray(vault, in _jobFromPositionsHandle, MaxTargets, out buffers.FromPositions) &&
+                   TryResolveVaultArray(vault, in _jobToPositionsHandle, MaxTargets, out buffers.ToPositions) &&
+                   TryResolveVaultArray(vault, in _jobAlphasHandle, MaxTargets, out buffers.Alphas) &&
+                   TryResolveVaultArray(vault, in _telemetryRingHandle, TelemetryCapacity, out buffers.TelemetryRing);
+        }
+
+        private bool TryResolveTelemetryRing(out NativeArray<FoveatedSimulationTelemetryEntry> telemetryRing)
+        {
+            IDataVault vault = _dataVault;
+            return TryResolveVaultArray(vault, in _telemetryRingHandle, TelemetryCapacity, out telemetryRing);
+        }
+
+        private static bool OpenOrAcquireVaultArray<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -1323,15 +1357,27 @@ namespace Hecton8.Core
             if (handle.BufferID == 0u || handle.Generation == 0u)
                 handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystemId, options);
 
-            if (vault.TryResolveHandle(in handle, out array) &&
-                array.IsCreated &&
-                array.Length >= requiredLength)
+            if (TryResolveVaultArray(vault, in handle, requiredLength, out array))
             {
                 return true;
             }
 
             handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, VaultOwnerSystemId, options);
-            return vault.TryResolveHandle(in handle, out array) &&
+            return TryResolveVaultArray(vault, in handle, requiredLength, out array);
+        }
+
+        private static bool TryResolveVaultArray<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> array) where T : struct
+        {
+            array = default;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   handle.BufferID != 0u &&
+                   handle.Generation != 0u &&
+                   vault.TryResolveHandle(in handle, out array) &&
                    array.IsCreated &&
                    array.Length >= requiredLength;
         }
@@ -1348,17 +1394,6 @@ namespace Hecton8.Core
 
         private void ClearNativeBufferAliases()
         {
-            _jobScorePositions = default;
-            _jobEntityAups = default;
-            _jobImportanceScores = default;
-            _jobTickRateCodes = default;
-            _jobInsideFrustumFlags = default;
-            _jobEntitySimTiers = default;
-            _jobDistancesMeters = default;
-            _jobFromPositions = default;
-            _jobToPositions = default;
-            _jobAlphas = default;
-            _telemetryRing = default;
             _nativeMemoryBudgetRegistered = false;
         }
 
@@ -1402,7 +1437,7 @@ namespace Hecton8.Core
             if (ReferenceEquals(_dataVault, nextVault))
             {
                 if (_dataVault != null)
-                    EnsureNativeBuffersAllocated();
+                    OpenOrAcquireNativeBuffersForOwnerRoute();
                 return;
             }
 
@@ -1417,7 +1452,7 @@ namespace Hecton8.Core
 
             _dataVault = nextVault;
             if (_dataVault != null)
-                EnsureNativeBuffersAllocated();
+                OpenOrAcquireNativeBuffersForOwnerRoute();
         }
 
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
@@ -1443,19 +1478,19 @@ namespace Hecton8.Core
             return _targets[index] as IFoveatedSimulationTarget;
         }
 
-        private void RegisterNativeMemoryBudget()
+        private void RegisterNativeMemoryBudget(in FoveatedNativeBuffers buffers)
         {
-            long totalBytes = GetNativeArrayBytes(_jobScorePositions) +
-                              GetNativeArrayBytes(_jobEntityAups) +
-                              GetNativeArrayBytes(_jobImportanceScores) +
-                              GetNativeArrayBytes(_jobTickRateCodes) +
-                              GetNativeArrayBytes(_jobInsideFrustumFlags) +
-                              GetNativeArrayBytes(_jobEntitySimTiers) +
-                              GetNativeArrayBytes(_jobDistancesMeters) +
-                              GetNativeArrayBytes(_jobFromPositions) +
-                              GetNativeArrayBytes(_jobToPositions) +
-                              GetNativeArrayBytes(_jobAlphas) +
-                              GetNativeArrayBytes(_telemetryRing);
+            long totalBytes = GetNativeArrayBytes(buffers.ScorePositions) +
+                              GetNativeArrayBytes(buffers.EntityAups) +
+                              GetNativeArrayBytes(buffers.ImportanceScores) +
+                              GetNativeArrayBytes(buffers.TickRateCodes) +
+                              GetNativeArrayBytes(buffers.InsideFrustumFlags) +
+                              GetNativeArrayBytes(buffers.EntitySimTiers) +
+                              GetNativeArrayBytes(buffers.DistancesMeters) +
+                              GetNativeArrayBytes(buffers.FromPositions) +
+                              GetNativeArrayBytes(buffers.ToPositions) +
+                              GetNativeArrayBytes(buffers.Alphas) +
+                              GetNativeArrayBytes(buffers.TelemetryRing);
             MemoryBudgetTracker.Register(MemoryBudgetOwnerName, totalBytes, PersistentNativeBudgetBytes);
             _nativeMemoryBudgetRegistered = true;
         }

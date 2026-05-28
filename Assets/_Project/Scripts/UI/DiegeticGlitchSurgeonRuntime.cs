@@ -349,6 +349,7 @@ namespace Hecton8.UI
         private bool _pendingTableReload;
         private bool _pendingCsvReload;
 #endif
+        private bool _externalLeaseOutstanding;
         private bool _pendingExternalLeaseRelease;
         private bool _pendingDisableTeardown;
         private bool _pendingVaultSwap;
@@ -394,7 +395,7 @@ namespace Hecton8.UI
         {
             _pendingDisableTeardown = true;
             TryUnregisterHotSwapListener();
-            if (!TryDrainActiveJobIfReady() || !ServicePendingExternalLeaseRelease())
+            if (!TryDrainActiveJobIfReady() || !ServicePendingExternalLeaseRelease() || _externalLeaseOutstanding)
             {
                 EnsureLateFrameDrainRegistered();
                 return;
@@ -529,7 +530,7 @@ namespace Hecton8.UI
             if (!TryDrainActiveJobIfReady())
                 return;
 
-            if (!ServicePendingExternalLeaseRelease())
+            if (!ServicePendingExternalLeaseRelease() || _externalLeaseOutstanding)
                 return;
 
             if (_pendingVaultSwap)
@@ -567,16 +568,23 @@ namespace Hecton8.UI
         private void WriteTuningToVault(float master, float textRate, float matrixStrength, float ghostCount)
         {
             if (!_nativeReady ||
-                !TryResolveGlitchVaultBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> tuningBuffer))
+                !TryAcquireGlitchVaultWriteBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> tuningBuffer))
             {
                 return;
             }
 
-            ref GlitchTuningDTO tuning = ref ElementRef(tuningBuffer, 0);
-            tuning.MasterIntensity = master;
-            tuning.TextScrambleRate = textRate;
-            tuning.MatrixShatterStrength = matrixStrength;
-            tuning.GhostBlipCount = ghostCount;
+            try
+            {
+                ref GlitchTuningDTO tuning = ref ElementRef(tuningBuffer, 0);
+                tuning.MasterIntensity = master;
+                tuning.TextScrambleRate = textRate;
+                tuning.MatrixShatterStrength = matrixStrength;
+                tuning.GhostBlipCount = ghostCount;
+            }
+            finally
+            {
+                ReleaseGlitchVaultWriteBuffer(_vault, in _tuningHandle, TuningBufferId);
+            }
         }
 
         /// <summary>Sets the deterministic sector hash mixed with the simulation frame for rollback-safe glitch RNG.</summary>
@@ -584,39 +592,38 @@ namespace Hecton8.UI
         {
             deterministicSectorHash = sectorHash == 0u ? 0x5348494Eu : sectorHash;
             if (!_nativeReady ||
-                !TryResolveGlitchVaultBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> tuningBuffer))
+                !TryAcquireGlitchVaultWriteBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> tuningBuffer))
             {
                 return;
             }
 
-            ref GlitchTuningDTO tuning = ref ElementRef(tuningBuffer, 0);
-            tuning.FrameSeed = deterministicSectorHash;
+            try
+            {
+                ref GlitchTuningDTO tuning = ref ElementRef(tuningBuffer, 0);
+                tuning.FrameSeed = deterministicSectorHash;
+            }
+            finally
+            {
+                ReleaseGlitchVaultWriteBuffer(_vault, in _tuningHandle, TuningBufferId);
+            }
         }
 
-        /// <summary>Returns a mutable ref to the vault state DTO for editor/debug tools.</summary>
+        /// <summary>Returns a snapshot-backed ref to the vault state DTO for editor/debug tools.</summary>
         public ref GlitchStateDTO GetGlitchStateRef()
         {
-            if (!_nativeReady ||
-                _jobScheduled ||
-                !TryResolveGlitchVaultBuffer(_vault, in _stateHandle, StateBufferId, 1, out NativeArray<GlitchStateDTO> stateBuffer))
-            {
-                return ref s_dummyState;
-            }
+            if (TryReadGlitchStateSnapshot(out GlitchStateDTO snapshot))
+                s_dummyState = snapshot;
 
-            return ref ElementRef(stateBuffer, 0);
+            return ref s_dummyState;
         }
 
-        /// <summary>Returns a mutable ref to the vault tuning DTO for editor/debug tools.</summary>
+        /// <summary>Returns a snapshot-backed ref to the vault tuning DTO for editor/debug tools.</summary>
         public ref GlitchTuningDTO GetTuningRef()
         {
-            if (!_nativeReady ||
-                _jobScheduled ||
-                !TryResolveGlitchVaultBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> tuningBuffer))
-            {
-                return ref s_dummyTuning;
-            }
+            if (TryReadTuningSnapshot(out GlitchTuningDTO snapshot))
+                s_dummyTuning = snapshot;
 
-            return ref ElementRef(tuningBuffer, 0);
+            return ref s_dummyTuning;
         }
 
         /// <summary>
@@ -634,6 +641,7 @@ namespace Hecton8.UI
             tableLength = 0;
             tableHash = _lastTableHash;
             if (!_nativeReady ||
+                _externalLeaseOutstanding ||
                 _vault == null ||
                 _vault.IsCompactionFenceActive ||
                 !IsGlitchVaultHandle(in _glitchTableHandle, GlitchTableBufferId))
@@ -657,6 +665,7 @@ namespace Hecton8.UI
             lease.Owner = this;
             lease.Vault = _vault;
             lease.IsCreated = 1;
+            _externalLeaseOutstanding = true;
             return true;
         }
 
@@ -777,6 +786,7 @@ namespace Hecton8.UI
                 return false;
 
             lease.Vault?.TryUnlockBuffer(GlitchTableBufferId, SystemID.UI);
+            _externalLeaseOutstanding = false;
 
             lease = default;
             return true;
@@ -1095,19 +1105,18 @@ namespace Hecton8.UI
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            if (!TryDrainActiveJobIfReady())
+            IDataVault nextVault = currentService is IDataVault currentVault ? currentVault : null;
+            if (!TryDrainActiveJobIfReady() || !ServicePendingExternalLeaseRelease() || _externalLeaseOutstanding)
             {
                 _pendingVaultSwap = true;
-                _pendingVaultAfterSwap = currentService as IDataVault;
+                _pendingVaultAfterSwap = nextVault;
                 _nativeReady = false;
                 EnsureLateFrameDrainRegistered();
                 return;
             }
 
-            _nativeReady = false;
-            UnlockScheduledBuffers();
-            ReleaseGlitchVaultHandles(_vault);
-            _vault = currentService as IDataVault;
+            IDataVault previousVault = previousService is IDataVault oldVault ? oldVault : null;
+            BindDataVaultForLifecycle(nextVault, previousVault);
             EnsureNativeResources();
         }
 
@@ -1126,12 +1135,22 @@ namespace Hecton8.UI
 
         private void CacheDataVaultCold()
         {
-            _vault = GlobalRegistry.DataVault;
+            IDataVault nextVault = GlobalRegistry.DataVault;
+            if (_jobScheduled || _pendingExternalLeaseRelease || _externalLeaseOutstanding)
+            {
+                _pendingVaultSwap = true;
+                _pendingVaultAfterSwap = nextVault;
+                _nativeReady = false;
+                EnsureLateFrameDrainRegistered();
+                return;
+            }
+
+            BindDataVaultForLifecycle(nextVault);
         }
 
         private void EnsureNativeResources()
         {
-            if (_nativeReady)
+            if (_nativeReady || _pendingVaultSwap)
                 return;
 
             EnsureColdPaths();
@@ -1263,6 +1282,46 @@ namespace Hecton8.UI
             handle = default;
         }
 
+        private static bool TryAcquireGlitchVaultWriteBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : unmanaged
+        {
+            buffer = default;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                requiredLength <= 0 ||
+                !IsGlitchVaultHandle(in handle, bufferId) ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.UI, out buffer))
+            {
+                return false;
+            }
+
+            if (!vault.IsCompactionFenceActive &&
+                buffer.IsCreated &&
+                buffer.Length >= requiredLength)
+            {
+                return true;
+            }
+
+            vault.ReleaseWriteLock(in handle, SystemID.UI);
+            buffer = default;
+            return false;
+        }
+
+        private static void ReleaseGlitchVaultWriteBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId)
+            where T : unmanaged
+        {
+            if (vault != null && IsGlitchVaultHandle(in handle, bufferId))
+                vault.ReleaseWriteLock(in handle, SystemID.UI);
+        }
+
         private static bool TryResolveGlitchVaultBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
@@ -1349,30 +1408,47 @@ namespace Hecton8.UI
 
         private void InitializeVaultDefaults()
         {
-            if (!TryResolveGlitchVaultBuffer(_vault, in _stateHandle, StateBufferId, 1, out NativeArray<GlitchStateDTO> stateBuffer) ||
-                !TryResolveGlitchVaultBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> tuningBuffer) ||
-                !TryResolveGlitchVaultBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId, GlitchTableCapacity, out NativeArray<byte> glitchTableBuffer))
+            bool stateLocked = false;
+            bool tuningLocked = false;
+            bool tableLocked = false;
+            try
             {
-                _lastFaultFlags |= FaultVaultUnavailable;
-                return;
+                stateLocked = TryAcquireGlitchVaultWriteBuffer(_vault, in _stateHandle, StateBufferId, 1, out NativeArray<GlitchStateDTO> stateBuffer);
+                tuningLocked = TryAcquireGlitchVaultWriteBuffer(_vault, in _tuningHandle, TuningBufferId, 1, out NativeArray<GlitchTuningDTO> tuningBuffer);
+                tableLocked = TryAcquireGlitchVaultWriteBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId, GlitchTableCapacity, out NativeArray<byte> glitchTableBuffer);
+                if (!stateLocked || !tuningLocked || !tableLocked)
+                {
+                    _lastFaultFlags |= FaultVaultUnavailable;
+                    return;
+                }
+
+                ref GlitchStateDTO state = ref ElementRef(stateBuffer, 0);
+                state.GlobalIntensity = 0f;
+                state.Seed = math.asfloat(0x3F800000u);
+                state.GlitchTableOffset = 0u;
+
+                ref GlitchTuningDTO tuning = ref ElementRef(tuningBuffer, 0);
+                tuning.MasterIntensity = math.saturate(masterIntensity);
+                tuning.TextScrambleRate = math.saturate(textScrambleRate);
+                tuning.MatrixShatterStrength = math.saturate(matrixShatterStrength);
+                tuning.GhostBlipCount = math.clamp(ghostBlipCount, 0f, 32f);
+                tuning.DepthStartMeters = math.max(0f, depthStartMeters);
+                tuning.DepthFullMeters = math.max(tuning.DepthStartMeters + 1f, depthFullMeters);
+                tuning.GlobalQualityWeight = ResolveGlobalQualityWeight();
+                tuning.FrameSeed = deterministicSectorHash == 0u ? 0x5348494Eu : deterministicSectorHash;
+
+                LoadGlitchTableCold((byte*)glitchTableBuffer.GetUnsafePtr(), GlitchTableCapacity);
+            }
+            finally
+            {
+                if (tableLocked)
+                    ReleaseGlitchVaultWriteBuffer(_vault, in _glitchTableHandle, GlitchTableBufferId);
+                if (tuningLocked)
+                    ReleaseGlitchVaultWriteBuffer(_vault, in _tuningHandle, TuningBufferId);
+                if (stateLocked)
+                    ReleaseGlitchVaultWriteBuffer(_vault, in _stateHandle, StateBufferId);
             }
 
-            ref GlitchStateDTO state = ref ElementRef(stateBuffer, 0);
-            state.GlobalIntensity = 0f;
-            state.Seed = math.asfloat(0x3F800000u);
-            state.GlitchTableOffset = 0u;
-
-            ref GlitchTuningDTO tuning = ref ElementRef(tuningBuffer, 0);
-            tuning.MasterIntensity = math.saturate(masterIntensity);
-            tuning.TextScrambleRate = math.saturate(textScrambleRate);
-            tuning.MatrixShatterStrength = math.saturate(matrixShatterStrength);
-            tuning.GhostBlipCount = math.clamp(ghostBlipCount, 0f, 32f);
-            tuning.DepthStartMeters = math.max(0f, depthStartMeters);
-            tuning.DepthFullMeters = math.max(tuning.DepthStartMeters + 1f, depthFullMeters);
-            tuning.GlobalQualityWeight = ResolveGlobalQualityWeight();
-            tuning.FrameSeed = deterministicSectorHash == 0u ? 0x5348494Eu : deterministicSectorHash;
-
-            LoadGlitchTableCold((byte*)glitchTableBuffer.GetUnsafePtr(), GlitchTableCapacity);
             SeedMockText();
             SeedMockQuads();
             SeedSynthParameters();
@@ -1380,61 +1456,86 @@ namespace Hecton8.UI
 
         private void SeedMockText()
         {
-            if (!TryResolveGlitchVaultBuffer(_vault, in _originalTextHandle, OriginalTextBufferId, MockTextCapacity, out NativeArray<ushort> originalBuffer) ||
-                !TryResolveGlitchVaultBuffer(_vault, in _workTextHandle, WorkTextBufferId, MockTextCapacity, out NativeArray<ushort> workBuffer))
+            bool originalLocked = false;
+            bool workLocked = false;
+            try
             {
-                return;
-            }
+                originalLocked = TryAcquireGlitchVaultWriteBuffer(_vault, in _originalTextHandle, OriginalTextBufferId, MockTextCapacity, out NativeArray<ushort> originalBuffer);
+                workLocked = TryAcquireGlitchVaultWriteBuffer(_vault, in _workTextHandle, WorkTextBufferId, MockTextCapacity, out NativeArray<ushort> workBuffer);
+                if (!originalLocked || !workLocked)
+                    return;
 
-            ushort* original = (ushort*)originalBuffer.GetUnsafePtr();
-            ushort* work = (ushort*)workBuffer.GetUnsafePtr();
-            const string Source = "O2 98%  DEPTH 1024M  SIGNAL CLEAN";
-            _mockTextLength = math.min(Source.Length, MockTextCapacity);
-            for (int i = 0; i < MockTextCapacity; i++)
+                ushort* original = (ushort*)originalBuffer.GetUnsafePtr();
+                ushort* work = (ushort*)workBuffer.GetUnsafePtr();
+                const string Source = "O2 98%  DEPTH 1024M  SIGNAL CLEAN";
+                _mockTextLength = math.min(Source.Length, MockTextCapacity);
+                for (int i = 0; i < MockTextCapacity; i++)
+                {
+                    ushort value = i < _mockTextLength ? (ushort)Source[i] : (ushort)0;
+                    original[i] = value;
+                    work[i] = value;
+                }
+            }
+            finally
             {
-                ushort value = i < _mockTextLength ? (ushort)Source[i] : (ushort)0;
-                original[i] = value;
-                work[i] = value;
+                if (workLocked)
+                    ReleaseGlitchVaultWriteBuffer(_vault, in _workTextHandle, WorkTextBufferId);
+                if (originalLocked)
+                    ReleaseGlitchVaultWriteBuffer(_vault, in _originalTextHandle, OriginalTextBufferId);
             }
         }
 
         private void SeedMockQuads()
         {
-            if (!TryResolveGlitchVaultBuffer(_vault, in _quadHandle, MockQuadBufferId, MockQuadCapacity, out NativeArray<GlitchQuadTransformDTO> quadBuffer))
+            if (!TryAcquireGlitchVaultWriteBuffer(_vault, in _quadHandle, MockQuadBufferId, MockQuadCapacity, out NativeArray<GlitchQuadTransformDTO> quadBuffer))
             {
                 return;
             }
 
-            GlitchQuadTransformDTO* quads = (GlitchQuadTransformDTO*)quadBuffer.GetUnsafePtr();
-            for (int i = 0; i < MockQuadCapacity; i++)
+            try
             {
-                GlitchQuadTransformDTO quad = default;
-                quad.Matrix = BuildMockQuadMatrixForIndex(i);
-                quad.Color = MakeFloat4(0.18f, 0.95f, 0.62f, 0.82f);
-                quad.UVRect = MakeFloat4(0f, 0f, 1f, 1f);
-                quad.CharacterCode = i < 16 ? SpecialRadarBlipCode : (uint)('A' + (i % 26));
-                quad.GlitchIntensity = 0f;
-                quads[i] = quad;
+                GlitchQuadTransformDTO* quads = (GlitchQuadTransformDTO*)quadBuffer.GetUnsafePtr();
+                for (int i = 0; i < MockQuadCapacity; i++)
+                {
+                    GlitchQuadTransformDTO quad = default;
+                    quad.Matrix = BuildMockQuadMatrixForIndex(i);
+                    quad.Color = MakeFloat4(0.18f, 0.95f, 0.62f, 0.82f);
+                    quad.UVRect = MakeFloat4(0f, 0f, 1f, 1f);
+                    quad.CharacterCode = i < 16 ? SpecialRadarBlipCode : (uint)('A' + (i % 26));
+                    quad.GlitchIntensity = 0f;
+                    quads[i] = quad;
+                }
+            }
+            finally
+            {
+                ReleaseGlitchVaultWriteBuffer(_vault, in _quadHandle, MockQuadBufferId);
             }
         }
 
         private void SeedSynthParameters()
         {
-            if (!TryResolveGlitchVaultBuffer(_vault, in _synthHandle, SynthParameterBufferId, SynthParameterCapacity, out NativeArray<GlitchSynthParametersDTO> synthBuffer))
+            if (!TryAcquireGlitchVaultWriteBuffer(_vault, in _synthHandle, SynthParameterBufferId, SynthParameterCapacity, out NativeArray<GlitchSynthParametersDTO> synthBuffer))
             {
                 return;
             }
 
-            GlitchSynthParametersDTO* synth = (GlitchSynthParametersDTO*)synthBuffer.GetUnsafePtr();
-            for (int i = 0; i < SynthParameterCapacity; i++)
+            try
             {
-                synth[i] = new GlitchSynthParametersDTO
+                GlitchSynthParametersDTO* synth = (GlitchSynthParametersDTO*)synthBuffer.GetUnsafePtr();
+                for (int i = 0; i < SynthParameterCapacity; i++)
                 {
-                    BaseFrequency = 180f + i * 35f,
-                    ModulationIndex = 0.25f,
-                    GrainSize = 0.045f + i * 0.0025f,
-                    PressureScalar = 0f
-                };
+                    synth[i] = new GlitchSynthParametersDTO
+                    {
+                        BaseFrequency = 180f + i * 35f,
+                        ModulationIndex = 0.25f,
+                        GrainSize = 0.045f + i * 0.0025f,
+                        PressureScalar = 0f
+                    };
+                }
+            }
+            finally
+            {
+                ReleaseGlitchVaultWriteBuffer(_vault, in _synthHandle, SynthParameterBufferId);
             }
         }
 
@@ -1634,10 +1735,29 @@ namespace Hecton8.UI
             tuning->FrameSeed = deterministicSectorHash == 0u ? 0x5348494Eu : deterministicSectorHash;
         }
 
-        private bool TryReadTuningSnapshot(out GlitchTuningDTO tuning)
+        /// <summary>Reads a copy of the current glitch state without exposing a mutable vault alias.</summary>
+        public bool TryReadGlitchStateSnapshot(out GlitchStateDTO state)
+        {
+            state = default;
+            if (!_nativeReady ||
+                _jobScheduled ||
+                _vault == null ||
+                _vault.IsCompactionFenceActive ||
+                !TryReadGlitchVaultBuffer(_vault, in _stateHandle, StateBufferId, 1, out NativeArray<GlitchStateDTO> stateBuffer))
+            {
+                return false;
+            }
+
+            state = stateBuffer[0];
+            return !_vault.IsCompactionFenceActive;
+        }
+
+        /// <summary>Reads a copy of the current tuning DTO without exposing a mutable vault alias.</summary>
+        public bool TryReadTuningSnapshot(out GlitchTuningDTO tuning)
         {
             tuning = default;
             if (!_nativeReady ||
+                _jobScheduled ||
                 _vault == null ||
                 _vault.IsCompactionFenceActive ||
                 !IsGlitchVaultHandle(in _tuningHandle, TuningBufferId))
@@ -1838,13 +1958,10 @@ namespace Hecton8.UI
 
         private void FinishDisableTeardown()
         {
-            UnlockScheduledBuffers();
-            ReleaseGlitchVaultHandles(_vault);
             _pendingDisableTeardown = false;
             _pendingVaultSwap = false;
             _pendingVaultAfterSwap = null;
-            _nativeReady = false;
-            _vault = null;
+            BindDataVaultForLifecycle(null);
         }
 
         private void UnregisterLateFrameCold()
@@ -1859,12 +1976,38 @@ namespace Hecton8.UI
         private void FinishPendingVaultSwap()
         {
             _pendingVaultSwap = false;
+            IDataVault nextVault = _pendingVaultAfterSwap;
+            _pendingVaultAfterSwap = null;
+            BindDataVaultForLifecycle(nextVault);
+            if (!_pendingDisableTeardown)
+                EnsureNativeResources();
+        }
+
+        private void BindDataVaultForLifecycle(IDataVault nextVault, IDataVault fallbackReleaseVault = null)
+        {
+            IDataVault releaseVault = _vault ?? fallbackReleaseVault;
             _nativeReady = false;
             UnlockScheduledBuffers();
-            ReleaseGlitchVaultHandles(_vault);
-            _vault = _pendingVaultAfterSwap;
-            _pendingVaultAfterSwap = null;
-            EnsureNativeResources();
+            ReleaseGlitchVaultHandles(releaseVault);
+            _vault = nextVault;
+            ResetGlitchNativeEpochState();
+        }
+
+        private void ResetGlitchNativeEpochState()
+        {
+            _nativeReady = false;
+            _mockTextLength = 0;
+            _lastComputeMs = 0f;
+            _lastShaderIntensity = -1f;
+            _lastShaderSeed01 = -1f;
+            _lastShaderQualityWeight = -1f;
+            _lastTerminalBridgeIntensity = 0f;
+            _lastFaultFlags = 0u;
+            _lastTableHash = 0u;
+            _lastSeedBits = 0u;
+            _stalledSeedFrames = 0;
+            _tableFallbackGenerated = false;
+            _dumpWrittenForCurrentFault = false;
         }
 
         private void EnsureLateFrameDrainRegistered()

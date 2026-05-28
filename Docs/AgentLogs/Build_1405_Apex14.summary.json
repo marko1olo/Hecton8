@@ -1,0 +1,21 @@
+﻿{
+    "timestampUtc":  "2026-05-28T02:19:23.6892747Z",
+    "cpuLoadSamplesPercent":  [
+                                  53,
+                                  61,
+                                  54
+                              ],
+    "cpuLoadMaxPercent":  61,
+    "compilerProcessCount":  1,
+    "compilerProcesses":  [
+                              {
+                                  "ProcessName":  "dotnet",
+                                  "Id":  12600,
+                                  "CPU":  13.203125,
+                                  "StartTime":  "\/Date(1779934754623)\/"
+                              }
+                          ],
+    "launched":  false,
+    "reason":  "BLOCKED_BY_CONTENTION",
+    "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc is active."
+}

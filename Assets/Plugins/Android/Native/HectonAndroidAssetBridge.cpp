@@ -107,7 +107,11 @@ namespace
         if (mkdir(path, 0700) == 0)
             return true;
 
-        return errno == EEXIST;
+        if (errno != EEXIST)
+            return false;
+
+        struct stat status {};
+        return stat(path, &status) == 0 && S_ISDIR(status.st_mode);
     }
 
     bool H8_WriteAll(int fd, const void* source, int32_t byteCount)
@@ -287,13 +291,27 @@ extern "C" JNIEXPORT bool JNICALL H8_WriteTelemetryDump(
     int32_t headerOffset = 0;
     H8_WriteUInt32Le(header, &headerOffset, 0x4858444Du);
     H8_WriteUInt32Le(header, &headerOffset, status);
-    H8_WriteInt32Le(header, &headerOffset, cursor);
+    int32_t normalizedCursor = cursor;
+    if (normalizedCursor < 0 || normalizedCursor >= entryCount)
+        normalizedCursor = 0;
+
+    H8_WriteInt32Le(header, &headerOffset, normalizedCursor);
     H8_WriteInt32Le(header, &headerOffset, entryCount);
     H8_WriteInt32Le(header, &headerOffset, entrySize);
 
     bool ok = H8_WriteAll(fd, header, headerOffset);
-    if (ok)
-        ok = H8_WriteAll(fd, telemetryEntries, entryCount * entrySize);
+    const auto* entryBytes = static_cast<const uint8_t*>(telemetryEntries);
+    const int32_t firstEntryCount = entryCount - normalizedCursor;
+    if (ok && firstEntryCount > 0)
+    {
+        ok = H8_WriteAll(
+            fd,
+            entryBytes + normalizedCursor * entrySize,
+            firstEntryCount * entrySize);
+    }
+
+    if (ok && normalizedCursor > 0)
+        ok = H8_WriteAll(fd, entryBytes, normalizedCursor * entrySize);
 
     if (close(fd) != 0)
         ok = false;

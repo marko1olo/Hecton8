@@ -2,15 +2,15 @@
     "agent":  "1415",
     "role":  "CIRCULAR_TELEMETRY_RING_HARDENER",
     "domain":  "Echelon 1 Core Infrastructure / Crash Telemetry Layout",
-    "generatedUtc":  "2026-05-28T01:36:49Z",
+    "generatedUtc":  "2026-05-28T10:08:50Z",
     "prompt":  {
                    "source":  "Docs/Tasks/CURRENT_BATCH.md",
                    "extractedCopy":  "Docs/Tasks/_1415_extracted_prompt.tmp.md",
                    "taskCount":  20,
-                   "sha256":  "b922c32c7f14ef7844c5f6bfa20bcdeb1e370a8c02d21641c43739f7c96780b0"
+                   "sha256":  "c2818356c509aaef9c4cf7ac9d506653f5049e28418d698c428d2d658ca0c5cd"
                },
     "layoutMaterialization":  {
-                                  "materializedCount":  39,
+                                  "materializedCount":  40,
                                   "skippedCount":  0,
                                   "skipped":  [
 
@@ -250,6 +250,12 @@
                                                                       "file":  "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs",
                                                                       "line":  146,
                                                                       "fieldCount":  28
+                                                                  },
+                                                                  {
+                                                                      "name":  "JobAdmissionBlackboxEntry",
+                                                                      "file":  "Assets/_Project/Scripts/Core/Scheduling/BurstTokenBucketJobAdmissionService.cs",
+                                                                      "line":  940,
+                                                                      "fieldCount":  42
                                                                   }
                                                               ]
                               },
@@ -12049,21 +12055,20 @@
     "compilationResourceThrottle":  {
                                         "cpuLoadPercentSample":  100,
                                         "activeCompilerProcesses":  [
-                                                                        {
-                                                                            "Id":  19368,
-                                                                            "ProcessName":  "csc",
-                                                                            "CpuSeconds":  0.890625,
-                                                                            "StartTime":  "2026-05-28T05:36:46+04:00"
-                                                                        },
-                                                                        {
-                                                                            "Id":  41344,
-                                                                            "ProcessName":  "dotnet",
-                                                                            "CpuSeconds":  92.71875,
-                                                                            "StartTime":  "2026-05-28T05:34:14+04:00"
-                                                                        }
+
                                                                     ],
                                         "dotnetBuildInvoked":  false,
-                                        "reason":  "CPU \u003e 50 and active compiler/dotnet process at final APEX gate; build remains forbidden by Compilation Resource Throttling."
+                                        "reason":  "CPU \u003e 50 and active compiler/dotnet process at final APEX gate; build remains forbidden by Compilation Resource Throttling.",
+                                        "lastGate":  "blocked_by_cpu_100",
+                                        "residualRecheck2":  {
+                                                                 "sampleUtc":  "2026-05-28T10:08:50Z",
+                                                                 "cpuLoadPercent":  100,
+                                                                 "compilerProcesses":  [
+
+                                                                                       ],
+                                                                 "dotnetBuildInvoked":  false,
+                                                                 "reason":  "CPU load 100% exceeds \u003c=50 build gate; no dotnet/csc/VBCSCompiler process visible in sample."
+                                                             }
                                     },
     "modifiedFileHashes":  [
                                {
@@ -12245,10 +12250,6 @@
                                "sha256":  "32ed4c2a99312907447ed34eb1e577782b4437ce47cd8e64f376c570b05ca4cd"
                            },
                            {
-                               "file":  "Docs/Reports/TELEMETRY_ZERO_GC_AUDIT_1415.json",
-                               "sha256":  "d32bc3221d38d2671406ccebda78ace8ac25bea4797a42c86338e601e7349a9f"
-                           },
-                           {
                                "file":  "Docs/Reports/TELEMETRY_PADDING_ACCESS_AUDIT_1415.json",
                                "sha256":  "9f918046a4a64b6a84866b8e6823cd40040c1c4d7d778fc04005aae42326b568"
                            },
@@ -12257,20 +12258,8 @@
                                "sha256":  "8d8ab623f4659d38b7efc9feca39ebcba4dbb6ab18dd9e9a1b80431d27c16ccb"
                            },
                            {
-                               "file":  "Docs/Reports/TELEMETRY_DUMP_SIZE_ASSERTION_1415.json",
-                               "sha256":  "882ba5bbf37567ead584e568e68d1a01d8d249cf24532a93efa3b5e145d82441"
-                           },
-                           {
-                               "file":  "Docs/Reports/TELEMETRY_DATA_SOVEREIGNTY_AUDIT_1415.json",
-                               "sha256":  "c90a702798a1bb9039ad6f3e77986dcb4de0112a8cee65b926ce46c9327b47b4"
-                           },
-                           {
                                "file":  "Docs/Reports/TELEMETRY_SCALABILITY_CINEMATIC_AUDIT_1415.json",
                                "sha256":  "a41a044658bf863b86587faab043b17a87da59be681e50471e627273e5c3a771"
-                           },
-                           {
-                               "file":  "Docs/Reports/TELEMETRY_EDITOR_VALIDATOR_AUDIT_1415.json",
-                               "sha256":  "39bb9a91edf165a80e33ad097a17abdce047dc6a6aae53b1637b607f6cfd87fc"
                            },
                            {
                                "file":  "Docs/Reports/TELEMETRY_APEX_FINAL_VERIFICATION_1415.json",
@@ -12279,12 +12268,32 @@
                            {
                                "file":  "Docs/Reports/TELEMETRY_DUMP_STRIDE_RECHECK_1415.json",
                                "sha256":  "214acece32f61524f4caff8ed9484e22625caef9de05dbb8deef4b199410444e"
+                           },
+                           {
+                               "file":  "Docs/Reports/TELEMETRY_ZERO_GC_AUDIT_1415.json",
+                               "sha256":  "1c2ded39ece775db7cbdf1687773d9907a2b8abc3f7f1da382a454504cbcb632"
+                           },
+                           {
+                               "file":  "Docs/Reports/TELEMETRY_DUMP_SIZE_ASSERTION_1415.json",
+                               "sha256":  "72f9154b09d645a9f431b4cd885ccc171690b3683721922c44f8e037d98d1d70"
+                           },
+                           {
+                               "file":  "Docs/Reports/TELEMETRY_DATA_SOVEREIGNTY_AUDIT_1415.json",
+                               "sha256":  "fc576a1a12869d6fb97780f97c20f843385d112b9166d2fdc9607e5e651eb443"
+                           },
+                           {
+                               "file":  "Docs/Reports/TELEMETRY_EDITOR_VALIDATOR_AUDIT_1415.json",
+                               "sha256":  "47d9e03fa5a4ba60bf699274ce83c839292e5d3edff5175ebb5be2eba439cc0e"
+                           },
+                           {
+                               "file":  "Docs/Reports/TELEMETRY_APEX_RESIDUAL_RECHECK2_1415.json",
+                               "sha256":  "7bace84dde49123aad2ba55f6bfc94b1bdf75203dabdac65fc1aeb7a10c048c7"
                            }
                        ],
     "knownResidualRisk":  [
                               "36 existing telemetry structs exceed 64 bytes and require owner-domain split into 64-byte header plus detail lane; no field-dropping was performed.",
-                              "Compiler/Unity Editor proof is still blocked by CPU 100 and active dotnet PID 55080; no dotnet build was invoked.",
-                              "Previous report defect was real: UberNoirShaderTelemetryEntry was skipped as complex_body and has now been corrected in APEX recheck artifact."
+                              "Compiler/Unity Editor proof is still blocked by host load; no dotnet build was invoked after residual recheck.",
+                              "Residual defects fixed after final report: ReentryVfx dump used 48-byte row contract; JobAdmission blackbox used 32-byte row contract and lacked validator coverage."
                           ],
     "postFinalRecheck":  {
                              "generatedUtc":  "2026-05-28T01:01:29Z",
@@ -12310,7 +12319,7 @@
     "apexFinalVerification":  {
                                   "file":  "Docs/Reports/TELEMETRY_APEX_FINAL_VERIFICATION_1415.json",
                                   "sha256":  "35b449b8c664bc9ff97a4b73e25506524bb5717a3f1b1626baf85e94e3e6259f",
-                                  "materialized64ByteStructs":  39,
+                                  "materialized64ByteStructs":  40,
                                   "previousAstAuditCount":  38,
                                   "apexIncrementalCount":  1,
                                   "failureCount":  0,
@@ -12452,5 +12461,45 @@
                                                      "fixedFault":  "48-byte row and old field serialization order for 64-byte struct"
                                                  }
                                              ]
-                              }
+                              },
+    "apexResidualRecheck2":  {
+                                 "file":  "Docs/Reports/TELEMETRY_APEX_RESIDUAL_RECHECK2_1415.json",
+                                 "sha256":  "7bace84dde49123aad2ba55f6bfc94b1bdf75203dabdac65fc1aeb7a10c048c7",
+                                 "fixedRouteCount":  2,
+                                 "failureCount":  0,
+                                 "oldPatternHits":  0,
+                                 "validatorSpecRows":  40,
+                                 "zeroGcHotPathSummary":  {
+                                                              "scannedBlockCount":  4,
+                                                              "newReferenceType":  0,
+                                                              "stringFormat":  0,
+                                                              "toString":  0,
+                                                              "linqQueryOrExtension":  0,
+                                                              "foreachLoop":  0
+                                                          },
+                                 "routes":  [
+                                                {
+                                                    "name":  "ReentryVfxTelemetryEntry",
+                                                    "file":  "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs",
+                                                    "constLine":  27,
+                                                    "writerLine":  1031,
+                                                    "clearLine":  1033,
+                                                    "bufferId":  "BufferID.OrbitalDropReentryVfxTelemetryRing",
+                                                    "tryAcquireLine":  918,
+                                                    "releaseLine":  957,
+                                                    "fixedFault":  "48-byte dump header/writer for 64-byte struct"
+                                                },
+                                                {
+                                                    "name":  "JobAdmissionBlackboxEntry",
+                                                    "file":  "Assets/_Project/Scripts/Core/Scheduling/BurstTokenBucketJobAdmissionService.cs",
+                                                    "constLine":  21,
+                                                    "writerLine":  888,
+                                                    "clearLine":  890,
+                                                    "bufferId":  "BufferID.JobAdmissionBlackBox",
+                                                    "tryAcquireLine":  751,
+                                                    "releaseLine":  779,
+                                                    "fixedFault":  "32-byte blackbox ring omitted from validator and written without write-lock/finally release"
+                                                }
+                                            ]
+                             }
 }

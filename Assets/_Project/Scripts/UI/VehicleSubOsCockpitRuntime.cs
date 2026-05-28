@@ -268,6 +268,8 @@ namespace Hecton8.UI
         private GraphicsBuffer _activeDamageProxyVertexBuffer;
         private GraphicsBuffer _damagePointBuffer;
         private GraphicsBuffer _damageArgsBuffer;
+        private GraphicsBuffer _damagePointUploadBuffer;
+        private GraphicsBuffer _damageArgsUploadBuffer;
         private GraphicsBuffer _damageRoomWaterBufferA;
         private GraphicsBuffer _damageRoomWaterBufferB;
         private GraphicsBuffer _activeDamageRoomWaterBuffer;
@@ -722,6 +724,15 @@ namespace Hecton8.UI
                 case GlobalRegistryServiceSlot.PowerGrid:
                     _cachedPowerGrid = currentService as IPowerGridService;
                     break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    CompleteButtonJobForTeardown();
+                    IDataVault previousVault = previousService is IDataVault oldVault ? oldVault : _dataVault;
+                    IDataVault nextVault = currentService is IDataVault currentVault ? currentVault : null;
+                    BindDataVaultForLifecycle(nextVault, previousVault);
+                    _buttonBasesInitialized = false;
+                    _resourcesReady = false;
+                    _resourceRefreshDirty = isActiveAndEnabled;
+                    break;
                 case GlobalRegistryServiceSlot.Logistics:
                     if (currentService is IHabitatGraphService || previousService is IHabitatGraphService)
                         _cachedHabitatGraph = currentService as IHabitatGraphService;
@@ -878,13 +889,7 @@ namespace Hecton8.UI
         {
             CompleteButtonJobForTeardown();
             ReleaseButtonJobBufferLocks();
-            ReleaseCockpitVaultHandle(ref _buttonStatesHandle);
-            ReleaseCockpitVaultHandle(ref _buttonTargetsHandle);
-            ReleaseCockpitVaultHandle(ref _buttonProgressHandle);
-            ReleaseCockpitVaultHandle(ref _buttonOffsetsHandle);
-            ReleaseCockpitVaultHandle(ref _buttonBaseLocalPositionsHandle);
-            ReleaseCockpitVaultHandle(ref _buttonMatricesHandle);
-            ReleaseCockpitVaultHandle(ref _telemetryRingHandle);
+            ReleaseCockpitVaultHandles(_dataVault);
             _buttonBasesInitialized = false;
             _resourcesReady = false;
         }
@@ -892,9 +897,18 @@ namespace Hecton8.UI
         private IDataVault CacheDataVaultCold()
         {
             if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
+                BindDataVaultForLifecycle(GlobalRegistry.DataVault);
 
             return _dataVault;
+        }
+
+        private void BindDataVaultForLifecycle(IDataVault nextVault, IDataVault previousVault = null)
+        {
+            IDataVault releaseVault = previousVault ?? _dataVault;
+            if (!ReferenceEquals(_dataVault, nextVault))
+                ReleaseCockpitVaultHandles(releaseVault);
+
+            _dataVault = nextVault;
         }
 
         private bool EnsureCockpitVaultBuffer<T>(
@@ -917,7 +931,7 @@ namespace Hecton8.UI
                 return true;
             }
 
-            if (handle.BufferID != 0u && handle.Generation != 0u)
+            if (IsExactVaultHandle(in handle, bufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = vault.EnsureGenerationHandle<T>(
@@ -1253,10 +1267,23 @@ namespace Hecton8.UI
                    buffer.Length >= requiredLength;
         }
 
-        private void ReleaseCockpitVaultHandle<T>(ref VaultGenerationHandle<T> handle) where T : unmanaged
+        private void ReleaseCockpitVaultHandles(IDataVault vault)
         {
-            IDataVault vault = _dataVault;
-            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+            ReleaseCockpitVaultHandle(vault, ref _buttonStatesHandle, ButtonStatesBufferId);
+            ReleaseCockpitVaultHandle(vault, ref _buttonTargetsHandle, ButtonTargetsBufferId);
+            ReleaseCockpitVaultHandle(vault, ref _buttonProgressHandle, ButtonProgressBufferId);
+            ReleaseCockpitVaultHandle(vault, ref _buttonOffsetsHandle, ButtonOffsetsBufferId);
+            ReleaseCockpitVaultHandle(vault, ref _buttonBaseLocalPositionsHandle, ButtonBaseLocalPositionsBufferId);
+            ReleaseCockpitVaultHandle(vault, ref _buttonMatricesHandle, ButtonMatricesBufferId);
+            ReleaseCockpitVaultHandle(vault, ref _telemetryRingHandle, TelemetryRingBufferId);
+        }
+
+        private static void ReleaseCockpitVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : unmanaged
+        {
+            if (vault != null && IsExactVaultHandle(in handle, expectedBufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
@@ -1366,6 +1393,8 @@ namespace Hecton8.UI
             _activeDamageProxyVertexBuffer = null;
             ReleaseBuffer(ref _damagePointBuffer);
             ReleaseBuffer(ref _damageArgsBuffer);
+            ReleaseBuffer(ref _damagePointUploadBuffer);
+            ReleaseBuffer(ref _damageArgsUploadBuffer);
             ReleaseBuffer(ref _damageRoomWaterBufferA);
             ReleaseBuffer(ref _damageRoomWaterBufferB);
             _activeDamageRoomWaterBuffer = null;
@@ -1445,21 +1474,32 @@ namespace Hecton8.UI
             if (_damagePointBuffer == null)
             {
                 _damagePointBuffer = new GraphicsBuffer(
-                    GraphicsBuffer.Target.Append,
+                    GraphicsBuffer.Target.Append | GraphicsBuffer.Target.CopyDestination,
                     MaxDamageHologramPoints,
                     16); // COLD ALLOC: GraphicsBuffer[512 float4] - GPU append hologram point cloud - owner: VehicleSubOsCockpitRuntime
                 _damageHologramMaterialBufferBound = false;
                 _damageHologramFallbackPointUploaded = false;
                 _damageHologramFallbackWarningActive = false;
             }
+            if (_damagePointUploadBuffer == null)
+                _damagePointUploadBuffer = GraphicsBufferUploadUtility.CreateStructuredUploadStagingBuffer<Vector4>(MaxDamageHologramPoints); // COLD ALLOC: GraphicsBuffer[512 float4] - CPU-visible damage fallback point staging, GPU copy source only - owner: VehicleSubOsCockpitRuntime
 
             if (_damageArgsBuffer == null)
             {
                 _damageArgsBuffer = new GraphicsBuffer(
-                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw | GraphicsBuffer.Target.CopyDestination,
                     1,
                     GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - damage hologram indirect args - owner: VehicleSubOsCockpitRuntime
+                _damageArgsUploadBuffer = GraphicsBufferUploadUtility.CreateRawIndirectUploadStagingBuffer(
+                    1,
+                    GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - CPU-visible damage args staging, GPU copy source only - owner: VehicleSubOsCockpitRuntime
                 UpdateDamageHologramArgs(0, true);
+            }
+            else if (_damageArgsUploadBuffer == null)
+            {
+                _damageArgsUploadBuffer = GraphicsBufferUploadUtility.CreateRawIndirectUploadStagingBuffer(
+                    1,
+                    GraphicsBuffer.IndirectDrawIndexedArgs.size);
             }
 
             if (_damageRoomWaterBufferA == null || _damageRoomWaterBufferB == null)
@@ -2428,7 +2468,11 @@ namespace Hecton8.UI
                     FillFallbackWarningGlyph();
                 else
                     FillFallbackIdleGlyph();
-                _damagePointBuffer.SetData(_damageFallbackPoint, 0, 0, FallbackDamageWarningPoints);
+                GraphicsBufferUploadUtility.UploadArrayAndCopyWholeBuffer(
+                    _damagePointUploadBuffer,
+                    _damagePointBuffer,
+                    _damageFallbackPoint,
+                    FallbackDamageWarningPoints);
                 _damageHologramFallbackPointUploaded = true;
                 _damageHologramFallbackWarningActive = warningActive;
             }
@@ -2508,7 +2552,11 @@ namespace Hecton8.UI
                 baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
                 startInstance = 0u
             };
-            _damageArgsBuffer.SetData(_damageHologramArgsUpload, 0, 0, 1);
+            GraphicsBufferUploadUtility.UploadArrayAndCopyWholeBuffer(
+                _damageArgsUploadBuffer,
+                _damageArgsBuffer,
+                _damageHologramArgsUpload,
+                1);
             _lastDamageArgsMesh = mesh;
             _lastDamageArgsInstanceCount = safeInstanceCount;
         }

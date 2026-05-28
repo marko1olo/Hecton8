@@ -14,7 +14,6 @@ public class Possessor : MonoBehaviour
     public GameObject[] PossessableObjects; //must have an instance of CandiceAIController script attached
     public bool PlayerCanPossessProjectile = false;
     public float ProjectilePossessionTimer = 10f;
-    private GameObject[] projectiles;
     [HideInInspector]
     public CandiceAnimationManager animationManager;
     private Transform vsfx;

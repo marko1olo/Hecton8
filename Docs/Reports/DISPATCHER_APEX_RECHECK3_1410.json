@@ -1,0 +1,244 @@
+﻿{
+    "agent":  "1410",
+    "generatedAtUtc":  "2026-05-28T09:12:22.6479694Z",
+    "elapsedMicroseconds":  466615,
+    "status":  "STATIC_RECHECK_FOUND_AND_FIXED_TWO_ADDITIONAL_PHASE_DEFECTS_BUILD_BLOCKED_BY_CPU_AND_COMPILER",
+    "defectsFixed":  [
+                         {
+                             "id":  "DISTANCE_MATH_SHADER_LOD_PRE_VISUAL_SYNC_UPLOAD",
+                             "oldRoute":  [
+                                              "RuntimeWatchdog.Tick -\u003e FrameTimeWatchdog.Tick -\u003e DistanceMath.PushShaderMathLod -\u003e Shader.SetGlobalFloat",
+                                              "LODSystemManager.ApplyQualityPreset -\u003e DistanceMath.PushShaderMathLod -\u003e Shader.SetGlobalFloat"
+                                          ],
+                             "fixedRoute":  [
+                                                "DistanceMath.PushShaderMathLod stages MathLodMode/float quality into primitive pending fields",
+                                                "SystemDispatcher.RunDispatcherLateFrame calls DistanceMath.FlushVisualSyncShaderState at Assets/_Project/Scripts/Core/SystemDispatcher.cs:5426",
+                                                "DistanceMath.FlushVisualSyncShaderState uploads Shader.SetGlobalFloat/keywords at Assets/_Project/Scripts/Core/DistanceMath.cs:303"
+                                            ]
+                         },
+                         {
+                             "id":  "LOGISTICS_PATH_HIGHLIGHT_ON_EQUIP_SHADER_UPLOAD",
+                             "oldRoute":  [
+                                              "LogicSpannerTool.OnEquip/OnUnequip -\u003e ConnectionSplineBatchRenderer.SetLogisticsPathHighlightActive -\u003e Shader.SetGlobalFloat"
+                                          ],
+                             "fixedRoute":  [
+                                                "SetLogisticsPathHighlightActive stages bool only at Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs:137",
+                                                "ConnectionSplineBatchRenderer.LateFrameTick drains FlushLogisticsPathHighlightState at line 371",
+                                                "FlushLogisticsPathHighlightState uploads Shader.SetGlobalFloat at line 386"
+                                            ]
+                         }
+                     ],
+    "shaderPlacementProof":  {
+                                 "distanceMathShaderWritesOutsideFlush":  0,
+                                 "distanceMathShaderWritesInsideFlush":  7,
+                                 "distanceMathPushCallSites":  5,
+                                 "connectionSetShaderWrites":  0,
+                                 "connectionFlushShaderWrites":  1,
+                                 "connectionHighlightCallSites":  3,
+                                 "dispatcherContainsDistanceFlush":  true
+                             },
+    "zeroGcHotPathScan":  {
+                              "allRowsZeroForbiddenTokens":  true,
+                              "forbiddenTokenFamilies":  [
+                                                             "new reference candidates",
+                                                             "string.Format",
+                                                             ".ToString()",
+                                                             "LINQ",
+                                                             "foreach"
+                                                         ],
+                              "rows":  [
+                                           {
+                                               "file":  "Assets/_Project/Scripts/Core/DistanceMath.cs",
+                                               "method":  "PushShaderMathLod",
+                                               "overloadIndex":  1,
+                                               "totalForbiddenCount":  0,
+                                               "counts":  {
+                                                              "referenceNew":  0,
+                                                              "stringFormat":  0,
+                                                              "toString":  0,
+                                                              "linq":  0,
+                                                              "foreach":  0
+                                                          }
+                                           },
+                                           {
+                                               "file":  "Assets/_Project/Scripts/Core/DistanceMath.cs",
+                                               "method":  "PushShaderMathLod",
+                                               "overloadIndex":  2,
+                                               "totalForbiddenCount":  0,
+                                               "counts":  {
+                                                              "referenceNew":  0,
+                                                              "stringFormat":  0,
+                                                              "toString":  0,
+                                                              "linq":  0,
+                                                              "foreach":  0
+                                                          }
+                                           },
+                                           {
+                                               "file":  "Assets/_Project/Scripts/Core/DistanceMath.cs",
+                                               "method":  "PushShaderMathLod",
+                                               "overloadIndex":  3,
+                                               "totalForbiddenCount":  0,
+                                               "counts":  {
+                                                              "referenceNew":  0,
+                                                              "stringFormat":  0,
+                                                              "toString":  0,
+                                                              "linq":  0,
+                                                              "foreach":  0
+                                                          }
+                                           },
+                                           {
+                                               "file":  "Assets/_Project/Scripts/Core/DistanceMath.cs",
+                                               "method":  "PushShaderMathLod",
+                                               "overloadIndex":  4,
+                                               "totalForbiddenCount":  0,
+                                               "counts":  {
+                                                              "referenceNew":  0,
+                                                              "stringFormat":  0,
+                                                              "toString":  0,
+                                                              "linq":  0,
+                                                              "foreach":  0
+                                                          }
+                                           },
+                                           {
+                                               "file":  "Assets/_Project/Scripts/Core/DistanceMath.cs",
+                                               "method":  "PushShaderMathLod",
+                                               "overloadIndex":  5,
+                                               "totalForbiddenCount":  0,
+                                               "counts":  {
+                                                              "referenceNew":  0,
+                                                              "stringFormat":  0,
+                                                              "toString":  0,
+                                                              "linq":  0,
+                                                              "foreach":  0
+                                                          }
+                                           },
+                                           {
+                                               "file":  "Assets/_Project/Scripts/Core/DistanceMath.cs",
+                                               "method":  "FlushVisualSyncShaderState",
+                                               "overloadIndex":  1,
+                                               "totalForbiddenCount":  0,
+                                               "counts":  {
+                                                              "referenceNew":  0,
+                                                              "stringFormat":  0,
+                                                              "toString":  0,
+                                                              "linq":  0,
+                                                              "foreach":  0
+                                                          }
+                                           },
+                                           {
+                                               "file":  "Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs",
+                                               "method":  "SetLogisticsPathHighlightActive",
+                                               "overloadIndex":  1,
+                                               "totalForbiddenCount":  0,
+                                               "counts":  {
+                                                              "referenceNew":  0,
+                                                              "stringFormat":  0,
+                                                              "toString":  0,
+                                                              "linq":  0,
+                                                              "foreach":  0
+                                                          }
+                                           },
+                                           {
+                                               "file":  "Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs",
+                                               "method":  "LateFrameTick",
+                                               "overloadIndex":  1,
+                                               "totalForbiddenCount":  0,
+                                               "counts":  {
+                                                              "referenceNew":  0,
+                                                              "stringFormat":  0,
+                                                              "toString":  0,
+                                                              "linq":  0,
+                                                              "foreach":  0
+                                                          }
+                                           },
+                                           {
+                                               "file":  "Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs",
+                                               "method":  "FlushLogisticsPathHighlightState",
+                                               "overloadIndex":  1,
+                                               "totalForbiddenCount":  0,
+                                               "counts":  {
+                                                              "referenceNew":  0,
+                                                              "stringFormat":  0,
+                                                              "toString":  0,
+                                                              "linq":  0,
+                                                              "foreach":  0
+                                                          }
+                                           },
+                                           {
+                                               "file":  "Assets/_Project/Scripts/Core/FrameTimeWatchdog.cs",
+                                               "method":  "TrySwitchScalability",
+                                               "overloadIndex":  1,
+                                               "totalForbiddenCount":  0,
+                                               "counts":  {
+                                                              "referenceNew":  0,
+                                                              "stringFormat":  0,
+                                                              "toString":  0,
+                                                              "linq":  0,
+                                                              "foreach":  0
+                                                          }
+                                           },
+                                           {
+                                               "file":  "Assets/_Project/Scripts/Core/FrameTimeWatchdog.cs",
+                                               "method":  "PushInitialScalabilityFromGlobalQuality",
+                                               "overloadIndex":  1,
+                                               "totalForbiddenCount":  0,
+                                               "counts":  {
+                                                              "referenceNew":  0,
+                                                              "stringFormat":  0,
+                                                              "toString":  0,
+                                                              "linq":  0,
+                                                              "foreach":  0
+                                                          }
+                                           },
+                                           {
+                                               "file":  "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+                                               "method":  "RunDispatcherLateFrame",
+                                               "overloadIndex":  1,
+                                               "totalForbiddenCount":  0,
+                                               "counts":  {
+                                                              "referenceNew":  0,
+                                                              "stringFormat":  0,
+                                                              "toString":  0,
+                                                              "linq":  0,
+                                                              "foreach":  0
+                                                          }
+                                           }
+                                       ]
+                          },
+    "dataSovereignty":  {
+                            "newGlobalDataVaultMigrationBy1410":  false,
+                            "bufferIdsSecuredBy1410":  [
+
+                                                       ],
+                            "tryAcquireWriteLockSitesBy1410":  [
+
+                                                               ],
+                            "releaseFinallySitesBy1410":  [
+
+                                                          ],
+                            "reason":  "New fixes use primitive static pending fields and dispatcher-owned late-frame flushes; no cross-domain NativeArray/List/Queue or GlobalDataVault migration was introduced."
+                        },
+    "buildGate":  {
+                      "agent":  "1410",
+                      "generatedAtUtc":  "2026-05-28T09:15:43.0541079Z",
+                      "cpuAveragePercent":  57,
+                      "compilerProcesses":  [
+                                                {
+                                                    "Id":  30904,
+                                                    "ProcessName":  "dotnet",
+                                                    "CPU":  26.78125,
+                                                    "StartTime":  "2026-05-28T13:14:40+04:00"
+                                                },
+                                                {
+                                                    "Id":  45636,
+                                                    "ProcessName":  "csc",
+                                                    "CPU":  6.875,
+                                                    "StartTime":  "2026-05-28T13:15:01+04:00"
+                                                }
+                                            ],
+                      "buildAllowed":  false,
+                      "dotnetBuildInvoked":  false,
+                      "decision":  "BLOCKED_BY_CPU_AND_COMPILER_CONTENTION",
+                      "reason":  "CPU sample is \u003e= 50% and active dotnet/csc compiler processes exist; compilation resource throttling forbids dotnet build."
+                  }
+}

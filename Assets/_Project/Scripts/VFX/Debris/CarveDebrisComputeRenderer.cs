@@ -430,8 +430,8 @@ namespace Hecton8.VFX.Debris
 
         private void RefreshCachedRegistryServices()
         {
-            _registryDataVault = GlobalRegistry.DataVault;
-            _abyssalFlowGpuReadModel = GlobalRegistry.AbyssalFlowGpu;
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DataVault, GlobalRegistry.DataVault);
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.FluidRuntime, GlobalRegistry.AbyssalFlowGpu);
             _nextMissingRegistryRefreshFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + MissingRegistryRefreshStrideFrames;
         }
 
@@ -597,12 +597,13 @@ namespace Hecton8.VFX.Debris
         private void InvalidateDataVaultLease()
         {
             IDataVault vault = _dataVault;
-            ReleaseCarveDebrisVaultHandle(vault, ref _debrisPositionsHandle);
-            ReleaseCarveDebrisVaultHandle(vault, ref _debrisVelocitiesHandle);
-            ReleaseCarveDebrisVaultHandle(vault, ref _carveRequestsHandle);
-            ReleaseCarveDebrisVaultHandle(vault, ref _jobStateHandle);
-            ReleaseCarveDebrisVaultHandle(vault, ref _blackBoxHandle);
+            ReleaseCarveDebrisVaultHandle(vault, ref _debrisPositionsHandle, BufferID.CarveDebris);
+            ReleaseCarveDebrisVaultHandle(vault, ref _debrisVelocitiesHandle, BufferID.CarveDebrisVelocity);
+            ReleaseCarveDebrisVaultHandle(vault, ref _carveRequestsHandle, BufferID.CarveDebrisRequests);
+            ReleaseCarveDebrisVaultHandle(vault, ref _jobStateHandle, BufferID.CarveDebrisJobState);
+            ReleaseCarveDebrisVaultHandle(vault, ref _blackBoxHandle, BufferID.CarveDebrisBlackBox);
             _dataVault = null;
+            ResetDataVaultEpochState();
         }
 
         private bool TryResolveVaultBuffers(
@@ -764,12 +765,20 @@ namespace Hecton8.VFX.Debris
 
         private static void ReleaseCarveDebrisVaultHandle<T>(
             IDataVault vault,
-            ref VaultGenerationHandle<T> handle) where T : struct
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
         {
-            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+            if (vault != null && IsCarveDebrisVaultHandle(in handle, bufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
+        }
+
+        private void ResetDataVaultEpochState()
+        {
+            _blackBoxCursor = 0;
+            _blackBoxDumped = false;
+            _lastTelemetryFrame = -1;
         }
 
         private void AllocateGraphicsBuffers()
@@ -801,7 +810,7 @@ namespace Hecton8.VFX.Debris
         private static GraphicsBuffer CreateGpuWriteStructuredBuffer<T>(int count)
             where T : struct
         {
-            return GraphicsBufferUploadUtility.CreateStructuredLockBuffer<T>(math.max(1, count)); // COLD ALLOC: GraphicsBuffer[count] - persistent carve debris GPU-write lane - owner: VFX_SDF_CARVE_DEBRIS
+            return GraphicsBufferUploadUtility.CreateStructuredCopyDestinationBuffer<T>(math.max(1, count)); // COLD ALLOC: GraphicsBuffer[count] - persistent carve debris GPU-write lane; dirty CPU ranges use SetData fallback because UAV forbids LockBufferForWrite - owner: VFX_SDF_CARVE_DEBRIS
         }
 
         private void CreateEmptyResources()
@@ -2216,24 +2225,7 @@ namespace Hecton8.VFX.Debris
             if (safeCount <= 0)
                 return;
 
-            NativeArray<T> mapped = destination.LockBufferForWrite<T>(safeStart, safeCount);
-            try
-            {
-                unsafe
-                {
-                    int stride = UnsafeUtility.SizeOf<T>();
-                    void* sourcePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source) + ((long)safeStart * stride);
-                    void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                    long copyBytes = (long)stride * safeCount;
-                    long destinationBytes = (long)stride * mapped.Length;
-                    if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
-                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CarveDebrisComputeRenderer));
-                }
-            }
-            finally
-            {
-                destination.UnlockBufferAfterWrite<T>(safeCount);
-            }
+            GraphicsBufferUploadUtility.UploadNativeArraySetDataRange(destination, source, safeStart, safeStart, safeCount);
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

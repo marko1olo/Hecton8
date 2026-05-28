@@ -5,13 +5,19 @@ This folder is for public mod authors working outside the HECTON-8 Unity project
 First setup:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1 -Id com.yourname.mod -DisplayName "Your Mod" -Author "YourName" -Version 0.1.0
+powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action setup -Id com.yourname.mod -DisplayName "Your Mod" -Author "YourName" -Version 0.1.0
 ```
 
 After edits:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action prepare
+```
+
+Optional menu:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1
 ```
 
 Use `pwsh` instead of `powershell` on macOS/Linux with PowerShell 7. The tools normalize child paths internally; do not rewrite the folder layout per platform.
@@ -32,6 +38,7 @@ Current runtime boundary:
 
 Files:
 
+- `h8mod.ps1`: root no-Unity launcher for setup, validate, review, prepare, and opcode discovery. It delegates to `Tools/*.ps1` and is not a second package contract.
 - `mod.h8manifest.json`: authoring manifest for Workbench/CLI style tools.
 - `mod.json`: loader compatibility manifest; `EntryAssembly` and `EntryType` stay empty in envelope-only mode.
 - `Graphs/main.h8graph.json`: command graph draft. Empty graph emits no packets. Non-empty nodes must use opcode hex tokens or comment aliases from `Reference/allowed_opcodes.csv`.

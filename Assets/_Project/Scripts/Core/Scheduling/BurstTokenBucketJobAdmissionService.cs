@@ -18,7 +18,7 @@ namespace Hecton8.Core.Scheduling
         private const int LaneCount = JobAdmissionLanes.Count;
         private const int CostSlotCapacity = 256;
         private const int BlackboxCapacity = 300;
-        private const int BlackboxEntrySizeBytes = 32;
+        private const int BlackboxEntrySizeBytes = 64;
         private const string AdmissionBlackboxDumpPath = "Docs/AgentLogs/Dump_SIMULATION_BUCKET_DISTRIBUTOR_JobAdmission.bin";
         private const ulong AdmissionBlackboxDumpMagic = 0x00384E4F54434548ul; // HECTON8\0
         private const uint AdmissionBlackboxDumpVersion = 1u;
@@ -744,28 +744,40 @@ namespace Hecton8.Core.Scheduling
 
         private void WriteBlackbox(JobAdmissionLane lane, uint jobHash, float estimatedCostMs, float remainingBudgetMs, bool admitted)
         {
-            NativeArray<JobAdmissionBlackboxEntry> blackbox = ResolveBlackbox();
-            if (!blackbox.IsCreated || blackbox.Length < BlackboxCapacity)
+            IDataVault vault = _dataVault;
+            if (vault == null || _blackboxHandle.BufferID == 0u)
                 return;
 
-            int slot = _blackboxCursor++;
-            if (_blackboxCursor >= BlackboxCapacity)
-                _blackboxCursor = 0;
+            if (!vault.TryAcquireWriteLock(in _blackboxHandle, SystemID.JobAdmission, out NativeArray<JobAdmissionBlackboxEntry> blackbox))
+                return;
 
-            int laneIndex = ClampLane(lane);
-            blackbox[slot] = new JobAdmissionBlackboxEntry
+            try
             {
-                FrameSequence = _refillFrameSequence,
-                JobHash = jobHash,
-                EstimatedCostMs = ClampCostTelemetryMilliseconds(estimatedCostMs),
-                RemainingBudgetMs = ClampLaneBudgetMilliseconds(laneIndex, remainingBudgetMs),
-                CriticalDebtFrames = _criticalDebtFrameCount,
-                Lane = (byte)laneIndex,
-                Flags = admitted ? (byte)1 : (byte)0,
-                KillSwitchMask = _systemKillSwitchMask,
-                Reserved = 0,
-                StateHash = ComputeBlackboxHash(jobHash, estimatedCostMs, remainingBudgetMs, admitted)
-            };
+                if (!blackbox.IsCreated || blackbox.Length < BlackboxCapacity)
+                    return;
+
+                int slot = _blackboxCursor++;
+                if (_blackboxCursor >= BlackboxCapacity)
+                    _blackboxCursor = 0;
+
+                int laneIndex = ClampLane(lane);
+                JobAdmissionBlackboxEntry entry = default;
+                entry.FrameSequence = _refillFrameSequence;
+                entry.JobHash = jobHash;
+                entry.EstimatedCostMs = ClampCostTelemetryMilliseconds(estimatedCostMs);
+                entry.RemainingBudgetMs = ClampLaneBudgetMilliseconds(laneIndex, remainingBudgetMs);
+                entry.CriticalDebtFrames = _criticalDebtFrameCount;
+                entry.Lane = (byte)laneIndex;
+                entry.Flags = admitted ? (byte)1 : (byte)0;
+                entry.KillSwitchMask = _systemKillSwitchMask;
+                entry.Reserved = 0;
+                entry.StateHash = ComputeBlackboxHash(jobHash, estimatedCostMs, remainingBudgetMs, admitted);
+                blackbox[slot] = entry;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _blackboxHandle, SystemID.JobAdmission);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -818,7 +830,9 @@ namespace Hecton8.Core.Scheduling
 
         private void DumpAdmissionBlackboxCold()
         {
-            NativeArray<JobAdmissionBlackboxEntry> blackbox = ResolveBlackbox();
+            if (!TryReadOnlyBlackbox(out NativeArray<JobAdmissionBlackboxEntry>.ReadOnly blackbox))
+                return;
+
             if (!blackbox.IsCreated || blackbox.Length < BlackboxCapacity)
                 return;
 
@@ -829,14 +843,17 @@ namespace Hecton8.Core.Scheduling
                     Directory.CreateDirectory(folder);
 
                 using (FileStream stream = new FileStream(AdmissionBlackboxDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(AdmissionBlackboxDumpMagic);
-                    writer.Write(AdmissionBlackboxDumpVersion);
-                    writer.Write(BlackboxCapacity);
-                    writer.Write(BlackboxEntrySizeBytes);
-                    writer.Write(_blackboxCursor);
-                    writer.Write(_refillFrameSequence);
+                    Span<byte> header = stackalloc byte[32];
+                    WriteUInt64LittleEndian(header.Slice(0, 8), AdmissionBlackboxDumpMagic);
+                    WriteUInt32LittleEndian(header.Slice(8, 4), AdmissionBlackboxDumpVersion);
+                    WriteInt32LittleEndian(header.Slice(12, 4), BlackboxCapacity);
+                    WriteInt32LittleEndian(header.Slice(16, 4), BlackboxEntrySizeBytes);
+                    WriteInt32LittleEndian(header.Slice(20, 4), _blackboxCursor);
+                    WriteUInt32LittleEndian(header.Slice(24, 4), _refillFrameSequence);
+                    stream.Write(header);
+
+                    Span<byte> entryBytes = stackalloc byte[BlackboxEntrySizeBytes];
                     for (int i = 0; i < BlackboxCapacity; i++)
                     {
                         int index = _blackboxCursor + i;
@@ -844,22 +861,79 @@ namespace Hecton8.Core.Scheduling
                             index -= BlackboxCapacity;
 
                         JobAdmissionBlackboxEntry entry = blackbox[index];
-                        writer.Write(entry.FrameSequence);
-                        writer.Write(entry.JobHash);
-                        writer.Write(entry.EstimatedCostMs);
-                        writer.Write(entry.RemainingBudgetMs);
-                        writer.Write(entry.CriticalDebtFrames);
-                        writer.Write(entry.KillSwitchMask);
-                        writer.Write(entry.Lane);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.Reserved);
-                        writer.Write(entry.StateHash);
+                        WriteBlackboxEntry(entryBytes, in entry);
+                        stream.Write(entryBytes);
                     }
                 }
             }
             catch (Exception)
             {
             }
+        }
+
+        private bool TryReadOnlyBlackbox(out NativeArray<JobAdmissionBlackboxEntry>.ReadOnly blackbox)
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null &&
+                _blackboxHandle.BufferID != 0u &&
+                vault.TryReadOnlyHandle(in _blackboxHandle, out blackbox))
+            {
+                return true;
+            }
+
+            blackbox = default;
+            return false;
+        }
+
+        private static void WriteBlackboxEntry(Span<byte> destination, in JobAdmissionBlackboxEntry entry)
+        {
+            destination.Clear();
+            WriteUInt32LittleEndian(destination.Slice(0, 4), entry.FrameSequence);
+            WriteUInt32LittleEndian(destination.Slice(4, 4), entry.JobHash);
+            WriteSingleLittleEndian(destination.Slice(8, 4), entry.EstimatedCostMs);
+            WriteSingleLittleEndian(destination.Slice(12, 4), entry.RemainingBudgetMs);
+            WriteInt32LittleEndian(destination.Slice(16, 4), entry.CriticalDebtFrames);
+            WriteUInt32LittleEndian(destination.Slice(20, 4), entry.KillSwitchMask);
+            destination[24] = entry.Lane;
+            destination[25] = entry.Flags;
+            WriteUInt16LittleEndian(destination.Slice(26, 2), entry.Reserved);
+            WriteUInt32LittleEndian(destination.Slice(28, 4), entry.StateHash);
+        }
+
+        private static void WriteSingleLittleEndian(Span<byte> destination, float value)
+        {
+            WriteUInt32LittleEndian(destination, math.asuint(value));
+        }
+
+        private static void WriteInt32LittleEndian(Span<byte> destination, int value)
+        {
+            WriteUInt32LittleEndian(destination, unchecked((uint)value));
+        }
+
+        private static void WriteUInt64LittleEndian(Span<byte> destination, ulong value)
+        {
+            destination[0] = (byte)value;
+            destination[1] = (byte)(value >> 8);
+            destination[2] = (byte)(value >> 16);
+            destination[3] = (byte)(value >> 24);
+            destination[4] = (byte)(value >> 32);
+            destination[5] = (byte)(value >> 40);
+            destination[6] = (byte)(value >> 48);
+            destination[7] = (byte)(value >> 56);
+        }
+
+        private static void WriteUInt32LittleEndian(Span<byte> destination, uint value)
+        {
+            destination[0] = (byte)value;
+            destination[1] = (byte)(value >> 8);
+            destination[2] = (byte)(value >> 16);
+            destination[3] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt16LittleEndian(Span<byte> destination, ushort value)
+        {
+            destination[0] = (byte)value;
+            destination[1] = (byte)(value >> 8);
         }
 
         [StructLayout(LayoutKind.Explicit, Size = BlackboxEntrySizeBytes)]
@@ -894,6 +968,102 @@ namespace Hecton8.Core.Scheduling
 
             [FieldOffset(28)]
             public uint StateHash;
+
+            [FieldOffset(32)]
+            private byte _pad0;
+
+            [FieldOffset(33)]
+            private byte _pad1;
+
+            [FieldOffset(34)]
+            private byte _pad2;
+
+            [FieldOffset(35)]
+            private byte _pad3;
+
+            [FieldOffset(36)]
+            private byte _pad4;
+
+            [FieldOffset(37)]
+            private byte _pad5;
+
+            [FieldOffset(38)]
+            private byte _pad6;
+
+            [FieldOffset(39)]
+            private byte _pad7;
+
+            [FieldOffset(40)]
+            private byte _pad8;
+
+            [FieldOffset(41)]
+            private byte _pad9;
+
+            [FieldOffset(42)]
+            private byte _pad10;
+
+            [FieldOffset(43)]
+            private byte _pad11;
+
+            [FieldOffset(44)]
+            private byte _pad12;
+
+            [FieldOffset(45)]
+            private byte _pad13;
+
+            [FieldOffset(46)]
+            private byte _pad14;
+
+            [FieldOffset(47)]
+            private byte _pad15;
+
+            [FieldOffset(48)]
+            private byte _pad16;
+
+            [FieldOffset(49)]
+            private byte _pad17;
+
+            [FieldOffset(50)]
+            private byte _pad18;
+
+            [FieldOffset(51)]
+            private byte _pad19;
+
+            [FieldOffset(52)]
+            private byte _pad20;
+
+            [FieldOffset(53)]
+            private byte _pad21;
+
+            [FieldOffset(54)]
+            private byte _pad22;
+
+            [FieldOffset(55)]
+            private byte _pad23;
+
+            [FieldOffset(56)]
+            private byte _pad24;
+
+            [FieldOffset(57)]
+            private byte _pad25;
+
+            [FieldOffset(58)]
+            private byte _pad26;
+
+            [FieldOffset(59)]
+            private byte _pad27;
+
+            [FieldOffset(60)]
+            private byte _pad28;
+
+            [FieldOffset(61)]
+            private byte _pad29;
+
+            [FieldOffset(62)]
+            private byte _pad30;
+
+            [FieldOffset(63)]
+            private byte _pad31;
         }
     }
 

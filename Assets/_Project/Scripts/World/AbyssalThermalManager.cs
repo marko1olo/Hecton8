@@ -97,27 +97,29 @@ namespace Hecton8.World
             public byte ShouldSpawn;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 40)]
         private struct ThermalVentGpuData
         {
-            public Vector3 PositionWS;
-            public float RadiusWS;
-            public float HeightWS;
-            public float UpdraftVelocity;
-            public float HeatIntensity;
-            public float SmokeDensity;
-            public Vector2 Padding;
+            [FieldOffset(0)] public Vector3 PositionWS;
+            [FieldOffset(12)] public float RadiusWS;
+            [FieldOffset(16)] public float HeightWS;
+            [FieldOffset(20)] public float UpdraftVelocity;
+            [FieldOffset(24)] public float HeatIntensity;
+            [FieldOffset(28)] public float SmokeDensity;
+            [FieldOffset(32)] public Vector2 Padding;
         }
 
+        [StructLayout(LayoutKind.Explicit, Size = 48)]
         private struct AshParticleData
         {
-            public Vector3 PositionWS;
-            public float Size;
-            public Vector3 VelocityWS;
-            public float Alpha;
-            public float Lifetime;
-            public float MaxLifetime;
-            public float Seed;
-            public float VentIndex;
+            [FieldOffset(0)] public Vector3 PositionWS;
+            [FieldOffset(12)] public float Size;
+            [FieldOffset(16)] public Vector3 VelocityWS;
+            [FieldOffset(28)] public float Alpha;
+            [FieldOffset(32)] public float Lifetime;
+            [FieldOffset(36)] public float MaxLifetime;
+            [FieldOffset(40)] public float Seed;
+            [FieldOffset(44)] public float VentIndex;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -640,6 +642,7 @@ namespace Hecton8.World
         private Texture2D _thermalMapTexture;
         private GraphicsBuffer _particleBufferA;
         private GraphicsBuffer _particleBufferB;
+        private GraphicsBuffer _particleUploadStagingBuffer;
         private GraphicsBuffer[] _ventBuffers;
         private GraphicsFence[] _ventBufferFences;
         private MaterialPropertyBlock _materialPropertyBlock;
@@ -732,6 +735,11 @@ namespace Hecton8.World
         private float _lastLocalThermalTemperatureCelsius = float.NaN;
         private float _pendingLocalThermalHeat01;
         private float _pendingLocalThermalTemperatureCelsius;
+        private bool _pendingThermalShockAcousticDirty;
+        private AcousticPingSignal _pendingThermalShockAcoustic;
+        private bool _pendingThermalRoarAudioDirty;
+        private Vector3 _pendingThermalRoarPositionWs;
+        private float _pendingThermalRoarIntensity01;
         private float _previousPlayerTemperatureCelsius = DefaultAmbientWaterTemperatureCelsius;
         private float _previousSubmarineTemperatureCelsius = DefaultAmbientWaterTemperatureCelsius;
         private float _thermalCondensation01;
@@ -1030,6 +1038,7 @@ namespace Hecton8.World
             _thermalMapDiffusionSlicesCompleted = 0;
             _thermalMapDiffusionSliceCursor = 0;
             ClearHazardSources();
+            ClearThermalFeedbackSignals();
             ReleaseBuffers();
             DisposeCrystallizationBuffers();
             DisposeThermalMapBuffers();
@@ -1051,6 +1060,7 @@ namespace Hecton8.World
             _submarineThermalDamageTransform = null;
             CompleteThermalMapJobIfReady(forceComplete: true);
             ClearHazardSources();
+            ClearThermalFeedbackSignals();
             ReleaseBuffers();
             DisposeCrystallizationBuffers();
             DisposeThermalMapBuffers();
@@ -1267,6 +1277,7 @@ namespace Hecton8.World
             FlushThermalMapMetadata();
             FlushLocalThermalPresentation();
             FlushThermalBubbleCommands();
+            FlushThermalFeedbackSignals();
 
             if (_cableVisualSyncRequested)
             {
@@ -1889,7 +1900,7 @@ namespace Hecton8.World
                 acoustic.SourceId = unchecked((uint)(sourceId <= 0 ? _instanceId : sourceId));
                 acoustic.Channel = ThermalShockAcousticChannel;
                 acoustic.Flags = 1;
-                SignalBus<AcousticPingSignal>.TryPushTracked(in acoustic, ref s_x001AbyssalThermalManagerSignalPushDropCount);
+                QueueThermalShockAcoustic(in acoustic);
             }
 
             PublishTemperatureChangedSignal(
@@ -2050,13 +2061,7 @@ namespace Hecton8.World
                 return;
 
             float intensity = math.saturate(heat01);
-            ProceduralAudioEvents.TryRaiseAudioPingTriggered(
-                positionWS,
-                intensity,
-                0.65f,
-                1f,
-                Mathf.Lerp(180f, 520f, intensity),
-                ProceduralAudioPingKind.MechanicalWhirr);
+            QueueThermalRoarAudio(positionWS, intensity);
 
             ImpactSignal signal = default;
             if (!TryResolveAupFromRuntimeOrigin(positionWS, out signal.PointAup))
@@ -2068,6 +2073,55 @@ namespace Hecton8.World
             signal.WeightClass = 2;
             SignalBus<ImpactSignal>.TryPushTracked(in signal, ref s_x001AbyssalThermalManagerSignalPushDropCount);
             _thermalRoarCooldown = thermalRoarCooldownSeconds;
+        }
+
+        private void QueueThermalShockAcoustic(in AcousticPingSignal acoustic)
+        {
+            if (_pendingThermalShockAcousticDirty && _pendingThermalShockAcoustic.Intensity01 > acoustic.Intensity01)
+                return;
+
+            _pendingThermalShockAcoustic = acoustic;
+            _pendingThermalShockAcousticDirty = true;
+        }
+
+        private void QueueThermalRoarAudio(Vector3 positionWS, float intensity01)
+        {
+            float intensity = math.saturate(intensity01);
+            if (_pendingThermalRoarAudioDirty && _pendingThermalRoarIntensity01 > intensity)
+                return;
+
+            _pendingThermalRoarPositionWs = positionWS;
+            _pendingThermalRoarIntensity01 = intensity;
+            _pendingThermalRoarAudioDirty = true;
+        }
+
+        private void FlushThermalFeedbackSignals()
+        {
+            if (_pendingThermalShockAcousticDirty)
+            {
+                _pendingThermalShockAcousticDirty = false;
+                SignalBus<AcousticPingSignal>.TryPushTracked(in _pendingThermalShockAcoustic, ref s_x001AbyssalThermalManagerSignalPushDropCount);
+            }
+
+            if (_pendingThermalRoarAudioDirty)
+            {
+                _pendingThermalRoarAudioDirty = false;
+                float intensity = _pendingThermalRoarIntensity01;
+                ProceduralAudioEvents.TryRaiseAudioPingTriggered(
+                    _pendingThermalRoarPositionWs,
+                    intensity,
+                    0.65f,
+                    1f,
+                    Mathf.Lerp(180f, 520f, intensity),
+                    ProceduralAudioPingKind.MechanicalWhirr);
+            }
+        }
+
+        private void ClearThermalFeedbackSignals()
+        {
+            _pendingThermalShockAcousticDirty = false;
+            _pendingThermalRoarAudioDirty = false;
+            _pendingThermalRoarIntensity01 = 0f;
         }
 
         private void AdvanceThermalGpuRefresh(float deltaTime)
@@ -3706,8 +3760,24 @@ namespace Hecton8.World
             ReleaseBuffer(ref buffer);
 
             // COLD ALLOC: GraphicsBuffer[count] - GPU-write-capable structured storage for RWStructuredBuffer ping-pong state - owner: AbyssalThermalManager
-            buffer = GraphicsBufferUploadUtility.CreateStructuredBuffer<T>(safeCount);
+            buffer = GraphicsBufferUploadUtility.CreateStructuredCopyDestinationBuffer<T>(safeCount);
             return true;
+        }
+
+        private bool EnsureParticleUploadStagingBuffer(int count)
+        {
+            int safeCount = Mathf.Max(1, count);
+            int stride = UnsafeUtility.SizeOf<AshParticleData>();
+            if (_particleUploadStagingBuffer != null &&
+                _particleUploadStagingBuffer.count == safeCount &&
+                _particleUploadStagingBuffer.stride == stride)
+            {
+                return true;
+            }
+
+            ReleaseBuffer(ref _particleUploadStagingBuffer);
+            _particleUploadStagingBuffer = GraphicsBufferUploadUtility.CreateStructuredUploadStagingBuffer<AshParticleData>(safeCount);
+            return _particleUploadStagingBuffer != null;
         }
 
         private bool TryResolveBlackSmokeKernel()
@@ -3753,6 +3823,7 @@ namespace Hecton8.World
         {
             ReleaseBuffer(ref _particleBufferA);
             ReleaseBuffer(ref _particleBufferB);
+            ReleaseBuffer(ref _particleUploadStagingBuffer);
             ReleaseBufferRing(ref _ventBuffers);
             ClearThermalFenceState();
             MarkThermalGpuStateDirty();
@@ -4336,7 +4407,8 @@ namespace Hecton8.World
             EnsureStorage();
             EnsureGpuWriteBuffer<AshParticleData>(ref _particleBufferA, smokeParticleCount);
             EnsureGpuWriteBuffer<AshParticleData>(ref _particleBufferB, smokeParticleCount);
-            if (_initialParticles == null || _particleBufferA == null || _particleBufferB == null)
+            EnsureParticleUploadStagingBuffer(smokeParticleCount);
+            if (_initialParticles == null || _particleBufferA == null || _particleBufferB == null || _particleUploadStagingBuffer == null)
                 return;
 
             if (!CanRewriteParticleBuffers())
@@ -4345,8 +4417,8 @@ namespace Hecton8.World
             if (_activeVentCount <= 0)
             {
                 System.Array.Clear(_initialParticles, 0, _initialParticles.Length);
-                GraphicsBufferUploadUtility.UploadArraySetData(_particleBufferA, _initialParticles, smokeParticleCount);
-                GraphicsBufferUploadUtility.UploadArraySetData(_particleBufferB, _initialParticles, smokeParticleCount);
+                GraphicsBufferUploadUtility.UploadArrayAndCopyWholeBuffer(_particleUploadStagingBuffer, _particleBufferA, _initialParticles, smokeParticleCount);
+                GraphicsBufferUploadUtility.UploadArrayAndCopyWholeBuffer(_particleUploadStagingBuffer, _particleBufferB, _initialParticles, smokeParticleCount);
                 CacheSeededVentTopology();
                 _forceParticleReset = false;
                 return;
@@ -4379,8 +4451,8 @@ namespace Hecton8.World
                 };
             }
 
-            GraphicsBufferUploadUtility.UploadArraySetData(_particleBufferA, _initialParticles, smokeParticleCount);
-            GraphicsBufferUploadUtility.UploadArraySetData(_particleBufferB, _initialParticles, smokeParticleCount);
+            GraphicsBufferUploadUtility.UploadArrayAndCopyWholeBuffer(_particleUploadStagingBuffer, _particleBufferA, _initialParticles, smokeParticleCount);
+            GraphicsBufferUploadUtility.UploadArrayAndCopyWholeBuffer(_particleUploadStagingBuffer, _particleBufferB, _initialParticles, smokeParticleCount);
             CacheSeededVentTopology();
             _forceParticleReset = false;
             _frameParity = 0;

@@ -821,14 +821,12 @@ namespace Hecton.Localization
         }
 
         /// <summary>
-        /// Resolve the localized entry as a span without heap allocation.
+        /// Resolve the localized entry as a TMP-ready logical span without heap allocation.
+        /// TMP owns RTL visual ordering through isRightToLeftText.
         /// </summary>
         public static ReadOnlySpan<char> ResolveVisual(int keyHash)
         {
-            ReadOnlySpan<char> raw = ResolveRaw(keyHash);
-            return LocalizationManager.IsRightToLeftLanguage(_activeLanguage)
-                ? RTLProcessor.ToVisualOrder(raw)
-                : raw;
+            return ResolveRaw(keyHash);
         }
 
         /// <summary>
@@ -858,7 +856,8 @@ namespace Hecton.Localization
         }
 
         /// <summary>
-        /// Resolve a localized char buffer for TMP SetCharArray without heap allocation.
+        /// Resolve a localized logical char buffer for TMP SetCharArray without heap allocation.
+        /// TMP owns RTL visual ordering through isRightToLeftText.
         /// </summary>
         public static bool TryGetVisualBuffer(int keyHash, out char[] buffer, out int length)
         {
@@ -869,10 +868,7 @@ namespace Hecton.Localization
                 return false;
             }
 
-            if (!LocalizationManager.IsRightToLeftLanguage(_activeLanguage))
-                return true;
-
-            return RTLProcessor.TryGetVisualBuffer(buffer.AsSpan(0, length), out buffer, out length);
+            return true;
         }
 
         /// <summary>
@@ -880,18 +876,15 @@ namespace Hecton.Localization
         /// </summary>
         public static bool TryGetLocalizedSpan(uint keyHash, out ReadOnlySpan<byte> utf8Bytes)
         {
-            RefreshLookupTelemetryFrame();
-            uint searchNs = 0u;
-            if (TryFindUtf8Slice(keyHash, out int2 slice, out searchNs))
+            if (TryFindUtf8Slice(keyHash, out int2 slice))
             {
                 if (slice.y == 0)
                 {
                     utf8Bytes = ReadOnlySpan<byte>.Empty;
-                    RecordTelemetry(keyHash, slice.x, 0, BabelTelemetryFlags.Hit, searchNs);
                     return true;
                 }
 
-                if (IsValidUtf8Slice(slice))
+                if (IsValidUtf8SliceNoRefresh(slice))
                 {
                     unsafe
                     {
@@ -899,17 +892,11 @@ namespace Hecton.Localization
                         utf8Bytes = new ReadOnlySpan<byte>(basePtr + slice.x, slice.y);
                     }
 
-                    RecordTelemetry(keyHash, slice.x, slice.y, BabelTelemetryFlags.Hit, searchNs);
                     return true;
                 }
-
-                DumpTelemetryForCorruption(keyHash, slice);
             }
 
-            LogMissingKeyOnce(unchecked((int)keyHash));
-            utf8Bytes = GetErrorUtf8Span();
-            _missingHashCountThisFrame++;
-            RecordTelemetry(keyHash, -1, ErrorUtf8Length, BabelTelemetryFlags.Miss, searchNs);
+            utf8Bytes = ReadOnlySpan<byte>.Empty;
             return false;
         }
 
@@ -962,7 +949,7 @@ namespace Hecton.Localization
             }
 
             uint searchNs = 0u;
-            if (!TryFindUtf8Slice(keyHash, out int2 slice, out searchNs))
+            if (!TrackUtf8SliceLookup(keyHash, out int2 slice, out searchNs))
             {
                 LogMissingKeyOnce(unchecked((int)keyHash));
                 _missingHashCountThisFrame++;
@@ -1010,7 +997,7 @@ namespace Hecton.Localization
         /// </summary>
         public static bool TryGetVisualBufferFromUtf8(int keyHash, out char[] buffer, out int length)
         {
-            bool found = TryGetLocalizedSpan(unchecked((uint)keyHash), out ReadOnlySpan<byte> utf8Bytes);
+            bool found = TrackLocalizedSpanLookupForDecode(unchecked((uint)keyHash), out ReadOnlySpan<byte> utf8Bytes);
             return DecodeUtf8VisualBuffer(unchecked((uint)keyHash), found, utf8Bytes, out buffer, out length);
         }
 
@@ -1077,7 +1064,7 @@ namespace Hecton.Localization
             BabelFormatArgs formatArgs,
             bool stripRichText = false)
         {
-            bool found = TryGetLocalizedSpan(keyHash, out ReadOnlySpan<byte> utf8Bytes);
+            bool found = TrackLocalizedSpanLookupForDecode(keyHash, out ReadOnlySpan<byte> utf8Bytes);
             return DecodeUtf8VisualSpan(keyHash, found, utf8Bytes, destination, out length, formatArgs, stripRichText);
         }
 
@@ -1128,7 +1115,7 @@ namespace Hecton.Localization
         private static bool TryDecodeRawBufferFromUtf8(int keyHash, out char[] buffer, out int length)
         {
             uint hash = unchecked((uint)keyHash);
-            bool found = TryGetLocalizedSpan(hash, out ReadOnlySpan<byte> utf8Bytes);
+            bool found = TrackLocalizedSpanLookupForDecode(hash, out ReadOnlySpan<byte> utf8Bytes);
             if (!found)
             {
                 buffer = _missingKeyChars;
@@ -1137,6 +1124,41 @@ namespace Hecton.Localization
             }
 
             return DecodeUtf8VisualBuffer(hash, true, utf8Bytes, out buffer, out length);
+        }
+
+        private static bool TrackLocalizedSpanLookupForDecode(uint keyHash, out ReadOnlySpan<byte> utf8Bytes)
+        {
+            RefreshLookupTelemetryFrame();
+            uint searchNs = 0u;
+            if (TrackUtf8SliceLookup(keyHash, out int2 slice, out searchNs))
+            {
+                if (slice.y == 0)
+                {
+                    utf8Bytes = ReadOnlySpan<byte>.Empty;
+                    RecordTelemetry(keyHash, slice.x, 0, BabelTelemetryFlags.Hit, searchNs);
+                    return true;
+                }
+
+                if (IsValidUtf8Slice(slice))
+                {
+                    unsafe
+                    {
+                        byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_utf8Bytes);
+                        utf8Bytes = new ReadOnlySpan<byte>(basePtr + slice.x, slice.y);
+                    }
+
+                    RecordTelemetry(keyHash, slice.x, slice.y, BabelTelemetryFlags.Hit, searchNs);
+                    return true;
+                }
+
+                DumpTelemetryForCorruption(keyHash, slice);
+            }
+
+            LogMissingKeyOnce(unchecked((int)keyHash));
+            utf8Bytes = GetErrorUtf8SpanIfReady();
+            _missingHashCountThisFrame++;
+            RecordTelemetry(keyHash, -1, utf8Bytes.Length, BabelTelemetryFlags.Miss, searchNs);
+            return false;
         }
 
         private static bool DecodeUtf8VisualBuffer(
@@ -1214,7 +1236,7 @@ namespace Hecton.Localization
                     {
                         formatterOverflow = true;
                         truncated = true;
-                        charCursor = maxGlyphs;
+                        charCursor = math.clamp(charCursor, 0, maxGlyphs);
                         break;
                     }
 
@@ -1237,7 +1259,7 @@ namespace Hecton.Localization
                         if (charCursor > maxGlyphs)
                         {
                             truncated = true;
-                            charCursor = maxGlyphs;
+                            charCursor = math.clamp(charCursor, 0, maxGlyphs);
                             break;
                         }
 
@@ -1249,7 +1271,7 @@ namespace Hecton.Localization
                         injectedVariable = true;
                         formatterOverflow = true;
                         truncated = true;
-                        charCursor = maxGlyphs;
+                        charCursor = math.clamp(charCursor, 0, maxGlyphs);
                         break;
                     }
                 }
@@ -1283,8 +1305,6 @@ namespace Hecton.Localization
             }
 
             length = charCursor;
-            if (found && LocalizationManager.IsRightToLeftLanguage(_activeLanguage))
-                ReverseSpanInPlace(destination.Slice(0, length));
 
             if (truncated)
                 AppendEllipsis(destination, ref length, maxGlyphs);
@@ -1487,20 +1507,6 @@ namespace Hecton.Localization
         private static bool IsUtf8ContinuationByte(byte value)
         {
             return (value & 0xC0) == 0x80;
-        }
-
-        private static void ReverseSpanInPlace(Span<char> buffer)
-        {
-            int left = 0;
-            int right = buffer.Length - 1;
-            while (left < right)
-            {
-                char temp = buffer[left];
-                buffer[left] = buffer[right];
-                buffer[right] = temp;
-                left++;
-                right--;
-            }
         }
 
         /// <summary>
@@ -1867,9 +1873,8 @@ namespace Hecton.Localization
             _errorUtf8[4] = (byte)'R';
         }
 
-        private static unsafe ReadOnlySpan<byte> GetErrorUtf8Span()
+        private static unsafe ReadOnlySpan<byte> GetErrorUtf8SpanIfReady()
         {
-            EnsureErrorUtf8();
             if (!_errorUtf8.IsCreated)
                 return ReadOnlySpan<byte>.Empty;
 
@@ -2662,9 +2667,8 @@ namespace Hecton.Localization
             return hash == 0u ? LocHash.FnvOffsetBasis : hash;
         }
 
-        private static bool TryFindUtf8Slice(uint keyHash, out int2 slice, out uint searchComputeTimeNs)
+        private static bool TryFindUtf8Slice(uint keyHash, out int2 slice)
         {
-            long start = System.Diagnostics.Stopwatch.GetTimestamp();
             int low = 0;
             int high = _utf8Index.IsCreated ? _utf8IndexLength - 1 : -1;
             while (low <= high)
@@ -2673,8 +2677,6 @@ namespace Hecton.Localization
                 LocalizationEntryDTO entry = _utf8Index[mid];
                 if (entry.StringHash == keyHash)
                 {
-                    searchComputeTimeNs = StopwatchTicksToUIntNs(System.Diagnostics.Stopwatch.GetTimestamp() - start);
-                    _lookupSearchNsThisFrame += searchComputeTimeNs;
                     slice = new int2((int)entry.ByteOffset, (int)entry.ByteLength);
                     return true;
                 }
@@ -2685,10 +2687,17 @@ namespace Hecton.Localization
                     high = mid - 1;
             }
 
-            searchComputeTimeNs = StopwatchTicksToUIntNs(System.Diagnostics.Stopwatch.GetTimestamp() - start);
-            _lookupSearchNsThisFrame += searchComputeTimeNs;
             slice = new int2(-1, 0);
             return false;
+        }
+
+        private static bool TrackUtf8SliceLookup(uint keyHash, out int2 slice, out uint searchComputeTimeNs)
+        {
+            long start = System.Diagnostics.Stopwatch.GetTimestamp();
+            bool found = TryFindUtf8Slice(keyHash, out slice);
+            searchComputeTimeNs = StopwatchTicksToUIntNs(System.Diagnostics.Stopwatch.GetTimestamp() - start);
+            _lookupSearchNsThisFrame += searchComputeTimeNs;
+            return found;
         }
 
         private static uint StopwatchTicksToUIntNs(long ticks)
@@ -2830,6 +2839,11 @@ namespace Hecton.Localization
         private static bool IsValidUtf8Slice(int2 slice)
         {
             RefreshUtf8BytesFromVault();
+            return IsValidUtf8SliceNoRefresh(slice);
+        }
+
+        private static bool IsValidUtf8SliceNoRefresh(int2 slice)
+        {
             return _utf8Bytes.IsCreated &&
                    slice.x >= 0 &&
                    slice.y >= 0 &&

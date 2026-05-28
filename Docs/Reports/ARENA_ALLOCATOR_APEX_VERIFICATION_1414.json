@@ -1,246 +1,1276 @@
-{
-  "agent": "1414",
-  "status": "APEX_STATIC_VERIFIED_BUILD_BLOCKED_BY_HOST_CONTENTION",
-  "prompt": {
-    "path": "Docs/Tasks/CURRENT_BATCH.md",
-    "taskCount": 20,
-    "sha256": "22323d22279e444c27790cf29585eacf5528bb19964887e38f8c1efb5dab014e"
-  },
-  "zeroGcHotPathScan": {
-    "scanner": "PowerShell method-body text scan",
-    "elapsedMicroseconds": 1477291,
-    "terms": [
-      "new ",
-      "string.Format",
-      ".ToString(",
-      "System.Linq",
-      "Enumerable.",
-      ".Select(",
-      ".Where(",
-      ".ToList(",
-      ".ToArray(",
-      "foreach"
-    ],
-    "results": [
-      {
-        "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
-        "signature": "public static H8RawReallocationGuard Create",
-        "line": 2223,
-        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
-      },
-      {
-        "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
-        "signature": "internal static void* ReallocateRaw",
-        "line": 2945,
-        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
-      },
-      {
-        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-        "signature": "private bool TryEnsureVaultBuffer<T>",
-        "line": 1084,
-        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
-      },
-      {
-        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-        "signature": "public bool TryAcquireWriteLock<T>",
-        "line": 1657,
-        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
-      },
-      {
-        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-        "signature": "public bool ReleaseWriteLock<T>",
-        "line": 1800,
-        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
-      },
-      {
-        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-        "signature": "private bool QueueDeferredRelease",
-        "line": 1925,
-        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
-      },
-      {
-        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-        "signature": "private bool DrainDeferredWriterReleaseLocked",
-        "line": 2035,
-        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
-      },
-      {
-        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-        "signature": "private bool DrainDeferredBufferPinReleaseLocked",
-        "line": 2083,
-        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
-      },
-      {
-        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-        "signature": "private bool TryReadFlatMetadata",
-        "line": 3583,
-        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
-      },
-      {
-        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-        "signature": "private bool TryGrowArenaForBytes",
-        "line": 4787,
-        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
-      },
-      {
-        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-        "signature": "private bool TryGrowArena",
-        "line": 4844,
-        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
-      },
-      {
-        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-        "signature": "public bool ProcessDeferredArenaGrowth",
-        "line": 4943,
-        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
-      },
-      {
-        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-        "signature": "private void QueueDeferredArenaGrowth",
-        "line": 4976,
-        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
-      },
-      {
-        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-        "signature": "private void ClearDeferredArenaGrowthIfSatisfied",
-        "line": 4995,
-        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
-      },
-      {
-        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
-        "signature": "private bool CanSatisfyContiguousFreeBlock",
-        "line": 5009,
-        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
-      },
-      {
-        "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-        "signature": "private void ProcessDeferredArenaGrowthPostSimulation",
-        "line": 2899,
-        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
-      }
-    ]
-  },
-  "layoutProof": {
-    "struct": "H8RawReallocationGuard",
-    "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
-    "line": 2211,
-    "declaredSizeBytes": 16,
-    "fields": [
-      { "name": "CompactionFenceHeld", "type": "int", "offset": 0, "size": 4 },
-      { "name": "ActiveLockMask", "type": "uint", "offset": 4, "size": 4 },
-      { "name": "HasPinnedExternalViews", "type": "byte", "offset": 8, "size": 1 },
-      { "name": "Reserved0", "type": "byte", "offset": 9, "size": 1 },
-      { "name": "Reserved1", "type": "ushort", "offset": 10, "size": 2 },
-      { "name": "Signature", "type": "uint", "offset": 12, "size": 4 }
-    ],
-    "math": "0+4=4; 4+4=8; 8+1=9; 9+1=10; 10+2=12; 12+4=16; 16 % 8 == 0.",
-    "managedReferences": 0,
-    "runtimeBoolFields": 0
-  },
-  "dataSovereignty": {
-    "migratedFieldsToGlobalDataVault": false,
-    "addedBufferIdConstantsInModifiedMethodBodies": 0,
-    "tryAcquireWriteLockFenceChecks": [
-      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1660",
-      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1673",
-      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1705"
-    ],
-    "tryLockBufferFenceChecks": [
-      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:2387",
-      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:2396"
-    ],
-    "releaseInFinallyProof": [
-      "TryAcquireWriteLock block mutation gate release: Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1791",
-      "ReleaseWriteLock release mutation gate release: Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1851",
-      "TryLockBuffer block mutation gate release: Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:2471",
-      "TryUnlockBuffer release mutation gate release: Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:2565",
-      "TryGrowArena relocation gate/fence release: Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:4933-4939"
-    ]
-  },
-  "deferredGrowthRaceProof": {
-    "writer": "QueueDeferredArenaGrowth uses Interlocked.CompareExchange max loop at GlobalDataVault.cs:4976-4988.",
-    "clear": "ClearDeferredArenaGrowthIfSatisfied uses Interlocked.CompareExchange zero-at-observed at GlobalDataVault.cs:4995-5006.",
-    "fenceQueueFix": "TryEnsureVaultBuffer now queues requiredBytes on any active compaction fence at GlobalDataVault.cs:1121-1124.",
-    "proof": "If a larger writer wins before clear observation, clear tests the larger observed target. If the writer wins after observation, clear CAS fails because current != observed. If no writer races, clear only occurs after CanSatisfyContiguousFreeBlock(observed)."
-  },
-  "sparseBufferIdProof": {
-    "problem": "High sparse BufferID values such as PlayerHandIkPublishedStates=315736 exceeded MaxGenerationHandleCapacity=100000; handles could be built through map metadata but public resolve/lock routes that used TryReadFlatMetadata could falsely fail.",
-    "fix": "TryReadFlatMetadata keeps the flat-array fast path and falls back to _metadata.TryGetValue for sparse keys without increasing native array capacity.",
-    "secondaryFix": "Generic write-lock acquire/release and deferred release queue now avoid flat-array length rejection and route ActiveWriterSystemID updates through WriteMetadata, which updates both flat metadata and sparse map metadata.",
-    "proofSites": [
-      "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:103-109",
-      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:3583-3597",
-      "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorRuntime.cs:992",
-      "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime_HandIK.cs:582",
-      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1657-1791",
-      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1800-1851",
-      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1925-1935"
-    ],
-    "staticTests": [
-      "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs:55",
-      "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs:65"
-    ],
-    "capacityChangeBytes": 0
-  },
-  "deferredGrowthDuplicateCheck": {
-    "problem": "ProcessDeferredArenaGrowth contained a duplicated HasActiveBurstLocks(0u) predicate after concurrent deferred-release edits.",
-    "fix": "Removed the duplicate predicate; the method now checks active burst locks once and pinned external views once.",
-    "proofSites": [
-      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:4943-4957",
-      "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs:81"
-    ]
-  },
-  "cinematicCheatAndScalability": {
-    "physicalSimulationAdded": false,
-    "visualFakeRelevance": "Allocator work is memory authority, not water/light/deformation simulation; the cheap path is fail-closed deferred growth rather than simulating allocator physics.",
-    "globalQualityRoute": [
-      "GameBootstrapper.ResolveBootstrapQualityWeight01 reads HomeostasisBrain.GlobalQualityWeight at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3931-3934.",
-      "GameBootstrapper.ResolveBootstrapScalabilityProfileByte maps the continuous 0..1 value to byte profile at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3925-3928.",
-      "GlobalDataVault.ResolveArenaCapacityLimit(byte) smoothsteps the profile from 512 MiB to 4 GiB at Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:4745-4751."
-    ],
-    "binaryLowEndSwitchScan": [
-      { "term": "isLowEnd", "count": 0 },
-      { "term": "lowEnd", "count": 0 },
-      { "term": "LowEnd", "count": 0 },
-      { "term": "MathLodMode.Low", "count": 0 },
-      { "term": "MathPrecisionLevel.Low", "count": 0 },
-      { "term": "switchTier", "count": 0 },
-      { "term": "switchQuality", "count": 0 }
-    ],
-    "binaryLowEndSwitchFalsePositiveNotes": [
-      "The broad regex 'if (.*Low' only matched _mutationGuardMaskLow, not low-end device branches."
-    ]
-  },
-  "compilationThrottle": {
-    "dotnetBuildInvocationsThisApexPass": 0,
-    "apexInitialCpuLoadPercentage": 100,
-    "apexInitialActiveCompilerProcesses": [
-      { "processName": "dotnet", "pid": 53704 }
-    ],
-    "latestFinalGateCpuLoadPercentage": 66,
-    "latestFinalGateActiveCompilerProcesses": [
-      { "processName": "csc", "pid": 67916 },
-      { "processName": "dotnet", "pid": 20440 }
-    ],
-    "decision": "No build launched."
-  },
-  "sourceHashesAfterApexFixes": {
-    "Assets/_Project/Scripts/Core/Memory/H8Memory.cs": "5244a1a957fc131c908190f6734a54ad2a17a186901d62306faa44384d083657",
-    "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs": "a0233a4e583874e84a7425741dcdf21bd21a7bf3ec6a2b282eb7076c1d32d4e4",
-    "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs": "d6cc77f5fb89f2cbde4147a7bd1364f9632aa8c6da3ce856c043138ecdd3c2cc",
-    "Assets/_Project/Scripts/Core/SystemDispatcher.cs": "2764521680859df474d966e08c278aad7be7b8a03f95ef0a5dcb057bf3429c74",
-    "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs": "ade4c888cbd116a8ee5b3c7fd6f3c41f3e3926f0e73b295541f87cac9e80db33"
-  },
-  "blackBoxAndDumpState": {
-    "h8MemoryRingEntries": 300,
-    "globalDataVaultDefragRingEntries": 300,
-    "existingDumpRoutes": [
-      "Docs/AgentLogs/Dump_SENTINEL_DISPOSAL_GUARD.bin",
-      "Docs/AgentLogs/Dump_MEMORY_DEFRAGMENTATION_OVERSEER.bin",
-      "Docs/AgentLogs/Dump_MEMORY_DEFRAGMENTATION_OVERSEER_PHIVOD.bin",
-      "Docs/AgentLogs/Dump_1310_MemorySentry.bin"
-    ],
-    "dump1414Exists": false,
-    "dump1414Reason": "No runtime crash, NaN, or executed failing test occurred during this static pass; creating a fake dump would be false evidence."
-  }
+﻿{
+    "agent":  "1414",
+    "status":  "APEX_STATIC_VERIFIED_BUILD_BLOCKED_BY_HOST_CONTENTION",
+    "date":  "2026-05-28",
+    "prompt":  {
+                   "path":  "Docs/Tasks/CURRENT_BATCH.md",
+                   "length":  21926,
+                   "taskCount":  20,
+                   "sha256":  "22323d22279e444c27790cf29585eacf5528bb19964887e38f8c1efb5dab014e"
+               },
+    "sourceHashes":  {
+                         "Assets/_Project/Scripts/Core/Memory/H8Memory.cs":  "16e4da2e5148bbad8f4abc9b524e97151f1b5080a15eda7c6ab544ba81618be4",
+                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs":  "b35073e0f7ad2e833767c0b3f6b3139a05942bd9b416bc77c8f373b9a3d74aac",
+                         "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs":  "d6cc77f5fb89f2cbde4147a7bd1364f9632aa8c6da3ce856c043138ecdd3c2cc",
+                         "Assets/_Project/Scripts/Core/SystemDispatcher.cs":  "2e9aae21b03b5f6efeca7f2f4d2c71a1f4ece0522aaffe53a0814524c0b0b815",
+                         "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs":  "f92bebfd212a46cb09a023c7a349b934c1431b3b651c80161f3757b1d7857309"
+                     },
+    "zeroGcHotPathScan":  {
+                              "scanner":  "PowerShell method-body text scan",
+                              "elapsedMicroseconds":  2883409,
+                              "terms":  [
+                                            "new ",
+                                            "string.Format",
+                                            ".ToString(",
+                                            "System.Linq",
+                                            "Enumerable.",
+                                            ".Select(",
+                                            ".Where(",
+                                            ".ToList(",
+                                            ".ToArray(",
+                                            "foreach"
+                                        ],
+                              "hotMethodsScanned":  22,
+                              "totalForbiddenTermHits":  0,
+                              "results":  [
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                  "line":  2225,
+                                                  "signature":  "public static H8RawReallocationGuard Create",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                  "line":  2947,
+                                                  "signature":  "internal static void* ReallocateRaw",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                  "line":  1089,
+                                                  "signature":  "private bool TryEnsureVaultBuffer\u003cT\u003e",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                  "line":  1270,
+                                                  "signature":  "private bool TryAllocatePublishedBuffer\u003cT\u003e",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                  "line":  1725,
+                                                  "signature":  "public bool TryAcquireWriteLock\u003cT\u003e",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                  "line":  1868,
+                                                  "signature":  "public bool ReleaseWriteLock\u003cT\u003e",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                  "line":  1923,
+                                                  "signature":  "private bool ReleaseWriterBlockLock",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                  "line":  1993,
+                                                  "signature":  "private bool QueueDeferredRelease",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                  "line":  2119,
+                                                  "signature":  "private bool DrainDeferredWriterReleaseLocked",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                  "line":  2167,
+                                                  "signature":  "private bool DrainDeferredBufferPinReleaseLocked",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                  "line":  2595,
+                                                  "signature":  "public bool TryUnlockBuffer(BufferID bufferId, SystemID lockOwner)",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                  "line":  3670,
+                                                  "signature":  "private bool TryReadFlatMetadata",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                  "line":  3751,
+                                                  "signature":  "private uint ReadMetadataGeneration",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                  "line":  3766,
+                                                  "signature":  "private void WriteMetadataGeneration",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                  "line":  3730,
+                                                  "signature":  "private void RemoveMetadata",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                  "line":  4904,
+                                                  "signature":  "private bool TryGrowArenaForBytes",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                  "line":  4961,
+                                                  "signature":  "private bool TryGrowArena(",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                  "line":  5061,
+                                                  "signature":  "public bool ProcessDeferredArenaGrowth",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                  "line":  5094,
+                                                  "signature":  "private void QueueDeferredArenaGrowth",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                  "line":  5113,
+                                                  "signature":  "private void ClearDeferredArenaGrowthIfSatisfied",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                                                  "line":  5127,
+                                                  "signature":  "private bool CanSatisfyContiguousFreeBlock",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              },
+                                              {
+                                                  "path":  "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+                                                  "line":  2899,
+                                                  "signature":  "private void ProcessDeferredArenaGrowthPostSimulation",
+                                                  "counts":  [
+                                                                 {
+                                                                     "term":  "new ",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "string.Format",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToString(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "System.Linq",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "Enumerable.",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Select(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".Where(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToList(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  ".ToArray(",
+                                                                     "count":  0
+                                                                 },
+                                                                 {
+                                                                     "term":  "foreach",
+                                                                     "count":  0
+                                                                 }
+                                                             ]
+                                              }
+                                          ]
+                          },
+    "layoutProof":  {
+                        "struct":  "H8RawReallocationGuard",
+                        "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                        "line":  2212,
+                        "declaredSizeBytes":  16,
+                        "fields":  [
+                                       {
+                                           "name":  "CompactionFenceHeld",
+                                           "type":  "int",
+                                           "offset":  0,
+                                           "size":  4
+                                       },
+                                       {
+                                           "name":  "ActiveLockMask",
+                                           "type":  "uint",
+                                           "offset":  4,
+                                           "size":  4
+                                       },
+                                       {
+                                           "name":  "HasPinnedExternalViews",
+                                           "type":  "byte",
+                                           "offset":  8,
+                                           "size":  1
+                                       },
+                                       {
+                                           "name":  "Reserved0",
+                                           "type":  "byte",
+                                           "offset":  9,
+                                           "size":  1
+                                       },
+                                       {
+                                           "name":  "Reserved1",
+                                           "type":  "ushort",
+                                           "offset":  10,
+                                           "size":  2
+                                       },
+                                       {
+                                           "name":  "Signature",
+                                           "type":  "uint",
+                                           "offset":  12,
+                                           "size":  4
+                                       }
+                                   ],
+                        "math":  "4+4+1+1+2+4=16; explicit offsets 0,4,8,9,10,12 are non-overlapping; 16 % 8 == 0; managed references=0; runtime bool fields=0."
+                    },
+    "dataSovereignty":  {
+                            "migratedFieldsToGlobalDataVault":  false,
+                            "securedSparseBufferIds":  [
+                                                           {
+                                                               "name":  "PlayerHandIkPublishedStates",
+                                                               "value":  315736,
+                                                               "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                               "line":  110
+                                                           },
+                                                           {
+                                                               "name":  "WorldSpatialAcousticDensityMap",
+                                                               "value":  1419042,
+                                                               "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                               "line":  243
+                                                           }
+                                                       ],
+                            "tryAcquireWriteLockCompactionFenceChecks":  [
+                                                                             1728,
+                                                                             1741,
+                                                                             1773
+                                                                         ],
+                            "writeLockReleaseFinallySites":  [
+                                                                 {
+                                                                     "method":  "TryAcquireWriteLock\u003cT\u003e",
+                                                                     "line":  1857,
+                                                                     "releaseLine":  1859
+                                                                 },
+                                                                 {
+                                                                     "method":  "ReleaseWriteLock\u003cT\u003e",
+                                                                     "line":  1917,
+                                                                     "releaseLine":  1919
+                                                                 },
+                                                                 {
+                                                                     "method":  "ReleaseWriterBlockLock",
+                                                                     "line":  1935,
+                                                                     "releaseLine":  1937
+                                                                 },
+                                                                 {
+                                                                     "method":  "TryUnlockBuffer",
+                                                                     "line":  2647,
+                                                                     "releaseLine":  2649
+                                                                 },
+                                                                 {
+                                                                     "method":  "TryGrowArena",
+                                                                     "line":  5051,
+                                                                     "releaseLine":  5054
+                                                                 },
+                                                                 {
+                                                                     "method":  "TryAllocatePublishedBuffer\u003cT\u003e",
+                                                                     "line":  1357,
+                                                                     "releaseLine":  1373
+                                                                 }
+                                                             ],
+                            "sparseMetadataRoute":  "TryReadFlatMetadata uses flat array only when key \u003c _metadataByBufferId.Length, then falls back to _metadata.TryGetValue for sparse keys.",
+                            "sparseGenerationLedger":  "_metadataGenerationByBufferId records live and tombstone generations for sparse keys without expanding the flat metadata array."
+                        },
+    "defectsFoundDuringThisPass":  [
+                                       {
+                                           "id":  "DEFERRED_BUFFER_PIN_DEDUP_LOST_RELEASE",
+                                           "fault":  "All-kind deferred-release de-duplication swallowed valid counted buffer-pin releases because TryLockBuffer allows multiple pins by the same owner through Reserved1++.",
+                                           "fix":  "QueueDeferredRelease now de-duplicates only DeferredReleaseKindWriter. Buffer-pin releases remain counted queue events.",
+                                           "proof":  [
+                                                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:2015",
+                                                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:2026",
+                                                         "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs:90",
+                                                         "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs:94"
+                                                     ]
+                                       },
+                                       {
+                                           "id":  "NEW_ALLOCATION_PUBLISH_ROLLBACK_GATE_RETRY",
+                                           "fault":  "A post-publish rollback helper reacquired the mutation gate after MarkExternalView failure, so rollback was not mathematically guaranteed under gate contention.",
+                                           "fix":  "New allocation publish moved into TryAllocatePublishedBuffer\u003cT\u003e, where allocation, clear, metadata publish, optional external-view mark, and rollback all execute under one mutation gate and release in finally.",
+                                           "proof":  [
+                                                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1270",
+                                                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1283",
+                                                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1347",
+                                                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1359",
+                                                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1373",
+                                                         "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs:99"
+                                                     ]
+                                       },
+                                       {
+                                           "id":  "NEW_ALLOCATION_SANITIZE_AFTER_PUBLISH",
+                                           "fault":  "New float payload sanitation occurred after metadata publication, leaving a small window where another resolver could observe un-sanitized newly allocated payload.",
+                                           "fix":  "TryAllocatePublishedBuffer\u003cT\u003e now runs SanitizeFinitePayload\u003cT\u003e before _buffers.TryAdd and TryAddMetadata.",
+                                           "proof":  [
+                                                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1313",
+                                                         "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1331",
+                                                         "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs:109"
+                                                     ]
+                                       }
+                                   ],
+    "deferredGrowthRaceProof":  {
+                                    "queue":  "QueueDeferredArenaGrowth starts at GlobalDataVault.cs:5094 and commits the Interlocked.CompareExchange max loop at GlobalDataVault.cs:5106.",
+                                    "clear":  "ClearDeferredArenaGrowthIfSatisfied starts at GlobalDataVault.cs:5113 and clears with Interlocked.CompareExchange(ref _deferredArenaGrowthBytes, 0L, observed) at GlobalDataVault.cs:5124 after CanSatisfyContiguousFreeBlock(observed).",
+                                    "proof":  "If a larger request wins before the maintenance reader observes, observed is larger. If it wins after observation, the zero-CAS fails because current != observed. If there is no racing writer, clear happens only when the observed target is already satisfiable."
+                                },
+    "cinematicCheatAndScalability":  {
+                                         "physicalSimulationAdded":  false,
+                                         "cheapPath":  "Fail-closed deferred relocation, bounded writer de-duplication, counted pin-release queueing, and gate-owned rollback; no physical simulation added.",
+                                         "globalQualityRoute":  [
+                                                                    "HomeostasisBrain.GlobalQualityWeight is consumed during bootstrap quality resolution in SystemDispatcher.cs:1758 and runtime frame state routes.",
+                                                                    "GlobalDataVault.ResolveArenaCapacityLimit scales arena capacity continuously through GlobalDataVault.cs:4862 and GlobalDataVault.cs:4867, then clamps explicit limits at GlobalDataVault.cs:4887.",
+                                                                    "No binary if(isLowEnd) or tier switch was added in the modified allocator paths."
+                                                                ],
+                                         "binaryLowEndSwitchScan":  [
+                                                                        {
+                                                                            "term":  "isLowEnd",
+                                                                            "count":  0
+                                                                        },
+                                                                        {
+                                                                            "term":  "lowEnd",
+                                                                            "count":  0
+                                                                        },
+                                                                        {
+                                                                            "term":  "LowEnd",
+                                                                            "count":  0
+                                                                        },
+                                                                        {
+                                                                            "term":  "MathLodMode.Low",
+                                                                            "count":  0
+                                                                        },
+                                                                        {
+                                                                            "term":  "MathPrecisionLevel.Low",
+                                                                            "count":  0
+                                                                        },
+                                                                        {
+                                                                            "term":  "switchTier",
+                                                                            "count":  0
+                                                                        },
+                                                                        {
+                                                                            "term":  "switchQuality",
+                                                                            "count":  0
+                                                                        }
+                                                                    ]
+                                     },
+    "verification":  {
+                         "gitDiffCheck":  "PASS_WITH_CRLF_WARNINGS_ONLY",
+                         "editorTestsAdded":  [
+                                                  "GlobalDataVault_SparseBufferIdWriteLocksAvoidFlatArrayReject",
+                                                  "GlobalDataVault_DeferredReleaseAcceptanceAndDeduplicationStayContractSafe",
+                                                  "GlobalDataVault_NewAllocationPublishAndRollbackStayUnderOneMutationGate",
+                                                  "GlobalDataVault_SparseBufferIdGenerationSurvivesRelease",
+                                                  "GlobalDataVault_DeferredGrowthChecksBurstLocksOnce"
+                                              ],
+                         "editorTestsExecuted":  false,
+                         "buildExecuted":  false
+                     },
+    "compilationThrottle":  {
+                                "dotnetBuildInvocationsThisPass":  0,
+                                "latestCpuLoadPercentage":  76,
+                                "latestActiveCompilerProcesses":  [],
+                                "decision":  "No dotnet build launched because CPU was above 50 percent. No dotnet/csc/VBCSCompiler processes were active in the latest sample."
+                            },
+    "blackBoxAndDumpState":  {
+                                 "expectedDumpPath":  "Docs/AgentLogs/Dump_1414.bin",
+                                 "dump1414Exists":  false,
+                                 "reason":  "No runtime crash, NaN, or executed failing test occurred during this static pass; creating a synthetic dump would be false evidence."
+                             }
 }

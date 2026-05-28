@@ -324,7 +324,11 @@ namespace Hecton8.Rendering
             if (runtime == null || !runtime._vaultStateReady)
                 return false;
 
-            if (!runtime.TryReadVaultBuffer(in runtime._tuningHandle, 1, out NativeArray<UpscalerTuningDTO>.ReadOnly tuningArray))
+            if (!runtime.TryReadVaultBuffer(
+                    in runtime._tuningHandle,
+                    BufferID.Shinobu236BilateralDrsTuning,
+                    1,
+                    out NativeArray<UpscalerTuningDTO>.ReadOnly tuningArray))
                 return false;
 
             tuning = tuningArray[0];
@@ -487,7 +491,11 @@ namespace Hecton8.Rendering
 
                 parametersLocked = true;
 
-                if (!TryReadVaultBuffer(in _tuningHandle, 1, out NativeArray<UpscalerTuningDTO>.ReadOnly tuning))
+                if (!TryReadVaultBuffer(
+                        in _tuningHandle,
+                        BufferID.Shinobu236BilateralDrsTuning,
+                        1,
+                        out NativeArray<UpscalerTuningDTO>.ReadOnly tuning))
                 {
                     failureFlags = BilateralDrsUpscalerConstants.FaultVaultUnavailable;
                     return dependsOn;
@@ -517,7 +525,11 @@ namespace Hecton8.Rendering
 
                 telemetryCursorLocked = true;
 
-                if (!TryReadVaultBuffer(in _profilesHandle, BilateralDrsUpscalerConstants.ProfileCapacity, out NativeArray<UpscalerProfileDTO>.ReadOnly profiles))
+                if (!TryReadVaultBuffer(
+                        in _profilesHandle,
+                        BufferID.Shinobu236BilateralDrsProfiles,
+                        BilateralDrsUpscalerConstants.ProfileCapacity,
+                        out NativeArray<UpscalerProfileDTO>.ReadOnly profiles))
                 {
                     failureFlags = BilateralDrsUpscalerConstants.FaultVaultUnavailable;
                     return dependsOn;
@@ -653,7 +665,7 @@ namespace Hecton8.Rendering
                 if (!allowAllocation)
                     return false;
 
-                _dataVault = GlobalRegistry.DataVault;
+                BindDataVaultForLifecycle(GlobalRegistry.DataVault);
                 _resolutionScaler = GlobalRegistry.ResolutionScaler;
                 _coldDependenciesCached = true;
             }
@@ -771,7 +783,11 @@ namespace Hecton8.Rendering
 
         private void RefreshCachedDebugFlag()
         {
-            if (!TryReadVaultBuffer(in _tuningHandle, 1, out NativeArray<UpscalerTuningDTO>.ReadOnly tuning))
+            if (!TryReadVaultBuffer(
+                    in _tuningHandle,
+                    BufferID.Shinobu236BilateralDrsTuning,
+                    1,
+                    out NativeArray<UpscalerTuningDTO>.ReadOnly tuning))
                 return;
 
             s_edgeMaskDebugEnabled = tuning[0].DebugAndFlags.x > 0.5f;
@@ -885,7 +901,11 @@ namespace Hecton8.Rendering
 
         private bool EnsureCsvScratch(bool allowAllocation)
         {
-            if (TryReadVaultBuffer(in _csvScratchHandle, BilateralDrsUpscalerConstants.CsvScratchBytes, out NativeArray<byte>.ReadOnly _))
+            if (TryReadVaultBuffer(
+                    in _csvScratchHandle,
+                    BufferID.Shinobu236BilateralDrsCsvScratch,
+                    BilateralDrsUpscalerConstants.CsvScratchBytes,
+                    out NativeArray<byte>.ReadOnly _))
                 return true;
 
             if (!allowAllocation)
@@ -1098,7 +1118,11 @@ namespace Hecton8.Rendering
 
         private bool UploadParametersToGpu()
         {
-            if (!TryReadVaultBuffer(in _parametersHandle, BilateralDrsUpscalerConstants.ParameterCapacity, out NativeArray<UpscalerParamsDTO>.ReadOnly parameters) ||
+            if (!TryReadVaultBuffer(
+                    in _parametersHandle,
+                    BufferID.Shinobu236BilateralDrsParams,
+                    BilateralDrsUpscalerConstants.ParameterCapacity,
+                    out NativeArray<UpscalerParamsDTO>.ReadOnly parameters) ||
                 !HasConstantBuffers())
             {
                 FailClosedRuntimeRoute(BilateralDrsUpscalerConstants.FaultVaultUnavailable);
@@ -1224,6 +1248,7 @@ namespace Hecton8.Rendering
 
         private bool TryReadVaultBuffer<T>(
             in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
             int requiredLength,
             out NativeArray<T>.ReadOnly buffer) where T : struct
         {
@@ -1232,7 +1257,7 @@ namespace Hecton8.Rendering
             return vault != null &&
                    !vault.IsCompactionFenceActive &&
                    requiredLength > 0 &&
-                   IsVaultHandleCreated(in handle) &&
+                   IsOwnedVaultHandle(in handle, expectedBufferId) &&
                    vault.TryReadOnlyHandle(in handle, out buffer) &&
                    !vault.IsCompactionFenceActive &&
                    buffer.Length >= requiredLength;
@@ -1283,7 +1308,7 @@ namespace Hecton8.Rendering
                 return false;
             }
 
-            if (IsVaultHandleCreated(in handle) &&
+            if (IsOwnedVaultHandle(in handle, bufferId) &&
                 vault.TryReadOnlyHandle(in handle, out buffer) &&
                 !vault.IsCompactionFenceActive &&
                 buffer.Length >= requiredLength)
@@ -1294,20 +1319,17 @@ namespace Hecton8.Rendering
             if (!allowAllocation || vault.IsAllocationLocked)
                 return false;
 
-            if (IsVaultHandleCreated(in handle))
-                ReleaseVaultHandle(vault, ref handle);
+            if (IsOwnedVaultHandle(in handle, bufferId))
+                ReleaseVaultHandle(vault, ref handle, bufferId);
+            else
+                handle = default;
 
             handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
-            return IsVaultHandleCreated(in handle) &&
+            return IsOwnedVaultHandle(in handle, bufferId) &&
                    !vault.IsCompactionFenceActive &&
                    vault.TryReadOnlyHandle(in handle, out buffer) &&
                    !vault.IsCompactionFenceActive &&
                    buffer.Length >= requiredLength;
-        }
-
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
-        {
-            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
@@ -1317,9 +1339,12 @@ namespace Hecton8.Rendering
                    handle.Generation != 0u;
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        private static void ReleaseVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
         {
-            if (vault != null && IsVaultHandleCreated(in handle))
+            if (vault != null && IsOwnedVaultHandle(in handle, expectedBufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
@@ -1479,10 +1504,10 @@ namespace Hecton8.Rendering
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.DataVault:
-                    IDataVault previousVault = _dataVault ?? previousService as IDataVault;
-                    ReleaseAllVaultHandles(previousVault);
-                    ResetVaultSeedState();
-                    _dataVault = currentService as IDataVault;
+                    if (_dataVault == null && previousService is IDataVault previousVault)
+                        ReleaseAllVaultHandles(previousVault);
+
+                    BindDataVaultForLifecycle(currentService as IDataVault);
                     if (_dataVault != null)
                     {
                         InitializeServiceForVisualSync(allowAllocation: true);
@@ -1496,13 +1521,26 @@ namespace Hecton8.Rendering
 
         private void ReleaseAllVaultHandles(IDataVault vault)
         {
-            ReleaseVaultHandle(vault, ref _parametersHandle);
-            ReleaseVaultHandle(vault, ref _tuningHandle);
-            ReleaseVaultHandle(vault, ref _telemetryHandle);
-            ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
-            ReleaseVaultHandle(vault, ref _profilesHandle);
-            ReleaseVaultHandle(vault, ref _csvScratchHandle);
-            ReleaseVaultHandle(vault, ref _mockStateHandle);
+            ReleaseVaultHandle(vault, ref _parametersHandle, BufferID.Shinobu236BilateralDrsParams);
+            ReleaseVaultHandle(vault, ref _tuningHandle, BufferID.Shinobu236BilateralDrsTuning);
+            ReleaseVaultHandle(vault, ref _telemetryHandle, BufferID.Shinobu236BilateralDrsTelemetry);
+            ReleaseVaultHandle(vault, ref _telemetryCursorHandle, BufferID.Shinobu236BilateralDrsTelemetryCursor);
+            ReleaseVaultHandle(vault, ref _profilesHandle, BufferID.Shinobu236BilateralDrsProfiles);
+            ReleaseVaultHandle(vault, ref _csvScratchHandle, BufferID.Shinobu236BilateralDrsCsvScratch);
+            ReleaseVaultHandle(vault, ref _mockStateHandle, BufferID.Shinobu236BilateralDrsMockState);
+        }
+
+        private void BindDataVaultForLifecycle(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            IDataVault previousVault = _dataVault;
+            if (previousVault != null)
+                ReleaseAllVaultHandles(previousVault);
+
+            _dataVault = nextVault;
+            ResetVaultSeedState();
         }
 
         private void ResetVaultSeedState()
@@ -1516,6 +1554,8 @@ namespace Hecton8.Rendering
             _simulationKernelScheduled = false;
             _pendingGpuUpload = false;
             _dispatcherRouteReady = false;
+            _faultDumped = false;
+            _lastFaultFlags = 0u;
             InvalidatePublishedParameters();
             s_edgeMaskDebugEnabled = false;
         }
@@ -1989,6 +2029,7 @@ namespace Hecton8.Rendering
             telemetryWriteCursor = 0;
             if (!TryReadVaultBuffer(
                     in _telemetryHandle,
+                    BufferID.Shinobu236BilateralDrsTelemetry,
                     BilateralDrsUpscalerConstants.TelemetryCapacity,
                     out NativeArray<UpscalerTelemetryEntry>.ReadOnly telemetry))
             {
@@ -1996,7 +2037,11 @@ namespace Hecton8.Rendering
             }
 
             entryCount = math.min(telemetry.Length, BilateralDrsUpscalerConstants.TelemetryCapacity);
-            if (TryReadVaultBuffer(in _telemetryCursorHandle, 1, out NativeArray<int>.ReadOnly telemetryCursor))
+            if (TryReadVaultBuffer(
+                    in _telemetryCursorHandle,
+                    BufferID.Shinobu236BilateralDrsTelemetryCursor,
+                    1,
+                    out NativeArray<int>.ReadOnly telemetryCursor))
                 telemetryWriteCursor = telemetryCursor[0];
             return entryCount > 0;
         }
@@ -2007,6 +2052,7 @@ namespace Hecton8.Rendering
             if (index < 0 ||
                 !TryReadVaultBuffer(
                     in _telemetryHandle,
+                    BufferID.Shinobu236BilateralDrsTelemetry,
                     BilateralDrsUpscalerConstants.TelemetryCapacity,
                     out NativeArray<UpscalerTelemetryEntry>.ReadOnly telemetry) ||
                 index >= telemetry.Length)

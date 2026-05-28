@@ -78,6 +78,52 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void GlobalDataVault_DeferredReleaseAcceptanceAndDeduplicationStayContractSafe()
+        {
+            string vault = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs");
+            string release = ExtractMethod(vault, "public bool ReleaseWriteLock<T>");
+            string blockRelease = ExtractMethod(vault, "private bool ReleaseWriterBlockLock");
+            string queue = ExtractMethod(vault, "private bool QueueDeferredRelease");
+
+            StringAssert.Contains("return QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID)", release);
+            StringAssert.Contains("return QueueDeferredWriterRelease(bufferKey, offsetBytes, ResolveActiveLockBit((BufferID)bufferKey), 0)", blockRelease);
+            StringAssert.Contains("if (kind == DeferredReleaseKindWriter)", queue);
+            StringAssert.Contains("Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate, 1, 0)", queue);
+            StringAssert.Contains("Volatile.Write(ref _deferredReleaseEnqueueGate, 0)", queue);
+            StringAssert.Contains("pending->Kind == DeferredReleaseKindWriter", queue);
+            Assert.IsFalse(queue.Contains("pending->Kind == kind"));
+            StringAssert.Contains("pending->LockOwnerSystemId == lockOwnerSystemId", queue);
+        }
+
+        [Test]
+        public void GlobalDataVault_NewAllocationPublishAndRollbackStayUnderOneMutationGate()
+        {
+            string vault = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs");
+            string ensure = ExtractMethod(vault, "private bool TryEnsureVaultBuffer<T>");
+            string publish = ExtractMethod(vault, "private bool TryAllocatePublishedBuffer<T>");
+
+            StringAssert.Contains("TryAllocatePublishedBuffer<T>", ensure);
+            StringAssert.Contains("TryEnterBlockMutationGate()", publish);
+            StringAssert.Contains("TryAllocateBlockLocked(key, requiredBytes", publish);
+            StringAssert.Contains("_buffers.TryAdd(key, pointer)", publish);
+            StringAssert.Contains("SanitizeFinitePayload<T>(pointer, requiredLength)", publish);
+            Assert.Less(
+                publish.IndexOf("SanitizeFinitePayload<T>(pointer, requiredLength)", StringComparison.Ordinal),
+                publish.IndexOf("_buffers.TryAdd(key, pointer)", StringComparison.Ordinal));
+            StringAssert.Contains("TryAddMetadata(key, in meta)", publish);
+            StringAssert.Contains("EnsureBufferKeyRegistered(key)", publish);
+            StringAssert.Contains("MarkExternalViewLocked(key, meta.OffsetBytes)", publish);
+            StringAssert.Contains("if (!success && blockAllocated)", publish);
+            StringAssert.Contains("_allocatedBytes = _allocatedBytes > requiredBytes ? _allocatedBytes - requiredBytes : 0L", publish);
+            StringAssert.Contains("_buffers.Remove(key)", publish);
+            StringAssert.Contains("RemoveMetadata(key)", publish);
+            StringAssert.Contains("RemoveBufferKey(key)", publish);
+            StringAssert.Contains("FreeBlockLocked(blockIndex, clearPayload: true)", publish);
+            StringAssert.Contains("finally", publish);
+            StringAssert.Contains("ReleaseBlockMutationGate()", publish);
+        }
+
+        [Test]
         public void GlobalDataVault_SparseBufferIdGenerationSurvivesRelease()
         {
             string vault = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs");
@@ -87,6 +133,7 @@ namespace Hecton8.Tests.Editor
             string removeMetadata = ExtractMethod(vault, "private void RemoveMetadata");
             string resolveInitial = ExtractMethod(vault, "private uint ResolveInitialGenerationForAllocation");
             string readGeneration = ExtractMethod(vault, "private uint ReadMetadataGeneration");
+            string writeGeneration = ExtractMethod(vault, "private void WriteMetadataGeneration");
 
             StringAssert.Contains("_metadataGenerationByBufferId = new UnsafeHashMap<int, uint>", initialize);
             StringAssert.Contains("WriteMetadataGeneration(key, stored.Version)", addMetadata);
@@ -94,6 +141,7 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("WriteMetadataGeneration(key, tombstoneGeneration)", removeMetadata);
             StringAssert.Contains("ReadMetadataGeneration(key)", resolveInitial);
             StringAssert.Contains("_metadataGenerationByBufferId.TryGetValue(key, out uint generation)", readGeneration);
+            StringAssert.Contains("(uint)key < (uint)_metadataByBufferId.Length", writeGeneration);
         }
 
         [Test]

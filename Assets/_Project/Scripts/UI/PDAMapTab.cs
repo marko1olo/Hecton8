@@ -1645,7 +1645,7 @@ namespace Hecton8.UI
             for (int pingIndex = 0; pingIndex < _threatPings.Length; pingIndex++)
                 _threatPings[pingIndex] = Vector4.zero;
 
-            if (WorldSpatialHashGrid.TryGetAcousticDensityMap(out float[] densityMap, out Vector3Int densityDimensions))
+            if (WorldSpatialHashGrid.TryGetAcousticDensityMap(out NativeArray<float>.ReadOnly densityMap, out Vector3Int densityDimensions))
             {
                 RefreshThreatPingsFromSpatialDensity(densityMap, densityDimensions);
                 TryAppendGhostSignalPing();
@@ -1744,9 +1744,9 @@ namespace Hecton8.UI
             return new Vector3(x * horizontalScale, y, z * horizontalScale) * 0.38f;
         }
 
-        private void RefreshThreatPingsFromSpatialDensity(float[] densityMap, Vector3Int dimensions)
+        private void RefreshThreatPingsFromSpatialDensity(NativeArray<float>.ReadOnly densityMap, Vector3Int dimensions)
         {
-            if (densityMap == null)
+            if (!densityMap.IsCreated)
                 return;
 
             int safeWidth = math.max(1, dimensions.x);

@@ -117,3 +117,71 @@ Solution: Sampled CPU/csc/dotnet before any compile command. Latest gate: CPU 82
 Rejected Alternatives: Running `dotnet build` with CPU above 50 percent or an active dotnet process was rejected by the compilation resource rule.
 Scalability potential: Static proof and scanner coverage continue; full compile remains pending until the workstation is below the explicit contention threshold.
 Hardware Impact: Avoided adding compiler load to an already saturated multi-agent workstation.
+
+## Loop 13 Residual Indirect Args SetData Repair
+
+Problem: APEX residual `.SetData(` scan found two small but real graphics-domain indirect-args uploads still using direct `GraphicsBuffer.SetData`: `InstanceCullingService.EnsureIndirectArgs` and `GpuScatterLodManager.InitializeIndirectArgs`.
+Solution: Converted both indirect args buffers to `GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw` with `GraphicsBuffer.UsageFlags.LockBufferForWrite`, then routed args updates through `GraphicsBufferUploadUtility.UploadArray`. The shared helper uses mapped writes, guarded memcpy, and `finally UnlockBufferAfterWrite`.
+Rejected Alternatives: Touching `VehicleSubOsCockpitRuntime` UI hologram/damage fallback, `HabitatStressSmokeTester`, editor material scanners, audio clip `SetData`, or `GlobalWorldSampler` job `SetData` was rejected because those hits are outside the active 1411 GPU hot path or are not `GraphicsBuffer.SetData`. Removing cold `UploadArraySetData` fallback helpers in `SystemDispatcher` was rejected because they are explicitly isolated fallback lanes.
+Scalability potential: Low and middle devices avoid extra driver validation/copy work even for tiny indirect args updates; high and ultra devices keep the same visual result while preserving the mapped-upload rule uniformly across graphics-domain draw argument paths.
+Hardware Impact: No runtime measurement. Static transfer size is small (`InstanceCullingService` 5 uints = 20B; `GpuScatterLodManager` one `IndirectDrawIndexedArgs` struct), but the repair removes the remaining direct SetData policy violation from domain-owned graphics draw args.
+
+Problem: Updated build gate still showed host contention.
+Solution: Sampled CPU/csc/dotnet before any compile command. Latest gate: CPU 43 percent, csc count 0, dotnet count 1, VBCSCompiler count 0. Build intentionally not launched.
+Rejected Alternatives: Running `dotnet build` with CPU above 50 percent or an active dotnet process was rejected by the compilation resource rule.
+Scalability potential: Static proof and scanner coverage continue; full compile remains pending until the workstation is below the explicit contention threshold.
+Hardware Impact: Avoided adding compiler load to an already saturated multi-agent workstation.
+
+## Loop 14 UI Damage Hologram PCIe Repair
+
+Problem: Broad runtime `.SetData(` scan still found two `GraphicsBuffer.SetData` calls in `VehicleSubOsCockpitRuntime`: fallback damage hologram point upload and damage hologram indirect args upload. Although the file belongs to Echelon 8 UI, the calls are active runtime GPU upload paths and therefore valid cross-domain PCIe cleanup after the primary vegetation/VFX scope was clean.
+Solution: Converted `_damagePointBuffer` and `_damageArgsBuffer` creation to include `GraphicsBuffer.UsageFlags.LockBufferForWrite`, then replaced both `SetData` calls with `GraphicsBufferUploadUtility.UploadArray`. The existing cached arrays remain unchanged; no new data ownership or gameplay truth route was introduced.
+Rejected Alternatives: Leaving UI runtime uploads unpatched was rejected once primary domain paths were clean, because the user explicitly requested searching other improvement sites. A larger UI dirty-page system was rejected because the fallback glyph is only seven `Vector4` values and the args payload is one indirect-draw struct; mapped upload is sufficient without extra state.
+Scalability potential: Low and middle devices avoid direct `SetData` validation/copy cost during cockpit fallback rendering; high and ultra retain the same damage hologram visual path and keep saved CPU/PCIe budget for richer cockpit presentation.
+Hardware Impact: No runtime measurement. Static transfer size is bounded: fallback glyph is `7 * 16B = 112B`; damage args is one `GraphicsBuffer.IndirectDrawIndexedArgs` struct. The value is policy consistency and removal of the remaining runtime UI `GraphicsBuffer.SetData` leak.
+
+Problem: Build gate remained blocked after the UI repair.
+Solution: Sampled CPU/process state. Latest gate: CPU 88 percent, csc count 0, dotnet count 1, VBCSCompiler count 1. The active dotnet command line was `"C:\Program Files\dotnet\dotnet.exe" build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1`. This agent did not launch a second build.
+Rejected Alternatives: Running another `dotnet build` while a sibling build and VBCSCompiler were active was rejected by compilation resource throttling.
+Scalability potential: Static proof remains current; compile remains pending until the existing build finishes and CPU drops below 50 percent.
+Hardware Impact: Avoided parallel compiler contention on the shared workstation.
+
+Problem: A later gate sample found no active dotnet/csc/VBCS process, but CPU still exceeded the allowed threshold.
+Solution: Sampled immediately before any possible build attempt. Latest gate: CPU 58 percent, csc count 0, dotnet count 0, VBCSCompiler count 0. Build remained blocked because CPU was above 50 percent.
+Rejected Alternatives: Starting a build at 58 percent CPU was rejected because the project rule is explicit and does not allow a near-miss exception.
+Scalability potential: Static proof remains the only valid evidence until a clean build window appears.
+Hardware Impact: Avoided adding compiler load while the workstation was already above the mandated CPU threshold.
+
+## Loop 15 Fluid/Readback/Drone Residual PCIe Repair
+
+Problem: APEX residual upload scan found `HectonFluidEngine.FlushFluidAdvectionGpuUploads` still using `UploadNativeArraySetData` to upload full silt, bubble, and debris A/B buffers after any single bubble/debris slot changed. This was worse than a policy issue: it could reset GPU-evolved particles from stale CPU spawn data on every new event.
+Solution: Added GlobalDataVault dirty page buffers `FluidAdvectedSiltDirtyPagesBufferId = 1322041`, `FluidAdvectedBubbleDirtyPagesBufferId = 1322042`, and `FluidAdvectedDebrisDirtyPagesBufferId = 1322043`. `UploadAdvectedBubble`, `UploadAdvectedDebris`, and buffer creation mark exact 64-element pages. `FlushFluidAdvectionDirtyLane` acquires the page mask with `TryAcquireWriteLock`, uploads matching pages to both A and B with `GraphicsBufferUploadUtility.UploadNativeArrayDirtyPages`, clears pages only after the mirrored upload, and releases the lock in `finally`. RenderGraph dispatch is held until all deferred dirty pages are drained, preventing compute from reading half-uploaded particle state.
+Rejected Alternatives: Keeping full uploads was rejected because it burns PCIe and destroys GPU-authored advection continuity. Uploading only the next write buffer was rejected because the following parity flip would read stale pages. Falling back to full upload on dirty-page lock contention was rejected because lock contention is a state-sovereignty fault and the safe action is to defer visual dispatch.
+Scalability potential: Low drains fluid advection uploads under a 32 KiB mirrored page budget and may delay presentation instead of flickering; Middle drains normal event bursts; High and Ultra scale continuously up to 512 KiB via `SmoothFluidAdvectionQuality(ResolveFluidAdvectionQualityWeight())`, preserving extra budget for richer silt/bubble/debris visuals.
+Hardware Impact: One changed 32B fluid particle now marks one 64-element page. Mirrored A/B upload cost is 4096 bytes instead of full lane costs: silt 262144 bytes, bubble 128000 bytes, debris 64000 bytes. No profiler measurement was taken.
+
+Problem: Two additional runtime GPU upload paths still used the cold SetData fallback wrapper: `AsyncBuoyancyReadbackRuntime` request dispatch and `DroneFleetManager` procedural indirect args.
+Solution: Converted async buoyancy request buffers to `CreateStructuredLockBuffer<ReadbackRequestDTO>` and routed request dispatch through `GraphicsBufferUploadUtility.UploadNativeArray`. Converted `s_DroneProceduralArgsBuffer` to `GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw` with `GraphicsBuffer.UsageFlags.LockBufferForWrite`, then routed args upload through `GraphicsBufferUploadUtility.UploadNativeArray`.
+Rejected Alternatives: Leaving them because they are small was rejected; the domain mandate is bus discipline, and small recurring indirect/request uploads still pay validation/copy cost. A dirty page layer for one drone args struct was rejected as useless state.
+Scalability potential: Low and Middle remove extra driver copy/validation from visual sync; High and Ultra keep the same visual path while mapped upload discipline stays uniform.
+Hardware Impact: Static transfer sizes are small but recurring: async readback request payload is `_dispatchRequestCount * sizeof(ReadbackRequestDTO)` and drone args is 16 bytes. No profiler measurement was taken.
+
+Problem: Build gate remained blocked after the residual repairs.
+Solution: Sampled CPU/process state repeatedly. One gate reached CPU 48 percent but still had VBCSCompiler process 18948 active; I ran `dotnet build-server shutdown` to clear the compiler server, then re-sampled. Latest gate after a 20 second wait: CPU 100 percent, csc count 0, dotnet count 0, VBCSCompiler count 0. Build intentionally not launched because CPU exceeded the 50 percent ceiling.
+Rejected Alternatives: Starting `dotnet build` with VBCSCompiler alive or CPU at 100 percent was rejected by compilation resource throttling.
+Scalability potential: Static scanner and text gates remain current; compile stays pending until host load drops below the explicit threshold.
+Hardware Impact: Avoided adding compiler load to a busy workstation.
+
+## Loop 16 First-Party Runtime Fallback Upload Cleanup
+
+Problem: A second APEX scan over project-owned runtime scripts still found `UploadArraySetData` users outside editor/dev/vendor code: boid spawn and visible args, GPU scatter foveated visibility cache and args, vegetation cull telemetry counter clear, and abyssal smoke particle reset.
+Solution: Converted the existing buffers to `LockBufferForWrite`-capable buffers and routed the existing owner-local staging arrays through `GraphicsBufferUploadUtility.UploadArray`. `HectonBoidController` now creates mapped boid ping buffers and mapped raw indirect args. `GPUScatterDirector` now creates a mapped visibility cache and mapped raw indirect args. `HectonIndirectVegetationRenderer` cull telemetry counters now use mapped clear writes. `AbyssalThermalManager` smoke ping-pong and vent buffers now use mapped structured buffers, and the GPU payload structs have explicit 40B/48B layouts matching the HLSL field offsets.
+Rejected Alternatives: Adding dirty pages to single-struct indirect args and one-time reset payloads was rejected as useless state. Editing third-party Crest/GPUInstancer/Astar buffers was rejected because those packages are outside the assigned first-party domain and the project rules forbid asset wrapper churn without a dedicated cleanup task.
+Scalability potential: Low and Middle devices avoid Unity `SetData` validation/copy work in reset/visibility-cache paths; High and Ultra keep the same visual systems but preserve a uniform mapped-upload route so saved bus/CPU budget can be spent on denser boids, scatter, and smoke.
+Hardware Impact: Static transfer sizes now use one guarded mapped memcpy per affected payload. Boid reset remains mirrored A/B for coherence (`boidCount * 32B * 2` only on reset/spawn), scatter visibility cache clear remains `requiredCapacity * 4B` on capacity changes, vegetation cull telemetry clear is 16B per 30-frame sample, and abyssal smoke reset remains `smokeParticleCount * 48B * 2` only when vent topology or origin shift forces a reset. No profiler measurement was taken.
+
+Problem: Build verification remained blocked after this cleanup.
+Solution: Sampled CPU/process state before compiling. Latest gate: CPU 94 percent, csc count 0, dotnet count 1, VBCSCompiler count 0. Active process was PID 62124, command line `dotnet build Hecton8.Editor.csproj --no-restore -nologo -v:minimal /m:1 /p:UseSharedCompilation=false /nr:false`. Build intentionally not launched.
+Rejected Alternatives: Launching another `dotnet build` while CPU exceeded 50 percent and a dotnet build was active was rejected by the explicit compilation resource rule.
+Scalability potential: Static gates remain the only valid evidence until the machine is below the build threshold.
+Hardware Impact: Avoided stacking compiler load on the shared workstation.

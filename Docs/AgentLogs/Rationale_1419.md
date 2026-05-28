@@ -55,13 +55,13 @@ Scalability potential: Low through Ultra keep the same descriptor ownership rout
 Hardware Impact: Runtime gain 0 us; preserves existing Burst vectorization.
 
 Problem: Task 07 required cold boot registration without `Allocator.Persistent`.
-Solution: Verified `ClaimVaultHandle`/`EnsureGenerationHandle` registrations for all relevant BufferID lanes and made no new persistent native allocation. Existing graphics buffers remain cold GPU resources with `LockBufferForWrite` usage flags.
+Solution: Static source check confirmed `ClaimVaultHandle`/`EnsureGenerationHandle` registrations for all relevant BufferID lanes and made no new persistent native allocation. Existing graphics buffers remain cold GPU resources with `LockBufferForWrite` usage flags.
 Rejected Alternatives: Adding duplicate BufferID lanes in the 1419000 range; that would fork truth ownership and break one fact/one owner.
 Scalability potential: Low keeps existing capacities; Middle/High/Ultra scale via active budgets, cadence, and GPU visual filtering.
 Hardware Impact: Runtime gain 0 us; avoids duplicated memory pools.
 
 Problem: Task 10 required job signatures to consume resolved views, not descriptors.
-Solution: Verified spatial and flocking jobs take `NativeArray<T>` views with `[NoAlias]` and `[ReadOnly]` on read-only inputs. `SpatialHashQuery` keeps handles only as a public fail-closed query descriptor outside Burst job scheduling.
+Solution: Static source check confirmed spatial and flocking jobs take `NativeArray<T>` views with `[NoAlias]` and `[ReadOnly]` on read-only inputs. `SpatialHashQuery` keeps handles only as a public fail-closed query descriptor outside Burst job scheduling.
 Rejected Alternatives: Passing `VaultGenerationHandle<T>` into jobs and resolving inside Burst; that would either fail compile or hide unsafe global state access inside jobs.
 Scalability potential: Low/Middle/High/Ultra all preserve deterministic job data locality.
 Hardware Impact: Keeps Burst-friendly signatures; expected gain is preserved vectorization, no new measured us.
@@ -163,3 +163,113 @@ Solution: Sampled CPU/process state before any build. Final sample: `2026-05-28T
 Rejected Alternatives: Running `dotnet build` during a 100% CPU sample; claiming Unity/runtime GC proof from static analysis.
 Scalability potential: N/A; build gate only.
 Hardware Impact: Prevented additional host contention. Runtime proof remains pending until Unity/Profiler/GCMonitor can run legally.
+
+## 2026-05-28 Loop 7 APEX Recheck Decisions
+
+Problem: `VaultBufferView<T>.TryAcquireWriteLock` combined Vault acquire and `array.IsCreated` validation in one boolean expression, so a pathological successful acquire with an invalid returned view could return `false` without releasing the lock.
+Solution: Split the helper into explicit phases: validate descriptor, acquire, validate returned array, release immediately if the returned array is invalid, then return. This converts an implicit contract assumption into a provable release path.
+Rejected Alternatives: Treating `array.IsCreated` as redundant because the Vault should not return an invalid view after a successful acquire; leaving the helper untouched and only fixing call sites.
+Scalability potential: Low devices avoid deadlock under memory pressure/compaction; Middle/High/Ultra keep the same DataVault route while raising swarm density with continuous quality weight.
+Hardware Impact: Runtime cost is one cold/branch check per explicit write-lock acquire; expected frame cost below measurement noise. Lock leak risk removed.
+
+Problem: `WorldSpatialHashGrid` acoustic density and `SargassumMicroFaunaBoids` threat upload used compound acquire guards where a successful `TryAcquireWriteLock` could be followed by failed length/created validation before the `locked` flag was set.
+Solution: Split acquire from validation in `TryUploadAcousticDensityMap`, `ClearAcousticDensityMapForOriginShift`, `BuildAcousticDensityMap`, and `RefreshThreatGridPayloadVisualSync`. The lock flag is now set immediately after acquire, and all later returns flow through `finally`.
+Rejected Alternatives: Assuming buffer capacity is always correct after cold registration; adding fallback managed arrays; using `SetData` for the invalid-size edge case.
+Scalability potential: Low-tier fail-closed behavior remains cheap; high/ultra still use the same GPU upload route and can spend saved CPU sync time on density/visual overkill.
+Hardware Impact: Hot-path speed unchanged; deadlock/leak edge removed. Static upload scan still reports zero scoped `SetData` routes.
+
+Problem: `ClearHeadlessRuntimeState` cleared headless mutation radiation/toxicity/brine/results lanes while only sector solve buffers were locked. Those four mutation scratch lanes belong to the genome mutation lock set, not the sector set.
+Solution: Added explicit write locks for the four mutation scratch lanes inside `ClearHeadlessRuntimeState`, releasing results/brine/toxicity/radiation in reverse order before sector unlock.
+Rejected Alternatives: Expanding the sector solve lock set to include unrelated mutation scratch buffers for every sector solve; that would increase contention in normal simulation.
+Scalability potential: Weak devices keep shorter lock windows; high-tier devices keep mutation fidelity without unnecessary sector-solve contention.
+Hardware Impact: Clear/save path only. Normal frame cost 0 us.
+
+Problem: `ApplyPendingBiomassImpacts` was safe when called from `CompleteScheduledSolve` because sector/biomass lanes were already pinned, but `CaptureSaveSnapshot` called it outside that lock window.
+Solution: Made `ApplyPendingBiomassImpacts` self-acquire the macro/biomass lock helper when the caller is not already holding sector or macro locks; it still avoids nested duplicate locks when called from a scheduled solve completion.
+Rejected Alternatives: Locking only the save path; moving biomass impact application to a managed queue; dropping pending impacts during save.
+Scalability potential: Low-tier save stability improves without changing gameplay truth; high/ultra preserve macro biomass continuity under dense swarm saves.
+Hardware Impact: Save/cold path only. Normal frame cost 0 us.
+
+Problem: `PushFaunaGeneticsTelemetryFrame` wrote Vault-backed genetics telemetry through a mutable indexer and read source genome buffers without fail-closed read-only resolution.
+Solution: Wrapped the telemetry write in `TryAcquireWriteLock`/`finally ReleaseWriteLock`, and read headless/macro genomes through `TryResolveReadOnly`. If a source lane is locked, that source contributes zero samples for that frame instead of blocking or dereferencing a mutable alias.
+Rejected Alternatives: Leaving telemetry as "diagnostic only"; allocating managed snapshots; forcing completion of unrelated jobs.
+Scalability potential: Low devices can skip telemetry samples during contention; high/ultra keep richer telemetry without changing simulation authority.
+Hardware Impact: One telemetry write-lock per late frame; no managed allocation added. Runtime profiler proof pending.
+
+Problem: Final evidence artifacts were stale after Loop 7 patches.
+Solution: Regenerated `Docs/Reports/ECOSYSTEM_APEX_FINAL_VERIFICATION_1419.json` and `Docs/Reports/ECOSYSTEM_MEMORY_OPTIMIZATION_REPORT_1419.json` with matching SHA-256 `E77AE2FE7706C1AF9E7A86959D848E8F07F1F2E0B0D5DB9C43DA0228EF073D77`; added route card `Docs/ARCHITECTURE/GLOBAL_AUTHORITY_ROUTE_CARD_1419_WORLD_SPATIAL_ACOUSTIC_DENSITY.md`.
+Rejected Alternatives: Leaving stale report hashes; relying on chat history; claiming runtime GC proof without Unity execution.
+Scalability potential: N/A; proof integrity.
+Hardware Impact: Runtime 0 us. Build proof remains pending because sample `2026-05-28T02:42:14.3829191Z` had CPU 77% and active `dotnet:22412`; an immediate guarded pre-build recheck at `2026-05-28T02:45:52.9366818Z` had CPU 53% and active `dotnet:25464`, so the command skipped before invoking `dotnet build`.
+
+## 2026-05-28 Loop 8 APEX Cold Save-Dump Recheck Decisions
+
+Problem: The Loop 7 proof artifact still carried a real residual risk: cold save/dump paths in `EcosystemDirector` used snapshot IO and binary dump routes that were not part of the final DataVault lock/read-only proof.
+Solution: Wrapped `CaptureSaveSnapshot` and `CaptureBiomassSaveRuns` with explicit `TryAcquireWriteLock`/`finally ReleaseWriteLock`, changed snapshot append helpers to write through the locked local `NativeArray`, returned read-only snapshot views with explicit record counts, and changed dump paths to resolve rings through `TryResolveReadOnly` before cold `FileStream` writes.
+Rejected Alternatives: Leaving cold paths as "not hot"; allocating managed save snapshots; returning full-capacity snapshot arrays and relying on consumers to ignore unused records.
+Scalability potential: Low-tier save/fault paths now fail closed under Vault contention; Middle/High/Ultra keep identical save identity while allowing higher ecosystem density. The fix does not change gameplay truth or DTO layout.
+Hardware Impact: Normal frame gain 0 us. Save path now copies exactly `ecosystemRecordCount`, avoiding full-capacity cold save copy waste; measured us unavailable because build/runtime gate remained blocked.
+
+Problem: A stricter text audit found two remaining multi-line `TryAcquireWriteLock` compound guards in `WorldSpatialHashGrid` and four macro mutation clear guards in `EcosystemDirector`.
+Solution: Split each acquire from `&&`/`||` context and set lock flags immediately after successful acquire. Follow-up context-window scan over scoped files reported `CompoundAcquireContextMatches = 0`.
+Rejected Alternatives: Accepting them because acquire was last and behavior was safe; relying on regex wording instead of making the proof mechanically simple.
+Scalability potential: Same Low/Middle/High/Ultra behavior; the change removes proof ambiguity without changing simulation work.
+Hardware Impact: Runtime change below measurement noise; correctness proof improves.
+
+Problem: Updated code and reports needed fresh machine-verifiable hashes after Loop 8.
+Solution: Regenerated `Docs/Reports/ECOSYSTEM_APEX_FINAL_VERIFICATION_1419.json` and `Docs/Reports/ECOSYSTEM_MEMORY_OPTIMIZATION_REPORT_1419.json` with exact line evidence, scan counts, cold allocation acknowledgements, build gate state, and modified-file SHA-256 values.
+Rejected Alternatives: Editing chat-only proof; leaving stale `COLD_PATH_REVIEW_REQUIRED`; claiming runtime GC proof without Unity execution.
+Scalability potential: N/A; proof integrity only.
+Hardware Impact: Runtime 0 us. Final build gate sample `2026-05-28T09:07:53.9428426Z` had CPU 100% and compiler process count 0; `dotnet build` was not invoked because CPU alone violated the throttle.
+
+## 2026-05-28 Loop 9 APEX Fauna Genetics Vault Recheck Decisions
+
+Problem: A cold/editor fauna genetics route still wrote and read Vault-backed tuning/profile/CSV scratch lanes through `_faunaGeneticsTuning[0]`, `_faunaGeneticsProfiles.Resolve()`, and `_faunaGeneticsCsvScratch.Resolve()` without explicit writer/read-only proof.
+Solution: Converted default tuning initialization and CSV profile reload to `TryAcquireWriteLock` with `finally ReleaseWriteLock`; scratch, profiles, and tuning locks are acquired separately and released at `EcosystemDirector.cs:4211/4213/4215`. Runtime genome compilation now reads tuning/profile lanes through `TryResolveReadOnly`, and `FaunaGenome64` gained a read-only `ResolveProfile` overload so no mutable profile view is needed.
+Rejected Alternatives: Leaving the route as "editor-only"; passing a mutable `NativeArray` from `Resolve()` into CSV parsing; allocating a managed profile snapshot. All three weaken Data Sovereignty proof for the same genetics buffers used by runtime ecosystem state.
+Scalability potential: Low-tier fails closed if the genetics lanes are locked; Middle/High/Ultra keep identical genome truth while macro/swarm presentation continues to scale via continuous `GlobalQualityWeight`. No binary `isLowEnd` branch was introduced.
+Hardware Impact: Normal hot-frame gain 0 us. The change removes a cold lock/alias correctness fault and keeps runtime `CompileHeadlessFaunaGenome` allocation-free except for value-type `double3` construction.
+
+Problem: Previous proof text contained stale process wording and two unqualified "Verified" claims that looked stronger than the available static evidence.
+Solution: Updated `Status_1419.md` to Loop 9 static/build-gate state and changed the rationale wording to "Static source check confirmed" where no runtime proof exists.
+Rejected Alternatives: Keeping stronger language than the evidence supports; hiding old CPU/dotnet state in final reports.
+Scalability potential: N/A; evidence hygiene only.
+Hardware Impact: Runtime 0 us; reduces integrator false confidence.
+
+Problem: Final compilation proof was requested, but the post-wait build gate still violated the resource throttle.
+Solution: Sampled CPU and compiler processes after a 30-second delay; CPU was 82% and `dotnet` pid 22152 was active, so `dotnet build` was not invoked.
+Rejected Alternatives: Running a build during CPU >50% or active dotnet contention; claiming compile success without a legal compiler run.
+Scalability potential: N/A; build host protection only.
+Hardware Impact: Prevented additional host contention. Compile/runtime proof remains pending.
+
+## 2026-05-28 Loop 10 APEX Index Boundary Recheck Decisions
+
+Problem: `SyncHibernatedFaunaPopulationRecords` read `_sectorFrontStates` through the mutable `VaultBufferView` indexer after solve completion, outside the sector solve lock window.
+Solution: Resolve `_sectorFrontStates` with `TryResolveReadOnly` before registry reconciliation and clamp the sync budget to the resolved read-only view length.
+Rejected Alternatives: Re-locking sector solve buffers only to publish cold hibernation counts; that would widen writer lock windows for a read-only registry sync. Keeping the mutable indexer would leave an unproven alias path.
+Scalability potential: Low-tier can skip the cold sync while Vault lanes are locked; Middle/High/Ultra keep identical population truth and can run denser swarms without stale reads.
+Hardware Impact: Normal frame gain 0 us claimed. Correctness gain is fail-closed read behavior under Vault contention.
+
+Problem: `VaultBufferView<EcosystemIndexEntry>` helper overloads hid mutable `Resolve()` inside `TryFindIndexEntry`, `TryUpsertIndexEntry`, and `ClearIndexEntries`, making lock proof dependent on caller folklore.
+Solution: Removed those overloads. Sector and biomass index operations now pass explicit `NativeArray<EcosystemIndexEntry>` views resolved inside lock-held windows, and `ResolveOrCreateSectorSlot`/`ResolveOrCreateBiomassCellSlot` fail closed unless their required job buffer locks are already held.
+Rejected Alternatives: Leaving helper overloads because current callers were mostly safe; adding comments instead of enforceable guard branches; allocating a managed dictionary mirror.
+Scalability potential: Low devices avoid deadlock/stale-index faults during compaction; High/Ultra preserve flat cache-friendly index arrays and can spend budget on visual swarm density, not managed lookup infrastructure.
+Hardware Impact: Runtime speed change is below measurement noise. Hidden alias risk removed.
+
+Problem: Mutable and read-only index entry lookup paths used two different probe-start algorithms (`ResolveIndexProbeStart` vs `ResolveIndexBucket`/`ResolveIndexProbe`).
+Solution: Unified all find/upsert paths on `ResolveIndexBucket`/`ResolveIndexProbe` and deleted `ResolveIndexProbeStart`.
+Rejected Alternatives: Keeping two algorithms because all old wrapper callers happened to use one family; that risks future read-only/mutable route divergence.
+Scalability potential: All tiers keep one deterministic flat index route. No gameplay truth or DTO layout changed.
+Hardware Impact: Same O(capacity) linear-probe behavior; expected timing delta negligible.
+
+Problem: `ScheduleApexTerritoryOverlap` still had a compound `hitCount <= 0 || !TryLockApexTerritoryOverlapJobBuffers()` guard.
+Solution: Split hit-count validation from the lock acquire. The acquire now appears on its own branch, and release remains in the existing `finally` unless a scheduled job intentionally owns the lock.
+Rejected Alternatives: Classifying the `||` as harmless. It was behaviorally safe, but it weakened mechanical evidence scans.
+Scalability potential: No simulation change. Apex overlap remains a cheap candidate-filter job, not a physical territory solver.
+Hardware Impact: 0 us claimed.
+
+Problem: Loop 10 changed code and invalidated the Loop 9 hashes.
+Solution: Regenerated `Docs/Reports/ECOSYSTEM_APEX_FINAL_VERIFICATION_1419.json` and `Docs/Reports/ECOSYSTEM_MEMORY_OPTIMIZATION_REPORT_1419.json`; sidecar hashes now match the files.
+Rejected Alternatives: Leaving stale JSON proof; reporting chat-only evidence.
+Scalability potential: N/A; evidence integrity only.
+Hardware Impact: Runtime 0 us. Final build gate sample `2026-05-28T10:10:21.0658960Z` had CPU 100% and active `dotnet:10444`, so `dotnet build` was not invoked.

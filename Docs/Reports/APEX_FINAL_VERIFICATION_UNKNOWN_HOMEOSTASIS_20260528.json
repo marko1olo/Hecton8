@@ -1,0 +1,167 @@
+﻿{
+  "status": "PENDING_VERIFICATION",
+  "agent": "UNKNOWN",
+  "date": "2026-05-28",
+  "domain": "Core & Memory Infrastructure",
+  "verificationTarget": "Unity Homeostasis DataVault Rebind Pass",
+  "currentHead": "bf2f6bc7762329a230966ff7bba8427ccd44489f",
+  "introducingCommitForPatch": "b3ca9eede",
+  "sourceFile": {
+    "path": "Assets/_Project/Scripts/Core/HomeostasisBrain.cs",
+    "sha256": "0FB5A6524707D516F57B4B9EEB550BF4759E5BDEC1CD564107E6778692AEA4C3"
+  },
+  "sourceReport": {
+    "jsonPath": "Docs/Reports/UNITY_HOMEOSTASIS_DATAVAULT_REBIND_PASS_UNKNOWN_20260528.json",
+    "jsonSha256": "C28063C63403175C4679E073561C728A754E0F1E9CE5952F8DF86B5A626EA038",
+    "mdPath": "Docs/Reports/UNITY_HOMEOSTASIS_DATAVAULT_REBIND_PASS_UNKNOWN_20260528.md",
+    "mdSha256": "4019063E8125393CACB5C469D761D473D41C6D51EDF5ACDB3730D828553EAB31"
+  },
+  "modifiedLineEvidence": {
+    "initializeRuntimeCall": 253,
+    "preSimulationTickReadCall": 339,
+    "openOrAcquireRuntimeBuffersDeclaration": 992,
+    "baseBufferIds": {
+      "HardwareMetrics": 1008,
+      "HardwareFrameTimes": 1016,
+      "HomeostasisBlackBox": 1024
+    },
+    "pureResolverDeclaration": 1047,
+    "pureResolverHandleGateStart": 1060,
+    "pureResolverTryResolveStart": 1068,
+    "dataVaultRebindReopenCall": 1190,
+    "dataVaultRebindReopenDeclaration": 1193,
+    "dataVaultRebindOpenCall": 1198,
+    "scalabilityDictatorReinitializeCall": 1206
+  },
+  "zeroGcScan": {
+    "methodRanges": {
+      "PreSimulationTick": "334-345",
+      "PureResolver": "1047-1080",
+      "ColdOpenOrAcquire": "992-1044",
+      "ColdDataVaultRebind": "1187-1207"
+    },
+    "patterns": [
+      "new_reference_candidate",
+      "string_Format",
+      "ToString_call",
+      "LINQ_query",
+      "foreach_loop"
+    ],
+    "counts": {
+      "PreSimulationTick": {
+        "new_reference_candidate": 0,
+        "string_Format": 0,
+        "ToString_call": 0,
+        "LINQ_query": 0,
+        "foreach_loop": 0
+      },
+      "PureResolver": {
+        "new_reference_candidate": 0,
+        "string_Format": 0,
+        "ToString_call": 0,
+        "LINQ_query": 0,
+        "foreach_loop": 0
+      },
+      "ColdOpenOrAcquire": {
+        "new_reference_candidate": 0,
+        "string_Format": 0,
+        "ToString_call": 0,
+        "LINQ_query": 0,
+        "foreach_loop": 0
+      },
+      "ColdDataVaultRebind": {
+        "new_reference_candidate": 0,
+        "string_Format": 0,
+        "ToString_call": 0,
+        "LINQ_query": 0,
+        "foreach_loop": 0
+      }
+    }
+  },
+  "dataSovereignty": {
+    "migratedFieldsToGlobalDataVault": false,
+    "newTryAcquireWriteLockRoutes": 0,
+    "newFinallyReleaseRoutes": 0,
+    "reason": "The pass did not add a DataVault writer route or migrate fields. It separated cold open/acquire from frame-phase resolve and reopens existing buffers after DataVault replacement.",
+    "baseBufferIdsTouched": [
+      "BufferID.HardwareMetrics",
+      "BufferID.HardwareFrameTimes",
+      "BufferID.HomeostasisBlackBox"
+    ],
+    "dependentBuffersReopenedByInitializeScalabilityDictator": [
+      "BufferID.ShinobuScalabilitySystemHealth",
+      "BufferID.ShinobuScalabilityState",
+      "BufferID.ShinobuScalabilityTunerState",
+      "BufferID.ShinobuScalabilityMockHeavyLoad",
+      "BufferID.ShinobuScalabilityMockScatterDensity",
+      "BufferID.ShinobuScalabilityCsvScratch",
+      "BufferID.ShinobuScalabilityOscilloscope",
+      "MathLodRuntimeConfig.PublishConfig"
+    ]
+  },
+  "structLayoutEvidence": {
+    "modifiedStructLayouts": 0,
+    "existingHomeostasisBlackBoxEntry": {
+      "structLayoutLine": 74,
+      "sizeBytes": 64,
+      "fieldOffsets": [
+        0,
+        4,
+        8,
+        16,
+        20,
+        24,
+        28,
+        32,
+        36,
+        37,
+        38,
+        40,
+        44,
+        48,
+        52,
+        56,
+        60
+      ]
+    }
+  },
+  "cinematicAndScalability": {
+    "newPhysicalSimulationAdded": false,
+    "newBinaryLowEndSwitchAdded": false,
+    "modifiedLineRangesContainLowEndSwitch": false,
+    "globalQualityWeightChanged": false,
+    "reason": "The pass removes a lifecycle/frame-phase allocation route. It does not add visuals, physics, or quality-tier logic. Existing continuous HomeostasisBrain.GlobalQualityWeight routes remain unchanged."
+  },
+  "compilationResourceThrottling": {
+    "cpuLoadPercentBeforeBuildDecision": 100,
+    "activeCompilerProcesses": [
+      {
+        "processName": "dotnet",
+        "pid": 62124
+      }
+    ],
+    "dotnetBuildInvocationsByThisVerification": 0,
+    "finalCompilationCheckInvoked": false,
+    "reason": "Build/load rule forbids launching dotnet build under CPU load > 50% or while dotnet/csc is active. User also assigned current compile-wall repair to another agent."
+  },
+  "diffAndRepositoryState": {
+    "gitDiffCheckOnTargetFiles": "exit 0; no output",
+    "targetFilesDirtyBeforeApexReport": false,
+    "polishTxtPath": "Docs/Tasks/POLISH.txt",
+    "polishTxtExists": false
+  },
+  "runtimeProof": {
+    "unityEditorImport": "not run",
+    "playMode": "not run",
+    "profiler": "not run",
+    "gcMonitor": "not run",
+    "playerBuild": "not run",
+    "deviceRun": "not run",
+    "dataVaultHotSwapRuntimeTest": "not run"
+  },
+  "forensicDump": {
+    "dumpCreated": false,
+    "dumpPath": null,
+    "reason": "No crash or NaN was produced by this source-only verification."
+  }
+}

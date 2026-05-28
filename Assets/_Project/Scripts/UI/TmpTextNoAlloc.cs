@@ -31,26 +31,47 @@ namespace Hecton8.UI
             if (value.Length <= CharBufferPool.SlotCapacity &&
                 CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
             {
-                int length = Copy(value, lease.Buffer);
-                target.SetCharArray(lease.Buffer, 0, length);
-                CharBufferPool.Release(in lease);
+                try
+                {
+                    int length = Copy(value, lease.Buffer);
+                    target.SetCharArray(lease.Buffer, 0, length);
+                }
+                finally
+                {
+                    CharBufferPool.Release(in lease);
+                }
+
                 return;
             }
 
             if (value.Length <= CharBufferPool.RequiredBabelTextCapacity &&
                 CharBufferPool.TryAcquireBabel(out CharBufferPool.BabelLease babelLease))
             {
-                int length = Copy(value, babelLease.TmpBuffer);
-                target.SetCharArray(babelLease.TmpBuffer, 0, length);
-                CharBufferPool.Release(in babelLease);
+                try
+                {
+                    int length = Copy(value, babelLease.TmpBuffer);
+                    target.SetCharArray(babelLease.TmpBuffer, 0, length);
+                }
+                finally
+                {
+                    CharBufferPool.Release(in babelLease);
+                }
+
                 return;
             }
 
             if (CharBufferPool.TryAcquireEncyclopedia(out CharBufferPool.EncyclopediaLease pageLease))
             {
-                int length = Copy(value, pageLease.Buffer);
-                target.SetCharArray(pageLease.Buffer, 0, length);
-                CharBufferPool.Release(in pageLease);
+                try
+                {
+                    int length = Copy(value, pageLease.Buffer);
+                    target.SetCharArray(pageLease.Buffer, 0, length);
+                }
+                finally
+                {
+                    CharBufferPool.Release(in pageLease);
+                }
+
                 return;
             }
 
@@ -83,6 +104,8 @@ namespace Hecton8.UI
                     formatArgs,
                     stripRichText);
                 int safeLength = lease.CopyToTmpBuffer(length);
+                target.richText = BabelRichTextLodPolicy.ShouldEnableTmpRichTextParsing();
+                target.isRightToLeftText = LocalizationManager.IsRightToLeftLanguage(LocRegistry.ActiveLanguage);
                 target.SetCharArray(lease.TmpBuffer, 0, safeLength);
                 return found;
             }

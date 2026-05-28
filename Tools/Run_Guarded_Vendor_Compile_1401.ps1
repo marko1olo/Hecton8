@@ -69,8 +69,21 @@ New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 
 $timestamp = Get-Date -Format 'yyyyMMdd_HHmmss'
 $cpu = Get-HectonCpuLoad
-$compilers = Get-HectonCompilerProcesses
-$blocked = ($cpu -ge 0 -and $cpu -gt $MaxCpuPercent) -or ($compilers.Count -gt 0)
+$compilers = @(Get-HectonCompilerProcesses)
+$cpuBlocked = ($cpu -lt 0) -or ($cpu -gt $MaxCpuPercent)
+$compilerBlocked = ($compilers.Length -gt 0)
+$blocked = $cpuBlocked -or $compilerBlocked
+$blockReasons = New-Object System.Collections.Generic.List[string]
+if ($cpu -lt 0) {
+    $blockReasons.Add('CPU_SAMPLE_UNAVAILABLE')
+}
+elseif ($cpu -gt $MaxCpuPercent) {
+    $blockReasons.Add('CPU_LOAD_ABOVE_THRESHOLD')
+}
+
+if ($compilerBlocked) {
+    $blockReasons.Add('ACTIVE_COMPILER_PROCESS')
+}
 $projects = New-Object System.Collections.Generic.List[object]
 
 foreach ($name in $ProjectNames) {
@@ -89,7 +102,9 @@ $summary = [ordered]@{
     maxCpuPercent = $MaxCpuPercent
     cpuLoadPercent = $cpu
     compilerProcesses = @($compilers | ForEach-Object { $_ })
+    compilerProcessCount = $compilers.Length
     blockedByContention = [bool]$blocked
+    blockReasons = @($blockReasons | ForEach-Object { $_ })
     projects = @($projects | ForEach-Object { $_ })
     attempts = @()
 }

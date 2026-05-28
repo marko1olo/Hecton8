@@ -3,12 +3,13 @@
     "role":  "UNIVERSAL_OPENXR_COMFORT_AND_TUNNELING_SHADER_INTEGRATOR",
     "domain":  "Echelon 8 Presentation and UX / VR Somatic Comfort / Diegetic Terminals",
     "taskCount":  20,
-    "generatedAt":  "2026-05-28T05:51:30.8904394+04:00",
+    "generatedAt":  "2026-05-28T12:35:49.3598710+04:00",
     "promptExtraction":  {
                              "path":  "Docs/AgentLogs/Prompt_1407_EXTRACTED.md",
-                             "chars":  20052,
+                             "chars":  20045,
                              "taskLines":  20,
-                             "sha256":  "CCF6248154A8B07970E1BB514DFE7D60A5DD57B6CC31F7E8D0495572B34119A5"
+                             "sha256":  "887C8753CB26026DDF4EC2C0504A91FE85D25BB9E68C1DC1D329FB6B41E88434",
+                             "normalization":  "trimmed end-of-line whitespace in extracted proof artifact; semantic prompt lines and task count preserved"
                          },
     "freshAuditCorrections":  [
                                   {
@@ -28,16 +29,22 @@
                                       "path":  "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs",
                                       "fault":  "Unused UnityEngine.Experimental.Rendering using contradicted namespace hygiene claim.",
                                       "fix":  "Removed unused using; runtime logic unchanged."
+                                  },
+                                  {
+                                      "severity":  "HIGH",
+                                      "path":  "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs",
+                                      "fault":  "APEX self-audit found GPU constant buffer upload used NativeArray index assignment under LockBufferForWrite instead of the mandated UnsafeUtility.MemCpy route.",
+                                      "fix":  "Added Unity.Collections.LowLevel.Unsafe, marked UpdateBrownoutGlobals unsafe, replaced mapped[0] assignment with NativeArrayUnsafeUtility.GetUnsafePtr + UnsafeUtility.AddressOf + UnsafeUtility.MemCpy, and kept UnlockBufferAfterWrite in finally."
                                   }
                               ],
     "scopeBoundary":  {
                           "xrOnlyGuard":  "HectonVRBrownoutFeature.TryBuildRuntimeState exits when !HectonXRRuntimeState.IsXRActive; PC/non-XR remains no-op.",
-                          "xrOnlyGuardLine":  440,
+                          "xrOnlyGuardLine":  444,
                           "noPcVrMixing":  true
                       },
     "zeroGc":  {
                    "reportPath":  "Docs\\Reports\\APEX_ZERO_GC_SCAN_1407.json",
-                   "sha256":  "A6B714E4C8825C0EED7D26BF6D13EDD22C2BAF0B98DD79B4A95539AE6ADA31EB",
+                   "sha256":  "68F776C4C8936313FEBD3C816AC8398DDA49F146D3B07902F0E9A37F8CB21CEA",
                    "aggregate":  {
                                      "referenceTypeNewCount":  0,
                                      "stringFormatCount":  0,
@@ -59,12 +66,15 @@
                                                        ],
                             "gpuConstantBufferRoute":  {
                                                            "dto":  "BrownoutGlobalsDTO",
-                                                           "explicitStructLayoutLine":  345,
+                                                           "explicitStructLayoutLine":  349,
                                                            "strideBytes":  64,
                                                            "fieldOffsets":  "Vector4 lanes at byte offsets 0, 16, 32, 48; total 64 bytes = multiple of 16 and 8.",
-                                                           "lockBufferForWriteLine":  226,
-                                                           "finallyLine":  274,
-                                                           "unlockBufferAfterWriteLine":  276
+                                                           "lockBufferForWriteLine":  270,
+                                                           "finallyLine":  278,
+                                                           "unlockBufferAfterWriteLine":  280,
+                                                           "memCpyLine":  273,
+                                                           "nativeArrayUnsafePtrLine":  274,
+                                                           "oldMappedIndexerAssignmentCount":  0
                                                        },
                             "existingSomaticDtoProjectFact":  {
                                                                   "source":  "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs",
@@ -73,9 +83,9 @@
                                                               }
                         },
     "renderGraphProof":  {
-                             "featureAddRenderPassesLine":  416,
-                             "featureRecordRenderGraphLine":  114,
-                             "setGlobalConstantBufferLine":  183,
+                             "featureAddRenderPassesLine":  420,
+                             "featureRecordRenderGraphLine":  115,
+                             "setGlobalConstantBufferLine":  184,
                              "rendererProof":  [
                                                    {
                                                        "path":  "Assets/_Project/Data/Mobile_Renderer.asset",
@@ -984,7 +994,7 @@
                         "publisherSomatic":  "VRSomaticProvider.FlushQueuedSomaticComfortShaderState()",
                         "publisherSomaticLine":  1346,
                         "consumer":  "HectonVRBrownoutFeature.TryBuildRuntimeState reads already-published globals for each eligible XR camera.",
-                        "consumerLine":  422,
+                        "consumerLine":  441,
                         "conclusion":  "One physiology scalar/vector route is sampled by all eligible XR cameras; direct diegetic shaders consume the same global vectors, so no per-camera comfort authority exists."
                     },
     "continuousScalability":  {
@@ -997,40 +1007,53 @@
                                   "cinematicCheat":  "Direct fragment dither/darkening and one final fullscreen brownout are visual fakes; no physical simulation, blur stack, per-terminal camera render, or duplicate post pass was added."
                               },
     "buildGate":  {
-                      "dotnetBuildInvoked":  false,
-                      "finalPreflightCpuLoadPercent":  94,
+                      "dotnetBuildInvoked":  true,
+                      "finalPreflightCpuLoadPercent":  63,
                       "finalPreflightCompilerProcesses":  [
                                                               {
-                                                                  "Id":  12816,
+                                                                  "Id":  52688,
                                                                   "ProcessName":  "csc",
-                                                                  "CPU":  1.9375,
-                                                                  "StartTime":  "\/Date(1779933088266)\/"
+                                                                  "CPU":  82.65625,
+                                                                  "StartTimeIso":  "2026-05-28T12:55:12.6574862+04:00"
                                                               },
                                                               {
-                                                                  "Id":  10056,
+                                                                  "Id":  52900,
                                                                   "ProcessName":  "dotnet",
-                                                                  "CPU":  47.796875,
-                                                                  "StartTime":  "\/Date(1779933051392)\/"
+                                                                  "CPU":  28.0625,
+                                                                  "StartTimeIso":  "2026-05-28T12:54:51.3507151+04:00"
                                                               }
                                                           ],
-                      "buildAllowedByGate":  false,
+                      "buildAllowedByGate":  null,
+                      "gateSampleBeforeInvocationCaptured":  false,
+                      "preDelayCpuLoadPercent":  76,
+                      "commandTimeoutMs":  904009,
                       "solutionProbe":  {
                                             "hecton8SlnxExists":  true,
                                             "hecton8SlnExists":  false,
                                             "solutionFile":  "Hecton8.slnx"
                                         },
-                      "reason":  "Gate closed: CPU \u003e50 percent or compiler process active; dotnet build not invoked."
+                      "reason":  "One delayed build-gate command exceeded the 904009 ms shell timeout after a dotnet process was observed. Exit code and exact gate CPU sample before invocation are not captured; no second build was launched.",
+                      "buildExitCode":  null,
+                      "buildDurationMs":  null,
+                      "dumpPath":  "Docs/AgentLogs/Dump_1407_BuildTimeout.txt",
+                      "dumpSha256":  "BE6C250391D651A83EDC4931EF28036AD596215ECE4123D3A086BAE28C498BAE",
+                      "sha256":  "EF5EB4A423689B896A9DA5BCE035BE3C4FE0798B577A3A8C4D4AF631B5366EBE"
                   },
     "latentRisks":  [
                         {
                             "risk":  "Runtime XR visual proof, RenderGraph Viewer proof, Unity shader compilation, and ProfilerRecorder GC proof remain unavailable without a legal Unity/build window.",
                             "status":  "PENDING_RUNTIME_VERIFICATION"
+                        },
+                        {
+                            "risk":  "One delayed build attempt exceeded shell timeout; exact pre-invocation CPU sample and exit code were not captured.",
+                            "status":  "BUILD_RESULT_UNKNOWN",
+                            "dumpPath":  "Docs/AgentLogs/Dump_1407_BuildTimeout.txt"
                         }
                     ],
     "hashes":  [
                    {
                        "path":  "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs",
-                       "sha256":  "D9F40B84BD8A15FD45F792552FD745A7F4F36124B1A9B799B2931ECB827E21F0"
+                       "sha256":  "79791AC45FBFEDA985B3A9BB6EE0B20A333519F1D4E8EA691ADF3EC632FC4E76"
                    },
                    {
                        "path":  "Assets/_Project/Scripts/Editor/VRSomaticComfortEvaluatorEditTests.cs",
@@ -1126,13 +1149,13 @@
                    },
                    {
                        "path":  "Docs/AgentLogs/Prompt_1407_EXTRACTED.md",
-                       "sha256":  "CCF6248154A8B07970E1BB514DFE7D60A5DD57B6CC31F7E8D0495572B34119A5"
+                       "sha256":  "887C8753CB26026DDF4EC2C0504A91FE85D25BB9E68C1DC1D329FB6B41E88434"
                    }
                ],
     "finalBuildPreflightArtifact":  "Docs/AgentLogs/Build_1407_FinalPreflight.json",
     "latestDomainRecheck":  {
                                 "path":  "Docs/Reports/APEX_DOMAIN_RECHECK_1407.json",
-                                "sha256":  "19E1FBCE981B70301825D21FEB8D17AADCAA09E47B7713BEAF1F888C475DB067",
+                                "sha256":  "E6B9E798A194EFD73F761DB94243747052103728C840B8F54A1C017B0F2E40AD",
                                 "aggregate":  {
                                                   "stereoBad":  0,
                                                   "shaderBalanceBad":  0,
@@ -1140,6 +1163,23 @@
                                                   "rendererBad":  0,
                                                   "jsonBad":  0,
                                                   "runtimeForbiddenTokenTotal":  0
-                                              }
-                            }
+                                              },
+                                "promptFileSha256":  "887C8753CB26026DDF4EC2C0504A91FE85D25BB9E68C1DC1D329FB6B41E88434"
+                            },
+    "buildPreflightSha256":  "EF5EB4A423689B896A9DA5BCE035BE3C4FE0798B577A3A8C4D4AF631B5366EBE",
+    "gpuUploadMemCpyRepair":  {
+                                  "sourcePath":  "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs",
+                                  "sourceSha256":  "79791AC45FBFEDA985B3A9BB6EE0B20A333519F1D4E8EA691ADF3EC632FC4E76",
+                                  "unsafeUsingLine":  6,
+                                  "unsafeMethodLine":  241,
+                                  "lockBufferForWriteLine":  270,
+                                  "memCpyLine":  273,
+                                  "nativeArrayUnsafePtrLine":  274,
+                                  "addressOfLine":  275,
+                                  "unlockFinallyLine":  278,
+                                  "unlockLine":  280,
+                                  "oldMappedIndexerAssignmentCount":  0,
+                                  "proof":  "One 64-byte explicit DTO copied to a double-buffered GraphicsBuffer mapping. Lock count 1; MemCpy count 1; UnlockBufferAfterWrite remains in finally; no second render pass added.",
+                                  "experimentalRenderingUsingCount":  0
+                              }
 }

@@ -134,14 +134,14 @@ Hardware Impact: No measurable runtime impact expected; generated struct assignm
 ## Decision 016 - APEX JSON Evidence Repair
 
 Problem: The first APEX JSON artifact failed PowerShell `ConvertFrom-Json` because case-insensitive duplicate keys `lowEnd` and `LowEnd` collided.
-Solution: Convert the binary switch scan object into an array of `{ term, count }` records and re-run JSON parsing. Current APEX report SHA-256 is `65cb1949a2e732e7175862301f685684a80a846d60a24f69bd76c45f371f85a6`.
+Solution: Convert the binary switch scan object into an array of `{ term, count }` records and re-run JSON parsing. Current APEX report SHA-256 is `bcd691fd18e52ff61b9e09559838cf79db0cace3e0e9503d51b0f2854570e461`.
 Rejected Alternatives: Keeping a JSON file that only some parsers accept was rejected because project evidence must be machine-verifiable on the host shell.
 Scalability potential: No runtime effect. Tooling stability improves for later allocator audits.
 Hardware Impact: No runtime cost.
 
 ## Decision 017 - Final Compilation Throttle Honesty
 
-Problem: A compiler check remains desirable after unsafe memory changes, but the latest gate still shows CPU 66 percent with active `csc` PID 67916 and `dotnet` PID 20440.
+Problem: A compiler check remains desirable after unsafe memory changes, but the latest gate still shows CPU 100 percent with active `dotnet` PID 40988.
 Solution: Do not launch `dotnet build`. Record static verification, exact CPU/process evidence, and mark build/test execution as blocked rather than green.
 Rejected Alternatives: Starting another build was rejected because it violates the explicit no-spam rule and the project's >50 percent CPU gate.
 Scalability potential: No runtime effect. Protects parallel agent throughput and cheap hardware from avoidable Roslyn load.
@@ -162,3 +162,99 @@ Solution: Remove the duplicated predicate and add `GlobalDataVault_DeferredGrowt
 Rejected Alternatives: Leaving the duplicate as harmless was rejected because allocator maintenance runs every PostSimulation frame when pressure exists; redundant native scans are debt in a 0.1 ms suspicious-budget system.
 Scalability potential: Low tier removes one redundant lock scan in the pressure path. Middle/High/Ultra preserve the same safety predicate while keeping room for larger arena pressure.
 Hardware Impact: Microsecond saving is not claimed without profiler data; static work removed one unnecessary scan call.
+
+## Decision 020 - Sparse BufferID Generation Tombstone Ledger
+
+Problem: Sparse `BufferID` keys above `_metadataByBufferId.Length` have no flat tombstone slot. `RemoveMetadata` removed the live map entry, so `ResolveInitialGenerationForAllocation` could return `1` on recreate and make an old generation-1 handle indistinguishable from a new allocation.
+Solution: Add `_metadataGenerationByBufferId` as an unmanaged `UnsafeHashMap<int,uint>` ledger only for sparse keys. `TryAddMetadata` and `WriteMetadata` record live generations, `RemoveMetadata` records tombstone generations, and `ResolveInitialGenerationForAllocation` now reads `ReadMetadataGeneration`.
+Rejected Alternatives: Expanding `_metadataByBufferId` to cover sparse enum IDs was rejected because it would allocate mostly empty native metadata. Leaving generation reset as acceptable was rejected because generation handles are the stale-pointer defense after raw memory reuse.
+Scalability potential: Low tier keeps sparse memory overhead bounded by active configured capacity. Middle/High/Ultra preserve stable sparse IDs without changing DTO layout or growing flat arrays.
+Hardware Impact: Avoids roughly 14 MB metadata expansion for `PlayerHandIkPublishedStates=315736` while preserving stale-handle rejection after release/recreate.
+
+## Decision 021 - Deferred Release Duplicate Pin Gate
+
+Problem: `QueueDeferredRelease` de-duplicated only `DeferredReleaseKindWriter`. If `TryUnlockBuffer` was called repeatedly while the release mutation gate was contended, identical buffer-pin releases could be queued more than once and later double-decrement `Reserved1`.
+Solution: De-duplicate all release kinds before reserving a queue slot using `BufferKey`, `OffsetBytes`, `ActiveLockBit`, `LockOwnerSystemId`, and `Kind`.
+Rejected Alternatives: Leaving pin releases uncovered was rejected because many callers ignore the `TryUnlockBuffer` return and can retry from retained local masks. Splitting writer/pin queues was rejected because the existing bounded ring already carries `Kind` and needs only a stronger identity check.
+Scalability potential: Low tier avoids extra lock-retention and double-release faults under contention. Middle/High/Ultra keep the same bounded ring and can absorb higher parallel pin pressure without changing memory authority.
+Hardware Impact: Adds one bounded pending-request scan only on release-gate contention. No steady allocator hot-path cost is claimed.
+
+## Decision 022 - Queued Writer Release Return Contract
+
+Problem: A recheck found the working tree returning `false` after successfully queuing writer release under mutation-gate contention. Existing callers and retry loops interpret `false` as release failure, even though ownership has been transferred to the deferred release queue.
+Solution: Preserve `return QueueDeferredWriterRelease(...)` for `ReleaseWriteLock` and `ReleaseWriterBlockLock`. A queued release is an accepted release request; actual relocation remains blocked until the queue drains and active lock state clears.
+Rejected Alternatives: Returning false for philosophical "not drained yet" semantics was rejected because it regresses caller state and can produce failure flags after a correct deferred release. Immediate blocking wait for the gate was rejected because it can stall under allocator pressure.
+Scalability potential: Low tier keeps writer release non-blocking under contention. Middle/High/Ultra maintain deterministic deferred drain without forcing caller-specific retry policy.
+Hardware Impact: Avoids retry spin in `ReleaseWriteLockWithRetry`-style paths; exact microseconds not claimed without profiler data.
+
+## Decision 023 - Latest Compiler Gate Refresh
+
+Problem: Final proof artifacts must name the current compilation throttle state, not an older CPU/process sample.
+Solution: Refresh the final gate to CPU 77 percent with active `dotnet` PIDs 54088 and 55804, keep build/test execution blocked, and update both JSON report hashes.
+Rejected Alternatives: Launching `dotnet build` at 77 percent CPU with active dotnet processes was rejected because AGENTS.md forbids build when CPU is above 50 percent or another compiler is running.
+Scalability potential: No runtime effect. Protects shared low-end host throughput during parallel agent work.
+Hardware Impact: Avoided another MSBuild/Roslyn invocation under active compiler contention.
+
+## Decision 024 - Deferred Release Scan Serialization
+
+Problem: The all-kind pending scan in `QueueDeferredRelease` was necessary but not sufficient. Two callers could both scan before either published `Pending`, then reserve two different slots with identical buffer/key/kind data.
+Solution: Add `_deferredReleaseEnqueueGate` and guard scan plus slot reservation with `Interlocked.CompareExchange(ref _deferredReleaseEnqueueGate, 1, 0)`. Release uses `Volatile.Write(ref _deferredReleaseEnqueueGate, 0)` in `finally`, so every successful gate acquire has a single release path.
+Rejected Alternatives: Relying on slot-level `CompareExchange` was rejected because it protects slot ownership, not semantic de-duplication across slots. A managed lock was rejected because this path exists specifically to survive allocator pressure.
+Scalability potential: Low tier avoids double pin/writer release corruption under contention. Middle/High/Ultra keep the same bounded unmanaged ring and can tolerate more release pressure without changing ownership semantics.
+Hardware Impact: Adds one atomic gate only when deferring a release. No steady-state allocation hot-path microsecond saving is claimed.
+
+## Decision 025 - Published Allocation Rollback
+
+Problem: A new buffer allocation could publish `_buffers`, metadata, key registry, and `_allocatedBytes`, then fail `MarkExternalView`. Returning false at that point left state published without completing the requested view and risked retained capacity after a failed call.
+Solution: Add `RollbackPublishedAllocation` and call it from the new-allocation external-view failure branch. The helper enters the block mutation gate, removes the buffer map entry, removes metadata, removes the key registry entry, frees the occupied block, decrements `_allocatedBytes`, and releases the gate in `finally`.
+Rejected Alternatives: Leaving the state for a later retry was rejected because `Try*` failure must not silently consume capacity after publishing. Blindly calling `TryFreeBlockRollback` after map removal was rejected because it did not prove key/metadata/byte accounting restoration in one audited helper.
+Scalability potential: Low devices recover scarce arena space after failed view publication. Middle/High/Ultra avoid accumulating invisible capacity loss during parallel memory pressure.
+Hardware Impact: Failure-path only. Expected normal-frame cost is 0 us; static scan of the helper showed zero forbidden GC terms.
+
+## Decision 026 - Final Compilation Gate And Artifact Refresh
+
+Problem: After rollback and release queue fixes, previous JSON hashes were stale and a compiler run still required resource gate proof.
+Solution: Regenerate APEX and optimization JSON reports, parse both with `ConvertFrom-Json`, and record current SHA-256 hashes. Latest compiler gate sampled CPU 100 percent with active `csc` PIDs 23596/33620 and `dotnet` PIDs 45864/66816; no build was launched.
+Rejected Alternatives: Reporting old hashes was rejected as false evidence. Starting `dotnet build` under CPU 100 percent with active compilers was rejected by the explicit compilation throttling rule.
+Scalability potential: No runtime effect. Keeps proof artifacts deterministic for later allocator work.
+Hardware Impact: Avoided one MSBuild/Roslyn invocation under saturated host conditions.
+
+## Decision 027 - Counted Pin Release Correction
+
+Problem: My previous all-kind deferred-release de-dup was wrong for buffer pins. `TryLockBuffer` allows repeated same-owner pins by incrementing `Reserved1`, so two valid releases can have identical `BufferKey`, `OffsetBytes`, `ActiveLockBit`, `LockOwnerSystemId`, and `Kind`.
+Solution: Keep de-duplication only for `DeferredReleaseKindWriter`, where ownership is unique. Buffer-pin releases remain counted queue events and are allowed to occupy separate deferred slots.
+Rejected Alternatives: Treating pin release retries as idempotent was rejected because there is no release token to distinguish a duplicate retry from a second legitimate pin. Adding a new token to the public lock API was rejected as too broad for this allocator pass.
+Scalability potential: Low tier avoids retained locks from swallowed pin releases. Middle/High/Ultra preserve the same bounded queue while maintaining correct counted lock semantics under heavier parallel read pressure.
+Hardware Impact: Removes a correctness fault. It may enqueue more pin-release records under contention, but only for legitimate counted pins; no microsecond saving is claimed.
+
+## Decision 028 - Single-Gate New Allocation Publish
+
+Problem: `RollbackPublishedAllocation` reacquired the mutation gate after a failed external-view mark. If the original failure was gate contention or compaction-fence timing, the rollback was not mathematically guaranteed.
+Solution: Move new allocation publish into `TryAllocatePublishedBuffer<T>`. The helper enters the mutation gate once, allocates the block, clears/sanitizes payload, publishes `_buffers`, metadata, key registry, optional external-view state, and rolls back every partial state inside the same `finally`.
+Rejected Alternatives: Bounded spin waiting for a second rollback gate was rejected because it can stall allocator pressure. Queueing a rollback request was rejected because the current deferred release record has no byte-accounting contract and would widen the protocol.
+Scalability potential: Low devices recover scarce arena space deterministically. Middle/High/Ultra can handle larger allocation bursts without partial publish leaks.
+Hardware Impact: Allocation publish is cold relative to per-frame reads; normal hot path claim remains 0 us. Failure path now does deterministic cleanup under one gate.
+
+## Decision 029 - Pre-Publish Finite Sanitization
+
+Problem: New float payload sanitation happened after metadata publication. A racing resolver could theoretically see newly published metadata before finite sanitation completed.
+Solution: `TryAllocatePublishedBuffer<T>` now calls `SanitizeFinitePayload<T>` before `_buffers.TryAdd` and `TryAddMetadata`, so no handle can resolve the payload before sanitation.
+Rejected Alternatives: Leaving sanitation after publish was rejected because the new one-gate helper made pre-publish sanitation cheap and mechanically provable. Disabling sanitation for uninitialized float buffers was rejected because existing code explicitly intended finite cleanup.
+Scalability potential: Low/Middle/High/Ultra all preserve finite data before publication without changing DTO layout or authority.
+Hardware Impact: Same sanitation work, moved earlier. No added normal-frame cost is claimed.
+
+## Decision 030 - Second Final Compilation Gate And Artifact Refresh
+
+Problem: After the pin semantics correction and single-gate publish rewrite, previous JSON hashes were stale and a compiler run still required resource gate proof.
+Solution: Regenerate APEX and optimization JSON reports, parse both with `ConvertFrom-Json`, and record current SHA-256 hashes. Latest compiler gate sampled CPU 100 percent with active `dotnet` PID 15108; no build was launched.
+Rejected Alternatives: Reporting stale hashes was rejected as false evidence. Starting `dotnet build` under CPU 100 percent with an active dotnet process was rejected by the explicit compilation throttling rule.
+Scalability potential: No runtime effect. Keeps proof artifacts current for the next allocator review.
+Hardware Impact: Avoided one MSBuild/Roslyn invocation under saturated host conditions.
+
+## Decision 031 - Proof Line Number Reconciliation
+
+Problem: The code was current, but the APEX/optimization JSON still carried pre-helper line numbers for `TryAcquireWriteLock<T>` finally release, deferred growth queue/clear CAS sites, and `ResolveArenaCapacityLimit`. That made the proof artifact weaker than the source.
+Solution: Re-open current source with numbered line output, update only the proof artifacts to the actual line numbers, parse both JSON files, and refresh hashes. No runtime code was changed.
+Rejected Alternatives: Leaving stale line numbers was rejected because the user explicitly requires exact file paths and line numbers. Re-running compiler was rejected because this was documentation evidence only and the latest compiler gate was already blocked by CPU/process contention.
+Scalability potential: No runtime effect. Accurate proof preserves future Low/Middle/High/Ultra allocator review without repeating archaeology.
+Hardware Impact: No runtime cost. Avoided one unnecessary MSBuild/Roslyn invocation.

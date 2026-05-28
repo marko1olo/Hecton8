@@ -165,6 +165,7 @@ namespace Hecton8.Tools
 
         private ref struct EquipmentVaultViews
         {
+            public IDataVault Vault;
             public EquipmentVaultView<ToolState> ToolStates;
             public EquipmentVaultView<ToolRuntimeStats> ToolStats;
             public EquipmentVaultView<byte> ToolTypes;
@@ -1174,39 +1175,48 @@ namespace Hecton8.Tools
 
         private bool EnsureEquipmentViews(out EquipmentVaultViews views, bool createIfMissing = false)
         {
+            return EnsureEquipmentViews(_dataVault, out views, createIfMissing);
+        }
+
+        private bool EnsureEquipmentViews(IDataVault vault, out EquipmentVaultViews views, bool createIfMissing = false)
+        {
             views = default;
-            IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            return EnsureEquipmentBuffer(vault, ref _toolStatesHandle, BufferID.ShinobuActiveEquipmentToolStates, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.ToolStates) &&
-                   EnsureEquipmentBuffer(vault, ref _toolStatsHandle, BufferID.ShinobuActiveEquipmentToolStats, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.ToolStats) &&
-                   EnsureEquipmentBuffer(vault, ref _toolTypesHandle, BufferID.ShinobuActiveEquipmentToolTypes, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.ToolTypes) &&
-                   EnsureEquipmentBuffer(vault, ref _currentHeatHandle, BufferID.ToolRuntimeHeat01, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.CurrentHeat) &&
-                   EnsureEquipmentBuffer(vault, ref _batteryChargeHandle, BufferID.ToolRuntimeBatteryCharge, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.BatteryCharge) &&
-                   EnsureEquipmentBuffer(vault, ref _statusMasksHandle, BufferID.ShinobuActiveEquipmentStatusMasks, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.StatusMasks) &&
-                   EnsureEquipmentBuffer(vault, ref _environmentHeat01Handle, BufferID.ShinobuActiveEquipmentEnvironmentHeat01, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.EnvironmentHeat01) &&
-                   EnsureEquipmentBuffer(vault, ref _activeEquipmentStatesHandle, BufferID.ShinobuActiveEquipmentState, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.ActiveEquipmentStates) &&
-                   EnsureEquipmentBuffer(vault, ref _publishedActiveEquipmentStatesHandle, BufferID.ShinobuActiveEquipmentPublishedState, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.PublishedActiveEquipmentStates) &&
-                   EnsureEquipmentBuffer(vault, ref _activeEquipmentAupSamplesHandle, BufferID.ShinobuActiveEquipmentAupSamples, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.ActiveEquipmentAupSamples) &&
-                   EnsureEquipmentBuffer(vault, ref _activeEquipmentGridLoadRequestsHandle, BufferID.ShinobuActiveEquipmentGridLoadRequests, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.ActiveEquipmentGridLoadRequests) &&
-                   EnsureEquipmentBuffer(vault, ref _activeEquipmentWearDrainRatesHandle, BufferID.ShinobuActiveEquipmentWearDrainRates, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.ActiveEquipmentWearDrainRates) &&
-                   EnsureEquipmentBuffer(vault, ref _equipmentTelemetryRingHandle, BufferID.ShinobuActiveEquipmentTelemetryRing, EquipmentTelemetryRingLength, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.EquipmentTelemetryRing) &&
-                   EnsureEquipmentBuffer(vault, ref _equipmentTelemetryCursorHandle, BufferID.ShinobuActiveEquipmentTelemetryCursor, 1, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.EquipmentTelemetryCursor) &&
-                   EnsureEquipmentBuffer(vault, ref _flashlightTelemetryRingHandle, FlashlightTelemetryRingBufferId, EquipmentTelemetryRingLength, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.FlashlightTelemetryRing) &&
-                   EnsureEquipmentBuffer(vault, ref _flashlightTelemetryCursorHandle, FlashlightTelemetryCursorBufferId, 1, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.FlashlightTelemetryCursor) &&
-                   EnsureEquipmentBuffer(vault, ref _equipmentIntegrationCountersHandle, BufferID.ShinobuActiveEquipmentIntegrationCounters, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.EquipmentIntegrationCounters) &&
-                   EnsureEquipmentBuffer(vault, ref _equipmentTuningHandle, BufferID.ShinobuActiveEquipmentTuning, 1, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.EquipmentTuning) &&
-                   EnsureEquipmentBuffer(vault, ref _equipmentHardwareSpecsHandle, BufferID.ShinobuActiveEquipmentHardwareSpecs, EquipmentHardwareSpecCapacity, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.EquipmentHardwareSpecs) &&
-                   EnsureEquipmentBuffer(vault, ref _upgradeMatrixMasksHandle, UpgradeMatrixConstants.UpgradeMasksBuffer, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.UpgradeMasks) &&
-                   EnsureEquipmentBuffer(vault, ref _upgradeMatrixBaseStatsHandle, UpgradeMatrixConstants.UpgradeBaseStatsBuffer, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.UpgradeBaseStats) &&
-                   EnsureEquipmentBuffer(vault, ref _upgradeMatrixCompiledStatsHandle, UpgradeMatrixConstants.UpgradeCompiledStatsBuffer, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.UpgradeCompiledStats) &&
-                   EnsureEquipmentBuffer(vault, ref _upgradeMatrixToolLutHandle, UpgradeMatrixConstants.UpgradeLutBuffer, MaxTrackedTools * UpgradeMatrixConstants.ToolModuleLutEntriesPerEquipment, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.UpgradeToolLut) &&
-                   EnsureEquipmentBuffer(vault, ref _upgradeMatrixToolRulesHandle, UpgradeMatrixConstants.UpgradeToolModuleRulesBuffer, MaxTrackedTools * UpgradeMatrixConstants.ToolModuleSlotsPerEquipment, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.UpgradeToolModuleRules) &&
-                   EnsureEquipmentBuffer(vault, ref _upgradeMatrixToolProfilesHandle, UpgradeMatrixConstants.UpgradeToolProfilesBuffer, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.UpgradeToolProfiles) &&
-                   EnsureEquipmentBuffer(vault, ref _upgradeMatrixTelemetryRingHandle, UpgradeMatrixConstants.UpgradeTelemetryRingBuffer, UpgradeMatrixConstants.TelemetryFrameCount, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.UpgradeTelemetryRing) &&
-                   EnsureEquipmentBuffer(vault, ref _upgradeMatrixTelemetryCursorHandle, UpgradeMatrixConstants.UpgradeTelemetryCursorBuffer, 1, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.UpgradeTelemetryCursor) &&
-                   EnsureEquipmentBuffer(vault, ref _upgradeMatrixVisualStatesHandle, UpgradeMatrixConstants.UpgradeVisualStateBuffer, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.UpgradeVisualStates);
+            bool resolved =
+                EnsureEquipmentBuffer(vault, ref _toolStatesHandle, BufferID.ShinobuActiveEquipmentToolStates, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.ToolStates) &&
+                EnsureEquipmentBuffer(vault, ref _toolStatsHandle, BufferID.ShinobuActiveEquipmentToolStats, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.ToolStats) &&
+                EnsureEquipmentBuffer(vault, ref _toolTypesHandle, BufferID.ShinobuActiveEquipmentToolTypes, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.ToolTypes) &&
+                EnsureEquipmentBuffer(vault, ref _currentHeatHandle, BufferID.ToolRuntimeHeat01, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.CurrentHeat) &&
+                EnsureEquipmentBuffer(vault, ref _batteryChargeHandle, BufferID.ToolRuntimeBatteryCharge, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.BatteryCharge) &&
+                EnsureEquipmentBuffer(vault, ref _statusMasksHandle, BufferID.ShinobuActiveEquipmentStatusMasks, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.StatusMasks) &&
+                EnsureEquipmentBuffer(vault, ref _environmentHeat01Handle, BufferID.ShinobuActiveEquipmentEnvironmentHeat01, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.EnvironmentHeat01) &&
+                EnsureEquipmentBuffer(vault, ref _activeEquipmentStatesHandle, BufferID.ShinobuActiveEquipmentState, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.ActiveEquipmentStates) &&
+                EnsureEquipmentBuffer(vault, ref _publishedActiveEquipmentStatesHandle, BufferID.ShinobuActiveEquipmentPublishedState, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.PublishedActiveEquipmentStates) &&
+                EnsureEquipmentBuffer(vault, ref _activeEquipmentAupSamplesHandle, BufferID.ShinobuActiveEquipmentAupSamples, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.ActiveEquipmentAupSamples) &&
+                EnsureEquipmentBuffer(vault, ref _activeEquipmentGridLoadRequestsHandle, BufferID.ShinobuActiveEquipmentGridLoadRequests, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.ActiveEquipmentGridLoadRequests) &&
+                EnsureEquipmentBuffer(vault, ref _activeEquipmentWearDrainRatesHandle, BufferID.ShinobuActiveEquipmentWearDrainRates, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.ActiveEquipmentWearDrainRates) &&
+                EnsureEquipmentBuffer(vault, ref _equipmentTelemetryRingHandle, BufferID.ShinobuActiveEquipmentTelemetryRing, EquipmentTelemetryRingLength, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.EquipmentTelemetryRing) &&
+                EnsureEquipmentBuffer(vault, ref _equipmentTelemetryCursorHandle, BufferID.ShinobuActiveEquipmentTelemetryCursor, 1, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.EquipmentTelemetryCursor) &&
+                EnsureEquipmentBuffer(vault, ref _flashlightTelemetryRingHandle, FlashlightTelemetryRingBufferId, EquipmentTelemetryRingLength, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.FlashlightTelemetryRing) &&
+                EnsureEquipmentBuffer(vault, ref _flashlightTelemetryCursorHandle, FlashlightTelemetryCursorBufferId, 1, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.FlashlightTelemetryCursor) &&
+                EnsureEquipmentBuffer(vault, ref _equipmentIntegrationCountersHandle, BufferID.ShinobuActiveEquipmentIntegrationCounters, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.EquipmentIntegrationCounters) &&
+                EnsureEquipmentBuffer(vault, ref _equipmentTuningHandle, BufferID.ShinobuActiveEquipmentTuning, 1, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.EquipmentTuning) &&
+                EnsureEquipmentBuffer(vault, ref _equipmentHardwareSpecsHandle, BufferID.ShinobuActiveEquipmentHardwareSpecs, EquipmentHardwareSpecCapacity, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.EquipmentHardwareSpecs) &&
+                EnsureEquipmentBuffer(vault, ref _upgradeMatrixMasksHandle, UpgradeMatrixConstants.UpgradeMasksBuffer, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.UpgradeMasks) &&
+                EnsureEquipmentBuffer(vault, ref _upgradeMatrixBaseStatsHandle, UpgradeMatrixConstants.UpgradeBaseStatsBuffer, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.UpgradeBaseStats) &&
+                EnsureEquipmentBuffer(vault, ref _upgradeMatrixCompiledStatsHandle, UpgradeMatrixConstants.UpgradeCompiledStatsBuffer, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.UpgradeCompiledStats) &&
+                EnsureEquipmentBuffer(vault, ref _upgradeMatrixToolLutHandle, UpgradeMatrixConstants.UpgradeLutBuffer, MaxTrackedTools * UpgradeMatrixConstants.ToolModuleLutEntriesPerEquipment, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.UpgradeToolLut) &&
+                EnsureEquipmentBuffer(vault, ref _upgradeMatrixToolRulesHandle, UpgradeMatrixConstants.UpgradeToolModuleRulesBuffer, MaxTrackedTools * UpgradeMatrixConstants.ToolModuleSlotsPerEquipment, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.UpgradeToolModuleRules) &&
+                EnsureEquipmentBuffer(vault, ref _upgradeMatrixToolProfilesHandle, UpgradeMatrixConstants.UpgradeToolProfilesBuffer, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.UpgradeToolProfiles) &&
+                EnsureEquipmentBuffer(vault, ref _upgradeMatrixTelemetryRingHandle, UpgradeMatrixConstants.UpgradeTelemetryRingBuffer, UpgradeMatrixConstants.TelemetryFrameCount, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.UpgradeTelemetryRing) &&
+                EnsureEquipmentBuffer(vault, ref _upgradeMatrixTelemetryCursorHandle, UpgradeMatrixConstants.UpgradeTelemetryCursorBuffer, 1, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.UpgradeTelemetryCursor) &&
+                EnsureEquipmentBuffer(vault, ref _upgradeMatrixVisualStatesHandle, UpgradeMatrixConstants.UpgradeVisualStateBuffer, MaxTrackedTools, NativeArrayOptions.UninitializedMemory, createIfMissing, out views.UpgradeVisualStates);
+
+            if (resolved)
+                views.Vault = vault;
+            return resolved;
         }
 
         private static bool EnsureEquipmentBuffer<T>(
@@ -1332,6 +1342,7 @@ namespace Hecton8.Tools
                     return false;
                 }
 
+                views.Vault = vault;
                 views.WriteLockCount = acquiredCount;
                 return true;
             }
@@ -1376,16 +1387,18 @@ namespace Hecton8.Tools
 
         private void ReleaseEquipmentWriteLocks(ref EquipmentVaultViews views)
         {
-            IDataVault vault = _dataVault;
+            IDataVault vault = views.Vault;
             int acquiredCount = views.WriteLockCount;
+            views.Vault = null;
             views.WriteLockCount = 0;
             ReleaseEquipmentWriteLocks(vault, acquiredCount);
         }
 
         private void CaptureEquipmentIntegrationWriteLocks(ref EquipmentVaultViews views)
         {
-            _equipmentIntegrationWriteLockVault = _dataVault;
+            _equipmentIntegrationWriteLockVault = views.Vault;
             _equipmentIntegrationWriteLockCount = views.WriteLockCount;
+            views.Vault = null;
             views.WriteLockCount = 0;
         }
 
@@ -1398,7 +1411,7 @@ namespace Hecton8.Tools
                 return false;
             }
 
-            return EnsureEquipmentViews(out views);
+            return EnsureEquipmentViews(_equipmentIntegrationWriteLockVault, out views);
         }
 
         private void ReleaseEquipmentIntegrationWriteLocks()

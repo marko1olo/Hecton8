@@ -5,7 +5,7 @@ Agent: 1413
 Role: ATOMIC_LOCK_CONTENTION_AND_FAIL_CLOSED_COORDINATOR
 Domain: CORE & MEMORY INFRASTRUCTURE / GlobalDataVault Concurrency
 Task Count: 20
-Status: ACTIVE / PENDING VERIFICATION
+Status: ACTIVE / PENDING UNITY RUNTIME VERIFICATION
 
 ## Mandates Loaded
 
@@ -134,6 +134,50 @@ Status: ACTIVE / PENDING VERIFICATION
 - [x] Reports regenerated | DOD: APEX generatedUtc = `2026-05-28T01:46:58Z`; zero-GC total forbidden hits = 0; `TryOpenAliasBuffer<T>` lines 1309-1449 forbidden hits = 0; optimization report hash before APEX write = `a519682ce0b5a9bfbf22426b3c2a38cfc85b90005d7a5d00d99eb08c8ad67fc9`.
 - [x] Final artifact hashes after Loop 14 | DOD: `GlobalDataVault.cs` SHA-256 = `a0233a4e583874e84a7425741dcdf21bd21a7bf3ec6a2b282eb7076c1d32d4e4`; `agent1413_apex_verifier.py` SHA-256 = `d32312469b43f054207e17576d5698ca94dcd4b7d94fe04778990e8c76f94bec`; optimization report SHA-256 = `a519682ce0b5a9bfbf22426b3c2a38cfc85b90005d7a5d00d99eb08c8ad67fc9`; APEX SHA-256 = `dd4f343fe87b43c0a44faf864fb0c9c364855d5827161d23911fc12dd6216941`.
 - [BLOCKED_BY_CONTENTION] Compiler/runtime proof | DOD: APEX runtime sample = 57.268876%, `dotnetCount=1`, `cscCount=0`; CPU exceeds 50% and dotnet is active, so no `dotnet build`, no Unity Test Runner.
+
+## Loop 15 / External-View Publish Rollback Audit
+
+- [x] New-buffer orphan risk found | DOD: reviewed `TryEnsureVaultBuffer` new allocation path. If `MarkExternalView` failed because the mutation gate was busy, the old cleanup removed `_buffers`, metadata, and key route, then attempted `TryFreeBlockRollback` while the gate was already known busy. That could leave an occupied arena block without metadata. Estimate: 1,300,000 us static branch reasoning.
+- [x] Rollback-on-contention removed | DOD: after new allocation, external-view publish failure now records `RecordLockContentionFault(key)` and returns false while keeping the registered buffer/metadata route intact for retry. Existing corruption cleanup branches remain unchanged.
+- [x] Remaining direct gate failures instrumented | DOD: direct `TryAcquireBlockMutationGate`/`TryEnterBlockMutationGate` failures in deferred-drain, live compaction, arena growth, allocation/reallocation/free helpers, `MarkExternalView`, and `MarkAliasReader` now record numeric contention before returning false or deferring work.
+- [x] APEX scanner extended | DOD: `agent1413_apex_verifier.py` scans `TryEnsureVaultBuffer<T>` lines 1087-1305; forbidden hits = 0.
+- [x] Final artifact hashes after Loop 15 | DOD: `GlobalDataVault.cs` SHA-256 = `6c057b9d799b703e290f0b7469525551434f3c3b51347953dcc12f4575f488d3`; `agent1413_apex_verifier.py` SHA-256 = `c3301569bed46fb2f3152e451929544b72a1886506cf77af64632e91e2ae0b61`; optimization report SHA-256 = `89eaea68b21966f90d0f25c06c43473f5d05e0b59bbe155ebb0fb2561a366328`; APEX SHA-256 = `bfe77168367959edb1b984281d56738987c54c3a2a0a363d8055fddc35510dcb`.
+- [BLOCKED_BY_CONTENTION] Compiler/runtime proof | DOD: APEX runtime sample = 88.595548%, `dotnetCount=1`, `cscCount=1`; CPU exceeds 50% and compiler/dotnet are active, so no `dotnet build`, no Unity Test Runner.
+
+## Loop 16 / Throttled Compiler Proof
+
+- [x] Build gate opened and was sampled | DOD: APEX runtime sample before build was CPU `27.641788%`, `dotnetCount=0`, `cscCount=0`. This satisfied the resource-throttle rule.
+- [x] Minimal runtime compile executed once | DOD: ran `dotnet build "C:\hades\Hecton8\Assembly-CSharp.csproj" --no-restore -v:minimal /m:1`. Rejected solution-wide build and restore. Build elapsed `48.80s`.
+- [x] Compiler result | DOD: `Assembly-CSharp -> C:\hades\Hecton8\Temp\CodexBuild\Assembly-CSharp\Assembly-CSharp.dll`; `0 Warning(s)`, `0 Error(s)`.
+- [x] APEX evidence regenerated | DOD: APEX generatedUtc = `2026-05-28T09:30:03Z`; zero-GC total forbidden hits = 0; `dotnetBuildLaunchedByAgent1413=true`; optimization build result = `PASSED`.
+- [x] Final artifact hashes after Loop 16 | DOD: `GlobalDataVault.cs` SHA-256 = `7d7d78d610a3e46b11729f29975b7826dfef1c4a9045c6491c1fa0fdea777c66`; `agent1413_apex_verifier.py` SHA-256 = `9e51fb0be2c247c163adbdf273650ecd5e3fde2c3fb93984197bdde6d68615f4`; optimization report SHA-256 = `dc23187a2d8631bbcc107f2fcbaaf5ec947913134ff414f361ac4d67c3db94ce`; APEX SHA-256 = `729d0270337b12fbb873f30772d6134bb0bd3ecf312acf117b2c30dabf25f6d0`.
+- [BLOCKED_RUNTIME] Unity Test Runner / editmode proof | DOD: not launched. The compiler proof is green; Unity runtime/editor behavior remains unexecuted.
+
+## Loop 17 / Evidence Hash Reconciliation
+
+- [x] Current-byte hash drift detected | DOD: `Get-FileHash` showed `GlobalDataVault.cs` on disk = `0d0599170f98d1c4dacf76e452d1a3401cd85e7a1ef8f320f04b0e0d5691d86e`, while the previous APEX JSON still embedded `7d7d78d610a3e46b11729f29975b7826dfef1c4a9045c6491c1fa0fdea777c66`.
+- [x] Optimization report corrected | DOD: `LOCK_CONTENTION_OPTIMIZATION_REPORT_1413.json.modifiedFiles[GlobalDataVault.cs].sha256` now matches the current file bytes.
+- [x] APEX evidence regenerated | DOD: APEX generatedUtc = `2026-05-28T09:37:38Z`; zero-GC total forbidden hits = 0; embedded `globalDataVault` hash = `0d0599170f98d1c4dacf76e452d1a3401cd85e7a1ef8f320f04b0e0d5691d86e`; embedded optimization report hash = `d454aa45b29702d59ae5607b639f9ff1839d29c48ba637c07f5d3eb0378db867`.
+- [x] Final artifact hashes after Loop 17 | DOD: APEX SHA-256 = `61cbc71a6a8cbafe2c75702321b43b68a11f5fea04406fbf27041bc708c54822`; optimization report SHA-256 = `d454aa45b29702d59ae5607b639f9ff1839d29c48ba637c07f5d3eb0378db867`; `agent1413_apex_verifier.py` SHA-256 = `9e51fb0be2c247c163adbdf273650ecd5e3fde2c3fb93984197bdde6d68615f4`.
+- [BLOCKED_RUNTIME] Post-APEX runtime/build gate | DOD: APEX runtime sample after regeneration was CPU `88.088131%`, `dotnetCount=2`, `cscCount=0`; no additional `dotnet build` and no Unity Test Runner launched.
+
+## Loop 18 / Cross-Agent Deferred Release Contract Recheck
+
+- [x] Contract drift found | DOD: `QueueDeferredRelease` currently contains `if (kind == DeferredReleaseKindWriter)`, while earlier 1414 text had expected all-kind de-duplication. Current editor contract now matches writer-only coalescing at `ArenaAllocatorSentinel1414EditTests.cs:90`.
+- [x] Writer-only policy retained | DOD: buffer-pin releases preserve one queued request per accepted release call because `TryLockBuffer` increments `Reserved1` for same-owner pins. Coalescing buffer pins would leak legitimate nested/same-owner pins.
+- [x] Residual API limit recorded | DOD: without a per-acquire token, a caller that retries `TryUnlockBuffer` after accepted `true` can enqueue multiple buffer-pin releases. This is explicit residual risk, not hidden as solved.
+- [x] Report/verifier updated | DOD: optimization report text now matches current code; APEX verifier emits `deferredReleaseContract` with `dedupePolicy`, `hasWriterOnlyFilter`, and `hasSerializedScanGate`.
+- [x] APEX evidence regenerated | DOD: APEX generatedUtc = `2026-05-28T09:59:18Z`; zero-GC total forbidden hits = 0; `hasWriterOnlyFilter=true`; `hasSerializedScanGate=true`; `matchesArenaAllocator1414EditorContract=true`.
+- [x] Final artifact hashes after Loop 18 | DOD: APEX SHA-256 = `bd30901deb1e6e10df4ec5efe39299864f6c201a90eac81559de59cbeff29114`; optimization report SHA-256 = `3a11f51bf112283355bdad433f90c7c716d36c7126a376bd26303632cbb3de1f`; `GlobalDataVault.cs` SHA-256 = `b35073e0f7ad2e833767c0b3f6b3139a05942bd9b416bc77c8f373b9a3d74aac`; `ArenaAllocatorSentinel1414EditTests.cs` SHA-256 = `f92bebfd212a46cb09a023c7a349b934c1431b3b651c80161f3757b1d7857309`; `agent1413_apex_verifier.py` SHA-256 = `4f5218f3c8ec004dafc9ab53eec120b0ed4d9c234479571e0f2a73792385246c`.
+- [BLOCKED_RUNTIME] Post-Loop-18 compiler/runtime gate | DOD: APEX runtime sample was CPU `91.810825%`, `dotnetCount=1`, `cscCount=0`; no extra `dotnet build`, no Unity Test Runner.
+
+## Loop 19 / TryAllocatePublishedBuffer Evidence Closure
+
+- [x] Current rollback path re-audited | DOD: `TryAllocatePublishedBuffer<T>` now owns the mutation gate from line 1283 through the cleanup `finally` at lines 1357-1374. Failed allocation cleanup removes counted bytes, buffer route, metadata, key route, and arena block via `FreeBlockLocked` before `ReleaseBlockMutationGate()`. Rejected extra runtime rewrite because the current path is gate-contained.
+- [x] APEX zero-GC scope corrected | DOD: `agent1413_apex_verifier.py` now scans `TryAllocatePublishedBuffer<T>` in addition to `TryEnsureVaultBuffer<T>`. Latest APEX JSON reports `TryAllocatePublishedBuffer<T>` lines 1270-1375, lineCount 106, forbiddenHitCount 0.
+- [x] Optimization report synchronized | DOD: `LOCK_CONTENTION_OPTIMIZATION_REPORT_1413.json.staticVerification.tryAllocatePublishedBufferZeroGcScan` now records the current line window and rollback/finally proof. Rejected chat-only evidence.
+- [x] Final artifact hashes after Loop 19 | DOD: optimization report SHA-256 = `a4f45e1c3625774b9e917bdb6848b2f1c5dae7844dd016edb7c5e6342aa4b537`; APEX SHA-256 = `79500eb84222fb46fb039e4e50ebf6ddd608c759c14dd655eb1185583ac72b8a`; `agent1413_apex_verifier.py` SHA-256 = `8a5ff144a662564b16db0a6e9c8d71ae1796ec2c2befa66c1501ef26e24ccc25`; `GlobalDataVault.cs` SHA-256 = `b35073e0f7ad2e833767c0b3f6b3139a05942bd9b416bc77c8f373b9a3d74aac`.
+- [BLOCKED_RUNTIME] Post-Loop-19 compiler/runtime gate | DOD: APEX runtime sample was CPU `48.971125%`, `dotnetCount=1`, `cscCount=0`; active dotnet process blocks a new build by rule. No extra `dotnet build`, no Unity Test Runner.
 
 ## Current Build Policy
 

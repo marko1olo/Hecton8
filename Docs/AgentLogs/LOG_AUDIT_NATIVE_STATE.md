@@ -2275,3 +2275,600 @@ Verification:
 - Grep for raw private-handle `TryReadOnlyHandle`, `TryAcquireWriteLock`, `ReleaseBuffer`, direct `_vault = GlobalRegistry.DataVault/currentService`, and old `BufferID == 0u` gates returns no hits.
 - `git diff --check -- HectonVolumetricParticulateFogFeature.cs` reports only existing LF/CRLF warning.
 - Build/import/profiler/native-ledger proof blocked by external `dotnet` PID `66408`, CPU `85%`.
+
+## 2026-05-28 - Camera Juice Telemetry Native Lifecycle Pass
+
+What was wrong:
+- `CameraJuiceSystem` accepted telemetry handles with nonzero BufferID/generation but no owner proof.
+- Hot telemetry writes used mutable `TryResolveHandle` instead of a DataVault write lock.
+- Owned telemetry release did not prove `SystemID.Vfx`.
+- Telemetry dump state could remain closed after native ring replacement.
+
+What was done:
+- Added `CameraJuiceOwnerSystemId` and expected `BufferID.CameraJuiceTelemetryRing`/owner/generation validation.
+- Borrow/acquire/read/release paths now reject foreign or stale telemetry handles.
+- `RecordCameraJuiceTelemetry` writes under `TryAcquireWriteLock` and releases in `finally`.
+- Native epoch reset now clears cursor and dump request/dumped flags.
+
+Cinematic cheats used:
+- None. Procedural shake, FOV, speed-line, and postprocess behavior are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: unmeasured scalar write-lock overhead only on telemetry write; correctness fix, not optimization.
+
+Verification:
+- Grep for old `OpenCameraJuiceTelemetryForWrite`, old `IsVaultHandleCreated`, and raw telemetry `TryResolveHandle` routes returns no hits.
+- `git diff --check -- CameraJuiceSystem.cs` reports only existing LF/CRLF warning.
+- Build/import/profiler/native-ledger proof blocked by external `dotnet` PID `40988`, CPU `100%`.
+
+## 2026-05-28 - Carve Debris Native Lifecycle Pass
+
+What was wrong:
+- `CarveDebrisComputeRenderer` directly cached `_registryDataVault = GlobalRegistry.DataVault`.
+- Lease invalidation released debris Vault handles by nonzero descriptor instead of expected buffer and owner proof.
+- Black-box cursor/dump state could survive native lease invalidation.
+
+What was done:
+- Cold/missing-service refresh now routes DataVault through `ApplyRegistryServiceRebind`.
+- Debris positions, velocities, requests, job-state, and black-box releases now require expected `BufferID`, `SystemID.Vfx`, and generation.
+- Lease invalidation resets debris black-box epoch state.
+
+Cinematic cheats used:
+- None. Existing GPU-only debris fake, SDF/flow response, capacity scaling, and indirect draw behavior are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us; cold lifecycle/release predicate only.
+
+Verification:
+- Grep for direct `_registryDataVault = GlobalRegistry.DataVault` and old nonzero-descriptor release predicate returns no hits.
+- `git diff --check -- CarveDebrisComputeRenderer.cs` reports only existing LF/CRLF warning.
+- Build/import/profiler/native-ledger proof blocked by external `dotnet` PID `47872`, CPU `71%`.
+
+## 2026-05-28 - GPU Scatter Native Lifecycle Pass
+
+What was wrong:
+- `GpuScatterLodManager` directly cached `_registryDataVault = GlobalRegistry.DataVault`.
+- Owned black-box and CPU audit releases used nonzero descriptor checks.
+- Black-box cursor/dump state could survive DataVault lease invalidation.
+
+What was done:
+- Cold/missing-service refresh now routes DataVault through `ApplyRegistryServiceRebind`.
+- Owned `FloraScatterBlackBox`, `FloraScatterCpuFrustumPlanes`, and `FloraScatterCpuVisibilityMask` releases require expected `BufferID`, `SystemID.Vfx`, and generation.
+- Borrowed producer-owned flora lanes are only invalidated, not released.
+- Lease invalidation resets scatter black-box epoch state.
+
+Cinematic cheats used:
+- None. Flora indirect draw, culling, visual payload, and GPU upload behavior are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us; cold lifecycle/release predicate only.
+
+Verification:
+- Grep for direct `_registryDataVault = GlobalRegistry.DataVault` and old nonzero-descriptor release predicate returns no hits.
+- `git diff --check -- GpuScatterLodManager.cs` reports only existing LF/CRLF warning.
+- Build/import/profiler/native-ledger proof blocked by external `dotnet` PID `63280`, CPU `54%`.
+
+## 2026-05-28 - Bilateral DRS Native Lifecycle Pass
+
+What was wrong:
+- `HectonBilateralDrsUpscalerRuntime` directly cached `_dataVault = GlobalRegistry.DataVault`.
+- DataVault replacement directly assigned `_dataVault = currentService as IDataVault`.
+- Owned read/release helpers accepted nonzero descriptors without proving the expected `BufferID` and `SystemID.GraphicsScalability`.
+- Fault dump and seed state could remain stale across native epoch replacement.
+
+What was done:
+- Cold cache and replacement now route through `BindDataVaultForLifecycle`.
+- Params, tuning, telemetry, cursor, profiles, CSV scratch, and mock-state reads require expected buffer id, owner, and generation.
+- Release only fires for the expected owned lane; foreign descriptors are cleared without release.
+- Native epoch reset now re-arms seed, publish, and fault-dump state.
+
+Cinematic cheats used:
+- None. Bilateral DRS filter math, GPU constant-buffer upload, CSV quality profiles, and continuous quality-weight policy are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us; ownership checks are scalar guard predicates around existing Vault reads/locks.
+
+Verification:
+- Direct `_dataVault = GlobalRegistry.DataVault/currentService` and old `IsVaultHandleCreated` grep returns no hits.
+- `git diff --check -- HectonBilateralDrsUpscalerRuntime.cs` reports only existing LF/CRLF warning.
+- Build/import/profiler/native-ledger proof blocked by external `dotnet` PID `44208`, CPU `68%`.
+
+## 2026-05-28 - Abyssal Deferred Caustics Native Lifecycle Pass
+
+What was wrong:
+- `AbyssalDeferredCausticsRuntime` directly cached and replaced `_dataVault`.
+- Owned caustics releases used nonzero descriptor checks.
+- Owned mutable writes used `TryResolveHandle` without DataVault write locks.
+- Native seed/fault state could survive DataVault epoch replacement.
+
+What was done:
+- Cold cache and DataVault replacement now route through `BindDataVaultForLifecycle`.
+- Params, tuning, telemetry, cursor, profiles, and CSV scratch validate expected `BufferID`, `SystemID.GraphicsScalability`, and generation.
+- Seed, tuning, CSV profile, telemetry, cursor, kernel-output, and pending-parameter writes use `TryAcquireWriteLock` and release in `finally`.
+- Borrowed ocean surface swell remains a borrowed read and is never released by caustics.
+
+Cinematic cheats used:
+- None. Existing deferred caustics fake, mock lighting kernel, quality-profile binding, and GPU constant-buffer payload are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: small unmeasured scalar lock overhead on caustics writes; stability fix, not optimization.
+
+Verification:
+- Direct `_dataVault = GlobalRegistry.DataVault/currentService`, old `IsVaultHandleCreated`, no-arg `RunPendingCausticsKernel(job)`, and no-arg `PublishPendingCausticsParameters()` grep returns no hits.
+- `git diff --check -- AbyssalDeferredCausticsRuntime.cs` reports only existing LF/CRLF warning.
+- Build/import/profiler/native-ledger proof blocked by external `dotnet` PID `57212`, CPU `46%`.
+
+## 2026-05-28 - Visor AR Stencil Native Lifecycle Pass
+
+What was wrong:
+- `HectonVisorARStencilRendererFeature` directly assigned `_dataVault` on DataVault replacement.
+- Required-handle readiness and release used nonzero descriptor checks.
+- Telemetry dump reads did not prove the telemetry descriptor owner before reading.
+
+What was done:
+- Cold cache and DataVault replacement now route through `BindDataVaultForLifecycle`.
+- HUD params, target source, projected target, digit params, telemetry, profile, and CSV scratch validate expected `BufferID`, `SystemID.UI`, and generation.
+- Release only fires for the expected UI-owned lane.
+- Telemetry dump state resets when Vault handles are released.
+
+Cinematic cheats used:
+- None. Stencil mask, RenderGraph passes, AR projection, HUD digits, and shader payloads are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us; scalar descriptor predicates only.
+
+Verification:
+- Direct `_dataVault = GlobalRegistry.DataVault/currentService`, old `IsHandleCreated`, and ownerless release grep returns no hits.
+- `git diff --check -- HectonVisorARStencilRendererFeature.cs` reports only existing LF/CRLF warning.
+- Build/import/profiler/native-ledger proof blocked by external `dotnet` PID `47444`, CPU `80%`.
+
+## 2026-05-28 - Combined Render/Visor Native Verification Guard
+
+What was wrong:
+- The DRS, Abyssal Caustics, and Visor AR Stencil edits needed one combined check after source and report updates.
+
+What was done:
+- Ran combined whitespace check over the three source files plus AUDIT status/rationale/log.
+- Ran combined grep for direct DataVault assignment, old handle helpers, ownerless release, and stale no-arg caustics publish routes.
+- Sampled compiler/CPU guard.
+
+Cinematic cheats used:
+- None. Verification-only step.
+
+Exact microseconds saved:
+- Measured: 0 us.
+
+Verification:
+- Combined `git diff --check` reports only LF/CRLF warnings.
+- Combined bad-pattern grep returns no hits.
+- Build/import/profiler/native-ledger proof blocked by external `dotnet` PID `62336`, CPU `62%`.
+
+## 2026-05-28 - Diegetic Glitch UI DataVault Epoch And Write Ownership
+
+What was wrong:
+- `DiegeticGlitchSurgeonRuntime` directly rebound `_vault` from GlobalRegistry/currentService.
+- Editor/debug `GetGlitchStateRef` and `GetTuningRef` exposed live mutable Vault refs.
+- Tuning/default/mock seeding writes used mutable resolve paths outside a DataVault writer-lock helper.
+- DataVault replacement/disable could release old UI Vault buffers while an external ASCII table lease still held the table lock.
+
+What was done:
+- Added `BindDataVaultForLifecycle` and native-epoch reset for shader push caches, fault/dump state, table hash, seed-stall tracking, and mock text length.
+- Deferred DataVault rebind/disable while owned jobs, pending external release, or an outstanding external table lease are alive.
+- Converted tuning, deterministic seed, default state/tuning/table, mock text, mock quads, and synth default writes to `TryAcquireWriteLock`/`ReleaseWriteLock`.
+- Kept `Get*Ref` signatures as snapshot-backed compatibility shims and moved `DiegeticGlitchTunerWindow` to explicit snapshot reads.
+
+Cinematic cheats used:
+- Kept the existing deterministic glyph-table, terminal UV, radar ghost, and synth pitch fakes. No heavier simulation added.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us; changes are lifecycle/cold/editor write discipline.
+
+Verification:
+- Direct `_vault = GlobalRegistry.DataVault/currentService` grep returns no hits.
+- Editor `GetGlitchStateRef`/`GetTuningRef` call sites are removed.
+- `git diff --check` over the UI runtime/editor and AUDIT docs reports only LF/CRLF warnings.
+- `dotnet build Hecton8.Core.csproj --no-restore -nologo -clp:ErrorsOnly -maxcpucount:1 /p:UseSharedCompilation=false /nr:false` succeeded with 0 errors/0 warnings in 13.32s.
+- Full solution proof remains pending: `dotnet build Hecton8.slnx ...` timed out after 604s and lost the original exit code; no Unity import, Play Mode, profiler, or GC capture was run.
+
+## 2026-05-28 - Visor Fluid Black-Box Vault Owner Proof
+
+What was wrong:
+- `HectonVisorFluidDistortionFeature` accepted black-box descriptors with only nonzero `BufferID` and generation.
+- DataVault hot-swap used `currentService as IDataVault`.
+- Owned release checked matching generation but not `SystemID.Vfx`, so a stale or foreign descriptor could be released through the wrong ownership route.
+
+What was done:
+- Added a black-box predicate requiring `BufferID.VisorRefractionBlackBox`, `SystemID.Vfx`, and generation.
+- Routed DataVault replacement through `BindBlackBoxVaultForLifecycle`.
+- Reused, read, write-locked, allocated, and released the black-box ring only after owner proof.
+- Reset black-box dump/native-epoch state on DataVault rebind.
+
+Cinematic cheats used:
+- None added. Existing fullscreen droplet/refraction fake, lens compute mask, thermal cull, quality pressure, and visual-overkill salt glint behavior are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us; descriptor owner checks are scalar guards around existing Vault operations.
+
+Verification:
+- Scoped grep for old `IsVaultHandleCreated`, direct `_dataVault = GlobalRegistry.DataVault/currentService`, raw `SystemID.Vfx` black-box write locks, and `currentService as IDataVault` returns no hits.
+- `git diff --check -- HectonVisorFluidDistortionFeature.cs` reports only LF/CRLF warning.
+- Initial compile guard blocked: external `dotnet` PID `60688` was running `dotnet build Hecton8.World.Dots.csproj --no-restore -nologo -v:minimal /m:1 /p:UseSharedCompilation=false`; CPU sampled `50%`.
+- Targeted compile passed: `dotnet build Hecton8.Core.csproj --no-restore -nologo -clp:ErrorsOnly -maxcpucount:1 /p:UseSharedCompilation=false /nr:false` succeeded with 0 errors/0 warnings in 51.12s.
+- Unity import, Play Mode, visor refraction scene, native ledger, profiler, and GC capture remain pending.
+
+## 2026-05-28 - Diegetic Visor HUD Black-Box Vault Rebind
+
+What was wrong:
+- `DiegeticVisorHudMesh` directly assigned `_dataVault` on DataVault replacement.
+- The old `_blackBoxHandle` could then be released through the new Vault instead of the old Vault.
+- Black-box validity checked only nonzero `BufferID` and generation, not `SystemID.UI`.
+
+What was done:
+- Added `RebindDataVaultForLifecycle` with previous-Vault fallback.
+- Cold cache now refreshes stale disabled-state Vault references from `GlobalRegistry.DataVault`.
+- Black-box read/write/dump/release paths now require `BufferID.DiegeticVisorHudBlackBox`, `SystemID.UI`, and generation.
+- Freshly ensured handles are validated before telemetry starts writing.
+
+Cinematic cheats used:
+- None added. Curved HUD mesh, material state, humidity sampling, stencil behavior, and continuous quality segment scaling are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us; scalar descriptor predicates only.
+
+Verification:
+- Scoped grep for old `IsVaultHandleCreated`, direct `_dataVault = GlobalRegistry.DataVault/currentService`, and `currentService as IDataVault` returns no hits.
+- `git diff --check -- DiegeticVisorHudMesh.cs` reports only LF/CRLF warning.
+- Build/import/profiler proof blocked: external `dotnet` PID `50524` was running `dotnet build Crest.csproj --no-restore -nologo -v:minimal /m:1 /p:UseSharedCompilation=false`; CPU sampled `65%`.
+
+## 2026-05-28 - Diegetic Tooltip Black-Box Vault Rebind And Lock Release
+
+What was wrong:
+- `DiegeticTooltipSystem` directly assigned `_dataVault` on DataVault replacement.
+- The old tooltip `_blackBoxHandle` could be released through the replacement Vault.
+- Black-box validity checked only nonzero `BufferID` and generation, not `SystemID.UI`.
+- `RecordBlackBox` could acquire a write lock and return on invalid ring state before releasing it.
+
+What was done:
+- Added `RebindDataVaultForLifecycle` with previous-Vault fallback.
+- Cold cache now refreshes stale disabled-state Vault references from `GlobalRegistry.DataVault`.
+- Black-box read/write/dump/release paths now require `BufferID.DiegeticTooltipBlackBox`, `SystemID.UI`, and generation.
+- Telemetry writes now release `ReleaseWriteLock` in `finally` for every successful lock acquisition.
+
+Cinematic cheats used:
+- None added. Glyph layout, icon buffers, material binding, input-determinism policy, and quality flags are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us; scalar descriptor checks only, plus lock-leak prevention on invalid ring state.
+
+Verification:
+- Scoped grep for old `IsVaultHandleCreated`, direct `_dataVault = GlobalRegistry.DataVault/currentService`, and `currentService as IDataVault` returns no hits.
+- `git diff --check -- DiegeticTooltipSystem.cs` reports only LF/CRLF warning.
+- Build/import/profiler proof blocked: external `dotnet` PID `62816` was running `dotnet build Hecton8.Editor.csproj --no-restore -nologo -v:minimal /m:1 /p:UseSharedCompilation=false`, child `csc` PID `61868` active, CPU sampled `94%`.
+
+## 2026-05-28 - Combined Current Visor/UI Native Verification Guard
+
+What was wrong:
+- The current package touched `HectonVisorFluidDistortionFeature`, `DiegeticVisorHudMesh`, and `DiegeticTooltipSystem`.
+- The last two UI files still needed compile/runtime proof after source and report updates.
+
+What was done:
+- Ran combined `git diff --check` over the three source files plus AUDIT docs.
+- Re-sampled compiler/CPU guard several times.
+- Stopped new source edits once the external build lane continued, to avoid growing uncompiled surface area.
+
+Cinematic cheats used:
+- None. Verification-only step.
+
+Exact microseconds saved:
+- Measured: 0 us.
+
+Verification:
+- Combined `git diff --check` reports only LF/CRLF warnings.
+- Per-file bad-pattern greps for old handle helpers, direct DataVault assignment, and `currentService as IDataVault` returned no hits in touched source.
+- New targeted compile/import/profiler proof blocked: external `dotnet` PID `28412` was running `dotnet build MoreMountains.Feedbacks.Cinemachine.csproj --no-restore -nologo -v:minimal /m:1 /p:UseSharedCompilation=false`; CPU sampled `7%`.
+- Later targeted compile passed: `dotnet build Hecton8.Core.csproj --no-restore -nologo -clp:ErrorsOnly -maxcpucount:1 /p:UseSharedCompilation=false /nr:false` succeeded with 0 errors/0 warnings in 71.15s.
+- Unity import, Play Mode, visor/HUD/tooltip scene, native ledger, profiler, and GC capture remain pending.
+
+## 2026-05-28 - OpenXR Manual Override Lever Black-Box Vault Rebind
+
+What was wrong:
+- `OpenXRManualOverrideLever` directly assigned `_dataVault` on DataVault replacement.
+- The old `_blackBoxHandle` could be released through the replacement Vault.
+- Black-box validity checked only `BufferID` and generation, not `SystemID.UI`.
+
+What was done:
+- Added `RebindDataVaultForLifecycle` with previous-Vault fallback.
+- Cold cache now refreshes stale Vault references through the same lifecycle path.
+- Black-box read/write/release paths now require `BufferID.OpenXrManualOverrideLeverBlackBox`, `SystemID.UI`, and generation.
+- Native-epoch state for the black-box cursor/dump flag resets after failed ensure, rebind, dispose, or release.
+
+Cinematic cheats used:
+- None added. Grab projection, IK, haptics, non-VR fallback, and prologue signal output are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us; scalar descriptor predicates only.
+
+Verification:
+- Scoped grep for direct `_dataVault = GlobalRegistry.DataVault/currentService`, `currentService as IDataVault`, and old nonzero release predicates returns no bad hits.
+- `git diff --check -- OpenXRManualOverrideLever.cs` reports only LF/CRLF warning.
+
+## 2026-05-28 - VR Brownout XRPass Compile Repair
+
+What was wrong:
+- Targeted compile after the OpenXR patch failed in `HectonVRBrownoutFeature` with `CS0246 XRPass` at lines `441` and `480`.
+- The file lacked `UnityEngine.Experimental.Rendering`, while other URP XR render features in the repo use that namespace for `XRPass`.
+
+What was done:
+- Added `using UnityEngine.Experimental.Rendering;`.
+- Did not rewrite brownout shader logic, RenderGraph routing, VR comfort gating, or the existing unsafe constant-buffer write path in this pass.
+
+Cinematic cheats used:
+- None. Brownout visual behavior unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Initial failed build wall time: `50.72s`.
+
+Verification:
+- `git diff --check -- HectonVRBrownoutFeature.cs OpenXRManualOverrideLever.cs` reports only LF/CRLF warnings.
+- Initial repeat proof was blocked: external `dotnet` PID `25684` was running `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1`; CPU later spiked above guard.
+- Targeted compile passed after the compiler lane cleared and CPU sampled `39%`: `dotnet build Hecton8.Core.csproj --no-restore -nologo -clp:ErrorsOnly -maxcpucount:1 /p:UseSharedCompilation=false /nr:false` succeeded with 0 errors/0 warnings in 93.56s.
+- No Unity import, Play Mode, cockpit/visor scene, native ledger, profiler, or GC capture has been run after the targeted compile.
+
+## 2026-05-28 - Font Streaming Prefetch Vault Lifecycle
+
+What was wrong:
+- `FontStreamingManager` directly cached `GlobalRegistry.DataVault`.
+- DataVault replacement assigned `_dataVault` without a single lifecycle teardown route.
+- Visible-prefetch hash/slice handles were released by nonzero descriptor state and proved only `BufferID` plus generation, not `SystemID.UI`.
+
+What was done:
+- Added `BindDataVaultForLifecycle` for cold cache and service replacement.
+- Existing prefetch job/lock teardown now runs before Vault rebind.
+- Hash and slice prefetch releases now require expected `BufferID`, `SystemID.UI`, and generation.
+- Failed ensure paths release only the exact owned lane they are replacing.
+
+Cinematic cheats used:
+- None. TMP registry scan, localization readiness, scheduler cadence, and status UI behavior are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us; cold lifecycle and scalar descriptor predicate change only.
+
+Verification:
+- Scoped grep for direct `_dataVault = GlobalRegistry.DataVault/currentService`, `currentService as IDataVault`, old no-expected-id `ReleasePrefetchHandle` calls, and old `BufferID != 0u && Generation` release predicates returns no bad hits.
+- `git diff --check -- FontStreamingManager.cs` reports only LF/CRLF warning.
+- Compile proof is still not accepted: guarded `dotnet build Hecton8.Core.csproj --no-restore -nologo -clp:ErrorsOnly -maxcpucount:1 /p:UseSharedCompilation=false /nr:false` returned exit code 1 after 64.7s with empty stdout/stderr and did not update `Temp/CodexBuild/Hecton8.Core/Hecton8.Core.dll`.
+- Repeat compile is blocked by CPU guard samples above 50% with no active compiler process.
+
+## 2026-05-28 - FontStreaming/Brownout Compile Recheck
+
+What was wrong:
+- The next guarded compile did not validate `FontStreamingManager`; it failed earlier in `HectonVRBrownoutFeature` with `CS0246 XRPass`.
+- Current worktree lacked `using UnityEngine.Experimental.Rendering;` despite the earlier report saying the namespace repair was present.
+
+What was done:
+- Verified local PackageCache and peer URP render features: `XRPass` is `UnityEngine.Experimental.Rendering.XRPass`.
+- Re-added `using UnityEngine.Experimental.Rendering;` to `HectonVRBrownoutFeature`.
+- Re-ran targeted compile after guard cleared.
+
+Cinematic cheats used:
+- None. No rendering behavior was changed.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Failed brownout build wall time: 37.9s.
+- Failed world-dependency build wall time: 71.6s.
+
+Verification:
+- Scoped `rg` confirms the brownout import and both `XRPass` method signatures.
+- `git diff --check` over brownout, FontStreaming, and AUDIT docs reports only LF/CRLF warnings.
+- Build progressed past brownout and failed in `HectonMapMagicVegetationBridge.cs:2876` with `CS0103 TryApplyPendingWorldOffset`.
+- Scoped inspection shows `TryApplyPendingWorldOffset` exists at line 5032 in the same class/depth; because this is world-domain code and currently contradictory, proof is blocked until a guarded repeat or world-domain owner fix.
+- Repeat build currently blocked by CPU guard above 50%.
+
+## 2026-05-28 - Moving Compile Lane Dependency Check
+
+What was wrong:
+- A later guarded compile no longer failed on `TryApplyPendingWorldOffset`.
+- It failed on `SubmarineAutoLevelBallastController` `NativeArray<T>` vs `.ReadOnly` conversions and `VegetationNavGridSynchronizer.ResolveActiveViewCamera`.
+- Immediate source inspection showed those errors did not match current disk state.
+
+What was done:
+- Confirmed current submarine room-buffer variables, job fields, and helper signature use `NativeArray<T>.ReadOnly`.
+- Confirmed current vegetation HLOD path calls `RefreshActiveViewCameraCache`, not `ResolveActiveViewCamera`.
+- Did not edit those files from stale compiler text.
+
+Cinematic cheats used:
+- None. Verification-only step.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Failed build wall time: 114.5s.
+
+Verification:
+- `git diff --check` over submarine, vegetation synchronizer, brownout, and FontStreaming reports only LF/CRLF warnings.
+- Scoped greps find no current `ResolveActiveViewCamera(` call and no old room-buffer `out NativeArray<float>` declarations.
+- External `Assembly-CSharp.csproj` build then occupied compiler lane; after it cleared CPU sampled 82%, so no immediate repeat build was launched.
+
+## 2026-05-28 - CharBufferPool Babel Arena Owner Predicate
+
+What was wrong:
+- `CharBufferPool` created the Babel native arena under `SystemID.UI`.
+- Its validity/release predicate accepted any nonzero `BufferID` and generation.
+- A stale or foreign UI handle could be resolved or released as the Babel arena.
+
+What was done:
+- Replaced `IsVaultHandleCreated` with `IsBabelArenaHandle`.
+- Babel arena resolve/acquire/release now requires exact `BufferID 70540`, `SystemID.UI`, and generation.
+- Slot bitmap leases, TMP bridge fallback, encyclopedia pages, and localization behavior were not changed.
+
+Cinematic cheats used:
+- None. Text formatting behavior unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+
+Verification:
+- Scoped grep confirms old `IsVaultHandleCreated` is gone and `ReleaseBuffer(in handle)` is behind `IsBabelArenaHandle`.
+- `git diff --check -- CharBufferPool.cs` reports only LF/CRLF warning.
+- Build/import/profiler proof blocked by external `dotnet` PID `63204`, child `csc` PID `9840`, CPU `100%`.
+
+## 2026-05-28 - PDA Frequency Stage And Telemetry Owner Predicates
+
+What was wrong:
+- `PDADecryptionSpectrogramPanel` used a generic nonzero handle predicate for two UI-owned DataVault lanes.
+- `PdaFrequencyStageTargets` and `PdaFrequencyTelemetryRing` could be treated as valid without proving exact `BufferID` and `SystemID.UI`.
+
+What was done:
+- Added a single `VaultOwnerSystemId = SystemID.UI` constant.
+- Replaced the generic predicate with `IsExactVaultHandle`.
+- Stage-target and telemetry read/write-lock/release/dump paths now require exact expected `BufferID`, `SystemID.UI`, and generation.
+- Frequency tuning math, shader parameters, input feedback, quality scaling, and dump layout were not changed.
+
+Cinematic cheats used:
+- None. The existing wave fake and minigame behavior were preserved.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+
+Verification:
+- Scoped grep confirms old `IsVaultHandleCreated` and nonzero release predicates are gone from `PDADecryptionSpectrogramPanel`.
+- `git diff --check -- PDADecryptionSpectrogramPanel.cs` reports only LF/CRLF warning.
+- Build/import/profiler proof blocked by external `dotnet` PIDs `45864`/`66816`, child `csc` PIDs `33620`/`23596`, CPU `93%`.
+
+## 2026-05-28 - PDA/Suit HUD Glitch-Table Borrowed Handle Predicates
+
+What was wrong:
+- `PDAShellChrome` and `SuitHUDV4CanvasOverlay` borrow the shared glitch glyph table from DataVault.
+- Their local predicates accepted any nonzero `BufferID` and generation.
+- A wrong UI byte buffer could be read as the glyph table through an unsafe read-only pointer.
+
+What was done:
+- Replaced both ownerless helpers with `IsGlitchTableHandle`.
+- Binding and pointer resolve now require raw `BufferID 70901`, `SystemID.UI`, and generation.
+- DataVault bind callbacks now use explicit pattern matching instead of `currentService as IDataVault`.
+- The borrowed table is still owned by `DiegeticGlitchSurgeonRuntime`; these consumers do not release it.
+
+Cinematic cheats used:
+- None changed. Existing glyph-table glitch fake remains intact.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+
+Verification:
+- Scoped grep confirms old `IsVaultHandleCreated` helpers are gone from both files and cached handle resolution revalidates `IsGlitchTableHandle`.
+- No `currentService as IDataVault` remains in `PDAShellChrome` or `SuitHUDV4CanvasOverlay`.
+- `git diff --check -- PDAShellChrome.cs SuitHUDV4CanvasOverlay.cs` reports only LF/CRLF warnings.
+- Build/import/profiler proof blocked by external `dotnet` PID `53008`, child `csc` PID `63300`, CPU `85%`.
+
+## 2026-05-28 - PDA Frequency DataVault Cache Rebind Route
+
+What was wrong:
+- `PDADecryptionSpectrogramPanel` still replaced `_cachedDataVault` directly from hot-swap and cold refresh paths.
+- Exact handle predicates were present, but the release route could still lose the previous Vault instance.
+
+What was done:
+- Added `BindDataVaultForLifecycle`.
+- DataVault hot-swap and `GlobalRegistry.DataVault` cold refresh now use the same route.
+- Owned stage/telemetry handles are released through the previous Vault before `_cachedDataVault` is replaced.
+
+Cinematic cheats used:
+- None changed. Frequency tuning wave fake remains intact.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+
+Verification:
+- Scoped grep confirms `_cachedDataVault` assignment is isolated to `BindDataVaultForLifecycle`.
+- No `currentService as IDataVault` remains in `PDADecryptionSpectrogramPanel`.
+- `git diff --check -- PDADecryptionSpectrogramPanel.cs` reports only LF/CRLF warning.
+- Build/import/profiler proof remains blocked by external build lane and CPU guard.
+
+## 2026-05-28 - Topographical Sonar DataVault Lifecycle And Owner Predicates
+
+What was wrong:
+- `TopographicalSonarSynthesizer` had 11 DataVault handles but resolved/released by generic nonzero `BufferID`.
+- DataVault hot-swap directly replaced `_dataVault`.
+- A stale or wrong UI descriptor could be resolved or released as sonar state.
+
+What was done:
+- Added `BindDataVaultForLifecycle`.
+- Added `IsTopographicalHandle`.
+- Every sonar resolve/release path now includes the expected `TopographicalSonarBufferIds.*`, `SystemID.UI`, and generation.
+- Raymarch math, mock SDF, LUT parsing, GPU upload, telemetry layout, and quality LOD were not changed.
+
+Cinematic cheats used:
+- None changed. Existing mock SDF and point-cloud sonar fake remain intact.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+
+Verification:
+- Scoped grep confirms no `currentService as IDataVault`, no direct `_dataVault = GlobalRegistry.DataVault`, and no generic `handle.BufferID != 0u` release/resolve predicate remain.
+- All `TryResolveVaultBuffer` calls pass expected sonar `BufferID`.
+- `git diff --check -- TopographicalSonarSynthesizer.cs` reports only LF/CRLF warning.
+- Build/import/profiler proof remains blocked by external build lane and CPU guard.
+
+## 2026-05-28 - Vehicle Sub OS Cockpit DataVault Hot-Swap And Release Predicates
+
+What was wrong:
+- `VehicleSubOsCockpitRuntime` did not handle DataVault service replacement.
+- Cold cache assigned `_dataVault` directly.
+- Cockpit button and telemetry teardown released by generic nonzero descriptor state.
+
+What was done:
+- Added DataVault hot-swap handling with button job teardown before rebind.
+- Added `BindDataVaultForLifecycle`.
+- Button and telemetry handles now release only with exact expected `VehicleSubOs*` `BufferID`, `SystemID.UI`, and generation.
+- Cockpit radar, damage hologram, render targets, and button animation behavior were not changed by this patch.
+
+Cinematic cheats used:
+- None changed. Existing radar/hologram fakes remain intact.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+
+Verification:
+- Scoped grep confirms no direct `_dataVault = GlobalRegistry.DataVault`, no `currentService as IDataVault`, no old `ReleaseCockpitVaultHandle(ref ...)`, and no generic `handle.BufferID != 0u` release predicate.
+- `git diff --check -- VehicleSubOsCockpitRuntime.cs` reports only LF/CRLF warning.
+- Build/import/profiler proof remains blocked by external build lane and CPU guard.
+
+## 2026-05-28 - Combined Current UI Native Lifecycle Package
+
+What was wrong:
+- Six touched files needed one combined static check after later micro-patches.
+- Compiler proof stayed blocked by build-lane/CPU guard.
+
+What was done:
+- Ran combined bad-pattern grep over current UI native lifecycle package.
+- Ran combined `git diff --check` over source files and AUDIT docs.
+- Re-sampled compiler lane and CPU guard before build.
+
+Cinematic cheats used:
+- None. Verification-only step.
+
+Exact microseconds saved:
+- Measured: 0 us.
+
+Verification:
+- Combined grep returns no hits for direct DataVault cast/cache in touched files, ownerless `handle.BufferID != 0u`, old `IsVaultHandleCreated`, or old cockpit release helper.
+- Combined `git diff --check` reports only LF/CRLF warnings.
+- Targeted compile not launched: latest guard has no `dotnet/csc`, but CPU sample remains `100%`.

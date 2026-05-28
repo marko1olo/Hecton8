@@ -157,9 +157,11 @@ namespace GPUInstancer
             public static readonly int COUNT = Shader.PropertyToID("count");
 
             public static readonly int MAX_TEXTURE_SIZE = Shader.PropertyToID("maxTextureSize");
+            public static readonly int TEXTURE_CAPACITY = Shader.PropertyToID("textureCapacity");
             public static readonly int UNITY_RENDERING_LAYER = Shader.PropertyToID("unity_RenderingLayer");
 
             public static readonly int ARGS_BUFFER_INDEX = Shader.PropertyToID("argsBufferIndex");
+            public static readonly int ARGS_BUFFER_LENGTH = Shader.PropertyToID("argsBufferLength");
         }
         public static readonly int BUFFER_COROUTINE_STEP_NUMBER = 16384;
         public static int DETAIL_BUFFER_MERGE_FRAME_LIMIT = 1024;
@@ -262,6 +264,9 @@ namespace GPUInstancer
             public static readonly int DETAIL_DENSITY = Shader.PropertyToID("detailDensity");
             public static readonly int TERRAIN_NORMAL_EFFECT = Shader.PropertyToID("terrainNormalEffect");
             public static readonly int INSTANCE_CAPACITY = Shader.PropertyToID("instanceCapacity");
+            public static readonly int DETAIL_MAP_CAPACITY = Shader.PropertyToID("detailMapCapacity");
+            public static readonly int HEIGHT_MAP_CAPACITY = Shader.PropertyToID("heightMapCapacity");
+            public static readonly int HAS_HEALTHY_DRY_NOISE_TEXTURE = Shader.PropertyToID("hasHealthyDryNoiseTexture");
         }
         #endregion CS Grass Instantiation
 

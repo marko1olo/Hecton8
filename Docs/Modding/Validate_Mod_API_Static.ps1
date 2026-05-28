@@ -99,6 +99,7 @@ $sdkAuthoringPlanPath = Join-Path $RepoRoot 'Docs\Modding\SDK_Authoring_Interfac
 $sdkProductBlueprintPath = Join-Path $RepoRoot 'Docs\Modding\SDK_Product_Blueprint.md'
 $externalStarterKitContractPath = Join-Path $RepoRoot 'Docs\Modding\External_Starter_Kit_File_Contract.md'
 $externalStarterKitTemplatePath = Join-Path $RepoRoot 'ModdingSDK\ExternalStarterKit'
+$externalStarterKitTemplateLauncherPath = Join-Path $externalStarterKitTemplatePath 'h8mod.ps1'
 $externalStarterKitTemplateValidatorPath = Join-Path $externalStarterKitTemplatePath 'Tools\validate_structure.ps1'
 $externalStarterKitTemplateReviewManifestBuilderPath = Join-Path $externalStarterKitTemplatePath 'Tools\build_review_manifest.ps1'
 $externalStarterKitTemplateAllowedOpcodeListToolPath = Join-Path $externalStarterKitTemplatePath 'Tools\list_allowed_opcodes.ps1'
@@ -161,6 +162,7 @@ Assert-True (Test-Path -LiteralPath $sdkAuthoringPlanPath) "Missing SDK authorin
 Assert-True (Test-Path -LiteralPath $sdkProductBlueprintPath) "Missing SDK product blueprint: $sdkProductBlueprintPath"
 Assert-True (Test-Path -LiteralPath $externalStarterKitContractPath) "Missing external starter kit file contract: $externalStarterKitContractPath"
 Assert-True (Test-Path -LiteralPath $externalStarterKitTemplatePath -PathType Container) "Missing external starter kit template: $externalStarterKitTemplatePath"
+Assert-True (Test-Path -LiteralPath $externalStarterKitTemplateLauncherPath -PathType Leaf) "Missing external starter kit root launcher: $externalStarterKitTemplateLauncherPath"
 Assert-True (Test-Path -LiteralPath $externalStarterKitTemplateValidatorPath -PathType Leaf) "Missing external starter kit template validator: $externalStarterKitTemplateValidatorPath"
 Assert-True (Test-Path -LiteralPath $externalStarterKitTemplateReviewManifestBuilderPath -PathType Leaf) "Missing external starter kit review manifest builder: $externalStarterKitTemplateReviewManifestBuilderPath"
 Assert-True (Test-Path -LiteralPath $externalStarterKitTemplateAllowedOpcodeListToolPath -PathType Leaf) "Missing external starter kit allowed opcode list tool: $externalStarterKitTemplateAllowedOpcodeListToolPath"
@@ -260,6 +262,7 @@ $changeControlChecklistText = Get-Content -Raw -LiteralPath $changeControlCheckl
 $runtimePlaybookText = Get-Content -Raw -LiteralPath $runtimePlaybookPath
 $specText = Get-Content -Raw -LiteralPath $specPath
 $externalStarterKitWorkbenchSource = Get-Content -Raw -LiteralPath $externalStarterKitWorkbenchPath
+$externalStarterKitTemplateLauncherSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateLauncherPath
 $externalStarterKitTemplateReviewManifestBuilderSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateReviewManifestBuilderPath
 $externalStarterKitTemplateAllowedOpcodeListToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateAllowedOpcodeListToolPath
 $externalStarterKitTemplateIdentityToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateIdentityToolPath
@@ -267,6 +270,8 @@ $externalStarterKitTemplatePrepareToolSource = Get-Content -Raw -LiteralPath $ex
 $externalStarterKitTemplateValidatorSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateValidatorPath
 $externalStarterKitTemplateValidatorOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $externalStarterKitTemplateValidatorPath -Root $externalStarterKitTemplatePath
 $externalStarterKitTemplateLocalValidatorExitCode = $LASTEXITCODE
+$externalStarterKitTemplateLauncherValidateOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $externalStarterKitTemplateLauncherPath -Action validate
+$externalStarterKitTemplateLauncherValidateExitCode = $LASTEXITCODE
 $externalStarterKitTemplateReviewManifestOutput = & powershell -NoProfile -ExecutionPolicy Bypass -File $externalStarterKitTemplateReviewManifestBuilderPath -Root $externalStarterKitTemplatePath
 $externalStarterKitTemplateReviewManifestExitCode = $LASTEXITCODE
 $externalStarterKitTemplateVsCodeSettings = Get-Content -Raw -LiteralPath $externalStarterKitTemplateVsCodeSettingsPath | ConvertFrom-Json
@@ -824,6 +829,13 @@ $moddingSdkHubLinksCoreDocs =
 $moddingSdkHubRunsStaticValidator =
     $moddingSdkHubSource.Contains('RunStaticValidator') -and
     $moddingSdkHubSource.Contains('Docs/Modding/Validate_Mod_API_Static.ps1')
+$moddingSdkHubRunsStaticValidatorAsync =
+    $moddingSdkHubSource.Contains('BeginOutputReadLine') -and
+    $moddingSdkHubSource.Contains('BeginErrorReadLine') -and
+    $moddingSdkHubSource.Contains('EditorApplication.update') -and
+    $moddingSdkHubSource.Contains('PollRunningValidator') -and
+    -not $moddingSdkHubSource.Contains('StandardOutput.ReadToEnd') -and
+    -not $moddingSdkHubSource.Contains('WaitForExit()')
 $moddingSdkHubShowsEnvelopeOnlyBoundary =
     $moddingSdkHubSource.Contains('Runtime API: envelope-only') -and
     $moddingSdkHubSource.Contains('Managed DLL entries are legacy/internal')
@@ -877,6 +889,10 @@ $externalStarterKitWorkbenchShowsReviewFreshness =
     $externalStarterKitWorkbenchSource.Contains('Report is stale') -and
     $externalStarterKitWorkbenchSource.Contains('Generated/') -and
     $externalStarterKitWorkbenchSource.Contains('Reports/')
+$externalStarterKitWorkbenchChecksRootLauncher =
+    $externalStarterKitWorkbenchSource.Contains('"h8mod.ps1"') -and
+    $externalStarterKitWorkbenchSource.Contains('Open Root Launcher') -and
+    $externalStarterKitWorkbenchSource.Contains('ModdingSDK/ExternalStarterKit/h8mod.ps1')
 Assert-True $moddingSdkHubPresent 'ModdingSdkHubWindow must expose Hecton/Modding/SDK Hub.'
 Assert-True $moddingSdkHubOpensBuilder 'ModdingSdkHubWindow must open ModBuilderWindow.'
 Assert-True $moddingSdkHubOpensStarterWorkbench 'ModdingSdkHubWindow must open the External Starter Kit Workbench from public authoring actions.'
@@ -885,6 +901,7 @@ Assert-True $moddingSdkHubGatesLegacyBuilder 'ModdingSdkHubWindow must gate the 
 Assert-True $modBuilderMenuIsInternalLegacy 'ModBuilderWindow menu and UI must be marked internal legacy.'
 Assert-True $moddingSdkHubLinksCoreDocs 'ModdingSdkHubWindow must link core SDK docs.'
 Assert-True $moddingSdkHubRunsStaticValidator 'ModdingSdkHubWindow must launch Validate_Mod_API_Static.ps1.'
+Assert-True $moddingSdkHubRunsStaticValidatorAsync 'ModdingSdkHubWindow must run the static validator asynchronously without blocking ReadToEnd/WaitForExit.'
 Assert-True $moddingSdkHubShowsEnvelopeOnlyBoundary 'ModdingSdkHubWindow must show the envelope-only runtime boundary.'
 Assert-True $externalStarterKitWorkbenchPresent 'ExternalStarterKitWorkbenchWindow must expose a dedicated starter kit workbench menu.'
 Assert-True $externalStarterKitWorkbenchUsesIdentityTool 'External Starter Kit Workbench must route identity edits through set_mod_identity.ps1.'
@@ -898,11 +915,20 @@ Assert-True $externalStarterKitWorkbenchRunsStructureValidator 'External Starter
 Assert-True $externalStarterKitWorkbenchLinksCoreDocs 'External Starter Kit Workbench must link core starter/API docs.'
 Assert-True $externalStarterKitWorkbenchRunsToolsAsync 'External Starter Kit Workbench must run starter tools asynchronously without blocking stdout/stderr reads.'
 Assert-True $externalStarterKitWorkbenchShowsReviewFreshness 'External Starter Kit Workbench must show bounded review manifest freshness against starter sources.'
+Assert-True $externalStarterKitWorkbenchChecksRootLauncher 'External Starter Kit Workbench must include the root no-Unity h8mod.ps1 launcher in health and file access.'
 $externalStarterKitGeneratorPresent =
     $moddingSdkHubSource.Contains('ExternalStarterKitRoot = "ModdingSDK/ExternalStarterKit"') -and
     $moddingSdkHubSource.Contains('CreateExternalStarterKit') -and
     $moddingSdkHubSource.Contains('Create External Starter Kit') -and
     $moddingSdkHubSource.Contains('Open External Starter Kit')
+$externalStarterKitWritesRootLauncher =
+    $moddingSdkHubSource.Contains('"h8mod.ps1"') -and
+    $moddingSdkHubSource.Contains('BuildStarterKitLauncherScript') -and
+    $moddingSdkHubSource.Contains("ValidateSet('menu','setup','validate','review','prepare','opcodes','opcodes-json')") -and
+    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/prepare_mod.ps1'") -and
+    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/validate_structure.ps1'") -and
+    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/build_review_manifest.ps1'") -and
+    $moddingSdkHubSource.Contains("Resolve-StarterTool 'Tools/list_allowed_opcodes.ps1'")
 $externalStarterKitWritesAuthoringManifest =
     $moddingSdkHubSource.Contains('mod.h8manifest.json') -and
     $moddingSdkHubSource.Contains('BuildAuthoringManifestTemplate') -and
@@ -1024,6 +1050,7 @@ $externalStarterKitValidatorChecksManifestIdentityTextParity =
     $moddingSdkHubSource.Contains('DisplayName must match mod.json Name') -and
     $moddingSdkHubSource.Contains('Version must match mod.json Version')
 $externalStarterKitToolsAvoidNestedPowerShell =
+    (-not $externalStarterKitTemplateLauncherSource.Contains('& powershell')) -and
     (-not $externalStarterKitTemplateIdentityToolSource.Contains('& powershell')) -and
     (-not $externalStarterKitTemplateReviewManifestBuilderSource.Contains('& powershell')) -and
     (-not $externalStarterKitTemplateAllowedOpcodeListToolSource.Contains('& powershell')) -and
@@ -1032,6 +1059,8 @@ $externalStarterKitToolsAvoidNestedPowerShell =
     $moddingSdkHubSource.Contains('& $identityTool -Root $rootFull -Id $Id') -and
     $moddingSdkHubSource.Contains('& $reviewTool -Root $rootFull -Output $ReviewOutput | Out-Host')
 $externalStarterKitToolsUsePortableJoinPath =
+    $externalStarterKitTemplateLauncherSource.Contains('function Join-StarterPath') -and
+    $externalStarterKitTemplateLauncherSource.Contains('$tool = Join-StarterPath $Root $RelativePath') -and
     $externalStarterKitTemplateValidatorSource.Contains('function Join-StarterPath') -and
     $externalStarterKitTemplateIdentityToolSource.Contains('function Join-StarterPath') -and
     $externalStarterKitTemplateReviewManifestBuilderSource.Contains('function Join-StarterPath') -and
@@ -1045,6 +1074,7 @@ $externalStarterKitToolsUsePortableJoinPath =
     (-not $externalStarterKitTemplateReviewManifestBuilderSource.Contains("'Tools\")) -and
     (-not $externalStarterKitTemplateAllowedOpcodeListToolSource.Contains("'Tools\")) -and
     (-not $externalStarterKitTemplatePrepareToolSource.Contains("'Tools\")) -and
+    (-not $externalStarterKitTemplateLauncherSource.Contains("'Tools\")) -and
     (-not $moddingSdkHubSource.Contains("'Tools\\"))
 $externalStarterKitWritesJsonSchemas =
     $moddingSdkHubSource.Contains('BuildAuthoringManifestSchema') -and
@@ -1171,6 +1201,7 @@ $externalStarterKitReviewManifestHasLimits =
     $externalStarterKitReviewManifestRejectsOversizedFile
 $externalStarterKitTemplateRequiredFiles = @(
     'README.md',
+    'h8mod.ps1',
     'mod.h8manifest.json',
     'mod.json',
     'Content\README.md',
@@ -1206,6 +1237,12 @@ foreach ($requiredTemplateFile in $externalStarterKitTemplateRequiredFiles) {
 $externalStarterKitTemplatePassesLocalValidator =
     $externalStarterKitTemplateLocalValidatorExitCode -eq 0 -and
     @($externalStarterKitTemplateValidatorOutput) -contains 'PASS HECTON-8 external starter structure'
+$externalStarterKitRootLauncherPasses =
+    $externalStarterKitTemplateLauncherValidateExitCode -eq 0 -and
+    @($externalStarterKitTemplateLauncherValidateOutput) -contains 'PASS HECTON-8 external starter structure'
+$externalStarterKitValidatorChecksRootLauncher =
+    $externalStarterKitTemplateValidatorSource.Contains("'h8mod.ps1'") -and
+    $moddingSdkHubSource.Contains("    'h8mod.ps1',")
 $externalStarterKitTemplateAllowedOpcodesPath = Join-Path $externalStarterKitTemplatePath 'Reference\allowed_opcodes.csv'
 $externalStarterKitTemplateKernelTuningPath = Join-Path $externalStarterKitTemplatePath 'Reference\kernel_tuning_profiles.csv'
 $externalStarterKitTemplateReferenceCsvsMatchSource = $false
@@ -1276,6 +1313,7 @@ $externalStarterKitReviewManifestHashesFiles =
     [int]$externalStarterKitReviewManifest.FileCount -eq @($externalStarterKitReviewManifest.Files).Count -and
     $externalStarterKitReviewManifestHashShapeValid -and
     $externalStarterKitReviewManifestPaths -contains 'mod.h8manifest.json' -and
+    $externalStarterKitReviewManifestPaths -contains 'h8mod.ps1' -and
     $externalStarterKitReviewManifestPaths -contains 'mod.json' -and
     $externalStarterKitReviewManifestPaths -contains 'Tools/build_review_manifest.ps1' -and
     $externalStarterKitReviewManifestPaths -contains 'Tools/list_allowed_opcodes.ps1' -and
@@ -1284,6 +1322,7 @@ $externalStarterKitReviewManifestExcludesReports =
     $externalStarterKitReviewManifestPasses -and
     (@($externalStarterKitReviewManifestPaths | Where-Object { $_ -like 'Reports/*' -or $_ -like 'Generated/*' }).Count -eq 0)
 Assert-True $externalStarterKitGeneratorPresent 'ModdingSdkHubWindow must create/open an external starter kit.'
+Assert-True $externalStarterKitWritesRootLauncher 'External starter kit generator must write the root no-Unity h8mod.ps1 launcher.'
 Assert-True $externalStarterKitWritesAuthoringManifest 'External starter kit must write mod.h8manifest.json authoring contract.'
 Assert-True $externalStarterKitWritesRuntimeManifest 'External starter kit must write mod.json runtime compatibility manifest.'
 Assert-True $externalStarterKitWritesFolderReadmes 'External starter kit must write folder README guidance.'
@@ -1292,6 +1331,7 @@ Assert-True $externalStarterKitDocumentsNoUnityProjectRequirement 'External star
 Assert-True $externalStarterKitDocumentsEnvelopeOnlyBoundary 'External starter kit must document the envelope-only boundary.'
 Assert-True $externalStarterKitWritesLocalStructureValidator 'External starter kit must write a local no-Unity structure validator.'
 Assert-True $externalStarterKitValidatorChecksRequiredFiles 'External starter kit local validator must check required files and reference CSVs.'
+Assert-True $externalStarterKitValidatorChecksRootLauncher 'External starter kit local validator must require the root no-Unity h8mod.ps1 launcher.'
 Assert-True $externalStarterKitValidatorChecksEnvelopeOnly 'External starter kit local validator must check envelope-only manifest/graph flags.'
 Assert-True $externalStarterKitValidatorChecksManagedEntryDisabled 'External starter kit local validator must reject managed entry fields.'
 Assert-True $externalStarterKitValidatorChecksCanonicalIds 'External starter kit local validator must enforce canonical mod IDs.'
@@ -1317,6 +1357,7 @@ Assert-True $externalStarterKitValidatorChecksJsonSchemas 'External starter kit 
 Assert-True $externalStarterKitValidatorChecksEditorSchemaMappings 'External starter kit local validator must check each editor schema URL and fileMatch mapping.'
 Assert-True $externalStarterKitTemplateVersioned 'External starter kit template must be versioned as files under ModdingSDK/ExternalStarterKit.'
 Assert-True $externalStarterKitTemplatePassesLocalValidator 'Versioned external starter kit must pass its local no-Unity validator.'
+Assert-True $externalStarterKitRootLauncherPasses 'Versioned external starter kit root launcher must route validate to the local structure validator.'
 Assert-True $externalStarterKitTemplateReferenceCsvsMatchSource 'Versioned external starter kit reference CSVs must match Docs/Modding authoritative source CSVs.'
 Assert-True $externalStarterKitReviewManifestPasses 'Versioned external starter kit review manifest builder must pass.'
 Assert-True $externalStarterKitReviewManifestHashesFiles 'Versioned external starter kit review manifest must hash required authoring/tool files.'
@@ -1901,6 +1942,7 @@ Assert-True ([bool]$schema.sdkAuthoringAudit.hubGatesLegacyBuilder) 'Schema sdkA
 Assert-True ([bool]$schema.sdkAuthoringAudit.builderMenuIsInternalLegacy) 'Schema sdkAuthoringAudit must record internal legacy builder menu.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.hubLinksCoreDocs) 'Schema sdkAuthoringAudit must record SDK hub docs links.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.hubRunsStaticValidator) 'Schema sdkAuthoringAudit must record SDK hub static validator action.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.hubRunsStaticValidatorAsync) 'Schema sdkAuthoringAudit must record async SDK hub static validator execution.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.hubShowsEnvelopeOnlyBoundary) 'Schema sdkAuthoringAudit must record envelope-only boundary visibility.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchPresent) 'Schema sdkAuthoringAudit must record starter workbench presence.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchUsesIdentityTool) 'Schema sdkAuthoringAudit must record starter workbench identity tool route.'
@@ -1914,7 +1956,9 @@ Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchRunsStructureValida
 Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchLinksCoreDocs) 'Schema sdkAuthoringAudit must record starter workbench core doc links.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchRunsToolsAsync) 'Schema sdkAuthoringAudit must record async starter tool execution.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchShowsReviewFreshness) 'Schema sdkAuthoringAudit must record starter workbench review freshness.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchChecksRootLauncher) 'Schema sdkAuthoringAudit must record starter workbench root launcher health/file access.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitGeneratorPresent) 'Schema sdkAuthoringAudit must record external starter kit generator presence.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesRootLauncher) 'Schema sdkAuthoringAudit must record root no-Unity launcher output.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesAuthoringManifest) 'Schema sdkAuthoringAudit must record external starter kit authoring manifest output.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesRuntimeManifest) 'Schema sdkAuthoringAudit must record external starter kit runtime manifest output.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesFolderReadmes) 'Schema sdkAuthoringAudit must record external starter kit folder README output.'
@@ -1923,6 +1967,7 @@ Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDocumentsNoUnityP
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitDocumentsEnvelopeOnlyBoundary) 'Schema sdkAuthoringAudit must record envelope-only starter kit guidance.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesLocalStructureValidator) 'Schema sdkAuthoringAudit must record local starter kit structure validator output.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksRequiredFiles) 'Schema sdkAuthoringAudit must record starter validator required-file checks.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksRootLauncher) 'Schema sdkAuthoringAudit must record starter validator root launcher check.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksEnvelopeOnly) 'Schema sdkAuthoringAudit must record starter validator envelope-only checks.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksManagedEntryDisabled) 'Schema sdkAuthoringAudit must record starter validator managed-entry rejection.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksCanonicalIds) 'Schema sdkAuthoringAudit must record starter validator canonical ID checks.'
@@ -1948,6 +1993,7 @@ Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksJs
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitValidatorChecksEditorSchemaMappings) 'Schema sdkAuthoringAudit must record exact starter editor schema mapping checks.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitTemplateVersioned) 'Schema sdkAuthoringAudit must record versioned starter kit template.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitTemplatePassesLocalValidator) 'Schema sdkAuthoringAudit must record starter template local validator pass.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitRootLauncherPasses) 'Schema sdkAuthoringAudit must record root launcher validation route pass.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitTemplateReferenceCsvsMatchSource) 'Schema sdkAuthoringAudit must record starter template reference CSV source parity.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitReviewManifestPasses) 'Schema sdkAuthoringAudit must record starter review manifest pass.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitReviewManifestHashesFiles) 'Schema sdkAuthoringAudit must record starter review manifest hash proof.'
@@ -2451,6 +2497,7 @@ Assert-True ($lastStaticValidation.moddingSdkHubGatesLegacyBuilder -eq $true) "S
 Assert-True ($lastStaticValidation.modBuilderMenuIsInternalLegacy -eq $true) "Schema lastStaticValidationSnapshot must record internal legacy builder menu."
 Assert-True ($lastStaticValidation.moddingSdkHubLinksCoreDocs -eq $true) "Schema lastStaticValidationSnapshot must record SDK hub doc links."
 Assert-True ($lastStaticValidation.moddingSdkHubRunsStaticValidator -eq $true) "Schema lastStaticValidationSnapshot must record SDK hub static validator action."
+Assert-True ($lastStaticValidation.moddingSdkHubRunsStaticValidatorAsync -eq $true) "Schema lastStaticValidationSnapshot must record async SDK hub static validator execution."
 Assert-True ($lastStaticValidation.moddingSdkHubShowsEnvelopeOnlyBoundary -eq $true) "Schema lastStaticValidationSnapshot must record SDK hub envelope-only warning."
 Assert-True ($lastStaticValidation.externalStarterKitWorkbenchPresent -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench presence."
 Assert-True ($lastStaticValidation.externalStarterKitWorkbenchUsesIdentityTool -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench identity tool route."
@@ -2464,7 +2511,9 @@ Assert-True ($lastStaticValidation.externalStarterKitWorkbenchRunsStructureValid
 Assert-True ($lastStaticValidation.externalStarterKitWorkbenchLinksCoreDocs -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench core doc links."
 Assert-True ($lastStaticValidation.externalStarterKitWorkbenchRunsToolsAsync -eq $true) "Schema lastStaticValidationSnapshot must record async starter tool execution."
 Assert-True ($lastStaticValidation.externalStarterKitWorkbenchShowsReviewFreshness -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench review freshness."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchChecksRootLauncher -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench root launcher health/file access."
 Assert-True ($lastStaticValidation.externalStarterKitGeneratorPresent -eq $true) "Schema lastStaticValidationSnapshot must record external starter kit generator presence."
+Assert-True ($lastStaticValidation.externalStarterKitWritesRootLauncher -eq $true) "Schema lastStaticValidationSnapshot must record root no-Unity launcher output."
 Assert-True ($lastStaticValidation.externalStarterKitWritesAuthoringManifest -eq $true) "Schema lastStaticValidationSnapshot must record external starter kit authoring manifest output."
 Assert-True ($lastStaticValidation.externalStarterKitWritesRuntimeManifest -eq $true) "Schema lastStaticValidationSnapshot must record external starter kit runtime manifest output."
 Assert-True ($lastStaticValidation.externalStarterKitWritesFolderReadmes -eq $true) "Schema lastStaticValidationSnapshot must record external starter kit folder README output."
@@ -2473,6 +2522,7 @@ Assert-True ($lastStaticValidation.externalStarterKitDocumentsNoUnityProjectRequ
 Assert-True ($lastStaticValidation.externalStarterKitDocumentsEnvelopeOnlyBoundary -eq $true) "Schema lastStaticValidationSnapshot must record envelope-only starter kit guidance."
 Assert-True ($lastStaticValidation.externalStarterKitWritesLocalStructureValidator -eq $true) "Schema lastStaticValidationSnapshot must record local starter kit structure validator output."
 Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksRequiredFiles -eq $true) "Schema lastStaticValidationSnapshot must record starter validator required-file checks."
+Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksRootLauncher -eq $true) "Schema lastStaticValidationSnapshot must record starter validator root launcher check."
 Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksEnvelopeOnly -eq $true) "Schema lastStaticValidationSnapshot must record starter validator envelope-only checks."
 Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksManagedEntryDisabled -eq $true) "Schema lastStaticValidationSnapshot must record starter validator managed-entry rejection."
 Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksCanonicalIds -eq $true) "Schema lastStaticValidationSnapshot must record starter validator canonical ID checks."
@@ -2498,6 +2548,7 @@ Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksJsonSchemas 
 Assert-True ($lastStaticValidation.externalStarterKitValidatorChecksEditorSchemaMappings -eq $true) "Schema lastStaticValidationSnapshot must record exact starter editor schema mapping checks."
 Assert-True ($lastStaticValidation.externalStarterKitTemplateVersioned -eq $true) "Schema lastStaticValidationSnapshot must record versioned starter kit template."
 Assert-True ($lastStaticValidation.externalStarterKitTemplatePassesLocalValidator -eq $true) "Schema lastStaticValidationSnapshot must record starter template local validator pass."
+Assert-True ($lastStaticValidation.externalStarterKitRootLauncherPasses -eq $true) "Schema lastStaticValidationSnapshot must record root launcher validation route pass."
 Assert-True ($lastStaticValidation.externalStarterKitTemplateReferenceCsvsMatchSource -eq $true) "Schema lastStaticValidationSnapshot must record starter template reference CSV source parity."
 Assert-True ($lastStaticValidation.externalStarterKitReviewManifestPasses -eq $true) "Schema lastStaticValidationSnapshot must record starter review manifest pass."
 Assert-True ($lastStaticValidation.externalStarterKitReviewManifestHashesFiles -eq $true) "Schema lastStaticValidationSnapshot must record starter review manifest hash proof."
@@ -2612,6 +2663,7 @@ Assert-True ($runtimePlaybookText.Contains('ModdingSdkHubGatesLegacyBuilder = Tr
 Assert-True ($runtimePlaybookText.Contains('ModBuilderMenuIsInternalLegacy = True')) 'Runtime playbook missing internal legacy builder menu evidence.'
 Assert-True ($runtimePlaybookText.Contains('ModdingSdkHubLinksCoreDocs = True')) 'Runtime playbook missing SDK Hub docs link evidence.'
 Assert-True ($runtimePlaybookText.Contains('ModdingSdkHubRunsStaticValidator = True')) 'Runtime playbook missing SDK Hub validator action evidence.'
+Assert-True ($runtimePlaybookText.Contains('ModdingSdkHubRunsStaticValidatorAsync = True')) 'Runtime playbook missing SDK Hub async validator execution evidence.'
 Assert-True ($runtimePlaybookText.Contains('ModdingSdkHubOpensStarterWorkbench = True')) 'Runtime playbook missing SDK Hub starter workbench action evidence.'
 Assert-True ($runtimePlaybookText.Contains('ModdingSdkHubShowsEnvelopeOnlyBoundary = True')) 'Runtime playbook missing SDK Hub envelope-only boundary evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchPresent = True')) 'Runtime playbook missing starter workbench presence evidence.'
@@ -2626,6 +2678,10 @@ Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchRunsStruc
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchLinksCoreDocs = True')) 'Runtime playbook missing starter workbench doc link evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchRunsToolsAsync = True')) 'Runtime playbook missing starter workbench async tool evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchShowsReviewFreshness = True')) 'Runtime playbook missing starter workbench review freshness evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchChecksRootLauncher = True')) 'Runtime playbook missing starter workbench root launcher evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesRootLauncher = True')) 'Runtime playbook missing starter root launcher generator evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitValidatorChecksRootLauncher = True')) 'Runtime playbook missing starter validator root launcher evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitRootLauncherPasses = True')) 'Runtime playbook missing starter root launcher pass evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitGeneratorPresent = True')) 'Runtime playbook missing external starter kit generator evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesAuthoringManifest = True')) 'Runtime playbook missing external starter kit authoring manifest evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesRuntimeManifest = True')) 'Runtime playbook missing external starter kit runtime manifest evidence.'
@@ -2826,6 +2882,7 @@ $result = [pscustomobject]@{
     ModBuilderMenuIsInternalLegacy = $modBuilderMenuIsInternalLegacy
     ModdingSdkHubLinksCoreDocs = $moddingSdkHubLinksCoreDocs
     ModdingSdkHubRunsStaticValidator = $moddingSdkHubRunsStaticValidator
+    ModdingSdkHubRunsStaticValidatorAsync = $moddingSdkHubRunsStaticValidatorAsync
     ModdingSdkHubShowsEnvelopeOnlyBoundary = $moddingSdkHubShowsEnvelopeOnlyBoundary
     ExternalStarterKitWorkbenchPresent = $externalStarterKitWorkbenchPresent
     ExternalStarterKitWorkbenchUsesIdentityTool = $externalStarterKitWorkbenchUsesIdentityTool
@@ -2839,7 +2896,9 @@ $result = [pscustomobject]@{
     ExternalStarterKitWorkbenchLinksCoreDocs = $externalStarterKitWorkbenchLinksCoreDocs
     ExternalStarterKitWorkbenchRunsToolsAsync = $externalStarterKitWorkbenchRunsToolsAsync
     ExternalStarterKitWorkbenchShowsReviewFreshness = $externalStarterKitWorkbenchShowsReviewFreshness
+    ExternalStarterKitWorkbenchChecksRootLauncher = $externalStarterKitWorkbenchChecksRootLauncher
     ExternalStarterKitGeneratorPresent = $externalStarterKitGeneratorPresent
+    ExternalStarterKitWritesRootLauncher = $externalStarterKitWritesRootLauncher
     ExternalStarterKitWritesAuthoringManifest = $externalStarterKitWritesAuthoringManifest
     ExternalStarterKitWritesRuntimeManifest = $externalStarterKitWritesRuntimeManifest
     ExternalStarterKitWritesFolderReadmes = $externalStarterKitWritesFolderReadmes
@@ -2848,6 +2907,7 @@ $result = [pscustomobject]@{
     ExternalStarterKitDocumentsEnvelopeOnlyBoundary = $externalStarterKitDocumentsEnvelopeOnlyBoundary
     ExternalStarterKitWritesLocalStructureValidator = $externalStarterKitWritesLocalStructureValidator
     ExternalStarterKitValidatorChecksRequiredFiles = $externalStarterKitValidatorChecksRequiredFiles
+    ExternalStarterKitValidatorChecksRootLauncher = $externalStarterKitValidatorChecksRootLauncher
     ExternalStarterKitValidatorChecksEnvelopeOnly = $externalStarterKitValidatorChecksEnvelopeOnly
     ExternalStarterKitValidatorChecksManagedEntryDisabled = $externalStarterKitValidatorChecksManagedEntryDisabled
     ExternalStarterKitValidatorChecksCanonicalIds = $externalStarterKitValidatorChecksCanonicalIds
@@ -2873,6 +2933,7 @@ $result = [pscustomobject]@{
     ExternalStarterKitValidatorChecksEditorSchemaMappings = $externalStarterKitValidatorChecksEditorSchemaMappings
     ExternalStarterKitTemplateVersioned = $externalStarterKitTemplateVersioned
     ExternalStarterKitTemplatePassesLocalValidator = $externalStarterKitTemplatePassesLocalValidator
+    ExternalStarterKitRootLauncherPasses = $externalStarterKitRootLauncherPasses
     ExternalStarterKitTemplateReferenceCsvsMatchSource = $externalStarterKitTemplateReferenceCsvsMatchSource
     ExternalStarterKitReviewManifestPasses = $externalStarterKitReviewManifestPasses
     ExternalStarterKitReviewManifestHashesFiles = $externalStarterKitReviewManifestHashesFiles

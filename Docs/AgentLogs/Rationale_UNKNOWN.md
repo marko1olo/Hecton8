@@ -2009,3 +2009,15 @@ Rejected Alternatives: Touching `HomeostasisBrain.ScalabilityDictator.cs` was re
 Scalability potential: Low-tier devices avoid a post-rebind allocation/open path in pre-simulation. Middle, high, and ultra tiers keep the same continuous `GlobalQualityWeight`, telemetry capacities, BufferIDs, DTO layout, and save identity. The change does not add binary quality switches.
 
 Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is frame-phase determinism and lower risk of stale or unopened Homeostasis buffers after DataVault replacement.
+
+## Decision 159 - Treat Homeostasis APEX Verification As Static Evidence, Not Runtime Completion
+
+Problem: The Homeostasis pass had a code/report proof, but it did not yet have a separate APEX artifact with exact Zero-GC text-scan counts, source/report hashes, line-number evidence, DataVault lock applicability, and compilation-throttle proof.
+
+Solution: Add `Docs/Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HOMEOSTASIS_20260528.json`, Markdown summary, and `.json.sha256` sidecar. The APEX JSON records exact line evidence, scan ranges, all forbidden-pattern counts, source SHA-256, source report SHA-256, existing struct offsets, BufferID route list, CPU sample, active dotnet PID, and the fact that no build/runtime proof was run.
+
+Rejected Alternatives: Claiming `COMPLETE` was rejected because no Unity import, Play Mode, profiler, GCMonitor, player build, device run, or DataVault hot-swap runtime test exists. Inventing `TryAcquireWriteLock`/`finally` proof was rejected because this pass did not add a DataVault writer route. Running `dotnet build` was rejected because CPU was `100%` and `dotnet.exe` PID `62124` was active.
+
+Scalability potential: Low, middle, high, and ultra behavior is unchanged by the verification artifact. The proof confirms the patch did not add binary quality switches or a new physical simulation and did not change the continuous `GlobalQualityWeight` route.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is evidence integrity and preventing false completion status.

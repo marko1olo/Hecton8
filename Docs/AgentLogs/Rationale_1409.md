@@ -1,7 +1,7 @@
 # Rationale 1409 - CONTINUOUS_QUALITY_WEIGHT_PHYSICS_HOMEOSTAT
 
 Date: 2026-05-28
-Status: APEX STATIC VERIFIED / COMPILE DEFERRED BY CPU GATE / SEAGLIDE CADENCE REPAIRED
+Status: APEX STATIC VERIFIED / COMPILE DEFERRED BY CPU GATE / SEAGLIDE METABOLISM ACCUMULATOR REPAIRED
 
 ## Decision 000 - Ledgers Before Code
 
@@ -138,3 +138,27 @@ Solution: Pass `SeaglideTuningDTO` into the cadence resolver and lerp from cappe
 Rejected Alternatives: A binary skip flag was rejected because it creates device-tier cliffs. Leaving cadence unscaled was rejected because it made the continuous-scaling report false.
 Scalability potential: Low q schedules thrust solve less frequently with accumulated delta; Middle q interpolates; High/Ultra q runs at the authored minimum cadence/fixed tick while visual/audio/cavitation presentation remains q-scaled.
 Hardware Impact: Static q sweep with `fixedDelta=0.02`, min `0.02`, authored max `0.12`, compensated max `0.08`: q0=0.080000s, q0.25=0.070625s, q0.5=0.050000s, q0.75=0.029375s, q1=0.020000s. Compile/profiler proof remains deferred because final CPU gate was 100.0% with one active `csc.exe` process and one active `dotnet` process. Exact binary quality scan found 0 hits in owned hot paths and 5 remaining hits in out-of-domain autopilot/navigation code.
+
+## Decision 017 - Seaglide Metabolism Cadence Player Safety
+
+Problem: APEX re-read found `AdvanceMetabolismCadence` inside a `#if UNITY_EDITOR` block while runtime `FixedTick` called it unconditionally. The method also used a linear q cadence law independent from thrust cadence and reset `_metabolismAccumulator` to zero, dropping overshoot.
+Solution: Move `AdvanceMetabolismCadence` outside the editor-only block, pass both accumulated solver delta and fixed tick delta, reuse the shared smoothstep cadence resolver, and subtract cadence from the accumulator instead of clearing it.
+Rejected Alternatives: Keeping editor-only placement was rejected because player compilation would be structurally unsafe. Keeping a separate linear metabolism law was rejected because seaglide processing load would scale differently for force and metabolism with no mathematical justification. Running a build was rejected by the 100% CPU gate and active `dotnet` process.
+Scalability potential: Low q evaluates seaglide metabolism at the capped `fixedDelta*4` cadence with accumulated delta; Middle q interpolates smoothly; High/Ultra q runs at fixed/authored minimum cadence while preserving stable force/metabolism timing.
+Hardware Impact: Static q sweep unchanged from thrust cadence: q0=0.080000s, q0.25=0.070625s, q0.5=0.050000s, q0.75=0.029375s, q1=0.020000s. Modified hot-range zero-GC scan returned 0 reference-type `new`, 0 `string.Format`, 0 `.ToString()`, 0 LINQ, and 0 `foreach`. Compile/profiler proof remains deferred because the immediate pre-build CPU gate rose to 56.0%, with `csc.exe` count 0 and `dotnet` count 0. Exact owned quality scan returned 0 hits; out-of-domain autopilot/navigation has 6 unresolved constant-q hits.
+
+## Decision 018 - Seaglide Metabolism Accumulator Clamp
+
+Problem: The Loop 14 metabolism cadence patch still had a numeric edge. Because the cadence branch allows a `0.00001f` tolerance, `_metabolismAccumulator` could be slightly below `cadence` and still execute. Subtracting `cadence` directly could leave a negative accumulator.
+Solution: Clamp the residual with `math.clamp(_metabolismAccumulator - cadence, 0f, cadence)`. This keeps residual time non-negative and limits positive carry to one cadence window.
+Rejected Alternatives: Removing the tolerance was rejected because it can reintroduce float-boundary missed ticks. Resetting to zero was rejected because it drops real overshoot. Leaving negative residual was rejected because it creates hidden phase debt.
+Scalability potential: Low/Middle/High/Ultra cadence law is unchanged; all tiers now have bounded residual state after metabolism execution.
+Hardware Impact: One scalar clamp after an executed metabolism cadence event; hot-range scan still reports 0 reference-type `new`, 0 `string.Format`, 0 `.ToString()`, 0 LINQ, and 0 `foreach`. Edge proof: accumulator 0.079995, cadence 0.08 -> raw -0.000005, clamped 0; accumulator 0.2, cadence 0.02 -> raw 0.18, clamped 0.02. Compile/profiler proof remains deferred because final gate for this loop was CPU 40.2%, `csc.exe` count 0, `dotnet` count 1 PID 67700.
+
+## Decision 019 - Runtime Allocation Residual Scan Classification
+
+Problem: A broad residual scan over domain runtime trees found `new string` and `new char[]` in `BuoyancyDisplacementRuntime.cs`, plus many apparent LINQ hits. These needed classification before declaring Zero-GC compliance.
+Solution: Re-read the hit locations. `new char[160]` and `new string(...)` are inside `#if UNITY_EDITOR`/`OnDrawGizmos` at lines 1936-2179. LINQ hits were regex false positives on `math.select`, not `System.Linq` or `Enumerable`.
+Rejected Alternatives: Editing editor gizmo code was rejected because it is outside player hot path and would add churn without runtime benefit. Reporting all `math.select` as LINQ was rejected as false evidence.
+Scalability potential: Low/Middle/High/Ultra runtime behavior unchanged. The scan confirms current player hot paths remain allocation-free under the checked patterns.
+Hardware Impact: 0 runtime code change. Residual scan counts: `new List=0`, `new Dictionary=0`, `string.Format=0`, runtime `foreach=0`; editor/gizmo-only allocation hits are excluded from hot-path Zero-GC proof. Compile/profiler proof remains deferred because final gate was CPU 22.2%, `csc.exe` count 0, `dotnet` count 1 PID 356.

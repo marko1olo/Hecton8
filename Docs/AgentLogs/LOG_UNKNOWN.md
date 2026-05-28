@@ -1958,3 +1958,32 @@ Proof:
 Residuals:
 - Full solution build was not run because CPU guard reported `100%` and active `dotnet.exe` PID `41344`; compile-wall repair belongs to another agent.
 - No Unity Editor import, Play Mode, profiler, GCMonitor, player build, device run, or DataVault hot-swap runtime test was performed.
+
+## APEX Homeostasis Verification - 2026-05-28
+
+What was wrong:
+- The Homeostasis pass had source and normal report artifacts, but no separate APEX proof artifact with exact scan counts, hashes, line evidence, and build-throttle proof.
+
+What was done:
+- Added `Docs/Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HOMEOSTASIS_20260528.json`.
+- Added `Docs/Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HOMEOSTASIS_20260528.md`.
+- Added `Docs/Reports/APEX_FINAL_VERIFICATION_UNKNOWN_HOMEOSTASIS_20260528.json.sha256`.
+- Recorded exact changed-route lines, Zero-GC scan counts, DataVault BufferIDs, existing struct offsets, source/report hashes, CPU sample, active dotnet PID, and missing runtime proof.
+
+Cinematic cheats used:
+- None. Verification confirms no new physical simulation or visual system was introduced.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+
+Proof:
+- APEX JSON SHA-256: `A6484321E054D644F5EF220EC97F9ABD6679BF89524C5C6B93EEE1886768ADDD`.
+- Homeostasis source SHA-256: `0FB5A6524707D516F57B4B9EEB550BF4759E5BDEC1CD564107E6778692AEA4C3`.
+- Source report JSON SHA-256: `C28063C63403175C4679E073561C728A754E0F1E9CE5952F8DF86B5A626EA038`.
+- Forbidden-pattern scan counts over `334-345`, `992-1044`, `1047-1080`, `1187-1207`: all `0`.
+- CPU sample before build decision: `100%`; active `dotnet.exe` PID `62124`; build invocations by this verification: `0`.
+
+Residuals:
+- Status remains `PENDING VERIFICATION`.
+- `Docs/Tasks/POLISH.txt` does not exist.
+- No Unity Editor import, Play Mode, profiler, GCMonitor, player build, device run, DataVault hot-swap runtime test, or `Docs/AgentLogs/Dump_*.bin` artifact exists for this pass.

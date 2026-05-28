@@ -207,7 +207,7 @@ namespace Hecton8.World
             bool hasUnderwaterBounds = false;
             Bounds surfaceBounds = default;
             Bounds underwaterBounds = default;
-            Camera activeViewCamera = ResolveActiveViewCamera();
+            Camera activeViewCamera = RefreshActiveViewCameraCache();
             bool hasViewCamera = activeViewCamera != null;
             if (hasViewCamera)
                 GeometryUtility.CalculateFrustumPlanes(activeViewCamera, _viewFrustumPlanes);
@@ -456,9 +456,21 @@ namespace Hecton8.World
         private bool ScheduleChunkBuild(TileRuntimeState state, ChunkKey key, long tileKey, byte grassLodTier)
         {
             if (state == null ||
-                !TryGetActiveTileCache(state, out NativeArray<byte> sandMask, out NativeArray<byte> rockMask, out NativeArray<ushort> heightSamples, touchAccess: true) ||
+                !TryGetActiveTileCache(state, out NativeArray<byte> sandMask, out NativeArray<byte> rockMask, out NativeArray<ushort> heightSamples) ||
                 state.AlphamapResolution <= 0 ||
                 state.HeightmapResolution <= 1)
+            {
+                return false;
+            }
+
+            TouchTileCacheState(state);
+            if (!TryCopyChunkTileCacheForJob(
+                    sandMask,
+                    rockMask,
+                    heightSamples,
+                    out NativeArray<byte> sandMaskForJob,
+                    out NativeArray<byte> rockMaskForJob,
+                    out NativeArray<ushort> heightSamplesForJob))
             {
                 return false;
             }
@@ -466,10 +478,18 @@ namespace Hecton8.World
             if (_terrainHoleCount > 0 && _nativeMemory.TerrainHoleRecordsHandle.BufferID == 0u)
                 SyncTerrainHoleNativeCache();
             if (!TryCreateTerrainHoleJobSnapshot(out NativeArray<TerrainHoleRecord> terrainHoles))
+            {
+                H8Memory.Release(ref sandMaskForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref rockMaskForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref heightSamplesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
                 return false;
+            }
             int terrainHoleCountForJob = terrainHoles.IsCreated ? terrainHoles.Length : 0;
             if (!TryPrepareArtificialStructureJobSnapshot(out NativeArray<ArtificialStructureRecord> artificialStructures))
             {
+                H8Memory.Release(ref sandMaskForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref rockMaskForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref heightSamplesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
                 H8Memory.Release(ref terrainHoles, VegetationMemorySovereigntyConstants.OwnerSystemId);
                 return false;
             }
@@ -518,7 +538,7 @@ namespace Hecton8.World
                 threatEchoFlags = H8Memory.Allocate<byte>(
                     _ecosystemThreatGridCellCount,
                     VegetationMemorySovereigntyConstants.OwnerSystemId,
-                    Allocator.TempJob,
+                    Allocator.Persistent,
                     NativeArrayOptions.UninitializedMemory);
                 if (threatEchoFlags.IsCreated && threatEchoFlags.Length >= _ecosystemThreatGridCellCount)
                     NativeArray<byte>.Copy(echoFlags, threatEchoFlags, _ecosystemThreatGridCellCount);
@@ -538,9 +558,9 @@ namespace Hecton8.World
                 {
                     var grassJob = new GenerateAnchoredVegetationJob
                     {
-                        SandMask = sandMask,
-                        RockMask = rockMask,
-                        HeightSamples = heightSamples,
+                        SandMask = sandMaskForJob,
+                        RockMask = rockMaskForJob,
+                        HeightSamples = heightSamplesForJob,
                         TerrainHoles = terrainHoles,
                         ThreatEchoFlags = threatEchoFlags,
                         ArtificialStructures = artificialStructures,
@@ -623,9 +643,9 @@ namespace Hecton8.World
                 {
                     var kelpJob = new GenerateAnchoredVegetationJob
                     {
-                        SandMask = sandMask,
-                        RockMask = rockMask,
-                        HeightSamples = heightSamples,
+                        SandMask = sandMaskForJob,
+                        RockMask = rockMaskForJob,
+                        HeightSamples = heightSamplesForJob,
                         TerrainHoles = terrainHoles,
                         ThreatEchoFlags = threatEchoFlags,
                         ArtificialStructures = artificialStructures,
@@ -712,9 +732,9 @@ namespace Hecton8.World
                 {
                     var floatingJob = new GenerateFloatingVegetationJob
                     {
-                        SandMask = sandMask,
-                        RockMask = rockMask,
-                        HeightSamples = heightSamples,
+                        SandMask = sandMaskForJob,
+                        RockMask = rockMaskForJob,
+                        HeightSamples = heightSamplesForJob,
                         TerrainHoles = terrainHoles,
                         TerrainHoleCount = terrainHoleCountForJob,
                         Output = floatingRecords,
@@ -769,6 +789,9 @@ namespace Hecton8.World
                 {
                     Active = true,
                     JobState = jobState,
+                    SandMaskSnapshot = sandMaskForJob,
+                    RockMaskSnapshot = rockMaskForJob,
+                    HeightSamplesSnapshot = heightSamplesForJob,
                     GrassRecords = grassRecords,
                     FloatingRecords = floatingRecords,
                     KelpRecords = kelpRecords,
@@ -787,11 +810,70 @@ namespace Hecton8.World
                     ReleaseJobRecordArray(ref grassRecords);
                     ReleaseJobRecordArray(ref floatingRecords);
                     ReleaseJobRecordArray(ref kelpRecords);
+                    H8Memory.Release(ref sandMaskForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                    H8Memory.Release(ref rockMaskForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                    H8Memory.Release(ref heightSamplesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
                     H8Memory.Release(ref threatEchoFlags, VegetationMemorySovereigntyConstants.OwnerSystemId);
                     H8Memory.Release(ref terrainHoles, VegetationMemorySovereigntyConstants.OwnerSystemId);
                     H8Memory.Release(ref artificialStructures, VegetationMemorySovereigntyConstants.OwnerSystemId);
                 }
             }
+        }
+
+        private static bool TryCopyChunkTileCacheForJob(
+            NativeArray<byte> sandMask,
+            NativeArray<byte> rockMask,
+            NativeArray<ushort> heightSamples,
+            out NativeArray<byte> sandMaskForJob,
+            out NativeArray<byte> rockMaskForJob,
+            out NativeArray<ushort> heightSamplesForJob)
+        {
+            sandMaskForJob = default;
+            rockMaskForJob = default;
+            heightSamplesForJob = default;
+            if (!sandMask.IsCreated ||
+                !rockMask.IsCreated ||
+                !heightSamples.IsCreated ||
+                sandMask.Length <= 0 ||
+                rockMask.Length <= 0 ||
+                heightSamples.Length <= 0)
+            {
+                return false;
+            }
+
+            sandMaskForJob = H8Memory.Allocate<byte>(
+                sandMask.Length,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+            rockMaskForJob = H8Memory.Allocate<byte>(
+                rockMask.Length,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+            heightSamplesForJob = H8Memory.Allocate<ushort>(
+                heightSamples.Length,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
+                Allocator.Persistent,
+                NativeArrayOptions.UninitializedMemory);
+
+            if (!sandMaskForJob.IsCreated ||
+                sandMaskForJob.Length < sandMask.Length ||
+                !rockMaskForJob.IsCreated ||
+                rockMaskForJob.Length < rockMask.Length ||
+                !heightSamplesForJob.IsCreated ||
+                heightSamplesForJob.Length < heightSamples.Length)
+            {
+                H8Memory.Release(ref sandMaskForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref rockMaskForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref heightSamplesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                return false;
+            }
+
+            NativeArray<byte>.Copy(sandMask, sandMaskForJob, sandMask.Length);
+            NativeArray<byte>.Copy(rockMask, rockMaskForJob, rockMask.Length);
+            NativeArray<ushort>.Copy(heightSamples, heightSamplesForJob, heightSamples.Length);
+            return true;
         }
 
         private int FinalizeCompletedChunkBuilds()
@@ -843,7 +925,7 @@ namespace Hecton8.World
 
             try
             {
-                if (!IsJobStateCurrent(pending.JobState))
+                if (pending.Cancelled || !IsJobStateCurrent(pending.JobState))
                     return false;
 
                 ChunkKey key = pending.JobState.Key;

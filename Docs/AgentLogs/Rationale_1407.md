@@ -3,7 +3,7 @@
 Agent: 1407
 Role: UNIVERSAL_OPENXR_COMFORT_AND_TUNNELING_SHADER_INTEGRATOR
 Domain: Echelon 8 Presentation and UX / VR Somatic Comfort / Diegetic Terminals
-State: APEX_QUEST_ORDER_REPAIRED_REPORT_REGENERATED_BUILD_BLOCKED_BY_CPU
+State: APEX_MEMCPY_REPAIRED_STATIC_PROOF_COMPLETE_BUILD_TIMEOUT_UNKNOWN
 
 ## Initialization
 Problem: Universal VR comfort masking can desync when secondary cockpit or terminal render paths ignore the global brownout scalar.
@@ -173,13 +173,55 @@ Scalability potential: No runtime tier impact; keeps compile surface tighter acr
 Hardware Impact: No runtime cost; reduces C# dependency noise only.
 
 Problem: Final report hashes were invalid after the Quest repair and namespace cleanup.
-Solution: Regenerated `Docs/Reports/APEX_ZERO_GC_SCAN_1407.json`, `Docs/Reports/APEX_FINAL_VERIFICATION_1407.json`, and `Docs/Reports/UNIVERSAL_COMFORT_INTEGRATION_REPORT_1407.json`. Current hashes: APEX final `AC465BF33B378206155AD6A842547485C573EA43C4901A14E21197169D50A10A`; universal mirror same; zero-GC scan `A6B714E4C8825C0EED7D26BF6D13EDD22C2BAF0B98DD79B4A95539AE6ADA31EB`.
+Solution: Regenerated `Docs/Reports/APEX_ZERO_GC_SCAN_1407.json`, `Docs/Reports/APEX_FINAL_VERIFICATION_1407.json`, and `Docs/Reports/UNIVERSAL_COMFORT_INTEGRATION_REPORT_1407.json`. Current hashes after correcting the exact `LockBufferForWrite<BrownoutGlobalsDTO>` evidence line to 269 and refreshing prompt/build proof: APEX final `A9B6562B897AB81CD1C214108B957CA8391F3344EB2C6772EDB00B5D717D261A`; universal mirror same; zero-GC scan `A6B714E4C8825C0EED7D26BF6D13EDD22C2BAF0B98DD79B4A95539AE6ADA31EB`.
 Rejected Alternatives: Leaving old JSON in place. It falsely claimed Quest order was correct before the fresh repair.
 Scalability potential: Cold proof artifact only.
 Hardware Impact: No runtime cost.
 
 Problem: Legal compilation gate remained closed after final report regeneration.
-Solution: Final preflight artifact `Docs/AgentLogs/Build_1407_FinalPreflight.json` sampled CPU at 82 percent and found active `csc` PID 36844 plus active `dotnet` PIDs 32028 and 33780. `dotnet build` was not launched.
-Rejected Alternatives: Running `dotnet build` under CPU >50 percent or active compiler/process contention.
+Solution: Final preflight artifact `Docs/AgentLogs/Build_1407_FinalPreflight.json` sampled CPU at 47 percent but found active `dotnet` PID 34436 and `VBCSCompiler` PID 44300. `dotnet build` was not launched.
+Rejected Alternatives: Running `dotnet build` while active compiler/process contention exists.
 Scalability potential: Keeps host available for parallel agents.
 Hardware Impact: Avoided additional CPU contention.
+
+Problem: Token-only shader assertions were not sufficient after the stale Quest report incident; a token can exist in invalid context.
+Solution: Generated `Docs/Reports/APEX_DOMAIN_RECHECK_1407.json` with context checks for every patched shader. It verifies every `UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(x)` argument matches the actual fragment function parameter, all patched shaders have balanced braces/parentheses, all 18 patched shaders have exactly the continuous `_H8GlobalQualityWeight` dither form and no old fixed `lerp(0.56, 0.90)`, all renderer assets have one active brownout feature last with valid maps, the non-cyclic zero-GC JSON sidecar matches, and `HectonVRBrownoutFeature.cs` has 0 forbidden runtime tokens for DataVault/Zero-GC abuse.
+Rejected Alternatives: Declaring shader safety from substring presence alone. That missed the possibility of wrong macro argument or malformed HLSL.
+Scalability potential: Confirms the continuous visual fake route is syntactically coherent across weak, middle, high, and ultra presentation paths.
+Hardware Impact: Cold proof only; no runtime cost.
+
+Problem: Independent verifier found stale prompt hash fields in final and universal reports. The prompt file on disk and report hash disagreed, which invalidates the proof chain even though runtime code was unaffected.
+Solution: Re-extracted `<AGENT_PROMPT id="1407">` from `Docs/Tasks/CURRENT_BATCH.md` into `Docs/AgentLogs/Prompt_1407_EXTRACTED.md` using explicit UTF-8, then normalized end-of-line whitespace in the proof artifact to satisfy `git diff --check` without removing semantic prompt lines. Current prompt file hash is `887C8753CB26026DDF4EC2C0504A91FE85D25BB9E68C1DC1D329FB6B41E88434`; final and universal reports were regenerated with that hash. Domain recheck hash is `9CABE784AA0DF1BC73745587AF25F523E9B8340538BCDC8949413AECC79A17AE`.
+Rejected Alternatives: Updating only chat output, leaving trailing-whitespace failures in the proof artifact, preserving double-encoded prompt bytes, or keeping a cyclic proof where the domain report hashes the final report and final report hashes the domain report. The new domain recheck avoids that cycle by proving zero-GC report + source artifacts, while final report references the domain recheck hash.
+Scalability potential: Cold evidence artifact only.
+Hardware Impact: No runtime cost.
+
+Problem: A further APEX pass found a real bandwidth-discipline violation in the comfort GPU upload route: `UpdateBrownoutGlobals` used `mapped[0] = globals` after `GraphicsBuffer.LockBufferForWrite`. That preserved `finally` release but failed the project rule requiring `UnsafeUtility.MemCpy` for mapped GPU updates.
+Solution: Added the required `Unity.Collections.LowLevel.Unsafe` namespace, marked `UpdateBrownoutGlobals` as `unsafe`, and replaced the indexer assignment with `UnsafeUtility.MemCpy(NativeArrayUnsafeUtility.GetUnsafePtr(mapped), UnsafeUtility.AddressOf(ref globals), 64)`. Exact proof lines: unsafe using 6, unsafe method 241, lock 270, MemCpy 273, pointer 274, source address 275, finally 278, unlock 280. `Assets/_Project/Scripts/Hecton8.Core.asmdef` already has `allowUnsafeCode: true`.
+Rejected Alternatives: Leaving the indexer assignment, using `GraphicsBuffer.SetData`, or adding a DataVault route. The indexer violates the bandwidth mandate; `SetData` can stage through managed paths; DataVault would invent a second ownership route for a GPU-only constant block.
+Scalability potential: Low, Middle, High, and Ultra keep the same single 64-byte double-buffered constant upload and one final brownout pass. No binary quality branch, no duplicate pass, no extra per-device authority.
+Hardware Impact: Runtime allocation remains 0 by declaration-bounded hot-path scan. The repair reduces upload ambiguity, not frame cost; expected GPU/CPU cost is unchanged except for avoiding any hidden indexer copy path.
+
+Problem: The first regenerated zero-GC proof after the MemCpy repair used a method scanner that matched a call site before the `UpdateBrownoutGlobals` declaration. That made the report formally invalid even though the source fix was correct.
+Solution: Regenerated `Docs/Reports/APEX_ZERO_GC_SCAN_1407.json` with declaration-bounded method matching. Current `UpdateBrownoutGlobals` scan is lines 241-309 with 0 reference-type `new`, 0 `string.Format`, 0 `.ToString()`, 0 LINQ, 0 `foreach`, and raw value-type constructions only (`BrownoutGlobalsDTO`, two `Vector4`). Current hashes: zero-GC `83DCED15FB653D17BBFC0AA52842EF3E70F1B61C3FDBBE0808BD4B9F78A647F4`, domain `30366E43A7A453E6757B374D6A331BE872305DBE05A01F2F234EA8070F41D499`, final/universal `DA3EFBFF3511D5EF0E5251865D53743E4A74A533D8447CAA8A11AA9D1307733D`.
+Rejected Alternatives: Keeping the call-site scan because aggregate counts were still zero. Evidence with the wrong line range is not acceptable.
+Scalability potential: Cold proof artifact only; no runtime tier impact.
+Hardware Impact: No runtime cost.
+
+Problem: Final compilation remained legally blocked after all source/report repairs.
+Solution: Sampled CPU at 43 percent and found active `dotnet` PID 15320. Because active compiler/dotnet contention still exists, `dotnet build` was not invoked. Build gate artifact hash is `DB65A298D0F9A93F32F86ABCD0AA7DE66767BEA2F5D6CE698D21DF9A54CA845A`.
+Rejected Alternatives: Running `dotnet build` while another dotnet process is active. That violates the explicit resource throttling rule.
+Scalability potential: Host remains available to concurrent agents.
+Hardware Impact: Avoided additional CPU contention.
+
+Problem: A repeated APEX pass found the same stale `using UnityEngine.Experimental.Rendering;` had reappeared in `HectonVRBrownoutFeature.cs`, invalidating the current source SHA recorded in final JSON.
+Solution: Removed the import again and regenerated zero-GC, domain, final, and universal reports from current disk state. The source SHA is again `79791AC45FBFEDA985B3A9BB6EE0B20A333519F1D4E8EA691ADF3EC632FC4E76`; `experimentalRenderingUsingCount` is 0 in the regenerated proof. Latest report hashes: zero-GC `68F776C4C8936313FEBD3C816AC8398DDA49F146D3B07902F0E9A37F8CB21CEA`, domain `E6B9E798A194EFD73F761DB94243747052103728C840B8F54A1C017B0F2E40AD`, final/universal `B6C122A0F4E8D7FB58337103401DA0915BB6DD6D4334CCF18E72F2205D083740`.
+Rejected Alternatives: Trusting stale hashes or updating the report without fixing the source. The mismatch proves disk state was not stable.
+Scalability potential: No runtime tier impact; this is namespace/verification hygiene.
+Hardware Impact: No runtime cost.
+
+Problem: One delayed build-gate command exceeded the shell timeout. A `dotnet` process was observed during follow-up, but the script did not persist the exact gate CPU sample before invocation or a build exit code before the external timeout killed the command context.
+Solution: Did not launch a second build. Created forensic dump `Docs/AgentLogs/Dump_1407_BuildTimeout.txt` SHA-256 `BE6C250391D651A83EDC4931EF28036AD596215ECE4123D3A086BAE28C498BAE`. Updated final proof state to `BUILD_RESULT_UNKNOWN`, with the unaccounted exact pre-invocation CPU sample explicitly declared.
+Rejected Alternatives: Pretending the build succeeded, pretending it never started, or launching another build under uncertain process state. All three would be false or unsafe.
+Scalability potential: Host remains protected from repeated compiler load.
+Hardware Impact: The attempted build consumed host CPU; no further build was launched.

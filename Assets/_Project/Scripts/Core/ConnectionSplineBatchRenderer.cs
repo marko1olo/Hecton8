@@ -31,6 +31,16 @@ namespace Hecton8.Core
         private static readonly int s_LogisticsPathHighlightId = Shader.PropertyToID("_HectonLogisticsPathHighlight");
         private static Mesh s_staticCylinderMesh;
         private static IConnectionSplineBatchRendererService s_activeService;
+        private static bool s_pendingLogisticsPathHighlightActive;
+        private static bool s_logisticsPathHighlightDirty;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticPresentationState()
+        {
+            s_activeService = null;
+            s_pendingLogisticsPathHighlightActive = false;
+            s_logisticsPathHighlightDirty = false;
+        }
 
         private enum BatchKind : byte
         {
@@ -134,7 +144,11 @@ namespace Hecton8.Core
 
         public static void SetLogisticsPathHighlightActive(bool active)
         {
-            Shader.SetGlobalFloat(s_LogisticsPathHighlightId, active ? 1f : 0f);
+            if (s_logisticsPathHighlightDirty && s_pendingLogisticsPathHighlightActive == active)
+                return;
+
+            s_pendingLogisticsPathHighlightActive = active;
+            s_logisticsPathHighlightDirty = true;
         }
 
         public static void SubmitRelayLink(long linkId, Vector3 start, Vector3 end, bool hasPower, Color poweredColor, Color unpoweredColor)
@@ -354,15 +368,25 @@ namespace Hecton8.Core
 
         public void LateFrameTick()
         {
-            if (_lateFrameTickDormant && !HasRenderableBatchWork())
+            if (_lateFrameTickDormant && !s_logisticsPathHighlightDirty && !HasRenderableBatchWork())
                 return;
 
             _lateFrameTickDormant = false;
+
             for (int batchIndex = 0; batchIndex < _batches.Length; batchIndex++)
                 ProcessBatch(_batches[batchIndex]);
 
-            if (!HasRenderableBatchWork())
+            if (!s_logisticsPathHighlightDirty && !HasRenderableBatchWork())
                 _lateFrameTickDormant = true;
+        }
+
+        internal static void FlushVisualSyncShaderState()
+        {
+            if (!s_logisticsPathHighlightDirty)
+                return;
+
+            s_logisticsPathHighlightDirty = false;
+            Shader.SetGlobalFloat(s_LogisticsPathHighlightId, s_pendingLogisticsPathHighlightActive ? 1f : 0f);
         }
 
         private void OnDestroy()

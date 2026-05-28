@@ -229,6 +229,7 @@ namespace Hecton8.UI
         private bool _tmpTypewriterActive;
         private bool _subtitleRichTextPolicyInitialized;
         private bool _subtitleRichTextEnabled;
+        private bool _subtitleRightToLeftEnabled;
         private float _tmpTypewriterElapsed;
         private int _tmpTypewriterTargetCharacters;
         private bool _timedAudioLogActive;
@@ -476,7 +477,7 @@ namespace Hecton8.UI
                     lease.Span,
                     out int length,
                     formatArgs,
-                    ShouldStripBabelRichTextForCurrentTier());
+                    ShouldStripBabelRichText(textHash));
                 float decodeMs = ResolveStopwatchElapsedMilliseconds(decodeStart);
                 BabelSubtitleSyncRuntime.RecordDecode(textHash, length, !found, decodeMs);
                 length = lease.CopyToTmpBuffer(length);
@@ -814,12 +815,13 @@ namespace Hecton8.UI
             try
             {
                 Span<char> destination = lease.Span;
+                bool stripRichText = ShouldStripBabelRichText(command.TextHash);
                 long decodeStart = Stopwatch.GetTimestamp();
                 bool found = LocRegistry.TryWriteVisualSpanFromUtf8(
                     command.TextHash,
                     destination,
                     out int length,
-                    ShouldStripBabelRichTextForCurrentTier());
+                    stripRichText);
                 AppendDirectionalArrow(command._pad0, destination, ref length);
                 float decodeMs = ResolveStopwatchElapsedMilliseconds(decodeStart);
                 BabelSubtitleSyncRuntime.RecordDecode(command.TextHash, length, !found, decodeMs);
@@ -836,7 +838,7 @@ namespace Hecton8.UI
                     TextHash = command.TextHash,
                     TimeRemaining = command.Duration,
                     VisibleCharacters = 0,
-                    Flags = (ushort)((ShouldStripBabelRichTextForCurrentTier() ? 1u : 0u) | (command._pad0 & ushort.MaxValue))
+                    Flags = (ushort)((stripRichText ? 1u : 0u) | (command._pad0 & ushort.MaxValue))
                 };
                 return true;
             }
@@ -1149,12 +1151,9 @@ namespace Hecton8.UI
                 _tmpTypewriterActive = false;
         }
 
-        private static bool ShouldStripBabelRichTextForCurrentTier()
+        private static bool ShouldStripBabelRichText(uint textHash)
         {
-            float quality = HomeostasisBrain.GlobalQualityWeight;
-            quality = math.saturate(math.select(0f, quality, math.isfinite(quality)));
-            float richTextWeight = math.saturate((quality - 0.35f) * 2.5f);
-            return richTextWeight < 0.5f;
+            return BabelRichTextLodPolicy.ShouldStrip(textHash);
         }
 
         private void RefreshSubtitleTextLodPolicy()
@@ -1162,12 +1161,19 @@ namespace Hecton8.UI
             if (_subtitleText == null)
                 return;
 
-            bool enableRichText = !ShouldStripBabelRichTextForCurrentTier();
-            if (_subtitleRichTextPolicyInitialized && _subtitleRichTextEnabled == enableRichText)
+            bool enableRichText = BabelRichTextLodPolicy.ShouldEnableTmpRichTextParsing();
+            bool enableRightToLeft = LocalizationManager.IsRightToLeftLanguage(LocRegistry.ActiveLanguage);
+            if (_subtitleRichTextPolicyInitialized &&
+                _subtitleRichTextEnabled == enableRichText &&
+                _subtitleRightToLeftEnabled == enableRightToLeft)
+            {
                 return;
+            }
 
             _subtitleText.richText = enableRichText;
+            _subtitleText.isRightToLeftText = enableRightToLeft;
             _subtitleRichTextEnabled = enableRichText;
+            _subtitleRightToLeftEnabled = enableRightToLeft;
             _subtitleRichTextPolicyInitialized = true;
         }
 

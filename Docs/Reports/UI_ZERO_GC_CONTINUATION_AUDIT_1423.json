@@ -1,0 +1,639 @@
+﻿{
+    "agent_id":  "1423",
+    "role":  "ZERO_GC_SUBTITLES_AND_BABEL_LOCALIZATION_COMPILER",
+    "generated_local":  "2026-05-28T06:25:49.2350370+04:00",
+    "prompt_extraction":  {
+                              "path":  "Docs/AgentLogs/PromptExtract_1423_CONTINUATION2.md",
+                              "sha256":  "F55028A6C93B0B2A2E7102271D88D46C0C957C9FC2F235B2B8050593FD35D4B9",
+                              "task_count":  20
+                          },
+    "scope":  {
+                  "domain":  "ECHELON 8 PRESENTATION \u0026 UX / Zero-GC Subtitles (Babel), VWS, UI localization sinks",
+                  "files_changed_or_removed":  [
+                                                   "Assets/_Project/Scripts/LocRegistry.cs",
+                                                   "Assets/_Project/Scripts/LocalizedWorldSign.cs",
+                                                   "Assets/_Project/Scripts/RTLProcessor.cs",
+                                                   "Assets/_Project/Scripts/RTLProcessor.cs.meta",
+                                                   "Assets/_Project/Scripts/UI/BabelRichTextLodPolicy.cs",
+                                                   "Assets/_Project/Scripts/UI/BabelRichTextLodPolicy.cs.meta",
+                                                   "Assets/_Project/Scripts/UI/TmpTextNoAlloc.cs",
+                                                   "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+                                                   "Assets/_Project/Scripts/UI/LabelSwapScheduler.cs",
+                                                   "Assets/_Project/Scripts/UI/PDADataArchaeologyDecryptLabel.cs"
+                                               ]
+              },
+    "source_file_scan":  {
+                             "scan_type":  "case_sensitive_regex_static_proxy",
+                             "total_forbidden_hits":  0,
+                             "forbidden_patterns":  {
+                                                        "string_format":  "string\\.Format",
+                                                        "to_string":  "\\.ToString\\(",
+                                                        "foreach_loop":  "\\bforeach\\s*\\(",
+                                                        "using_linq":  "using\\s+System\\.Linq\\s*;",
+                                                        "linq_select":  "\\.Select\\s*\\(",
+                                                        "linq_where":  "\\.Where\\s*\\(",
+                                                        "linq_toarray":  "\\.ToArray\\s*\\(",
+                                                        "linq_tolist":  "\\.ToList\\s*\\(",
+                                                        "linq_aggregate":  "\\.Aggregate\\s*\\(",
+                                                        "tmp_text_assignment":  "\\.text\\s*=(?!=)",
+                                                        "interpolation":  "\\$\\\"",
+                                                        "string_builder":  "StringBuilder",
+                                                        "new_string":  "new\\s+string\\s*\\(",
+                                                        "array_resize":  "Array\\.Resize\\s*\\(",
+                                                        "scene_search":  "FindObject(s)?OfType|GetComponentsInChildren",
+                                                        "set_text":  "SetText\\("
+                                                    },
+                             "files":  [
+                                           {
+                                               "path":  "Assets/_Project/Scripts/Core/ZeroGCFormatter.cs",
+                                               "exists":  true,
+                                               "sha256":  "DF0E50E0EDEA48D8CE2FADBEE1EB2842C1E27C78D78580D68EDBC52DC8A16CB0",
+                                               "counts":  {
+                                                              "string_format":  0,
+                                                              "to_string":  0,
+                                                              "foreach_loop":  0,
+                                                              "using_linq":  0,
+                                                              "linq_select":  0,
+                                                              "linq_where":  0,
+                                                              "linq_toarray":  0,
+                                                              "linq_tolist":  0,
+                                                              "linq_aggregate":  0,
+                                                              "tmp_text_assignment":  0,
+                                                              "interpolation":  0,
+                                                              "string_builder":  0,
+                                                              "new_string":  0,
+                                                              "array_resize":  0,
+                                                              "scene_search":  0,
+                                                              "set_text":  0
+                                                          }
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Scripts/LocNumericBuffer.cs",
+                                               "exists":  true,
+                                               "sha256":  "E29798E924AED1DAEB42912860B43547341F465D4CC2288FA78552BEED9134A4",
+                                               "counts":  {
+                                                              "string_format":  0,
+                                                              "to_string":  0,
+                                                              "foreach_loop":  0,
+                                                              "using_linq":  0,
+                                                              "linq_select":  0,
+                                                              "linq_where":  0,
+                                                              "linq_toarray":  0,
+                                                              "linq_tolist":  0,
+                                                              "linq_aggregate":  0,
+                                                              "tmp_text_assignment":  0,
+                                                              "interpolation":  0,
+                                                              "string_builder":  0,
+                                                              "new_string":  0,
+                                                              "array_resize":  0,
+                                                              "scene_search":  0,
+                                                              "set_text":  0
+                                                          }
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Scripts/Core/Contracts/BabelLocalizationContract.cs",
+                                               "exists":  true,
+                                               "sha256":  "08124D34399C8F54138C9F181114ABA9FF74B7FF9C5CF100E0E40BA7C2449E24",
+                                               "counts":  {
+                                                              "string_format":  0,
+                                                              "to_string":  0,
+                                                              "foreach_loop":  0,
+                                                              "using_linq":  0,
+                                                              "linq_select":  0,
+                                                              "linq_where":  0,
+                                                              "linq_toarray":  0,
+                                                              "linq_tolist":  0,
+                                                              "linq_aggregate":  0,
+                                                              "tmp_text_assignment":  0,
+                                                              "interpolation":  0,
+                                                              "string_builder":  0,
+                                                              "new_string":  0,
+                                                              "array_resize":  0,
+                                                              "scene_search":  0,
+                                                              "set_text":  0
+                                                          }
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Scripts/LocRegistry.cs",
+                                               "exists":  true,
+                                               "sha256":  "6057EF78ACBDCA9E27461C65FB5CD507918D29E2BD2E0DC3A8104BD48C9FD6F1",
+                                               "counts":  {
+                                                              "string_format":  0,
+                                                              "to_string":  0,
+                                                              "foreach_loop":  0,
+                                                              "using_linq":  0,
+                                                              "linq_select":  0,
+                                                              "linq_where":  0,
+                                                              "linq_toarray":  0,
+                                                              "linq_tolist":  0,
+                                                              "linq_aggregate":  0,
+                                                              "tmp_text_assignment":  0,
+                                                              "interpolation":  0,
+                                                              "string_builder":  0,
+                                                              "new_string":  0,
+                                                              "array_resize":  0,
+                                                              "scene_search":  0,
+                                                              "set_text":  0
+                                                          }
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Scripts/LocalizationManager.cs",
+                                               "exists":  true,
+                                               "sha256":  "9BD64EB488B606B4E759DC8455F6FC200390E47558A7671D2C4E8C8DA2A50CFB",
+                                               "counts":  {
+                                                              "string_format":  0,
+                                                              "to_string":  0,
+                                                              "foreach_loop":  0,
+                                                              "using_linq":  0,
+                                                              "linq_select":  0,
+                                                              "linq_where":  0,
+                                                              "linq_toarray":  0,
+                                                              "linq_tolist":  0,
+                                                              "linq_aggregate":  0,
+                                                              "tmp_text_assignment":  0,
+                                                              "interpolation":  0,
+                                                              "string_builder":  0,
+                                                              "new_string":  0,
+                                                              "array_resize":  0,
+                                                              "scene_search":  0,
+                                                              "set_text":  0
+                                                          }
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Scripts/LocalizedWorldSign.cs",
+                                               "exists":  true,
+                                               "sha256":  "8EB4A27F1D115E956A3B96945DFB2AD1EF4263222EC8611862E728EC0989B504",
+                                               "counts":  {
+                                                              "string_format":  0,
+                                                              "to_string":  0,
+                                                              "foreach_loop":  0,
+                                                              "using_linq":  0,
+                                                              "linq_select":  0,
+                                                              "linq_where":  0,
+                                                              "linq_toarray":  0,
+                                                              "linq_tolist":  0,
+                                                              "linq_aggregate":  0,
+                                                              "tmp_text_assignment":  0,
+                                                              "interpolation":  0,
+                                                              "string_builder":  0,
+                                                              "new_string":  0,
+                                                              "array_resize":  0,
+                                                              "scene_search":  0,
+                                                              "set_text":  0
+                                                          }
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Scripts/UI/BabelRichTextLodPolicy.cs",
+                                               "exists":  true,
+                                               "sha256":  "6EB320617B68509CC035E77437DB41A1E9DDF656C5BC4E4F552BF4FE0A5D62DC",
+                                               "counts":  {
+                                                              "string_format":  0,
+                                                              "to_string":  0,
+                                                              "foreach_loop":  0,
+                                                              "using_linq":  0,
+                                                              "linq_select":  0,
+                                                              "linq_where":  0,
+                                                              "linq_toarray":  0,
+                                                              "linq_tolist":  0,
+                                                              "linq_aggregate":  0,
+                                                              "tmp_text_assignment":  0,
+                                                              "interpolation":  0,
+                                                              "string_builder":  0,
+                                                              "new_string":  0,
+                                                              "array_resize":  0,
+                                                              "scene_search":  0,
+                                                              "set_text":  0
+                                                          }
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Scripts/UI/BabelRichTextLodPolicy.cs.meta",
+                                               "exists":  true,
+                                               "sha256":  "39E27FD7CCA31FCB7C8E2AA3061A8E0E5406871314EF4A5990E1F609B616D4B6",
+                                               "counts":  {
+                                                              "string_format":  0,
+                                                              "to_string":  0,
+                                                              "foreach_loop":  0,
+                                                              "using_linq":  0,
+                                                              "linq_select":  0,
+                                                              "linq_where":  0,
+                                                              "linq_toarray":  0,
+                                                              "linq_tolist":  0,
+                                                              "linq_aggregate":  0,
+                                                              "tmp_text_assignment":  0,
+                                                              "interpolation":  0,
+                                                              "string_builder":  0,
+                                                              "new_string":  0,
+                                                              "array_resize":  0,
+                                                              "scene_search":  0,
+                                                              "set_text":  0
+                                                          }
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Scripts/UI/TmpTextNoAlloc.cs",
+                                               "exists":  true,
+                                               "sha256":  "C3BCEAB264B6C0C1DB6E58BBE7793A68B13FC279F2D0EE406996AC1A2BD75B11",
+                                               "counts":  {
+                                                              "string_format":  0,
+                                                              "to_string":  0,
+                                                              "foreach_loop":  0,
+                                                              "using_linq":  0,
+                                                              "linq_select":  0,
+                                                              "linq_where":  0,
+                                                              "linq_toarray":  0,
+                                                              "linq_tolist":  0,
+                                                              "linq_aggregate":  0,
+                                                              "tmp_text_assignment":  0,
+                                                              "interpolation":  0,
+                                                              "string_builder":  0,
+                                                              "new_string":  0,
+                                                              "array_resize":  0,
+                                                              "scene_search":  0,
+                                                              "set_text":  0
+                                                          }
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+                                               "exists":  true,
+                                               "sha256":  "084243DAC5C5A74C3945FEA0F2F290AE13CDB544B6F228CC7F0653E998E4B71B",
+                                               "counts":  {
+                                                              "string_format":  0,
+                                                              "to_string":  0,
+                                                              "foreach_loop":  0,
+                                                              "using_linq":  0,
+                                                              "linq_select":  0,
+                                                              "linq_where":  0,
+                                                              "linq_toarray":  0,
+                                                              "linq_tolist":  0,
+                                                              "linq_aggregate":  0,
+                                                              "tmp_text_assignment":  0,
+                                                              "interpolation":  0,
+                                                              "string_builder":  0,
+                                                              "new_string":  0,
+                                                              "array_resize":  0,
+                                                              "scene_search":  0,
+                                                              "set_text":  0
+                                                          }
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Scripts/UI/LabelSwapScheduler.cs",
+                                               "exists":  true,
+                                               "sha256":  "4BC0BCD0349B33793A31314180F2102096A7B1C8BCEFDC38C82865E37D2F3390",
+                                               "counts":  {
+                                                              "string_format":  0,
+                                                              "to_string":  0,
+                                                              "foreach_loop":  0,
+                                                              "using_linq":  0,
+                                                              "linq_select":  0,
+                                                              "linq_where":  0,
+                                                              "linq_toarray":  0,
+                                                              "linq_tolist":  0,
+                                                              "linq_aggregate":  0,
+                                                              "tmp_text_assignment":  0,
+                                                              "interpolation":  0,
+                                                              "string_builder":  0,
+                                                              "new_string":  0,
+                                                              "array_resize":  0,
+                                                              "scene_search":  0,
+                                                              "set_text":  0
+                                                          }
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Scripts/UI/PDADataArchaeologyDecryptLabel.cs",
+                                               "exists":  true,
+                                               "sha256":  "5A52CF1A61EB475ADA1E26F6E1FA7B17878FE41AB5BE9D1D44A6FEED94264785",
+                                               "counts":  {
+                                                              "string_format":  0,
+                                                              "to_string":  0,
+                                                              "foreach_loop":  0,
+                                                              "using_linq":  0,
+                                                              "linq_select":  0,
+                                                              "linq_where":  0,
+                                                              "linq_toarray":  0,
+                                                              "linq_tolist":  0,
+                                                              "linq_aggregate":  0,
+                                                              "tmp_text_assignment":  0,
+                                                              "interpolation":  0,
+                                                              "string_builder":  0,
+                                                              "new_string":  0,
+                                                              "array_resize":  0,
+                                                              "scene_search":  0,
+                                                              "set_text":  0
+                                                          }
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+                                               "exists":  true,
+                                               "sha256":  "CE492BB53D0A04FA8AA90D99678FCE260D2DDD68E3A7F9292EAA84CB93FFE5F3",
+                                               "counts":  {
+                                                              "string_format":  0,
+                                                              "to_string":  0,
+                                                              "foreach_loop":  0,
+                                                              "using_linq":  0,
+                                                              "linq_select":  0,
+                                                              "linq_where":  0,
+                                                              "linq_toarray":  0,
+                                                              "linq_tolist":  0,
+                                                              "linq_aggregate":  0,
+                                                              "tmp_text_assignment":  0,
+                                                              "interpolation":  0,
+                                                              "string_builder":  0,
+                                                              "new_string":  0,
+                                                              "array_resize":  0,
+                                                              "scene_search":  0,
+                                                              "set_text":  0
+                                                          }
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+                                               "exists":  true,
+                                               "sha256":  "85EF4850D6FA0D4764FD928866A4AED2F774664DF2ACCF40AD5E1ADB9F2BBF16",
+                                               "counts":  {
+                                                              "string_format":  0,
+                                                              "to_string":  0,
+                                                              "foreach_loop":  0,
+                                                              "using_linq":  0,
+                                                              "linq_select":  0,
+                                                              "linq_where":  0,
+                                                              "linq_toarray":  0,
+                                                              "linq_tolist":  0,
+                                                              "linq_aggregate":  0,
+                                                              "tmp_text_assignment":  0,
+                                                              "interpolation":  0,
+                                                              "string_builder":  0,
+                                                              "new_string":  0,
+                                                              "array_resize":  0,
+                                                              "scene_search":  0,
+                                                              "set_text":  0
+                                                          }
+                                           }
+                                       ]
+                         },
+    "hot_range_scan":  {
+                           "verdict":  "PASS_STATIC_PROXY_REFERENCE_TYPE_NEW_ZERO_IN_REVIEWED_HOT_RANGES",
+                           "ranges":  [
+                                          {
+                                              "file":  "Assets/_Project/Scripts/UI/BabelRichTextLodPolicy.cs",
+                                              "name":  "ShouldStrip",
+                                              "line_range":  "14-18",
+                                              "counts":  {
+                                                             "string_format":  0,
+                                                             "to_string":  0,
+                                                             "foreach_loop":  0,
+                                                             "using_linq":  0,
+                                                             "linq_calls":  0,
+                                                             "tmp_text_assignment":  0,
+                                                             "interpolation":  0,
+                                                             "string_builder":  0,
+                                                             "new_any":  0
+                                                         },
+                                              "reference_type_new_suspects":  0,
+                                              "value_type_new_classified":  ""
+                                          },
+                                          {
+                                              "file":  "Assets/_Project/Scripts/UI/BabelRichTextLodPolicy.cs",
+                                              "name":  "ResolveStableThreshold01",
+                                              "line_range":  "34-38",
+                                              "counts":  {
+                                                             "string_format":  0,
+                                                             "to_string":  0,
+                                                             "foreach_loop":  0,
+                                                             "using_linq":  0,
+                                                             "linq_calls":  0,
+                                                             "tmp_text_assignment":  0,
+                                                             "interpolation":  0,
+                                                             "string_builder":  0,
+                                                             "new_any":  1
+                                                         },
+                                              "reference_type_new_suspects":  0,
+                                              "value_type_new_classified":  "uint2"
+                                          },
+                                          {
+                                              "file":  "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+                                              "name":  "ShowSubtitleCommand_decode_block",
+                                              "line_range":  "815-842",
+                                              "counts":  {
+                                                             "string_format":  0,
+                                                             "to_string":  0,
+                                                             "foreach_loop":  0,
+                                                             "using_linq":  0,
+                                                             "linq_calls":  0,
+                                                             "tmp_text_assignment":  0,
+                                                             "interpolation":  0,
+                                                             "string_builder":  0,
+                                                             "new_any":  1
+                                                         },
+                                              "reference_type_new_suspects":  0,
+                                              "value_type_new_classified":  "SubtitleStateDTO"
+                                          },
+                                          {
+                                              "file":  "Assets/_Project/Scripts/UI/LabelSwapScheduler.cs",
+                                              "name":  "ApplyEntry_localized_block",
+                                              "line_range":  "126-159",
+                                              "counts":  {
+                                                             "string_format":  0,
+                                                             "to_string":  0,
+                                                             "foreach_loop":  0,
+                                                             "using_linq":  0,
+                                                             "linq_calls":  0,
+                                                             "tmp_text_assignment":  0,
+                                                             "interpolation":  0,
+                                                             "string_builder":  0,
+                                                             "new_any":  0
+                                                         },
+                                              "reference_type_new_suspects":  0,
+                                              "value_type_new_classified":  ""
+                                          },
+                                          {
+                                              "file":  "Assets/_Project/Scripts/UI/PDADataArchaeologyDecryptLabel.cs",
+                                              "name":  "RenderHash",
+                                              "line_range":  "107-135",
+                                              "counts":  {
+                                                             "string_format":  0,
+                                                             "to_string":  0,
+                                                             "foreach_loop":  0,
+                                                             "using_linq":  0,
+                                                             "linq_calls":  0,
+                                                             "tmp_text_assignment":  0,
+                                                             "interpolation":  0,
+                                                             "string_builder":  0,
+                                                             "new_any":  0
+                                                         },
+                                              "reference_type_new_suspects":  0,
+                                              "value_type_new_classified":  ""
+                                          },
+                                          {
+                                              "file":  "Assets/_Project/Scripts/UI/PDADataArchaeologyDecryptLabel.cs",
+                                              "name":  "Scramble",
+                                              "line_range":  "138-154",
+                                              "counts":  {
+                                                             "string_format":  0,
+                                                             "to_string":  0,
+                                                             "foreach_loop":  0,
+                                                             "using_linq":  0,
+                                                             "linq_calls":  0,
+                                                             "tmp_text_assignment":  0,
+                                                             "interpolation":  0,
+                                                             "string_builder":  0,
+                                                             "new_any":  0
+                                                         },
+                                              "reference_type_new_suspects":  0,
+                                              "value_type_new_classified":  ""
+                                          },
+                                          {
+                                              "file":  "Assets/_Project/Scripts/LocalizedWorldSign.cs",
+                                              "name":  "RefreshLocalizedText",
+                                              "line_range":  "110-129",
+                                              "counts":  {
+                                                             "string_format":  0,
+                                                             "to_string":  0,
+                                                             "foreach_loop":  0,
+                                                             "using_linq":  0,
+                                                             "linq_calls":  0,
+                                                             "tmp_text_assignment":  0,
+                                                             "interpolation":  0,
+                                                             "string_builder":  0,
+                                                             "new_any":  0
+                                                         },
+                                              "reference_type_new_suspects":  0,
+                                              "value_type_new_classified":  ""
+                                          },
+                                          {
+                                              "file":  "Assets/_Project/Scripts/LocalizedWorldSign.cs",
+                                              "name":  "PrepareDisplayBuffer",
+                                              "line_range":  "163-191",
+                                              "counts":  {
+                                                             "string_format":  0,
+                                                             "to_string":  0,
+                                                             "foreach_loop":  0,
+                                                             "using_linq":  0,
+                                                             "linq_calls":  0,
+                                                             "tmp_text_assignment":  0,
+                                                             "interpolation":  0,
+                                                             "string_builder":  0,
+                                                             "new_any":  0
+                                                         },
+                                              "reference_type_new_suspects":  0,
+                                              "value_type_new_classified":  ""
+                                          },
+                                          {
+                                              "file":  "Assets/_Project/Scripts/LocRegistry.cs",
+                                              "name":  "ResolveVisual_TryGetVisualBuffer",
+                                              "line_range":  "823-870",
+                                              "counts":  {
+                                                             "string_format":  0,
+                                                             "to_string":  0,
+                                                             "foreach_loop":  0,
+                                                             "using_linq":  0,
+                                                             "linq_calls":  0,
+                                                             "tmp_text_assignment":  0,
+                                                             "interpolation":  0,
+                                                             "string_builder":  0,
+                                                             "new_any":  0
+                                                         },
+                                              "reference_type_new_suspects":  0,
+                                              "value_type_new_classified":  ""
+                                          },
+                                          {
+                                              "file":  "Assets/_Project/Scripts/LocRegistry.cs",
+                                              "name":  "DecodeUtf8VisualSpan_tail",
+                                              "line_range":  "1156-1284",
+                                              "counts":  {
+                                                             "string_format":  0,
+                                                             "to_string":  0,
+                                                             "foreach_loop":  0,
+                                                             "using_linq":  0,
+                                                             "linq_calls":  0,
+                                                             "tmp_text_assignment":  0,
+                                                             "interpolation":  0,
+                                                             "string_builder":  0,
+                                                             "new_any":  0
+                                                         },
+                                              "reference_type_new_suspects":  0,
+                                              "value_type_new_classified":  ""
+                                          }
+                                      ],
+                           "value_type_new_evidence":  [
+                                                           "Unity.Mathematics.uint2 is an unmanaged value type; math.hash(new uint2(...)) does not allocate managed heap.",
+                                                           "SubtitleStateDTO is declared as public struct in Assets/_Project/Scripts/LocRegistry.cs:305."
+                                                       ]
+                       },
+    "rtl_and_bidi_correction":  {
+                                    "problem":  "Manual RTL reversal violated Babel mandate and corrupts BiDi/shaping. TextMeshPro must own RTL visual order via isRightToLeftText.",
+                                    "removed_files":  [
+                                                          {
+                                                              "path":  "Assets/_Project/Scripts/RTLProcessor.cs",
+                                                              "exists":  false
+                                                          },
+                                                          {
+                                                              "path":  "Assets/_Project/Scripts/RTLProcessor.cs.meta",
+                                                              "exists":  false
+                                                          }
+                                                      ],
+                                    "rtl_reversal_scan_hits":  0,
+                                    "quality_binary_scan_hits":  0,
+                                    "try_get_visual_buffer_consumers":  [
+                                                                            "Assets\\_Project\\Scripts\\LocRegistry.cs:862:public static bool TryGetVisualBuffer(int keyHash, out char[] buffer, out int length)",
+                                                                            "Assets\\_Project\\Scripts\\UI\\PDADataArchaeologyDecryptLabel.cs:113:if (!LocRegistry.TryGetVisualBuffer(hash, out char[] source, out int length))"
+                                                                        ],
+                                    "fixed_sinks":  [
+                                                        "Assets/_Project/Scripts/UI/SubtitleManager.cs:1173-1174 sets richText and isRightToLeftText.",
+                                                        "Assets/_Project/Scripts/UI/LabelSwapScheduler.cs:128 sets isRightToLeftText before SetCharArray.",
+                                                        "Assets/_Project/Scripts/UI/TmpTextNoAlloc.cs:86-88 sets richText, RTL, SetCharArray.",
+                                                        "Assets/_Project/Scripts/LocalizedWorldSign.cs:125-127 sets RTL and no longer reverses chars.",
+                                                        "Assets/_Project/Scripts/UI/PDADataArchaeologyDecryptLabel.cs:121-132 releases lease in finally and sets RTL before SetCharArray."
+                                                    ]
+                                },
+    "continuous_scalability":  {
+                                   "problem":  "Previous subtitle/label rich-text retention used a binary threshold derived from GlobalQualityWeight.",
+                                   "solution":  "BabelRichTextLodPolicy computes retention = saturate(lerp(0.16, 1.0, smoothstep(GlobalQualityWeight))) and compares a stable per-text 16-bit hash threshold to retention.",
+                                   "low":  "At GlobalQualityWeight 0, about 16 percent of localized rich styling is retained by stable text hash; all labels remain legible and TMP parsing stays enabled.",
+                                   "middle":  "Between 0 and 1, retention increases continuously; workload scales by aggregate retained style density rather than binary device class.",
+                                   "high":  "At GlobalQualityWeight 1, retention reaches 100 percent; saved budget can be spent on richer presentation without changing DTO/text ownership.",
+                                   "ultra":  "No gameplay truth, locale identity, or subtitle DTO layout changes with quality; only presentation styling density changes.",
+                                   "binary_switch_scan_hits":  0
+                               },
+    "cursor_and_truncation_proof":  {
+                                        "decode_utf8_visual_span":  "For every decoded scalar, writes occur only when charCursor \u003c maxGlyphs for BMP or charCursor + 1 \u003c maxGlyphs for surrogate pairs. length is assigned from charCursor, and AppendEllipsis receives maxGlyphs, so cursor cannot exceed destination.Length.",
+                                        "pda_decrypt_label":  "writeLength = min(length, sourceCapacity, CharBufferPool.SlotCapacity). Both source and destination spans are sliced to writeLength; Scramble loops i \u003c source.Length. SetCharArray uses the same writeLength. Lease release is in finally.",
+                                        "localized_world_sign":  "displayLength is clamped to sourceBuffer.Length before copy. EnsureBuffer only runs when persistent sign buffer capacity is insufficient; no manual RTL copy is performed."
+                                    },
+    "data_sovereignty":  {
+                             "migrated_new_fields_this_continuation":  false,
+                             "existing_buffer_ids_secured":  [
+                                                                 {
+                                                                     "name":  "SubtitleCommandBufferId",
+                                                                     "buffer_id":  15070550
+                                                                 },
+                                                                 {
+                                                                     "name":  "SubtitleStateBufferId",
+                                                                     "buffer_id":  15070551
+                                                                 },
+                                                                 {
+                                                                     "name":  "UIOptimizationTelemetryBufferId",
+                                                                     "buffer_id":  15070552
+                                                                 }
+                                                             ],
+                             "write_lock_checks":  [
+                                                       "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:668 TryAcquireWriteLock for UIOptimizationTelemetryBufferId"
+                                                   ],
+                             "finally_releases":  [
+                                                      "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:509-511",
+                                                      "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:1104-1106"
+                                                  ],
+                             "struct_layout":  "UIOptimizationTelemetryEntry explicit layout, 64 bytes, validated by static proof from prior APEX report."
+                         },
+    "compilation_throttle":  {
+                                 "cpu_load_percent_before_final_build_decision":  65,
+                                 "csc_process_count":  0,
+                                 "dotnet_build_related_process_count":  1,
+                                 "dotnet_build_related_process":  "PID=66444; CMD=\"dotnet\" build \"AmplifyImpostors.Editor.csproj\" --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false",
+                                 "build_launched":  false,
+                                 "reason":  "Compilation Resource Throttling forbids launching a build: CPU sampled at 65.00% and another dotnet build-related process is active. Previous single project build remains blocked by out-of-domain XRPass errors."
+                             },
+    "verification_status":  {
+                                "static_scan":  "PASS",
+                                "build":  "NOT_RERUN_DUE_CPU_65_PERCENT_ACTIVE_DOTNET_BUILD_AND_KNOWN_XRPASS_BLOCKER",
+                                "unity_runtime_profiler_gc":  "ABSENT",
+                                "status":  "PENDING_VERIFICATION_UNTIL_PROJECT_BUILD_AND_RUNTIME_GC_CAPTURE_PASS"
+                            }
+}

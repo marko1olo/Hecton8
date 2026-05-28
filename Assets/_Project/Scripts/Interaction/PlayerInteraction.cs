@@ -56,7 +56,7 @@ namespace Hecton8.Interaction
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Player/Player Interaction")]
-    public sealed class PlayerInteraction : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class PlayerInteraction : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private static int s_x001PlayerInteractionSignalPushDropCount;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
@@ -127,6 +127,11 @@ namespace Hecton8.Interaction
         private Ray           _ray;
         private static readonly int _DefaultInteractableLayerMask = HectonLayerMasks.InteractableLayerMask;
         private static string _activeInteractKey = "E";
+        private AudioClip _pendingStaticAudio0;
+        private AudioClip _pendingStaticAudio1;
+        private float _pendingStaticAudioVolume0;
+        private float _pendingStaticAudioVolume1;
+        private int _pendingStaticAudioCount;
 
         /// <summary>
         /// Tracks whether this component successfully registered
@@ -134,6 +139,7 @@ namespace Hecton8.Interaction
         /// Start both succeeding) and orphan unregister.
         /// </summary>
         private bool          _registeredToTickManager;
+        private bool          _registeredToLateFrameTick;
         private bool          _hotSwapListenerRegistered;
         private uint          _lastPlayerInputSignalSequence;
 
@@ -178,6 +184,7 @@ namespace Hecton8.Interaction
             _cameraTransform = playerCamera.transform;
             _targetProbeTimer = 0f;
             _registeredToTickManager = false;
+            _registeredToLateFrameTick = false;
             _hotSwapListenerRegistered = false;
             TryGetComponent(out _physicalInteractionHandler);
             RefreshActiveInteractKeyCache();
@@ -259,7 +266,9 @@ namespace Hecton8.Interaction
                 _registeredToTickManager = false;
             }
 
+            TryUnregisterLateFrameTickable();
             TryUnregisterHotSwapListener();
+            ClearQueuedStaticAudio();
             _audioService = null;
             _playerInventoryService = null;
 
@@ -294,8 +303,13 @@ namespace Hecton8.Interaction
 
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _registeredToTickManager = false;
+                    _registeredToLateFrameTick = false;
                     if (currentService != null && isActiveAndEnabled)
+                    {
                         _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+                        if (_pendingStaticAudioCount > 0)
+                            TryRegisterLateFrameTickable();
+                    }
                     return;
             }
         }
@@ -376,6 +390,83 @@ namespace Hecton8.Interaction
             _playerInventoryService = GlobalRegistry.PlayerInventory;
         }
 
+        private void QueueStaticAudio(AudioClip clip, float volume)
+        {
+            if (clip == null || _audioService == null)
+                return;
+
+            switch (_pendingStaticAudioCount)
+            {
+                case 0:
+                    _pendingStaticAudio0 = clip;
+                    _pendingStaticAudioVolume0 = math.saturate(volume);
+                    _pendingStaticAudioCount = 1;
+                    break;
+                case 1:
+                    _pendingStaticAudio1 = clip;
+                    _pendingStaticAudioVolume1 = math.saturate(volume);
+                    _pendingStaticAudioCount = 2;
+                    break;
+                default:
+                    return;
+            }
+
+            TryRegisterLateFrameTickable();
+        }
+
+        private void FlushQueuedStaticAudio()
+        {
+            int count = _pendingStaticAudioCount;
+            if (count <= 0)
+            {
+                TryUnregisterLateFrameTickable();
+                return;
+            }
+
+            AudioClip clip0 = _pendingStaticAudio0;
+            AudioClip clip1 = _pendingStaticAudio1;
+            float volume0 = _pendingStaticAudioVolume0;
+            float volume1 = _pendingStaticAudioVolume1;
+            ClearQueuedStaticAudio();
+
+            IAudioService audioService = _audioService;
+            if (audioService != null)
+            {
+                if (count > 0 && clip0 != null)
+                    audioService.PlayStatic2D(clip0, volume0);
+                if (count > 1 && clip1 != null)
+                    audioService.PlayStatic2D(clip1, volume1);
+            }
+
+            TryUnregisterLateFrameTickable();
+        }
+
+        private void ClearQueuedStaticAudio()
+        {
+            _pendingStaticAudio0 = null;
+            _pendingStaticAudio1 = null;
+            _pendingStaticAudioVolume0 = 0f;
+            _pendingStaticAudioVolume1 = 0f;
+            _pendingStaticAudioCount = 0;
+        }
+
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_registeredToLateFrameTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredToLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (!_registeredToLateFrameTick)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredToLateFrameTick = false;
+        }
+
         private static void RefreshActiveInteractKeyCache()
         {
             INativeInputManagerRuntime inputManager = GlobalRegistry.NativeInputRuntime;
@@ -420,6 +511,11 @@ namespace Hecton8.Interaction
                 _targetProbeTimer = 0f;
                 ResolveHoveredTarget();
             }
+        }
+
+        public void LateFrameTick()
+        {
+            FlushQueuedStaticAudio();
         }
 
         private static bool IsGameplayInputBlockedByMenu()
@@ -511,11 +607,7 @@ namespace Hecton8.Interaction
             _currentHovered.OnHoverStart();
 
             // Audio: subtle metallic click on hover acquisition.
-            IAudioService audioService = _audioService;
-            if (hoverSound != null && audioService != null)
-            {
-                audioService.PlayStatic2D(hoverSound, 0.3f);
-            }
+            QueueStaticAudio(hoverSound, 0.3f);
 
             InteractionEvents.TryRaiseHoverChanged(_currentHovered);
             PublishLookTargetSignal(_currentHovered, in hit, PlayerLookTargetSignalStates.Acquired);
@@ -654,11 +746,7 @@ namespace Hecton8.Interaction
         private void ExecuteInteraction()
         {
             // Audio: firm metallic confirmation.
-            IAudioService audioService = _audioService;
-            if (interactSound != null && audioService != null)
-            {
-                audioService.PlayStatic2D(interactSound, 0.6f);
-            }
+            QueueStaticAudio(interactSound, 0.6f);
 
             if (_physicalInteractionHandler != null &&
                 _physicalInteractionHandler.TryHandleInteraction(_currentHovered, transform, in _currentTargetInfo))

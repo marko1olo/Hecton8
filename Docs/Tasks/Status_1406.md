@@ -5,7 +5,7 @@ Domain: Echelon 8 Rendering/XR URP Quest VR
 Task Count: 19
 Prompt Source: Docs/Tasks/CURRENT_BATCH.md `<AGENT_PROMPT id="1406">`
 Last Successful Prompt Extraction From Saved State: 2026-05-28; Task count revalidated by `Task NN:` regex = 19
-Current Prompt Recheck: 2026-05-28 FAILED; `Docs/Tasks/CURRENT_BATCH.md` now starts with `<AGENT_PROMPT id="1400">`, and exact `rg` for 1406/QUEST_URP returned exit code 1.
+Current Prompt Recheck: 2026-05-28 PASS; PowerShell extraction found `START=545 END=629 TASK_COUNT=19`.
 
 Relevant Mandates Read:
 - REND_URP_Graphics_HotPath_Optimization_HLOD.txt
@@ -14,6 +14,7 @@ Relevant Mandates Read:
 - REND_VR_Stencil_Masking.txt
 - OPT_Zero_GC_Policy_AllocFree_Mandate.txt
 - OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt
+- OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt
 - ARCH_Global_Registry_ServiceLocator_DI_Init.txt
 - ARCH_Execution_Phases.txt
 
@@ -53,7 +54,7 @@ Relevant Mandates Read:
 - dotnet build: BLOCKED_BY_CONTENTION on post-APEX final gate; CPU_TOTAL_PERCENT=100.0, CSC_COUNT=0, DOTNET_COUNT=0.
 - dotnet build: BLOCKED_BY_CONTENTION on final route/cache gate; CPU_TOTAL_PERCENT=100.0, CSC_COUNT=1, DOTNET_COUNT=1.
 - dotnet build: BLOCKED_BY_CONTENTION on Shapes strip final gate; CPU_TOTAL_PERCENT=100.0, CSC_COUNT=0, DOTNET_COUNT=1.
-- Current prompt source hygiene: FAILED for live `CURRENT_BATCH.md`; 1406 assignment survives only in this status/rationale/report evidence set.
+- Current prompt source hygiene: PASS for live `CURRENT_BATCH.md`; 1406 prompt is currently present at lines 545-629 with 19 tasks.
 - Current blocker: Unity import/build/device proof unavailable under contention.
 
 ## Loop 6 - APEX Final Verification
@@ -93,3 +94,8 @@ Relevant Mandates Read:
 - [x] REAUDIT 16: Fluid advection owner-null enqueue guard | DOD: `HectonFluidAdvectionRenderFeature.cs:125-127` copies `_cachedFluidEngine` to local owner and returns before `_pass.Setup`/`EnqueuePass` when null; hot slice 120-135 scan reports `new=0`, `string.Format=0`, `.ToString=0`, LINQ=0, `foreach=0`, coroutine=0, `GetComponent=0`, `TryGetComponent=0`, scene search=0 | Alternative rejected: enqueue pass with null owner and rely on `RecordRenderGraph` to fail later | Estimate: unknown us; avoids no-owner no-op render pass setup
 - [x] REAUDIT 17: PDA projector non-game camera enqueue guard | DOD: `WristPdaScreenProjectorFeature.cs:187-189` returns before setup/enqueue for Preview, Reflection, and SceneView cameras; validator asserts order at `QuestVrOptimizationValidator1406.cs:179-185`; hot slice 182-192 scan reports all audited allocation/search tokens at 0 | Alternative rejected: let AddRenderPasses enqueue and depend on RecordRenderGraph to reject camera type later | Estimate: unknown us; avoids no-op enqueue for editor/reflection cameras
 - [x] REAUDIT 18: Final evidence sync after Loop 12 | DOD: report JSON parses; final report SHA-256 `91952cf3de133ef7c5e82356108cd0ec199b9b91d36e4575708649ec16412231`; final build gate `CPU_TOTAL_PERCENT=100; CSC_COUNT=0; DOTNET_COUNT=0; VBCS_COUNT=0`, so `dotnet build` was not launched | Alternative rejected: running compilation under CPU >50% | Estimate: host CPU preserved
+
+## Loop 13 - Active Quest Renderer Camera-Type Reaudit
+- [x] REAUDIT 19: Brownout non-game camera guard | DOD: `HectonVRBrownoutFeature.cs:426-428` returns before camera state build, `_pass.Setup`, and `renderer.EnqueuePass` for Preview, Reflection, and SceneView cameras; hot slice 421-435 scan reports `new=0`, `string.Format=0`, `.ToString=0`, LINQ=0, `foreach=0`, coroutine=0, `GetComponent=0`, `TryGetComponent=0`, scene search=0 | Alternative rejected: probing comfort globals and relying on `RecordRenderGraph` to reject later | Estimate: unknown us; avoids no-op comfort pass route for non-game cameras
+- [x] REAUDIT 20: Visor uber post non-game camera guard | DOD: `HectonVisorUberPostFeature.cs:921-927` clears raw history and pending reconstruction input, then returns before noir/reconstruction setup/enqueue for Preview, Reflection, and SceneView cameras; hot slice 912-988 scan reports all audited allocation/search tokens at 0 | Alternative rejected: allowing editor/reflection cameras to stage raw-color reconstruction state before render graph rejection | Estimate: unknown us; avoids no-op noir/reconstruction setup for non-game cameras
+- [x] REAUDIT 21: Final evidence sync after Loop 13 | DOD: `CURRENT_BATCH.md` prompt extraction now passes with `START=545 END=629 TASK_COUNT=19`; report JSON parses and includes 14 zero-GC scan rows; report SHA-256 `648e9cf1d9c9814754a82c267be00ff898e0e803a3e03b6769d07bce0bbeeba6`; final build gate `CPU_TOTAL_PERCENT=91; CSC_COUNT=0; DOTNET_COUNT=0; VBCS_COUNT=0`, so `dotnet build` was not launched | Alternative rejected: running compilation under CPU >50% | Estimate: host CPU preserved

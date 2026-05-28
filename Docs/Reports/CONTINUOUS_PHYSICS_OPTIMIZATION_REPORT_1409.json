@@ -4,7 +4,7 @@
   "date": "2026-05-28",
   "domain": "Echelon 4 Kinematics/Physics - Hydrodynamic Drag, Buoyancy, KCC",
   "taskCount": 20,
-  "status": "apex_static_verified_compile_deferred_cpu_gate_seaglide_cadence_repaired",
+  "status": "apex_static_verified_compile_deferred_cpu_gate_seaglide_metabolism_accumulator_repaired",
   "promptReextract": {
     "source": "Docs/Tasks/CURRENT_BATCH.md",
     "agentId": "1409",
@@ -12,13 +12,13 @@
     "chars": 19978
   },
   "compileGate": {
-    "cpuPercent": 100.0,
-    "cscProcessCount": 1,
+    "cpuPercent": 22.2,
+    "cscProcessCount": 0,
     "dotnetProcessCount": 1,
-    "cscPids": "61156",
-    "dotnetPids": "25668",
+    "cscPids": "",
+    "dotnetPids": "356",
     "dotnetBuildLaunched": false,
-    "reason": "User forbade heavy compiler use under CPU load; final gate measured 100.0% total processor with one csc.exe process and one dotnet process active. dotnet build was not launched because CPU remained above 50% and compiler processes were already active."
+    "reason": "User forbade heavy compiler use under CPU load. Final gate for the latest APEX loop measured 22.2% CPU with no csc.exe and one dotnet process PID 356. dotnet build was not launched because another dotnet process was active."
   },
   "zeroGcSelfAudit": {
     "scope": "added lines in modified runtime hot path files and Hecton_WaveHeightSampler.compute",
@@ -31,7 +31,19 @@
     "foreachLoops": 0,
     "tryBlocksAdded": 20,
     "finallyBlocksAdded": 19,
-    "notes": "Editor test file and editor-only CSV FileStream path are excluded from hot-path GC count. Runtime diff scan covered 795 added lines across modified runtime files and shader. The 24 new tokens are all value-type/job-struct initializers; no reference-type constructor survived the added-line scan. Dedicated AsyncReadback runtime hot-range scan over lines 205-243, 687-713, 727-770, 856-904, 1162-1298, and 1751-1889 returned 0 forbidden tokens and 10 allowed value-type initializers. Case-sensitive LINQ scan returned 0 hits; a case-insensitive probe falsely counted math.select as Select."
+    "notes": "Editor test file and editor-only CSV FileStream path are excluded from hot-path GC count. Runtime diff scan covered 795 added lines across modified runtime files and shader. The 24 new tokens are all value-type/job-struct initializers; no reference-type constructor survived the added-line scan. Dedicated AsyncReadback runtime hot-range scan over lines 205-243, 687-713, 727-770, 856-904, 1162-1298, and 1751-1889 returned 0 forbidden tokens and 10 allowed value-type initializers. Seaglide modified hot ranges 300-390 and 1277-1305 returned 0 reference-type new, 0 string.Format, 0 .ToString(), 0 LINQ, and 0 foreach. Broad residual runtime scan excluding Editor folders returned 0 new List, 0 new Dictionary, 0 string.Format, and 0 runtime foreach; allocation hits were editor/gizmo-only in #if UNITY_EDITOR, and apparent LINQ hits were math.select false positives."
+  },
+  "runtimeAllocationResidualScan": {
+    "scope": "Vehicles, Buoyancy, KCC, Seaglide, Cavitation runtime trees; Editor folders excluded",
+    "newList": 0,
+    "newDictionary": 0,
+    "stringFormat": 0,
+    "runtimeForeach": 0,
+    "editorOnlyAllocationHits": [
+      "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs:1942 new char[160] under #if UNITY_EDITOR",
+      "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs:2127 new string(...) under #if UNITY_EDITOR OnDrawGizmos"
+    ],
+    "linqFalsePositiveNote": "Regex probe matched math.select; no System.Linq or Enumerable call was confirmed in the modified hot paths."
   },
   "dataSovereignty": {
     "migratedFieldsToGlobalDataVault": false,
@@ -112,10 +124,11 @@
       "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:1798",
       "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:2118",
       "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:2746",
-      "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:2764"
+      "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:2764",
+      "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:2788"
     ],
-    "hits": 5,
-    "scopeNote": "The five hits are outside agent 1409's hydrodynamic/KCC ownership boundary and remain for the autopilot/navigation owner. Owned hot paths scanned in this report returned 0 exact forbidden binary quality route hits."
+    "hits": 6,
+    "scopeNote": "The six hits are outside agent 1409's hydrodynamic/KCC ownership boundary and remain for the autopilot/navigation owner. Owned hot paths scanned in this report returned 0 exact forbidden binary quality route hits."
   },
   "formulas": {
     "submarineDrag": "dragWorld = math.lerp(-velocity * dragCoefficient * max(0.25,totalMass*0.015), normalize(-velocity) * speedSq * dragCoefficient, quality)",
@@ -125,6 +138,7 @@
     "buoyancyDisplacement": "quality = min(saturate(job.GlobalQualityWeight), saturate(tuning.GlobalQualityWeight)); existing smoothstep blends consume live q",
     "asyncReadbackWaves": "activeWaveLastIndex = ceil(lerp(2, 6, q)) - 1; shader contribution = saturate(lerp(2, 6, q) - waveIndex)",
     "seaglideForceCadence": "thrustCadenceSeconds = lerp(maxCadence, minCadence, q*q*(3-2*q)); maxCadence is capped to fixedDelta*4 so accumulated solverDelta stays within the existing job force-scale cap; low q schedules less often, high q runs at authored minimum cadence",
+    "seaglideMetabolismCadence": "metabolismCadenceSeconds = lerp(maxCadence, minCadence, q*q*(3-2*q)); AdvanceMetabolismCadence consumes solverDelta plus fixedDelta, clamps accumulator - cadence into [0,cadence] instead of resetting to zero, and is outside the UNITY_EDITOR block for player safety",
     "cavitationSdf": "multiTapWeight = SmoothRange(0.35, 0.85, q); interpolationWeight = Smooth01(saturate((Smooth01(q)-0.18)/0.52))"
   },
   "apexReverificationFixes": [
@@ -139,7 +153,10 @@
     "AsyncBuoyancyReadbackRuntime.cs now gates ReleaseVaultWriteBuffer behind local ownership booleans set only from NativeArray.IsCreated, avoiding release-by-handle when acquisition failed under contention.",
     "SubmarineBallastBuoyancyContracts.cs now removes the remaining q/sample-budget denominator path and uses always-on four-sample compensated integration: secondary*q + secondary*(1-q).",
     "SeaglideHydrodynamicsRuntime.cs now uses q inside ResolveThrustCadenceSeconds instead of accepting q and returning only fixedDeltaTime.",
-    "SeaglideHydrodynamicsRuntime.cs caps low-q max cadence to fixedDelta*4 so cadence scaling remains consistent with the existing ResolveForceCadenceScale 4x compensation cap."
+    "SeaglideHydrodynamicsRuntime.cs caps low-q max cadence to fixedDelta*4 so cadence scaling remains consistent with the existing ResolveForceCadenceScale 4x compensation cap.",
+    "SeaglideHydrodynamicsRuntime.cs moved AdvanceMetabolismCadence outside the UNITY_EDITOR CSV-loading block so the runtime fixed tick has a player-safe method.",
+    "SeaglideHydrodynamicsRuntime.cs routes metabolism cadence through the shared smoothstep continuous cadence resolver and preserves accumulator overshoot by subtracting cadence instead of clearing to zero.",
+    "SeaglideHydrodynamicsRuntime.cs clamps the post-metabolism residual accumulator into [0,cadence], eliminating the negative-residual edge introduced by epsilon-tolerant cadence firing."
   ],
   "lineEvidence": {
     "submarineDynamics": [
@@ -201,6 +218,7 @@
       "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs:228",
       "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs:230",
       "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:309",
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:362",
       "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:326",
       "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:346",
       "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:416",
@@ -209,10 +227,12 @@
       "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:859",
       "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:864",
       "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:866",
-      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:1281"
-      ,"Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:1291",
-      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:1298",
-      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:1301"
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:1277",
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:1280",
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:1285",
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:1291",
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:1294",
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:1303"
     ],
     "analyticalWaves": [
       "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs:212",
@@ -275,7 +295,7 @@
     "asyncReadbackPotentialGpuWaveLaneReduction": "6 lanes at q=1, 2 lanes plus fractional fade at q=0",
     "cavitationPotentialReduction": "nearest SDF and single midpoint dampening at low q; trilinear and multi-tap at high q",
     "lockLifecycleRuntimeCost": "nineteen added finally blocks plus twelve ownership booleans across lock/swap/async readback hardening; no managed allocation; no new steady-state physics math",
-    "note": "No profiler, tests, or compile run was launched because CPU gate measured 100.0% on the final gate and one dotnet process was active."
+    "note": "No profiler, tests, or compile run was launched because the final gate found one active dotnet process PID 356."
   },
   "modifiedFileHashesSha256": [
     {
@@ -316,7 +336,7 @@
     },
     {
       "path": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
-      "sha256": "317806b8831c1fac3f6ca3c0f3fcefa602b2be76e4c75ab673c57998d08b5851"
+      "sha256": "6e852a6210543edb80044d4bb6fd12a1ad5632f2a65b5d5de85cc3844dddb2af"
     },
     {
       "path": "Assets/_Project/Art/Shaders/Hecton_WaveHeightSampler.compute",
@@ -339,7 +359,7 @@
   ],
   "remainingOutOfDomainFindings": [
     "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs still contains VehicleDamageConstants.AuthoritativeQualityWeight; combat damage domain, not hydrodynamic/KCC.",
-    "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs still contains SubmarineAutopilotConstants.AuthoritativeQualityWeight at lines 1744, 1798, 2118, 2746, and 2764; vehicle autopilot/navigation domain, not hydrodynamic/KCC.",
+    "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs still contains SubmarineAutopilotConstants.AuthoritativeQualityWeight at lines 1744, 1798, 2118, 2746, 2764, and 2788; vehicle autopilot/navigation domain, not hydrodynamic/KCC.",
     "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs still contains HabitatFluidIncursionMath.AuthoritativeQualityWeight; habitat flooding/logistics domain."
   ],
   "dumpStatus": {
@@ -349,12 +369,15 @@
   },
   "verification": {
     "gitDiffCheck": "passed_with_line_ending_warnings_only",
-    "staticForbiddenPatternHits": 5,
+    "staticForbiddenPatternHits": 6,
     "ownedDomainForbiddenPatternHits": 0,
-    "outOfDomainForbiddenPatternHits": 5,
+    "outOfDomainForbiddenPatternHits": 6,
     "zeroGcAddedHotPathReferenceNewHits": 0,
     "zeroGcAddedHotPathForbiddenCalls": 0,
     "valueTypeNewInitializersInDiff": 24,
+    "seaglideModifiedHotRanges": "300-390,1277-1305",
+    "seaglideModifiedHotRangeReferenceNewHits": 0,
+    "seaglideModifiedHotRangeForbiddenCalls": 0,
     "testsExecuted": false,
     "compilationExecuted": false
   }

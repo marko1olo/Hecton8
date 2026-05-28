@@ -3,11 +3,13 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -1351,7 +1353,7 @@ namespace Hecton8.Gameplay
         private const uint TelemetryReasonRuntimeDisable = 0x00000010u;
         private const float MaxAcceptedOriginShiftMeters = 10000.0f;
         private const float MaxAcceptedOriginShiftMetersSq = MaxAcceptedOriginShiftMeters * MaxAcceptedOriginShiftMeters;
-        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_ANIM_PROCEDURAL_LEGS_IK.bin";
+        private const string TelemetryDumpRelativePath = "Docs/AgentLogs/Dump_1403_CONTEXTUAL_PHYSICAL_IK.bin";
 
         // COLD ALLOC: ContextualPhysicalIkRig[128] - stable slot owner registry for contextual IK entities - owner: ContextualPhysicalIkRuntime
         private readonly ContextualPhysicalIkRig[] _registeredRigs = new ContextualPhysicalIkRig[MaxEntities];
@@ -2665,7 +2667,7 @@ namespace Hecton8.Gameplay
             return hash * 16777619u;
         }
 
-        private void DumpTelemetry(uint reasonFlags)
+        private unsafe void DumpTelemetry(uint reasonFlags)
         {
             if (!_telemetryRing.IsCreated)
                 return;
@@ -2678,19 +2680,24 @@ namespace Hecton8.Gameplay
                 if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                     Directory.CreateDirectory(directory);
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
                 int capacity = _telemetryRing.Length;
                 if (capacity <= 0)
                     return;
 
-                int head = (uint)_telemetryCursor < (uint)capacity ? _telemetryCursor : 0;
-                writer.Write(TelemetryDumpMagic);
-                writer.Write((uint)capacity);
-                writer.Write((uint)TelemetryEntrySizeBytes);
-                    writer.Write((uint)head);
-                    writer.Write(reasonFlags);
+                const int headerBytes = 24;
+                int dumpBytesLength = headerBytes + (capacity * TelemetryEntrySizeBytes);
+                NativeArray<byte> dumpBytes = default;
+                try
+                {
+                    dumpBytes = new NativeArray<byte>(dumpBytesLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    byte* dumpPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(dumpBytes);
+                    int cursor = 0;
+                    int head = (uint)_telemetryCursor < (uint)capacity ? _telemetryCursor : 0;
+                    WriteUInt64LittleEndian(dumpPtr, ref cursor, TelemetryDumpMagic);
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, (uint)capacity);
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, (uint)TelemetryEntrySizeBytes);
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, (uint)head);
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, reasonFlags);
 
                     for (int i = 0; i < capacity; i++)
                     {
@@ -2698,8 +2705,16 @@ namespace Hecton8.Gameplay
                         if (ringIndex >= capacity)
                             ringIndex -= capacity;
 
-                        WriteTelemetryEntry(writer, _telemetryRing[ringIndex]);
+                        ContextualPhysicalIkTelemetryEntry entry = _telemetryRing[ringIndex];
+                        WriteTelemetryEntry(dumpPtr, ref cursor, in entry);
                     }
+
+                    Hecton8.SaveSystem.AsyncWriteManager.WriteAll(path, dumpPtr, cursor, out _);
+                }
+                finally
+                {
+                    if (dumpBytes.IsCreated)
+                        dumpBytes.Dispose();
                 }
             }
             catch
@@ -2708,30 +2723,54 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static void WriteTelemetryEntry(BinaryWriter writer, in ContextualPhysicalIkTelemetryEntry entry)
+        private static unsafe void WriteTelemetryEntry(byte* destination, ref int cursor, in ContextualPhysicalIkTelemetryEntry entry)
         {
-            writer.Write(entry.Frame);
-            writer.Write(entry.Flags);
-            writer.Write(entry.StateHash);
-            writer.Write(entry.ActiveEntities);
-            writer.Write(entry.Reserved);
-            WriteFloat3(writer, entry.FirstRootPosition);
-            WriteFloat3(writer, entry.FirstLeftFootTarget);
-            WriteFloat3(writer, entry.FirstRightFootTarget);
-            WriteFloat3(writer, entry.FirstLeftHandTarget);
-            WriteFloat3(writer, entry.FirstRightHandTarget);
-            WriteFloat3(writer, entry.FirstKccVelocity);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Frame);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Flags);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.StateHash);
+            WriteUInt16LittleEndian(destination, ref cursor, entry.ActiveEntities);
+            WriteUInt16LittleEndian(destination, ref cursor, entry.Reserved);
+            WriteFloat3(destination, ref cursor, entry.FirstRootPosition);
+            WriteFloat3(destination, ref cursor, entry.FirstLeftFootTarget);
+            WriteFloat3(destination, ref cursor, entry.FirstRightFootTarget);
+            WriteFloat3(destination, ref cursor, entry.FirstLeftHandTarget);
+            WriteFloat3(destination, ref cursor, entry.FirstRightHandTarget);
+            WriteFloat3(destination, ref cursor, entry.FirstKccVelocity);
             float2 weights = SanitizeTelemetryFloat2(entry.FirstHandWeights, float2.zero);
-            writer.Write(weights.x);
-            writer.Write(weights.y);
+            WriteFloat(destination, ref cursor, weights.x);
+            WriteFloat(destination, ref cursor, weights.y);
         }
 
-        private static void WriteFloat3(BinaryWriter writer, float3 value)
+        private static unsafe void WriteFloat3(byte* destination, ref int cursor, float3 value)
         {
             value = SanitizeTelemetryFloat3(value, float3.zero);
-            writer.Write(value.x);
-            writer.Write(value.y);
-            writer.Write(value.z);
+            WriteFloat(destination, ref cursor, value.x);
+            WriteFloat(destination, ref cursor, value.y);
+            WriteFloat(destination, ref cursor, value.z);
+        }
+
+        private static unsafe void WriteFloat(byte* destination, ref int cursor, float value)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(new Span<byte>(destination + cursor, sizeof(uint)), math.asuint(value));
+            cursor += sizeof(uint);
+        }
+
+        private static unsafe void WriteUInt16LittleEndian(byte* destination, ref int cursor, ushort value)
+        {
+            BinaryPrimitives.WriteUInt16LittleEndian(new Span<byte>(destination + cursor, sizeof(ushort)), value);
+            cursor += sizeof(ushort);
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, ref int cursor, uint value)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(new Span<byte>(destination + cursor, sizeof(uint)), value);
+            cursor += sizeof(uint);
+        }
+
+        private static unsafe void WriteUInt64LittleEndian(byte* destination, ref int cursor, ulong value)
+        {
+            BinaryPrimitives.WriteUInt64LittleEndian(new Span<byte>(destination + cursor, sizeof(ulong)), value);
+            cursor += sizeof(ulong);
         }
 
         private static float3 SanitizeTelemetryFloat3(float3 value, float3 fallback)

@@ -120,6 +120,7 @@ function Read-AllowedGraphOpcodeTokens() {
 @('Content','Graphs','Tables','Locales','Generated','Reports','Reference','Schemas','Tools','.vscode') | ForEach-Object { Require-Directory $_ }
 @(
     'README.md',
+    'h8mod.ps1',
     'mod.h8manifest.json',
     'mod.json',
     'Content/README.md',

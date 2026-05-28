@@ -1504,26 +1504,35 @@ namespace Hecton8.VFX
 
         private void RecordCameraJuiceTelemetry()
         {
-            if (!OpenCameraJuiceTelemetryForWrite(out var telemetry))
+            IDataVault vault = _dataVault;
+            if (!TryAcquireCameraJuiceTelemetryWriteBuffer(vault, in _cameraJuiceTelemetryHandle, out NativeArray<CameraJuiceTelemetryEntry> telemetry))
                 return;
 
-            int index = (int)(_cameraJuiceTelemetryCursor % (uint)CAMERA_JUICE_TELEMETRY_CAPACITY);
-            telemetry[index] = new CameraJuiceTelemetryEntry
+            try
             {
-                Frame = _cameraJuiceTelemetryCursor,
-                Flags = ResolveCameraJuiceTelemetryFlags(),
-                TraumaScalar = _cameraJuiceLastTraumaScalar,
-                MaxTranslationalOffsetMagnitude = _cameraJuiceLastMaxTranslationMagnitude,
-                Offset = _proceduralShakeTranslation,
-                RotationDegrees = _proceduralShakeRotationDegrees,
-                IncomingSignalCount = _cameraJuiceLastIncomingSignalCount,
-                BurstExecutionMicroseconds = _cameraJuiceLastBurstExecutionMicros,
-                GlobalQualityWeight01 = _cameraJuiceLastQualityWeight,
-                DirectionalImpulseMagnitude = _cameraJuiceLastDirectionalImpulseMagnitude,
-                StateHash = _cameraJuiceLastStateHash,
-                Sequence = _cameraJuiceTelemetryCursor
-            };
-            _cameraJuiceTelemetryCursor++;
+                int index = (int)(_cameraJuiceTelemetryCursor % (uint)CAMERA_JUICE_TELEMETRY_CAPACITY);
+                telemetry[index] = new CameraJuiceTelemetryEntry
+                {
+                    Frame = _cameraJuiceTelemetryCursor,
+                    Flags = ResolveCameraJuiceTelemetryFlags(),
+                    TraumaScalar = _cameraJuiceLastTraumaScalar,
+                    MaxTranslationalOffsetMagnitude = _cameraJuiceLastMaxTranslationMagnitude,
+                    Offset = _proceduralShakeTranslation,
+                    RotationDegrees = _proceduralShakeRotationDegrees,
+                    IncomingSignalCount = _cameraJuiceLastIncomingSignalCount,
+                    BurstExecutionMicroseconds = _cameraJuiceLastBurstExecutionMicros,
+                    GlobalQualityWeight01 = _cameraJuiceLastQualityWeight,
+                    DirectionalImpulseMagnitude = _cameraJuiceLastDirectionalImpulseMagnitude,
+                    StateHash = _cameraJuiceLastStateHash,
+                    Sequence = _cameraJuiceTelemetryCursor
+                };
+                _cameraJuiceTelemetryCursor++;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _cameraJuiceTelemetryHandle, CameraJuiceOwnerSystemId);
+            }
+
             if (_cameraJuiceTelemetryDumpRequested)
             {
                 _cameraJuiceTelemetryDumpRequested = false;

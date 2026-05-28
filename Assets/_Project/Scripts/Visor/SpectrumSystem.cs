@@ -1762,6 +1762,42 @@ namespace Hecton8.Visor
         private float _lastPublishedPassiveRadarAutoGain = -1f;
         private float _lastPublishedSonarRadius = -1f;
         private float _lastPublishedSonarWaveFront = -1f;
+        private bool _spectrumModeShaderDirty;
+        private int _pendingSpectrumMode;
+        private bool _sonarPulseTimeShaderDirty;
+        private float _pendingSonarPulseTime;
+        private bool _sonarRevealShaderDirty;
+        private Vector4 _pendingSonarRevealOrigin;
+        private Vector4 _pendingSonarPingCenter;
+        private Vector4 _pendingSonarPingParams;
+        private Vector4 _pendingSonarRevealWaveParams;
+        private float _pendingSonarRevealExpireTime;
+        private float _pendingAbyssalDistortion;
+        private bool _screenSpacePrimaryPulseShaderDirty;
+        private Vector4 _pendingScreenSpacePrimaryPulse;
+        private Vector4 _pendingScreenSpaceVisualParams;
+        private bool _screenSpaceEchoPulseShaderDirty;
+        private Vector4 _pendingScreenSpaceEchoPulse;
+        private Vector4 _pendingScreenSpaceEchoParams;
+        private bool _acousticMappingStaticShaderDirty;
+        private Vector4 _pendingSonarColor;
+        private float _pendingNoirHideDistance;
+        private bool _sonarActiveShaderDirty;
+        private int _pendingSonarActiveState;
+        private bool _sonarRadiusShaderDirty;
+        private float _pendingSonarRadius;
+        private bool _sonarWaveFrontShaderDirty;
+        private float _pendingSonarWaveFront;
+        private bool _lidarPersistenceShaderDirty;
+        private float _pendingLidarPersistence;
+        private bool _radarDistortionShaderDirty;
+        private Vector4 _pendingRadarDistortion;
+        private bool _passiveRadarShaderDirty;
+        private bool _pendingPassiveRadarRowsChanged;
+        private Vector4 _pendingPassiveRadarPeak;
+        private float _pendingPassiveRadarAutoGain = 1f;
+        private bool _abyssalAnchorReturnAudioDirty;
+        private float _pendingAbyssalAnchorReturnResponse01;
         private int _activeSonarGeoPingCount;
         private int _lastConsumedActiveSonarAcousticSequence;
         private int _activeSonarGeoTelemetryWriteIndex;
@@ -1927,12 +1963,12 @@ namespace Hecton8.Visor
             TryUnregisterLateFrameTick();
 
             // Sbrasyvaem v Normal pri otklyuchenii
-            Shader.SetGlobalInt(_ShaderSpectrumMode, 0);
-            _lastPublishedSpectrumMode = 0;
+            QueueSpectrumMode(0);
             SonarGridOverlay.ClearGlobals();
             ClearSonarSnapshot();
             ClearAcousticMappingGlobals();
             ClearActiveSonarGeoGlobals();
+            FlushQueuedSpectrumShaderGlobals();
             ClearCachedRegistryServices();
         }
 
@@ -1947,6 +1983,7 @@ namespace Hecton8.Visor
             SonarGridOverlay.ClearGlobals();
             ClearAcousticMappingGlobals();
             ClearActiveSonarGeoGlobals();
+            FlushQueuedSpectrumShaderGlobals();
             DisposeAupDiscoveryGrid();
             DisposeActiveSonarGeoTelemetryRing();
             ClearCachedRegistryServices();
@@ -2093,6 +2130,8 @@ namespace Hecton8.Visor
         {
             DrainPhysicsEventPayloads();
             RunSpectrumVisualTick(math.max(0f, SystemDispatcher.CurrentFrameDeltaTime));
+            FlushQueuedSpectrumShaderGlobals();
+            FlushQueuedSpectrumAudio();
         }
 
         private void RunSpectrumVisualTick(float deltaTime)
@@ -2186,12 +2225,7 @@ namespace Hecton8.Visor
         private void ApplyShaderMode()
         {
             int mode = (int)_currentMode;
-            if (_lastPublishedSpectrumMode != mode)
-            {
-                Shader.SetGlobalInt(_ShaderSpectrumMode, mode);
-                _lastPublishedSpectrumMode = mode;
-            }
-
+            QueueSpectrumMode(mode);
             PublishSonarRadius(sonarRadius);
         }
 
@@ -2245,7 +2279,7 @@ namespace Hecton8.Visor
                 TryPlayAbyssalAnchorReturn(abyssalAnchorResponse01);
             }
 
-            Shader.SetGlobalFloat(_ShaderSonarPulseTime, pulseTime);
+            QueueSonarPulseTime(pulseTime);
             PublishSonarRadius(0f);
             PublishSonarReveal(playerPosition, in playerAup, pulseRadius, revealDurationSeconds, pulseTime, pulseIntensity, abyssalDistortion, effectiveWaveSpeed);
             if (!isActivePing)
@@ -2355,11 +2389,8 @@ namespace Hecton8.Visor
             float echoWidth = math.max(1.5f, _activeSonarWaveBandWidth * 1.65f);
             float echoIntensity = math.saturate(echoEvent.ReturnStrength * sonarEchoVisualIntensityScale);
 
-            Shader.SetGlobalVector(
-                _ShaderHectonSonarEchoPulse,
-                MakeVector4(echoEvent.WorldPosition.x, echoEvent.WorldPosition.y, echoEvent.WorldPosition.z, echoStartTime));
-            Shader.SetGlobalVector(
-                _ShaderHectonSonarEchoParams,
+            QueueScreenSpaceEchoPulse(
+                MakeVector4(echoEvent.WorldPosition.x, echoEvent.WorldPosition.y, echoEvent.WorldPosition.z, echoStartTime),
                 MakeVector4(speed, echoRadius, echoWidth, echoIntensity));
             PublishSonarActive(true);
 
@@ -2383,11 +2414,8 @@ namespace Hecton8.Visor
             float echoWidth = math.max(1.5f, _activeSonarWaveBandWidth * 1.65f);
             float echoIntensity = math.saturate(signal.ReturnStrength * sonarEchoVisualIntensityScale);
 
-            Shader.SetGlobalVector(
-                _ShaderHectonSonarEchoPulse,
-                MakeVector4(signal.WorldPosition.x, signal.WorldPosition.y, signal.WorldPosition.z, echoStartTime));
-            Shader.SetGlobalVector(
-                _ShaderHectonSonarEchoParams,
+            QueueScreenSpaceEchoPulse(
+                MakeVector4(signal.WorldPosition.x, signal.WorldPosition.y, signal.WorldPosition.z, echoStartTime),
                 MakeVector4(speed, echoRadius, echoWidth, echoIntensity));
             PublishSonarActive(true);
 
@@ -2427,9 +2455,8 @@ namespace Hecton8.Visor
         {
             ApplyAcousticMappingStaticGlobals();
             float visualWaveSpeed = math.max(0.01f, sonarScreenSpacePulseSpeedMetersPerSecond);
-            Shader.SetGlobalVector(_ShaderHectonSonarPrimaryPulse, MakeVector4(origin.x, origin.y, origin.z, pulseTime));
-            Shader.SetGlobalVector(
-                _ShaderHectonSonarVisualParams,
+            QueueScreenSpacePrimaryPulse(
+                MakeVector4(origin.x, origin.y, origin.z, pulseTime),
                 MakeVector4(
                     visualWaveSpeed,
                     math.max(1f, radius),
@@ -2476,21 +2503,7 @@ namespace Hecton8.Visor
             Color sonarColor = sonarGridHardColor.linear;
             Vector4 sonarColorPayload = MakeVector4(sonarColor.r, sonarColor.g, sonarColor.b, math.max(0f, sonarGridContourBoost));
             float noirHideDistance = math.max(0f, sonarNoirHideDistanceMeters);
-            if (!_hasPublishedAcousticMappingStaticGlobals ||
-                !NearlyEqual(_lastPublishedSonarColor, sonarColorPayload, ShaderScalarPublishEpsilon))
-            {
-                Shader.SetGlobalVector(_ShaderHectonSonarColor, sonarColorPayload);
-                _lastPublishedSonarColor = sonarColorPayload;
-            }
-
-            if (!_hasPublishedAcousticMappingStaticGlobals ||
-                !NearlyEqual(_lastPublishedNoirHideDistance, noirHideDistance, ShaderScalarPublishEpsilon))
-            {
-                Shader.SetGlobalFloat(_ShaderHectonSonarNoirHideDistance, noirHideDistance);
-                _lastPublishedNoirHideDistance = noirHideDistance;
-            }
-
-            _hasPublishedAcousticMappingStaticGlobals = true;
+            QueueAcousticMappingStaticGlobals(sonarColorPayload, noirHideDistance);
         }
 
         private void UpdateAcousticMappingGlobals(float deltaTime, float now)
@@ -2528,15 +2541,9 @@ namespace Hecton8.Visor
 
         private void ClearAcousticMappingGlobals()
         {
-            Shader.SetGlobalVector(_ShaderHectonSonarPrimaryPulse, Vector4.zero);
-            Shader.SetGlobalVector(_ShaderHectonSonarEchoPulse, Vector4.zero);
-            Shader.SetGlobalVector(_ShaderHectonSonarVisualParams, Vector4.zero);
-            Shader.SetGlobalVector(_ShaderHectonSonarEchoParams, Vector4.zero);
-            Shader.SetGlobalVector(_ShaderHectonSonarColor, Vector4.zero);
-            Shader.SetGlobalFloat(_ShaderHectonSonarNoirHideDistance, 0f);
-            _lastPublishedSonarColor = Vector4.zero;
-            _lastPublishedNoirHideDistance = 0f;
-            _hasPublishedAcousticMappingStaticGlobals = true;
+            QueueScreenSpacePrimaryPulse(Vector4.zero, Vector4.zero);
+            QueueScreenSpaceEchoPulse(Vector4.zero, Vector4.zero);
+            QueueAcousticMappingStaticGlobals(Vector4.zero, 0f);
             PublishRadarDistortion(Vector4.zero);
             PublishSonarActive(false);
         }
@@ -2544,54 +2551,302 @@ namespace Hecton8.Visor
         private void PublishSonarActive(bool active)
         {
             int state = active ? 1 : 0;
-            if (_lastPublishedSonarActiveState == state)
+            if (_sonarActiveShaderDirty && _pendingSonarActiveState == state)
                 return;
 
-            Shader.SetGlobalFloat(_ShaderSonarActive, state);
-            _lastPublishedSonarActiveState = state;
+            if (!_sonarActiveShaderDirty && _lastPublishedSonarActiveState == state)
+                return;
+
+            _pendingSonarActiveState = state;
+            _sonarActiveShaderDirty = true;
         }
 
         private void PublishSonarRadius(float radius)
         {
             float value = math.max(0f, radius);
-            if (NearlyEqual(_lastPublishedSonarRadius, value, ShaderScalarPublishEpsilon))
+            if (_sonarRadiusShaderDirty && NearlyEqual(_pendingSonarRadius, value, ShaderScalarPublishEpsilon))
                 return;
 
-            Shader.SetGlobalFloat(_ShaderSonarRadius, value);
-            _lastPublishedSonarRadius = value;
+            if (!_sonarRadiusShaderDirty && NearlyEqual(_lastPublishedSonarRadius, value, ShaderScalarPublishEpsilon))
+                return;
+
+            _pendingSonarRadius = value;
+            _sonarRadiusShaderDirty = true;
         }
 
         private void PublishSonarWaveFront(float waveFront)
         {
             float value = math.max(0f, waveFront);
-            if (NearlyEqual(_lastPublishedSonarWaveFront, value, ShaderScalarPublishEpsilon))
+            if (_sonarWaveFrontShaderDirty && NearlyEqual(_pendingSonarWaveFront, value, ShaderScalarPublishEpsilon))
                 return;
 
-            Shader.SetGlobalFloat(_ShaderSonarWaveFront, value);
-            _lastPublishedSonarWaveFront = value;
+            if (!_sonarWaveFrontShaderDirty && NearlyEqual(_lastPublishedSonarWaveFront, value, ShaderScalarPublishEpsilon))
+                return;
+
+            _pendingSonarWaveFront = value;
+            _sonarWaveFrontShaderDirty = true;
         }
 
         private void PublishLidarPersistence(float persistence)
         {
             float value = math.max(0f, persistence);
-            if (NearlyEqual(_lastPublishedLidarPersistence, value, ShaderScalarPublishEpsilon))
+            if (_lidarPersistenceShaderDirty && NearlyEqual(_pendingLidarPersistence, value, ShaderScalarPublishEpsilon))
                 return;
 
-            Shader.SetGlobalFloat(_ShaderLidarPersistence, value);
-            _lastPublishedLidarPersistence = value;
+            if (!_lidarPersistenceShaderDirty && NearlyEqual(_lastPublishedLidarPersistence, value, ShaderScalarPublishEpsilon))
+                return;
+
+            _pendingLidarPersistence = value;
+            _lidarPersistenceShaderDirty = true;
         }
 
         private void PublishRadarDistortion(Vector4 distortion)
         {
-            if (_hasPublishedRadarDistortion &&
+            if (_radarDistortionShaderDirty &&
+                NearlyEqual(_pendingRadarDistortion, distortion, ShaderScalarPublishEpsilon))
+            {
+                return;
+            }
+
+            if (!_radarDistortionShaderDirty &&
+                _hasPublishedRadarDistortion &&
                 NearlyEqual(_lastPublishedRadarDistortion, distortion, ShaderScalarPublishEpsilon))
             {
                 return;
             }
 
-            Shader.SetGlobalVector(_ShaderHectonSonarRadarDistortion, distortion);
-            _lastPublishedRadarDistortion = distortion;
-            _hasPublishedRadarDistortion = true;
+            _pendingRadarDistortion = distortion;
+            _radarDistortionShaderDirty = true;
+        }
+
+        private void QueueSpectrumMode(int mode)
+        {
+            if (_spectrumModeShaderDirty && _pendingSpectrumMode == mode)
+                return;
+
+            if (!_spectrumModeShaderDirty && _lastPublishedSpectrumMode == mode)
+                return;
+
+            _pendingSpectrumMode = mode;
+            _spectrumModeShaderDirty = true;
+        }
+
+        private void QueueSonarPulseTime(float pulseTime)
+        {
+            _pendingSonarPulseTime = math.max(0f, math.isfinite(pulseTime) ? pulseTime : 0f);
+            _sonarPulseTimeShaderDirty = true;
+        }
+
+        private void QueueScreenSpacePrimaryPulse(Vector4 pulse, Vector4 visualParams)
+        {
+            if (_screenSpacePrimaryPulseShaderDirty &&
+                NearlyEqual(_pendingScreenSpacePrimaryPulse, pulse, ShaderVectorPublishEpsilon) &&
+                NearlyEqual(_pendingScreenSpaceVisualParams, visualParams, ShaderVectorPublishEpsilon))
+            {
+                return;
+            }
+
+            _pendingScreenSpacePrimaryPulse = pulse;
+            _pendingScreenSpaceVisualParams = visualParams;
+            _screenSpacePrimaryPulseShaderDirty = true;
+        }
+
+        private void QueueScreenSpaceEchoPulse(Vector4 pulse, Vector4 echoParams)
+        {
+            if (_screenSpaceEchoPulseShaderDirty &&
+                NearlyEqual(_pendingScreenSpaceEchoPulse, pulse, ShaderVectorPublishEpsilon) &&
+                NearlyEqual(_pendingScreenSpaceEchoParams, echoParams, ShaderVectorPublishEpsilon))
+            {
+                return;
+            }
+
+            _pendingScreenSpaceEchoPulse = pulse;
+            _pendingScreenSpaceEchoParams = echoParams;
+            _screenSpaceEchoPulseShaderDirty = true;
+        }
+
+        private void QueueAcousticMappingStaticGlobals(Vector4 sonarColor, float noirHideDistance)
+        {
+            float safeDistance = math.max(0f, math.isfinite(noirHideDistance) ? noirHideDistance : 0f);
+            if (_acousticMappingStaticShaderDirty &&
+                NearlyEqual(_pendingSonarColor, sonarColor, ShaderScalarPublishEpsilon) &&
+                NearlyEqual(_pendingNoirHideDistance, safeDistance, ShaderScalarPublishEpsilon))
+            {
+                return;
+            }
+
+            if (!_acousticMappingStaticShaderDirty &&
+                _hasPublishedAcousticMappingStaticGlobals &&
+                NearlyEqual(_lastPublishedSonarColor, sonarColor, ShaderScalarPublishEpsilon) &&
+                NearlyEqual(_lastPublishedNoirHideDistance, safeDistance, ShaderScalarPublishEpsilon))
+            {
+                return;
+            }
+
+            _pendingSonarColor = sonarColor;
+            _pendingNoirHideDistance = safeDistance;
+            _acousticMappingStaticShaderDirty = true;
+        }
+
+        private void QueueSonarRevealShaderState(
+            Vector4 revealOrigin,
+            Vector4 pingCenter,
+            Vector4 pingParams,
+            float revealExpireTime,
+            float abyssalDistortion,
+            Vector4 revealWaveParams)
+        {
+            _pendingSonarRevealOrigin = revealOrigin;
+            _pendingSonarPingCenter = pingCenter;
+            _pendingSonarPingParams = pingParams;
+            _pendingSonarRevealExpireTime = math.max(0f, math.isfinite(revealExpireTime) ? revealExpireTime : 0f);
+            _pendingAbyssalDistortion = math.isfinite(abyssalDistortion) ? abyssalDistortion : 0f;
+            _pendingSonarRevealWaveParams = revealWaveParams;
+            _sonarRevealShaderDirty = true;
+        }
+
+        private void FlushQueuedSpectrumShaderGlobals()
+        {
+            if (_spectrumModeShaderDirty)
+            {
+                _spectrumModeShaderDirty = false;
+                if (_lastPublishedSpectrumMode != _pendingSpectrumMode)
+                {
+                    Shader.SetGlobalInt(_ShaderSpectrumMode, _pendingSpectrumMode);
+                    _lastPublishedSpectrumMode = _pendingSpectrumMode;
+                }
+            }
+
+            if (_sonarPulseTimeShaderDirty)
+            {
+                _sonarPulseTimeShaderDirty = false;
+                Shader.SetGlobalFloat(_ShaderSonarPulseTime, _pendingSonarPulseTime);
+            }
+
+            if (_screenSpacePrimaryPulseShaderDirty)
+            {
+                _screenSpacePrimaryPulseShaderDirty = false;
+                Shader.SetGlobalVector(_ShaderHectonSonarPrimaryPulse, _pendingScreenSpacePrimaryPulse);
+                Shader.SetGlobalVector(_ShaderHectonSonarVisualParams, _pendingScreenSpaceVisualParams);
+            }
+
+            if (_screenSpaceEchoPulseShaderDirty)
+            {
+                _screenSpaceEchoPulseShaderDirty = false;
+                Shader.SetGlobalVector(_ShaderHectonSonarEchoPulse, _pendingScreenSpaceEchoPulse);
+                Shader.SetGlobalVector(_ShaderHectonSonarEchoParams, _pendingScreenSpaceEchoParams);
+            }
+
+            if (_acousticMappingStaticShaderDirty)
+            {
+                _acousticMappingStaticShaderDirty = false;
+                if (!_hasPublishedAcousticMappingStaticGlobals ||
+                    !NearlyEqual(_lastPublishedSonarColor, _pendingSonarColor, ShaderScalarPublishEpsilon))
+                {
+                    Shader.SetGlobalVector(_ShaderHectonSonarColor, _pendingSonarColor);
+                    _lastPublishedSonarColor = _pendingSonarColor;
+                }
+
+                if (!_hasPublishedAcousticMappingStaticGlobals ||
+                    !NearlyEqual(_lastPublishedNoirHideDistance, _pendingNoirHideDistance, ShaderScalarPublishEpsilon))
+                {
+                    Shader.SetGlobalFloat(_ShaderHectonSonarNoirHideDistance, _pendingNoirHideDistance);
+                    _lastPublishedNoirHideDistance = _pendingNoirHideDistance;
+                }
+
+                _hasPublishedAcousticMappingStaticGlobals = true;
+            }
+
+            if (_sonarActiveShaderDirty)
+            {
+                _sonarActiveShaderDirty = false;
+                if (_lastPublishedSonarActiveState != _pendingSonarActiveState)
+                {
+                    Shader.SetGlobalFloat(_ShaderSonarActive, _pendingSonarActiveState);
+                    _lastPublishedSonarActiveState = _pendingSonarActiveState;
+                }
+            }
+
+            if (_sonarRadiusShaderDirty)
+            {
+                _sonarRadiusShaderDirty = false;
+                if (!NearlyEqual(_lastPublishedSonarRadius, _pendingSonarRadius, ShaderScalarPublishEpsilon))
+                {
+                    Shader.SetGlobalFloat(_ShaderSonarRadius, _pendingSonarRadius);
+                    _lastPublishedSonarRadius = _pendingSonarRadius;
+                }
+            }
+
+            if (_sonarWaveFrontShaderDirty)
+            {
+                _sonarWaveFrontShaderDirty = false;
+                if (!NearlyEqual(_lastPublishedSonarWaveFront, _pendingSonarWaveFront, ShaderScalarPublishEpsilon))
+                {
+                    Shader.SetGlobalFloat(_ShaderSonarWaveFront, _pendingSonarWaveFront);
+                    _lastPublishedSonarWaveFront = _pendingSonarWaveFront;
+                }
+            }
+
+            if (_lidarPersistenceShaderDirty)
+            {
+                _lidarPersistenceShaderDirty = false;
+                if (!NearlyEqual(_lastPublishedLidarPersistence, _pendingLidarPersistence, ShaderScalarPublishEpsilon))
+                {
+                    Shader.SetGlobalFloat(_ShaderLidarPersistence, _pendingLidarPersistence);
+                    _lastPublishedLidarPersistence = _pendingLidarPersistence;
+                }
+            }
+
+            if (_radarDistortionShaderDirty)
+            {
+                _radarDistortionShaderDirty = false;
+                if (!_hasPublishedRadarDistortion ||
+                    !NearlyEqual(_lastPublishedRadarDistortion, _pendingRadarDistortion, ShaderScalarPublishEpsilon))
+                {
+                    Shader.SetGlobalVector(_ShaderHectonSonarRadarDistortion, _pendingRadarDistortion);
+                    _lastPublishedRadarDistortion = _pendingRadarDistortion;
+                    _hasPublishedRadarDistortion = true;
+                }
+            }
+
+            if (_sonarRevealShaderDirty)
+            {
+                _sonarRevealShaderDirty = false;
+                Shader.SetGlobalVector(_ShaderSonarRevealOrigin, _pendingSonarRevealOrigin);
+                Shader.SetGlobalVector(_ShaderSonarPingCenter, _pendingSonarPingCenter);
+                Shader.SetGlobalVector(_ShaderSonarPingParams, _pendingSonarPingParams);
+                Shader.SetGlobalFloat(_ShaderSonarRevealExpireTime, _pendingSonarRevealExpireTime);
+                Shader.SetGlobalFloat(_ShaderAbyssalDistortion, _pendingAbyssalDistortion);
+                Shader.SetGlobalVector(_ShaderSonarRevealWaveParams, _pendingSonarRevealWaveParams);
+            }
+
+            if (_passiveRadarShaderDirty)
+            {
+                _passiveRadarShaderDirty = false;
+                bool hadPublishedPeak = _hasPublishedPassiveRadarPeak;
+                if (_pendingPassiveRadarRowsChanged || !_passiveRadarShaderRowsInitialized)
+                {
+                    Shader.SetGlobalVectorArray(_ShaderPassiveRadarRows, s_passiveRadarRows);
+                    _passiveRadarShaderRowsInitialized = true;
+                }
+
+                if (!hadPublishedPeak ||
+                    !NearlyEqual(_lastPublishedPassiveRadarPeak, _pendingPassiveRadarPeak, ShaderVectorPublishEpsilon))
+                {
+                    Shader.SetGlobalVector(_ShaderPassiveRadarPeak, _pendingPassiveRadarPeak);
+                    _lastPublishedPassiveRadarPeak = _pendingPassiveRadarPeak;
+                }
+
+                if (!hadPublishedPeak ||
+                    !NearlyEqual(_lastPublishedPassiveRadarAutoGain, _pendingPassiveRadarAutoGain, ShaderVectorPublishEpsilon))
+                {
+                    Shader.SetGlobalFloat(_ShaderPassiveRadarAutoGain, _pendingPassiveRadarAutoGain);
+                    _lastPublishedPassiveRadarAutoGain = _pendingPassiveRadarAutoGain;
+                }
+
+                _pendingPassiveRadarRowsChanged = false;
+                _hasPublishedPassiveRadarPeak = true;
+            }
         }
 
         private void EnsureAupDiscoveryGrid()
@@ -3087,13 +3342,15 @@ namespace Hecton8.Visor
         {
             _hasSonarSnapshot = false;
             _lastSonarSnapshot = default;
-            Shader.SetGlobalFloat(_ShaderSonarRevealExpireTime, 0f);
-            Shader.SetGlobalVector(_ShaderSonarRevealWaveParams, Vector4.zero);
+            QueueSonarRevealShaderState(
+                Vector4.zero,
+                Vector4.zero,
+                Vector4.zero,
+                0f,
+                0f,
+                Vector4.zero);
             PublishSonarWaveFront(0f);
             PublishSonarRadius(0f);
-            Shader.SetGlobalVector(_ShaderSonarPingCenter, Vector4.zero);
-            Shader.SetGlobalVector(_ShaderSonarPingParams, Vector4.zero);
-            Shader.SetGlobalFloat(_ShaderAbyssalDistortion, 0f);
             PublishLidarPersistence(0f);
             _activeSonarWaveFront = 0f;
             _activeSonarWaveSpeed = 0f;
@@ -3563,19 +3820,16 @@ namespace Hecton8.Visor
         {
             MarkAupDiscoveryPulseShell(in originAup, radius, pulseIntensity);
 
-            Shader.SetGlobalVector(_ShaderSonarRevealOrigin, MakeVector4(origin.x, origin.y, origin.z, radius));
-            Shader.SetGlobalVector(_ShaderSonarPingCenter, MakeVector4(origin.x, origin.y, origin.z, pulseIntensity));
-            Shader.SetGlobalVector(
-                _ShaderSonarPingParams,
+            QueueSonarRevealShaderState(
+                MakeVector4(origin.x, origin.y, origin.z, radius),
+                MakeVector4(origin.x, origin.y, origin.z, pulseIntensity),
                 MakeVector4(
                     radius,
                     math.lerp(6f, 2f, pulseIntensity),
                     pulseTime,
-                    pulseTime + math.max(0.05f, revealDurationSeconds)));
-            Shader.SetGlobalFloat(_ShaderSonarRevealExpireTime, pulseTime + math.max(0.05f, revealDurationSeconds));
-            Shader.SetGlobalFloat(_ShaderAbyssalDistortion, abyssalDistortion);
-            Shader.SetGlobalVector(
-                _ShaderSonarRevealWaveParams,
+                    pulseTime + math.max(0.05f, revealDurationSeconds)),
+                pulseTime + math.max(0.05f, revealDurationSeconds),
+                abyssalDistortion,
                 MakeVector4(
                     pulseTime,
                     effectiveWaveSpeed,
@@ -3836,27 +4090,10 @@ namespace Hecton8.Visor
 
         private void PublishPassiveRadarShaderState(Vector4 peakPayload, float autoGain, bool rowsChanged)
         {
-            if (rowsChanged || !_passiveRadarShaderRowsInitialized)
-            {
-                Shader.SetGlobalVectorArray(_ShaderPassiveRadarRows, s_passiveRadarRows);
-                _passiveRadarShaderRowsInitialized = true;
-            }
-
-            if (!_hasPublishedPassiveRadarPeak ||
-                !NearlyEqual(_lastPublishedPassiveRadarPeak, peakPayload, ShaderVectorPublishEpsilon))
-            {
-                Shader.SetGlobalVector(_ShaderPassiveRadarPeak, peakPayload);
-                _lastPublishedPassiveRadarPeak = peakPayload;
-            }
-
-            if (!_hasPublishedPassiveRadarPeak ||
-                !NearlyEqual(_lastPublishedPassiveRadarAutoGain, autoGain, ShaderVectorPublishEpsilon))
-            {
-                Shader.SetGlobalFloat(_ShaderPassiveRadarAutoGain, autoGain);
-                _lastPublishedPassiveRadarAutoGain = autoGain;
-            }
-
-            _hasPublishedPassiveRadarPeak = true;
+            _pendingPassiveRadarRowsChanged |= rowsChanged || !_passiveRadarShaderRowsInitialized;
+            _pendingPassiveRadarPeak = peakPayload;
+            _pendingPassiveRadarAutoGain = math.max(0f, math.isfinite(autoGain) ? autoGain : 1f);
+            _passiveRadarShaderDirty = true;
         }
 
         private void ClearPassiveRadarState()
@@ -3889,6 +4126,23 @@ namespace Hecton8.Visor
 
         private void TryPlayAbyssalAnchorReturn(float response01)
         {
+            if (abyssalAnchorReturnClip == null || response01 <= 0f)
+                return;
+
+            _pendingAbyssalAnchorReturnResponse01 = math.max(
+                _pendingAbyssalAnchorReturnResponse01,
+                math.saturate(response01));
+            _abyssalAnchorReturnAudioDirty = true;
+        }
+
+        private void FlushQueuedSpectrumAudio()
+        {
+            if (!_abyssalAnchorReturnAudioDirty)
+                return;
+
+            _abyssalAnchorReturnAudioDirty = false;
+            float response01 = _pendingAbyssalAnchorReturnResponse01;
+            _pendingAbyssalAnchorReturnResponse01 = 0f;
             if (abyssalAnchorReturnClip == null || response01 <= 0f)
                 return;
 

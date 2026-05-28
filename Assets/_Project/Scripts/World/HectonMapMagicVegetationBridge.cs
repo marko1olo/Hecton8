@@ -150,8 +150,6 @@ namespace Hecton8.World
         private const int InvalidArtificialStructureId = 0;
         private const float DefaultTerrainHoleEvictionDistance = 3000f;
         private const float DefaultThermalGridRadius = 1000f;
-        private const float DistantFloraLowMathLodDistanceMeters = 1000f;
-        private const float DistantFloraLowMathLodDistanceSq = DistantFloraLowMathLodDistanceMeters * DistantFloraLowMathLodDistanceMeters;
         private const float DefaultThermalGridHorizontalCellSize = 50f;
         private const float DefaultThermalGridVerticalCellSize = 250f;
         private const float BiolumeSurgeDurationSeconds = 4f;
@@ -1856,6 +1854,10 @@ namespace Hecton8.World
         {
             public bool Active;
             public ChunkBuildJobState JobState;
+            public bool Cancelled;
+            public NativeArray<byte> SandMaskSnapshot;
+            public NativeArray<byte> RockMaskSnapshot;
+            public NativeArray<ushort> HeightSamplesSnapshot;
             public NativeArray<JobInstanceRecord> GrassRecords;
             public NativeArray<JobInstanceRecord> FloatingRecords;
             public NativeArray<JobInstanceRecord> KelpRecords;
@@ -1879,6 +1881,7 @@ namespace Hecton8.World
             public NativeArray<byte> VoxelOutput;
             public Vector3 TargetCenter;
             public Vector3 VoxelOrigin;
+            public bool Cancelled;
             public JobHandle Handle;
         }
 
@@ -1892,6 +1895,7 @@ namespace Hecton8.World
             public NativeArray<float2> FlowOutput;
             public Vector3 FlowCenter;
             public float RuntimeTime;
+            public bool Cancelled;
             public JobHandle Handle;
         }
 
@@ -1906,6 +1910,7 @@ namespace Hecton8.World
             public Vector3 ThermalCenter;
             public float RuntimeTime;
             public bool CanComparePreviousFlowVolume;
+            public bool Cancelled;
             public JobHandle Handle;
         }
 
@@ -1925,6 +1930,7 @@ namespace Hecton8.World
             public long ScheduleTicks;
             public bool CanReuseLastTarget;
             public bool ScheduledMacroVoxelRoute;
+            public bool Cancelled;
             public JobHandle Handle;
         }
 
@@ -2300,10 +2306,13 @@ namespace Hecton8.World
         private Vector3 _externalThreatPulsePosition;
         private Vector3 _totalUniverseOffset;
         private double3 _totalUniverseOffsetDouble;
+        private Vector3 _pendingWorldOffset;
+        private double3 _pendingWorldOffsetDouble;
         private float _externalThreatPulseRadius;
         private float _externalThreatPulseStrength;
         private float _externalThreatPulseHoldTimer;
         private float _idleNativePoolTimer;
+        private bool _hasPendingWorldOffset;
         private int _nextTerrainHoleId = 1;
         private int _nextArtificialStructureId = 1;
         private int _surfaceDefragMoveCount;
@@ -2865,6 +2874,8 @@ namespace Hecton8.World
             {
                 _insideLateFrameJobSwap = false;
             }
+
+            TryApplyPendingWorldOffset();
         }
 
         /// <summary>Active surface instance matrix buffer currently owned by this bridge.</summary>
@@ -4657,7 +4668,7 @@ namespace Hecton8.World
             records = H8Memory.Allocate<ArtificialStructureRecord>(
                 recordCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
             if (!records.IsCreated || records.Length < recordCount)
             {
@@ -4995,21 +5006,77 @@ namespace Hecton8.World
         /// </summary>
         public void ApplyWorldOffsetToAllChunks(Vector3 offset)
         {
-            ApplyWorldOffsetToAllChunks(offset, _totalUniverseOffsetDouble - ToDouble3(offset));
+            TryApplyWorldOffsetToAllChunks(offset, _totalUniverseOffsetDouble - ToDouble3(offset), refreshResidency: true);
         }
 
-        private void ApplyWorldOffsetToAllChunks(Vector3 offset, double3 newTotalUniverseOffsetDouble)
+        private bool TryApplyWorldOffsetToAllChunks(Vector3 offset, double3 newTotalUniverseOffsetDouble, bool refreshResidency)
+        {
+            if (offset.sqrMagnitude <= 0.000001f)
+                return true;
+
+            if (HasAsyncWorldJobsInFlight())
+            {
+                QueuePendingWorldOffset(offset, newTotalUniverseOffsetDouble);
+                return false;
+            }
+
+            ApplyWorldOffsetToAllChunksImmediate(offset, newTotalUniverseOffsetDouble, refreshResidency);
+            return true;
+        }
+
+        private void QueuePendingWorldOffset(Vector3 offset, double3 newTotalUniverseOffsetDouble)
+        {
+            _pendingWorldOffset = _hasPendingWorldOffset ? _pendingWorldOffset + offset : offset;
+            _pendingWorldOffsetDouble = newTotalUniverseOffsetDouble;
+            _hasPendingWorldOffset = true;
+        }
+
+        private void TryApplyPendingWorldOffset()
+        {
+            if (!_hasPendingWorldOffset || HasAsyncWorldJobsInFlight())
+                return;
+
+            Vector3 pendingOffset = _pendingWorldOffset;
+            double3 pendingTotalOffset = _pendingWorldOffsetDouble;
+            _pendingWorldOffset = default;
+            _pendingWorldOffsetDouble = default;
+            _hasPendingWorldOffset = false;
+
+            ApplyWorldOffsetToAllChunksImmediate(pendingOffset, pendingTotalOffset, refreshResidency: false);
+        }
+
+        private bool HasAsyncWorldJobsInFlight()
+        {
+            if (_threatPropagationScheduled ||
+                _flowFieldScheduled ||
+                _abyssalThermalGridScheduled ||
+                _abyssalPathScheduled ||
+                _hlodCullScheduled ||
+                _poolDefragScheduled)
+            {
+                return true;
+            }
+
+            return HasActiveChunkBuildJobs();
+        }
+
+        private bool HasActiveChunkBuildJobs()
+        {
+            for (int i = 0; i < _chunkBuildJobs.Length; i++)
+            {
+                if (_chunkBuildJobs[i].Active)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void ApplyWorldOffsetToAllChunksImmediate(Vector3 offset, double3 newTotalUniverseOffsetDouble, bool refreshResidency)
         {
             if (offset.sqrMagnitude <= 0.000001f)
                 return;
 
             Vector3 appliedOffset = -offset;
-            DisposeAllChunkBuildJobs();
-            CompleteThreatPropagationJob(forceComplete: true);
-            CompleteFlowFieldJob(forceComplete: true);
-            CompleteThermalGridJob(forceComplete: true);
-            CompleteAbyssalPathJob(forceComplete: true);
-            CompleteHLODCullJob(forceComplete: true);
             _totalUniverseOffsetDouble = math.all(math.isfinite(newTotalUniverseOffsetDouble))
                 ? newTotalUniverseOffsetDouble
                 : _totalUniverseOffsetDouble + ToDouble3(appliedOffset);
@@ -5115,9 +5182,34 @@ namespace Hecton8.World
                 _abyssalThermalGridCenter += appliedOffset;
             _scheduledAbyssalThermalGridCenter += appliedOffset;
             _currentThreatHotspotPosition += appliedOffset;
+            ShiftPredatorFearNodes(appliedOffset);
 
             _activeSetDirty = true;
-            RefreshResidency();
+            if (refreshResidency)
+            {
+                RefreshResidency();
+            }
+            else
+            {
+                _activeBufferRebuildRequested = true;
+            }
+        }
+
+        private void ShiftPredatorFearNodes(Vector3 appliedOffset)
+        {
+            if (_predatorFearNodeCount <= 0)
+                return;
+
+            float3 offset = new float3(appliedOffset.x, appliedOffset.y, appliedOffset.z);
+            for (int i = 0; i < _predatorFearNodeCount; i++)
+            {
+                PredatorFearNodeState node = _predatorFearNodes[i];
+                node.Position += offset;
+                _predatorFearNodes[i] = node;
+            }
+
+            if (!_abyssalPathScheduled)
+                SyncPredatorFearNodeSnapshot(_predatorFearSimulationTime);
         }
 
         void IMapMagicTerrainTileEventListener.OnMapMagicTerrainTileApplied(in MapMagicTerrainTileSnapshot snapshot)
@@ -5304,21 +5396,8 @@ namespace Hecton8.World
                 new Vector4(value.c3.x, value.c3.y, value.c3.z, value.c3.w));
         }
 
-        private static Matrix4x4 ApplyMatrixTranslationOffset(Matrix4x4 matrix, Vector3 offset)
-        {
-            matrix.m03 += offset.x;
-            matrix.m13 += offset.y;
-            matrix.m23 += offset.z;
-            return matrix;
-        }
-
         private Matrix4x4 ApplyVegetationRuntimeOffset(Matrix4x4 matrix)
         {
-#if _MATH_LOD_LOW
-            Vector3 approximateOffset = _totalUniverseOffset;
-            if (IsDistantFloraMatrix(matrix, approximateOffset))
-                return ApplyMatrixTranslationOffset(matrix, approximateOffset);
-#endif
             return ApplyMatrixTranslationOffsetDouble(matrix, _totalUniverseOffsetDouble);
         }
 
@@ -5329,19 +5408,6 @@ namespace Hecton8.World
             matrix.m13 = ClampDoubleToRuntimeFloat(translated.y);
             matrix.m23 = ClampDoubleToRuntimeFloat(translated.z);
             return matrix;
-        }
-
-        private bool IsDistantFloraMatrix(Matrix4x4 matrix, Vector3 offset)
-        {
-            if (!_hasLastPlayerPosition)
-                return false;
-
-            Vector3 runtimePosition = new Vector3(
-                matrix.m03 + offset.x,
-                matrix.m13 + offset.y,
-                matrix.m23 + offset.z);
-            float distanceSq = (runtimePosition - _lastPlayerPosition).sqrMagnitude;
-            return float.IsFinite(distanceSq) && distanceSq > DistantFloraLowMathLodDistanceSq;
         }
 
         private static Matrix4x4 ConvertMatrixToStableUniverseSpace(Matrix4x4 matrix, double3 universeOffset)
@@ -5384,7 +5450,7 @@ namespace Hecton8.World
             return H8Memory.Allocate<JobInstanceRecord>(
                 count,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
         }
 
@@ -5418,7 +5484,7 @@ namespace Hecton8.World
                 if (!_chunkBuildJobs[i].Active || !_chunkBuildJobs[i].JobState.Key.Equals(key))
                     continue;
 
-                CompleteAndReleaseChunkBuildJob(i);
+                MarkChunkBuildJobCancelled(i);
                 return;
             }
         }
@@ -5447,8 +5513,27 @@ namespace Hecton8.World
 
                 ChunkKey key = _chunkBuildJobs[i].JobState.Key;
                 if (key.TileX == tileX && key.TileZ == tileZ)
-                    CompleteAndReleaseChunkBuildJob(i);
+                    MarkChunkBuildJobCancelled(i);
             }
+        }
+
+        private void CancelAllChunkBuildJobs()
+        {
+            for (int i = 0; i < _chunkBuildJobs.Length; i++)
+            {
+                if (_chunkBuildJobs[i].Active)
+                    MarkChunkBuildJobCancelled(i);
+            }
+        }
+
+        private void MarkChunkBuildJobCancelled(int slot)
+        {
+            if ((uint)slot >= (uint)_chunkBuildJobs.Length || !_chunkBuildJobs[slot].Active)
+                return;
+
+            ChunkBuildPendingJob pending = _chunkBuildJobs[slot];
+            pending.Cancelled = true;
+            _chunkBuildJobs[slot] = pending;
         }
 
         private void DisposeAllChunkBuildJobs()
@@ -5470,6 +5555,9 @@ namespace Hecton8.World
 
         private static void ReleaseChunkBuildPendingJob(ref ChunkBuildPendingJob pending)
         {
+            H8Memory.Release(ref pending.SandMaskSnapshot, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.RockMaskSnapshot, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.HeightSamplesSnapshot, VegetationMemorySovereigntyConstants.OwnerSystemId);
             ReleaseJobRecordArray(ref pending.GrassRecords);
             ReleaseJobRecordArray(ref pending.FloatingRecords);
             ReleaseJobRecordArray(ref pending.KelpRecords);
@@ -6274,7 +6362,7 @@ namespace Hecton8.World
             return indices.Sand >= 0 || indices.GreenSand >= 0;
         }
 
-        private Camera ResolveActiveViewCamera()
+        private Camera RefreshActiveViewCameraCache()
         {
             if (_cachedViewCamera != null &&
                 _cachedViewCamera.isActiveAndEnabled &&
@@ -6334,12 +6422,29 @@ namespace Hecton8.World
         private byte GetGrassLodTier(float distanceSqr)
         {
             float nearRadiusSqr = grassHighDensityRadius * grassHighDensityRadius;
-            return distanceSqr <= nearRadiusSqr ? (byte)0 : (byte)1;
+            float farRadius = math.max(grassHighDensityRadius + 1f, residentRadius);
+            float farRadiusSqr = farRadius * farRadius;
+            float distance01 = math.saturate((distanceSqr - nearRadiusSqr) / math.max(1f, farRadiusSqr - nearRadiusSqr));
+            float smoothedDistance01 = distance01 * distance01 * (3f - (2f * distance01));
+            float qualityWeight = ResolveGrassQualityWeight();
+            float tierScale = math.lerp(1.25f, 0.65f, qualityWeight);
+            int encodedTier = (int)math.round(math.saturate(smoothedDistance01 * tierScale) * byte.MaxValue);
+            return (byte)math.clamp(encodedTier, 0, byte.MaxValue);
         }
 
         private float GetGrassStepForTier(byte grassLodTier)
         {
-            return grassLodTier == 0 ? grassStepMeters : grassFarStepMeters;
+            float nearStep = math.max(0.05f, grassStepMeters);
+            float farStep = math.max(nearStep, grassFarStepMeters);
+            float qualityWeight = ResolveGrassQualityWeight();
+            float tier01 = (grassLodTier * (1f / byte.MaxValue)) * math.lerp(1f, 0.55f, qualityWeight);
+            return math.lerp(nearStep, farStep, math.saturate(tier01));
+        }
+
+        private static float ResolveGrassQualityWeight()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return float.IsFinite(quality) ? math.saturate(quality) : 0f;
         }
 
         private void UploadChannel(
@@ -8090,32 +8195,31 @@ namespace Hecton8.World
             if (!isActiveAndEnabled)
                 return;
 
-            ApplyWorldOffsetToAllChunks(shiftData.ShiftOffset, -shiftData.NewTotalOffsetDouble);
-            if (_predatorFearNodeCount > 0)
-            {
-                float3 offset = -shiftData.ShiftOffset;
-                for (int i = 0; i < _predatorFearNodeCount; i++)
-                {
-                    PredatorFearNodeState node = _predatorFearNodes[i];
-                    node.Position += offset;
-                    _predatorFearNodes[i] = node;
-                }
-
-                if (!_abyssalPathScheduled)
-                    SyncPredatorFearNodeSnapshot(_predatorFearSimulationTime);
-            }
+            TryApplyWorldOffsetToAllChunks(shiftData.ShiftOffset, -shiftData.NewTotalOffsetDouble, refreshResidency: true);
         }
 
         private void ClearAllResidency()
         {
-            if (_selectedChunkCount == 0 && _pendingChunkCount == 0 && !_activeSetDirty)
+            bool hasClearableJobs = HasActiveChunkBuildJobs() ||
+                _threatPropagationScheduled ||
+                _flowFieldScheduled ||
+                _abyssalThermalGridScheduled ||
+                _abyssalPathScheduled;
+            if (_selectedChunkCount == 0 && _pendingChunkCount == 0 && !_activeSetDirty && !hasClearableJobs)
                 return;
 
-            DisposeAllChunkBuildJobs();
+            CancelAsyncWorldJobsForResidencyClear();
             ResetActiveState(clearChunkCache: true);
             ClearRendererBindings();
             ReleaseBuffers();
             _activeSetDirty = false;
+        }
+
+        private void CancelAsyncWorldJobsForResidencyClear()
+        {
+            CancelAllChunkBuildJobs();
+            CancelVegetationSimulationJobsForResidencyClear();
+            InvalidateAbyssalPathState();
         }
 
         private void ResetActiveState(bool clearChunkCache)

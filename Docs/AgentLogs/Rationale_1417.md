@@ -1,7 +1,7 @@
 # Rationale 1417 - Combat Damage / Armor Penetration Array Purge
 
 Date: 2026-05-28
-Status: LOOP 4 STATUS-EFFECT RESIDUAL PURGED STATICALLY - BUILD/STRESS PENDING
+Status: LOOP 8 TARGET LOCK ORDER STATICALLY HARDENED - BUILD/STRESS PENDING
 
 ## Decision 00 - Mandate Set
 
@@ -130,3 +130,43 @@ Solution: Add `Assets/_Project/Tests/Editor/CombatDamageRuntime1417StressHarness
 Rejected Alternatives: Running the stress test without Unity Test Runner/profiler is impossible from this shell. Claiming 0 B GC from source inspection is false. Making the heavy test automatic would punish every editor test pass.
 Scalability potential: Low tier proof focuses on bounded rejection under overload. Middle/high/ultra truth remains identical; higher devices can spend visual budget on hit/VFX response after the bounded authority lane rejects excess packets.
 Hardware Impact: Harness is editor-only and explicit. Runtime impact is 0 us until manually executed. Verification remains pending: no Unity execution, no GCMonitor, no profiler sample.
+
+## Decision 16 - Target And Armor Writer Lock Hardening
+
+Problem: Loop 5 audit found real remaining relocation hazards after the first migration. Target register/unregister/sync and helper refresh paths wrote DataVault-backed target arrays without a dedicated writer window. `TryQueueDamage` refreshed hit profile from managed receiver/Transform state before ingress locks. Armor target snapshots could be refreshed before armor buffers were pinned. Late dispatch wrote counters, status-active flags, and telemetry after job locks were released. Queue-reject anomalies published a signal but did not write the fixed black-box ring.
+Solution: Add `TryAcquireCombatTargetWriteLocks`/`ReleaseCombatTargetWriteLocks`, `TryAcquireCombatTelemetryWriteLocks`/`ReleaseCombatTelemetryWriteLocks`, and `TryAcquireArmorTargetWriteLocks`/`ReleaseArmorTargetWriteLocks`. Wrap every owner-phase target and armor mutation in `try/finally`. Move armor snapshot refresh inside locked/pinned windows. Remove hot ingress hit-profile refresh from `TryQueueDamage`; owner phase must publish `SyncTargetHitProfile`. Add late dispatch pending flags so result/status dispatch retries under `TryLockCombatDamageVaultBuffersForJobs` instead of writing after unlock. Record queue/storage rejects into the 300-entry telemetry ring under telemetry write locks.
+Rejected Alternatives: Keeping hot `Transform`/receiver reads in damage ingress violates the route doctrine and makes hit packets mutate target state from the wrong phase. Treating registration/sync as "cold enough" leaves compaction relocation windows unproven. Adding managed locks would duplicate DataVault ownership semantics. Using a full physical penetration simulation was rejected; the LUT plus continuous quality blend remains cheaper and more controllable.
+Scalability potential: Low tier gets bounded hit ingestion, fail-closed overflow, cheap base-armor approximation blended by quality, and reduced mutation cadence. Middle tier keeps the same truth route with higher status cadence/batch. High tier spends saved budget on richer hit normals, decals, and VFX. Ultra tier can push visual overkill through SignalBus presentation, but damage truth, DTO layout, buffer IDs, and save identity do not branch.
+Hardware Impact: No profiler microseconds are claimed. Static impact is stability: writer fences add small owner-phase overhead and prevent DataVault relocation corruption. On i3/MX350, the practical gain is avoiding exception/corruption during explosion spikes; runtime proof remains pending because CPU/build gate was blocked.
+
+## Decision 17 - Atomic Target Side-State Fail-Closed Contract
+
+Problem: Loop 6 audit found a real partial-publication path. Armor/status helper methods could fail silently when a DataVault write lock was unavailable. `UnregisterTarget` also tombstoned BallisticsRuntime primitives before all side-state locks succeeded, so lock contention could leave a still-registered target without a ballistic primitive.
+Solution: Convert target armor/status helper routes to bool-return fail-closed contracts and consume those returns at register, unregister, protection sync, and clear call sites. Add `MoveTargetSideState` and `ClearTargetSideState` so status and armor side-state locks are acquired together, all buffers are validated before mutation, and both domains are released in `finally`. Move ballistic tombstone after successful `ClearSlot` and `RebuildTargetLookup`.
+Rejected Alternatives: Keeping best-effort void helpers would hide lock contention and corrupt cross-domain target facts. Copying status and armor through independent helpers was rejected because one domain could mutate while the other failed. Tombstoning first was rejected because it publishes an irreversible side-effect before the owning combat slot mutation has actually succeeded.
+Scalability potential: Low tier gets fail-closed target mutation under compaction or explosion pressure. Middle tier keeps the same deterministic target truth with more status cadence. High tier can spend saved stability margin on richer hit/debris presentation. Ultra tier can push visual overkill through SignalBus without changing target, armor, status, DTO, or save identity ownership.
+Hardware Impact: No profiler microseconds are claimed. On i3/MX350 the impact is stability: failed write locks now return false before combat arrays and ballistic primitive state diverge. Added owner-phase lock checks are not in per-hit Burst loops.
+
+## Decision 18 - Ingress Reject Telemetry After Lock Release
+
+Problem: `TryQueueDamage` had one post-lock storage reject branch that called queue-reject telemetry while damage ingress write locks were still held. This was not needed and nested telemetry lock acquisition inside ingress locks.
+Solution: Record `postLockStorageReject` while holding ingress locks, release ingress locks in `finally`, and publish queue reject telemetry only after `ReleaseDamageIngressWriteLocks` has executed.
+Rejected Alternatives: Keeping nested telemetry publication was mechanically functional but unnecessary. Removing the telemetry would hide overflow/storage faults. Throwing would violate fail-closed overload behavior.
+Scalability potential: Low tier avoids extra lock nesting during overload spikes. Middle, high, and ultra retain identical damage truth; quality only affects visual/reporting fidelity outside authority.
+Hardware Impact: No measured microseconds. Static impact is cleaner lock ordering in the hit ingress path, with the same bounded packet capacity and no heap allocation.
+
+## Decision 19 - Continuation Build Gate Recheck
+
+Problem: The final build/stress proof remains required, but launching another compiler while the host is saturated would violate the explicit Compilation Resource Throttling rule.
+Solution: Re-sampled host load before any build attempt. Result: CPU 99 percent, active dotnet PID 38260 and VBCSCompiler PID 18948. No dotnet build was launched by agent 1417.
+Rejected Alternatives: Running build because code edits are already staged would contaminate proof and compete with an active compiler. Claiming final compile proof without an executed build is false.
+Scalability potential: No gameplay change. This preserves machine stability so low-tier device work can still be validated later under controlled CPU conditions.
+Hardware Impact: 0 us runtime change, 0 build CPU consumed by this continuation. Loop 8 post-patch gate also blocked: CPU 87 percent, no compiler process printed.
+
+## Decision 20 - Cross-Domain Target Lock Order Normalization
+
+Problem: Subagent audit found inconsistent nested writer-lock order. `RegisterTarget` and `UnregisterTarget` acquired combat target locks first, then called helpers that acquired armor/status locks. Status scheduling already uses armor -> status -> combat, so the owner-phase target mutation route could fail closed unnecessarily under contention and created an avoidable ordering hazard.
+Solution: Rework owner target mutation to acquire locks in one order: armor first, status second, combat third. Add locked armor/status side-state variants so `RegisterTarget`, `UnregisterTarget`, `SyncTargetProtection`, and standalone `ClearSlot` do not call helper methods that acquire new locks while combat locks are held. Release order is combat -> status -> armor in `finally`.
+Rejected Alternatives: Keeping combat -> armor/status was rejected because it conflicts with scheduler order. Adding a managed global mutex was rejected because DataVault lock ownership already defines the concurrency contract. Removing side-state updates was rejected because armor/status target facts would diverge.
+Scalability potential: Low tier gets fewer avoidable fail-closed registration/unregistration failures during compaction. Middle/high/ultra keep identical combat truth and can spend quality budget only on visual fidelity.
+Hardware Impact: No measured microseconds. Owner-phase target mutation now holds combat locks for less time and performs side-state validation before combat mutation.

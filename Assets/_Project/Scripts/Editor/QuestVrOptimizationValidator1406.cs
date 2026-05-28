@@ -17,6 +17,8 @@ namespace Hecton8.Editor
         private const string XrReadinessValidatorPath = "Assets/_Project/Scripts/Editor/Build/XrPlatformReadinessValidator.cs";
         private const string FluidAdvectionRenderFeaturePath = "Assets/_Project/Scripts/Visor/HectonFluidAdvectionRenderFeature.cs";
         private const string WristPdaScreenProjectorFeaturePath = "Assets/_Project/Scripts/UI/WristPdaScreenProjectorFeature.cs";
+        private const string BrownoutRenderFeaturePath = "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs";
+        private const string VisorUberPostFeaturePath = "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs";
         private const string TextureGuardPath = "Assets/_Project/Scripts/Core/HectonUrpTextureRequirementsGuard.cs";
         private const string UnderwaterVisualsPath = "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs";
         private const string QuestUrpGuid = "d9c4cd6a763fec04a913c6a149663003";
@@ -39,6 +41,8 @@ namespace Hecton8.Editor
             ValidateXrReadinessValidator();
             ValidateFluidAdvectionRenderFeature();
             ValidateWristPdaScreenProjectorFeature();
+            ValidateBrownoutRenderFeature();
+            ValidateVisorUberPostFeature();
             ValidateCameraTexturePolicy();
             ValidateFoveationMock();
         }
@@ -185,6 +189,26 @@ namespace Hecton8.Editor
             AssertTokenAfter(feature, "_pass.Setup(settings, _material);", "renderer.EnqueuePass(_pass);", WristPdaScreenProjectorFeaturePath, "PDA projector setup must precede enqueue");
         }
 
+        private static void ValidateBrownoutRenderFeature()
+        {
+            string feature = ReadRequiredText(BrownoutRenderFeaturePath);
+            AssertContains(feature, "CameraType cameraType = renderingData.cameraData.cameraType;", BrownoutRenderFeaturePath, "brownout checks camera type before pass setup");
+            AssertContains(feature, "cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView", BrownoutRenderFeaturePath, "brownout skips non-game camera types before enqueue");
+            AssertTokenAfter(feature, "if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)", "Camera renderCamera = renderingData.cameraData.camera;", BrownoutRenderFeaturePath, "brownout skip guard must precede camera state build");
+            AssertTokenAfter(feature, "_pass.Setup(settings, _material, runtimeState);", "renderer.EnqueuePass(_pass);", BrownoutRenderFeaturePath, "brownout setup must precede enqueue");
+        }
+
+        private static void ValidateVisorUberPostFeature()
+        {
+            string feature = ReadRequiredText(VisorUberPostFeaturePath);
+            AssertContains(feature, "CameraType cameraType = renderingData.cameraData.cameraType;", VisorUberPostFeaturePath, "visor uber post checks camera type before pass setup");
+            AssertContains(feature, "cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView", VisorUberPostFeaturePath, "visor uber post skips non-game camera types before enqueue");
+            AssertTokenNotBetween(feature, "if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)", "ClearRawColorHistoryRequest();", "if (settings.deepSeaNoirUnifiedPass)", VisorUberPostFeaturePath, "visor uber post non-game guard must not clear game-camera raw history state");
+            AssertTokenNotBetween(feature, "if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)", "ClearPendingReconstructionInput();", "if (settings.deepSeaNoirUnifiedPass)", VisorUberPostFeaturePath, "visor uber post non-game guard must not clear game-camera reconstruction input");
+            AssertTokenAfter(feature, "if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)", "if (settings.deepSeaNoirUnifiedPass)", VisorUberPostFeaturePath, "visor uber post non-game guard must precede unified pass enqueue");
+            AssertTokenAfter(feature, "Camera renderCamera = renderingData.cameraData.camera;", "_pass.Setup(", VisorUberPostFeaturePath, "visor uber post state build must precede pass setup");
+        }
+
         private static void ValidateFoveationMock()
         {
             if (!QuestFoveationDriver.WouldAbortCleanlyForUnsupported(false, FoveatedRenderingCaps.None))
@@ -278,6 +302,15 @@ namespace Hecton8.Editor
             int first = text.IndexOf(firstToken, StringComparison.Ordinal);
             int second = text.IndexOf(secondToken, StringComparison.Ordinal);
             if (first < 0 || second < 0 || second <= first)
+                throw new FatalArchitectureException("Validation failed in " + path + " for " + context);
+        }
+
+        private static void AssertTokenNotBetween(string text, string startToken, string forbiddenToken, string endToken, string path, string context)
+        {
+            int start = text.IndexOf(startToken, StringComparison.Ordinal);
+            int end = start < 0 ? -1 : text.IndexOf(endToken, start + startToken.Length, StringComparison.Ordinal);
+            int forbidden = start < 0 ? -1 : text.IndexOf(forbiddenToken, start + startToken.Length, StringComparison.Ordinal);
+            if (start < 0 || end < 0 || (forbidden >= 0 && forbidden < end))
                 throw new FatalArchitectureException("Validation failed in " + path + " for " + context);
         }
 

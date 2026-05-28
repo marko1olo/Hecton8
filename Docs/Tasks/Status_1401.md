@@ -9,10 +9,12 @@ Route relevance: removes compile/import blocker for first-20-minutes route. No g
 
 ## Resource Gate
 
-- dotnet build used: NO
-- MSBuild used: NO
-- Last CPU sample before build: 100 percent at `Docs/AgentLogs/Build_1401_Attempt_20260528_052348_BLOCKED_BY_CONTENTION.json`
-- Compiler contention check: BLOCKED by CPU and active `dotnet` process `55080`
+- direct `dotnet build` used: NO
+- direct MSBuild used: NO
+- guarded wrapper invocations after the previous report: 3
+- Diagnostic compile artifact: `Docs/AgentLogs/Build_1401_Attempt_20260528_061044_SUMMARY.json`; wrapper launched vendor project builds and attempted projects returned exitCode 0, but this is NOT valid throttling proof because the old wrapper failed to block a single active `dotnet` process recorded in the same JSON.
+- Latest post-patch compile gate after wrapper fix: CPU sample unavailable (`-1`) at `Docs/AgentLogs/Build_1401_Attempt_20260528_123346_BLOCKED_BY_CONTENTION.json`; active `csc` process `33212`, active `dotnet` process `26840`; attempts array empty.
+- Compiler contention check: LATEST BLOCKED. Post-patch warning cleanup is static-only, not compile-proven.
 
 ## Loop 1 - Tasks 01-05
 
@@ -36,7 +38,7 @@ Route relevance: removes compile/import blocker for first-20-minutes route. No g
 - [x] Task 12 MISSING_SHADER_INCLUDE_REPAIR | Target shader include audit found legacy cginc includes but no current failing shader log. DOD practice: patch only proven failures. Rejected: blind shader rewrite.
 - [x] Task 13 RENDER_GRAPH_COMPATIBILITY_STUBS | Target source scan found no `AddRenderPasses` RenderGraph offender. DOD practice: no fake stub for absent route. Rejected: dead compatibility layer.
 - [x] Task 14 TELEMETRY_INSTRUMENTATION_FOR_VENDOR_COMPILATION | Added `Tools/Run_Guarded_Vendor_Compile_1401.ps1`. DOD practice: CPU and compiler gate before build. Rejected: unguarded dotnet spam.
-- [ ] Task 15 GATED_VENDOR_COMPILATION_ATTEMPT | [BLOCKED_BY_CONTENTION] Latest real guarded attempt: CPU 100 percent and active `dotnet` PID 55080. Wrapper exited before `dotnet build`; attempts array is empty. DOD practice: resource throttling. Rejected: forcing build under contention.
+- [ ] Task 15 GATED_VENDOR_COMPILATION_ATTEMPT | [BLOCKED_AFTER_GATE_FIX] `Docs/AgentLogs/Build_1401_Attempt_20260528_061044_SUMMARY.json` is downgraded to diagnostic-only because the wrapper did not block one active `dotnet` process. Fixed wrapper single-process counting and unavailable-CPU handling. Latest post-patch wrapper invocation `Docs/AgentLogs/Build_1401_Attempt_20260528_123346_BLOCKED_BY_CONTENTION.json` blocked with CPU sample `-1`, active `csc` PID 33212, active `dotnet` PID 26840, and attempts array empty. DOD practice: resource throttling. Rejected: pretending the defective gate was compliant proof.
 
 ## Loop 4 - Tasks 16-19
 
@@ -47,7 +49,7 @@ Route relevance: removes compile/import blocker for first-20-minutes route. No g
 
 ## Loop 5 - Task 20 and Final Self-Audit
 
-- [x] Task 20 AUTOMATED_METRIC_VALIDATOR_REPORT | Generated `Docs/Reports/VENDOR_API_ALIGNMENT_REPORT_1401.json` and SHA-256 sidecar. Current hash: `8f2fc22c9660fbdf7841e6821de4522db777ebe601ed49c830439dc293d5b598`.
+- [x] Task 20 AUTOMATED_METRIC_VALIDATOR_REPORT | Generated `Docs/Reports/VENDOR_API_ALIGNMENT_REPORT_1401.json` and SHA-256 sidecar. Current hash: `83c1f40f7317cefdace6adf45f33733a6344e0d787b346c8ed42de10e26594a2`.
 - [x] APEX FINAL VERIFICATION | Static proof generated at `Docs/AgentLogs/VendorStaticAudit_1401.json`; final report appended to `Docs/AgentLogs/LOG_1401.md`. Compile/runtime/profiler proof remains explicitly pending.
 - [x] APEX RECHECK 2026-05-28 03:58+04 | Latest external compile-medic logs `BUILD_COMPILE_MEDIC_CORE_WARNINGS_20260528_8.log` and `BUILD_COMPILE_MEDIC_EDITOR_WARNINGS_20260528_8.log` show `Build succeeded`, `0 Warning(s)`, `0 Error(s)`. Own guarded vendor compile remains blocked by CPU contention. Patched Candice disabled `SelectObject` to preserve caller `ref` state instead of assigning null.
 - [x] APEX RECHECK 2026-05-28 04:20+04 | Fresh external full-log `BUILD_COMPILE_MEDIC_FULL_WARNINGS_20260528_4.log` exposed two CS0104 errors in my test harness and CS0169 vendor warnings in Candice/MasterAudio. Source-level patches applied; fresh compile proof remains blocked. Report/hash regenerated.
@@ -55,16 +57,21 @@ Route relevance: removes compile/import blocker for first-20-minutes route. No g
 - [x] APEX RECHECK 2026-05-28 04:57+04 | Patched MasterAudio runtime UnityEditor import guard, added MasterAudio/RelationsInspector asmdef quarantine, extended asmdef leakage audit to MasterAudio, and regenerated static evidence. Latest real guarded compile attempt blocked before build: CPU 100 percent, active `dotnet` PID 59296, attempts array empty.
 - [x] APEX RECHECK 2026-05-28 05:09+04 | Found MasterAudio example scripts outside source asmdef coverage. Added `DarkTonic.MasterAudio.Examples.asmdef`, extended guarded compile project list to MasterAudio/RelationsInspector, verified PowerShell/Python syntax, and regenerated static evidence. Latest guarded compile attempt blocked before build: CPU 100 percent, active `csc` PID 27628 and `dotnet` PID 55080, attempts array empty.
 - [x] APEX RECHECK 2026-05-28 05:26+04 | Verified Candice legacy `Mono.Data.Sqlite.dll` and `sqlite3.dll` PluginImporters are disabled (`enabledOneTotal=0`) at `Docs/AgentLogs/CandicePluginImporterAudit_1401.json`. Patched MasterAudio settings static constructor behind `UNITY_EDITOR`, removed cold `string.Format`, added exact cold allocation capacity, and regenerated static evidence/report hash. Latest guarded compile attempt blocked before build: CPU 100 percent, active `dotnet` PID 55080, attempts array empty.
+- [x] APEX RECHECK 2026-05-28 05:59+04 | Patched Technie auto-collider child-marker rebuild to remove extra cold `List<T>` and `ToArray()` churn; regenerated `VendorHotPathDeltaScan_1401.json`, `VendorStaticAudit_1401.json`, `VendorBoundaryAudit_1401.json` linkage in the final report, and report hash. `AutoUpdateTransformsJob` is explicitly classified as a value-type struct, not reference allocation. Latest guarded compile attempt remains blocked before build: CPU 100 percent, active `dotnet` PID 66408, attempts array empty.
+- [x] APEX RECHECK 2026-05-28 06:18+04 | Found and patched GPUI GLES3 append-texture reuse churn: `SetAppendBuffersGLES3` now checks texture width/height instead of comparing render texture width to `runtimeData.bufferSize`, and shadow append buffer/texture recreation is guarded by null/count/dimension checks. Guarded compile at CPU 42 percent produced exitCode 0 for attempted Amplify/Technie projects but exposed 3 Technie warnings; patched `averagedCenter`, `debugMesh`, and `lastModifiedFrame` source debt. Latest post-patch compile gate blocked at CPU 67 percent and active `dotnet` PID 53376, so post-patch compile proof is pending. Report/hash regenerated.
+- [x] APEX RECHECK 2026-05-28 12:36+04 | Found a defect in my guarded compile wrapper: a single compiler process could be returned as a scalar object, making `$compilers.Count` unreliable. Patched `Tools/Run_Guarded_Vendor_Compile_1401.ps1` to force array counting, block unavailable CPU samples, and record `compilerProcessCount` plus `blockReasons`. Latest fixed gate blocked before build: CPU sample `-1`, active `csc` PID 33212, active `dotnet` PID 26840, attempts array empty. Report/hash regenerated.
 
 ## Current Findings
 
-- Own final vendor compile proof is blocked by resource contention. Latest own guarded attempt artifact: `Docs/AgentLogs/Build_1401_Attempt_20260528_052348_BLOCKED_BY_CONTENTION.json` with CPU 100 percent, active `dotnet` PID 55080, and empty build attempts.
+- Own final post-patch vendor compile proof is blocked by resource contention. Latest fixed guarded attempt artifact: `Docs/AgentLogs/Build_1401_Attempt_20260528_123346_BLOCKED_BY_CONTENTION.json` with CPU sample `-1`, active `csc` PID 33212, active `dotnet` PID 26840, and empty build attempts.
+- Previous compile artifact `Docs/AgentLogs/Build_1401_Attempt_20260528_061044_SUMMARY.json` is diagnostic-only, not valid resource-throttling proof, because it recorded one active `dotnet` process while `blockedByContention=false` before the wrapper single-process count fix.
 - Fresh external full-log `Docs/Reports/BUILD_COMPILE_MEDIC_FULL_WARNINGS_20260528_4.log` still contains stale 1401 CS0104/CS0169 line numbers. Current source-level scans show those offenders removed, but compile proof is pending.
 - `MSB3277 System.Net.Http` remains in the external full-log for generated `Assembly-CSharp-Editor*` projects. I did not suppress it because it is build graph/reference unification debt outside the vendor source patch.
 - Runtime Unity import, Play Mode, ProfilerRecorder, and GCMonitor proof are absent.
 - Runtime vendor editor-symbol leakage static scan: 0 unguarded findings at `Docs/AgentLogs/VendorRuntimeEditorLeakage_1401.json`, now including MasterAudio runtime scripts.
 - Candice legacy SQLite PluginImporter static audit: `Docs/AgentLogs/CandicePluginImporterAudit_1401.json` reports `enabledOneTotal=0`, `Mono.Data.Sqlite.dll.meta` enabled-one count 0, and `sqlite3.dll.meta` enabled-one count 0.
-- Patched hot-path static ranges are documented at `Docs/AgentLogs/VendorHotPathDeltaScan_1401.json`; active patched ranges have 0 hot-path `new`, `string.Format`, `.ToString()`, LINQ, and `foreach`.
+- Patched hot-path static ranges are documented at `Docs/AgentLogs/VendorHotPathDeltaScan_1401.json`; production hot-path totals are 0 `new` reference-type allocations, 0 `string.Format`, 0 `.ToString()`, 0 LINQ queries, and 0 `foreach`. Residual scene search/sync raycast sites are separately listed in that JSON.
+- New GPUI GLES3 resource churn patch is source-level only until the next allowed compile/Unity import: `Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs:246`, `:250`, `:275`, `:292`, `:299`.
 - First-party hard compile references to Candice/Amplify/Technie/MasterAudio after quarantine: 0. First-party GPUInstancer references are intentional and backed by existing `GPUInstancer` asmdef references.
 - MasterAudio/RelationsInspector source asmdefs are present and `autoReferenced: false`; all MasterAudio C# files are covered by source asmdefs. Generated `.csproj` files are stale until Unity imports/regenerates them, so compile safety remains pending.
 - Candice disabled provider keeps shared cached empty `List<T>` instances to avoid per-call allocation; current shipped Candice caller only enumerates, but external mutation is documented as an API-level residual.

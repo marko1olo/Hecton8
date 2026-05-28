@@ -1,7 +1,7 @@
 # Status 1416 - MODULAR_EQUIPMENT_AND_TOOL_RUNTIME_PURGER
 
 Date: 2026-05-28
-Status: PATCHED_STATIC_REAUDITED_IMPLICIT_ALIAS_REMOVED_BUILD_BLOCKED_BY_CONTENTION
+Status: PATCHED_STATIC_REAUDITED_OWNER_VAULT_BUILD_TIMEOUT_KILLED
 Domain: ECHELON 4 Equipment Runtime (Tools)
 Batch Prompt Tasks: 20
 
@@ -21,7 +21,7 @@ Batch Prompt Tasks: 20
 - [x] Task 06: VAULT_DESCRIPTOR_SUBSTITUTION | 28 direct `NativeArray<T>` view fields replaced by stack-only `EquipmentVaultView<T>`; `EquipmentVaultView.cs.meta` added | Rejected untracked source-only Unity file | Estimate: 0 us runtime ownership change
 - [x] Task 07: COLD_BOOT_BUFFER_REGISTRATION | Cold creation remains DataVault `EnsureGenerationHandle` through existing Equipment/Upgrade BufferID routes | Rejected new duplicate `1416000+` route IDs | Estimate: cold-only
 - [x] Task 08: PHASE_LOCAL_VIEW_RESOLUTION | 16 mutation call-sites acquire views through `TryAcquireEquipmentViewsWriteLock`; `Tick` captures scheduled-job locks explicitly | Rejected class-level cached physical views outside a tracked fence | Estimate: 28 lock checks per mutation phase
-- [x] Task 09: IRONCLAD_TRY_FINALLY_LOCKING | 16 direct acquire call-sites have `finally` release; scheduled integration release now sits in `CompleteActiveEquipmentJob` finally; failed releases are retained as a retry mask | Rejected ignored `ReleaseWriteLock` results | Estimate: release path O(28)
+- [x] Task 09: IRONCLAD_TRY_FINALLY_LOCKING | 16 direct acquire call-sites have `finally` release; scheduled integration release now sits in `CompleteActiveEquipmentJob` finally; failed releases are retained as a retry mask; `EquipmentVaultViews.Vault` keeps releases bound to the original owner vault | Rejected ignored `ReleaseWriteLock` results and `_dataVault` reread at release time | Estimate: release path O(28)
 - [x] Task 10: BURST_JOB_SIGNATURE_RECONCILIATION | Jobs and the editor CSV parser receive physical views only after explicit `.AsNativeArray()`/pointer extraction; `EquipmentVaultView<T>` implicit `NativeArray<T>` conversion removed | Rejected implicit alias escape | Estimate: no new job allocations
 
 ## Loop 3 - Tasks 11-15
@@ -29,10 +29,10 @@ Batch Prompt Tasks: 20
 - [x] Task 12: EXPLICIT_DTO_REFACTORING | No DTO refactor required; target DTOs already explicit and guarded | Rejected unnecessary struct churn | Estimate: 0 us
 - [x] Task 13: SCALABILITY_WEIGHT_PRESERVATION | Continuous `HomeostasisBrain.GlobalQualityWeight` retained in cadence/tuning/telemetry; no binary quality switch introduced | Rejected low/ultra dichotomy | Estimate: existing math only
 - [x] Task 14: TELEMETRY_RING_IMPLEMENTATION | Added contention and release-failure fault flags with unmanaged telemetry write path | Rejected managed string log in failure path | Estimate: one ring slot write
-- [BLOCKED BY CONTENTION] Task 15: BATCHED_COMPILATION_AND_EXECUTION_CHECK | CPU sample 100%, active `dotnet` pid 55080; build not launched | Rejected violating build throttle | Estimate: 0 compiler us consumed
+- [BLOCKED BY TIMEOUT] Task 15: BATCHED_COMPILATION_AND_EXECUTION_CHECK | Pre-build CPU sample 28%, no active `dotnet`/`csc`/`VBCSCompiler`; one throttled `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` was launched, timed out after 124s, and leftover pid 10444 plus VBCSCompiler pid 67176 were killed | Rejected second build attempt | Estimate: compiler attempt exceeded 124000000 us wall-clock
 
 ## Loop 4 - Tasks 16-18
-- [x STATIC_SOURCE / NOT EXECUTED] Task 16: MOCK_EQUIPMENT_STRESS_HARNESS | Added `Assets/_Project/Tests/Editor/ModularEquipmentEngine1416EditTests.cs` plus `.meta`; harness is `[Explicit]` and not run because build/Editor gate is blocked | Rejected pretending runtime proof from source text | Estimate: 1024 mock frames when executed
+- [x STATIC_SOURCE / NOT EXECUTED] Task 16: MOCK_EQUIPMENT_STRESS_HARNESS | Added `Assets/_Project/Tests/Editor/ModularEquipmentEngine1416EditTests.cs` plus `.meta`; harness is `[Explicit]`, guarded against occupied `GlobalRegistry.DataVault`/`GlobalRegistry.ModularEquipment`, and not run because build timed out | Rejected pretending runtime proof from source text | Estimate: 1024 mock frames when executed
 - [x] Task 17: BLACKBOX_DUMP_ROUTING | Equipment fault dump path now agent-specific; pending dump file path is `Docs/AgentLogs/Dump_1416_ModularEquipment.bin` | Rejected old `Dump_SHINOBU_327.bin` route | Estimate: disk only on fault
 - [x] Task 18: ARM64_ALIGNMENT_VALIDATOR_INTEGRATION | Existing `EquipmentLayoutVerifier` asserts sizes/offsets for equipment DTOs | Rejected duplicate validator | Estimate: cold-only
 
@@ -42,10 +42,13 @@ Batch Prompt Tasks: 20
 
 ## Build Policy
 - Build is blocked unless CPU <= 50% and no `csc.exe`/active compiler process is present.
-- Last CPU gate: 100%.
-- Active processes: `dotnet` pid 55080, `csc` pid 36360.
-- Build launched: no.
+- Pre-build CPU gate for the only build attempt: 28%.
+- Active compiler/dotnet processes before the attempt: none detected.
+- Build launched: exactly once, `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1`.
+- Build result: no diagnostics captured; command timed out after 124s. Leftover `dotnet` pid 10444 and `VBCSCompiler` pid 67176 were stopped. No second build was launched.
+- Post-stop CPU sample: 96%.
 
 ## Residual Risks
 - Broad 28-buffer write-lock group remains. It is fixed-order and safer than partial ad hoc locking, but it is over-broad for narrow writes and should be split only after compile gate clears.
-- Task 16 harness exists but remains uncompiled/unexecuted; runtime proof is absent until CPU/process gate clears and an isolated Editor test pass runs.
+- Task 16 harness exists but remains uncompiled/unexecuted; runtime proof is absent until a successful compile and isolated Editor test pass run.
+- Global `git diff --check` is not clean because of unrelated `Docs/Tasks/_1415_extracted_prompt.tmp.md` trailing whitespace. Scoped diff check over agent 1416 files is clean except CRLF normalization warnings.

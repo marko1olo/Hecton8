@@ -53,7 +53,11 @@ void CSTreeInstantiationKernel(uint3 id : SV_DispatchThreadID)
     uint instanceIndex;
     InterlockedAdd(counterBuffer[0], 1, instanceIndex);
     if (instanceIndex >= instanceCapacity)
+    {
+        uint ignoredCounterValue;
+        InterlockedAdd(counterBuffer[0], 0xffffffffu, ignoredCounterValue);
         return;
+    }
 
     // Add tree 
     gpuiInstanceData[instanceIndex] = TRS(position, rotation, scale);

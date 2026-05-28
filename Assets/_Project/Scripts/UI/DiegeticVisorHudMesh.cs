@@ -290,7 +290,9 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                _dataVault = currentService as IDataVault;
+                IDataVault previousVault = previousService is IDataVault oldVault ? oldVault : null;
+                IDataVault nextVault = currentService is IDataVault vault ? vault : null;
+                RebindDataVaultForLifecycle(nextVault, previousVault);
                 if (_dataVault != null)
                     EnsureBlackBox();
                 return;
@@ -609,7 +611,7 @@ namespace Hecton8.UI
                 return;
 
             if (!vault.IsCompactionFenceActive &&
-                IsVaultHandleCreated(in _blackBoxHandle) &&
+                IsBlackBoxHandle(in _blackBoxHandle) &&
                 vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<DiegeticHudTelemetryEntry>.ReadOnly blackBox) &&
                 !vault.IsCompactionFenceActive &&
                 blackBox.IsCreated &&
@@ -619,47 +621,86 @@ namespace Hecton8.UI
             if (vault.IsCompactionFenceActive)
                 return;
 
-            if (IsVaultHandleCreated(in _blackBoxHandle))
-                vault.ReleaseBuffer(in _blackBoxHandle);
+            ReleaseBlackBoxHandle(vault);
 
             _blackBoxHandle = vault.EnsureGenerationHandle<DiegeticHudTelemetryEntry>(
                 BlackBoxBufferId,
                 BlackBoxCapacity,
                 VaultOwnerSystemId,
                 NativeArrayOptions.ClearMemory);
+            if (!IsBlackBoxHandle(in _blackBoxHandle) ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryReadOnlyHandle(in _blackBoxHandle, out blackBox) ||
+                vault.IsCompactionFenceActive ||
+                !blackBox.IsCreated ||
+                blackBox.Length < BlackBoxCapacity)
+            {
+                ResetBlackBoxNativeEpochState();
+                return;
+            }
+
             _blackBoxCursor = 0;
             _blackBoxDumped = false;
         }
 
         private void DisposeBlackBox()
         {
-            IDataVault vault = _dataVault;
-            if (vault == null || !IsVaultHandleCreated(in _blackBoxHandle))
+            ReleaseBlackBoxHandle(_dataVault);
+            ResetBlackBoxNativeEpochState();
+        }
+
+        private void ReleaseBlackBoxHandle(IDataVault vault)
+        {
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsBlackBoxHandle(in _blackBoxHandle) ||
+                !vault.TryGetGenerationHandle(BlackBoxBufferId, out VaultGenerationHandle<DiegeticHudTelemetryEntry> currentHandle) ||
+                !IsBlackBoxHandle(in currentHandle) ||
+                currentHandle.Generation != _blackBoxHandle.Generation)
+            {
                 return;
+            }
 
             vault.ReleaseBuffer(in _blackBoxHandle);
+        }
+
+        private void ResetBlackBoxNativeEpochState()
+        {
             _blackBoxHandle = default;
             _blackBoxCursor = 0;
             _blackBoxDumped = false;
         }
 
+        private void RebindDataVaultForLifecycle(IDataVault nextVault, IDataVault fallbackReleaseVault = null)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            ReleaseBlackBoxHandle(_dataVault ?? fallbackReleaseVault);
+            _dataVault = nextVault;
+            ResetBlackBoxNativeEpochState();
+        }
+
         private IDataVault CacheDataVaultCold()
         {
-            if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
+            IDataVault registryVault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_dataVault, registryVault))
+                RebindDataVaultForLifecycle(registryVault);
 
             return _dataVault;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
+        private static bool IsBlackBoxHandle(in VaultGenerationHandle<DiegeticHudTelemetryEntry> handle)
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == (uint)BlackBoxBufferId &&
+                   handle.SystemID == (uint)VaultOwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private void RecordTelemetry()
         {
             IDataVault vault = _dataVault;
-            if (vault == null || !IsVaultHandleCreated(in _blackBoxHandle))
+            if (vault == null || !IsBlackBoxHandle(in _blackBoxHandle))
                 return;
 
             Vector3 localPosition = transform.localPosition;
@@ -711,7 +752,7 @@ namespace Hecton8.UI
             IDataVault vault = _dataVault;
             if (_blackBoxDumped ||
                 vault == null ||
-                !IsVaultHandleCreated(in _blackBoxHandle))
+                !IsBlackBoxHandle(in _blackBoxHandle))
             {
                 return;
             }
@@ -770,7 +811,7 @@ namespace Hecton8.UI
             if (vault == null ||
                 index < 0 ||
                 index >= BlackBoxCapacity ||
-                !IsVaultHandleCreated(in _blackBoxHandle) ||
+                !IsBlackBoxHandle(in _blackBoxHandle) ||
                 vault.IsCompactionFenceActive ||
                 !vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<DiegeticHudTelemetryEntry>.ReadOnly blackBox) ||
                 vault.IsCompactionFenceActive ||

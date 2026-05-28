@@ -24,6 +24,9 @@ uniform float detailUniqueValue;
 uniform float detailDensity;
 uniform float terrainNormalEffect;
 uniform uint instanceCapacity;
+uniform uint detailMapCapacity;
+uniform uint heightMapCapacity;
+uniform uint hasHealthyDryNoiseTexture;
 
 RWStructuredBuffer<uint> counterBuffer;
 
@@ -52,9 +55,15 @@ void CSInstancedRenderingGrassInstantiationKernel(uint3 id : SV_DispatchThreadID
         return;
     if (heightMapWidth == 0 || heightMapHeight == 0)
         return;
+    if (detailMapCapacity == 0 || heightMapCapacity == 0)
+        return;
+    if (detailResolution == 0 || heightResolution == 0 || terrainSize.x == 0 || terrainSize.y == 0)
+        return;
 
     // Get detail index on maps
     uint detailIndex = id.x + id.z * detailMapWidth;
+    if (detailIndex >= detailMapCapacity)
+        return;
     
     // Get detail count
     uint detailCount = detailMapData[detailIndex];
@@ -64,7 +73,7 @@ void CSInstancedRenderingGrassInstantiationKernel(uint3 id : SV_DispatchThreadID
         return;
     
     // Get heightMap info
-    uint heightDataSize = heightMapWidth * heightMapHeight;
+    uint heightDataSize = heightMapCapacity;
     float detailHeightMapScale = (heightResolution - 1.0) / detailResolution;
     
     // Convert to world coordinates
@@ -80,7 +89,11 @@ void CSInstancedRenderingGrassInstantiationKernel(uint3 id : SV_DispatchThreadID
         uint index;
         InterlockedAdd(counterBuffer[0], 1, index);
         if (index >= instanceCapacity)
+        {
+            uint ignoredCounterValue;
+            InterlockedAdd(counterBuffer[0], 0xffffffffu, ignoredCounterValue);
             return;
+        }
 
         float multiplier = (i + 1) * abs(detailUniqueValue);
         
@@ -111,8 +124,12 @@ void CSInstancedRenderingGrassInstantiationKernel(uint3 id : SV_DispatchThreadID
         float3 grassPosition = float3(position.x + (randomPoint.x * multiplierX), position.y + sampledHeight * terrainSize.y, position.z + (randomPoint.y * multiplierZ));
                 
         // Calculate random scale
-        float4 posterize364 = (floor(healthyDryNoiseTexture.SampleLevel(samplerhealthyDryNoiseTexture, ((grassPosition.xz * 0.05) * noiseSpread), 0) * 8.0) / 8.0);
-        float randomScale = 1 - saturate(sqrt((posterize364.r * posterize364.g * posterize364.b)));
+        float randomScale = randomFloat((grassPosition.x * multiplier) + grassPosition.z);
+        if (hasHealthyDryNoiseTexture != 0)
+        {
+            float4 posterize364 = (floor(healthyDryNoiseTexture.SampleLevel(samplerhealthyDryNoiseTexture, ((grassPosition.xz * 0.05) * noiseSpread), 0) * 8.0) / 8.0);
+            randomScale = 1 - saturate(sqrt((posterize364.r * posterize364.g * posterize364.b)));
+        }
         
         float xzScale = detailScale[0] + ((detailScale[1] - detailScale[0]) * randomScale);
         float yScale = detailScale[2] + ((detailScale[3] - detailScale[2]) * randomScale);

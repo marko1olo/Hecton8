@@ -32,6 +32,7 @@ The SDK Hub also creates or refreshes that same path non-destructively. Existing
 ```text
 ExternalStarterKit/
   README.md
+  h8mod.ps1
   mod.h8manifest.json
   mod.json
   Content/
@@ -73,6 +74,8 @@ ExternalStarterKit/
 
 `README.md` is the first screen for random public authors. It states that no Unity project is required for manifest, graph, table, locale, and validation authoring, and that envelope-only runtime is the active boundary.
 
+`h8mod.ps1` is the root no-Unity launcher for humans. It exposes `menu`, `setup`, `validate`, `review`, `prepare`, `opcodes`, and `opcodes-json` actions, delegates to the existing `Tools/*.ps1` scripts, and is not a second package format or validation contract.
+
 `mod.h8manifest.json` is the authoring manifest. It names the mod, capabilities, budgets, compatibility, and draft entrypoint files used by Workbench/CLI-style tooling.
 
 `mod.json` is the current loader compatibility manifest. `EntryAssembly` and `EntryType` stay empty in envelope-only packages. A non-empty managed entry is a legacy/internal path and is rejected by current runtime policy.
@@ -106,13 +109,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File Tools/list_allowed_opcodes.p
 
 `.vscode/settings.json` maps starter files to those schemas for schema-aware editor autocomplete and early error highlighting. Other editors can use the same files manually. The local validator checks the exact schema URL/fileMatch pairs so a copied kit cannot silently lose editor assistance while still passing validation.
 
-`Tools/prepare_mod.ps1` is the one-command local no-Unity happy path. With `-Id`, it runs identity setup, structure validation, and review manifest generation in the correct order. Without identity arguments, it validates the existing manifests and rebuilds `Reports/review_manifest.json` for the normal edit-review loop. Public tools compose child paths through normalized `Join-Path` segments, not Windows backslash-only child paths. Use `powershell` on Windows or `pwsh` on macOS/Linux with PowerShell 7.
+`Tools/prepare_mod.ps1` is the one-command local no-Unity happy path underneath the root launcher. With `-Id`, it runs identity setup, structure validation, and review manifest generation in the correct order. Without identity arguments, it validates the existing manifests and rebuilds `Reports/review_manifest.json` for the normal edit-review loop. Public tools compose child paths through normalized `Join-Path` segments, not Windows backslash-only child paths. Use `powershell` on Windows or `pwsh` on macOS/Linux with PowerShell 7.
 
 Run it from the starter kit root:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1 -Id com.yourname.mod -DisplayName "Your Mod" -Author "YourName" -Version 0.1.0
-powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action setup -Id com.yourname.mod -DisplayName "Your Mod" -Author "YourName" -Version 0.1.0
+powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action prepare
+powershell -NoProfile -ExecutionPolicy Bypass -File h8mod.ps1 -Action validate
 ```
 
 `Tools/validate_structure.ps1` is a local no-Unity structure validator. It checks required files, JSON parseability, JSON Schema file parseability, exact `.vscode/settings.json` schema URL/fileMatch mapping, canonical `mod.h8manifest.json` and `mod.json` IDs, matching authoring/runtime IDs, matching `DisplayName`/`Name`, `Author`, and `Version` values, semantic package versions, canonical runtime dependency IDs, `Compatibility.Runtime = envelope-only`, graph runtime `envelope-only`, graph opcode allowlist membership against `Reference/allowed_opcodes.csv`, graph budget parity against `mod.h8manifest.json` `Budgets.MaxEnvelopesPerFrame`, empty `EntryAssembly`, empty `EntryType`, API version floor, and reference CSV presence.
@@ -145,7 +149,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File Tools/build_review_manifest.
 
 ## Tooling Direction
 
-Low tier authoring: copy the starter folder, run `Tools/prepare_mod.ps1 -Id ...` once, use `Tools/list_allowed_opcodes.ps1` while editing graph nodes, edit JSON/CSV in any text editor, then rerun `Tools/prepare_mod.ps1` before review handoff. Emit no gameplay packets until validated.
+Low tier authoring: copy the starter folder, run `h8mod.ps1 -Action setup -Id ...` once, use `h8mod.ps1 -Action opcodes` while editing graph nodes, edit JSON/CSV in any text editor, then rerun `h8mod.ps1 -Action prepare` before review handoff. Emit no gameplay packets until validated.
 
 Middle tier authoring: use the Unity SDK Hub to create the starter kit, open the External Starter Kit Workbench, check required-file health and review manifest freshness, inspect docs, run `Tools/validate_structure.ps1`, and run review validation.
 

@@ -409,6 +409,131 @@ namespace Hecton8.Gameplay
             if (lockedCount >= 1) vault.TryUnlockBuffer(CombatDamageSignalsBufferId, CombatDamageMemoryOwner);
         }
 
+        private static bool TryAcquireCombatTargetWriteLocks(out CombatDamageVaultViews views, out int lockedCount)
+        {
+            views = default;
+            lockedCount = 0;
+            IDataVault vault = ResolveCombatDataVault(allowColdBootstrap: false);
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            bool success = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _targetLookupKeysHandle, CombatDamageMemoryOwner, out views.TargetLookupKeys)) return false;
+                lockedCount++;
+                if (!vault.TryAcquireWriteLock(in _targetLookupSlotsHandle, CombatDamageMemoryOwner, out views.TargetLookupSlots)) return false;
+                lockedCount++;
+                if (!vault.TryAcquireWriteLock(in _instanceIdsHandle, CombatDamageMemoryOwner, out views.InstanceIds)) return false;
+                lockedCount++;
+                if (!vault.TryAcquireWriteLock(in _healthHandle, CombatDamageMemoryOwner, out views.Health)) return false;
+                lockedCount++;
+                if (!vault.TryAcquireWriteLock(in _maxHealthHandle, CombatDamageMemoryOwner, out views.MaxHealth)) return false;
+                lockedCount++;
+                if (!vault.TryAcquireWriteLock(in _invMaxHealthHandle, CombatDamageMemoryOwner, out views.InvMaxHealth)) return false;
+                lockedCount++;
+                if (!vault.TryAcquireWriteLock(in _armorValuesHandle, CombatDamageMemoryOwner, out views.ArmorValues)) return false;
+                lockedCount++;
+                if (!vault.TryAcquireWriteLock(in _shieldValuesHandle, CombatDamageMemoryOwner, out views.ShieldValues)) return false;
+                lockedCount++;
+                if (!vault.TryAcquireWriteLock(in _minorDamageAccumulatorsHandle, CombatDamageMemoryOwner, out views.MinorDamageAccumulators)) return false;
+                lockedCount++;
+                if (!vault.TryAcquireWriteLock(in _targetForwardVectorsHandle, CombatDamageMemoryOwner, out views.TargetForwardVectors)) return false;
+                lockedCount++;
+                if (!vault.TryAcquireWriteLock(in _targetHeightsHandle, CombatDamageMemoryOwner, out views.TargetHeights)) return false;
+                lockedCount++;
+                if (!vault.TryAcquireWriteLock(in _targetFlagsHandle, CombatDamageMemoryOwner, out views.TargetFlags)) return false;
+                lockedCount++;
+                if (!vault.TryAcquireWriteLock(in _statusMasksHandle, CombatDamageMemoryOwner, out views.StatusMasks)) return false;
+                lockedCount++;
+                if (!vault.TryAcquireWriteLock(in _statusDurations0123Handle, CombatDamageMemoryOwner, out views.StatusDurations0123)) return false;
+                lockedCount++;
+                if (!vault.TryAcquireWriteLock(in _legacyStatusDurations4567Handle, CombatDamageMemoryOwner, out views.LegacyStatusDurations4567)) return false;
+                lockedCount++;
+                if (!vault.TryAcquireWriteLock(in _brittleDurationsHandle, CombatDamageMemoryOwner, out views.BrittleDurations)) return false;
+                lockedCount++;
+                if (!vault.TryAcquireWriteLock(in _statusResultsHandle, CombatDamageMemoryOwner, out views.StatusResults)) return false;
+                lockedCount++;
+                if (!vault.TryAcquireWriteLock(in _statusResultActiveHandle, CombatDamageMemoryOwner, out views.StatusResultActive)) return false;
+                lockedCount++;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                    ReleaseCombatTargetWriteLocks(lockedCount);
+            }
+        }
+
+        private static void ReleaseCombatTargetWriteLocks(int lockedCount)
+        {
+            IDataVault vault = ResolveCombatDataVault(allowColdBootstrap: false);
+            if (vault == null)
+                return;
+
+            if (lockedCount >= 18) vault.ReleaseWriteLock(in _statusResultActiveHandle, CombatDamageMemoryOwner);
+            if (lockedCount >= 17) vault.ReleaseWriteLock(in _statusResultsHandle, CombatDamageMemoryOwner);
+            if (lockedCount >= 16) vault.ReleaseWriteLock(in _brittleDurationsHandle, CombatDamageMemoryOwner);
+            if (lockedCount >= 15) vault.ReleaseWriteLock(in _legacyStatusDurations4567Handle, CombatDamageMemoryOwner);
+            if (lockedCount >= 14) vault.ReleaseWriteLock(in _statusDurations0123Handle, CombatDamageMemoryOwner);
+            if (lockedCount >= 13) vault.ReleaseWriteLock(in _statusMasksHandle, CombatDamageMemoryOwner);
+            if (lockedCount >= 12) vault.ReleaseWriteLock(in _targetFlagsHandle, CombatDamageMemoryOwner);
+            if (lockedCount >= 11) vault.ReleaseWriteLock(in _targetHeightsHandle, CombatDamageMemoryOwner);
+            if (lockedCount >= 10) vault.ReleaseWriteLock(in _targetForwardVectorsHandle, CombatDamageMemoryOwner);
+            if (lockedCount >= 9) vault.ReleaseWriteLock(in _minorDamageAccumulatorsHandle, CombatDamageMemoryOwner);
+            if (lockedCount >= 8) vault.ReleaseWriteLock(in _shieldValuesHandle, CombatDamageMemoryOwner);
+            if (lockedCount >= 7) vault.ReleaseWriteLock(in _armorValuesHandle, CombatDamageMemoryOwner);
+            if (lockedCount >= 6) vault.ReleaseWriteLock(in _invMaxHealthHandle, CombatDamageMemoryOwner);
+            if (lockedCount >= 5) vault.ReleaseWriteLock(in _maxHealthHandle, CombatDamageMemoryOwner);
+            if (lockedCount >= 4) vault.ReleaseWriteLock(in _healthHandle, CombatDamageMemoryOwner);
+            if (lockedCount >= 3) vault.ReleaseWriteLock(in _instanceIdsHandle, CombatDamageMemoryOwner);
+            if (lockedCount >= 2) vault.ReleaseWriteLock(in _targetLookupSlotsHandle, CombatDamageMemoryOwner);
+            if (lockedCount >= 1) vault.ReleaseWriteLock(in _targetLookupKeysHandle, CombatDamageMemoryOwner);
+        }
+
+        private static bool TryAcquireCombatTelemetryWriteLocks(
+            out NativeArray<CombatTelemetryEntry> telemetryRing,
+            out NativeArray<uint> telemetryState,
+            out int lockedCount)
+        {
+            telemetryRing = default;
+            telemetryState = default;
+            lockedCount = 0;
+            IDataVault vault = ResolveCombatDataVault(allowColdBootstrap: false);
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            if (!vault.TryAcquireWriteLock(in _telemetryRingHandle, CombatDamageMemoryOwner, out telemetryRing))
+                return false;
+            lockedCount++;
+            bool success = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _telemetryStateHandle, CombatDamageMemoryOwner, out telemetryState))
+                    return false;
+
+                lockedCount++;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                    ReleaseCombatTelemetryWriteLocks(lockedCount);
+            }
+        }
+
+        private static void ReleaseCombatTelemetryWriteLocks(int lockedCount)
+        {
+            IDataVault vault = ResolveCombatDataVault(allowColdBootstrap: false);
+            if (vault == null)
+                return;
+
+            if (lockedCount >= 2) vault.ReleaseWriteLock(in _telemetryStateHandle, CombatDamageMemoryOwner);
+            if (lockedCount >= 1) vault.ReleaseWriteLock(in _telemetryRingHandle, CombatDamageMemoryOwner);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int ComputeTargetLookupIndex(int targetId)
         {

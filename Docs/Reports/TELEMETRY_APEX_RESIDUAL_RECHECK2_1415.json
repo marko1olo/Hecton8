@@ -1,0 +1,115 @@
+{
+    "agent":  "1415",
+    "generatedUtc":  "2026-05-28T10:00:14Z",
+    "purpose":  "Residual APEX recheck after finding stale ReentryVfx and omitted JobAdmission blackbox row contracts.",
+    "prompt":  {
+                   "source":  "Docs/Tasks/CURRENT_BATCH.md",
+                   "extractedCopy":  "Docs/Tasks/_1415_extracted_prompt.tmp.md",
+                   "taskCount":  20,
+                   "sha256":  "c2818356c509aaef9c4cf7ac9d506653f5049e28418d698c428d2d658ca0c5cd"
+               },
+    "validator":  {
+                      "file":  "Assets/_Project/Scripts/Editor/TelemetryLayoutValidator1415.cs",
+                      "specRows":  40,
+                      "hasJobAdmissionBlackboxEntry":  true,
+                      "hasReentryVfxTelemetryEntry":  true,
+                      "malformedNewlineLiteralCount":  0,
+                      "sourceSha256":  "eaea8e033c5dfa2ac3210da6a3e49f31e045d26277d8136000f8934e5e6c651c"
+                  },
+    "fixes":  [
+                  {
+                      "name":  "ReentryVfxTelemetryEntry",
+                      "file":  "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs",
+                      "sourceSha256":  "92a025c8c75424ae3b68b90de92c64121830025d6d43ae8590df0430ba2d474a",
+                      "bufferId":  "BufferID.OrbitalDropReentryVfxTelemetryRing",
+                      "owner":  "SystemID.Vfx",
+                      "lineEvidence":  {
+                                           "sizeConstant":  27,
+                                           "tryAcquireWriteLock":  918,
+                                           "releaseWriteLockFinally":  957,
+                                           "rowWriter":  1031,
+                                           "destinationClear":  1033
+                                       },
+                      "oldSizePatternHits":  0,
+                      "binaryWriterHits":  0,
+                      "hotForbiddenCounts":  {
+                                                 "referenceNew":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreachLoop":  0
+                                             },
+                      "layoutProof":  {
+                                          "sizeBytes":  64,
+                                          "fields":  [
+                                                         "Frame:0..3",
+                                                         "Heat01:4..7",
+                                                         "Opacity01:8..11",
+                                                         "AltitudeMeters:12..15",
+                                                         "VelocityMetersPerSecond:16..19",
+                                                         "AmbientBlend01:20..23",
+                                                         "OverlayDistanceMeters:24..27",
+                                                         "StateHash:28..31",
+                                                         "SectorHashLo:32..35",
+                                                         "Reserved2:36..39",
+                                                         "Sequence:40..41",
+                                                         "HydrationSequence:42..43",
+                                                         "Phase:44",
+                                                         "QualityWeightByte:45",
+                                                         "Flags:46",
+                                                         "Reserved:47",
+                                                         "_pad0.._pad15:48..63"
+                                                     ]
+                                      }
+                  },
+                  {
+                      "name":  "JobAdmissionBlackboxEntry",
+                      "file":  "Assets/_Project/Scripts/Core/Scheduling/BurstTokenBucketJobAdmissionService.cs",
+                      "sourceSha256":  "cff8d48637279e616765f0d203575fb4334823277f5cc95cbfccf2c071de4a02",
+                      "bufferId":  "BufferID.JobAdmissionBlackBox",
+                      "owner":  "SystemID.JobAdmission",
+                      "lineEvidence":  {
+                                           "sizeConstant":  21,
+                                           "tryAcquireWriteLock":  751,
+                                           "releaseWriteLockFinally":  779,
+                                           "rowWriter":  888,
+                                           "destinationClear":  890
+                                       },
+                      "oldSizePatternHits":  0,
+                      "binaryWriterHits":  0,
+                      "hotForbiddenCounts":  {
+                                                 "referenceNew":  0,
+                                                 "stringFormat":  0,
+                                                 "toString":  0,
+                                                 "linq":  0,
+                                                 "foreachLoop":  0
+                                             },
+                      "layoutProof":  {
+                                          "sizeBytes":  64,
+                                          "fields":  [
+                                                         "FrameSequence:0..3",
+                                                         "JobHash:4..7",
+                                                         "EstimatedCostMs:8..11",
+                                                         "RemainingBudgetMs:12..15",
+                                                         "CriticalDebtFrames:16..19",
+                                                         "KillSwitchMask:20..23",
+                                                         "Lane:24",
+                                                         "Flags:25",
+                                                         "Reserved:26..27",
+                                                         "StateHash:28..31",
+                                                         "_pad0.._pad31:32..63"
+                                                     ]
+                                      }
+                  }
+              ],
+    "aggregate":  {
+                      "fixedStructCount":  2,
+                      "stalePatternHitsInFixedFiles":  0,
+                      "hotForbiddenTotal":  0,
+                      "dotnetBuildInvoked":  false
+                  },
+    "residualRisk":  [
+                         "Compiler/Unity validator execution remains blocked until CPU \u003c= 50 and no dotnet/csc/VBCSCompiler processes are active.",
+                         "Other 32/40/48-byte structs found by broad rg include non-telemetry signal/contracts/memory DTOs and oversize blockers; they were not blindly rewritten in this pass."
+                     ]
+}

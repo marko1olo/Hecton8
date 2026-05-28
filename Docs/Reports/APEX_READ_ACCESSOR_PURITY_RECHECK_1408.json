@@ -1,0 +1,112 @@
+{
+  "agentId": "1408",
+  "role": "MAIN_THREAD_SYNCHRONOUS_JOB_BLOCKER_PURGER",
+  "generatedLocalDate": "2026-05-28",
+  "status": "READ_ACCESSOR_PURITY_REPAIRED_STATIC_PASS_BUILD_BLOCKED_BY_ACTIVE_DOTNET",
+  "prompt": {
+    "source": "Docs/Tasks/CURRENT_BATCH.md",
+    "agentPromptId": "1408",
+    "extractedBlockLengthBytes": 20153,
+    "taskCount": 20
+  },
+  "primaryFix": {
+    "file": "Assets/_Project/Scripts/World/VegetationMemorySovereigntyRuntime.cs",
+    "problem": "TryReadVegetationMemoryBuffer and TryReadOnlyVegetationMemoryBuffer recorded vegetation memory telemetry on read failure, making read accessors mutate black-box state.",
+    "solution": "Removed failure-side RecordVegetationMemoryTelemetry calls from both TryRead helpers. Writer/acquire/publish paths keep telemetry ownership.",
+    "lineEvidence": {
+      "TryReadVegetationMemoryBuffer": 352,
+      "TryReadOnlyVegetationMemoryBuffer": 376,
+      "TryPublishVegetationMemorySnapshot": 400,
+      "telemetryRemainingInNonReadPaths": [74, 119, 280, 305, 333, 412]
+    }
+  },
+  "zeroGcHotPathAudit": {
+    "scan": "PowerShell method-body token scan over the two modified TryRead helpers.",
+    "results": [
+      {
+        "method": "TryReadVegetationMemoryBuffer",
+        "line": 352,
+        "referenceTypeNewCount": 0,
+        "valueTypeNewCount": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      },
+      {
+        "method": "TryReadOnlyVegetationMemoryBuffer",
+        "line": 376,
+        "referenceTypeNewCount": 0,
+        "valueTypeNewCount": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      }
+    ]
+  },
+  "readAccessorPurity": {
+    "scanner": "PowerShell declaration/body scanner over assigned TryGet/Get/TryRead/Read/Resolve methods for RecordVegetationMemoryTelemetry, TryAcquireWriteLock, ReleaseWriteLock, EnsureGenerationHandle, TryComplete, .Complete, .Schedule, and TryGetLatestCreated.",
+    "matches": 0,
+    "result": "READ_ACCESSOR_MUTATION_OR_SYNC_MATCHES=0"
+  },
+  "staticVerification": {
+    "worldRuntimeSyncScan": {
+      "command": "rg -n \"\\.Run\\(|\\.Complete\\(\" Assets/_Project/Scripts/World -g \"*.cs\" -g \"!**/Editor/**\"",
+      "matches": 0
+    },
+    "scopedDiffCheck": "Passed with CRLF warnings only for agent files.",
+    "classifiedResiduals": [
+      {
+        "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+        "line": 7856,
+        "token": "AsyncGPUReadbackRequest.WaitForCompletion",
+        "classification": "forced teardown GPU readback before buffer release; not patched under agent 1408 vegetation job domain without Sargassum ownership proof"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+        "lines": [1572, 1776],
+        "token": "Thread.Sleep",
+        "classification": "background worker result/backing-store mock delay path; terrain streaming domain, not Unity Job main-thread vegetation blocker"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+        "lines": [3261, 3386, 3431],
+        "token": "AsyncOperationHandle.Result",
+        "classification": "Addressables result access after IsDone/status guards; no Task.Result wait"
+      }
+    ]
+  },
+  "dataSovereignty": {
+    "migratedNewGlobalDataVaultFields": false,
+    "securedBufferIds": [],
+    "writeLockChecksAdded": [],
+    "readHelperContract": "Read helpers no longer write telemetry. GlobalDataVault write locks remain in writer/acquire/publish paths and are still released in finally blocks where acquired."
+  },
+  "scalabilityAndCinematicCheat": {
+    "globalQualityWeightChange": "none",
+    "binaryQualitySwitchMatchesInModifiedFile": 0,
+    "cheatProtocol": "No simulation or visual path was added. This is contract cleanup to keep polling reads deterministic across low, middle, high, and ultra hardware."
+  },
+  "compilationResourceThrottling": {
+    "dotnetBuildInvocationsThisLoop": 0,
+    "cpuCimPercentBeforeFinalBuildDecision": 51,
+    "activeCompilerOrDotnetProcesses": [
+      {
+        "processName": "dotnet",
+        "pid": 17912,
+        "cpuSeconds": 50.65625,
+        "commandLine": "\"dotnet\" build \"MoreMountains.Feedbacks.csproj\" --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false"
+      }
+    ],
+    "buildStatus": "NOT_LAUNCHED_CPU_OVER_50_AND_ACTIVE_DOTNET"
+  },
+  "hashes": {
+    "Assets/_Project/Scripts/World/VegetationMemorySovereigntyRuntime.cs": "58A588A978EE1807BE16016714562297BD933EFFB1DEFC85DCE3204871C2F03A"
+  },
+  "residualRisk": {
+    "compileVerified": false,
+    "unityEditModeTestsExecuted": false,
+    "reason": "Project build guard forbids dotnet build while CPU is above 50% or another dotnet/compiler process is active."
+  }
+}

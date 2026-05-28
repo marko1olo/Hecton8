@@ -698,8 +698,9 @@ namespace Hecton8.UI
                 return;
 
             CompleteScheduledJobs();
-            ReleaseVaultBuffers(_dataVault);
-            _dataVault = currentService as IDataVault;
+            IDataVault previousVault = previousService is IDataVault oldVault ? oldVault : _dataVault;
+            IDataVault nextVault = currentService is IDataVault currentVault ? currentVault : null;
+            BindDataVaultForLifecycle(nextVault, previousVault);
             _activePointCount = 0;
             _lastHitCount = 0;
             _lastTelemetryFlags = 0u;
@@ -820,7 +821,7 @@ namespace Hecton8.UI
         public bool TryApplyMaterialColorCsv(NativeArray<byte> csvBytes, out int appliedRows)
         {
             appliedRows = 0;
-            if (!TryResolveVaultBuffer(_dataVault, ref _materialColorLutHandle, TopographicalSonarConstants.ColorLutEntries, out NativeArray<uint> lut))
+            if (!TryResolveVaultBuffer(_dataVault, ref _materialColorLutHandle, TopographicalSonarBufferIds.MaterialColorLut, TopographicalSonarConstants.ColorLutEntries, out NativeArray<uint> lut))
                 return false;
 
             appliedRows = ParseMaterialColorCsv(csvBytes, csvBytes.IsCreated ? csvBytes.Length : 0, lut);
@@ -880,7 +881,10 @@ namespace Hecton8.UI
 
         private void AllocatePersistentState()
         {
-            if (_pointsHandle.BufferID != 0u && _pointBufferA != null && _pointBufferB != null && _argsBuffer != null)
+            if (IsTopographicalHandle(in _pointsHandle, TopographicalSonarBufferIds.Points) &&
+                _pointBufferA != null &&
+                _pointBufferB != null &&
+                _argsBuffer != null)
                 return;
 
             IDataVault vault = CacheDataVaultCold();
@@ -946,7 +950,7 @@ namespace Hecton8.UI
 
         private void InitializeMaterialColorLut()
         {
-            if (!TryResolveVaultBuffer(_dataVault, ref _materialColorLutHandle, TopographicalSonarConstants.ColorLutEntries, out NativeArray<uint> lut))
+            if (!TryResolveVaultBuffer(_dataVault, ref _materialColorLutHandle, TopographicalSonarBufferIds.MaterialColorLut, TopographicalSonarConstants.ColorLutEntries, out NativeArray<uint> lut))
                 return;
 
             for (int i = 0; i < lut.Length; i++)
@@ -1183,7 +1187,7 @@ namespace Hecton8.UI
             bool scheduled = false;
             try
             {
-                if (!TryResolveVaultBuffer(_dataVault, ref _pointsHandle, TopographicalSonarConstants.MaxRays, out NativeArray<SonarPointDTO> points))
+                if (!TryResolveVaultBuffer(_dataVault, ref _pointsHandle, TopographicalSonarBufferIds.Points, TopographicalSonarConstants.MaxRays, out NativeArray<SonarPointDTO> points))
                     return;
 
                 DecaySonarPointsJob fadeJob = new DecaySonarPointsJob
@@ -1206,7 +1210,7 @@ namespace Hecton8.UI
 
         private void CommitCompletedFade()
         {
-            if (!TryResolveVaultBuffer(_dataVault, ref _pointsHandle, TopographicalSonarConstants.MaxRays, out NativeArray<SonarPointDTO> points))
+            if (!TryResolveVaultBuffer(_dataVault, ref _pointsHandle, TopographicalSonarBufferIds.Points, TopographicalSonarConstants.MaxRays, out NativeArray<SonarPointDTO> points))
                 return;
 
             GraphicsBuffer writePointBuffer = ResolveWritePointBuffer();
@@ -1219,12 +1223,12 @@ namespace Hecton8.UI
 
         private void WriteTelemetry(uint flags)
         {
-            if (!TryResolveVaultBuffer(_dataVault, ref _telemetryRingHandle, TopographicalSonarConstants.TelemetryFrames, out NativeArray<TopographicalSonarTelemetryEntry> telemetry))
+            if (!TryResolveVaultBuffer(_dataVault, ref _telemetryRingHandle, TopographicalSonarBufferIds.TelemetryRing, TopographicalSonarConstants.TelemetryFrames, out NativeArray<TopographicalSonarTelemetryEntry> telemetry))
                 return;
 
             int index = _telemetryWriteIndex % TopographicalSonarConstants.TelemetryFrames;
             _telemetryWriteIndex = (_telemetryWriteIndex + 1) % TopographicalSonarConstants.TelemetryFrames;
-            if (TryResolveVaultBuffer(_dataVault, ref _telemetryCursorHandle, 1, out NativeArray<int> cursor))
+            if (TryResolveVaultBuffer(_dataVault, ref _telemetryCursorHandle, TopographicalSonarBufferIds.TelemetryCursor, 1, out NativeArray<int> cursor))
                 cursor[0] = _telemetryWriteIndex;
 
             float3 pingCameraLocal = ResolveLocalAupDeltaFloat3(_lastPingAup, _lastCameraAup);
@@ -1264,12 +1268,12 @@ namespace Hecton8.UI
             out NativeArray<uint> colorLut)
         {
             IDataVault vault = _dataVault;
-            bool resolvedPoints = TryResolveVaultBuffer(vault, ref _pointsHandle, TopographicalSonarConstants.MaxRays, out points);
-            bool resolvedHitMask = TryResolveVaultBuffer(vault, ref _hitMaskHandle, TopographicalSonarConstants.MaxRays, out hitMask);
-            bool resolvedCounters = TryResolveVaultBuffer(vault, ref _countersHandle, TopographicalSonarConstants.CounterCount, out counters);
-            bool resolvedMockSdf = TryResolveVaultBuffer(vault, ref _mockSdfHandle, TopographicalSonarConstants.MockVoxelCount, out mockSdf);
-            bool resolvedMockMaterials = TryResolveVaultBuffer(vault, ref _mockMaterialIdsHandle, TopographicalSonarConstants.MockVoxelCount, out mockMaterialIds);
-            bool resolvedColorLut = TryResolveVaultBuffer(vault, ref _materialColorLutHandle, TopographicalSonarConstants.ColorLutEntries, out colorLut);
+            bool resolvedPoints = TryResolveVaultBuffer(vault, ref _pointsHandle, TopographicalSonarBufferIds.Points, TopographicalSonarConstants.MaxRays, out points);
+            bool resolvedHitMask = TryResolveVaultBuffer(vault, ref _hitMaskHandle, TopographicalSonarBufferIds.HitMask, TopographicalSonarConstants.MaxRays, out hitMask);
+            bool resolvedCounters = TryResolveVaultBuffer(vault, ref _countersHandle, TopographicalSonarBufferIds.Counters, TopographicalSonarConstants.CounterCount, out counters);
+            bool resolvedMockSdf = TryResolveVaultBuffer(vault, ref _mockSdfHandle, TopographicalSonarBufferIds.MockSdf, TopographicalSonarConstants.MockVoxelCount, out mockSdf);
+            bool resolvedMockMaterials = TryResolveVaultBuffer(vault, ref _mockMaterialIdsHandle, TopographicalSonarBufferIds.MockMaterialIds, TopographicalSonarConstants.MockVoxelCount, out mockMaterialIds);
+            bool resolvedColorLut = TryResolveVaultBuffer(vault, ref _materialColorLutHandle, TopographicalSonarBufferIds.MaterialColorLut, TopographicalSonarConstants.ColorLutEntries, out colorLut);
             return resolvedPoints && resolvedHitMask && resolvedCounters && resolvedMockSdf && resolvedMockMaterials && resolvedColorLut;
         }
 
@@ -1402,8 +1406,17 @@ namespace Hecton8.UI
             if (_dataVault != null)
                 return _dataVault;
 
-            _dataVault = GlobalRegistry.DataVault;
+            BindDataVaultForLifecycle(GlobalRegistry.DataVault);
             return _dataVault;
+        }
+
+        private void BindDataVaultForLifecycle(IDataVault nextVault, IDataVault previousVault = null)
+        {
+            IDataVault releaseVault = previousVault ?? _dataVault;
+            if (!ReferenceEquals(_dataVault, nextVault))
+                ReleaseVaultBuffers(releaseVault);
+
+            _dataVault = nextVault;
         }
 
         private void TryRegisterLateFrameTickable()
@@ -1459,22 +1472,23 @@ namespace Hecton8.UI
 
         private void ReleaseVaultBuffers(IDataVault vault)
         {
-            ReleaseVaultBuffer(vault, ref _pointsHandle);
-            ReleaseVaultBuffer(vault, ref _hitMaskHandle);
-            ReleaseVaultBuffer(vault, ref _countersHandle);
-            ReleaseVaultBuffer(vault, ref _mockSdfHandle);
-            ReleaseVaultBuffer(vault, ref _mockMaterialIdsHandle);
-            ReleaseVaultBuffer(vault, ref _telemetryRingHandle);
-            ReleaseVaultBuffer(vault, ref _telemetryCursorHandle);
-            ReleaseVaultBuffer(vault, ref _materialColorLutHandle);
-            ReleaseVaultBuffer(vault, ref _csvScratchHandle);
-            ReleaseVaultBuffer(vault, ref _indirectArgsHandle);
-            ReleaseVaultBuffer(vault, ref _shaderGlobalsHandle);
+            ReleaseVaultBuffer(vault, ref _pointsHandle, TopographicalSonarBufferIds.Points);
+            ReleaseVaultBuffer(vault, ref _hitMaskHandle, TopographicalSonarBufferIds.HitMask);
+            ReleaseVaultBuffer(vault, ref _countersHandle, TopographicalSonarBufferIds.Counters);
+            ReleaseVaultBuffer(vault, ref _mockSdfHandle, TopographicalSonarBufferIds.MockSdf);
+            ReleaseVaultBuffer(vault, ref _mockMaterialIdsHandle, TopographicalSonarBufferIds.MockMaterialIds);
+            ReleaseVaultBuffer(vault, ref _telemetryRingHandle, TopographicalSonarBufferIds.TelemetryRing);
+            ReleaseVaultBuffer(vault, ref _telemetryCursorHandle, TopographicalSonarBufferIds.TelemetryCursor);
+            ReleaseVaultBuffer(vault, ref _materialColorLutHandle, TopographicalSonarBufferIds.MaterialColorLut);
+            ReleaseVaultBuffer(vault, ref _csvScratchHandle, TopographicalSonarBufferIds.CsvScratch);
+            ReleaseVaultBuffer(vault, ref _indirectArgsHandle, TopographicalSonarBufferIds.IndirectArgs);
+            ReleaseVaultBuffer(vault, ref _shaderGlobalsHandle, TopographicalSonarBufferIds.ShaderGlobals);
         }
 
         private static bool TryResolveVaultBuffer<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
             int requiredLength,
             out NativeArray<T> buffer) where T : unmanaged
         {
@@ -1482,7 +1496,7 @@ namespace Hecton8.UI
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
                 requiredLength <= 0 ||
-                handle.BufferID == 0u)
+                !IsTopographicalHandle(in handle, expectedBufferId))
                 return false;
 
             if (!vault.TryResolveHandle(in handle, out buffer))
@@ -1493,13 +1507,20 @@ namespace Hecton8.UI
                    buffer.Length >= requiredLength;
         }
 
-        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle, BufferID expectedBufferId)
             where T : unmanaged
         {
-            if (vault != null && handle.BufferID != 0u)
+            if (vault != null && IsTopographicalHandle(in handle, expectedBufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
+        }
+
+        private static bool IsTopographicalHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : unmanaged
+        {
+            return handle.BufferID == (uint)expectedBufferId &&
+                   handle.SystemID == (uint)SystemID.UI &&
+                   handle.Generation != 0u;
         }
 
         private static bool TryResolvePublishedSdfSnapshot(
@@ -1682,7 +1703,7 @@ namespace Hecton8.UI
                 StartVertex = 0u,
                 StartInstance = 0u
             };
-            if (TryResolveVaultBuffer(_dataVault, ref _indirectArgsHandle, 1, out NativeArray<SonarProceduralArgsDTO> vaultArgs))
+            if (TryResolveVaultBuffer(_dataVault, ref _indirectArgsHandle, TopographicalSonarBufferIds.IndirectArgs, 1, out NativeArray<SonarProceduralArgsDTO> vaultArgs))
                 vaultArgs[0] = args;
 
             NativeArray<SonarProceduralArgsDTO> argsWrite =
@@ -1733,7 +1754,7 @@ namespace Hecton8.UI
                 RenderParams1 = new float4(pingCameraLocal.x, pingCameraLocal.y, pingCameraLocal.z, (float)_lastTelemetryFlags)
             };
 
-            if (TryResolveVaultBuffer(_dataVault, ref _shaderGlobalsHandle, 1, out NativeArray<TopographicalSonarShaderGlobalsDTO> vaultGlobals))
+            if (TryResolveVaultBuffer(_dataVault, ref _shaderGlobalsHandle, TopographicalSonarBufferIds.ShaderGlobals, 1, out NativeArray<TopographicalSonarShaderGlobalsDTO> vaultGlobals))
                 vaultGlobals[0] = globals;
 
             NativeArray<TopographicalSonarShaderGlobalsDTO> mapped =
@@ -1753,7 +1774,7 @@ namespace Hecton8.UI
         private bool TryReadTelemetryDumpLength(out int telemetryLength)
         {
             telemetryLength = 0;
-            if (!TryResolveVaultBuffer(_dataVault, ref _telemetryRingHandle, TopographicalSonarConstants.TelemetryFrames, out NativeArray<TopographicalSonarTelemetryEntry> telemetry))
+            if (!TryResolveVaultBuffer(_dataVault, ref _telemetryRingHandle, TopographicalSonarBufferIds.TelemetryRing, TopographicalSonarConstants.TelemetryFrames, out NativeArray<TopographicalSonarTelemetryEntry> telemetry))
                 return false;
 
             telemetryLength = math.min(telemetry.Length, TopographicalSonarConstants.TelemetryFrames);
@@ -1764,7 +1785,7 @@ namespace Hecton8.UI
         {
             entry = default;
             if (index < 0 ||
-                !TryResolveVaultBuffer(_dataVault, ref _telemetryRingHandle, TopographicalSonarConstants.TelemetryFrames, out NativeArray<TopographicalSonarTelemetryEntry> telemetry) ||
+                !TryResolveVaultBuffer(_dataVault, ref _telemetryRingHandle, TopographicalSonarBufferIds.TelemetryRing, TopographicalSonarConstants.TelemetryFrames, out NativeArray<TopographicalSonarTelemetryEntry> telemetry) ||
                 index >= telemetry.Length)
             {
                 return false;
@@ -2060,8 +2081,8 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            if (!TryResolveVaultBuffer(_dataVault, ref _csvScratchHandle, TopographicalSonarConstants.CsvScratchBytes, out NativeArray<byte> scratch) ||
-                !TryResolveVaultBuffer(_dataVault, ref _materialColorLutHandle, TopographicalSonarConstants.ColorLutEntries, out NativeArray<uint> lut))
+            if (!TryResolveVaultBuffer(_dataVault, ref _csvScratchHandle, TopographicalSonarBufferIds.CsvScratch, TopographicalSonarConstants.CsvScratchBytes, out NativeArray<byte> scratch) ||
+                !TryResolveVaultBuffer(_dataVault, ref _materialColorLutHandle, TopographicalSonarBufferIds.MaterialColorLut, TopographicalSonarConstants.ColorLutEntries, out NativeArray<uint> lut))
             {
                 return false;
             }
@@ -2103,7 +2124,7 @@ namespace Hecton8.UI
             int count = math.min(96, math.max(8, ResolveRayCount(ResolveQualityWeight()) / 256));
             NativeArray<SonarPointDTO> points = default;
             bool hasPoints = Application.isPlaying &&
-                             TryResolveVaultBuffer(_dataVault, ref _pointsHandle, TopographicalSonarConstants.MaxRays, out points) &&
+                             TryResolveVaultBuffer(_dataVault, ref _pointsHandle, TopographicalSonarBufferIds.Points, TopographicalSonarConstants.MaxRays, out points) &&
                              points.IsCreated;
             Transform cameraTransform = renderCamera != null ? renderCamera.transform : transform;
             Vector3 cameraPosition = cameraTransform != null ? cameraTransform.position : origin;

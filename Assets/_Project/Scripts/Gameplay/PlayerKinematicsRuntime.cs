@@ -1046,6 +1046,16 @@ namespace Hecton8.Gameplay
         private uint _lastConsumedPlayerStressFrame;
         private uint _lastConsumedSystemStressFrame;
         private float _cachedSystemStress01;
+        private bool _pendingMovementAcousticDirty;
+        private MovementAcousticSignal _pendingMovementAcoustic;
+        private bool _pendingSdfSqueezeHapticDirty;
+        private HapticRequest _pendingSdfSqueezeHaptic;
+        private bool _pendingSdfSqueezeAcousticDirty;
+        private AcousticPingSignal _pendingSdfSqueezeAcoustic;
+        private bool _pendingBraceHapticDirty;
+        private HapticRequest _pendingBraceHaptic;
+        private bool _pendingGloveScrapeAcousticDirty;
+        private AcousticPingSignal _pendingGloveScrapeAcoustic;
         private bool _hasImpactBracePoint;
         private bool _lastProbeReduced;
         private int _lastProbeCount;
@@ -1082,6 +1092,7 @@ namespace Hecton8.Gameplay
             UnregisterRuntime();
             CompleteHandFabrikIkForTeardown();
             ClearHandTargets();
+            ClearQueuedFeedbackSignals();
         }
 
         private void OnDestroy()
@@ -1089,6 +1100,7 @@ namespace Hecton8.Gameplay
             UnregisterRuntime();
             CompleteHandFabrikIkForTeardown();
             ClearHandTargets();
+            ClearQueuedFeedbackSignals();
             DisposeNativeState();
         }
 
@@ -1429,6 +1441,7 @@ namespace Hecton8.Gameplay
             if (!MovementOwnsKinematicAuthority())
                 PushVatScalar();
             PushRollSignal();
+            FlushQueuedFeedbackSignals();
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -2627,7 +2640,7 @@ namespace Hecton8.Gameplay
             signal.LocomotionMode = ResolveLocomotionModeCode();
             signal.SurfaceMode = (byte)(_movement != null && _movement.IsPlayerSubmerged ? 1 : 0);
             signal.Flags = 0;
-            SignalBus<MovementAcousticSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
+            QueueMovementAcoustic(in signal);
         }
 
         private void PublishKccVelocitySignal(float3 position, float3 velocity, byte flags)
@@ -2730,7 +2743,7 @@ namespace Hecton8.Gameplay
             haptic.Frame = frame;
             haptic.Channel = HapticRequest.ChannelGearScrape;
             haptic.Flags = 0;
-            SignalBus<HapticRequest>.TryPushTracked(in haptic, ref _signalPushDropCount);
+            QueueSdfSqueezeHaptic(in haptic);
 
             AcousticPingSignal acoustic = default;
             acoustic.PositionAup = positionAup;
@@ -2739,9 +2752,96 @@ namespace Hecton8.Gameplay
             acoustic.SourceId = _sourceId;
             acoustic.Channel = AcousticPingSignal.ChannelFabricScrape;
             acoustic.Flags = AcousticPingSignal.FlagFabricScrape;
-            SignalBus<AcousticPingSignal>.TryPushTracked(in acoustic, ref _signalPushDropCount);
+            QueueSdfSqueezeAcoustic(in acoustic);
 
             _sdfSqueezeFeedbackCooldown = SdfSqueezeFeedbackCooldownSeconds;
+        }
+
+        private void QueueMovementAcoustic(in MovementAcousticSignal signal)
+        {
+            if (_pendingMovementAcousticDirty && _pendingMovementAcoustic.Volume > signal.Volume)
+                return;
+
+            _pendingMovementAcoustic = signal;
+            _pendingMovementAcousticDirty = true;
+        }
+
+        private void QueueSdfSqueezeHaptic(in HapticRequest signal)
+        {
+            if (_pendingSdfSqueezeHapticDirty && _pendingSdfSqueezeHaptic.Intensity01 > signal.Intensity01)
+                return;
+
+            _pendingSdfSqueezeHaptic = signal;
+            _pendingSdfSqueezeHapticDirty = true;
+        }
+
+        private void QueueSdfSqueezeAcoustic(in AcousticPingSignal signal)
+        {
+            if (_pendingSdfSqueezeAcousticDirty && _pendingSdfSqueezeAcoustic.Intensity01 > signal.Intensity01)
+                return;
+
+            _pendingSdfSqueezeAcoustic = signal;
+            _pendingSdfSqueezeAcousticDirty = true;
+        }
+
+        private void QueueBraceHaptic(in HapticRequest signal)
+        {
+            if (_pendingBraceHapticDirty && _pendingBraceHaptic.Intensity01 > signal.Intensity01)
+                return;
+
+            _pendingBraceHaptic = signal;
+            _pendingBraceHapticDirty = true;
+        }
+
+        private void QueueGloveScrapeAcoustic(in AcousticPingSignal signal)
+        {
+            if (_pendingGloveScrapeAcousticDirty && _pendingGloveScrapeAcoustic.Intensity01 > signal.Intensity01)
+                return;
+
+            _pendingGloveScrapeAcoustic = signal;
+            _pendingGloveScrapeAcousticDirty = true;
+        }
+
+        private void FlushQueuedFeedbackSignals()
+        {
+            if (_pendingMovementAcousticDirty)
+            {
+                _pendingMovementAcousticDirty = false;
+                SignalBus<MovementAcousticSignal>.TryPushTracked(in _pendingMovementAcoustic, ref _signalPushDropCount);
+            }
+
+            if (_pendingSdfSqueezeHapticDirty)
+            {
+                _pendingSdfSqueezeHapticDirty = false;
+                SignalBus<HapticRequest>.TryPushTracked(in _pendingSdfSqueezeHaptic, ref _signalPushDropCount);
+            }
+
+            if (_pendingSdfSqueezeAcousticDirty)
+            {
+                _pendingSdfSqueezeAcousticDirty = false;
+                SignalBus<AcousticPingSignal>.TryPushTracked(in _pendingSdfSqueezeAcoustic, ref _signalPushDropCount);
+            }
+
+            if (_pendingBraceHapticDirty)
+            {
+                _pendingBraceHapticDirty = false;
+                SignalBus<HapticRequest>.TryPushTracked(in _pendingBraceHaptic, ref _signalPushDropCount);
+            }
+
+            if (_pendingGloveScrapeAcousticDirty)
+            {
+                _pendingGloveScrapeAcousticDirty = false;
+                SignalBus<AcousticPingSignal>.TryPushTracked(in _pendingGloveScrapeAcoustic, ref _signalPushDropCount);
+            }
+        }
+
+        private void ClearQueuedFeedbackSignals()
+        {
+            _pendingMovementAcousticDirty = false;
+            _pendingSdfSqueezeHapticDirty = false;
+            _pendingSdfSqueezeAcousticDirty = false;
+            _pendingBraceHapticDirty = false;
+            _pendingGloveScrapeAcousticDirty = false;
         }
 
         private void TryPublishSdfSqueezeVisualImpulse(
@@ -3253,7 +3353,7 @@ namespace Hecton8.Gameplay
             signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             signal.Channel = HapticRequest.ChannelLightThud;
             signal.Flags = HapticRequest.FlagLightThud;
-            SignalBus<HapticRequest>.TryPushTracked(in signal, ref _signalPushDropCount);
+            QueueBraceHaptic(in signal);
             _braceHapticCooldown = BraceHapticCooldownSeconds;
         }
 
@@ -3293,7 +3393,7 @@ namespace Hecton8.Gameplay
             signal.SourceId = _sourceId;
             signal.Channel = AcousticPingSignal.ChannelGloveScrape;
             signal.Flags = AcousticPingSignal.FlagGloveScrape;
-            SignalBus<AcousticPingSignal>.TryPushTracked(in signal, ref _signalPushDropCount);
+            QueueGloveScrapeAcoustic(in signal);
             _scrapeAcousticCooldown = GloveScrapeCooldownSeconds;
             return true;
         }

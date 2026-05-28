@@ -1,17 +1,26 @@
 {
   "agentId": "1413",
   "compilationResourceThrottling": {
-    "dotnetBuildLaunchedByAgent1413": false,
+    "dotnetBuildLaunchedByAgent1413": true,
     "optimizationReportSample": {
-      "cpuLoadPercent": 100,
-      "cscCount": 0,
-      "dotnetBuild": "BLOCKED_BY_CONTENTION",
-      "dotnetCount": 1,
+      "dotnetBuild": "PASSED",
+      "dotnetBuildCommand": "dotnet build \"C:\\hades\\Hecton8\\Assembly-CSharp.csproj\" --no-restore -v:minimal /m:1",
+      "dotnetBuildLaunchedByAgent1413": true,
+      "elapsedSeconds": 48.8,
+      "errors": 0,
+      "maxCpuWorkers": 1,
+      "noRestore": true,
+      "preBuildCpuLoadPercent": 27.641788,
+      "preBuildCscCount": 0,
+      "preBuildDotnetCount": 0,
       "sampleCommand": "Get-Counter \"\\Processor(_Total)\\% Processor Time\" plus Get-Process dotnet/csc",
-      "sampleUtc": "2026-05-28T01:46:34Z"
+      "sampleUtc": "2026-05-28T09:30:01Z",
+      "target": "Assembly-CSharp.csproj",
+      "unityTestRunnerLaunchedByAgent1413": false,
+      "warnings": 0
     },
     "sample": {
-      "cpuLoadPercent": 57.268876,
+      "cpuLoadPercent": 48.971125,
       "cscCount": 0,
       "dotnetBuild": "BLOCKED_BY_CONTENTION",
       "dotnetCount": 1,
@@ -60,15 +69,26 @@
       }
     }
   },
-  "generatedUtc": "2026-05-28T01:46:58Z",
+  "deferredReleaseContract": {
+    "dedupePolicy": "QueueDeferredRelease de-duplicates writer releases only; buffer-pin releases preserve one queued record per accepted release call.",
+    "dedupePolicyEvidence": {
+      "hasSerializedScanGate": true,
+      "hasWriterOnlyFilter": true,
+      "matchesArenaAllocator1414EditorContract": true
+    },
+    "residualLimit": "A caller that retries TryUnlockBuffer after QueueDeferredRelease already returned true can still enqueue multiple buffer-pin releases. The API has no per-acquire token; compliant callers must treat true as accepted ownership transfer."
+  },
+  "generatedUtc": "2026-05-28T10:12:41Z",
   "knownResidualRisk": [
     "GlobalDataVault release APIs now queue a fixed-size unmanaged deferred-release request if the block mutation gate is busy. Runtime drain is static-only verified; compiler and Unity runtime proof are still pending.",
+    "Deferred release de-duplication is intentionally writer-only to preserve count semantics for multiple same-owner buffer pins. The residual risk is retry after accepted true on tokenless TryUnlockBuffer.",
     "Project-wide scanner still reports loop-shaped and nested-lock candidates outside the edited window; they are report-ranked but not all fixed in this pass."
   ],
   "modifiedFileHashes": {
+    "arenaAllocatorSentinel1414EditTest": "f92bebfd212a46cb09a023c7a349b934c1431b3b651c80161f3757b1d7857309",
     "destructibleOrganic": "3b5ece0ee93d4d29404396a104a9d784bc587e30b37f61b470151370ee3765ad",
     "failClosedEditTest": "9c3d246955985c340790c69d307dac781e1174c5f39a0cf7c4fc619ab48981d1",
-    "globalDataVault": "a0233a4e583874e84a7425741dcdf21bd21a7bf3ec6a2b282eb7076c1d32d4e4"
+    "globalDataVault": "b35073e0f7ad2e833767c0b3f6b3139a05942bd9b416bc77c8f373b9a3d74aac"
   },
   "nestedLockAuditModifiedWindows": {
     "destructibleLockedCopyWindowNestedTryLockCalls": 0,
@@ -81,128 +101,152 @@
   },
   "reportHashesBeforeApexWrite": {
     "lockSpanLedgerSha256": "23ed043fe774fa28d8c6aed1dd4bf25a70495a5ec6d255ea6a0861b1b3e70220",
-    "optimizationReportSha256": "a519682ce0b5a9bfbf22426b3c2a38cfc85b90005d7a5d00d99eb08c8ad67fc9"
+    "optimizationReportSha256": "a4f45e1c3625774b9e917bdb6848b2f1c5dae7844dd016edb7c5e6342aa4b537"
   },
   "role": "ATOMIC_LOCK_CONTENTION_AND_FAIL_CLOSED_COORDINATOR",
   "zeroGcTextScan": {
     "blocks": [
       {
-        "endLine": 1449,
+        "endLine": 1268,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 180,
+        "linqHits": [],
+        "name": "private bool TryEnsureVaultBuffer<T>(",
+        "referenceNewTextHits": [],
+        "startLine": 1089,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 1375,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 106,
+        "linqHits": [],
+        "name": "private bool TryAllocatePublishedBuffer<T>(",
+        "referenceNewTextHits": [],
+        "startLine": 1270,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 1517,
         "forbiddenHitCount": 0,
         "foreachHits": [],
         "lineCount": 141,
         "linqHits": [],
         "name": "private bool TryOpenAliasBuffer<T>(BufferID bufferId, SystemID requester, out NativeArray<T> buffer) where T : struct",
         "referenceNewTextHits": [],
-        "startLine": 1309,
+        "startLine": 1377,
         "stringFormatHits": [],
         "toStringHits": []
       },
       {
-        "endLine": 4704,
+        "endLine": 4821,
         "forbiddenHitCount": 0,
         "foreachHits": [],
         "lineCount": 11,
         "linqHits": [],
         "name": "private void RecordLockContentionFault(int key)",
         "referenceNewTextHits": [],
-        "startLine": 4694,
+        "startLine": 4811,
         "stringFormatHits": [],
         "toStringHits": []
       },
       {
-        "endLine": 2654,
+        "endLine": 2738,
         "forbiddenHitCount": 0,
         "foreachHits": [],
         "lineCount": 23,
         "linqHits": [],
         "name": "private bool TryEnterBlockMutationGate()",
         "referenceNewTextHits": [],
-        "startLine": 2632,
+        "startLine": 2716,
         "stringFormatHits": [],
         "toStringHits": []
       },
       {
-        "endLine": 2671,
+        "endLine": 2755,
         "forbiddenHitCount": 0,
         "foreachHits": [],
         "lineCount": 16,
         "linqHits": [],
         "name": "private bool TryEnterReleaseMutationGate()",
         "referenceNewTextHits": [],
-        "startLine": 2656,
+        "startLine": 2740,
         "stringFormatHits": [],
         "toStringHits": []
       },
       {
-        "endLine": 2710,
+        "endLine": 2794,
         "forbiddenHitCount": 0,
         "foreachHits": [],
         "lineCount": 18,
         "linqHits": [],
         "name": "private void ClearActiveLockBitIfUnused(int bit)",
         "referenceNewTextHits": [],
-        "startLine": 2693,
+        "startLine": 2777,
         "stringFormatHits": [],
         "toStringHits": []
       },
       {
-        "endLine": 1981,
-        "forbiddenHitCount": 0,
-        "foreachHits": [],
-        "lineCount": 57,
-        "linqHits": [],
-        "name": "private bool QueueDeferredRelease(",
-        "referenceNewTextHits": [],
-        "startLine": 1925,
-        "stringFormatHits": [],
-        "toStringHits": []
-      },
-      {
-        "endLine": 2015,
+        "endLine": 2096,
         "forbiddenHitCount": 0,
         "foreachHits": [],
         "lineCount": 33,
         "linqHits": [],
         "name": "private void DrainDeferredReleaseRequestsLocked()",
         "referenceNewTextHits": [],
-        "startLine": 1983,
+        "startLine": 2064,
         "stringFormatHits": [],
         "toStringHits": []
       },
       {
-        "endLine": 2033,
+        "endLine": 2117,
         "forbiddenHitCount": 0,
         "foreachHits": [],
-        "lineCount": 17,
+        "lineCount": 20,
         "linqHits": [],
         "name": "private bool TryDrainDeferredReleaseRequests()",
         "referenceNewTextHits": [],
-        "startLine": 2017,
+        "startLine": 2098,
         "stringFormatHits": [],
         "toStringHits": []
       },
       {
-        "endLine": 2081,
+        "endLine": 2165,
         "forbiddenHitCount": 0,
         "foreachHits": [],
         "lineCount": 47,
         "linqHits": [],
         "name": "private bool DrainDeferredWriterReleaseLocked(in DeferredVaultReleaseRequest request)",
         "referenceNewTextHits": [],
-        "startLine": 2035,
+        "startLine": 2119,
         "stringFormatHits": [],
         "toStringHits": []
       },
       {
-        "endLine": 2139,
+        "endLine": 2223,
         "forbiddenHitCount": 0,
         "foreachHits": [],
         "lineCount": 57,
         "linqHits": [],
         "name": "private bool DrainDeferredBufferPinReleaseLocked(in DeferredVaultReleaseRequest request)",
         "referenceNewTextHits": [],
-        "startLine": 2083,
+        "startLine": 2167,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 2062,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 70,
+        "linqHits": [],
+        "name": "private bool QueueDeferredRelease(",
+        "referenceNewTextHits": [],
+        "startLine": 1993,
         "stringFormatHits": [],
         "toStringHits": []
       },

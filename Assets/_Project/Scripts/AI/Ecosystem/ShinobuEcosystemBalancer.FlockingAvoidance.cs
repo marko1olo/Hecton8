@@ -21,6 +21,7 @@ namespace Hecton8.AI.Ecosystem
         private const uint FlockingThreatDamageHash = 0x43444D47u; // CDMG
         private const ulong FlockingDumpMagic = 0x5348333037464C4FUL; // SH307FLO
         private const int FlockingDumpVersion = 1;
+        private const string FlockingDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_307_Flocking.bin";
 
         private bool TryResolveFlockingBuffers(
             IDataVault vault,

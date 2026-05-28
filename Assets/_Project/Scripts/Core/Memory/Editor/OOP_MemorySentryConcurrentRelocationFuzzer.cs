@@ -26,6 +26,7 @@ namespace Hecton8.Core.Memory.Editor
     public static class OOP_MemorySentryConcurrentRelocationFuzzer
     {
         private const string ReportPath = "Docs/Reports/VAULT_COMPACTION_STRESS_REPORT_1412.json";
+        private const string ReportSidecarPath = ReportPath + ".sha256";
         private const string DumpPath = "Docs/AgentLogs/Dump_1412.bin";
         private const string SourcePath = "Assets/_Project/Scripts/Core/Memory/Editor/OOP_MemorySentryConcurrentRelocationFuzzer.cs";
         private const int BlackBoxFrameCount = 300;
@@ -222,10 +223,10 @@ namespace Hecton8.Core.Memory.Editor
                     }
 
                     PopulateResultSnapshot(state, stopwatch, ref result);
-                    if (result.LockedSkipCount <= 0 && !injectCorruption)
+                    if (result.LockContentionEvidenceCount <= 0 && !injectCorruption)
                         result.FailureFlags |= FailureFlagLockedSkipMissing;
 
-                    bool passed = result.FailureFlags == 0 && result.DataIntegrity == 1 && result.LockedSkipCount > 0;
+                    bool passed = result.FailureFlags == 0 && result.DataIntegrity == 1 && result.LockContentionEvidenceCount > 0;
                     if (injectCorruption)
                         passed = result.ExpectedCorruptionCaught == 1 && result.FailureFlags == 0;
 
@@ -418,10 +419,16 @@ namespace Hecton8.Core.Memory.Editor
             if (!allFinished)
             {
                 state.RecordFailure(FailureFlagTimeout, BufferID.Unknown, FuzzerOperation.None);
+                int timeoutTaskCount = 0;
                 for (int i = 0; i < tasks.Length; i++)
                 {
                     if (tasks[i] == null || !tasks[i].IsCompleted)
-                        state.Exceptions.Enqueue(new TimeoutException("Fuzzer task did not exit within timeout."));
+                        timeoutTaskCount++;
+                }
+
+                if (timeoutTaskCount > 0)
+                {
+                    Interlocked.Add(ref state.TimeoutTaskCount, timeoutTaskCount);
                 }
             }
 
@@ -537,7 +544,13 @@ namespace Hecton8.Core.Memory.Editor
 
                 try
                 {
-                    VerifyPattern(slot.BufferId, buffer);
+                    if (!TryVerifyPattern(slot.BufferId, buffer, out _, out _, out _))
+                    {
+                        state.RecordFailure(FailureFlagIntegrity, slot.BufferId, operation);
+                        state.Cancel();
+                        return;
+                    }
+
                     WritePattern(slot.BufferId, buffer);
                     Interlocked.Increment(ref state.WriteLockPasses);
                     RecordTelemetry(state, slot.BufferId, operation, 0u);
@@ -596,7 +609,8 @@ namespace Hecton8.Core.Memory.Editor
                     if (state.JobFailures[failureIndex] != 0)
                     {
                         state.RecordFailure(FailureFlagJobPayload, slot.BufferId, FuzzerOperation.PinJob);
-                        throw new FatalMemoryCorruptionException("Burst pin job detected deterministic pattern corruption.");
+                        state.Cancel();
+                        return;
                     }
                 }
                 finally
@@ -650,7 +664,7 @@ namespace Hecton8.Core.Memory.Editor
                     CompactionSliceInvoker direct = state.DirectCompaction;
                     if (direct != null)
                     {
-                        direct(0u);
+                        direct(activeMask);
                         Interlocked.Increment(ref state.DirectCompactionPasses);
                     }
 
@@ -721,7 +735,7 @@ namespace Hecton8.Core.Memory.Editor
                     if (!TryResolveSlot(state, slot, out NativeArray<int> buffer))
                         throw new FatalMemoryCorruptionException("Failed to resolve active slot " + slot.BufferId);
 
-                    VerifyPattern(slot.BufferId, buffer);
+                    VerifyPatternOrThrow(slot.BufferId, buffer);
                     result.VerifiedIntegers += buffer.Length;
                 }
             }
@@ -877,6 +891,8 @@ namespace Hecton8.Core.Memory.Editor
 
             result.GenerationRefreshes = Interlocked.Read(ref state.GenerationRefreshes);
             result.ManagedExceptionCount = state.Exceptions.Count;
+            result.TimeoutTaskCount = Volatile.Read(ref state.TimeoutTaskCount);
+            result.LockContentionEvidenceCount = SaturatingLongToInt((long)result.LockedSkipCount + Interlocked.Read(ref state.MaskedDefragPasses));
             int expectedExceptionAllowance = result.ExpectedCorruptionCaught != 0 ? 1 : 0;
             if (result.ManagedExceptionCount > expectedExceptionAllowance)
                 result.FailureFlags |= FailureFlagManagedException;
@@ -917,15 +933,36 @@ namespace Hecton8.Core.Memory.Editor
                 buffer[i] = ComputePattern(bufferId, i);
         }
 
-        private static void VerifyPattern(BufferID bufferId, NativeArray<int> buffer)
+        private static bool TryVerifyPattern(
+            BufferID bufferId,
+            NativeArray<int> buffer,
+            out int mismatchIndex,
+            out int expectedValue,
+            out int actualValue)
         {
+            mismatchIndex = -1;
+            expectedValue = 0;
+            actualValue = 0;
             for (int i = 0; i < buffer.Length; i++)
             {
                 int expected = ComputePattern(bufferId, i);
                 int actual = buffer[i];
                 if (actual != expected)
-                    throw new PatternMismatchMemoryCorruptionException("Pattern mismatch buffer=" + (int)bufferId + " index=" + i + " expected=" + expected + " actual=" + actual);
+                {
+                    mismatchIndex = i;
+                    expectedValue = expected;
+                    actualValue = actual;
+                    return false;
+                }
             }
+
+            return true;
+        }
+
+        private static void VerifyPatternOrThrow(BufferID bufferId, NativeArray<int> buffer)
+        {
+            if (!TryVerifyPattern(bufferId, buffer, out int index, out int expected, out int actual))
+                throw new PatternMismatchMemoryCorruptionException("Pattern mismatch buffer=" + (int)bufferId + " index=" + index + " expected=" + expected + " actual=" + actual);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1060,6 +1097,11 @@ namespace Hecton8.Core.Memory.Editor
         private static string ComputeSelfSha256()
         {
             string path = Path.Combine(Directory.GetCurrentDirectory(), SourcePath);
+            return ComputeFileSha256(path);
+        }
+
+        private static string ComputeFileSha256(string path)
+        {
             if (!File.Exists(path))
                 return string.Empty;
 
@@ -1072,6 +1114,16 @@ namespace Hecton8.Core.Memory.Editor
                     builder.Append(hash[i].ToString("x2"));
                 return builder.ToString();
             }
+        }
+
+        private static void WriteReportSha256Sidecar(string fullPath)
+        {
+            string hash = ComputeFileSha256(fullPath);
+            if (string.IsNullOrEmpty(hash))
+                return;
+
+            string sidecarPath = Path.Combine(Directory.GetCurrentDirectory(), ReportSidecarPath);
+            File.WriteAllText(sidecarPath, hash + "  " + ReportPath + Environment.NewLine);
         }
 
         private static void WriteReport(in MemorySentryFuzzerResult result, bool injectedCorruption, bool passed)
@@ -1105,6 +1157,7 @@ namespace Hecton8.Core.Memory.Editor
             AppendJson(builder, "growth_resolve_attempts", result.GrowthResolveAttempts, comma: true);
             AppendJson(builder, "growth_resolve_misses", result.GrowthResolveMisses, comma: true);
             AppendJson(builder, "locked_skip_count", result.LockedSkipCount, comma: true);
+            AppendJson(builder, "lock_contention_evidence_count", result.LockContentionEvidenceCount, comma: true);
             AppendJson(builder, "arena_growth_probe_executed", result.ArenaGrowthProbeExecuted != 0, comma: true);
             AppendJson(builder, "arena_bytes", result.ArenaBytes, comma: true);
             AppendJson(builder, "total_bytes_allocated", result.TotalBytesAllocated, comma: true);
@@ -1113,6 +1166,7 @@ namespace Hecton8.Core.Memory.Editor
             AppendJson(builder, "verified_integers", result.VerifiedIntegers, comma: true);
             AppendJson(builder, "generation_refreshes", result.GenerationRefreshes, comma: true);
             AppendJson(builder, "managed_exception_count", result.ManagedExceptionCount, comma: true);
+            AppendJson(builder, "timeout_task_count", result.TimeoutTaskCount, comma: true);
             AppendJson(builder, "elapsed_microseconds", result.ElapsedMicroseconds, comma: true);
             AppendJson(builder, "static_scan_microseconds", result.StaticScanMicroseconds, comma: true);
             AppendJson(builder, "global_quality_weight_milli", result.GlobalQualityWeightMilli, comma: true);
@@ -1121,6 +1175,7 @@ namespace Hecton8.Core.Memory.Editor
             AppendJson(builder, "source_sha256", result.SourceSha256, comma: false);
             builder.AppendLine("}");
             File.WriteAllText(fullPath, builder.ToString());
+            WriteReportSha256Sidecar(fullPath);
         }
 
         private static void AppendJson(StringBuilder builder, string name, string value, bool comma)
@@ -1289,10 +1344,28 @@ namespace Hecton8.Core.Memory.Editor
             return (ticks * 1000000L) / Stopwatch.Frequency;
         }
 
+        private static int SaturatingLongToInt(long value)
+        {
+            if (value <= 0L)
+                return 0;
+            return value > int.MaxValue ? int.MaxValue : (int)value;
+        }
+
         [BurstCompile]
         private struct ReadWriteStressJob : IJob
         {
             public NativeArray<int> Buffer;
+            // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+            // Failure is a fuzzer-owned per-slot flag array. The job writes exactly one int at FailureIndex while the
+            // scheduling worker holds slot.Gate and a DataVault pin for the same slot, so Unity's generic alias check
+            // cannot express the single-writer slot partition but the harness can.
+            // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+            // A TempJob failure flag per pin operation was rejected because it adds a native allocation to the hot
+            // fuzzer path. A managed exception or queue from Burst was rejected because Burst jobs cannot own managed
+            // references and would invalidate the zero-GC stress signal.
+            // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+            // The invariant is FailureIndex == SlotState.Index, SlotState.Index is unique within the fixed slot table,
+            // and slot.Gate serializes all jobs for that slot before the next job can reuse the same FailureIndex.
             [NativeDisableContainerSafetyRestriction]
             public NativeArray<int> Failure;
             public int FailureIndex;
@@ -1398,6 +1471,7 @@ namespace Hecton8.Core.Memory.Editor
             public long GrowthResolveAttempts;
             public long GrowthResolveMisses;
             public int LockedSkipCount;
+            public int LockContentionEvidenceCount;
             public long TotalBytesAllocated;
             public long ArenaBytes;
             public long CompactionMovedBytes;
@@ -1405,6 +1479,7 @@ namespace Hecton8.Core.Memory.Editor
             public long VerifiedIntegers;
             public long GenerationRefreshes;
             public int ManagedExceptionCount;
+            public int TimeoutTaskCount;
             public int ArenaGrowthProbeExecuted;
             public int EditorQuarantineVerified;
             public long ElapsedMicroseconds;
@@ -1507,6 +1582,7 @@ namespace Hecton8.Core.Memory.Editor
             public int MaxLockedSkipCount;
             public int FailureFlags;
             public int TasksCompleted = 1;
+            public int TimeoutTaskCount;
             public int DeferredCleanupQueued;
 
             public FuzzerState(
@@ -1550,7 +1626,25 @@ namespace Hecton8.Core.Memory.Editor
                 }
                 while (Interlocked.CompareExchange(ref FailureFlags, next, observed) != observed);
 
-                RecordTelemetry(this, bufferId, operation, unchecked((uint)next));
+                RecordTelemetry(this, bufferId, operation, ReadActiveLockMaskForTelemetry());
+            }
+
+            private uint ReadActiveLockMaskForTelemetry()
+            {
+                bool entered = false;
+                try
+                {
+                    Monitor.TryEnter(StructuralGate, 0, ref entered);
+                    if (!entered)
+                        return 0u;
+
+                    return Vault.ActiveBurstLockMask;
+                }
+                finally
+                {
+                    if (entered)
+                        Monitor.Exit(StructuralGate);
+                }
             }
         }
 

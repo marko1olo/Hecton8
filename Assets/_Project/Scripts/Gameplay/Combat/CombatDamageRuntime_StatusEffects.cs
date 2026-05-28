@@ -355,7 +355,7 @@ namespace Hecton8.Gameplay
             statusEffectMask = 0UL;
             if (_statusJobScheduled ||
                 !TryResolveStatusEffectReadOnlyVaultViews(out CombatStatusEffectReadOnlyVaultViews statusViews) ||
-                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+                !TryResolveCombatDamageReadOnlyViews(out CombatDamageReadOnlyVaultViews views))
                 return false;
 
             if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out int slot))
@@ -373,7 +373,7 @@ namespace Hecton8.Gameplay
             mobilityScale = 1f;
             if (_statusJobScheduled ||
                 !TryResolveStatusEffectReadOnlyVaultViews(out CombatStatusEffectReadOnlyVaultViews statusViews) ||
-                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+                !TryResolveCombatDamageReadOnlyViews(out CombatDamageReadOnlyVaultViews views))
                 return false;
 
             if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out int slot))
@@ -917,7 +917,6 @@ namespace Hecton8.Gameplay
                     return false;
                 }
 
-                RefreshArmorTargetSnapshots(ref armorViews);
                 if (!TryLockArmorVaultBuffersForJobs())
                     return false;
 
@@ -943,8 +942,19 @@ namespace Hecton8.Gameplay
 
             if (!TryResolveStatusEffectVaultViews(out statusViews, ensure: false) ||
                 !TryResolveCombatDamageVaultViews(out damageViews, ensure: false) ||
-                (hasSimulationWork && !TryResolveArmorPenetrationVaultViews(out armorViews, ensure: false)) ||
-                !CanUseStatusEffectJobBuffers(hasSimulationWork, ref statusViews, ref damageViews, in armorViews))
+                (hasSimulationWork && !TryResolveArmorPenetrationVaultViews(out armorViews, ensure: false)))
+            {
+                UnlockCombatDamageVaultBuffersForJobs(damageLockedCount);
+                UnlockStatusEffectVaultBuffersForJobs();
+                if (lockedArmorVaultBuffers)
+                    UnlockArmorVaultBuffersForJobs();
+
+                return false;
+            }
+
+            if (hasSimulationWork)
+                RefreshArmorTargetSnapshotsLocked(ref armorViews);
+            if (!CanUseStatusEffectJobBuffers(hasSimulationWork, ref statusViews, ref damageViews, in armorViews))
             {
                 UnlockCombatDamageVaultBuffersForJobs(damageLockedCount);
                 UnlockStatusEffectVaultBuffersForJobs();
@@ -1242,50 +1252,177 @@ namespace Hecton8.Gameplay
             if (lockedCount >= 1) _statusEffectVault.TryUnlockBuffer(BufferID.Shinobu319StatusEffectRequests, SystemID.GameplayCombat);
         }
 
-        private static void ResetStatusEffectSlot(int slot)
+        private static bool MoveTargetSideState(int sourceSlot, int destinationSlot)
         {
-            if (_statusEffectVault == null ||
-                !_statusEffectVault.TryAcquireWriteLock(in _statusEffectStatesHandle, SystemID.GameplayCombat, out NativeArray<CombatStatusEffectState> states))
-            {
-                return;
-            }
+            bool armorLocked = false;
+            bool statusLocked = false;
+            int armorLockCount = 0;
+            IDataVault statusVault = null;
+            NativeArray<CombatStatusEffectState> states = default;
 
+            if (!TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews armorViews, out armorLockCount))
+                return false;
+
+            armorLocked = true;
             try
             {
-                if (!states.IsCreated || (uint)slot >= (uint)states.Length)
-                    return;
+                if (!TryAcquireStatusEffectStatesWriteLock(out statusVault, out states, out statusLocked))
+                    return false;
 
-                states[slot] = default;
+                return MoveTargetSideStateLocked(sourceSlot, destinationSlot, statusLocked, states, ref armorViews);
             }
             finally
             {
-                _statusEffectVault.ReleaseWriteLock(in _statusEffectStatesHandle, SystemID.GameplayCombat);
+                if (statusLocked)
+                    ReleaseStatusEffectStatesWriteLock(statusVault, statusLocked);
+                if (armorLocked)
+                    ReleaseArmorTargetWriteLocks(armorLockCount);
             }
         }
 
-        private static void CopyStatusEffectSlot(int destinationSlot, int sourceSlot)
+        private static bool ClearTargetSideState(int slot)
         {
-            if (_statusEffectVault == null ||
-                !_statusEffectVault.TryAcquireWriteLock(in _statusEffectStatesHandle, SystemID.GameplayCombat, out NativeArray<CombatStatusEffectState> states))
-            {
-                return;
-            }
+            bool armorLocked = false;
+            bool statusLocked = false;
+            int armorLockCount = 0;
+            IDataVault statusVault = null;
+            NativeArray<CombatStatusEffectState> states = default;
 
+            if (!TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews armorViews, out armorLockCount))
+                return false;
+
+            armorLocked = true;
             try
             {
-                if (!states.IsCreated ||
-                    (uint)destinationSlot >= (uint)states.Length ||
-                    (uint)sourceSlot >= (uint)states.Length)
-                {
-                    return;
-                }
+                if (!TryAcquireStatusEffectStatesWriteLock(out statusVault, out states, out statusLocked))
+                    return false;
 
-                states[destinationSlot] = states[sourceSlot];
+                return ClearTargetSideStateLocked(slot, statusLocked, states, ref armorViews);
             }
             finally
             {
-                _statusEffectVault.ReleaseWriteLock(in _statusEffectStatesHandle, SystemID.GameplayCombat);
+                if (statusLocked)
+                    ReleaseStatusEffectStatesWriteLock(statusVault, statusLocked);
+                if (armorLocked)
+                    ReleaseArmorTargetWriteLocks(armorLockCount);
             }
+        }
+
+        private static bool ResetStatusEffectSlot(int slot)
+        {
+            if (!TryAcquireStatusEffectStatesWriteLock(
+                    out IDataVault statusVault,
+                    out NativeArray<CombatStatusEffectState> states,
+                    out bool statusLocked))
+                return false;
+
+            try
+            {
+                return ResetStatusEffectSlotLocked(slot, statusLocked, states);
+            }
+            finally
+            {
+                ReleaseStatusEffectStatesWriteLock(statusVault, statusLocked);
+            }
+        }
+
+        private static bool TryAcquireStatusEffectStatesWriteLock(
+            out IDataVault statusVault,
+            out NativeArray<CombatStatusEffectState> states,
+            out bool statusLocked)
+        {
+            statusVault = _statusEffectVault;
+            states = default;
+            statusLocked = false;
+            if (statusVault == null || _statusEffectStatesHandle.BufferID == 0u)
+                return true;
+
+            if (!statusVault.TryAcquireWriteLock(in _statusEffectStatesHandle, SystemID.GameplayCombat, out states))
+                return false;
+
+            statusLocked = true;
+            return true;
+        }
+
+        private static void ReleaseStatusEffectStatesWriteLock(IDataVault statusVault, bool statusLocked)
+        {
+            if (statusLocked && statusVault != null)
+                statusVault.ReleaseWriteLock(in _statusEffectStatesHandle, SystemID.GameplayCombat);
+        }
+
+        private static bool ResetStatusEffectSlotLocked(int slot, bool hasStatusStorage, NativeArray<CombatStatusEffectState> states)
+        {
+            if (!hasStatusStorage)
+                return true;
+
+            if (!states.IsCreated || (uint)slot >= (uint)states.Length)
+                return false;
+
+            states[slot] = default;
+            return true;
+        }
+
+        private static bool MoveTargetSideStateLocked(
+            int sourceSlot,
+            int destinationSlot,
+            bool hasStatusStorage,
+            NativeArray<CombatStatusEffectState> states,
+            ref ArmorPenetrationVaultViews armorViews)
+        {
+            if (hasStatusStorage &&
+                (!states.IsCreated ||
+                 (uint)destinationSlot >= (uint)states.Length ||
+                 (uint)sourceSlot >= (uint)states.Length))
+            {
+                return false;
+            }
+
+            if (!CanUseArmorTargetSlot(in armorViews, sourceSlot) ||
+                !CanUseArmorTargetSlot(in armorViews, destinationSlot))
+            {
+                return false;
+            }
+
+            if (hasStatusStorage)
+            {
+                states[destinationSlot] = states[sourceSlot];
+                states[sourceSlot] = default;
+            }
+
+            armorViews.TargetArmorProfiles[destinationSlot] = armorViews.TargetArmorProfiles[sourceSlot];
+            armorViews.TargetRootAups[destinationSlot] = armorViews.TargetRootAups[sourceSlot];
+            armorViews.TargetRotations[destinationSlot] = armorViews.TargetRotations[sourceSlot];
+            armorViews.TargetHalfExtents[destinationSlot] = armorViews.TargetHalfExtents[sourceSlot];
+            armorViews.TargetArmorProfiles[sourceSlot] = default;
+            armorViews.TargetRootAups[sourceSlot] = double3.zero;
+            armorViews.TargetRotations[sourceSlot] = quaternion.identity;
+            armorViews.TargetHalfExtents[sourceSlot] = float3.zero;
+            return true;
+        }
+
+        private static bool ClearTargetSideStateLocked(
+            int slot,
+            bool hasStatusStorage,
+            NativeArray<CombatStatusEffectState> states,
+            ref ArmorPenetrationVaultViews armorViews)
+        {
+            if (hasStatusStorage &&
+                (!states.IsCreated || (uint)slot >= (uint)states.Length))
+            {
+                return false;
+            }
+
+            if (!CanUseArmorTargetSlot(in armorViews, slot))
+                return false;
+
+            if (hasStatusStorage)
+                states[slot] = default;
+
+            armorViews.TargetArmorProfiles[slot] = default;
+            armorViews.TargetRootAups[slot] = double3.zero;
+            armorViews.TargetRotations[slot] = quaternion.identity;
+            armorViews.TargetHalfExtents[slot] = float3.zero;
+            return true;
         }
 
         private static ReadOnlySpan<byte> ReadLine(ReadOnlySpan<byte> span, ref int cursor)
@@ -1626,8 +1763,10 @@ namespace Hecton8.Gameplay
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static int ReadStatusCounter(int index)
         {
-            return TryResolveStatusEffectVaultViews(out CombatStatusEffectVaultViews statusViews, ensure: false)
-                ? ReadStatusCounter(index, ref statusViews)
+            return TryResolveStatusEffectReadOnlyVaultViews(out CombatStatusEffectReadOnlyVaultViews statusViews) &&
+                   statusViews.Counters.IsCreated &&
+                   (uint)index < (uint)statusViews.Counters.Length
+                ? statusViews.Counters[index].Value
                 : 0;
         }
 

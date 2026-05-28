@@ -1,7 +1,7 @@
 ﻿{
     "agentId":  "1411",
     "status":  "PASS",
-    "checkedAtUtc":  "2026-05-28T01:51:25.5352821Z",
+    "checkedAtUtc":  "2026-05-28T09:50:24.8177146Z",
     "targets":  [
                     "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
                     "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
@@ -10,7 +10,16 @@
                     "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
                     "Assets/_Project/Scripts/World/VegetationMemoryPool.cs",
                     "Assets/_Project/Scripts/World/PcieBandwidthGuard1411SelfTest.cs",
-                    "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs"
+                    "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs",
+                    "Assets/_Project/Scripts/Graphics/Culling/InstanceCullingService.cs",
+                    "Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs",
+                    "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs",
+                    "Assets/_Project/Scripts/HectonFluidEngine.cs",
+                    "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                    "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+                    "Assets/_Project/Scripts/HectonBoidController.cs",
+                    "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
+                    "Assets/_Project/Scripts/World/AbyssalThermalManager.cs"
                 ],
     "checks":  {
                    "UploadRangeMethodPresent":  true,
@@ -44,7 +53,32 @@
                    "CarveDebrisUsesLongByteOffset":  true,
                    "CarveDebrisUsesGuardedMemcpy":  true,
                    "CarveDebrisFinallyUnlocks":  true,
-                   "CarveDebrisBuffersLockCapable":  true
+                   "CarveDebrisBuffersLockCapable":  true,
+                   "InstanceCullingIndirectArgsLockCapable":  true,
+                   "InstanceCullingIndirectArgsMappedUpload":  true,
+                   "GpuScatterIndirectArgsLockCapable":  true,
+                   "GpuScatterIndirectArgsMappedUpload":  true,
+                   "VehicleCockpitDamagePointBufferLockCapable":  true,
+                   "VehicleCockpitDamageArgsLockCapable":  true,
+                   "VehicleCockpitDamageFallbackMappedUpload":  true,
+                   "VehicleCockpitDamageArgsMappedUpload":  true,
+                   "FluidAdvectionDirtyPageIdsPresent":  true,
+                   "FluidAdvectionBuffersLockCapable":  true,
+                   "FluidAdvectionMappedDirtyUpload":  true,
+                   "FluidAdvectionDirtyLocksFinally":  true,
+                   "FluidAdvectionUsesContinuousQualityBudget":  true,
+                   "FluidAdvectionNoSetDataFallbackCall":  true,
+                   "AsyncBuoyancyRequestBuffersLockCapable":  true,
+                   "DroneProceduralArgsLockCapable":  true,
+                   "BoidPingBuffersLockCapable":  true,
+                   "BoidIndirectArgsLockCapable":  true,
+                   "BoidSpawnResetMappedUpload":  true,
+                   "GpuScatterDirectorVisibilityCacheMappedClear":  true,
+                   "GpuScatterDirectorArgsLockCapable":  true,
+                   "VegetationCullTelemetryMappedClear":  true,
+                   "AbyssalThermalSmokeBuffersLockCapable":  true,
+                   "AbyssalThermalParticleResetMappedUpload":  true,
+                   "AbyssalThermalExplicitGpuLayouts":  true
                },
     "fatalFailures":  [
 

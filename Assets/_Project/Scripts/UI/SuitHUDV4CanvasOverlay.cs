@@ -2076,7 +2076,8 @@ namespace Hecton8.UI
                     break;
 
                 case GlobalRegistryServiceSlot.DataVault:
-                    BindGlitchTableVault(currentService as IDataVault);
+                    IDataVault nextVault = currentService is IDataVault currentVault ? currentVault : null;
+                    BindGlitchTableVault(nextVault);
                     return;
 
                 case GlobalRegistryServiceSlot.MapMagicVegetationRuntime:
@@ -2177,7 +2178,7 @@ namespace Hecton8.UI
             if (!vault.TryGetGenerationHandle(
                     (BufferID)DiegeticGlitchSurgeonRuntime.GlitchTableBufferIdRaw,
                     out VaultGenerationHandle<byte> borrowedHandle) ||
-                !IsVaultHandleCreated(in borrowedHandle) ||
+                !IsGlitchTableHandle(in borrowedHandle) ||
                 vault.IsCompactionFenceActive ||
                 !vault.TryReadOnlyHandle(in borrowedHandle, out NativeArray<byte>.ReadOnly glitchTable) ||
                 vault.IsCompactionFenceActive ||
@@ -2203,7 +2204,8 @@ namespace Hecton8.UI
             tableLength = 0;
             if (!_glitchTableHandleReady ||
                 _glitchVault == null ||
-                _glitchVault.IsCompactionFenceActive)
+                _glitchVault.IsCompactionFenceActive ||
+                !IsGlitchTableHandle(in _glitchTableHandle))
                 return false;
 
             if (!_glitchVault.TryReadOnlyHandle(in _glitchTableHandle, out NativeArray<byte>.ReadOnly glitchTable) ||
@@ -2229,9 +2231,11 @@ namespace Hecton8.UI
             _glitchTableHandleReady = false;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
+        private static bool IsGlitchTableHandle<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == DiegeticGlitchSurgeonRuntime.GlitchTableBufferIdRaw &&
+                   handle.SystemID == (uint)SystemID.UI &&
+                   handle.Generation != 0u;
         }
 
         private void RebindInventoryService(IPlayerInventoryService inventoryService)
@@ -2826,10 +2830,10 @@ namespace Hecton8.UI
                                    radarResolution > 0;
 
             if (!hasRadarPayload &&
-                WorldSpatialHashGrid.TryGetAcousticDensityMap(out float[] densityMap, out Vector3Int densityDimensions))
+                WorldSpatialHashGrid.TryGetAcousticDensityMap(out NativeArray<float>.ReadOnly densityMap, out Vector3Int densityDimensions))
             {
                 int densityCellCount = densityDimensions.x * densityDimensions.y * densityDimensions.z;
-                radarResolution = densityMap != null ? math.min(densityMap.Length, densityCellCount) : 0;
+                radarResolution = densityMap.IsCreated ? math.min(densityMap.Length, densityCellCount) : 0;
                 hasRadarPayload = radarResolution > 0;
                 hasSpatialDensityFallback = hasRadarPayload;
             }

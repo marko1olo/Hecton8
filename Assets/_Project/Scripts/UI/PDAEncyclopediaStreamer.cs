@@ -202,6 +202,7 @@ namespace Hecton8.UI
         private const BufferID CsvScratchBufferId = (BufferID)70567;
         private const BufferID TypewriterStateBufferId = (BufferID)70569;
         private const BufferID H8lrMirrorBufferId = (BufferID)70570;
+        private const SystemID VaultOwnerSystemId = SystemID.UI;
 
         private static readonly uint TokenDepthHash = ComputeStaticAsciiHash("DEPTH".AsSpan());
         private static readonly uint TokenEntryHashHash = ComputeStaticAsciiHash("ENTRY_HASH".AsSpan());
@@ -486,22 +487,9 @@ namespace Hecton8.UI
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            _vault = currentService as IDataVault;
-            _vaultReady = false;
-            _unlockMaskHandle = default;
-            _runtimeStateHandle = default;
-            _metadataHandle = default;
-            _telemetryHandle = default;
-            _telemetryCursorHandle = default;
-            _mockUtf8Handle = default;
-            _mockIndexHandle = default;
-            _csvScratchHandle = default;
-            _typewriterStateHandle = default;
-            _h8lrMirrorHandle = default;
-            _mockSeeded = false;
-            _h8lrMetadataSeeded = false;
-            _coldBootstrapAttempted = false;
-            ResetActiveSourceCache();
+            IDataVault nextVault = currentService as IDataVault;
+            IDataVault previousVault = previousService as IDataVault;
+            BindDataVaultForLifecycle(nextVault, previousVault);
 
             if (_h8lrLoreStore != null)
             {
@@ -527,8 +515,8 @@ namespace Hecton8.UI
             if (!EnsureVaultBuffers())
                 return false;
 
-            runtimeState = GetVaultElementRef(in _runtimeStateHandle, 0);
-            unlockMask = GetVaultElementRef(in _unlockMaskHandle, 0);
+            runtimeState = GetVaultElementRef(in _runtimeStateHandle, RuntimeStateBufferId, 0);
+            unlockMask = GetVaultElementRef(in _unlockMaskHandle, UnlockMaskBufferId, 0);
             return true;
         }
 
@@ -538,11 +526,11 @@ namespace Hecton8.UI
             if (!EnsureVaultBuffers())
                 return;
 
-            ref EncyclopediaStateDTO mask = ref GetVaultElementRef(in _unlockMaskHandle, 0);
+            ref EncyclopediaStateDTO mask = ref GetVaultElementRef(in _unlockMaskHandle, UnlockMaskBufferId, 0);
             for (int word = 0; word < UnlockWordCount; word++)
                 GetMaskWordRef(ref mask, word) = ulong.MaxValue;
 
-            ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, 0);
+            ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, RuntimeStateBufferId, 0);
             state.UnlockedCount = UnlockBitCount;
             state.Revision++;
             state.Magic = StateMagic;
@@ -560,11 +548,11 @@ namespace Hecton8.UI
             if (!EnsureVaultBuffers())
                 return;
 
-            ref EncyclopediaStateDTO mask = ref GetVaultElementRef(in _unlockMaskHandle, 0);
+            ref EncyclopediaStateDTO mask = ref GetVaultElementRef(in _unlockMaskHandle, UnlockMaskBufferId, 0);
             for (int word = 0; word < UnlockWordCount; word++)
                 GetMaskWordRef(ref mask, word) = 0UL;
 
-            ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, 0);
+            ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, RuntimeStateBufferId, 0);
             state.UnlockedCount = 0u;
             state.Revision++;
             state.Magic = StateMagic;
@@ -601,7 +589,7 @@ namespace Hecton8.UI
             if (!EnsureVaultBuffers() || string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
-            NativeArray<byte> scratch = ResolveVaultBuffer(in _csvScratchHandle);
+            NativeArray<byte> scratch = ResolveVaultBuffer(in _csvScratchHandle, CsvScratchBufferId);
             if (!scratch.IsCreated || scratch.Length <= 0)
                 return false;
 
@@ -836,11 +824,11 @@ namespace Hecton8.UI
             int wordIndex = bitIndex >> 6;
             int bitInWord = bitIndex & 63;
             ulong bit = 1UL << bitInWord;
-            ref EncyclopediaStateDTO mask = ref GetVaultElementRef(in _unlockMaskHandle, 0);
+            ref EncyclopediaStateDTO mask = ref GetVaultElementRef(in _unlockMaskHandle, UnlockMaskBufferId, 0);
             ref ulong word = ref GetMaskWordRef(ref mask, wordIndex);
             bool wasLocked = AtomicOr(ref word, bit);
 
-            ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, 0);
+            ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, RuntimeStateBufferId, 0);
             state.Magic = StateMagic;
             state.LastEntryHash = hash;
             state.LastFrame = frame;
@@ -885,7 +873,7 @@ namespace Hecton8.UI
                 mask.Flags |= StateFlagPreciseAup;
             }
 
-            ref PdaEncyclopediaEntryMetaDTO meta = ref GetVaultElementRef(in _metadataHandle, bitIndex);
+            ref PdaEncyclopediaEntryMetaDTO meta = ref GetVaultElementRef(in _metadataHandle, MetadataBufferId, bitIndex);
             meta.EntryHash = hash;
             meta.BitIndex = bitIndex;
             meta.SourceId = sourceId;
@@ -913,7 +901,7 @@ namespace Hecton8.UI
             if (!TryFindBitIndex(hash, out ushort bitIndex))
                 return false;
 
-            ref EncyclopediaStateDTO mask = ref GetVaultElementRef(in _unlockMaskHandle, 0);
+            ref EncyclopediaStateDTO mask = ref GetVaultElementRef(in _unlockMaskHandle, UnlockMaskBufferId, 0);
             ulong word = GetMaskWordRef(ref mask, bitIndex >> 6);
             ulong bit = 1UL << (bitIndex & 63);
             return (word & bit) != 0UL;
@@ -928,15 +916,15 @@ namespace Hecton8.UI
             for (int probe = 0; probe < UnlockBitCount; probe++)
             {
                 int index = (start + probe) & (UnlockBitCount - 1);
-                ref PdaEncyclopediaEntryMetaDTO meta = ref GetVaultElementRef(in _metadataHandle, index);
+                ref PdaEncyclopediaEntryMetaDTO meta = ref GetVaultElementRef(in _metadataHandle, MetadataBufferId, index);
                 if (meta.EntryHash != 0u && meta.EntryHash != hash)
                     continue;
 
                 if (meta.EntryHash == 0u)
                 {
-                    ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, 0);
+                    ref PdaEncyclopediaRuntimeStateDTO state = ref GetVaultElementRef(in _runtimeStateHandle, RuntimeStateBufferId, 0);
                     state.MetadataCount = math.min((uint)UnlockBitCount, state.MetadataCount + 1u);
-                    ref EncyclopediaStateDTO encyclopedia = ref GetVaultElementRef(in _unlockMaskHandle, 0);
+                    ref EncyclopediaStateDTO encyclopedia = ref GetVaultElementRef(in _unlockMaskHandle, UnlockMaskBufferId, 0);
                     encyclopedia.MetadataCount = state.MetadataCount;
                     meta.EntryHash = hash;
                     meta.BitIndex = (ushort)index;
@@ -961,7 +949,7 @@ namespace Hecton8.UI
             for (int probe = 0; probe < UnlockBitCount; probe++)
             {
                 int index = (start + probe) & (UnlockBitCount - 1);
-                ref PdaEncyclopediaEntryMetaDTO meta = ref GetVaultElementRef(in _metadataHandle, index);
+                ref PdaEncyclopediaEntryMetaDTO meta = ref GetVaultElementRef(in _metadataHandle, MetadataBufferId, index);
                 if (meta.EntryHash == hash)
                 {
                     bitIndex = (ushort)index;
@@ -1496,16 +1484,16 @@ namespace Hecton8.UI
                    ArePdaHandlesCreated();
         }
 
-        private NativeArray<T> ResolveVaultBuffer<T>(in VaultGenerationHandle<T> handle)
+        private NativeArray<T> ResolveVaultBuffer<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId)
             where T : unmanaged
         {
-            return TryResolveVaultBuffer(in handle, out NativeArray<T> buffer) ? buffer : default;
+            return TryResolveVaultBuffer(in handle, expectedBufferId, out NativeArray<T> buffer) ? buffer : default;
         }
 
-        private ref T GetVaultElementRef<T>(in VaultGenerationHandle<T> handle, int index)
+        private ref T GetVaultElementRef<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId, int index)
             where T : unmanaged
         {
-            if (!TryResolveVaultBuffer(in handle, out NativeArray<T> buffer) ||
+            if (!TryResolveVaultBuffer(in handle, expectedBufferId, out NativeArray<T> buffer) ||
                 (uint)index >= (uint)buffer.Length)
             {
                 FatalMemoryException.ThrowStaleVaultHandle();
@@ -1517,13 +1505,14 @@ namespace Hecton8.UI
 
         private bool TryResolveVaultBuffer<T>(
             in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
             out NativeArray<T> buffer)
             where T : unmanaged
         {
             buffer = default;
             if (_vault == null ||
                 _vault.IsCompactionFenceActive ||
-                !IsPdaHandleCreated(in handle) ||
+                !IsPdaHandleCreated(in handle, expectedBufferId) ||
                 !_vault.TryResolveHandle(in handle, out buffer) ||
                 _vault.IsCompactionFenceActive ||
                 !buffer.IsCreated ||
@@ -1536,50 +1525,95 @@ namespace Hecton8.UI
             return true;
         }
 
-        private static bool IsPdaHandleCreated<T>(in VaultGenerationHandle<T> handle)
+        private static bool IsPdaHandleCreated<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId)
             where T : unmanaged
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == expectedBufferId &&
+                   handle.SystemID == (uint)VaultOwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private bool ArePdaHandlesCreated()
         {
-            return IsPdaHandleCreated(in _unlockMaskHandle) &&
-                   IsPdaHandleCreated(in _runtimeStateHandle) &&
-                   IsPdaHandleCreated(in _metadataHandle) &&
-                   IsPdaHandleCreated(in _telemetryHandle) &&
-                   IsPdaHandleCreated(in _telemetryCursorHandle) &&
-                   IsPdaHandleCreated(in _mockUtf8Handle) &&
-                   IsPdaHandleCreated(in _mockIndexHandle) &&
-                   IsPdaHandleCreated(in _csvScratchHandle) &&
-                   IsPdaHandleCreated(in _typewriterStateHandle) &&
-                   IsPdaHandleCreated(in _h8lrMirrorHandle);
+            return IsPdaHandleCreated(in _unlockMaskHandle, UnlockMaskBufferId) &&
+                   IsPdaHandleCreated(in _runtimeStateHandle, RuntimeStateBufferId) &&
+                   IsPdaHandleCreated(in _metadataHandle, MetadataBufferId) &&
+                   IsPdaHandleCreated(in _telemetryHandle, TelemetryBufferId) &&
+                   IsPdaHandleCreated(in _telemetryCursorHandle, TelemetryCursorBufferId) &&
+                   IsPdaHandleCreated(in _mockUtf8Handle, MockUtf8BufferId) &&
+                   IsPdaHandleCreated(in _mockIndexHandle, MockIndexBufferId) &&
+                   IsPdaHandleCreated(in _csvScratchHandle, CsvScratchBufferId) &&
+                   IsPdaHandleCreated(in _typewriterStateHandle, TypewriterStateBufferId) &&
+                   IsPdaHandleCreated(in _h8lrMirrorHandle, H8lrMirrorBufferId);
         }
 
         private bool ArePdaBuffersResolvable()
         {
-            return IsPdaBufferResolvable(in _unlockMaskHandle, 1) &&
-                   IsPdaBufferResolvable(in _runtimeStateHandle, 1) &&
-                   IsPdaBufferResolvable(in _metadataHandle, MaxMetadataEntries) &&
-                   IsPdaBufferResolvable(in _telemetryHandle, TelemetryFrameCount) &&
-                   IsPdaBufferResolvable(in _telemetryCursorHandle, 1) &&
-                   IsPdaBufferResolvable(in _mockUtf8Handle, MockUtf8Bytes) &&
-                   IsPdaBufferResolvable(in _mockIndexHandle, MockEntryCapacity) &&
-                   IsPdaBufferResolvable(in _csvScratchHandle, CsvScratchBytes) &&
-                   IsPdaBufferResolvable(in _typewriterStateHandle, 1) &&
-                   IsPdaBufferResolvable(in _h8lrMirrorHandle, H8lrMirrorBytes);
+            return IsPdaBufferResolvable(in _unlockMaskHandle, UnlockMaskBufferId, 1) &&
+                   IsPdaBufferResolvable(in _runtimeStateHandle, RuntimeStateBufferId, 1) &&
+                   IsPdaBufferResolvable(in _metadataHandle, MetadataBufferId, MaxMetadataEntries) &&
+                   IsPdaBufferResolvable(in _telemetryHandle, TelemetryBufferId, TelemetryFrameCount) &&
+                   IsPdaBufferResolvable(in _telemetryCursorHandle, TelemetryCursorBufferId, 1) &&
+                   IsPdaBufferResolvable(in _mockUtf8Handle, MockUtf8BufferId, MockUtf8Bytes) &&
+                   IsPdaBufferResolvable(in _mockIndexHandle, MockIndexBufferId, MockEntryCapacity) &&
+                   IsPdaBufferResolvable(in _csvScratchHandle, CsvScratchBufferId, CsvScratchBytes) &&
+                   IsPdaBufferResolvable(in _typewriterStateHandle, TypewriterStateBufferId, 1) &&
+                   IsPdaBufferResolvable(in _h8lrMirrorHandle, H8lrMirrorBufferId, H8lrMirrorBytes);
         }
 
-        private bool IsPdaBufferResolvable<T>(in VaultGenerationHandle<T> handle, int requiredLength)
+        private bool IsPdaBufferResolvable<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            int requiredLength)
             where T : unmanaged
         {
-            return TryResolveVaultBuffer(in handle, out NativeArray<T> buffer) &&
+            return TryResolveVaultBuffer(in handle, expectedBufferId, out NativeArray<T> buffer) &&
                    buffer.Length >= requiredLength;
         }
 
         private void InvalidateVaultDescriptors()
         {
             _vaultReady = false;
+        }
+
+        private void BindDataVaultForLifecycle(IDataVault nextVault, IDataVault fallbackReleaseVault = null)
+        {
+            if (ReferenceEquals(_vault, nextVault))
+                return;
+
+            ReleasePdaVaultHandles(_vault ?? fallbackReleaseVault);
+            _vault = nextVault;
+            _vaultReady = false;
+            _mockSeeded = false;
+            _h8lrMetadataSeeded = false;
+            _coldBootstrapAttempted = false;
+            ResetActiveSourceCache();
+        }
+
+        private void ReleasePdaVaultHandles(IDataVault vault)
+        {
+            ReleasePdaVaultHandle(vault, ref _unlockMaskHandle, UnlockMaskBufferId);
+            ReleasePdaVaultHandle(vault, ref _runtimeStateHandle, RuntimeStateBufferId);
+            ReleasePdaVaultHandle(vault, ref _metadataHandle, MetadataBufferId);
+            ReleasePdaVaultHandle(vault, ref _telemetryHandle, TelemetryBufferId);
+            ReleasePdaVaultHandle(vault, ref _telemetryCursorHandle, TelemetryCursorBufferId);
+            ReleasePdaVaultHandle(vault, ref _mockUtf8Handle, MockUtf8BufferId);
+            ReleasePdaVaultHandle(vault, ref _mockIndexHandle, MockIndexBufferId);
+            ReleasePdaVaultHandle(vault, ref _csvScratchHandle, CsvScratchBufferId);
+            ReleasePdaVaultHandle(vault, ref _typewriterStateHandle, TypewriterStateBufferId);
+            ReleasePdaVaultHandle(vault, ref _h8lrMirrorHandle, H8lrMirrorBufferId);
+        }
+
+        private static void ReleasePdaVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId)
+            where T : unmanaged
+        {
+            if (vault != null && IsPdaHandleCreated(in handle, expectedBufferId))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private void TryColdBootstrap()
@@ -1698,10 +1732,10 @@ namespace Hecton8.UI
 
         private bool TryBindVaultCold()
         {
-            if (_vault != null)
-                return true;
+            IDataVault registryVault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_vault, registryVault))
+                BindDataVaultForLifecycle(registryVault);
 
-            _vault = GlobalRegistry.DataVault;
             return _vault != null;
         }
 

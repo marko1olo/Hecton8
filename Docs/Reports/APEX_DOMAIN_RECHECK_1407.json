@@ -1,6 +1,13 @@
 ﻿{
     "agentId":  "1407",
-    "generatedAt":  "2026-05-28T05:51:28.2584616+04:00",
+    "generatedAt":  "2026-05-28T12:35:49.1943087+04:00",
+    "promptFileProof":  {
+                            "path":  "Docs/AgentLogs/Prompt_1407_EXTRACTED.md",
+                            "chars":  20045,
+                            "taskLines":  20,
+                            "sha256":  "887C8753CB26026DDF4EC2C0504A91FE85D25BB9E68C1DC1D329FB6B41E88434",
+                            "normalization":  "trimmed end-of-line whitespace in extracted proof artifact; semantic prompt lines and task count preserved"
+                        },
     "shaderStereoContext":  [
                                 {
                                     "path":  "Assets/_Project/Art/Shaders/Hidden_Hecton_VRBrownout.shader",
@@ -506,52 +513,48 @@
                                       "foreach":  0,
                                       "stringFormat":  0,
                                       "toString":  0,
-                                      "linq":  0
+                                      "linq":  0,
+                                      "experimentalRenderingUsing":  0
                                   },
-    "jsonProof":  [
-                      {
-                          "path":  "Docs/Reports/APEX_FINAL_VERIFICATION_1407.json",
-                          "jsonValid":  true,
-                          "sha256":  "AC465BF33B378206155AD6A842547485C573EA43C4901A14E21197169D50A10A",
-                          "sidecar":  "AC465BF33B378206155AD6A842547485C573EA43C4901A14E21197169D50A10A",
-                          "sidecarMatches":  true
-                      },
-                      {
-                          "path":  "Docs/Reports/APEX_ZERO_GC_SCAN_1407.json",
-                          "jsonValid":  true,
-                          "sha256":  "A6B714E4C8825C0EED7D26BF6D13EDD22C2BAF0B98DD79B4A95539AE6ADA31EB",
-                          "sidecar":  "A6B714E4C8825C0EED7D26BF6D13EDD22C2BAF0B98DD79B4A95539AE6ADA31EB",
-                          "sidecarMatches":  true
-                      },
-                      {
-                          "path":  "Docs/Reports/UNIVERSAL_COMFORT_INTEGRATION_REPORT_1407.json",
-                          "jsonValid":  true,
-                          "sha256":  "AC465BF33B378206155AD6A842547485C573EA43C4901A14E21197169D50A10A",
-                          "sidecar":  "AC465BF33B378206155AD6A842547485C573EA43C4901A14E21197169D50A10A",
-                          "sidecarMatches":  true
-                      }
-                  ],
+    "nonCyclicJsonProof":  [
+                               {
+                                   "path":  "Docs/Reports/APEX_ZERO_GC_SCAN_1407.json",
+                                   "jsonValid":  true,
+                                   "sha256":  "68F776C4C8936313FEBD3C816AC8398DDA49F146D3B07902F0E9A37F8CB21CEA",
+                                   "sidecar":  "68F776C4C8936313FEBD3C816AC8398DDA49F146D3B07902F0E9A37F8CB21CEA",
+                                   "sidecarMatches":  true
+                               }
+                           ],
     "buildPreflight":  {
-                           "agentId":  "1407",
-                           "sampledAt":  "2026-05-28T05:51:28.2584616+04:00",
-                           "cpuLoadPercent":  94,
+                           "sampledAt":  "2026-05-28T12:55:35.6511160+04:00",
+                           "cpuLoadPercent":  63,
                            "compilerProcesses":  [
                                                      {
-                                                         "Id":  12816,
+                                                         "Id":  52688,
                                                          "ProcessName":  "csc",
-                                                         "CPU":  1.9375,
-                                                         "StartTime":  "\/Date(1779933088266)\/"
+                                                         "CPU":  82.65625,
+                                                         "StartTimeIso":  "2026-05-28T12:55:12.6574862+04:00"
                                                      },
                                                      {
-                                                         "Id":  10056,
+                                                         "Id":  52900,
                                                          "ProcessName":  "dotnet",
-                                                         "CPU":  47.796875,
-                                                         "StartTime":  "\/Date(1779933051392)\/"
+                                                         "CPU":  28.0625,
+                                                         "StartTimeIso":  "2026-05-28T12:54:51.3507151+04:00"
                                                      }
                                                  ],
-                           "buildInvoked":  false,
+                           "buildInvoked":  true,
+                           "dotnetBuildInvoked":  true,
+                           "buildAllowedByGate":  null,
+                           "gateSampleBeforeInvocationCaptured":  false,
+                           "preDelayCpuLoadPercent":  76,
+                           "commandTimeoutMs":  904009,
+                           "solutionFile":  "Hecton8.slnx",
                            "buildExitCode":  null,
-                           "reason":  "Gate closed: CPU \u003e50 percent or compiler process active; dotnet build not invoked."
+                           "buildDurationMs":  null,
+                           "dumpPath":  "Docs/AgentLogs/Dump_1407_BuildTimeout.txt",
+                           "dumpSha256":  "BE6C250391D651A83EDC4931EF28036AD596215ECE4123D3A086BAE28C498BAE",
+                           "reason":  "One delayed build-gate command exceeded the 904009 ms shell timeout after a dotnet process was observed. Exit code and exact gate CPU sample before invocation are not captured; no second build was launched.",
+                           "sha256":  "EF5EB4A423689B896A9DA5BCE035BE3C4FE0798B577A3A8C4D4AF631B5366EBE"
                        },
     "aggregate":  {
                       "stereoBad":  0,
@@ -560,5 +563,21 @@
                       "rendererBad":  0,
                       "jsonBad":  0,
                       "runtimeForbiddenTokenTotal":  0
-                  }
+                  },
+    "runtimeSourceProof":  {
+                               "path":  "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs",
+                               "sha256":  "79791AC45FBFEDA985B3A9BB6EE0B20A333519F1D4E8EA691ADF3EC632FC4E76",
+                               "unsafeUsingLine":  6,
+                               "updateMethodUnsafeLine":  241,
+                               "lockBufferForWriteLine":  270,
+                               "memCpyLine":  273,
+                               "nativeArrayUnsafePtrLine":  274,
+                               "addressOfLine":  275,
+                               "finallyLine":  278,
+                               "unlockBufferAfterWriteLine":  280,
+                               "oldMappedIndexerAssignmentCount":  0,
+                               "asmdef":  "Assets/_Project/Scripts/Hecton8.Core.asmdef",
+                               "asmdefAllowUnsafeCode":  true,
+                               "experimentalRenderingUsingCount":  0
+                           }
 }

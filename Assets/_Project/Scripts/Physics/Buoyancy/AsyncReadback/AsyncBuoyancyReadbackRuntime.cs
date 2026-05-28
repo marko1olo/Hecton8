@@ -115,6 +115,9 @@ namespace Hecton8.Physics
         private GraphicsBuffer _requestBuffer0;
         private GraphicsBuffer _requestBuffer1;
         private GraphicsBuffer _requestBuffer2;
+        private GraphicsBuffer _requestUploadBuffer0;
+        private GraphicsBuffer _requestUploadBuffer1;
+        private GraphicsBuffer _requestUploadBuffer2;
         private AsyncGPUReadbackRequest _readbackRequest0;
         private AsyncGPUReadbackRequest _readbackRequest1;
         private AsyncGPUReadbackRequest _readbackRequest2;
@@ -589,11 +592,19 @@ namespace Hecton8.Physics
             if (requestBuffer == null)
                 return ReadbackDispatchStatus.Unavailable;
 
+            GraphicsBuffer requestUploadBuffer = ResolveRequestUploadBuffer(slot);
+            if (requestUploadBuffer == null)
+                return ReadbackDispatchStatus.Unavailable;
+
             GraphicsBuffer waveBuffer = ResolveWaveParametersBuffer(slot);
             if (waveBuffer == null)
                 return ReadbackDispatchStatus.Unavailable;
 
-            GraphicsBufferUploadUtility.UploadNativeArraySetData(requestBuffer, requests, _dispatchRequestCount);
+            GraphicsBufferUploadUtility.UploadNativeArrayAndCopyWholeBuffer(
+                requestUploadBuffer,
+                requestBuffer,
+                requests,
+                _dispatchRequestCount);
             int waveUploadCount = math.min(waves.Length, AsyncBuoyancyReadbackConstants.WaveCapacity);
             uint waveUploadHash = ComputeWaveParametersHash(waves, waveUploadCount);
             ref uint waveHashRef = ref ResolveWaveUploadHashRef(slot);
@@ -907,11 +918,17 @@ namespace Hecton8.Physics
         private bool EnsureGpuBuffers()
         {
             if (_requestBuffer0 == null)
-                _requestBuffer0 = new GraphicsBuffer(GraphicsBuffer.Target.Structured, AsyncBuoyancyReadbackConstants.RequestCapacity, UnsafeUtility.SizeOf<ReadbackRequestDTO>());
+                _requestBuffer0 = GraphicsBufferUploadUtility.CreateStructuredCopyDestinationBuffer<ReadbackRequestDTO>(AsyncBuoyancyReadbackConstants.RequestCapacity);
             if (_requestBuffer1 == null)
-                _requestBuffer1 = new GraphicsBuffer(GraphicsBuffer.Target.Structured, AsyncBuoyancyReadbackConstants.RequestCapacity, UnsafeUtility.SizeOf<ReadbackRequestDTO>());
+                _requestBuffer1 = GraphicsBufferUploadUtility.CreateStructuredCopyDestinationBuffer<ReadbackRequestDTO>(AsyncBuoyancyReadbackConstants.RequestCapacity);
             if (_requestBuffer2 == null)
-                _requestBuffer2 = new GraphicsBuffer(GraphicsBuffer.Target.Structured, AsyncBuoyancyReadbackConstants.RequestCapacity, UnsafeUtility.SizeOf<ReadbackRequestDTO>());
+                _requestBuffer2 = GraphicsBufferUploadUtility.CreateStructuredCopyDestinationBuffer<ReadbackRequestDTO>(AsyncBuoyancyReadbackConstants.RequestCapacity);
+            if (_requestUploadBuffer0 == null)
+                _requestUploadBuffer0 = GraphicsBufferUploadUtility.CreateStructuredUploadStagingBuffer<ReadbackRequestDTO>(AsyncBuoyancyReadbackConstants.RequestCapacity);
+            if (_requestUploadBuffer1 == null)
+                _requestUploadBuffer1 = GraphicsBufferUploadUtility.CreateStructuredUploadStagingBuffer<ReadbackRequestDTO>(AsyncBuoyancyReadbackConstants.RequestCapacity);
+            if (_requestUploadBuffer2 == null)
+                _requestUploadBuffer2 = GraphicsBufferUploadUtility.CreateStructuredUploadStagingBuffer<ReadbackRequestDTO>(AsyncBuoyancyReadbackConstants.RequestCapacity);
 
             if (_waveParametersBuffer0 == null)
                 _waveParametersBuffer0 = CreateWaveParametersBuffer();
@@ -963,6 +980,9 @@ namespace Hecton8.Physics
             return _requestBuffer0 != null &&
                    _requestBuffer1 != null &&
                    _requestBuffer2 != null &&
+                   _requestUploadBuffer0 != null &&
+                   _requestUploadBuffer1 != null &&
+                   _requestUploadBuffer2 != null &&
                    _waveParametersBuffer0 != null &&
                    _waveParametersBuffer1 != null &&
                    _waveParametersBuffer2 != null;
@@ -1040,6 +1060,9 @@ namespace Hecton8.Physics
             DisposeRequestBuffer(ref _requestBuffer0);
             DisposeRequestBuffer(ref _requestBuffer1);
             DisposeRequestBuffer(ref _requestBuffer2);
+            DisposeRequestBuffer(ref _requestUploadBuffer0);
+            DisposeRequestBuffer(ref _requestUploadBuffer1);
+            DisposeRequestBuffer(ref _requestUploadBuffer2);
             DisposeRequestBuffer(ref _waveParametersBuffer0);
             DisposeRequestBuffer(ref _waveParametersBuffer1);
             DisposeRequestBuffer(ref _waveParametersBuffer2);
@@ -1092,6 +1115,15 @@ namespace Hecton8.Physics
             if (slot == 1)
                 return _requestBuffer1;
             return _requestBuffer2;
+        }
+
+        private GraphicsBuffer ResolveRequestUploadBuffer(int slot)
+        {
+            if (slot == 0)
+                return _requestUploadBuffer0;
+            if (slot == 1)
+                return _requestUploadBuffer1;
+            return _requestUploadBuffer2;
         }
 
         private GraphicsBuffer ResolveWaveParametersBuffer(int slot)

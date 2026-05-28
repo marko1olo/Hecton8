@@ -5423,6 +5423,8 @@ namespace Hecton8.Core
                 WfcLaserCutRuntime.FlushVisualSync();
                 HectonShaderGlobalDataVaultBridge.FlushFallbackVisualSync();
                 GlobalRegistry.FlushMathPrecisionShaderState();
+                DistanceMath.FlushVisualSyncShaderState();
+                ConnectionSplineBatchRenderer.FlushVisualSyncShaderState();
                 HomeostasisBrain.FlushVisualSyncShaderState();
                 RunMasterVisualSyncPhase();
                 BeginLateFrameEventBudget();
@@ -7095,6 +7097,17 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Creates a structured buffer that the GPU may write and CPU uploads may initialize via a copy-source staging buffer.
+        /// </summary>
+        public static GraphicsBuffer CreateStructuredCopyDestinationBuffer<T>(int count) where T : struct
+        {
+            return new GraphicsBuffer(
+                GraphicsBuffer.Target.Structured | GraphicsBuffer.Target.CopyDestination,
+                count,
+                UnsafeUtility.SizeOf<T>());
+        }
+
+        /// <summary>
         /// Creates a structured buffer configured for direct CPU writes.
         /// </summary>
         public static GraphicsBuffer CreateStructuredLockBuffer<T>(int count) where T : struct
@@ -7104,6 +7117,35 @@ namespace Hecton8.Core
                 GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 count,
                 UnsafeUtility.SizeOf<T>());
+        }
+
+        /// <summary>
+        /// Creates a CPU-write staging buffer that may only be read/copied by the GPU.
+        /// </summary>
+        public static GraphicsBuffer CreateStructuredUploadStagingBuffer<T>(int count) where T : struct
+        {
+            return new GraphicsBuffer(
+                GraphicsBuffer.Target.Structured | GraphicsBuffer.Target.CopySource,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                count,
+                UnsafeUtility.SizeOf<T>());
+        }
+
+        public static GraphicsBuffer CreateRawIndirectCopyDestinationBuffer(int count, int stride)
+        {
+            return new GraphicsBuffer(
+                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw | GraphicsBuffer.Target.CopyDestination,
+                math.max(1, count),
+                math.max(4, stride));
+        }
+
+        public static GraphicsBuffer CreateRawIndirectUploadStagingBuffer(int count, int stride)
+        {
+            return new GraphicsBuffer(
+                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw | GraphicsBuffer.Target.CopySource,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                math.max(1, count),
+                math.max(4, stride));
         }
 
         /// <summary>
@@ -7161,6 +7203,36 @@ namespace Hecton8.Core
             }
         }
 
+        public static void UploadNativeArrayAndCopyWholeBuffer<T>(
+            GraphicsBuffer uploadStaging,
+            GraphicsBuffer destination,
+            NativeArray<T> source,
+            int count)
+            where T : struct
+        {
+            int safeCount = ResolveSafeWriteCount<T>(uploadStaging, source.IsCreated ? source.Length : 0, count);
+            if (safeCount <= 0 || !CanCopyWholeBuffer(uploadStaging, destination))
+                return;
+
+            UploadNativeArray(uploadStaging, source, safeCount);
+            Graphics.CopyBuffer(uploadStaging, destination);
+        }
+
+        public static void UploadArrayAndCopyWholeBuffer<T>(
+            GraphicsBuffer uploadStaging,
+            GraphicsBuffer destination,
+            T[] source,
+            int count)
+            where T : unmanaged
+        {
+            int safeCount = ResolveSafeWriteCount<T>(uploadStaging, source != null ? source.Length : 0, count);
+            if (safeCount <= 0 || !CanCopyWholeBuffer(uploadStaging, destination))
+                return;
+
+            UploadArray(uploadStaging, source, safeCount);
+            Graphics.CopyBuffer(uploadStaging, destination);
+        }
+
         /// <summary>
         /// Uploads a blittable native array into a GPU-write-capable buffer.
         /// </summary>
@@ -7173,6 +7245,26 @@ namespace Hecton8.Core
             destination.SetData(source, 0, 0, safeCount);
         }
 
+        public static void UploadNativeArraySetDataRange<T>(
+            GraphicsBuffer destination,
+            NativeArray<T> source,
+            int sourceStartIndex,
+            int destinationStartIndex,
+            int count)
+            where T : struct
+        {
+            int safeCount = ResolveSafeWriteRangeCount<T>(
+                destination,
+                source.IsCreated ? source.Length : 0,
+                sourceStartIndex,
+                destinationStartIndex,
+                count);
+            if (safeCount <= 0)
+                return;
+
+            destination.SetData(source, sourceStartIndex, destinationStartIndex, safeCount);
+        }
+
         /// <summary>
         /// Uploads a blittable managed staging array into a GPU-write-capable buffer.
         /// </summary>
@@ -7183,6 +7275,26 @@ namespace Hecton8.Core
                 return;
 
             destination.SetData(source, 0, 0, safeCount);
+        }
+
+        public static void UploadArraySetDataRange<T>(
+            GraphicsBuffer destination,
+            T[] source,
+            int sourceStartIndex,
+            int destinationStartIndex,
+            int count)
+            where T : struct
+        {
+            int safeCount = ResolveSafeWriteRangeCount<T>(
+                destination,
+                source != null ? source.Length : 0,
+                sourceStartIndex,
+                destinationStartIndex,
+                count);
+            if (safeCount <= 0)
+                return;
+
+            destination.SetData(source, sourceStartIndex, destinationStartIndex, safeCount);
         }
 
         public static int ResolveDirtyPageCount(int elementCount, int pageSize)
@@ -7392,6 +7504,96 @@ namespace Hecton8.Core
             return stats;
         }
 
+        public static PageUploadStats UploadNativeArrayDirtyPagesSetData<T>(
+            GraphicsBuffer destination,
+            NativeArray<T> source,
+            NativeArray<byte> dirtyPages,
+            int count,
+            int pageSize,
+            int maxBytesThisFrame,
+            bool clearUploadedPages)
+            where T : struct
+        {
+            int safeCount = ResolveSafeWriteCount<T>(destination, source.IsCreated ? source.Length : 0, count);
+            if (safeCount <= 0 || !dirtyPages.IsCreated)
+                return CreateEmptyPageUploadStats();
+
+            int safePageSize = math.max(1, pageSize);
+            int pageCount = math.min(dirtyPages.Length, ResolveDirtyPageCount(safeCount, safePageSize));
+            if (pageCount <= 0)
+                return CreateEmptyPageUploadStats();
+
+            int stride = UnsafeUtility.SizeOf<T>();
+            long byteBudget = maxBytesThisFrame > 0 ? maxBytesThisFrame : long.MaxValue;
+            PageUploadStats stats = CreateEmptyPageUploadStats();
+            int pageIndex = 0;
+            while (pageIndex < pageCount)
+            {
+                if (dirtyPages[pageIndex] == 0)
+                {
+                    pageIndex++;
+                    continue;
+                }
+
+                int runStartPage = pageIndex;
+                int runPageCount = 0;
+                long runBytes = 0L;
+                while (pageIndex < pageCount && dirtyPages[pageIndex] != 0)
+                {
+                    int pageElementStart = pageIndex * safePageSize;
+                    int pageElementCount = math.min(safePageSize, safeCount - pageElementStart);
+                    if (pageElementCount <= 0)
+                    {
+                        pageIndex++;
+                        continue;
+                    }
+
+                    long pageBytes = (long)pageElementCount * stride;
+                    bool overBudget = stats.UploadedBytes + runBytes + pageBytes > byteBudget;
+                    if (overBudget && (stats.UploadedBytes > 0L || runPageCount > 0))
+                        break;
+
+                    runBytes += pageBytes;
+                    runPageCount++;
+                    pageIndex++;
+                }
+
+                if (runPageCount <= 0)
+                {
+                    stats.FirstDeferredPage = runStartPage;
+                    stats.DeferredPages += CountDirtyPagesInRange(dirtyPages, runStartPage, pageCount);
+                    return stats;
+                }
+
+                int startElement = runStartPage * safePageSize;
+                int elementCount = math.min(runPageCount * safePageSize, safeCount - startElement);
+                UploadNativeArraySetDataRange(destination, source, startElement, startElement, elementCount);
+                if (clearUploadedPages)
+                {
+                    int runEnd = runStartPage + runPageCount;
+                    for (int i = runStartPage; i < runEnd; i++)
+                        dirtyPages[i] = 0;
+                }
+
+                stats.UploadedPages += runPageCount;
+                stats.UploadedBytes += runBytes;
+                stats.LockSpans++;
+
+                if (stats.UploadedBytes >= byteBudget && pageIndex < pageCount)
+                {
+                    int deferred = CountDirtyPagesInRange(dirtyPages, pageIndex, pageCount);
+                    if (deferred > 0)
+                    {
+                        stats.FirstDeferredPage = ResolveFirstDirtyPage(dirtyPages, pageIndex, pageCount);
+                        stats.DeferredPages += deferred;
+                        return stats;
+                    }
+                }
+            }
+
+            return stats;
+        }
+
         private static PageUploadStats CalculateDirtyPageUploadStats<T>(
             NativeArray<byte> dirtyPages,
             int safeCount,
@@ -7530,6 +7732,42 @@ namespace Hecton8.Core
                 return 0;
 
             return ResolveSafeWriteCount<T>(destination.count, destination.stride, sourceLength, requestedCount);
+        }
+
+        private static int ResolveSafeWriteRangeCount<T>(
+            GraphicsBuffer destination,
+            int sourceLength,
+            int sourceStartIndex,
+            int destinationStartIndex,
+            int requestedCount)
+            where T : struct
+        {
+            if (destination == null ||
+                requestedCount <= 0 ||
+                sourceLength <= 0 ||
+                sourceStartIndex < 0 ||
+                destinationStartIndex < 0 ||
+                destination.count <= 0 ||
+                destination.stride != UnsafeUtility.SizeOf<T>() ||
+                sourceStartIndex >= sourceLength ||
+                destinationStartIndex >= destination.count)
+            {
+                return 0;
+            }
+
+            int sourceRemaining = sourceLength - sourceStartIndex;
+            int destinationRemaining = destination.count - destinationStartIndex;
+            return math.min(requestedCount, math.min(sourceRemaining, destinationRemaining));
+        }
+
+        private static bool CanCopyWholeBuffer(GraphicsBuffer source, GraphicsBuffer destination)
+        {
+            if (source == null || destination == null)
+                return false;
+
+            long sourceBytes = (long)source.count * source.stride;
+            long destinationBytes = (long)destination.count * destination.stride;
+            return sourceBytes > 0L && sourceBytes == destinationBytes;
         }
 
         private static int ResolveSafeWriteCount<T>(int destinationCount, int destinationStride, int sourceLength, int requestedCount) where T : struct

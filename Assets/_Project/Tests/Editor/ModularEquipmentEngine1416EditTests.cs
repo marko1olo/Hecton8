@@ -49,6 +49,10 @@ namespace Hecton8.Tests.Editor
             StringAssert.Contains("TryResolveCapturedEquipmentIntegrationViews", complete);
             StringAssert.Contains("finally", complete);
             StringAssert.Contains("ReleaseEquipmentIntegrationWriteLocks", complete);
+            StringAssert.Contains("public IDataVault Vault;", source);
+            StringAssert.Contains("IDataVault vault = views.Vault;", source);
+            StringAssert.Contains("_equipmentIntegrationWriteLockVault = views.Vault;", source);
+            StringAssert.Contains("EnsureEquipmentViews(_equipmentIntegrationWriteLockVault, out views)", source);
             Assert.AreEqual(28, Regex.Matches(releaseMask, @"vault\.ReleaseWriteLock").Count);
             StringAssert.Contains("failedMask |=", releaseMask);
         }
@@ -57,6 +61,11 @@ namespace Hecton8.Tests.Editor
         [Explicit("Agent 1416 equipment mock stress harness: creates GlobalDataVault and runs 1024 mock equipment frames. Run only in isolated Editor test pass.")]
         public void MockEquipmentStressHarness_MockGenerationSurvivesRepeatedLockCycles()
         {
+            if (GlobalRegistry.DataVault != null)
+                Assert.Ignore("Agent 1416 harness requires an empty DataVault slot; run in an isolated Editor test pass.");
+            if (GlobalRegistry.ModularEquipment != null)
+                Assert.Ignore("Agent 1416 harness requires an empty ModularEquipment slot; run in an isolated Editor test pass.");
+
             GlobalDataVault vault = GlobalDataVault.Create(256);
             GameObject host = new GameObject("ModularEquipmentEngine_1416_StressHarness");
             ModularEquipmentEngine engine = null;

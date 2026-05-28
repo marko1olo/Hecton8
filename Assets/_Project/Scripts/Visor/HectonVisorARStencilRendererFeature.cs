@@ -839,11 +839,10 @@ namespace Hecton8.Visor
 
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                IDataVault previousVault = _dataVault != null ? _dataVault : previousService as IDataVault;
-                if (!ReferenceEquals(previousVault, currentService))
+                if (_dataVault == null && previousService is IDataVault previousVault)
                     ReleaseVaultHandles(previousVault);
 
-                _dataVault = currentService as IDataVault;
+                BindDataVaultForLifecycle(currentService as IDataVault);
                 TryEnsureVaultBuffers();
 #if UNITY_EDITOR
                 LoadCsvProfilesCold();
@@ -1010,38 +1009,38 @@ namespace Hecton8.Visor
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            if (!IsHandleCreated(in _hudParamsHandle))
+            if (!IsOwnedHandle(in _hudParamsHandle, VisorARStencilContracts.HudParamsBufferId))
                 _hudParamsHandle = vault.EnsureGenerationHandle<VisorHudParamsDTO>(VisorARStencilContracts.HudParamsBufferId, 1, SystemID.UI, NativeArrayOptions.ClearMemory);
-            if (!IsHandleCreated(in _targetSourceHandle))
+            if (!IsOwnedHandle(in _targetSourceHandle, VisorARStencilContracts.TargetSourceBufferId))
                 _targetSourceHandle = vault.EnsureGenerationHandle<ARWaypointOverlay.StencilTargetSourceDTO>(VisorARStencilContracts.TargetSourceBufferId, VisorARStencilContracts.MaxTargets, SystemID.UI, NativeArrayOptions.ClearMemory);
-            if (!IsHandleCreated(in _projectedTargetHandle))
+            if (!IsOwnedHandle(in _projectedTargetHandle, VisorARStencilContracts.ProjectedTargetBufferId))
                 _projectedTargetHandle = vault.EnsureGenerationHandle<VisorArTargetDTO>(VisorARStencilContracts.ProjectedTargetBufferId, VisorARStencilContracts.MaxTargets, SystemID.UI, NativeArrayOptions.ClearMemory);
-            if (!IsHandleCreated(in _digitParamsHandle))
+            if (!IsOwnedHandle(in _digitParamsHandle, VisorARStencilContracts.DigitParamsBufferId))
                 _digitParamsHandle = vault.EnsureGenerationHandle<VisorHudDigitParamsDTO>(VisorARStencilContracts.DigitParamsBufferId, 1, SystemID.UI, NativeArrayOptions.ClearMemory);
-            if (!IsHandleCreated(in _telemetryHandle))
+            if (!IsOwnedHandle(in _telemetryHandle, VisorARStencilContracts.TelemetryRingBufferId))
                 _telemetryHandle = vault.EnsureGenerationHandle<VisorTelemetryEntry>(VisorARStencilContracts.TelemetryRingBufferId, VisorARStencilContracts.TelemetryFrameCount, SystemID.UI, NativeArrayOptions.ClearMemory);
-            if (!IsHandleCreated(in _profileHandle))
+            if (!IsOwnedHandle(in _profileHandle, VisorARStencilContracts.ProfileBufferId))
                 _profileHandle = vault.EnsureGenerationHandle<VisorHudProfileDTO>(VisorARStencilContracts.ProfileBufferId, VisorARStencilContracts.ProfileCapacity, SystemID.UI, NativeArrayOptions.ClearMemory);
-            if (!IsHandleCreated(in _csvScratchHandle))
+            if (!IsOwnedHandle(in _csvScratchHandle, VisorARStencilContracts.CsvScratchBufferId))
                 _csvScratchHandle = vault.EnsureGenerationHandle<byte>(VisorARStencilContracts.CsvScratchBufferId, VisorARStencilContracts.CsvScratchBytes, SystemID.UI, NativeArrayOptions.UninitializedMemory);
 
             _telemetryDescriptorGeneration = _telemetryHandle.Generation;
-            return IsHandleCreated(in _hudParamsHandle) &&
-                   IsHandleCreated(in _targetSourceHandle) &&
-                   IsHandleCreated(in _projectedTargetHandle) &&
-                   IsHandleCreated(in _digitParamsHandle) &&
-                   IsHandleCreated(in _telemetryHandle);
+            return IsOwnedHandle(in _hudParamsHandle, VisorARStencilContracts.HudParamsBufferId) &&
+                   IsOwnedHandle(in _targetSourceHandle, VisorARStencilContracts.TargetSourceBufferId) &&
+                   IsOwnedHandle(in _projectedTargetHandle, VisorARStencilContracts.ProjectedTargetBufferId) &&
+                   IsOwnedHandle(in _digitParamsHandle, VisorARStencilContracts.DigitParamsBufferId) &&
+                   IsOwnedHandle(in _telemetryHandle, VisorARStencilContracts.TelemetryRingBufferId);
         }
 
         private bool HasRequiredVaultHandles()
         {
             return _dataVault != null &&
                    !_dataVault.IsCompactionFenceActive &&
-                   IsHandleCreated(in _hudParamsHandle) &&
-                   IsHandleCreated(in _targetSourceHandle) &&
-                   IsHandleCreated(in _projectedTargetHandle) &&
-                   IsHandleCreated(in _digitParamsHandle) &&
-                   IsHandleCreated(in _telemetryHandle);
+                   IsOwnedHandle(in _hudParamsHandle, VisorARStencilContracts.HudParamsBufferId) &&
+                   IsOwnedHandle(in _targetSourceHandle, VisorARStencilContracts.TargetSourceBufferId) &&
+                   IsOwnedHandle(in _projectedTargetHandle, VisorARStencilContracts.ProjectedTargetBufferId) &&
+                   IsOwnedHandle(in _digitParamsHandle, VisorARStencilContracts.DigitParamsBufferId) &&
+                   IsOwnedHandle(in _telemetryHandle, VisorARStencilContracts.TelemetryRingBufferId);
         }
 
 #if UNITY_EDITOR
@@ -1404,7 +1403,8 @@ namespace Hecton8.Visor
                 return false;
             }
 
-            if (!vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<VisorTelemetryEntry>.ReadOnly telemetry) ||
+            if (!IsOwnedHandle(in _telemetryHandle, VisorARStencilContracts.TelemetryRingBufferId) ||
+                !vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<VisorTelemetryEntry>.ReadOnly telemetry) ||
                 vault.IsCompactionFenceActive ||
                 !telemetry.IsCreated)
             {
@@ -1433,7 +1433,8 @@ namespace Hecton8.Visor
                 return false;
             }
 
-            if (!vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<VisorTelemetryEntry>.ReadOnly telemetry) ||
+            if (!IsOwnedHandle(in _telemetryHandle, VisorARStencilContracts.TelemetryRingBufferId) ||
+                !vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<VisorTelemetryEntry>.ReadOnly telemetry) ||
                 vault.IsCompactionFenceActive ||
                 !telemetry.IsCreated ||
                 row >= telemetry.Length)
@@ -1655,28 +1656,37 @@ namespace Hecton8.Visor
         private void CacheColdServices(IPlayerRuntimeContext playerContext, IDataVault vault)
         {
             _playerContext = playerContext;
-            if (!ReferenceEquals(_dataVault, vault))
-            {
-                ReleaseVaultHandles(_dataVault);
-                _dataVault = vault;
-            }
+            BindDataVaultForLifecycle(vault);
         }
 
         private void ReleaseVaultHandles(IDataVault vault)
         {
-            ReleaseVaultHandle(vault, ref _hudParamsHandle);
-            ReleaseVaultHandle(vault, ref _targetSourceHandle);
-            ReleaseVaultHandle(vault, ref _projectedTargetHandle);
-            ReleaseVaultHandle(vault, ref _digitParamsHandle);
-            ReleaseVaultHandle(vault, ref _telemetryHandle);
-            ReleaseVaultHandle(vault, ref _profileHandle);
-            ReleaseVaultHandle(vault, ref _csvScratchHandle);
+            ReleaseVaultHandle(vault, ref _hudParamsHandle, VisorARStencilContracts.HudParamsBufferId);
+            ReleaseVaultHandle(vault, ref _targetSourceHandle, VisorARStencilContracts.TargetSourceBufferId);
+            ReleaseVaultHandle(vault, ref _projectedTargetHandle, VisorARStencilContracts.ProjectedTargetBufferId);
+            ReleaseVaultHandle(vault, ref _digitParamsHandle, VisorARStencilContracts.DigitParamsBufferId);
+            ReleaseVaultHandle(vault, ref _telemetryHandle, VisorARStencilContracts.TelemetryRingBufferId);
+            ReleaseVaultHandle(vault, ref _profileHandle, VisorARStencilContracts.ProfileBufferId);
+            ReleaseVaultHandle(vault, ref _csvScratchHandle, VisorARStencilContracts.CsvScratchBufferId);
             _telemetryDescriptorGeneration = 0u;
+            _telemetryDumped = false;
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : unmanaged
+        private void BindDataVaultForLifecycle(IDataVault vault)
         {
-            if (vault != null && IsHandleCreated(in handle))
+            if (ReferenceEquals(_dataVault, vault))
+                return;
+
+            ReleaseVaultHandles(_dataVault);
+            _dataVault = vault;
+        }
+
+        private static void ReleaseVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : unmanaged
+        {
+            if (vault != null && IsOwnedHandle(in handle, expectedBufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
@@ -1699,9 +1709,11 @@ namespace Hecton8.Visor
             _hotSwapRegistered = false;
         }
 
-        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
+        private static bool IsOwnedHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : unmanaged
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)SystemID.UI &&
+                   handle.Generation != 0u;
         }
 
         private static float3 ToFloat3(Vector3 value)

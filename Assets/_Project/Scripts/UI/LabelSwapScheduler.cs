@@ -125,11 +125,12 @@ namespace Hecton8.UI
 
             if (!entry.IsUserInput && entry.HasLocalizationKey)
             {
-                text.isRightToLeftText = false;
+                text.isRightToLeftText = LocalizationManager.IsRightToLeftLanguage(LocRegistry.ActiveLanguage);
                 if (CharBufferPool.TryAcquireBabel(out CharBufferPool.BabelLease lease))
                 {
                     try
                     {
+                        bool stripRichText = ShouldStripRichText(unchecked((uint)entry.LocalizationKeyHash));
                         int length;
                         if (pending.HasPrefetchedSlice != 0)
                         {
@@ -138,7 +139,7 @@ namespace Hecton8.UI
                                 pending.Utf8Slice,
                                 lease.Span,
                                 out length,
-                                ShouldStripRichTextForCurrentTier());
+                                stripRichText);
                         }
                         else
                         {
@@ -146,7 +147,7 @@ namespace Hecton8.UI
                                 entry.LocalizationKeyHash,
                                 lease.Span,
                                 out length,
-                                ShouldStripRichTextForCurrentTier());
+                                stripRichText);
                         }
 
                         length = lease.CopyToTmpBuffer(length);
@@ -163,22 +164,14 @@ namespace Hecton8.UI
             text.SetVerticesDirty();
         }
 
-        private static bool ShouldStripRichTextForCurrentTier()
+        private static bool ShouldStripRichText(uint textHash)
         {
-            float quality = ResolveGlobalQualityWeight();
-            float richTextWeight = math.saturate((quality - 0.35f) * 2.5f);
-            return richTextWeight < 0.5f;
+            return BabelRichTextLodPolicy.ShouldStrip(textHash);
         }
 
         private static int ResolveDirtyBudget(int pendingCount)
         {
             return BabelSubtitleSyncRuntime.ResolveCanvasDirtyBudget(math.min(pendingCount, MaxPerTick));
-        }
-
-        private static float ResolveGlobalQualityWeight()
-        {
-            float quality = Hecton8.Core.HomeostasisBrain.GlobalQualityWeight;
-            return math.saturate(math.select(0f, quality, math.isfinite(quality)));
         }
 
         private struct PendingSwap

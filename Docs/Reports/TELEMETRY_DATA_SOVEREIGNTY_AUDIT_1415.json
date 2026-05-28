@@ -1,61 +1,93 @@
 {
-  "agent": "1415",
-  "generatedUtc": "2026-05-28T00:33:40Z",
-  "fieldMigrationPerformed": false,
-  "newBufferIds": [],
-  "tryAcquireWriteLockChecksAdded": [],
-  "auditNote": "No fields were migrated to GlobalDataVault in this pass; existing vault routes were only size-validated where dump stride changed. Biolum scratch uses TryLockBuffer, not TryAcquireWriteLock, because it locks a byte scratch buffer by BufferID.",
-  "failureCount": 0,
-  "checks": [
-    {
-      "claim": "no_new_global_data_vault_migration",
-      "passed": true,
-      "evidence": "All changes were StructLayout/FieldOffset/padding constants/dump size constants only; no new BufferID enum entry or EnsureGenerationHandle call was added."
-    },
-    {
-      "claim": "biolum_scratch_buffer_id_constant",
-      "passed": true,
-      "file": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
-      "line": 230,
-      "bufferId": "70312"
-    },
-    {
-      "claim": "biolum_copy_snapshot_lock",
-      "passed": true,
-      "file": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
-      "line": 3106
-    },
-    {
-      "claim": "biolum_copy_snapshot_unlock_finally",
-      "passed": true,
-      "file": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
-      "line": 3144
-    },
-    {
-      "claim": "biolum_scratch_lock_unlock_pairs",
-      "passed": true,
-      "file": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
-      "lockLines": [
-        3106,
-        3279
-      ],
-      "unlockLines": [
-        3144,
-        3294
-      ]
-    },
-    {
-      "claim": "drs_telemetry_existing_buffer_id",
-      "passed": true,
-      "file": "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
-      "firstLine": 799,
-      "bufferId": "BufferID.ResolutionScaleTelemetry"
-    },
-    {
-      "claim": "drs_telemetry_unlock_in_finally_near_dump_lock",
-      "passed": true,
-      "file": "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
-      "firstUnlockLine": 799
-    }
-  ]
+    "agent":  "1415",
+    "generatedUtc":  "2026-05-28T10:04:04Z",
+    "fieldMigrationPerformed":  false,
+    "newBufferIds":  [
+
+                     ],
+    "tryAcquireWriteLockChecksAdded":  [
+                                           "JobAdmissionBlackboxEntry write path now uses existing BufferID.JobAdmissionBlackBox with TryAcquireWriteLock and finally ReleaseWriteLock; no new BufferID was added."
+                                       ],
+    "auditNote":  "No fields were migrated to GlobalDataVault in this pass. Existing vault routes were size/stride/lock validated. ReentryVfx kept existing BufferID.OrbitalDropReentryVfxTelemetryRing. JobAdmission kept existing BufferID.JobAdmissionBlackBox and now writes through TryAcquireWriteLock/finally ReleaseWriteLock.",
+    "failureCount":  0,
+    "checks":  [
+                   {
+                       "claim":  "no_new_global_data_vault_migration",
+                       "passed":  true,
+                       "evidence":  "All changes were StructLayout/FieldOffset/padding constants/dump size constants only; no new BufferID enum entry or EnsureGenerationHandle call was added."
+                   },
+                   {
+                       "claim":  "biolum_scratch_buffer_id_constant",
+                       "passed":  true,
+                       "file":  "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+                       "line":  230,
+                       "bufferId":  "70312"
+                   },
+                   {
+                       "claim":  "biolum_copy_snapshot_lock",
+                       "passed":  true,
+                       "file":  "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+                       "line":  3106
+                   },
+                   {
+                       "claim":  "biolum_copy_snapshot_unlock_finally",
+                       "passed":  true,
+                       "file":  "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+                       "line":  3144
+                   },
+                   {
+                       "claim":  "biolum_scratch_lock_unlock_pairs",
+                       "passed":  true,
+                       "file":  "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+                       "lockLines":  [
+                                         3106,
+                                         3279
+                                     ],
+                       "unlockLines":  [
+                                           3144,
+                                           3294
+                                       ]
+                   },
+                   {
+                       "claim":  "drs_telemetry_existing_buffer_id",
+                       "passed":  true,
+                       "file":  "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
+                       "firstLine":  799,
+                       "bufferId":  "BufferID.ResolutionScaleTelemetry"
+                   },
+                   {
+                       "claim":  "drs_telemetry_unlock_in_finally_near_dump_lock",
+                       "passed":  true,
+                       "file":  "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
+                       "firstUnlockLine":  799
+                   },
+                   {
+                       "claim":  "reentry_vfx_existing_buffer_id",
+                       "passed":  true,
+                       "file":  "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs",
+                       "line":  37,
+                       "bufferId":  "BufferID.OrbitalDropReentryVfxTelemetryRing"
+                   },
+                   {
+                       "claim":  "reentry_vfx_write_lock_finally_release",
+                       "passed":  true,
+                       "file":  "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs",
+                       "tryAcquireLine":  918,
+                       "releaseLine":  957
+                   },
+                   {
+                       "claim":  "job_admission_existing_buffer_id",
+                       "passed":  true,
+                       "file":  "Assets/_Project/Scripts/Core/Scheduling/BurstTokenBucketJobAdmissionService.cs",
+                       "line":  122,
+                       "bufferId":  "BufferID.JobAdmissionBlackBox"
+                   },
+                   {
+                       "claim":  "job_admission_write_lock_finally_release",
+                       "passed":  true,
+                       "file":  "Assets/_Project/Scripts/Core/Scheduling/BurstTokenBucketJobAdmissionService.cs",
+                       "tryAcquireLine":  751,
+                       "releaseLine":  779
+                   }
+               ]
 }

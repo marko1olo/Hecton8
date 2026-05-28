@@ -1,7 +1,7 @@
 # Rationale 1416 - MODULAR_EQUIPMENT_AND_TOOL_RUNTIME_PURGER
 
 Date: 2026-05-28
-Status: PATCHED_STATIC_REAUDITED_IMPLICIT_ALIAS_REMOVED_BUILD_BLOCKED_BY_CONTENTION
+Status: PATCHED_STATIC_REAUDITED_OWNER_VAULT_BUILD_TIMEOUT_KILLED
 
 ## Decision 001 - Static Archaeology Before Mutation
 Problem: The batch claims 28 forbidden native aliases in `ModularEquipmentEngine.cs`, but the live source already used `VaultGenerationHandle<T>` for persistent ownership.
@@ -65,3 +65,24 @@ Solution: Add an EditMode test file with two static contract tests and one `[Exp
 Rejected Alternatives: Marking the harness as executed was rejected because no runtime artifact exists. Auto-running it under current CPU contention was rejected. Hiding it inside production code was rejected because it would pollute runtime surfaces.
 Scalability potential: The harness protects the same continuous `GlobalQualityWeight` equipment path without adding runtime branches. Low/Middle/High/Ultra behavior is unchanged until tests are explicitly run.
 Hardware Impact: Runtime build impact is 0 because the harness is Editor test code. Verification impact is pending; no profiler or GCMonitor sample exists.
+
+## Decision 010 - Release Against Captured Vault
+Problem: `ReleaseEquipmentWriteLocks(ref views)` reread `_dataVault` at release time. That is usually identical inside a Unity main-thread phase, but it is not a formal proof under hot-swap/rebind pressure.
+Solution: Add `EquipmentVaultViews.Vault` and set it at successful view resolution/acquisition. Direct `finally` releases and scheduled integration capture now release against the exact vault that produced the views.
+Rejected Alternatives: Assuming `_dataVault` cannot change during a short phase was rejected because the APEX proof must survive registry rebind reasoning. Storing raw `NativeArray` owners on the class was rejected because it would reintroduce cross-frame aliases.
+Scalability potential: No quality tier behavior changed. Low/Middle/High/Ultra use the same ownership route; quality scaling remains in cadence and visual/presentation paths.
+Hardware Impact: One stack reference copy per acquisition; no heap allocation and no measured CPU claim.
+
+## Decision 011 - Isolated Harness Registry Guard
+Problem: The explicit mock harness registered a new `GlobalDataVault` without checking whether the Editor session already had an authoritative `DataVault` or `ModularEquipment` service. `GlobalRegistry.RegisterService` throws on slot hijack.
+Solution: Guard the `[Explicit]` harness with `Assert.Ignore` when `GlobalRegistry.DataVault` or `GlobalRegistry.ModularEquipment` is already occupied. The harness now documents and enforces isolated execution.
+Rejected Alternatives: Force-overriding registry services was rejected because the public GlobalRegistry override path is not part of this domain and would risk cross-agent test contamination. Unregistering somebody else's service was rejected as architectural sabotage.
+Scalability potential: Runtime unchanged. Verification is safer across shared development machines.
+Hardware Impact: Runtime impact 0; Editor-only branch.
+
+## Decision 012 - Build Timeout Cleanup
+Problem: After the final CPU gate improved to 28% and no compiler process was active, one throttled `dotnet build` was justified. It timed out after 124 seconds and left `dotnet` pid 10444 plus `VBCSCompiler` pid 67176 running.
+Solution: Stop only the build process spawned by this verification attempt and record the result as `BLOCKED_BY_TIMEOUT`, not success.
+Rejected Alternatives: Launching a second build was rejected as build spam. Reporting success from a timed-out build was rejected as false evidence.
+Scalability potential: Preserves host resources for the parallel batch.
+Hardware Impact: One failed compiler attempt consumed more than 124 seconds wall-clock; no build diagnostics were captured.

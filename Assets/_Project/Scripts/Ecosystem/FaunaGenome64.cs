@@ -377,6 +377,25 @@ namespace Hecton8.Ecosystem
             return default;
         }
 
+        public static FaunaGeneticsProfileDTO ResolveProfile(
+            NativeArray<FaunaGeneticsProfileDTO>.ReadOnly profiles,
+            uint speciesHash)
+        {
+            if (speciesHash == 0u || profiles.Length <= 0)
+                return default;
+
+            for (int i = 0; i < profiles.Length; i++)
+            {
+                FaunaGeneticsProfileDTO profile = profiles[i];
+                if (profile.SpeciesHash == speciesHash)
+                    return profile;
+                if (profile.SpeciesHash == 0u)
+                    return default;
+            }
+
+            return default;
+        }
+
         public static float ExtractScaleMultiplier(ulong geneticMask)
         {
             return 0.8f + ExtractSizeByte(geneticMask) * InvGenomeByte * 0.4f;

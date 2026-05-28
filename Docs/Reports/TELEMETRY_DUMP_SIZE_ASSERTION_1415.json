@@ -1,6 +1,6 @@
 {
     "agent":  "1415",
-    "generatedUtc":  "2026-05-28T01:33:35Z",
+    "generatedUtc":  "2026-05-28T10:02:47Z",
     "failureCount":  0,
     "checks":  [
                    {
@@ -163,6 +163,41 @@
                        "passed":  true,
                        "pattern":  "destination.Clear()",
                        "line":  1688
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs",
+                       "description":  "ReentryVfxTelemetryEntry dump entry constant is 64",
+                       "passed":  true,
+                       "pattern":  "TelemetryEntrySizeBytes\\s*=\\s*64\\s*;",
+                       "line":  27
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs",
+                       "description":  "ReentryVfxTelemetryEntry serializer clears full 64-byte row",
+                       "passed":  true,
+                       "pattern":  "destination.Clear()",
+                       "line":  1033
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Core/Scheduling/BurstTokenBucketJobAdmissionService.cs",
+                       "description":  "JobAdmissionBlackboxEntry dump entry constant is 64",
+                       "passed":  true,
+                       "pattern":  "BlackboxEntrySizeBytes\\s*=\\s*64\\s*;",
+                       "line":  21
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Core/Scheduling/BurstTokenBucketJobAdmissionService.cs",
+                       "description":  "JobAdmissionBlackboxEntry writer uses TryAcquireWriteLock/finally release",
+                       "passed":  true,
+                       "pattern":  "TryAcquireWriteLock + ReleaseWriteLock in finally",
+                       "line":  751
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Core/Scheduling/BurstTokenBucketJobAdmissionService.cs",
+                       "description":  "JobAdmissionBlackboxEntry serializer clears full 64-byte row",
+                       "passed":  true,
+                       "pattern":  "destination.Clear()",
+                       "line":  890
                    }
                ]
 }

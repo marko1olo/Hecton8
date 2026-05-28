@@ -2,28 +2,23 @@
   "agentId": "1416",
   "role": "MODULAR_EQUIPMENT_AND_TOOL_RUNTIME_PURGER",
   "domain": "ECHELON 4 Equipment Runtime (Tools)",
-  "status": "PATCHED_STATIC_REAUDITED_IMPLICIT_ALIAS_REMOVED_BUILD_BLOCKED_BY_CONTENTION",
-  "evidenceClass": "STATIC_SOURCE",
+  "status": "PATCHED_STATIC_REAUDITED_OWNER_VAULT_BUILD_TIMEOUT_KILLED",
+  "evidenceClass": "STATIC_SOURCE_WITH_TIMED_OUT_BUILD_ATTEMPT",
   "timestampLocal": "2026-05-28",
   "buildGate": {
-    "cpuLoadPercent": 100,
-    "activeCompilerOrDotnet": [
-      {
-        "processName": "dotnet",
-        "pid": 55080
-      },
-      {
-        "processName": "csc",
-        "pid": 36360
-      }
-    ],
-    "dotnetBuildInvoked": false,
-    "reason": "Compilation Resource Throttling forbids build when CPU > 50 or compiler/dotnet is active."
+    "cpuLoadPercentBeforeBuild": 28,
+    "activeCompilerOrDotnetBeforeBuild": [],
+    "dotnetBuildInvoked": true,
+    "dotnetBuildCommand": "dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1",
+    "dotnetBuildResult": "TIMEOUT_AFTER_124_SECONDS_NO_DIAGNOSTICS_CAPTURED",
+    "cleanup": "Stopped leftover dotnet pid 10444 and VBCSCompiler pid 67176 from this build attempt.",
+    "cpuLoadPercentAfterCleanup": 96,
+    "secondBuildInvoked": false
   },
   "modifiedFiles": [
     {
       "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
-      "sha256": "6A6168DFC94D6E684A67D6E502F331F88902E86933336ABF80E19C184B9004AF"
+      "sha256": "F7EF18DCBD7078621EFBFA6C65D2E5975A4AD5550A9827530A1F9C9298518617"
     },
     {
       "path": "Assets/_Project/Scripts/Tools/EquipmentVaultView.cs",
@@ -35,7 +30,7 @@
     },
     {
       "path": "Assets/_Project/Tests/Editor/ModularEquipmentEngine1416EditTests.cs",
-      "sha256": "E37C5C36819A94573CD343276CF8D2EB30FD3E021B617E5C8BB9374D8693C766"
+      "sha256": "D461B086549649ACDAA91D1777868E90EFF68EB910631F1B3C2F2B21AF097CB8"
     },
     {
       "path": "Assets/_Project/Tests/Editor/ModularEquipmentEngine1416EditTests.cs.meta",
@@ -59,16 +54,17 @@
   "lockingDiscipline": {
     "ownerSystemId": "SystemID.GameplayTools",
     "writeLockBufferCount": 28,
-    "acquireHelper": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1253-1342",
-    "releaseHelper": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1409-1492",
-    "pendingReleaseMask": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:163-164,1439-1456",
-    "completionHelper": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:2543-2598",
-    "contentionTelemetry": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1496-1537",
+    "acquireHelper": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1263-1353",
+    "releaseHelper": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1417-1505",
+    "pendingReleaseMask": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:163-164,1436-1469",
+    "completionHelper": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:2543-2607",
+    "contentionTelemetry": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1508-1557",
+    "releaseOwnerVault": "EquipmentVaultViews.Vault @ ModularEquipmentEngine.cs:168; direct release uses views.Vault @ 1390; scheduled job capture uses views.Vault @ 1399; completion view resolution uses _equipmentIntegrationWriteLockVault @ 1414",
     "directAcquireCallCount": 16,
-    "directAcquireCallLines": "243,324,420,471,637,685,724,880,906,969,1003,1117,1894,2203,2902,3325",
+    "directAcquireCallLines": "244,325,421,472,638,686,725,881,907,970,1004,1118,1907,2216,2915,3338",
     "directFinallyReleaseCallCount": 16,
-    "directFinallyReleaseLines": "258,347,460,494,647,708,744,898,952,995,1024,1129,1935,2220,2921,3340",
-    "scheduledJobLockCapture": "Tick captures locks at ModularEquipmentEngine.cs:340; CompleteActiveEquipmentJob releases captured locks in finally at 2591-2595",
+    "directFinallyReleaseLines": "259,348,461,495,648,709,745,899,953,996,1025,1130,1948,2233,2934,3353",
+    "scheduledJobLockCapture": "Tick captures locks at ModularEquipmentEngine.cs:341; CompleteActiveEquipmentJob releases captured locks in finally at 2601-2607",
     "releaseFailurePolicy": "ReleaseWriteLock bool return values are checked through a 28-bit mask; failed bits are retained in _equipmentPendingReleaseMask and retried before future acquisition.",
     "failureCodes": {
       "contention": "EquipmentFaultWriteLockContention = 1u << 5",
@@ -108,7 +104,7 @@
   "zeroGcHotPathScan": [
     {
       "name": "Tick",
-      "lines": "302-349",
+      "lines": "302-350",
       "newReferenceCandidates": 0,
       "stringFormat": 0,
       "toString": 0,
@@ -117,7 +113,7 @@
     },
     {
       "name": "LateFrameTick",
-      "lines": "375-392",
+      "lines": "376-393",
       "newReferenceCandidates": 0,
       "stringFormat": 0,
       "toString": 0,
@@ -126,7 +122,7 @@
     },
     {
       "name": "CompleteActiveEquipmentJob",
-      "lines": "2543-2598",
+      "lines": "2543-2607",
       "newReferenceCandidates": 0,
       "stringFormat": 0,
       "toString": 0,
@@ -135,7 +131,7 @@
     },
     {
       "name": "TryAcquireEquipmentViewsWriteLock",
-      "lines": "1253-1345",
+      "lines": "1263-1353",
       "newReferenceCandidates": 0,
       "stringFormat": 0,
       "toString": 0,
@@ -143,9 +139,29 @@
       "linqWhereSelectAnyFirstOrDefault": 0
     },
     {
-      "name": "ReleaseEquipmentWriteLocks",
-      "lines": "1409-1492",
+      "name": "TryAcquireEquipmentWriteBuffer",
+      "lines": "1362-1386",
       "newReferenceCandidates": 0,
+      "allowedStructNew": "1 x EquipmentVaultView<T>",
+      "stringFormat": 0,
+      "toString": 0,
+      "foreach": 0,
+      "linqWhereSelectAnyFirstOrDefault": 0
+    },
+    {
+      "name": "ReleaseEquipmentWriteLocks",
+      "lines": "1417-1505",
+      "newReferenceCandidates": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "foreach": 0,
+      "linqWhereSelectAnyFirstOrDefault": 0
+    },
+    {
+      "name": "TryRecordEquipmentWriteLockContention",
+      "lines": "1508-1557",
+      "newReferenceCandidates": 0,
+      "allowedStructNew": "1 x EquipmentTelemetryEntry",
       "stringFormat": 0,
       "toString": 0,
       "foreach": 0,
@@ -163,10 +179,10 @@
   "staticChecks": {
     "nativeManagerFieldScan": "0 matches for manager native collection field regex",
     "hotPathScan": "0 reference-new candidates, 0 string.Format, 0 .ToString(), 0 foreach, 0 LINQ over audited ranges",
-    "braceBalance": "ModularEquipmentEngine.cs open=364 close=364; EquipmentVaultView.cs open=10 close=10; ModularEquipmentEngine1416EditTests.cs open=13 close=13",
-    "gitDiffCheck": "no whitespace errors; CRLF warning only",
-    "dotnetBuild": "blocked by CPU/process gate",
-    "editorHarness": "Assets/_Project/Tests/Editor/ModularEquipmentEngine1416EditTests.cs lines 12,19,38,57; not compiled or executed",
+    "braceBalance": "ModularEquipmentEngine.cs open=365 close=365; EquipmentVaultView.cs open=9 close=9; ModularEquipmentEngine1416EditTests.cs open=13 close=13",
+    "gitDiffCheck": "scoped agent 1416 files: no whitespace errors, CRLF warning only; global diff check fails on unrelated Docs/Tasks/_1415_extracted_prompt.tmp.md trailing whitespace",
+    "dotnetBuild": "one throttled attempt timed out after 124 seconds; no diagnostics captured; leftover compiler processes stopped; no second build launched",
+    "editorHarness": "Assets/_Project/Tests/Editor/ModularEquipmentEngine1416EditTests.cs lines 12,19,38,57; not compiled or executed; guarded with Assert.Ignore when DataVault or ModularEquipment slot is occupied",
     "implicitNativeArrayConversion": "removed from EquipmentVaultView.cs; only explicit AsNativeArray unwrap remains in editor CSV parser and upgrade job scheduling"
   },
   "testHarness": {
@@ -178,7 +194,7 @@
     ],
     "explicitStressHarness": "MockEquipmentStressHarness_MockGenerationSurvivesRepeatedLockCycles @ line 57",
     "iterations": 1024,
-    "executionStatus": "NOT_RUN_BUILD_AND_EDITOR_TEST_GATE_BLOCKED_BY_CPU_100_AND_DOTNET_PID_55080"
+    "executionStatus": "NOT_RUN_BUILD_TIMED_OUT; harness source is isolated-only and skips when GlobalRegistry.DataVault or GlobalRegistry.ModularEquipment is occupied"
   },
   "subagentFindingsAddressed": [
     "LateFrameTick no longer force-completes the equipment integration job every frame.",
@@ -186,13 +202,16 @@
     "Completion readback now uses TryResolveCapturedEquipmentIntegrationViews instead of reacquiring locks.",
     "Upgrade matrix job NativeArray escapes are explicit via .AsNativeArray().",
     "EquipmentVaultView.cs.meta added.",
-    "EquipmentVaultView<T> implicit NativeArray conversion removed after the editor CSV parser call was made explicit."
+    "EquipmentVaultView<T> implicit NativeArray conversion removed after the editor CSV parser call was made explicit.",
+    "Direct and scheduled write-lock releases now use the vault captured in EquipmentVaultViews instead of rereading _dataVault.",
+    "Explicit mock harness now refuses to run in a non-isolated GlobalRegistry session."
   ],
   "knownResidualRisk": [
-    "CLI compile verification is not complete because CPU gate blocked build.",
-    "Task 16 editor stress harness exists but is Explicit, uncompiled, and unexecuted because CPU/process gate blocked verification.",
+    "CLI compile verification is not complete because the single throttled build attempt timed out after 124 seconds and was stopped.",
+    "Task 16 editor stress harness exists but is Explicit, uncompiled, and unexecuted because build verification did not complete.",
     "The prompt requested a new contiguous BufferID range, but this patch deliberately reuses existing project Equipment/Upgrade ranges to avoid route duplication.",
     "TryAcquireEquipmentViewsWriteLock still acquires all 28 equipment/upgrade buffers for narrow writes; this is safe and fixed-order, but over-broad and should be split into buffer groups after compile gate clears.",
+    "Global git diff check is not clean because of unrelated trailing whitespace in Docs/Tasks/_1415_extracted_prompt.tmp.md.",
     "Static source scans are not Unity Editor, PlayMode, profiler, GCMonitor, or player-build proof."
   ]
 }

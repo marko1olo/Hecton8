@@ -133,8 +133,8 @@ namespace Hecton8.World
 
             _abyssalPathCount = 0;
             int fixedPathCapacity = ResolveMaxAbyssalPathWaypointCapacity();
-            NativeList<Vector3> rawPath = new NativeList<Vector3>(fixedPathCapacity, Allocator.TempJob);
-            NativeList<Vector3> resultPath = new NativeList<Vector3>(fixedPathCapacity, Allocator.TempJob);
+            NativeList<Vector3> rawPath = new NativeList<Vector3>(fixedPathCapacity, Allocator.Persistent);
+            NativeList<Vector3> resultPath = new NativeList<Vector3>(fixedPathCapacity, Allocator.Persistent);
             if (!rawPath.IsCreated || !resultPath.IsCreated)
             {
                 if (rawPath.IsCreated)
@@ -201,7 +201,7 @@ namespace Hecton8.World
                         predatorFearNodesForJob = H8Memory.Allocate<PredatorFearNodeSnapshot>(
                             copyCount,
                             VegetationMemorySovereigntyConstants.OwnerSystemId,
-                            Allocator.TempJob,
+                            Allocator.Persistent,
                             NativeArrayOptions.UninitializedMemory);
                         if (predatorFearNodesForJob.IsCreated)
                         {
@@ -618,7 +618,7 @@ namespace Hecton8.World
             snapshot = H8Memory.Allocate<T>(
                 requiredCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
             if (!snapshot.IsCreated)
                 return false;
@@ -686,11 +686,13 @@ namespace Hecton8.World
 
             if (!_tileStates.TryGetValue(jobState.TileKey, out TileRuntimeState state) ||
                 state == null ||
-                !TryGetActiveTileCache(state, out _, out _, out NativeArray<ushort> heightSamples, touchAccess: true) ||
+                !TryGetActiveTileCache(state, out _, out _, out NativeArray<ushort> heightSamples) ||
                 !SliceContainsDeepBiome(ResolveChunkPool(isSurface: false, payload), payload.UnderwaterOffset, payload.UnderwaterCount))
             {
                 return navPayload;
             }
+
+            TouchTileCacheState(state);
 
             if (!math.isfinite(payload.MinX) ||
                 !math.isfinite(payload.MaxX) ||
@@ -1297,7 +1299,7 @@ namespace Hecton8.World
             if (_hlodCullScheduled || _hlodRegistryCount <= 0)
                 return;
 
-            Camera activeViewCamera = ResolveActiveViewCamera();
+            Camera activeViewCamera = RefreshActiveViewCameraCache();
             if (activeViewCamera == null)
             {
                 _visibleHlodCount = 0;
@@ -1642,22 +1644,22 @@ namespace Hecton8.World
             nodes = H8Memory.Allocate<Vector3>(
                 requiredCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
             nodeTypes = H8Memory.Allocate<byte>(
                 requiredCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
             conduitVectors = H8Memory.Allocate<Vector3>(
                 requiredCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
             conduitStrengths = H8Memory.Allocate<float>(
                 requiredCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
 
             if (!nodes.IsCreated ||
@@ -1715,32 +1717,32 @@ namespace Hecton8.World
             parents = H8Memory.Allocate<int>(
                 requiredCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
             gScore = H8Memory.Allocate<float>(
                 requiredCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
             fScore = H8Memory.Allocate<float>(
                 requiredCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
             closedFlags = H8Memory.Allocate<byte>(
                 requiredCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
             heapNodes = H8Memory.Allocate<int>(
                 requiredCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
             heapPositions = H8Memory.Allocate<int>(
                 requiredCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
 
             if (parents.IsCreated &&
@@ -1917,11 +1919,14 @@ namespace Hecton8.World
             pending.Handle = handle;
             try
             {
-                float funnelMs = ResolveAbyssalPathElapsedMs(Stopwatch.GetTimestamp() - pending.ScheduleTicks);
-                _lastAbyssalPathEndNode = pending.CanReuseLastTarget && !pending.ScheduledMacroVoxelRoute ? pending.EndNode : -1;
-                _lastAbyssalPathTargetPosition = pending.TargetPosition;
-                _hasLastAbyssalPathTarget = pending.CanReuseLastTarget && !pending.ScheduledMacroVoxelRoute;
-                CommitAbyssalPathResult(pending.RawPath, pending.ResultPath, funnelMs);
+                if (!pending.Cancelled)
+                {
+                    float funnelMs = ResolveAbyssalPathElapsedMs(Stopwatch.GetTimestamp() - pending.ScheduleTicks);
+                    _lastAbyssalPathEndNode = pending.CanReuseLastTarget && !pending.ScheduledMacroVoxelRoute ? pending.EndNode : -1;
+                    _lastAbyssalPathTargetPosition = pending.TargetPosition;
+                    _hasLastAbyssalPathTarget = pending.CanReuseLastTarget && !pending.ScheduledMacroVoxelRoute;
+                    CommitAbyssalPathResult(pending.RawPath, pending.ResultPath, funnelMs);
+                }
             }
             finally
             {
@@ -2318,7 +2323,11 @@ namespace Hecton8.World
         private void InvalidateAbyssalPathState()
         {
             if (_abyssalPathScheduled)
-                CompleteAbyssalPathJob(forceComplete: true);
+            {
+                AbyssalPathPendingJob pending = _abyssalPathJob;
+                pending.Cancelled = true;
+                _abyssalPathJob = pending;
+            }
 
             _abyssalPathCount = 0;
             _lastAbyssalPathEndNode = -1;

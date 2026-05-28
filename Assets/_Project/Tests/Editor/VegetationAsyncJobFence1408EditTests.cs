@@ -76,6 +76,12 @@ namespace Hecton8.Tests.Editor
             AssertFlowCompletionContract(source, "CompleteThreatPropagationJob", "ReleaseThreatPropagationPendingJob");
             AssertFlowCompletionContract(source, "CompleteFlowFieldJob", "ReleaseFlowFieldPendingJob");
             AssertFlowCompletionContract(source, "CompleteThermalGridJob", "ReleaseThermalGridPendingJob");
+
+            string cancelBody = ExtractMethodBody(source, "CancelVegetationSimulationJobsForResidencyClear");
+            Assert.That(cancelBody, Does.Contain("pending.Cancelled = true"));
+            Assert.That(cancelBody, Does.Contain("_threatPropagationJob = pending"));
+            Assert.That(cancelBody, Does.Contain("_flowFieldJob = pending"));
+            Assert.That(cancelBody, Does.Contain("_thermalGridJob = pending"));
         }
 
         [Test]
@@ -127,6 +133,41 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void OriginShift_QueuesInsteadOfForceCompletingAsyncVegetationJobs()
+        {
+            string bridgeSource = ReadProjectScript("World/HectonMapMagicVegetationBridge.cs");
+            string applyBody = ExtractMethodBodyFromSignature(bridgeSource, "private bool TryApplyWorldOffsetToAllChunks");
+            string pendingBody = ExtractMethodBodyFromSignature(bridgeSource, "private void TryApplyPendingWorldOffset");
+            string immediateBody = ExtractMethodBodyFromSignature(bridgeSource, "private void ApplyWorldOffsetToAllChunksImmediate");
+            string lateFrame = ExtractMethodBody(bridgeSource, "LateFrameTick");
+
+            AssertOrdered(applyBody, "HasAsyncWorldJobsInFlight()", "QueuePendingWorldOffset");
+            AssertOrdered(pendingBody, "HasAsyncWorldJobsInFlight()", "ApplyWorldOffsetToAllChunksImmediate");
+            AssertOrdered(lateFrame, "CompleteThermalGridJob(forceComplete: false)", "TryApplyPendingWorldOffset()");
+            Assert.That(immediateBody, Does.Not.Contain("forceComplete: true"));
+            Assert.That(immediateBody, Does.Not.Contain("DisposeAllChunkBuildJobs"));
+        }
+
+        [Test]
+        public void ClearResidency_CancelsAsyncJobsInsteadOfForceDrainingChunkJobs()
+        {
+            string bridgeSource = ReadProjectScript("World/HectonMapMagicVegetationBridge.cs");
+            string clearBody = ExtractMethodBody(bridgeSource, "ClearAllResidency");
+            string cancelBody = ExtractMethodBody(bridgeSource, "CancelAsyncWorldJobsForResidencyClear");
+            string chunkCancelBody = ExtractMethodBody(bridgeSource, "CancelAllChunkBuildJobs");
+            string disposeBody = ExtractMethodBody(bridgeSource, "DisposeAllChunkBuildJobs");
+
+            Assert.That(clearBody, Does.Contain("CancelAsyncWorldJobsForResidencyClear()"));
+            Assert.That(clearBody, Does.Not.Contain("DisposeAllChunkBuildJobs"));
+            Assert.That(clearBody, Does.Not.Contain("forceComplete: true"));
+            Assert.That(cancelBody, Does.Contain("CancelAllChunkBuildJobs()"));
+            Assert.That(cancelBody, Does.Contain("CancelVegetationSimulationJobsForResidencyClear()"));
+            Assert.That(cancelBody, Does.Contain("InvalidateAbyssalPathState()"));
+            Assert.That(chunkCancelBody, Does.Contain("MarkChunkBuildJobCancelled(i)"));
+            Assert.That(disposeBody, Does.Contain("CompleteAndReleaseChunkBuildJob(i)"));
+        }
+
+        [Test]
         public void StaticHotPathAudit_RejectsSynchronousTokensOutsideLateFrameAndTeardown()
         {
             string bridgeSource = ReadProjectScript("World/HectonMapMagicVegetationBridge.cs");
@@ -159,9 +200,11 @@ namespace Hecton8.Tests.Editor
 
             AssertOrdered(scheduleBody, "TryCreateRadarPendingJob(out pending)", "GroundRadarRaymarchJob job = new GroundRadarRaymarchJob");
             AssertOrdered(scheduleBody, "TryCopyCurrentGprStateToPending(ref pending)", "GroundRadarRaymarchJob job = new GroundRadarRaymarchJob");
+            AssertOrdered(scheduleBody, "TryStageNearestSdf(probeOrigin, ref pending", "GroundRadarRaymarchJob job = new GroundRadarRaymarchJob");
             AssertOrdered(scheduleBody, "JobHandle handle = job.Schedule()", "_radarJobScheduled = 1");
-            AssertOrdered(scheduleBody, "_radarSdfSnapshotLocked = sdfSnapshotLocked", "oreDependencySink.RegisterOreReadDependency(handle)");
             AssertOrdered(scheduleBody, "oreDependencySink == null", "GroundRadarRaymarchJob job = new GroundRadarRaymarchJob");
+            AssertOrdered(scheduleBody, "TryStageNearestSdf(probeOrigin, ref pending", "EncodedSdf = encodedSdf");
+            Assert.That(scheduleBody, Does.Not.Contain("_radarSdfSnapshotLocked"));
             Assert.That(scheduleBody, Does.Not.Contain("CommitCompletedScan"));
             Assert.That(scheduleBody, Does.Not.Contain(".Run("));
 
@@ -176,9 +219,14 @@ namespace Hecton8.Tests.Editor
         {
             string source = ReadProjectScript("World/GroundPenetratingRadarRuntime.cs");
             string scheduleBody = ExtractMethodBody(source, "ScheduleRadarJob");
+            string createBody = ExtractMethodBody(source, "TryCreateRadarPendingJob");
             string copyBody = ExtractMethodBody(source, "TryCopyCurrentGprStateToPending");
+            string sdfStageBody = ExtractMethodBody(source, "TryStageSdfLeaseToPendingSnapshot");
+            string releaseBody = ExtractMethodBody(source, "ReleaseRadarPendingJob");
             string publishBody = ExtractMethodBody(source, "TryPublishRadarPendingJob");
 
+            Assert.That(createBody, Does.Contain("Allocator.Persistent"));
+            Assert.That(createBody, Does.Not.Contain("Allocator.TempJob"));
             Assert.That(scheduleBody, Does.Contain("new NativeSlice<float3>(pending.Hits)"));
             Assert.That(scheduleBody, Does.Contain("new NativeSlice<float>(pending.SignalStrength)"));
             Assert.That(scheduleBody, Does.Contain("new NativeSlice<float4>(pending.PingGpu)"));
@@ -187,6 +235,12 @@ namespace Hecton8.Tests.Editor
 
             AssertOrdered(copyBody, "TryLockScanJobBuffers()", "NativeArray<float3>.Copy(hits, pending.Hits");
             AssertOrdered(copyBody, "NativeArray<float4>.Copy(pingGpu, pending.PingGpu", "ReleaseScanJobBufferLocks()");
+            Assert.That(sdfStageBody, Does.Contain("Allocator.Persistent"));
+            Assert.That(sdfStageBody, Does.Not.Contain("Allocator.TempJob"));
+            AssertOrdered(sdfStageBody, "H8Memory.Allocate<byte>", "snapshotSdf = pending.SdfSnapshot.AsReadOnly()");
+            Assert.That(sdfStageBody, Does.Not.Contain("TryLockBuffer"));
+            Assert.That(sdfStageBody, Does.Not.Contain("TryResolveHandle"));
+            Assert.That(releaseBody, Does.Contain("pending.SdfSnapshot"));
 
             AssertOrdered(publishBody, "TryAcquireWriteLock(in _gprHitsHandle", "NativeArray<float3>.Copy(pending.Hits, hits");
             AssertOrdered(publishBody, "TryAcquireWriteLock(in _gprPingGpuHandle", "NativeArray<float4>.Copy(pending.PingGpu, pingGpu");
@@ -204,6 +258,7 @@ namespace Hecton8.Tests.Editor
                 source,
                 "public bool TryScheduleAbyssalPath(Vector3 startPosition, Vector3 endPosition, int traversalSpeciesId");
             string completeBody = ExtractMethodBody(source, "CompleteAbyssalPathJob");
+            string invalidateBody = ExtractMethodBody(source, "InvalidateAbyssalPathState");
 
             AssertOrdered(scheduleBody, "JobHandle smoothingHandle = smoothingJob.Schedule(pathSourceHandle)", "_abyssalPathJob = new AbyssalPathPendingJob");
             AssertOrdered(scheduleBody, "_abyssalPathJob = new AbyssalPathPendingJob", "handle = smoothingHandle");
@@ -221,6 +276,9 @@ namespace Hecton8.Tests.Editor
             AssertOrdered(completeBody, "DispatcherJobSwap.TryComplete(ref handle, forceComplete)", "CommitAbyssalPathResult");
             AssertOrdered(completeBody, "CommitAbyssalPathResult", "ReleaseAbyssalPathPendingJob(ref pending)");
             Assert.That(completeBody, Does.Contain("_abyssalPathScheduled = false"));
+            Assert.That(completeBody, Does.Contain("!pending.Cancelled"));
+            Assert.That(invalidateBody, Does.Contain("pending.Cancelled = true"));
+            Assert.That(invalidateBody, Does.Not.Contain("CompleteAbyssalPathJob"));
         }
 
         [Test]
@@ -237,6 +295,36 @@ namespace Hecton8.Tests.Editor
             AssertOrdered(sampleBody, "ResolveAbyssalPathQualityWeight()", "ResolveAbyssalPathQualityBudget");
             Assert.That(budgetBody, Does.Contain("math.lerp"));
             Assert.That(budgetBody, Does.Not.Contain("isLowEnd"));
+        }
+
+        [Test]
+        public void GrassLodBudget_UsesContinuousGlobalQualityWeight()
+        {
+            string source = ReadProjectScript("World/HectonMapMagicVegetationBridge.cs");
+            string tierBody = ExtractMethodBody(source, "GetGrassLodTier");
+            string stepBody = ExtractMethodBody(source, "GetGrassStepForTier");
+            string qualityBody = ExtractMethodBody(source, "ResolveGrassQualityWeight");
+
+            Assert.That(source, Does.Not.Contain("_MATH_LOD_LOW"));
+            Assert.That(tierBody, Does.Contain("ResolveGrassQualityWeight()"));
+            Assert.That(tierBody, Does.Contain("math.lerp"));
+            Assert.That(tierBody, Does.Contain("byte.MaxValue"));
+            Assert.That(stepBody, Does.Contain("ResolveGrassQualityWeight()"));
+            Assert.That(stepBody, Does.Contain("math.lerp"));
+            Assert.That(stepBody, Does.Not.Contain("grassLodTier == 0"));
+            Assert.That(qualityBody, Does.Contain("HomeostasisBrain.GlobalQualityWeight"));
+        }
+
+        [Test]
+        public void CameraCacheRefresh_IsNotNamedAsPureResolveAccessor()
+        {
+            string bridgeSource = ReadProjectScript("World/HectonMapMagicVegetationBridge.cs");
+            string residencySource = ReadProjectScript("World/VegetationChunkResidencyDirector.cs");
+            string navSource = ReadProjectScript("World/VegetationNavGridSynchronizer.cs");
+
+            Assert.That(bridgeSource, Does.Not.Contain("ResolveActiveViewCamera"));
+            Assert.That(residencySource, Does.Contain("RefreshActiveViewCameraCache()"));
+            Assert.That(navSource, Does.Contain("RefreshActiveViewCameraCache()"));
         }
 
         [Test]
@@ -258,6 +346,7 @@ namespace Hecton8.Tests.Editor
         {
             string body = ExtractMethodBody(source, completeMethodName);
 
+            AssertOrdered(body, "pending.Cancelled", "TryCopyVegetationMemorySnapshot");
             AssertOrdered(body, "DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete)", "TryCopyVegetationMemorySnapshot");
             AssertOrdered(body, "TryCopyVegetationMemorySnapshot", releaseMethodName + "(ref pending)");
             Assert.That(body, Does.Contain("= default"));

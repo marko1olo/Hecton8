@@ -71,6 +71,8 @@ namespace Hecton8.Gameplay
         private bool _parasiteSporeLosResultValid;
         private bool _parasiteSporeLosBlocked;
         private bool _hotSwapRegistered;
+        private bool _parasiteAudioLoadDirty;
+        private int _pendingParasiteAudioLoad;
         private int _lastPhysicsEventSnapshotGeneration;
         private ISpatialAudioEnvironmentModulationSink _spatialAudioSink;
         private IPdaCorrosionPresentationSink _pdaCorrosionSink;
@@ -166,6 +168,7 @@ namespace Hecton8.Gameplay
 
             ClearHabitatBinding();
             ClearTransportBinding();
+            FlushParasiteAudioLoad();
             TryUnregister();
             TryUnregisterHotSwapListener();
             ResetChannels();
@@ -194,6 +197,7 @@ namespace Hecton8.Gameplay
         public void LateFrameTick()
         {
             DrainPhysicsEventPayloads();
+            FlushParasiteAudioLoad();
         }
 
         /// <summary>
@@ -756,8 +760,18 @@ namespace Hecton8.Gameplay
 
         private void PublishParasiteAudioLoad(int parasiteCount)
         {
+            _pendingParasiteAudioLoad = math.max(0, parasiteCount);
+            _parasiteAudioLoadDirty = true;
+        }
+
+        private void FlushParasiteAudioLoad()
+        {
+            if (!_parasiteAudioLoadDirty)
+                return;
+
+            _parasiteAudioLoadDirty = false;
             if (_spatialAudioSink != null)
-                _spatialAudioSink.SetParasiteRoomAcousticLoad(parasiteCount);
+                _spatialAudioSink.SetParasiteRoomAcousticLoad(_pendingParasiteAudioLoad);
         }
 
         private bool HasSealedHelmetProtection()

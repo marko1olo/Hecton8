@@ -890,3 +890,15 @@ Rejected Alternatives: Hashing every source file on every Workbench reload was r
 Scalability potential: Low tier authors still rely on the CLI prepare loop. Middle tier Unity users see stale report warnings before handoff. High tier can add package diff and graph/table previews over the same source/report freshness rule. Ultra tier can add simulation and visual diagnostics after the same review manifest without changing runtime authority.
 
 Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is Editor/offline tooling only. It prevents stale review handoff before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, Burst/job paths, or device quality scaling.
+
+## Decision 75 - Copied starter kits need one root launcher
+
+Problem: The starter kit had correct local tools, and the Workbench could call them, but a random external author outside Unity still had to copy several raw `Tools/*.ps1` commands from README. That is a real SDK usability defect: the file contract was valid, but the first no-Unity interaction was fragmented.
+
+Solution: Add root `h8mod.ps1` as a thin launcher over the existing tools. It exposes menu/setup/validate/review/prepare/opcode actions, delegates to `Tools/prepare_mod.ps1`, `Tools/validate_structure.ps1`, `Tools/build_review_manifest.ps1`, and `Tools/list_allowed_opcodes.ps1`, and keeps the existing scripts as the contract owners. SDK Hub generation, Workbench health/file access, local validation, schema revision 87, docs, and static validation now require/prove that launcher.
+
+Rejected Alternatives: Reimplementing validation inside `h8mod.ps1` was rejected because it would create drift against the no-Unity validator. Adding a compiled CLI was rejected for this pass because it would introduce new packaging/runtime dependencies while the PowerShell/pwsh starter contract already exists. Leaving README command lists as the main path was rejected because it fails the random-modder usability requirement.
+
+Scalability potential: Low tier authors get one command/menu in a copied folder with no Unity install. Middle tier authors can use the same starter through the Unity Workbench. High tier can later wrap the same action names in a richer CLI or GUI. Ultra tier can add simulation, package diff, preview, and visual diagnostics after the same review manifest without changing runtime authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is offline authoring only. It prevents user-error package churn before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, Burst/job paths, or device quality scaling.

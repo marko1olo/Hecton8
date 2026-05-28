@@ -1,0 +1,256 @@
+﻿{
+    "agent_id":  "1423",
+    "role":  "ZERO_GC_SUBTITLES_AND_BABEL_LOCALIZATION_COMPILER",
+    "generated_local":  "2026-05-28T06:36:05.8981458+04:00",
+    "prompt_extraction":  {
+                              "path":  "Docs/AgentLogs/PromptExtract_1423_CONTINUATION2.md",
+                              "sha256":  "F55028A6C93B0B2A2E7102271D88D46C0C957C9FC2F235B2B8050593FD35D4B9",
+                              "task_count":  20
+                          },
+    "changed_file_hashes":  [
+                                {
+                                    "path":  "Assets/_Project/Scripts/LocalizedWorldSign.cs",
+                                    "exists":  true,
+                                    "sha256":  "CF7A5CDCF19A007734403F16DDFBD0AC263E4189FAAA6F30A3B5E1FA83476F90"
+                                },
+                                {
+                                    "path":  "Assets/_Project/Scripts/LocRegistry.cs",
+                                    "exists":  true,
+                                    "sha256":  "6057EF78ACBDCA9E27461C65FB5CD507918D29E2BD2E0DC3A8104BD48C9FD6F1"
+                                },
+                                {
+                                    "path":  "Assets/_Project/Scripts/UI/BabelRichTextLodPolicy.cs",
+                                    "exists":  true,
+                                    "sha256":  "6EB320617B68509CC035E77437DB41A1E9DDF656C5BC4E4F552BF4FE0A5D62DC"
+                                },
+                                {
+                                    "path":  "Assets/_Project/Scripts/UI/TmpTextNoAlloc.cs",
+                                    "exists":  true,
+                                    "sha256":  "C3BCEAB264B6C0C1DB6E58BBE7793A68B13FC279F2D0EE406996AC1A2BD75B11"
+                                },
+                                {
+                                    "path":  "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+                                    "exists":  true,
+                                    "sha256":  "084243DAC5C5A74C3945FEA0F2F290AE13CDB544B6F228CC7F0653E998E4B71B"
+                                },
+                                {
+                                    "path":  "Assets/_Project/Scripts/UI/LabelSwapScheduler.cs",
+                                    "exists":  true,
+                                    "sha256":  "4BC0BCD0349B33793A31314180F2102096A7B1C8BCEFDC38C82865E37D2F3390"
+                                },
+                                {
+                                    "path":  "Assets/_Project/Scripts/UI/PDADataArchaeologyDecryptLabel.cs",
+                                    "exists":  true,
+                                    "sha256":  "5A52CF1A61EB475ADA1E26F6E1FA7B17878FE41AB5BE9D1D44A6FEED94264785"
+                                },
+                                {
+                                    "path":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+                                    "exists":  true,
+                                    "sha256":  "CE492BB53D0A04FA8AA90D99678FCE260D2DDD68E3A7F9292EAA84CB93FFE5F3"
+                                }
+                            ],
+    "localized_world_sign_fail_closed":  {
+                                             "path":  "Assets/_Project/Scripts/LocalizedWorldSign.cs",
+                                             "capacity":  128,
+                                             "proof_lines":  [
+                                                                 "31-32 fixed capacity and ellipsis width",
+                                                                 "150-151 fallback uses CopySpanFailClosed",
+                                                                 "168-203 display path clamps and appends ellipsis",
+                                                                 "207-212 cold fixed allocation only",
+                                                                 "215-238 fallback copy clamps and records telemetry",
+                                                                 "241-255 ellipsis cursor clamp"
+                                                             ],
+                                             "telemetry_calls":  [
+                                                                     "LocalizedWorldSign.cs:194-200 RecordUIOptimizationFailure(TextBufferOverflow)",
+                                                                     "LocalizedWorldSign.cs:229-235 RecordUIOptimizationFailure(TextBufferOverflow)"
+                                                                 ],
+                                             "growth_loop_removed":  true
+                                         },
+    "broad_domain_scan":  {
+                              "scanned_file_count":  152,
+                              "forbidden_string_hits":  0,
+                              "foreach_hits":  0,
+                              "scene_search_hits":  0,
+                              "forbidden_hit_lines":  [
+
+                                                      ],
+                              "foreach_hit_lines":  [
+
+                                                    ],
+                              "scene_search_hit_lines":  [
+
+                                                         ]
+                          },
+    "hot_range_scan":  {
+                           "verdict":  "PASS_STATIC_PROXY_REFERENCE_TYPE_NEW_ZERO_IN_REVIEWED_HOT_RANGES",
+                           "ranges":  [
+                                          {
+                                              "file":  "Assets/_Project/Scripts/LocalizedWorldSign.cs",
+                                              "name":  "PrepareDisplayBuffer",
+                                              "line_range":  "162-205",
+                                              "counts":  {
+                                                             "string_format":  0,
+                                                             "to_string":  0,
+                                                             "foreach_loop":  0,
+                                                             "linq_calls":  0,
+                                                             "tmp_text_assignment":  0,
+                                                             "interpolation":  0,
+                                                             "string_builder":  0,
+                                                             "new_any":  0
+                                                         },
+                                              "reference_type_new_suspects":  0,
+                                              "value_type_new_classified":  ""
+                                          },
+                                          {
+                                              "file":  "Assets/_Project/Scripts/LocalizedWorldSign.cs",
+                                              "name":  "CopySpanFailClosed",
+                                              "line_range":  "215-238",
+                                              "counts":  {
+                                                             "string_format":  0,
+                                                             "to_string":  0,
+                                                             "foreach_loop":  0,
+                                                             "linq_calls":  0,
+                                                             "tmp_text_assignment":  0,
+                                                             "interpolation":  0,
+                                                             "string_builder":  0,
+                                                             "new_any":  0
+                                                         },
+                                              "reference_type_new_suspects":  0,
+                                              "value_type_new_classified":  ""
+                                          },
+                                          {
+                                              "file":  "Assets/_Project/Scripts/LocalizedWorldSign.cs",
+                                              "name":  "AppendAsciiEllipsis",
+                                              "line_range":  "241-255",
+                                              "counts":  {
+                                                             "string_format":  0,
+                                                             "to_string":  0,
+                                                             "foreach_loop":  0,
+                                                             "linq_calls":  0,
+                                                             "tmp_text_assignment":  0,
+                                                             "interpolation":  0,
+                                                             "string_builder":  0,
+                                                             "new_any":  0
+                                                         },
+                                              "reference_type_new_suspects":  0,
+                                              "value_type_new_classified":  ""
+                                          },
+                                          {
+                                              "file":  "Assets/_Project/Scripts/UI/BabelRichTextLodPolicy.cs",
+                                              "name":  "ShouldStrip",
+                                              "line_range":  "14-18",
+                                              "counts":  {
+                                                             "string_format":  0,
+                                                             "to_string":  0,
+                                                             "foreach_loop":  0,
+                                                             "linq_calls":  0,
+                                                             "tmp_text_assignment":  0,
+                                                             "interpolation":  0,
+                                                             "string_builder":  0,
+                                                             "new_any":  0
+                                                         },
+                                              "reference_type_new_suspects":  0,
+                                              "value_type_new_classified":  ""
+                                          },
+                                          {
+                                              "file":  "Assets/_Project/Scripts/UI/BabelRichTextLodPolicy.cs",
+                                              "name":  "ResolveStableThreshold01",
+                                              "line_range":  "34-38",
+                                              "counts":  {
+                                                             "string_format":  0,
+                                                             "to_string":  0,
+                                                             "foreach_loop":  0,
+                                                             "linq_calls":  0,
+                                                             "tmp_text_assignment":  0,
+                                                             "interpolation":  0,
+                                                             "string_builder":  0,
+                                                             "new_any":  1
+                                                         },
+                                              "reference_type_new_suspects":  0,
+                                              "value_type_new_classified":  "uint2"
+                                          },
+                                          {
+                                              "file":  "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+                                              "name":  "ShowSubtitleCommand_decode_block",
+                                              "line_range":  "815-842",
+                                              "counts":  {
+                                                             "string_format":  0,
+                                                             "to_string":  0,
+                                                             "foreach_loop":  0,
+                                                             "linq_calls":  0,
+                                                             "tmp_text_assignment":  0,
+                                                             "interpolation":  0,
+                                                             "string_builder":  0,
+                                                             "new_any":  1
+                                                         },
+                                              "reference_type_new_suspects":  0,
+                                              "value_type_new_classified":  "SubtitleStateDTO"
+                                          },
+                                          {
+                                              "file":  "Assets/_Project/Scripts/UI/LabelSwapScheduler.cs",
+                                              "name":  "ApplyEntry_localized_block",
+                                              "line_range":  "126-159",
+                                              "counts":  {
+                                                             "string_format":  0,
+                                                             "to_string":  0,
+                                                             "foreach_loop":  0,
+                                                             "linq_calls":  0,
+                                                             "tmp_text_assignment":  0,
+                                                             "interpolation":  0,
+                                                             "string_builder":  0,
+                                                             "new_any":  0
+                                                         },
+                                              "reference_type_new_suspects":  0,
+                                              "value_type_new_classified":  ""
+                                          },
+                                          {
+                                              "file":  "Assets/_Project/Scripts/UI/PDADataArchaeologyDecryptLabel.cs",
+                                              "name":  "RenderHash",
+                                              "line_range":  "107-135",
+                                              "counts":  {
+                                                             "string_format":  0,
+                                                             "to_string":  0,
+                                                             "foreach_loop":  0,
+                                                             "linq_calls":  0,
+                                                             "tmp_text_assignment":  0,
+                                                             "interpolation":  0,
+                                                             "string_builder":  0,
+                                                             "new_any":  0
+                                                         },
+                                              "reference_type_new_suspects":  0,
+                                              "value_type_new_classified":  ""
+                                          }
+                                      ],
+                           "value_type_new_evidence":  [
+                                                           "uint2 is Unity.Mathematics value type",
+                                                           "SubtitleStateDTO is struct at Assets/_Project/Scripts/LocRegistry.cs:305"
+                                                       ]
+                       },
+    "data_sovereignty":  {
+                             "new_global_data_vault_fields_this_polish":  false,
+                             "existing_buffer_ids":  [
+                                                         15070550,
+                                                         15070551,
+                                                         15070552
+                                                     ],
+                             "write_lock":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:668 TryAcquireWriteLock",
+                             "finally_releases":  [
+                                                      "BabelSubtitleSyncRuntime.cs:509-511",
+                                                      "BabelSubtitleSyncRuntime.cs:1104-1106"
+                                                  ]
+                         },
+    "compilation_throttle":  {
+                                 "cpu_load_percent":  68,
+                                 "csc_process_count":  0,
+                                 "dotnet_build_related_process_count":  1,
+                                 "dotnet_build_related_process":  "PID=22412; CMD=\"C:\\Program Files\\dotnet\\dotnet.exe\" build Hecton8.slnx --no-restore -nologo -clp:ErrorsOnly -maxcpucount:1 /p:UseSharedCompilation=false /nr:false",
+                                 "build_launched":  false,
+                                 "reason":  "CPU sampled at 68.00% and active dotnet build-related process is present; no build launched."
+                             },
+    "verification_status":  {
+                                "static_scan":  "PASS",
+                                "build":  "NOT_RERUN_CPU_68_PERCENT_ACTIVE_DOTNET_BUILD_AND_PRIOR_XRPASS_BLOCKER",
+                                "runtime_gc":  "ABSENT",
+                                "status":  "PENDING_VERIFICATION"
+                            }
+}

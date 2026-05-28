@@ -1,4 +1,4 @@
-# Status_1404
+﻿# Status_1404
 
 Agent: 1404
 Role: ANDROID_NDK_AND_AASSETMANAGER_PORTABILITY_ARCHITECT
@@ -72,3 +72,18 @@ Relevant mandates selected before coding:
 - [x] Unity GameActivity manifest corrected | DOD: `ProjectSettings.asset` has `androidApplicationEntry: 2`; `AndroidManifest.xml` now uses `com.unity3d.player.UnityPlayerGameActivity`, `@style/BaseUnityGameActivityTheme`, and `android.app.lib_name=game` | Alternative rejected: leaving GameActivity settings with `UnityPlayerActivity` manifest | Estimate: 0 us runtime; launch proof pending.
 - [x] APEX JSON proof refreshed again | DOD: `Docs/Reports/ANDROID_PAL_OPTIMIZATION_REPORT_1404.json` regenerated after native dump, release retry, and GameActivity manifest fixes; SHA-256 `6ec50ef7ed5736a5e640c3da6cf498f9869714bf7b2cac8c2b00f4bb8c0a0f82` | Alternative rejected: stale report hash `c81065228d5e90bd0b080e88e8aa8b23368251ef4cff76b969d4308443f5bf28` | Estimate: static scan only.
 - [ ] Build/player proof | [BLOCKED_BY_CONTENTION] latest report gate sample: CPU 96 with active `dotnet` PID 32028, process CPU 197.265625, start `2026-05-28T05:41:37+04:00`; `dotnet build` not run | Alternative rejected: violating CPU > 50 / active compiler rule | Estimate: 0 us measured.
+
+## APEX Repeat Audit Addendum 3
+
+- [x] DataVault deferred writer-release truth fixed | DOD: `GlobalDataVault.ReleaseWriteLock` and `ReleaseWriterBlockLock` now enqueue deferred writer release but return `false`, so callers cannot treat a queued release as an actual released writer fence | Alternative rejected: preserving a false-success API contract that can hide an active writer | Estimate: 0 us frame; cold/failure ownership path only.
+- [x] Data Monolith dump path made read-only and chronological | DOD: `DumpTelemetry` no longer calls `EnsureTelemetry`; editor/dev, Win32, and Android native dump writers normalize cursor and emit ring entries from cursor to end then zero to cursor | Alternative rejected: mutating/allocating DataVault telemetry buffers during a fault dump and writing raw ring storage order | Estimate: 0 us frame; diagnostic path only.
+- [x] Android native dump directory guard hardened | DOD: `H8_EnsureDirectory` now accepts `EEXIST` only when `stat(path)` succeeds and `S_ISDIR` is true | Alternative rejected: accepting a non-directory path collision as success | Estimate: 0 us frame; diagnostic path only.
+- [x] Validator/report proof refreshed | DOD: `NativePluginMatrixValidator` and `H8AndroidAssetBridgeStaticAudit` now enforce `S_ISDIR`, cursor-rotated telemetry dump, and read-only `DumpTelemetry`; `Docs/Reports/ANDROID_PAL_OPTIMIZATION_REPORT_1404.json` SHA-256 `a1631a93d1b21552631497c433e86ebe5c0b01b990d7d1f3822f793a57730fdf` | Alternative rejected: stale JSON hash `6ec50ef7ed5736a5e640c3da6cf498f9869714bf7b2cac8c2b00f4bb8c0a0f82` | Estimate: static scan only.
+- [ ] Build/player proof | [BLOCKED_BY_CONTENTION] latest report gate sample: CPU 23 with active `dotnet` PID 34436 and `VBCSCompiler` PID 44300; `dotnet build` not run because active compiler process exists even though CPU dropped below 50 | Alternative rejected: violating active compiler rule | Estimate: 0 us measured.
+
+## APEX Repeat Audit Addendum 4
+
+- [x] Cross-platform writer-release retry fixed | DOD: `DataMonolithWriterReleaseRetryCount` moved outside Android guards and `ReleaseWriteLockWithRetry` now retries on all platforms before returning false | Alternative rejected: Android-only retry while DataVault deferred release is global | Estimate: 0 us frame; cold/failure ownership path only.
+- [x] Deferred release false-success actually fixed | DOD: `GlobalDataVault.ReleaseWriteLock` and `ReleaseWriterBlockLock` now use `_ = QueueDeferredWriterRelease(...); return false;`; validators now reject `return QueueDeferredWriterRelease(...)` | Alternative rejected: report field that only searched for queue calls and could pass false positives | Estimate: 0 us frame; correctness fix.
+- [x] APEX JSON proof refreshed after false-positive correction | DOD: `Docs/Reports/ANDROID_PAL_OPTIMIZATION_REPORT_1404.json` parsed and sidecar SHA-256 refreshed to `34e1c9e153c72bc1114fdb543e2629879009a7225e37dee6164485986ab75407` | Alternative rejected: stale JSON hash and stale `GlobalDataVault` hash | Estimate: static scan only.
+- [ ] Compile proof | [FAILED_NO_DIAGNOSTIC_OUTPUT] CPU gate before build was CPU 35 with zero active compiler processes, so one final `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` was launched; it returned exit code 1 with empty captured output and no fresh binlog; forensic record written to `Docs/AgentLogs/Dump_1404_build_failure_20260528T1306_SAMARA.log`; rerun blocked because post-failure CPU sampled at 99 | Alternative rejected: second build under CPU > 50 | Estimate: no runtime microseconds measured.

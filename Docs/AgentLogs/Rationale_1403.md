@@ -161,3 +161,91 @@ Solution: Replace the portable fallback for Linux/macOS/Android with a lock-prot
 Rejected Alternatives: Keep `File.Open` as a universal fallback; rejected because it contradicts the Zero-GC evidence target. Add POSIX `stat`; rejected because struct layout differs by target and this pass has no Linux/macOS/Android player proof. Claim iOS/WebGL readiness; rejected because no platform build artifact exists.
 Scalability potential: Low Android/Steam Deck/macOS devices avoid managed file-stream construction on save length checks. Middle/High/Ultra preserve identical save file identity and checksum behavior.
 Hardware Impact: Measured runtime microseconds saved: 0. Expected benefit is lower managed allocation pressure in save verification on Unix-like targets; runtime platform proof remains pending.
+
+## Decision 020 - Read-Only Save Mapping Must Not Allocate FileStream
+
+Problem: `SaveBinaryStorage.AsyncWriteManager.TryOpenReadOnlyMapping` still opened a managed `FileStream` before copying a save file into a native mapping snapshot. This was a transitive persistence read route used by metadata, header, sector, and override readers.
+Solution: Route read-only mapping through native file APIs. Windows opens with `CreateFileW`, reads fixed chunks with `ReadFile`, and closes with `CloseHandle`. Linux/macOS/Android encode the path into the existing preallocated UTF-8 buffer, then use `open`, `read`, and `close`. Unsupported platforms fail closed with a static error.
+Rejected Alternatives: Keep `FileStream` because the route is cold; rejected because APEX asked for evidence in persistence routes. Introduce a managed `byte[]` staging buffer; rejected because it would move the allocation rather than remove it. Use Unity `AsyncReadManager.GetFileInfo`; rejected again because runtime-created save files can be misreported absent in Unity 6000.x.
+Scalability potential: Low avoids managed stream allocation during save metadata/readback; Middle/High/Ultra preserve identical save bytes and checksum behavior. This is IO hygiene, not visual fidelity.
+Hardware Impact: Measured microseconds saved: 0. Expected gain on i3/MX350 is lower GC pressure and fewer managed object lifetimes during save-file inspection.
+
+## Decision 021 - WFC Vault Grid Alias Violated Data Sovereignty
+
+Problem: `SaveManagerNativeBufferSet` stored `BufferID.WfcOutpostGrid` as a `NativeArray<byte>` alias and internal routes wrote to it after `TryResolveHandle`, not after `TryAcquireWriteLock`. That made the BufferSet a cross-phase mutable pointer cache for GlobalDataVault memory.
+Solution: Replace the cached `NativeArray<byte>` alias with `VaultGenerationHandle<byte>`. Internal WFC mutation routes now acquire `TryAcquireWriteLock(in handle, SystemID.CoreDataVault, out wfcGrid)` and release through `ReleaseWfcOutpostGridWrite()` inside `finally` blocks in dirty-signal, storm, hydration, and cache-reset paths.
+Rejected Alternatives: Keep `TryResolveHandle` because mutations happen on the same frame; rejected because the doctrine requires explicit writer fences for GlobalDataVault mutation. Move WFC grid to owner-local persistent NativeArray; rejected because `BufferID.WfcOutpostGrid` already declares cross-domain vault ownership and save identity must not move.
+Scalability potential: Low devices avoid relocation/use-after-free risk under memory pressure. Middle/High/Ultra keep identical WFC persistence behavior; only authority and lifetime proof changed.
+Hardware Impact: Measured microseconds saved: 0. Expected benefit is stability under vault relocation/defrag and scene unload, not frame-time reduction.
+
+## Decision 022 - Sentinel Restore Must Preserve Owner Labels
+
+Problem: Failed native disposal restored sentinel records under a generic `DisposeNativeArray` label. That preserved leak visibility but weakened forensic ownership evidence.
+Solution: Add sentinel label parameters to SaveManager, rig, and runtime disposal helpers and pass the original BufferSet field names from best-effort disposal loops. If disposal fails after unregister, the restored sentinel row keeps the original field label.
+Rejected Alternatives: Keep generic restore labels; rejected because final verification requires exact owner evidence. Swallow restore failures; retained only inside the restore fallback because the original disposal exception must remain the surfaced fault.
+Scalability potential: Low/Middle/High/Ultra behavior unchanged. This improves crash forensics on every device tier.
+Hardware Impact: Runtime hot-path cost: 0. The label path executes only during cold disposal faults.
+
+## Decision 023 - Compilation Gate Remains Closed
+
+Problem: After the final source changes, compiler proof would be useful, but the workstation is still outside the permitted build window.
+Solution: Sample CPU/compiler state and skip `dotnet build`. Latest sample: CPU 91%, `dotnet=1`, `csc=0`, `VBCSCompiler=0`.
+Rejected Alternatives: Launching `dotnet build` while CPU exceeds 50% and another dotnet process exists; rejected by explicit project rule. Reporting compile success from static scans; rejected as false evidence.
+Scalability potential: Runtime behavior unchanged. Verification status remains `PENDING_VERIFICATION` until an idle build or Unity Test Runner pass exists.
+Hardware Impact: Avoided adding a compiler workload under high CPU. Exact avoided build duration is not measured.
+
+## Decision 024 - Black-Box Dump Writers Must Not Use BinaryWriter Loops
+
+Problem: APEX continuation found Agent 1403 fault dump callsites still created managed `FileStream` and `BinaryWriter` objects in `SaveManager` WFC/async persistence dumps and `ContextualPhysicalIkRuntime` IK telemetry dumps. The routes are cold fault paths, but they are the exact forensic paths used when memory/lifecycle code fails.
+Solution: Replace the callsite writers with local `NativeArray<byte>` staging buffers, explicit little-endian `BinaryPrimitives` span writes, sanitized IK float writes, and `AsyncWriteManager.WriteAll` submission. Rename dump outputs to `Dump_1403_WFC_PERSISTENCE_SYNC.bin`, `Dump_1403_ASYNC_PERSISTENCE.bin`, and `Dump_1403_CONTEXTUAL_PHYSICAL_IK.bin` so forensic artifacts identify the 1403 ownership pass.
+Rejected Alternatives: Keep `BinaryWriter` because the path is cold; rejected because black-box evidence must survive fault analysis without extra field-loop allocation debt. Write raw struct memory directly; rejected for IK because the old route sanitized non-finite floats before export. Build a new global dump service; rejected as an over-broad authority route for a scoped 1403 cleanup.
+Scalability potential: Low devices avoid extra managed dump writer objects during failure export. Middle/High/Ultra behavior and visual fidelity are unchanged because this is crash evidence serialization, not simulation.
+Hardware Impact: Measured runtime microseconds saved: 0. Expected impact is reduced fault-path GC pressure only. End-to-end managed IO is not fully eradicated because `AsyncWriteManager.WriteAll` still centralizes writes through existing storage IO; this remains reported as residual storage-layer debt.
+
+## Decision 025 - Build Attempt Timed Out, No Compiler Verdict
+
+Problem: After C# source edits, a compiler pass became justified if the workstation gate allowed it.
+Solution: Gate sample before build was CPU 29%, `dotnet=0`, `csc=0`, `VBCSCompiler=0`; one `dotnet build Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1` attempt was launched. It timed out after 124 seconds without diagnostic output. The leftover build processes were stopped to avoid continuing CPU pressure.
+Rejected Alternatives: Claiming compile success from a timed-out command; rejected as false evidence. Re-running immediately; rejected because post-timeout CPU rose above 50% and compiler processes existed.
+Scalability potential: Runtime behavior unchanged across Low/Middle/High/Ultra. Verification remains `PENDING_VERIFICATION`.
+Hardware Impact: The aborted build consumed CPU for 124 seconds. No additional build pass was launched.
+
+## Decision 026 - Storage Writer And Cached Read Window Must Stop Allocating Stream Wrappers
+
+Problem: Agent 1403 black-box dump callsites had been cleaned, but they still depended on `AsyncWriteManager.WriteAll`. That storage layer still used `FileStream`, `Marshal.Copy`, managed write scratch byte arrays, and `.WriteAsync(...).GetAwaiter().GetResult()` for writeback. Cached read-window hydration also used a managed `FileStream` plus managed scratch copy before inserting the window.
+Solution: Replace `WriteAll`, `OverwriteAll`, `FlushPath`, and cached read-window hydration with native OS handle routes. Windows uses `CreateFileW`, `WriteFile`, `ReadFile`, `SetFilePointerEx`, `SetEndOfFile`, and `FlushFileBuffers`. Linux/macOS/Android use preallocated UTF-8 path encoding plus `open`, `write`, `read`, `lseek`, `ftruncate`, `fsync`, and `close`. Unsupported platforms fail closed instead of silently falling back to managed stream allocation. The editor/development smoke corruption helper now edits a native read snapshot and writes it back through `OverwriteAll`.
+Rejected Alternatives: Keeping `FileStream` because IO is cold; rejected because the 1403 dump proof path depends on this writer. Keeping managed `Marshal.Copy` scratch; rejected because the source pointer can be written directly to the OS handle in bounded chunks. Rewriting the byte[] read-window cache into NativeArray windows; rejected for this pass because it changes cache ownership wider than the 1403 dependency and needs separate load tests.
+Scalability potential: Low devices avoid managed stream/scratch churn during save writeback, crash dump export, and cached save read hydration. Middle/High/Ultra preserve identical save bytes, checksum behavior, and IK visuals; this is storage hygiene, not a new simulation or visual feature.
+Hardware Impact: Measured runtime microseconds saved: 0. Expected impact is reduced GC pressure and fewer managed object lifetimes during persistence IO and fault export on i3/MX350-class machines. Runtime platform proof remains pending.
+
+## Decision 027 - Compilation Evidence Is Blocked By Out-Of-Domain XRPass Errors
+
+Problem: The native interop patch required a compiler check. The full solution build exited 1 after 99.9 seconds with no diagnostic lines and left a child `dotnet` process building `Hecton8.Editor.csproj`, which had to be stopped to obey the workstation throttle rule.
+Solution: After cooldown, a narrower `Hecton8.Core.csproj` build was run under an open gate. It failed with two explicit errors in `Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs`: `XRPass` missing at lines 441 and 480. No compiler error was reported for `SaveBinaryStorage.cs`, `SaveManager.cs`, or contextual IK in that targeted output.
+Rejected Alternatives: Editing `HectonVRBrownoutFeature.cs`; rejected because Visor/XR rendering is outside Agent 1403's domain boundary and belongs to another owner or Integrator. Running a third build immediately; rejected as build spam after one full solution attempt and one targeted compile.
+Scalability potential: Runtime behavior unchanged. The storage changes remain `PENDING_VERIFICATION` until an owner fixes the XRPass compile blocker and a clean project build/Unity import can run.
+Hardware Impact: Full build attempt consumed 99.9 seconds plus child cleanup. Targeted Core compile consumed 31.5 seconds and produced actionable out-of-domain diagnostics.
+
+## Decision 028 - Cached Read Windows Cannot Depend On Managed ArrayPool
+
+Problem: The native storage IO patch removed `FileStream` and `Marshal.Copy`, but `AsyncWriteManager.CachedReadWindow` still retained a `byte[]` rented from `ArrayPool<byte>`. A cold pool can allocate a managed array, so the save read-cache route could not honestly claim zero managed buffer allocation.
+Solution: Replace cached window bytes with `NativeArray<byte>`, register each window with `NativeMemorySentinel` under owner `AsyncWriteManager` and label `CachedReadWindow`, hydrate directly through `TryReadAbsoluteFileRangeToNativeBuffer`, and dispose/unregister at eviction, invalidation, or failed hydration.
+Rejected Alternatives: Keep `ArrayPool<byte>` because it usually reuses arrays; rejected because evidence must hold when the pool is cold. Disable the cache; rejected because it would regress save metadata/readback IO behavior and GPU upload batching. Allocate one global native window; rejected because the existing four-slot prefetch cache is the owner boundary already used by readers.
+Scalability potential: Low devices avoid cold managed array allocation during save readback. Middle/High/Ultra keep the same cached read-window behavior, prefetch window count, and GPU upload route; no save DTO, checksum, IK math, or visual system changed.
+Hardware Impact: Measured runtime microseconds saved: 0. Expected benefit on i3/MX350-class hardware is lower GC pressure and native sentinel visibility for cached save reads under memory pressure.
+
+## Decision 029 - World Pager Allocation Must Be Cold-Warmed Before Tick
+
+Problem: A transitive hot route remained after the cached-window sweep: `SaveManager.Tick -> DrainChunkDehydratedSignals -> EnqueueChunkDehydrationPayloads -> EnsureWorldPagerInitialized` could allocate `new H8BinaryWorldPager()` if the first dehydrated chunk signal arrived before any cold pager initialization. That is a reference-type allocation reachable from Tick.
+Solution: Call `EnsureWorldPagerInitialized()` from `Awake` after native buffer and storage warmup, and from `InitializeService` after native buffer initialization. Collapse `EnsureWorldPager()` to delegate to the same initializer so there is only one allocation site, tagged as a cold allocation warmed before Tick.
+Rejected Alternatives: Leave the lazy allocation because dehydrated chunk signals are rare; rejected because the Zero-GC contract is route-based, not frequency-based. Move the pager into GlobalDataVault; rejected because it is a managed persistence bridge, not a cross-domain native data owner. Add a binary low-end guard; rejected because allocation ownership is lifecycle truth and must not depend on quality tier.
+Scalability potential: Low devices avoid a first-signal managed allocation spike during world streaming. Middle/High/Ultra keep identical chunk persistence behavior; no save DTO, checksum, page format, visual simulation, or GlobalQualityWeight route changed.
+Hardware Impact: Measured runtime microseconds saved: 0. Expected benefit on i3/MX350 is removal of a first-use managed allocation from the Tick-dehydration route and lower scene-streaming hitch risk.
+
+## Decision 030 - Pager Telemetry Ring Must Use A DataVault Writer Fence
+
+Problem: `H8BinaryWorldPager.RecordTelemetry` wrote `BufferID.SaveWorldPagerTelemetryRing` after resolving a mutable `NativeArray` through `TryResolveHandle`. The pager runs on a background worker and can outlive a single owner phase, so the mutable alias was weaker than the Data Sovereignty proof standard used for WFC.
+Solution: Add `TryAcquirePagerVaultWrite` and `ReleasePagerVaultWrite`. `RecordTelemetry` captures the telemetry handle, acquires `TryAcquireWriteLock(..., SystemID.SavePersistence, out telemetryRing)`, writes one record, and releases in `finally`. Black-box dump reads now use `TryReadOnlyHandle` and no longer creates a separate dump `FileStream`; it stages bytes in `NativeArray<byte>` and writes through `AsyncWriteManager.WriteAll`.
+Rejected Alternatives: Keep `TryResolveHandle` because the ring is owned by SavePersistence; rejected because worker-thread lifetime crosses the current-phase contract. Lock all pager buffers in this pass; rejected because command queues, arenas, compression scratch, hot-state arena, and read staging need a coordinated worker/queue locking redesign to avoid deadlocks and dropped writes.
+Scalability potential: Low devices gain safer telemetry visibility under vault compaction or relocation pressure. Middle/High/Ultra keep identical page/WAL behavior and no visual simulation changes.
+Hardware Impact: Measured runtime microseconds saved: 0. Expected benefit is lower relocation/use-after-free risk for the 300-frame pager telemetry ring; core pager `FileStream` IO remains documented residual debt.

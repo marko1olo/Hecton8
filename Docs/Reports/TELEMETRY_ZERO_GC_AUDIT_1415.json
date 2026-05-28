@@ -1294,5 +1294,74 @@
                                                                     }
                                                      }
                                                  ]
-                                  }
+                                  },
+    "apexResidualRecheck2Scan":  {
+                                     "generatedUtc":  "2026-05-28T10:03:25Z",
+                                     "summary":  {
+                                                     "scannedBlockCount":  4,
+                                                     "newReferenceType":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linqQueryOrExtension":  0,
+                                                     "foreachLoop":  0
+                                                 },
+                                     "blocks":  [
+                                                    {
+                                                        "name":  "ReentryVfx WriteTelemetry hot path",
+                                                        "file":  "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs",
+                                                        "startLine":  912,
+                                                        "endLine":  960,
+                                                        "hotPath":  true,
+                                                        "counts":  {
+                                                                       "newReferenceType":  0,
+                                                                       "stringFormat":  0,
+                                                                       "toString":  0,
+                                                                       "linqQueryOrExtension":  0,
+                                                                       "foreachLoop":  0
+                                                                   }
+                                                    },
+                                                    {
+                                                        "name":  "ReentryVfx dump row serializer",
+                                                        "file":  "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs",
+                                                        "startLine":  1031,
+                                                        "endLine":  1068,
+                                                        "hotPath":  false,
+                                                        "counts":  {
+                                                                       "newReferenceType":  0,
+                                                                       "stringFormat":  0,
+                                                                       "toString":  0,
+                                                                       "linqQueryOrExtension":  0,
+                                                                       "foreachLoop":  0
+                                                                   }
+                                                    },
+                                                    {
+                                                        "name":  "JobAdmission WriteBlackbox hot path",
+                                                        "file":  "Assets/_Project/Scripts/Core/Scheduling/BurstTokenBucketJobAdmissionService.cs",
+                                                        "startLine":  745,
+                                                        "endLine":  780,
+                                                        "hotPath":  true,
+                                                        "counts":  {
+                                                                       "newReferenceType":  0,
+                                                                       "stringFormat":  0,
+                                                                       "toString":  0,
+                                                                       "linqQueryOrExtension":  0,
+                                                                       "foreachLoop":  0
+                                                                   }
+                                                    },
+                                                    {
+                                                        "name":  "JobAdmission dump row serializer",
+                                                        "file":  "Assets/_Project/Scripts/Core/Scheduling/BurstTokenBucketJobAdmissionService.cs",
+                                                        "startLine":  888,
+                                                        "endLine":  900,
+                                                        "hotPath":  false,
+                                                        "counts":  {
+                                                                       "newReferenceType":  0,
+                                                                       "stringFormat":  0,
+                                                                       "toString":  0,
+                                                                       "linqQueryOrExtension":  0,
+                                                                       "foreachLoop":  0
+                                                                   }
+                                                    }
+                                                ]
+                                 }
 }

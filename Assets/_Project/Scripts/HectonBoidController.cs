@@ -388,6 +388,8 @@ namespace Hecton8.AI.GPU
         private GraphicsBuffer _fallbackFlowFieldBuffer;
         private GraphicsBuffer _visibleBoidIndexBuffer;
         private GraphicsBuffer _visibleIndirectArgsBuffer;
+        private GraphicsBuffer _boidUploadStagingBuffer;
+        private GraphicsBuffer _visibleIndirectArgsUploadBuffer;
         private readonly GraphicsBuffer.IndirectDrawIndexedArgs[] _visibleIndirectArgsUpload = new GraphicsBuffer.IndirectDrawIndexedArgs[1]; // COLD ALLOC: IndirectDrawIndexedArgs[1] - boid indirect draw static args staging - owner: HectonBoidController
         private BoidData[] _spawnUploadBuffer;
         private Texture3D _fallbackVoxelSdfTexture;
@@ -924,6 +926,18 @@ namespace Hecton8.AI.GPU
                 _visibleIndirectArgsBuffer = null;
             }
 
+            if (_boidUploadStagingBuffer != null)
+            {
+                _boidUploadStagingBuffer.Release();
+                _boidUploadStagingBuffer = null;
+            }
+
+            if (_visibleIndirectArgsUploadBuffer != null)
+            {
+                _visibleIndirectArgsUploadBuffer.Release();
+                _visibleIndirectArgsUploadBuffer = null;
+            }
+
             _indirectArgsMesh = null;
 
             if (_fallbackVoxelSdfTexture != null)
@@ -943,8 +957,9 @@ namespace Hecton8.AI.GPU
             //  STEP 2: Create Ping-Pong boids buffers
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-            _boidsBufferA = GraphicsBufferUploadUtility.CreateStructuredBuffer<BoidData>(boidCount); // COLD ALLOC: GraphicsBuffer[boidCount] - GPU-written boid ping buffer A - owner: HectonBoidController
-            _boidsBufferB = GraphicsBufferUploadUtility.CreateStructuredBuffer<BoidData>(boidCount); // COLD ALLOC: GraphicsBuffer[boidCount] - GPU-written boid ping buffer B - owner: HectonBoidController
+            _boidsBufferA = GraphicsBufferUploadUtility.CreateStructuredCopyDestinationBuffer<BoidData>(boidCount); // COLD ALLOC: GraphicsBuffer[boidCount] - GPU-written boid ping buffer A, CPU reset via copy-source staging - owner: HectonBoidController
+            _boidsBufferB = GraphicsBufferUploadUtility.CreateStructuredCopyDestinationBuffer<BoidData>(boidCount); // COLD ALLOC: GraphicsBuffer[boidCount] - GPU-written boid ping buffer B, CPU reset via copy-source staging - owner: HectonBoidController
+            _boidUploadStagingBuffer = GraphicsBufferUploadUtility.CreateStructuredUploadStagingBuffer<BoidData>(boidCount); // COLD ALLOC: GraphicsBuffer[boidCount] - CPU-visible boid reset staging, GPU copy source only - owner: HectonBoidController
             _spatialGridCountBuffer = new GraphicsBuffer(
                 GraphicsBuffer.Target.Raw,
                 SpatialGridMaxCellCount,
@@ -957,9 +972,12 @@ namespace Hecton8.AI.GPU
             UploadFallbackFlowField();
             _visibleBoidIndexBuffer = GraphicsBufferUploadUtility.CreateStructuredBuffer<uint>(boidCount); // COLD ALLOC: GraphicsBuffer[boidCount] - GPU-written visible boid indices - owner: HectonBoidController
             _visibleIndirectArgsBuffer = new GraphicsBuffer(
-                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw,
+                GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw | GraphicsBuffer.Target.CopyDestination,
                 1,
                 GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[IndirectDrawIndexedArgs] - GPU-written visible boid draw args - owner: HectonBoidController
+            _visibleIndirectArgsUploadBuffer = GraphicsBufferUploadUtility.CreateRawIndirectUploadStagingBuffer(
+                1,
+                GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[IndirectDrawIndexedArgs] - CPU-visible visible-boid args staging, GPU copy source only - owner: HectonBoidController
             UploadIndirectArgsStaticMeshData();
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1101,7 +1119,11 @@ namespace Hecton8.AI.GPU
                 baseVertexIndex = (uint)Mathf.Max(0, fishMesh.GetBaseVertex(0)),
                 startInstance = 0u
             };
-            GraphicsBufferUploadUtility.UploadArraySetData(_visibleIndirectArgsBuffer, _visibleIndirectArgsUpload, 1);
+            GraphicsBufferUploadUtility.UploadArrayAndCopyWholeBuffer(
+                _visibleIndirectArgsUploadBuffer,
+                _visibleIndirectArgsBuffer,
+                _visibleIndirectArgsUpload,
+                1);
             _indirectArgsMesh = fishMesh;
         }
 
@@ -1134,8 +1156,8 @@ namespace Hecton8.AI.GPU
                 };
             }
 
-            GraphicsBufferUploadUtility.UploadArraySetData(_boidsBufferA, _spawnUploadBuffer, safeCount);
-            GraphicsBufferUploadUtility.UploadArraySetData(_boidsBufferB, _spawnUploadBuffer, safeCount);
+            GraphicsBufferUploadUtility.UploadArrayAndCopyWholeBuffer(_boidUploadStagingBuffer, _boidsBufferA, _spawnUploadBuffer, safeCount);
+            GraphicsBufferUploadUtility.UploadArrayAndCopyWholeBuffer(_boidUploadStagingBuffer, _boidsBufferB, _spawnUploadBuffer, safeCount);
         }
 
         private bool EnsureSpawnUploadBufferCapacity(int safeCount, bool allowResize)
@@ -1234,6 +1256,18 @@ namespace Hecton8.AI.GPU
             {
                 _visibleIndirectArgsBuffer.Release();
                 _visibleIndirectArgsBuffer = null;
+            }
+
+            if (_boidUploadStagingBuffer != null)
+            {
+                _boidUploadStagingBuffer.Release();
+                _boidUploadStagingBuffer = null;
+            }
+
+            if (_visibleIndirectArgsUploadBuffer != null)
+            {
+                _visibleIndirectArgsUploadBuffer.Release();
+                _visibleIndirectArgsUploadBuffer = null;
             }
 
             _indirectArgsMesh = null;

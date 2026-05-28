@@ -1,8 +1,8 @@
 {
   "agent": "1417",
   "date": "2026-05-28",
-  "status": "STATIC_CLEAN_BUILD_BLOCKED",
-  "scope": "Combat domain scan after primary 43-entry purge plus status-effect residual migration",
+  "status": "LOOP7_INGRESS_REJECT_LOCK_NESTING_STATIC_BUILD_BLOCKED",
+  "scope": "Combat domain scan after primary 43-entry purge, status-effect residual migration, Loop 5 target/armor writer-lock audit, Loop 6 atomic side-state fail-closed audit, and Loop 7 ingress reject lock-nesting audit",
   "primaryLedger": "Docs/Reports/COMBAT_NATIVE_ALIAS_LEDGER_1417.json",
   "originalResidualFindings": {
     "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs",
@@ -18,9 +18,24 @@
       "_statusEffectDamageSignals"
     ]
   },
+  "loop5AdditionalFindings": [
+    "RegisterTarget/UnregisterTarget/SyncTargetHealth/SyncTargetProtection/SyncTargetHitProfile wrote DataVault-backed target arrays without a dedicated writer window.",
+    "TryQueueDamage refreshed target hit profile from managed receiver/Transform before ingress locks.",
+    "RefreshArmorTargetSnapshots ran before armor buffer pinning in damage/status/armor evaluator paths.",
+    "LateFrame dispatch wrote counters/status-active/telemetry after job pin locks were released.",
+    "Queue reject anomaly publication did not write a black-box telemetry ring entry."
+  ],
+  "loop6AdditionalFindings": [
+    "SeedTargetArmorProfile, RefreshTargetArmorBase, ResetStatusEffectSlot, and ClearSlot-adjacent helper routes could previously fail silently when a DataVault write lock was unavailable.",
+    "UnregisterTarget could tombstone BallisticsRuntime primitives before side-state locks had succeeded, leaving a still-registered target without its ballistic primitive on lock contention.",
+    "Moving status and armor side-state through independent helper calls was not atomic enough: one domain could be copied/cleared while the other domain failed."
+  ],
+  "loop7AdditionalFindings": [
+    "TryQueueDamage post-lock storage rejection published queue reject telemetry while ingress write locks were still held. This was not a guaranteed deadlock, but it nested telemetry lock acquisition inside ingress locks without a need."
+  ],
   "remediation": {
     "requestIngress": "BufferID.Shinobu319StatusEffectRequests = 71269, CombatStatusEffectRequest[MaxQueuedSignals]",
-    "stateBuffers": [
+    "statusStateBuffers": [
       "71260 Shinobu319StatusEffectStates",
       "71263 Shinobu319StatusEffectTuning",
       "71261 Shinobu319StatusEffectTelemetryRing",
@@ -29,38 +44,44 @@
       "71267 Shinobu319StatusEffectVfxRequests",
       "71268 Shinobu319StatusEffectDamageSignals"
     ],
-    "routeCardUpdated": "Docs/ARCHITECTURE/SHINOBU_319_STATUS_EFFECTS_ROUTE_CARD.md",
-    "editorFacadeUpdated": "Assets/_Project/Scripts/Gameplay/Combat/StatusEffectsEditorFacade.cs"
+    "targetMutationLocks": "CombatDamageRuntime_VaultViews.cs:412-482 plus finally sites in CombatDamageRuntime.cs:517,590,625,654,682,1382,2129,2282",
+    "armorTargetLocks": "HectonCombatRuntime_ArmorPenetration.cs:770-799 plus finally sites at 1082,1104,1169 and combined side-state finally sites in CombatDamageRuntime_StatusEffects.cs:1308,1358",
+    "atomicSideState": "CombatDamageRuntime_StatusEffects.cs:1255-1365 MoveTargetSideState/ClearTargetSideState acquire status + armor locks, validate both storage domains, mutate after validation, and release both domains in finally.",
+    "failClosedCallSites": "CombatDamageRuntime.cs:467,490,556,644,2140 consume bool helper results instead of ignoring failed locks.",
+    "ballisticsTombstoneOrdering": "CombatDamageRuntime.cs:584-588 tombstones BallisticsRuntime primitives only after ClearSlot and RebuildTargetLookup succeed.",
+    "dispatchRetryPin": "CombatDamageRuntime.cs:1284-1303, pending flags retry if dispatch lock cannot be acquired",
+    "queueRejectBlackBox": "CombatDamageRuntime.cs:1707-1767 records dropped packet anomalies under telemetry write locks",
+    "ingressRejectLockNesting": "CombatDamageRuntime.cs:762-789 defers post-lock storage reject telemetry until after ReleaseDamageIngressWriteLocks has run.",
+    "hotPathRefreshRemoval": "TryQueueDamage no longer calls RefreshTargetHitProfile; owner phase must publish hit profile through SyncTargetHitProfile."
   },
   "staticScans": {
-    "persistentNativeFieldScanCommand": "rg -n --pcre2 \"private\\s+static\\s+(?:readonly\\s+)?(?:NativeArray|NativeQueue|NativeList|NativeParallelHashMap|NativeHashMap)<[^>]+>\\s+[_A-Za-z0-9]+\\s*;\" Assets/_Project/Scripts/Gameplay/Combat",
+    "persistentNativeFieldScanCommand": "rg -n \"NativeQueue<|NativeParallelHashMap<|private static NativeArray|private NativeArray|Allocator.Persistent|AllocatorManager.Persistent\" CombatDamageRuntime.cs CombatDamageRuntime_StatusEffects.cs CombatDamageRuntime_VaultViews.cs HectonCombatRuntime_ArmorPenetration.cs",
     "persistentNativeFieldMatches": 0,
-    "primaryAndStatusLegacyContainerScanCommand": "rg -n \"NativeQueue<|NativeParallelHashMap<|new\\s+Native(Array|Queue|List|ParallelHashMap|HashMap)<|PrewarmQueue|DataVaultExempt\" CombatDamageRuntime.cs CombatDamageRuntime_StatusEffects.cs CombatDamageRuntime_VaultViews.cs HectonCombatRuntime_ArmorPenetration.cs",
-    "primaryAndStatusLegacyContainerMatches": 0,
-    "zeroGcForbiddenTokenScanCommand": "rg -n \"string\\.Format|\\.ToString\\(|\\.Select\\(|\\.Where\\(|\\.ToArray\\(|\\.ToList\\(|Enumerable\\.|foreach\\s*\\(\" CombatDamageRuntime.cs CombatDamageRuntime_StatusEffects.cs CombatDamageRuntime_VaultViews.cs HectonCombatRuntime_ArmorPenetration.cs",
-    "zeroGcForbiddenTokenMatches": 0
-  },
-  "lockEvidence": {
-    "statusRequestTryAcquireWriteLock": "CombatDamageRuntime_StatusEffects.cs:244",
-    "statusRequestFinallyRelease": "CombatDamageRuntime_StatusEffects.cs:258-260",
-    "statusTuningTryAcquireWriteLock": "CombatDamageRuntime_StatusEffects.cs:643",
-    "statusTuningFinallyRelease": "CombatDamageRuntime_StatusEffects.cs:656-658",
-    "statusStateResetCopyWriteLocks": [
-      "CombatDamageRuntime_StatusEffects.cs:1248-1262",
-      "CombatDamageRuntime_StatusEffects.cs:1269-1287"
-    ],
-    "statusCounterWriteLock": "CombatDamageRuntime_StatusEffects.cs:1646-1662",
-    "jobPinLocks": "CombatDamageRuntime_StatusEffects.cs:1131-1242, reverse unlock count-guarded"
+    "zeroGcForbiddenTokenScanCommand": "rg -n --pcre2 \"string\\.Format|\\.ToString\\s*\\(|\\bforeach\\s*\\(|\\bEnumerable\\.|\\.Select\\s*\\(|\\.Where\\s*\\(|\\.ToArray\\s*\\(|\\.ToList\\s*\\(\" CombatDamageRuntime.cs CombatDamageRuntime_StatusEffects.cs CombatDamageRuntime_VaultViews.cs HectonCombatRuntime_ArmorPenetration.cs",
+    "zeroGcForbiddenTokenMatches": 0,
+    "loop6IgnoredSideHelperCallMatches": 0,
+    "binaryQualitySwitchMatches": 0,
+    "gitDiffCheck": "no whitespace errors; CRLF warnings only"
   },
   "buildGate": {
-    "cpuLoadPercentSamples": [97, 68],
-    "activeCompilerOrDotnetProcess": "none observed in Get-Process dotnet,csc,VBCSCompiler",
+    "cpuLoadPercentSamples": [54, 56, 59, 86, 46, 73, 33, 74],
+    "activeCompilerOrDotnetProcess": [
+      "dotnet PID 62180",
+      "dotnet PID 34436",
+      "VBCSCompiler PID 44300",
+      "dotnet PID 53376",
+      "dotnet PID 13284 running `dotnet build Hecton8.Core.csproj --no-restore -v:minimal`",
+      "none at final compiler-process sample after 30 seconds",
+      "VBCSCompiler PID 28856",
+      "none at final compiler-process sample with CPU 74"
+    ],
     "dotnetBuildLaunchedByAgent1417": false,
     "decision": "BLOCKED_BY_CONTENTION_CPU_GT_50"
   },
   "remainingFaults": [
     "No Unity import proof.",
     "No PlayMode/profiler/GCMonitor proof.",
-    "Task 16 editor stress harness source exists but was not executed."
+    "Task 16 editor stress harness source exists but was not executed.",
+    "No Roslyn semantic compilation proof was executed in Loop 5/6."
   ]
 }

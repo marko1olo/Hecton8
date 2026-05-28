@@ -21,6 +21,7 @@ namespace Hecton8.Editor.ModdingSDK
         private static readonly string[] RequiredStarterFiles =
         {
             "README.md",
+            "h8mod.ps1",
             "mod.h8manifest.json",
             "mod.json",
             "Graphs/main.h8graph.json",
@@ -190,6 +191,9 @@ namespace Hecton8.Editor.ModdingSDK
             {
                 if (GUILayout.Button("List Graph Opcodes", GUILayout.Height(28f)))
                     RunStarterTool("Tools/list_allowed_opcodes.ps1", string.Empty, false);
+
+                if (GUILayout.Button("Open Root Launcher", GUILayout.Height(28f)))
+                    OpenRelativePath("ModdingSDK/ExternalStarterKit/h8mod.ps1");
             }
             EditorGUI.EndDisabledGroup();
         }
@@ -632,9 +636,9 @@ namespace Hecton8.Editor.ModdingSDK
 
         private static string BuildToolSummary(int exitCode, string stdout, string stderr)
         {
-            string output = string.IsNullOrWhiteSpace(stderr) ? stdout : stdout + Environment.NewLine + stderr;
+            string output = string.IsNullOrWhiteSpace(stderr) ? stdout : stdout + global::System.Environment.NewLine + stderr;
             if (string.IsNullOrWhiteSpace(output))
-                return "Tool exit code: " + exitCode + Environment.NewLine + "No output.";
+                return "Tool exit code: " + exitCode + global::System.Environment.NewLine + "No output.";
 
             string[] lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
             int firstLine = Math.Max(0, lines.Length - ToolSummaryLineCount);
@@ -694,28 +698,28 @@ namespace Hecton8.Editor.ModdingSDK
         [Serializable]
         private sealed class AuthoringManifest
         {
-            public string Id;
-            public string DisplayName;
-            public string Author;
-            public string Version;
+            public string Id = string.Empty;
+            public string DisplayName = string.Empty;
+            public string Author = string.Empty;
+            public string Version = string.Empty;
         }
 
         [Serializable]
         private sealed class ReviewManifest
         {
-            public string RootId;
+            public string RootId = string.Empty;
             public ReviewIdentity Identity = new ReviewIdentity();
-            public int FileCount;
-            public long TotalBytes;
+            public int FileCount = 0;
+            public long TotalBytes = 0L;
         }
 
         [Serializable]
         private sealed class ReviewIdentity
         {
-            public string Id;
-            public string DisplayName;
-            public string Author;
-            public string Version;
+            public string Id = string.Empty;
+            public string DisplayName = string.Empty;
+            public string Author = string.Empty;
+            public string Version = string.Empty;
         }
     }
 }

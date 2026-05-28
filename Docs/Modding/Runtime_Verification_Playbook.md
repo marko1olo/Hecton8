@@ -403,6 +403,7 @@ Required result:
 - `ModBuilderMenuIsInternalLegacy = True`
 - `ModdingSdkHubLinksCoreDocs = True`
 - `ModdingSdkHubRunsStaticValidator = True`
+- `ModdingSdkHubRunsStaticValidatorAsync = True`
 - `ModdingSdkHubOpensStarterWorkbench = True`
 - `ModdingSdkHubShowsEnvelopeOnlyBoundary = True`
 - `ExternalStarterKitWorkbenchPresent = True`
@@ -417,7 +418,9 @@ Required result:
 - `ExternalStarterKitWorkbenchLinksCoreDocs = True`
 - `ExternalStarterKitWorkbenchRunsToolsAsync = True`
 - `ExternalStarterKitWorkbenchShowsReviewFreshness = True`
+- `ExternalStarterKitWorkbenchChecksRootLauncher = True`
 - `ExternalStarterKitGeneratorPresent = True`
+- `ExternalStarterKitWritesRootLauncher = True`
 - `ExternalStarterKitWritesAuthoringManifest = True`
 - `ExternalStarterKitWritesRuntimeManifest = True`
 - `ExternalStarterKitWritesFolderReadmes = True`
@@ -426,6 +429,7 @@ Required result:
 - `ExternalStarterKitDocumentsEnvelopeOnlyBoundary = True`
 - `ExternalStarterKitWritesLocalStructureValidator = True`
 - `ExternalStarterKitValidatorChecksRequiredFiles = True`
+- `ExternalStarterKitValidatorChecksRootLauncher = True`
 - `ExternalStarterKitValidatorChecksEnvelopeOnly = True`
 - `ExternalStarterKitValidatorChecksManagedEntryDisabled = True`
 - `ExternalStarterKitValidatorChecksCanonicalIds = True`
@@ -454,6 +458,7 @@ Required result:
 - `ExternalStarterKitValidatorChecksEditorSchemaMappings = True`
 - `ExternalStarterKitTemplateVersioned = True`
 - `ExternalStarterKitTemplatePassesLocalValidator = True`
+- `ExternalStarterKitRootLauncherPasses = True`
 - `ExternalStarterKitTemplateReferenceCsvsMatchSource = True`
 - `ExternalStarterKitReviewManifestPasses = True`
 - `ExternalStarterKitReviewManifestHashesFiles = True`

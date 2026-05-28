@@ -37,7 +37,6 @@ namespace Technie.PhysicsCreator
 
 		private List<Triangle> triangles;
 		private Vector3 averagedNormal;
-		private Vector3 averagedCenter;
 		private float totalArea;
 
 		public TriangleBucket(Triangle initialTriangle)

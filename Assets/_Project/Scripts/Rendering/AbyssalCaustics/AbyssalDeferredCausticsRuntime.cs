@@ -135,51 +135,94 @@ namespace Hecton8.Rendering
             if (!_vaultStateReady)
                 return;
 
-            if (!TryResolveVaultBuffer(in _parametersHandle, AbyssalCausticsConstants.ParameterCapacity, out NativeArray<CausticsParametersDTO> parameters))
+            bool parametersLocked = false;
+            bool telemetryLocked = false;
+            bool telemetryCursorLocked = false;
+            try
             {
-                _vaultStateReady = false;
-                return;
-            }
+                if (!TryAcquireVaultWriteBuffer(
+                        in _parametersHandle,
+                        BufferID.ShinobuCausticsParameters,
+                        AbyssalCausticsConstants.ParameterCapacity,
+                        out NativeArray<CausticsParametersDTO> parameters))
+                {
+                    _vaultStateReady = false;
+                    return;
+                }
 
-            double3 cameraAupLocal = ResolveCameraAupLocalOffset();
-            float quality = ResolveGlobalQualityWeight01();
-            NativeArray<float4> surfaceSwell = default;
-            bool hasTuning = TryResolveVaultBuffer(in _tuningHandle, 1, out NativeArray<CausticsTuningDTO> tuning);
-            bool hasTelemetry = TryResolveVaultBuffer(in _telemetryHandle, AbyssalCausticsConstants.TelemetryCapacity, out NativeArray<CausticsTelemetryEntry> telemetry);
-            bool hasTelemetryCursor = TryResolveVaultBuffer(in _telemetryCursorHandle, 1, out NativeArray<int> telemetryCursor);
-            bool hasProfiles = TryResolveVaultBuffer(in _profilesHandle, AbyssalCausticsConstants.ProfileCapacity, out NativeArray<CausticsLightingProfileDTO> profiles);
-            if (!hasTuning || !hasTelemetry || !hasTelemetryCursor || !hasProfiles)
+                parametersLocked = true;
+
+                double3 cameraAupLocal = ResolveCameraAupLocalOffset();
+                float quality = ResolveGlobalQualityWeight01();
+                NativeArray<float4> surfaceSwell = default;
+                bool hasTuning = TryResolveVaultBuffer(
+                    in _tuningHandle,
+                    BufferID.ShinobuCausticsTuning,
+                    1,
+                    out NativeArray<CausticsTuningDTO> tuning);
+                bool hasTelemetry = TryAcquireVaultWriteBuffer(
+                    in _telemetryHandle,
+                    BufferID.ShinobuCausticsTelemetryRing,
+                    AbyssalCausticsConstants.TelemetryCapacity,
+                    out NativeArray<CausticsTelemetryEntry> telemetry);
+                telemetryLocked = hasTelemetry;
+                bool hasTelemetryCursor = TryAcquireVaultWriteBuffer(
+                    in _telemetryCursorHandle,
+                    BufferID.ShinobuCausticsTelemetryCursor,
+                    1,
+                    out NativeArray<int> telemetryCursor);
+                telemetryCursorLocked = hasTelemetryCursor;
+                bool hasProfiles = TryResolveVaultBuffer(
+                    in _profilesHandle,
+                    BufferID.ShinobuCausticsProfiles,
+                    AbyssalCausticsConstants.ProfileCapacity,
+                    out NativeArray<CausticsLightingProfileDTO> profiles);
+                if (!hasTuning || !hasTelemetry || !hasTelemetryCursor || !hasProfiles)
+                {
+                    _vaultStateReady = false;
+                    return;
+                }
+
+                bool hasWeatherSnapshot = TryResolveWeatherSnapshot(out WeatherRuntimeSnapshot weatherSnapshot);
+                TryResolveExternalVaultBuffer(
+                    in _surfaceSwellInputHandle,
+                    BufferID.ShinobuOceanSurfaceSwell,
+                    1,
+                    out surfaceSwell);
+
+                CausticsInputSnapshotDTO inputSnapshot = CaptureCausticsInputSnapshot(
+                    tuning,
+                    hasWeatherSnapshot,
+                    weatherSnapshot,
+                    surfaceSwell,
+                    profiles,
+                    quality,
+                    _presentationTimeSeconds);
+
+                CalculateCausticParametersJob job = default;
+                job.Parameters = (CausticsParametersDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(parameters);
+                job.ParameterLength = parameters.Length;
+                job.Telemetry = (CausticsTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetry);
+                job.TelemetryLength = telemetry.Length;
+                job.TelemetryCursor = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetryCursor);
+                job.TelemetryCursorLength = telemetryCursor.Length;
+                job.InputSnapshot = inputSnapshot;
+                job.CameraAupLocalOffset = cameraAupLocal;
+                job.TimeSeconds = _presentationTimeSeconds;
+                job.GlobalQualityWeight = inputSnapshot.WeatherStormWindPhaseQuality.w;
+                job.FrameIndex = _presentationFrameIndex;
+                job.OutputIndex = AbyssalCausticsConstants.PendingParameterIndex;
+                RunPendingCausticsKernel(job, parameters);
+            }
+            finally
             {
-                _vaultStateReady = false;
-                return;
+                if (telemetryCursorLocked)
+                    ReleaseVaultWriteBuffer(in _telemetryCursorHandle, BufferID.ShinobuCausticsTelemetryCursor);
+                if (telemetryLocked)
+                    ReleaseVaultWriteBuffer(in _telemetryHandle, BufferID.ShinobuCausticsTelemetryRing);
+                if (parametersLocked)
+                    ReleaseVaultWriteBuffer(in _parametersHandle, BufferID.ShinobuCausticsParameters);
             }
-
-            bool hasWeatherSnapshot = TryResolveWeatherSnapshot(out WeatherRuntimeSnapshot weatherSnapshot);
-            TryResolveVaultBuffer(in _surfaceSwellInputHandle, 1, out surfaceSwell);
-
-            CausticsInputSnapshotDTO inputSnapshot = CaptureCausticsInputSnapshot(
-                tuning,
-                hasWeatherSnapshot,
-                weatherSnapshot,
-                surfaceSwell,
-                profiles,
-                quality,
-                _presentationTimeSeconds);
-
-            CalculateCausticParametersJob job = default;
-            job.Parameters = (CausticsParametersDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(parameters);
-            job.ParameterLength = parameters.Length;
-            job.Telemetry = (CausticsTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetry);
-            job.TelemetryLength = telemetry.Length;
-            job.TelemetryCursor = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetryCursor);
-            job.TelemetryCursorLength = telemetryCursor.Length;
-            job.InputSnapshot = inputSnapshot;
-            job.CameraAupLocalOffset = cameraAupLocal;
-            job.TimeSeconds = _presentationTimeSeconds;
-            job.GlobalQualityWeight = inputSnapshot.WeatherStormWindPhaseQuality.w;
-            job.FrameIndex = _presentationFrameIndex;
-            job.OutputIndex = AbyssalCausticsConstants.PendingParameterIndex;
-            RunPendingCausticsKernel(job);
         }
 
         public void LateFrameTick()
@@ -211,14 +254,10 @@ namespace Hecton8.Rendering
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.DataVault:
-                    ReleaseAllVaultHandles(previousService as IDataVault ?? _dataVault);
-                    ClearExternalInputHandles();
-                    _dataVault = currentService as IDataVault;
-                    _tuningSeeded = false;
-                    _profilesSeeded = false;
-                    _telemetrySeeded = false;
-                    _telemetryCursorSeeded = false;
-                    _vaultStateReady = false;
+                    if (_dataVault == null && previousService is IDataVault previousVault)
+                        ReleaseAllVaultHandles(previousVault);
+
+                    BindDataVaultForLifecycle(currentService as IDataVault);
                     EnsureVaultState();
                     break;
                 case GlobalRegistryServiceSlot.Player:
@@ -269,6 +308,7 @@ namespace Hecton8.Rendering
             if (runtime != null &&
                 runtime.TryReadOnlyVaultBuffer(
                     in runtime._parametersHandle,
+                    BufferID.ShinobuCausticsParameters,
                     AbyssalCausticsConstants.ParameterCapacity,
                     out NativeArray<CausticsParametersDTO>.ReadOnly parametersArray))
             {
@@ -286,6 +326,7 @@ namespace Hecton8.Rendering
             if (runtime != null &&
                 runtime.TryReadOnlyVaultBuffer(
                     in runtime._tuningHandle,
+                    BufferID.ShinobuCausticsTuning,
                     1,
                     out NativeArray<CausticsTuningDTO>.ReadOnly tuningArray))
             {
@@ -317,25 +358,48 @@ namespace Hecton8.Rendering
         {
             EnsureVaultState();
             EnsureCsvScratch();
-            if (!TryResolveVaultBuffer(in _csvScratchHandle, AbyssalCausticsConstants.CsvScratchBytes, out NativeArray<byte> csvScratch) ||
-                !TryResolveVaultBuffer(in _profilesHandle, AbyssalCausticsConstants.ProfileCapacity, out NativeArray<CausticsLightingProfileDTO> profiles))
+            bool scratchLocked = false;
+            bool profilesLocked = false;
+            if (!TryAcquireVaultWriteBuffer(
+                    in _csvScratchHandle,
+                    BufferID.ShinobuCausticsCsvScratch,
+                    AbyssalCausticsConstants.CsvScratchBytes,
+                    out NativeArray<byte> csvScratch) ||
+                !TryAcquireVaultWriteBuffer(
+                    in _profilesHandle,
+                    BufferID.ShinobuCausticsProfiles,
+                    AbyssalCausticsConstants.ProfileCapacity,
+                    out NativeArray<CausticsLightingProfileDTO> profiles))
             {
+                ReleaseVaultWriteBuffer(in _csvScratchHandle, BufferID.ShinobuCausticsCsvScratch);
                 return false;
             }
 
-            string fullPath = BuildProjectPath(projectRelativePath);
-            int byteCount = LoadFileBytesIntoScratch(fullPath, csvScratch);
-            if (byteCount <= 0)
-                return false;
+            scratchLocked = true;
+            profilesLocked = true;
+            try
+            {
+                string fullPath = BuildProjectPath(projectRelativePath);
+                int byteCount = LoadFileBytesIntoScratch(fullPath, csvScratch);
+                if (byteCount <= 0)
+                    return false;
 
-            byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(csvScratch);
-            ReadOnlySpan<byte> csvBytes = new ReadOnlySpan<byte>(ptr, byteCount);
-            int parsed = ParseLightingProfiles(csvBytes, profiles);
-            if (parsed <= 0)
-                return false;
+                byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(csvScratch);
+                ReadOnlySpan<byte> csvBytes = new ReadOnlySpan<byte>(ptr, byteCount);
+                int parsed = ParseLightingProfiles(csvBytes, profiles);
+                if (parsed <= 0)
+                    return false;
 
-            _profilesSeeded = true;
-            return true;
+                _profilesSeeded = true;
+                return true;
+            }
+            finally
+            {
+                if (profilesLocked)
+                    ReleaseVaultWriteBuffer(in _profilesHandle, BufferID.ShinobuCausticsProfiles);
+                if (scratchLocked)
+                    ReleaseVaultWriteBuffer(in _csvScratchHandle, BufferID.ShinobuCausticsCsvScratch);
+            }
         }
 #endif
 
@@ -459,46 +523,68 @@ namespace Hecton8.Rendering
             if (_vaultStateReady && AreOwnedVaultHandlesCreated())
                 return;
 
-            bool hasParameters = AcquireOrRefreshOwnedVaultBuffer(
-                BufferID.ShinobuCausticsParameters,
-                AbyssalCausticsConstants.ParameterCapacity,
-                NativeArrayOptions.UninitializedMemory,
-                ref _parametersHandle,
-                out NativeArray<CausticsParametersDTO> _);
-            bool hasTuning = AcquireOrRefreshOwnedVaultBuffer(
-                BufferID.ShinobuCausticsTuning,
-                1,
-                NativeArrayOptions.UninitializedMemory,
-                ref _tuningHandle,
-                out NativeArray<CausticsTuningDTO> tuning);
-            bool hasTelemetry = AcquireOrRefreshOwnedVaultBuffer(
-                BufferID.ShinobuCausticsTelemetryRing,
-                AbyssalCausticsConstants.TelemetryCapacity,
-                NativeArrayOptions.UninitializedMemory,
-                ref _telemetryHandle,
-                out NativeArray<CausticsTelemetryEntry> telemetry);
-            bool hasTelemetryCursor = AcquireOrRefreshOwnedVaultBuffer(
-                BufferID.ShinobuCausticsTelemetryCursor,
-                1,
-                NativeArrayOptions.UninitializedMemory,
-                ref _telemetryCursorHandle,
-                out NativeArray<int> telemetryCursor);
-            bool hasProfiles = AcquireOrRefreshOwnedVaultBuffer(
-                BufferID.ShinobuCausticsProfiles,
-                AbyssalCausticsConstants.ProfileCapacity,
-                NativeArrayOptions.UninitializedMemory,
-                ref _profilesHandle,
-                out NativeArray<CausticsLightingProfileDTO> profiles);
-
-            if (!_telemetryCursorSeeded && telemetryCursor.IsCreated && telemetryCursor.Length > 0)
+            bool hasParameters = false;
+            bool hasTuning = false;
+            bool hasTelemetry = false;
+            bool hasTelemetryCursor = false;
+            bool hasProfiles = false;
+            try
             {
-                telemetryCursor[0] = 0;
-                _telemetryCursorSeeded = true;
+                hasParameters = AcquireOrRefreshOwnedVaultBuffer(
+                    BufferID.ShinobuCausticsParameters,
+                    AbyssalCausticsConstants.ParameterCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    ref _parametersHandle,
+                    out NativeArray<CausticsParametersDTO> _);
+                hasTuning = AcquireOrRefreshOwnedVaultBuffer(
+                    BufferID.ShinobuCausticsTuning,
+                    1,
+                    NativeArrayOptions.UninitializedMemory,
+                    ref _tuningHandle,
+                    out NativeArray<CausticsTuningDTO> tuning);
+                hasTelemetry = AcquireOrRefreshOwnedVaultBuffer(
+                    BufferID.ShinobuCausticsTelemetryRing,
+                    AbyssalCausticsConstants.TelemetryCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    ref _telemetryHandle,
+                    out NativeArray<CausticsTelemetryEntry> telemetry);
+                hasTelemetryCursor = AcquireOrRefreshOwnedVaultBuffer(
+                    BufferID.ShinobuCausticsTelemetryCursor,
+                    1,
+                    NativeArrayOptions.UninitializedMemory,
+                    ref _telemetryCursorHandle,
+                    out NativeArray<int> telemetryCursor);
+                hasProfiles = AcquireOrRefreshOwnedVaultBuffer(
+                    BufferID.ShinobuCausticsProfiles,
+                    AbyssalCausticsConstants.ProfileCapacity,
+                    NativeArrayOptions.UninitializedMemory,
+                    ref _profilesHandle,
+                    out NativeArray<CausticsLightingProfileDTO> profiles);
+
+                if (!_telemetryCursorSeeded && telemetryCursor.IsCreated && telemetryCursor.Length > 0)
+                {
+                    telemetryCursor[0] = 0;
+                    _telemetryCursorSeeded = true;
+                }
+
+                SeedTelemetryIfNeeded(telemetry);
+                SeedTuningIfNeeded(tuning);
+                SeedProfilesIfNeeded(profiles);
+            }
+            finally
+            {
+                if (hasProfiles)
+                    ReleaseVaultWriteBuffer(in _profilesHandle, BufferID.ShinobuCausticsProfiles);
+                if (hasTelemetryCursor)
+                    ReleaseVaultWriteBuffer(in _telemetryCursorHandle, BufferID.ShinobuCausticsTelemetryCursor);
+                if (hasTelemetry)
+                    ReleaseVaultWriteBuffer(in _telemetryHandle, BufferID.ShinobuCausticsTelemetryRing);
+                if (hasTuning)
+                    ReleaseVaultWriteBuffer(in _tuningHandle, BufferID.ShinobuCausticsTuning);
+                if (hasParameters)
+                    ReleaseVaultWriteBuffer(in _parametersHandle, BufferID.ShinobuCausticsParameters);
             }
 
-            SeedTelemetryIfNeeded(telemetry);
-            SeedTuningIfNeeded(tuning);
-            SeedProfilesIfNeeded(profiles);
             RefreshExternalInputHandles();
             _vaultStateReady = hasParameters &&
                                hasTuning &&
@@ -513,11 +599,11 @@ namespace Hecton8.Rendering
 
         private bool AreOwnedVaultHandlesCreated()
         {
-            return IsVaultHandleCreated(in _parametersHandle) &&
-                   IsVaultHandleCreated(in _tuningHandle) &&
-                   IsVaultHandleCreated(in _telemetryHandle) &&
-                   IsVaultHandleCreated(in _telemetryCursorHandle) &&
-                   IsVaultHandleCreated(in _profilesHandle);
+            return IsOwnedVaultHandle(in _parametersHandle, BufferID.ShinobuCausticsParameters) &&
+                   IsOwnedVaultHandle(in _tuningHandle, BufferID.ShinobuCausticsTuning) &&
+                   IsOwnedVaultHandle(in _telemetryHandle, BufferID.ShinobuCausticsTelemetryRing) &&
+                   IsOwnedVaultHandle(in _telemetryCursorHandle, BufferID.ShinobuCausticsTelemetryCursor) &&
+                   IsOwnedVaultHandle(in _profilesHandle, BufferID.ShinobuCausticsProfiles);
         }
 
         private void SeedTuningIfNeeded(NativeArray<CausticsTuningDTO> tuning)
@@ -551,15 +637,22 @@ namespace Hecton8.Rendering
 
         private void EnsureCsvScratch()
         {
-            if (TryResolveVaultBuffer(in _csvScratchHandle, AbyssalCausticsConstants.CsvScratchBytes, out NativeArray<byte> _))
+            if (TryResolveVaultBuffer(
+                    in _csvScratchHandle,
+                    BufferID.ShinobuCausticsCsvScratch,
+                    AbyssalCausticsConstants.CsvScratchBytes,
+                    out NativeArray<byte> _))
                 return;
 
-            AcquireOrRefreshOwnedVaultBuffer(
-                BufferID.ShinobuCausticsCsvScratch,
-                AbyssalCausticsConstants.CsvScratchBytes,
-                NativeArrayOptions.UninitializedMemory,
-                ref _csvScratchHandle,
-                out NativeArray<byte> _);
+            if (AcquireOrRefreshOwnedVaultBuffer(
+                    BufferID.ShinobuCausticsCsvScratch,
+                    AbyssalCausticsConstants.CsvScratchBytes,
+                    NativeArrayOptions.UninitializedMemory,
+                    ref _csvScratchHandle,
+                    out NativeArray<byte> _))
+            {
+                ReleaseVaultWriteBuffer(in _csvScratchHandle, BufferID.ShinobuCausticsCsvScratch);
+            }
         }
 
         private bool EnsureConstantBuffers()
@@ -597,7 +690,12 @@ namespace Hecton8.Rendering
 
         private bool UploadParametersToGpu()
         {
-            if (!TryResolveVaultBuffer(in _parametersHandle, AbyssalCausticsConstants.ParameterCapacity, out NativeArray<CausticsParametersDTO> parameters) || !HasConstantBuffers())
+            if (!TryResolveVaultBuffer(
+                    in _parametersHandle,
+                    BufferID.ShinobuCausticsParameters,
+                    AbyssalCausticsConstants.ParameterCapacity,
+                    out NativeArray<CausticsParametersDTO> parameters) ||
+                !HasConstantBuffers())
                 return false;
 
             GraphicsBuffer target = _activeConstantBufferIndex == 0 ? _constantBufferA : _constantBufferB;
@@ -637,46 +735,73 @@ namespace Hecton8.Rendering
 
         private void RunMockLightingKernel()
         {
-            if (!TryResolveVaultBuffer(in _parametersHandle, AbyssalCausticsConstants.ParameterCapacity, out NativeArray<CausticsParametersDTO> parameters))
+            if (!TryAcquireVaultWriteBuffer(
+                    in _parametersHandle,
+                    BufferID.ShinobuCausticsParameters,
+                    AbyssalCausticsConstants.ParameterCapacity,
+                    out NativeArray<CausticsParametersDTO> parameters))
                 return;
 
-            TryResolveVaultBuffer(in _tuningHandle, 1, out NativeArray<CausticsTuningDTO> tuning);
-            NativeArray<float4> emptySurfaceSwell = default;
-            NativeArray<CausticsLightingProfileDTO> emptyProfiles = default;
-            CausticsInputSnapshotDTO inputSnapshot = CaptureCausticsInputSnapshot(
-                tuning,
-                false,
-                default,
-                emptySurfaceSwell,
-                emptyProfiles,
-                ResolveGlobalQualityWeight01(),
-                _presentationTimeSeconds);
+            try
+            {
+                TryResolveVaultBuffer(
+                    in _tuningHandle,
+                    BufferID.ShinobuCausticsTuning,
+                    1,
+                    out NativeArray<CausticsTuningDTO> tuning);
+                NativeArray<float4> emptySurfaceSwell = default;
+                NativeArray<CausticsLightingProfileDTO> emptyProfiles = default;
+                CausticsInputSnapshotDTO inputSnapshot = CaptureCausticsInputSnapshot(
+                    tuning,
+                    false,
+                    default,
+                    emptySurfaceSwell,
+                    emptyProfiles,
+                    ResolveGlobalQualityWeight01(),
+                    _presentationTimeSeconds);
 
-            GenerateMockCausticLightingJob job = default;
-            job.Parameters = (CausticsParametersDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(parameters);
-            job.ParameterLength = parameters.Length;
-            job.InputSnapshot = inputSnapshot;
-            job.CameraAupLocalOffset = ResolveCameraAupLocalOffset();
-            job.TimeSeconds = _presentationTimeSeconds;
-            job.GlobalQualityWeight = inputSnapshot.WeatherStormWindPhaseQuality.w;
-            job.FrameIndex = _presentationFrameIndex;
-            job.OutputIndex = AbyssalCausticsConstants.PendingParameterIndex;
-            RunPendingCausticsKernel(job);
+                GenerateMockCausticLightingJob job = default;
+                job.Parameters = (CausticsParametersDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(parameters);
+                job.ParameterLength = parameters.Length;
+                job.InputSnapshot = inputSnapshot;
+                job.CameraAupLocalOffset = ResolveCameraAupLocalOffset();
+                job.TimeSeconds = _presentationTimeSeconds;
+                job.GlobalQualityWeight = inputSnapshot.WeatherStormWindPhaseQuality.w;
+                job.FrameIndex = _presentationFrameIndex;
+                job.OutputIndex = AbyssalCausticsConstants.PendingParameterIndex;
+                RunPendingCausticsKernel(job, parameters);
+            }
+            finally
+            {
+                ReleaseVaultWriteBuffer(in _parametersHandle, BufferID.ShinobuCausticsParameters);
+            }
         }
 
         private bool TrySetTuningInternal(float chromaticDispersion, float noiseScale, float flowSpeedMultiplier, float maxDepthMeters)
         {
             EnsureVaultState();
-            if (!TryResolveVaultBuffer(in _tuningHandle, 1, out NativeArray<CausticsTuningDTO> tuningArray))
+            if (!TryAcquireVaultWriteBuffer(
+                    in _tuningHandle,
+                    BufferID.ShinobuCausticsTuning,
+                    1,
+                    out NativeArray<CausticsTuningDTO> tuningArray))
                 return false;
 
-            CausticsTuningDTO tuning = tuningArray[0];
-            tuning.ScaleFlowDepthIntensity.x = math.max(0.005f, noiseScale);
-            tuning.ScaleFlowDepthIntensity.y = math.max(0f, flowSpeedMultiplier);
-            tuning.ScaleFlowDepthIntensity.z = math.max(1f, maxDepthMeters);
-            tuning.DispersionSdfTileProfile.x = math.saturate(chromaticDispersion);
-            tuningArray[0] = tuning;
-            _pendingGpuUpload = false;
+            try
+            {
+                CausticsTuningDTO tuning = tuningArray[0];
+                tuning.ScaleFlowDepthIntensity.x = math.max(0.005f, noiseScale);
+                tuning.ScaleFlowDepthIntensity.y = math.max(0f, flowSpeedMultiplier);
+                tuning.ScaleFlowDepthIntensity.z = math.max(1f, maxDepthMeters);
+                tuning.DispersionSdfTileProfile.x = math.saturate(chromaticDispersion);
+                tuningArray[0] = tuning;
+                _pendingGpuUpload = false;
+            }
+            finally
+            {
+                ReleaseVaultWriteBuffer(in _tuningHandle, BufferID.ShinobuCausticsTuning);
+            }
+
             RunMockLightingKernel();
             return true;
         }
@@ -733,9 +858,9 @@ namespace Hecton8.Rendering
             }
         }
 
-        private bool PublishPendingCausticsParameters()
+        private bool PublishPendingCausticsParameters(NativeArray<CausticsParametersDTO> parameters)
         {
-            if (!TryResolveVaultBuffer(in _parametersHandle, AbyssalCausticsConstants.ParameterCapacity, out NativeArray<CausticsParametersDTO> parameters))
+            if (!parameters.IsCreated || parameters.Length < AbyssalCausticsConstants.ParameterCapacity)
                 return false;
 
             parameters[AbyssalCausticsConstants.ActiveParameterIndex] = parameters[AbyssalCausticsConstants.PendingParameterIndex];
@@ -760,7 +885,9 @@ namespace Hecton8.Rendering
             }
         }
 
-        private bool RunPendingCausticsKernel(GenerateMockCausticLightingJob job)
+        private bool RunPendingCausticsKernel(
+            GenerateMockCausticLightingJob job,
+            NativeArray<CausticsParametersDTO> parameters)
         {
             if (!s_generateMockKernel.IsCreated)
             {
@@ -769,10 +896,12 @@ namespace Hecton8.Rendering
             }
 
             s_generateMockKernel.Invoke(&job);
-            return PublishPendingCausticsParameters();
+            return PublishPendingCausticsParameters(parameters);
         }
 
-        private bool RunPendingCausticsKernel(CalculateCausticParametersJob job)
+        private bool RunPendingCausticsKernel(
+            CalculateCausticParametersJob job,
+            NativeArray<CausticsParametersDTO> parameters)
         {
             if (!s_calculateKernel.IsCreated)
             {
@@ -781,7 +910,7 @@ namespace Hecton8.Rendering
             }
 
             s_calculateKernel.Invoke(&job);
-            return PublishPendingCausticsParameters();
+            return PublishPendingCausticsParameters(parameters);
         }
 
         private void MarkBurstKernelUnavailable()
@@ -1278,7 +1407,7 @@ namespace Hecton8.Rendering
         private void CacheRegistryServicesCold(bool forceRefresh)
         {
             if (forceRefresh || _dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
+                BindDataVaultForLifecycle(GlobalRegistry.DataVault);
             if (forceRefresh || _playerRuntimeContext == null)
                 _playerRuntimeContext = GlobalRegistry.Player;
             if (forceRefresh || _weatherService == null)
@@ -1287,6 +1416,7 @@ namespace Hecton8.Rendering
 
         private bool TryResolveVaultBuffer<T>(
             in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
             int requiredLength,
             out NativeArray<T> buffer) where T : struct
         {
@@ -1294,14 +1424,50 @@ namespace Hecton8.Rendering
             IDataVault vault = _dataVault;
             return vault != null &&
                    requiredLength > 0 &&
-                   IsVaultHandleCreated(in handle) &&
+                   IsOwnedVaultHandle(in handle, expectedBufferId) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
         }
 
+        private bool TryAcquireVaultWriteBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsOwnedVaultHandle(in handle, expectedBufferId) ||
+                !vault.TryAcquireWriteLock(in handle, OwnerSystemId, out buffer))
+            {
+                return false;
+            }
+
+            if (!buffer.IsCreated || buffer.Length < requiredLength)
+            {
+                vault.ReleaseWriteLock(in handle, OwnerSystemId);
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private void ReleaseVaultWriteBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsOwnedVaultHandle(in handle, expectedBufferId))
+                vault.ReleaseWriteLock(in handle, OwnerSystemId);
+        }
+
         private bool TryReadOnlyVaultBuffer<T>(
             in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
             int requiredLength,
             out NativeArray<T>.ReadOnly buffer) where T : struct
         {
@@ -1309,8 +1475,24 @@ namespace Hecton8.Rendering
             IDataVault vault = _dataVault;
             return vault != null &&
                    requiredLength > 0 &&
-                   IsVaultHandleCreated(in handle) &&
+                   IsOwnedVaultHandle(in handle, expectedBufferId) &&
                    vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private bool TryResolveExternalVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   IsVaultHandleForBuffer(in handle, expectedBufferId) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
         }
@@ -1332,7 +1514,7 @@ namespace Hecton8.Rendering
                 return false;
             }
 
-            if (IsVaultHandleCreated(in handle) &&
+            if (IsVaultHandleForBuffer(in handle, bufferId) &&
                 vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)
@@ -1342,7 +1524,7 @@ namespace Hecton8.Rendering
 
             handle = default;
             if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existingHandle) ||
-                !IsVaultHandleCreated(in existingHandle))
+                !IsVaultHandleForBuffer(in existingHandle, bufferId))
             {
                 return false;
             }
@@ -1374,30 +1556,35 @@ namespace Hecton8.Rendering
                 return false;
             }
 
-            if (IsVaultHandleCreated(in handle) &&
-                vault.TryResolveHandle(in handle, out buffer) &&
-                buffer.IsCreated &&
-                buffer.Length >= requiredLength)
+            if (IsOwnedVaultHandle(in handle, bufferId) &&
+                TryAcquireVaultWriteBuffer(in handle, bufferId, requiredLength, out buffer))
             {
                 return true;
             }
 
-            if (IsVaultHandleCreated(in handle))
-                ReleaseVaultHandle(vault, ref handle);
+            if (IsOwnedVaultHandle(in handle, bufferId))
+                ReleaseVaultHandle(vault, ref handle, bufferId);
+            else
+                handle = default;
 
             if (vault.IsAllocationLocked)
                 return false;
 
             handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
-            return IsVaultHandleCreated(in handle) &&
-                   vault.TryResolveHandle(in handle, out buffer) &&
-                   buffer.IsCreated &&
-                   buffer.Length >= requiredLength;
+            return TryAcquireVaultWriteBuffer(in handle, bufferId, requiredLength, out buffer);
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsVaultHandleForBuffer<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.Generation != 0u;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)OwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private void ShutdownServiceState()
@@ -1423,31 +1610,53 @@ namespace Hecton8.Rendering
 
             ReleaseAllVaultHandles(_dataVault);
 
+            ResetVaultEpochState();
             _isInitialized = false;
+            _dataVault = null;
+        }
+
+        private void ReleaseAllVaultHandles(IDataVault vault)
+        {
+            ReleaseVaultHandle(vault, ref _parametersHandle, BufferID.ShinobuCausticsParameters);
+            ReleaseVaultHandle(vault, ref _tuningHandle, BufferID.ShinobuCausticsTuning);
+            ReleaseVaultHandle(vault, ref _telemetryHandle, BufferID.ShinobuCausticsTelemetryRing);
+            ReleaseVaultHandle(vault, ref _telemetryCursorHandle, BufferID.ShinobuCausticsTelemetryCursor);
+            ReleaseVaultHandle(vault, ref _profilesHandle, BufferID.ShinobuCausticsProfiles);
+            ReleaseVaultHandle(vault, ref _csvScratchHandle, BufferID.ShinobuCausticsCsvScratch);
+        }
+
+        private void BindDataVaultForLifecycle(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            IDataVault previousVault = _dataVault;
+            if (previousVault != null)
+                ReleaseAllVaultHandles(previousVault);
+
+            _dataVault = nextVault;
+            ResetVaultEpochState();
+        }
+
+        private void ResetVaultEpochState()
+        {
             _pendingGpuUpload = false;
             _tuningSeeded = false;
             _profilesSeeded = false;
             _telemetrySeeded = false;
             _telemetryCursorSeeded = false;
             _vaultStateReady = false;
+            _faultDumped = false;
+            _lastFaultFlags = 0u;
             ClearExternalInputHandles();
         }
 
-        private void ReleaseAllVaultHandles(IDataVault vault)
+        private static void ReleaseVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
         {
-            ReleaseVaultHandle(vault, ref _parametersHandle);
-            ReleaseVaultHandle(vault, ref _tuningHandle);
-            ReleaseVaultHandle(vault, ref _telemetryHandle);
-            ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
-            ReleaseVaultHandle(vault, ref _profilesHandle);
-            ReleaseVaultHandle(vault, ref _csvScratchHandle);
-            _vaultStateReady = false;
-            _telemetrySeeded = false;
-        }
-
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
-        {
-            if (vault != null && IsVaultHandleCreated(in handle))
+            if (vault != null && IsOwnedVaultHandle(in handle, expectedBufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
@@ -1488,10 +1697,18 @@ namespace Hecton8.Rendering
 
         private void DumpBlackBox()
         {
-            if (!TryResolveVaultBuffer(in _telemetryHandle, AbyssalCausticsConstants.TelemetryCapacity, out NativeArray<CausticsTelemetryEntry> telemetry))
+            if (!TryResolveVaultBuffer(
+                    in _telemetryHandle,
+                    BufferID.ShinobuCausticsTelemetryRing,
+                    AbyssalCausticsConstants.TelemetryCapacity,
+                    out NativeArray<CausticsTelemetryEntry> telemetry))
                 return;
 
-            TryResolveVaultBuffer(in _telemetryCursorHandle, 1, out NativeArray<int> telemetryCursor);
+            TryResolveVaultBuffer(
+                in _telemetryCursorHandle,
+                BufferID.ShinobuCausticsTelemetryCursor,
+                1,
+                out NativeArray<int> telemetryCursor);
             string path = _blackBoxDumpPath;
             string directory = _blackBoxDumpDirectory;
             if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(directory) || !Directory.Exists(directory))

@@ -384,3 +384,87 @@ Rejected Alternatives: Leaving it as a cold runtime allocation was rejected beca
 Scalability potential: Low/Middle/High/Ultra runtime no longer pays this static editor setup if the type is touched in player code. No gameplay/audio route or `GlobalQualityWeight` branch changed.
 
 Hardware Impact: Measured proof absent. Static effect is removal of one cold runtime-source `string.Format` and confinement of one editor-only `List<string>(2)` allocation to Editor compilation.
+
+## Decision - Technie Auto-Collider Marker Allocation Cleanup 2026-05-28 05:59+04
+
+Problem: Final hot-path evidence contained a noisy cold `List<RigidColliderCreatorChild>` allocation plus two `ToArray()` calls inside Technie collider materialization. This is not a per-frame path, but it weakened the static proof artifact and kept avoidable editor/runtime collider-bake churn.
+
+Solution: Replaced the temporary list and `ToArray()` calls with two explicitly sized persisted arrays: `MeshCollider[autoColliders.Count]` and `RigidColliderCreatorChild[autoColliders.Count]`, both marked with canonical `COLD ALLOC` comments. The arrays are required because `HullMapping` stores array fields. No gameplay authority route changed.
+
+Rejected Alternatives: Leaving the temporary list was rejected because the fix is local and eliminates an avoidable allocation. Reusing a static scratch array was rejected because the mapping needs stable per-hull ownership, not shared mutable scratch. Rewriting Technie collider generation was rejected as package-scope overreach.
+
+Scalability potential: Low/Middle/High/Ultra runtime frame behavior is unchanged. Collider bake/materialization has one less temporary managed list and no `ToArray()` copy churn.
+
+Hardware Impact: Measured proof absent. Static delta removes one cold temporary `List<T>` allocation and two cold array-copy calls from the patched Technie range.
+
+## Decision - GPUInstancer Job Struct Audit 2026-05-28 05:59+04
+
+Problem: A text-only `new` scanner flagged `new AutoUpdateTransformsJob()` in `GPUInstancerPrefabManager.Update()` as a possible hot reference allocation.
+
+Solution: Verified source definition `Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerRuntimeData.cs:505`: `public struct AutoUpdateTransformsJob : IJobParallelForTransform`. Regenerated the hot-path scan to classify it as `valueTypeNewCount=1`, not `hotNewReferenceTypeCount`.
+
+Rejected Alternatives: Removing the job schedule was rejected because it is existing GPUI behavior and the real residual is same-frame `dependentJob.Complete()`/`SetData`, which needs profiler and route review. Calling it a reference allocation was rejected because it is mathematically false at the C# type level.
+
+Scalability potential: No quality scalar or gameplay route changed. The remaining GPUI synchronization/upload residual is documented for a separate GPU bandwidth/job phase owner.
+
+Hardware Impact: 0 measured runtime proof. Static proof now separates value-type job construction from managed reference allocation.
+
+## Decision - Build Resource Throttle Recheck 2026-05-28 05:49+04
+
+Problem: A final guarded compile attempt remained necessary for evidence, but the machine was still saturated.
+
+Solution: Ran `Tools/Run_Guarded_Vendor_Compile_1401.ps1` without `-DryRun`. The wrapper sampled CPU 100 percent and active `dotnet` PID 66408, wrote `Docs/AgentLogs/Build_1401_Attempt_20260528_054921_BLOCKED_BY_CONTENTION.json`, and exited before launching `dotnet build`. The `attempts` array is empty.
+
+Rejected Alternatives: Forcing compilation under CPU 100 percent was rejected by the compilation resource throttling rule. Treating static JSON as compile proof was rejected.
+
+Scalability potential: Tooling-only protection. Runtime tier routes unchanged.
+
+Hardware Impact: Prevented additional compiler load on a saturated host.
+
+## Decision - GPUI GLES3 Append Texture Reuse Guard 2026-05-28 06:18+04
+
+Problem: Follow-up audit found `GPUInstancerUtility.SetAppendBuffersGLES3()` comparing `RenderTexture.width` to `runtimeData.bufferSize`. For buffers wider than `GPUInstancerConstants.TEXTURE_MAX_SIZE`, the allocated texture width is capped and height carries the extra rows, so the old width check could force repeated release/recreate churn. The shadow append branch also released and recreated its buffer/texture every call.
+
+Solution: Added local `textureWidth`, `lodTextureHeight`, and `matrixTextureHeight` values derived from `rowCount`. Reuse checks now compare width and height against the actual allocation dimensions. Shadow append buffer recreation is guarded by null/count mismatch, and shadow append texture recreation is guarded by null/width/height mismatch.
+
+Rejected Alternatives: Increasing `TEXTURE_MAX_SIZE` was rejected because it changes GPU texture capacity assumptions and does not solve the incorrect dimension predicate. Moving GPUI append data into first-party `GlobalDataVault` was rejected as domain overreach and wrong ownership; GPUI owns this GPU upload bridge. Adding a binary low-end branch was rejected because the defect is correctness/resource reuse, not quality policy.
+
+Scalability potential: Low tier avoids unnecessary allocation/upload object churn when large instance buffers exceed one texture row. Middle/High/Ultra keep the same visual path and can spend saved CPU/GPU-driver time on existing GPUI density/crossfade work. No `GlobalQualityWeight` route was introduced because this patch does not decide fidelity; it repairs resource lifetime.
+
+Hardware Impact: Measured profiler proof is absent. Static expected impact is fewer `RenderTexture`/`ComputeBuffer` release-create cycles in GPUI GLES3 setup for large instance buffers. Frame impact remains unproven until Unity/Profiler run.
+
+## Decision - Guarded Compile Pass and Technie Warning Cleanup 2026-05-28 06:18+04
+
+Problem: The first allowed guarded compile pass sampled CPU 42 percent and launched project builds. Amplify Runtime/Editor and Technie Runtime/Updater returned exitCode 0, but Technie Runtime emitted CS0169/CS0649 warnings: `TriangleBucket.averagedCenter`, `RigidColliderCreator.debugMesh`, and `SkinnedColliderEditorData.lastModifiedFrame`.
+
+Solution: Removed the unused `averagedCenter` field, removed the unused compiled `debugMesh` field, and initialized `lastModifiedFrame` to 0 because the field is assigned on update and read through `GetLastModifiedFrame()`. The remaining `debugMesh` text is inside a commented-out debug block and is not a compiled field declaration. Static grep confirms only `private int lastModifiedFrame = 0;` remains among the warning field declarations.
+
+Rejected Alternatives: Global warning suppression was rejected because the warnings were local and cheap to remove. Re-enabling the commented debug mesh field was rejected because it would preserve dead debug allocation/state in production source. Forcing a second compile after the patch was rejected because the post-patch gate sampled CPU 67 percent and active `dotnet` PID 53376.
+
+Scalability potential: Warning cleanup is compile hygiene only. Low/Middle/High/Ultra runtime routes unchanged; no visual quality or gameplay truth route changed.
+
+Hardware Impact: Runtime 0 us/frame expected. Post-patch compile proof remains pending; static brace and grep checks passed, but no Unity import or profiler proof exists.
+
+## Decision - Compilation Resource Throttle Recheck 2026-05-28 06:13+04
+
+Problem: A second compile after the Technie warning cleanup was needed for proof, but running it under active compiler contention would violate the explicit project rule.
+
+Solution: Ran the guarded wrapper without direct `dotnet build`. It wrote `Docs/AgentLogs/Build_1401_Attempt_20260528_061325_BLOCKED_BY_CONTENTION.json`: CPU 67 percent, active `dotnet` PID 53376, `blockedByContention=true`, and an empty `attempts` array. No post-patch build launched.
+
+Rejected Alternatives: Forcing compilation above the 50 percent CPU gate was rejected. Reporting the pre-patch Technie compile as post-patch proof was rejected because the warning cleanup occurred after that compile.
+
+Scalability potential: Tooling-only protection. Runtime tier routes unchanged.
+
+Hardware Impact: Prevented additional compiler load while the host was above the allowed CPU threshold.
+
+## Decision - Guarded Compile Wrapper Single-Process Gate Fix 2026-05-28 12:36+04
+
+Problem: The `Docs/AgentLogs/Build_1401_Attempt_20260528_061044_SUMMARY.json` artifact recorded one active `dotnet` process but still had `blockedByContention=false`. Root cause: PowerShell can unwrap a single returned object from `Get-HectonCompilerProcesses`; `$compilers.Count` is then not a reliable array count for the one-process case.
+
+Solution: Forced `$compilers = @(Get-HectonCompilerProcesses)`, changed the gate to `$compilers.Length -gt 0`, blocked unavailable CPU samples (`$cpu -lt 0`), and added `compilerProcessCount` plus `blockReasons` to the JSON summary. Re-ran only the guarded wrapper. The fixed wrapper wrote `Docs/AgentLogs/Build_1401_Attempt_20260528_123346_BLOCKED_BY_CONTENTION.json`: CPU sample `-1`, active `csc` PID 33212, active `dotnet` PID 26840, `compilerProcessCount=2`, `blockReasons=[CPU_SAMPLE_UNAVAILABLE, ACTIVE_COMPILER_PROCESS]`, attempts array empty.
+
+Rejected Alternatives: Treating the 06:10 compile as compliant proof was rejected because the artifact contradicts the throttling rule. Removing process detection was rejected. Running direct `dotnet build` after the tool fix was rejected because the fixed gate blocked.
+
+Scalability potential: Tooling-only protection. Runtime low/middle/high/ultra routes unchanged. This preserves workstation throughput for parallel agents and prevents accidental build load on weak CPUs.
+
+Hardware Impact: Prevented a build under active compiler contention. No runtime frame impact.

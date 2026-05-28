@@ -1,126 +1,215 @@
-{
-  "agent": "1414",
-  "role": "UNMANAGED_MEMORY_SENTINEL_AND_ARENA_ALLOCATOR_AUDITOR",
-  "domain": "ECHELON 1 Core & Memory Infrastructure / Native Arena Allocator",
-  "status": "APEX_STATIC_VERIFIED_BUILD_BLOCKED_BY_HOST_CONTENTION",
-  "taskCount": 20,
-  "prompt": {
-    "path": "Docs/Tasks/CURRENT_BATCH.md",
-    "length": 21926,
-    "taskMarkers": 20,
-    "sha256": "22323d22279e444c27790cf29585eacf5528bb19964887e38f8c1efb5dab014e"
-  },
-  "apexVerification": {
-    "path": "Docs/Reports/ARENA_ALLOCATOR_APEX_VERIFICATION_1414.json",
-    "sha256": "65cb1949a2e732e7175862301f685684a80a846d60a24f69bd76c45f371f85a6",
-    "jsonParse": "PASS",
-    "zeroGcHotPathScanElapsedMicroseconds": 1477291,
-    "defectsFoundDuringApex": [
-      "TryEnsureVaultBuffer queued deferred arena growth only when _arenaGrowthInProgress was set; fixed to queue on any active compaction fence.",
-      "TryEnsureVaultBuffer contained a textual struct initializer 'new VaultBufferMeta'; replaced with default plus explicit field assignments to make the hot-path forbidden-term scan unambiguous.",
-      "Sparse BufferID values above MaxGenerationHandleCapacity could build handles through map metadata but fail later public resolve/lock routes that called TryReadFlatMetadata; fixed with a flat fast path plus map fallback.",
-      "Generic write-lock acquire/release and deferred release queue still rejected sparse BufferID values through flat-array length checks; fixed by routing ActiveWriterSystemID state through WriteMetadata and TryReadFlatMetadata.",
-      "ProcessDeferredArenaGrowth contained a duplicate HasActiveBurstLocks predicate after concurrent deferred-release edits; removed the redundant check and added a static test."
-    ]
-  },
-  "raceConditionsEliminated": [
-    {
-      "id": "RAW_REALLOCATE_WITH_EXPORTED_POINTERS",
-      "previousRisk": "H8Memory.ReallocateRaw could malloc/copy/free old arena memory without proving GlobalDataVault views and locks had drained.",
-      "fix": "Added H8RawReallocationGuard and required ReallocateRaw to reject relocation unless compaction fence is held, active lock mask is zero, and pinned external views are absent.",
-      "proofSites": [
-        "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:2211",
-        "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:2945",
-        "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:2969",
-        "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:4897"
-      ],
-      "unsafePathsEliminated": 1
-    },
-    {
-      "id": "DEFERRED_GROWTH_LOST_UPDATE",
-      "previousRisk": "A blind zero clear could erase a larger concurrent deferred arena growth request.",
-      "fix": "Deferred target is a monotonic Interlocked max; clear is CompareExchange to zero only when current contiguous free space satisfies the observed value.",
-      "proofSites": [
-        "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:4976",
-        "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:4995"
-      ],
-      "interleavingProof": "Writer-before-reader: reader observes the larger target. Writer-after-reader: clear CAS fails because current != observed. No writer: clear is legal only after CanSatisfyContiguousFreeBlock(observed)."
-    },
-    {
-      "id": "SENTINEL_RECORD_MUTATION_RACE",
-      "previousRisk": "NativeMemorySentinel fixed arrays were mutated from register/unregister and leak audit paths without a shared gate.",
-      "fix": "Serialized register, unregister, refresh, reset, scene leak report/reap, and transient audit mutation with an Interlocked mutation gate.",
-      "proofSites": [
-        "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs:743",
-        "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs:792",
-        "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs:895",
-        "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs:980"
-      ]
-    }
-  ],
-  "deferredGrowthQueue": {
-    "implemented": true,
-    "targetField": "_deferredArenaGrowthBytes",
-    "writer": "Interlocked.CompareExchange max loop",
-    "clear": "Interlocked.CompareExchange(ref _deferredArenaGrowthBytes, 0L, observed) after contiguous free block satisfaction",
-    "maintenancePhase": "SystemDispatcher.RunMasterPostSimulationPhase",
-    "proofSites": [
-      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:4943",
-      "Assets/_Project/Scripts/Core/SystemDispatcher.cs:2899"
-    ]
-  },
-  "sentinel": {
-    "usesDictionaryHotPath": false,
-    "storageReality": "Fixed NativeAllocationRecord[1024] and PersistentReallocationRecord[128] arrays existed; rewrite targeted serialization and fatal teardown instead of inventing a NativeHashMap migration.",
-    "fatalLeakException": true,
-    "proofSites": [
-      "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs:69",
-      "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs:876",
-      "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs:994"
-    ]
-  },
-  "verification": {
-    "gitDiffCheck": "PASS_WITH_CRLF_WARNINGS_ONLY",
-    "braceBalance": "PASS",
-    "reallocateRawCallCountInProject": 1,
-    "hotAllocatorForbiddenTerms": 0,
-    "publicPointerRouteFenceChecks": 6,
-    "staticAuditReport": "Docs/Reports/ARENA_ALLOCATOR_STATIC_AUDIT_1414.json",
-    "editorTestsAdded": [
-      "GlobalDataVault_ReallocateRaw_CallRequiresRelocationGuard",
-      "GlobalDataVault_DeferredGrowth_ClearUsesCompareExchange",
-      "GlobalDataVault_PublicPointerRoutes_CheckCompactionFence",
-      "GlobalDataVault_SparseBufferIdMetadataReadFallsBackToMap",
-      "GlobalDataVault_SparseBufferIdWriteLocksAvoidFlatArrayReject",
-      "GlobalDataVault_DeferredGrowthChecksBurstLocksOnce",
-      "NativeMemorySentinel_FatalLeakAssertion_IdentifiesLeakedBuffer"
-    ],
-    "editorTestsExecuted": false,
-    "buildExecuted": false,
-    "buildBlockReason": "Initial gate: CPU_PERCENT=100.0 and active dotnet PID 66768. Final pre-APEX gate: CPU_PERCENT=100.0 with active dotnet PID 40436 and csc PID 58904. APEX gate: CPU_PERCENT=100 with active dotnet PID 53704. Latest final gate: CPU_PERCENT=66 with active csc PID 67916 and dotnet PID 20440. No build launched."
-  },
-  "microsecondEstimates": {
-    "hotPathArenaAllocation": 0,
-    "pendingZeroDeferredGrowthCheck": 1,
-    "blockedGrowthStringLoggingAvoided": 15,
-    "managedLockAvoidedUnderContention": 20,
-    "staticAuditWallMicroseconds": 334004,
-    "compileMicrosecondsAvoidedByContentionGate": "unmeasured_full_msbuild_startup"
-  },
-  "scalabilityPillar": {
-    "low": "Fail closed, no relocation under locks/pins, no build launched under CPU saturation.",
-    "middle": "Deferred growth drains in deterministic PostSimulation maintenance without gameplay truth changes.",
-    "high": "Larger arena caps remain legal through existing quality capacity policy while preserving CAS queue semantics.",
-    "ultra": "Visual overkill tiers may consume larger memory budgets, but relocation authority and DTO layout are unchanged."
-  },
-  "hashes": {
-    "Assets/_Project/Scripts/Core/Memory/H8Memory.cs": "5244a1a957fc131c908190f6734a54ad2a17a186901d62306faa44384d083657",
-    "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs": "a0233a4e583874e84a7425741dcdf21bd21a7bf3ec6a2b282eb7076c1d32d4e4",
-    "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs": "d6cc77f5fb89f2cbde4147a7bd1364f9632aa8c6da3ce856c043138ecdd3c2cc",
-    "Assets/_Project/Scripts/Core/SystemDispatcher.cs": "2764521680859df474d966e08c278aad7be7b8a03f95ef0a5dcb057bf3429c74",
-    "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs": "ade4c888cbd116a8ee5b3c7fd6f3c41f3e3926f0e73b295541f87cac9e80db33",
-    "Docs/Reports/ARENA_ALLOCATOR_FLOW_LEDGER_1414.json": "b1266508b3f520343f13cd15c1b289ddca60e073a5592321c8fdda5da8cffc2f",
-    "Docs/Reports/ARENA_ALLOCATOR_STATIC_AUDIT_1414.json": "54582dda5a6748da761b83be9a9698110582aad879500b246385aa64d3d31b66",
-    "Docs/Reports/ARENA_ALLOCATOR_APEX_VERIFICATION_1414.json": "65cb1949a2e732e7175862301f685684a80a846d60a24f69bd76c45f371f85a6"
-  }
+﻿{
+    "agent":  "1414",
+    "role":  "UNMANAGED_MEMORY_SENTINEL_AND_ARENA_ALLOCATOR_AUDITOR",
+    "domain":  "ECHELON 1 Core \u0026 Memory Infrastructure / Native Arena Allocator",
+    "status":  "APEX_STATIC_VERIFIED_BUILD_BLOCKED_BY_HOST_CONTENTION",
+    "taskCount":  20,
+    "prompt":  {
+                   "path":  "Docs/Tasks/CURRENT_BATCH.md",
+                   "length":  21926,
+                   "taskMarkers":  20,
+                   "sha256":  "22323d22279e444c27790cf29585eacf5528bb19964887e38f8c1efb5dab014e"
+               },
+    "apexVerification":  {
+                             "path":  "Docs/Reports/ARENA_ALLOCATOR_APEX_VERIFICATION_1414.json",
+                             "sha256":  "800878712b51cb11239788db7011ad847e984b03bfa5d63e150413d0681ffc6e",
+                             "jsonParse":  "PASS",
+                             "zeroGcHotPathScanElapsedMicroseconds":  2883409,
+                             "hotMethodsScanned":  22,
+                             "totalForbiddenTermHits":  0
+                         },
+    "whatWasWrong":  [
+                         "Raw arena reallocation lacked a local relocation permit and could free old unmanaged memory while exported views still existed.",
+                         "Deferred arena growth needed a compare-exchange satisfaction proof to avoid lost updates.",
+                         "Sparse BufferID values above flat metadata capacity could fail resolve/write-lock/release paths or reuse generation after release.",
+                         "Deferred writer release de-duplication needed serialization; scan-only de-dup was raceable.",
+                         "All-kind buffer-pin release de-duplication was wrong because buffer pins are counted, not unique ownership.",
+                         "New allocation rollback after external-view publication failure reacquired the mutation gate and therefore was not a guaranteed rollback.",
+                         "New allocation float sanitation happened after metadata publication."
+                     ],
+    "whatWasDone":  [
+                        "H8RawReallocationGuard gates ReallocateRaw before Malloc/MemMove/Free.",
+                        "Interlocked max target and compare-exchange clear protect deferred arena growth.",
+                        "Sparse metadata fallback and unmanaged generation tombstone ledger avoid flat array expansion.",
+                        "QueueDeferredRelease serializes writer duplicate scan plus slot reservation with _deferredReleaseEnqueueGate.",
+                        "Buffer-pin deferred releases are queued as counted events; only writer releases are de-duplicated.",
+                        "TryAllocatePublishedBuffer\u003cT\u003e owns new allocation publish and rollback under one mutation gate.",
+                        "New allocation sanitation now runs before _buffers.TryAdd/TryAddMetadata.",
+                        "Static editor source tests cover sparse metadata, generation tombstones, writer release de-duplication, counted pin semantics, one-gate allocation publish/rollback, and redundant predicate prevention."
+                    ],
+    "raceConditionsEliminated":  [
+                                     {
+                                         "id":  "RAW_REALLOCATE_WITH_EXPORTED_POINTERS",
+                                         "proofSites":  [
+                                                            "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:2212",
+                                                            "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:2947",
+                                                            "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:2971",
+                                                            "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:3014"
+                                                        ]
+                                     },
+                                     {
+                                         "id":  "DEFERRED_GROWTH_LOST_UPDATE",
+                                         "proofSites":  [
+                                                            "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:5094",
+                                                            "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:5106",
+                                                            "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:5113",
+                                                            "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:5124"
+                                                        ]
+                                     },
+                                     {
+                                         "id":  "DEFERRED_WRITER_RELEASE_DUPLICATE_SCAN_RACE",
+                                         "proofSites":  [
+                                                            "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:2005",
+                                                            "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:2060"
+                                                        ]
+                                     }
+                                 ],
+    "dataSovereignty":  {
+                            "migratedFieldsToGlobalDataVault":  false,
+                            "securedSparseBufferIds":  [
+                                                           {
+                                                               "name":  "PlayerHandIkPublishedStates",
+                                                               "value":  315736,
+                                                               "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                               "line":  110
+                                                           },
+                                                           {
+                                                               "name":  "WorldSpatialAcousticDensityMap",
+                                                               "value":  1419042,
+                                                               "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                                                               "line":  243
+                                                           }
+                                                       ],
+                            "tryAcquireWriteLockCompactionFenceChecks":  [
+                                                                             1728,
+                                                                             1741,
+                                                                             1773
+                                                                         ],
+                            "writeLockReleaseFinallySites":  [
+                                                                 {
+                                                                     "method":  "TryAcquireWriteLock\u003cT\u003e",
+                                                                     "line":  1857,
+                                                                     "releaseLine":  1859
+                                                                 },
+                                                                 {
+                                                                     "method":  "ReleaseWriteLock\u003cT\u003e",
+                                                                     "line":  1917,
+                                                                     "releaseLine":  1919
+                                                                 },
+                                                                 {
+                                                                     "method":  "ReleaseWriterBlockLock",
+                                                                     "line":  1935,
+                                                                     "releaseLine":  1937
+                                                                 },
+                                                                 {
+                                                                     "method":  "TryUnlockBuffer",
+                                                                     "line":  2647,
+                                                                     "releaseLine":  2649
+                                                                 },
+                                                                 {
+                                                                     "method":  "TryGrowArena",
+                                                                     "line":  5051,
+                                                                     "releaseLine":  5054
+                                                                 },
+                                                                 {
+                                                                     "method":  "TryAllocatePublishedBuffer\u003cT\u003e",
+                                                                     "line":  1357,
+                                                                     "releaseLine":  1373
+                                                                 }
+                                                             ],
+                            "sparseMetadataRoute":  "TryReadFlatMetadata uses flat array only when key \u003c _metadataByBufferId.Length, then falls back to _metadata.TryGetValue for sparse keys.",
+                            "sparseGenerationLedger":  "_metadataGenerationByBufferId records live and tombstone generations for sparse keys without expanding the flat metadata array."
+                        },
+    "zeroGcProof":  {
+                        "hotMethodsScanned":  22,
+                        "forbiddenTerms":  [
+                                               "new ",
+                                               "string.Format",
+                                               ".ToString(",
+                                               "System.Linq",
+                                               "Enumerable.",
+                                               ".Select(",
+                                               ".Where(",
+                                               ".ToList(",
+                                               ".ToArray(",
+                                               "foreach"
+                                           ],
+                        "totalForbiddenTermHits":  0,
+                        "elapsedMicroseconds":  2883409,
+                        "detailsIn":  "Docs/Reports/ARENA_ALLOCATOR_APEX_VERIFICATION_1414.json"
+                    },
+    "layoutProof":  {
+                        "struct":  "H8RawReallocationGuard",
+                        "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                        "line":  2212,
+                        "declaredSizeBytes":  16,
+                        "fields":  [
+                                       {
+                                           "name":  "CompactionFenceHeld",
+                                           "type":  "int",
+                                           "offset":  0,
+                                           "size":  4
+                                       },
+                                       {
+                                           "name":  "ActiveLockMask",
+                                           "type":  "uint",
+                                           "offset":  4,
+                                           "size":  4
+                                       },
+                                       {
+                                           "name":  "HasPinnedExternalViews",
+                                           "type":  "byte",
+                                           "offset":  8,
+                                           "size":  1
+                                       },
+                                       {
+                                           "name":  "Reserved0",
+                                           "type":  "byte",
+                                           "offset":  9,
+                                           "size":  1
+                                       },
+                                       {
+                                           "name":  "Reserved1",
+                                           "type":  "ushort",
+                                           "offset":  10,
+                                           "size":  2
+                                       },
+                                       {
+                                           "name":  "Signature",
+                                           "type":  "uint",
+                                           "offset":  12,
+                                           "size":  4
+                                       }
+                                   ],
+                        "math":  "4+4+1+1+2+4=16; explicit offsets 0,4,8,9,10,12 are non-overlapping; 16 % 8 == 0; managed references=0; runtime bool fields=0."
+                    },
+    "cinematicCheats":  {
+                            "physicalSimulationAdded":  false,
+                            "cheatUsed":  "Fail-closed deferred growth, writer release de-duplication, counted pin release queueing, and one-gate rollback; no simulation model was added.",
+                            "globalQualityWeight":  "Existing GlobalQualityWeight route scales memory capacity continuously; no binary if(isLowEnd) path was added."
+                        },
+    "microsecondEstimates":  {
+                                 "arenaAllocationHotPathClaimedSavings":  0,
+                                 "pendingZeroDeferredGrowthCheckEstimatedMicroseconds":  1,
+                                 "managedLockAvoidedUnderContentionEstimatedMicroseconds":  20,
+                                 "latestStaticScanWallMicroseconds":  2883409,
+                                 "buildCostAvoided":  "unmeasured; build was not launched because CPU/process gate failed"
+                             },
+    "verification":  {
+                         "gitDiffCheck":  "PASS_WITH_CRLF_WARNINGS_ONLY",
+                         "jsonParse":  "PASS",
+                         "editorTestsExecuted":  false,
+                         "buildExecuted":  false,
+                         "buildBlockReason":  "Latest gate: CPU_PERCENT=76 with no active dotnet/csc/VBCSCompiler processes; build still blocked because CPU > 50."
+                     },
+    "hashes":  {
+                   "Assets/_Project/Scripts/Core/Memory/H8Memory.cs":  "16e4da2e5148bbad8f4abc9b524e97151f1b5080a15eda7c6ab544ba81618be4",
+                   "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs":  "b35073e0f7ad2e833767c0b3f6b3139a05942bd9b416bc77c8f373b9a3d74aac",
+                   "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs":  "d6cc77f5fb89f2cbde4147a7bd1364f9632aa8c6da3ce856c043138ecdd3c2cc",
+                   "Assets/_Project/Scripts/Core/SystemDispatcher.cs":  "2e9aae21b03b5f6efeca7f2f4d2c71a1f4ece0522aaffe53a0814524c0b0b815",
+                   "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs":  "f92bebfd212a46cb09a023c7a349b934c1431b3b651c80161f3757b1d7857309"
+               },
+    "reportHashes":  {
+                         "Docs/Reports/ARENA_ALLOCATOR_APEX_VERIFICATION_1414.json":  "800878712b51cb11239788db7011ad847e984b03bfa5d63e150413d0681ffc6e"
+                     }
 }

@@ -1,0 +1,26 @@
+﻿{
+    "timestampUtc":  "2026-05-28T09:17:22.3766385Z",
+    "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+    "preflightCpuSamplesPercent":  [
+                                       1,
+                                       23,
+                                       18
+                                   ],
+    "preflightCompilerProcessCount":  0,
+    "launched":  true,
+    "exitCode":  0,
+    "result":  "SUCCEEDED",
+    "warnings":  0,
+    "errors":  0,
+    "elapsed":  "00:00:35.03",
+    "outputAssembly":  "Temp/CodexBuild/Assembly-CSharp/Assembly-CSharp.dll",
+    "postBuildCompilerProcesses":  [
+                                       {
+                                           "CPU":  6.5,
+                                           "StartTimeLocal":  "2026-05-28T13:12:28+04:00",
+                                           "ProcessName":  "VBCSCompiler",
+                                           "Id":  28856
+                                       }
+                                   ],
+    "rule":  "Build launched only after CPU samples were all \u003c= 50 and no dotnet/csc/VBCSCompiler process was active."
+}

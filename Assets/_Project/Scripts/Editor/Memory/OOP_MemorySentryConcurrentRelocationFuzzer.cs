@@ -1,4 +1,6 @@
-#if UNITY_EDITOR
+#if UNITY_EDITOR && HECTON8_ENABLE_LEGACY_MEMORY_FUZZER_1310
+// Legacy 1310 fuzzer is opt-in only. It uses raw Thread joins and a disposable GlobalDataVault;
+// agent 1412 keeps the active compaction stress path in Core/Memory/Editor with bounded cleanup proof.
 using System;
 using System.Diagnostics;
 using System.Globalization;

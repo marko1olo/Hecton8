@@ -9,6 +9,7 @@
 // ============================================================================
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -70,7 +71,8 @@ namespace Hecton8.SaveSystem
         private const float SafeAupSnapMinimumLiftMeters = 0.35f;
         private const string CriticalSectorCorruptionMessage = "CRITICAL ERROR: LOCALIZED DATA CORRUPTION. TERRAIN RE-INITIALIZED.";
         private const string GeologicalAnomalyDetectedMessage = "UNSTABLE REALITY";
-        private const string WfcOutpostBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_MACRO_WFC_PERSISTENCE_SYNC.bin";
+        private const string WfcOutpostBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1403_WFC_PERSISTENCE_SYNC.bin";
+        private const string AsyncPersistenceBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_1403_ASYNC_PERSISTENCE.bin";
         private const int MaxRegisteredSaveables = 256;
         private const int MaxSaveSlotNameLength = 48;
         private const int SaveSlotScratchCapacity = 8;
@@ -889,6 +891,8 @@ namespace Hecton8.SaveSystem
             CachePersistentDataPathRoot();
             InitializeNativeBuffers();
             SaveBinaryStorage.WarmRuntime();
+            EnsureWorldPagerCold();
+            EnsureWorldPagerInitialized();
         }
 
         private void OnEnable()
@@ -1035,6 +1039,8 @@ namespace Hecton8.SaveSystem
         {
             CachePersistentDataPathRoot();
             InitializeNativeBuffers();
+            EnsureWorldPagerCold();
+            EnsureWorldPagerInitialized();
             RefreshWfcOutpostDependencies();
 
             if (_serviceRegistered)
@@ -1390,12 +1396,8 @@ namespace Hecton8.SaveSystem
 
         private H8BinaryWorldPager EnsureWorldPager()
         {
-            if (_worldPager == null)
-                _worldPager = new H8BinaryWorldPager(); // COLD ALLOC: H8BinaryWorldPager[1] - async chunk page persistence bridge - owner: SaveManager
-
-            if (!_worldPager.IsInitialized && !_worldPager.HasInitializationFault)
-                _worldPager.Initialize(null);
-
+            EnsureWorldPagerCold();
+            EnsureWorldPagerInitialized();
             return _worldPager;
         }
 
@@ -1544,13 +1546,22 @@ namespace Hecton8.SaveSystem
             _nativeBuffers.EnsureLoadCandidateScratch();
         }
 
-        private void EnsureWorldPagerInitialized()
+        private void EnsureWorldPagerCold()
         {
             if (_worldPager == null)
-                _worldPager = new H8BinaryWorldPager();
+                _worldPager = new H8BinaryWorldPager(); // COLD ALLOC: H8BinaryWorldPager[1] - async chunk page persistence bridge warmed before Tick - owner: SaveManager
+        }
 
-            if (!_worldPager.IsInitialized && !_worldPager.HasInitializationFault)
-                _worldPager.Initialize(HectonPersistentPathPolicy.CombineFile("world_data.h8bin"));
+        private bool EnsureWorldPagerInitialized()
+        {
+            H8BinaryWorldPager pager = _worldPager;
+            if (pager == null)
+                return false;
+
+            if (!pager.IsInitialized && !pager.HasInitializationFault)
+                pager.Initialize(HectonPersistentPathPolicy.CombineFile("world_data.h8bin"));
+
+            return pager.IsInitialized && !pager.HasInitializationFault;
         }
 
         private static void EnsureStaticLoadCandidateScratch()
@@ -2896,7 +2907,7 @@ namespace Hecton8.SaveSystem
             };
         }
 
-        private void DumpWfcOutpostBlackBox()
+        private unsafe void DumpWfcOutpostBlackBox()
         {
             if (!_wfcOutpostTelemetryRing.IsCreated ||
                 !_wfcOutpostEventTelemetryRing.IsCreated ||
@@ -2912,107 +2923,154 @@ namespace Hecton8.SaveSystem
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                int entrySize = UnsafeUtility.SizeOf<WfcOutpostTelemetryEntry>();
+                int dumpBytesLength =
+                    28 +
+                    ((WfcOutpostTelemetryCapacity + WfcOutpostEventTelemetryCapacity) * entrySize);
+                NativeArray<byte> dumpBytes = default;
+                try
                 {
-                    writer.Write(WfcOutpostBlackBoxMagic);
-                    writer.Write(WfcOutpostBlackBoxVersion);
-                    writer.Write(WfcOutpostTelemetryCapacity);
-                    writer.Write(WfcOutpostEventTelemetryCapacity);
-                    writer.Write(UnsafeUtility.SizeOf<WfcOutpostTelemetryEntry>());
-                    writer.Write(_wfcOutpostTelemetryWriteIndex);
-                    writer.Write(_wfcOutpostEventTelemetryWriteIndex);
+                    dumpBytes = new NativeArray<byte>(dumpBytesLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    byte* dumpPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(dumpBytes);
+                    int cursor = 0;
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, WfcOutpostBlackBoxMagic);
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, WfcOutpostBlackBoxVersion);
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, WfcOutpostTelemetryCapacity);
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, WfcOutpostEventTelemetryCapacity);
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, (uint)entrySize);
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, (uint)_wfcOutpostTelemetryWriteIndex);
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, (uint)_wfcOutpostEventTelemetryWriteIndex);
+
                     for (int i = 0; i < WfcOutpostTelemetryCapacity; i++)
                     {
                         int index = (_wfcOutpostTelemetryWriteIndex + i) % WfcOutpostTelemetryCapacity;
                         WfcOutpostTelemetryEntry entry = _wfcOutpostTelemetryRing[index];
-                        WriteWfcOutpostTelemetryEntry(writer, in entry);
+                        WriteWfcOutpostTelemetryEntry(dumpPtr, ref cursor, in entry);
                     }
 
                     for (int i = 0; i < WfcOutpostEventTelemetryCapacity; i++)
                     {
                         int index = (_wfcOutpostEventTelemetryWriteIndex + i) % WfcOutpostEventTelemetryCapacity;
                         WfcOutpostTelemetryEntry entry = _wfcOutpostEventTelemetryRing[index];
-                        WriteWfcOutpostTelemetryEntry(writer, in entry);
+                        WriteWfcOutpostTelemetryEntry(dumpPtr, ref cursor, in entry);
                     }
+
+                    if (!AsyncWriteManager.WriteAll(dumpPath, dumpPtr, cursor, out _))
+                        LogWarning("[SaveManager] WFC outpost black box dump failed.");
+                }
+                finally
+                {
+                    if (dumpBytes.IsCreated)
+                        dumpBytes.Dispose();
                 }
 
                 _wfcOutpostBlackBoxDumped = true;
             }
-            catch (Exception exception)
+            catch (Exception)
             {
-                LogWarning($"[SaveManager] WFC outpost black box dump failed: {exception.Message}");
+                LogWarning("[SaveManager] WFC outpost black box dump failed.");
             }
         }
 
-        private static void WriteWfcOutpostTelemetryEntry(BinaryWriter writer, in WfcOutpostTelemetryEntry entry)
+        private static unsafe void WriteWfcOutpostTelemetryEntry(byte* destination, ref int cursor, in WfcOutpostTelemetryEntry entry)
         {
-            writer.Write(entry.Frame);
-            writer.Write(entry.Operation);
-            writer.Write(entry.Status);
-            writer.Write(entry.Flags);
-            writer.Write(entry.SectorHash);
-            writer.Write(entry.PayloadHash);
-            writer.Write(entry.GridSectorHash);
-            writer.Write(entry.PayloadBytes);
-            writer.Write(entry.CellIndex);
-            writer.Write(entry.PreviousFlags);
-            writer.Write(entry.CurrentFlags);
-            writer.Write(entry.SignalSourceHash);
-            writer.Write(entry.Reserved0);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Frame);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Operation);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Status);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Flags);
+            WriteUInt64LittleEndian(destination, ref cursor, entry.SectorHash);
+            WriteUInt64LittleEndian(destination, ref cursor, entry.PayloadHash);
+            WriteUInt64LittleEndian(destination, ref cursor, entry.GridSectorHash);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.PayloadBytes);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.CellIndex);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.PreviousFlags);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.CurrentFlags);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.SignalSourceHash);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Reserved0);
         }
 
-        private void DumpSaveBlackBox()
+        private unsafe void DumpSaveBlackBox()
         {
             if (!_saveTelemetryRing.IsCreated)
                 return;
 
             try
             {
-                const string dumpRelativePath = "Docs/AgentLogs/Dump_ASYNC_PERSISTENCE_SURGEON.bin";
-                string dumpPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", dumpRelativePath));
+                string dumpPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", AsyncPersistenceBlackBoxDumpRelativePath));
                 string directory = Path.GetDirectoryName(dumpPath);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                const int headerBytes = 12;
+                int entrySize = UnsafeUtility.SizeOf<AsyncPersistenceTelemetryEntry>();
+                int dumpBytesLength = headerBytes + (SaveTelemetryCapacity * entrySize);
+                NativeArray<byte> dumpBytes = default;
+                try
                 {
-                    writer.Write(0x48384153u); // H8AS
-                    writer.Write(SaveTelemetryCapacity);
-                    writer.Write(UnsafeUtility.SizeOf<AsyncPersistenceTelemetryEntry>());
+                    dumpBytes = new NativeArray<byte>(dumpBytesLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    byte* dumpPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(dumpBytes);
+                    int cursor = 0;
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, 0x48384153u); // H8AS
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, SaveTelemetryCapacity);
+                    WriteUInt32LittleEndian(dumpPtr, ref cursor, (uint)entrySize);
+
                     for (int i = 0; i < SaveTelemetryCapacity; i++)
                     {
                         int index = (_saveTelemetryWriteIndex + i) % SaveTelemetryCapacity;
                         AsyncPersistenceTelemetryEntry entry = _saveTelemetryRing[index];
-                        WriteAsyncPersistenceTelemetryEntry(writer, in entry);
+                        WriteAsyncPersistenceTelemetryEntry(dumpPtr, ref cursor, in entry);
                     }
+
+                    if (!AsyncWriteManager.WriteAll(dumpPath, dumpPtr, cursor, out _))
+                        LogWarning("[SaveManager] Save black box dump failed.");
+                }
+                finally
+                {
+                    if (dumpBytes.IsCreated)
+                        dumpBytes.Dispose();
                 }
             }
-            catch (Exception exception)
+            catch (Exception)
             {
-                LogWarning($"[SaveManager] Save black box dump failed: {exception.Message}");
+                LogWarning("[SaveManager] Save black box dump failed.");
             }
         }
 
-        private static void WriteAsyncPersistenceTelemetryEntry(BinaryWriter writer, in AsyncPersistenceTelemetryEntry entry)
+        private static unsafe void WriteAsyncPersistenceTelemetryEntry(byte* destination, ref int cursor, in AsyncPersistenceTelemetryEntry entry)
         {
-            writer.Write(entry.Frame);
-            writer.Write(entry.OperationId);
-            writer.Write(entry.SaveDurationMs);
-            writer.Write(entry.CompressedSizeBytes);
-            writer.Write(entry.RawPayloadBytes);
-            writer.Write(entry.Flags);
-            writer.Write(entry.SlotHash);
-            writer.Write(entry.Reserved);
-            writer.Write(0u);
-            writer.Write(0u);
-            writer.Write(0u);
-            writer.Write(0u);
-            writer.Write(0u);
-            writer.Write(0u);
-            writer.Write(0u);
-            writer.Write(0u);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Frame);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.OperationId);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.SaveDurationMs);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.CompressedSizeBytes);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.RawPayloadBytes);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Flags);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.SlotHash);
+            WriteUInt32LittleEndian(destination, ref cursor, entry.Reserved);
+            WriteUInt32LittleEndian(destination, ref cursor, 0u);
+            WriteUInt32LittleEndian(destination, ref cursor, 0u);
+            WriteUInt32LittleEndian(destination, ref cursor, 0u);
+            WriteUInt32LittleEndian(destination, ref cursor, 0u);
+            WriteUInt32LittleEndian(destination, ref cursor, 0u);
+            WriteUInt32LittleEndian(destination, ref cursor, 0u);
+            WriteUInt32LittleEndian(destination, ref cursor, 0u);
+            WriteUInt32LittleEndian(destination, ref cursor, 0u);
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, ref int cursor, int value)
+        {
+            WriteUInt32LittleEndian(destination, ref cursor, (uint)value);
+        }
+
+        private static unsafe void WriteUInt32LittleEndian(byte* destination, ref int cursor, uint value)
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian(new Span<byte>(destination + cursor, sizeof(uint)), value);
+            cursor += sizeof(uint);
+        }
+
+        private static unsafe void WriteUInt64LittleEndian(byte* destination, ref int cursor, ulong value)
+        {
+            BinaryPrimitives.WriteUInt64LittleEndian(new Span<byte>(destination + cursor, sizeof(ulong)), value);
+            cursor += sizeof(ulong);
         }
 
         private static void PublishSaveRecoveredNotification(string slotName)
@@ -3510,16 +3568,16 @@ namespace Hecton8.SaveSystem
                 if (ecosystemDirector != null)
                 {
                     ecosystemDirector.CaptureSaveSnapshot();
-                    NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemView = ecosystemDirector.GetSaveSnapshotArray();
-                    if (ecosystemView.IsCreated && ecosystemView.Length > 0)
+                    NativeArray<EcosystemSectorSaveRecord>.ReadOnly ecosystemView = ecosystemDirector.GetSaveSnapshotArray(out int ecosystemRecordCount);
+                    if (ecosystemView.IsCreated && ecosystemRecordCount > 0)
                     {
                         ecosystemSectorSnapshotOwner = new NativeArray<EcosystemSectorSaveRecord>(
-                            ecosystemView.Length,
+                            ecosystemRecordCount,
                             Allocator.Persistent,
                             NativeArrayOptions.UninitializedMemory);
                         RegisterTransientNativeArray(ecosystemSectorSnapshotOwner, "ecosystemSectorSnapshotOwner");
 
-                        for (int i = 0; i < ecosystemView.Length; i++)
+                        for (int i = 0; i < ecosystemRecordCount; i++)
                             ecosystemSectorSnapshotOwner[i] = ecosystemView[i];
 
                         ecosystemSectorSnapshot = ecosystemSectorSnapshotOwner.AsReadOnly();

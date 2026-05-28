@@ -289,7 +289,7 @@ namespace Hecton8.World
             navSupportGrid = H8Memory.Allocate<float>(
                 navSupportLength,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
 
             if (!navSupportGrid.IsCreated ||
@@ -381,6 +381,9 @@ namespace Hecton8.World
 
             try
             {
+                if (pending.Cancelled)
+                    return;
+
                 bool permanentEchoChanged = InvalidateChunksForNewPermanentEchoes(pending.PreviousEchoFlags, pending.EchoOutput);
                 bool published =
                     TryCopyVegetationMemorySnapshot(
@@ -436,6 +439,9 @@ namespace Hecton8.World
 
             try
             {
+                if (pending.Cancelled)
+                    return;
+
                 if (!TryCopyVegetationMemorySnapshot(
                         ref _nativeMemory.EcosystemFlowFieldHandle,
                         BufferID.VegetationEcosystemFlowField,
@@ -471,6 +477,9 @@ namespace Hecton8.World
 
             try
             {
+                if (pending.Cancelled)
+                    return;
+
                 bool biolumeSurge = pending.CanComparePreviousFlowVolume &&
                     DetectBiolumeSurgeCluster3D(
                         pending.PreviousFlowVolumeSnapshot,
@@ -543,6 +552,30 @@ namespace Hecton8.World
             H8Memory.Release(ref pending.FlowVolumeOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
             H8Memory.Release(ref pending.PreviousFlowVolumeSnapshot, VegetationMemorySovereigntyConstants.OwnerSystemId);
             pending.Handle = default;
+        }
+
+        private void CancelVegetationSimulationJobsForResidencyClear()
+        {
+            if (_threatPropagationScheduled)
+            {
+                ThreatPropagationPendingJob pending = _threatPropagationJob;
+                pending.Cancelled = true;
+                _threatPropagationJob = pending;
+            }
+
+            if (_flowFieldScheduled)
+            {
+                FlowFieldPendingJob pending = _flowFieldJob;
+                pending.Cancelled = true;
+                _flowFieldJob = pending;
+            }
+
+            if (_abyssalThermalGridScheduled)
+            {
+                ThermalGridPendingJob pending = _thermalGridJob;
+                pending.Cancelled = true;
+                _thermalGridJob = pending;
+            }
         }
 
         private bool TryCopyVegetationMemorySnapshot<T>(
@@ -655,32 +688,32 @@ namespace Hecton8.World
             NativeArray<float> threatOutput = H8Memory.Allocate<float>(
                 _ecosystemThreatGridCellCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
             NativeArray<byte> compressedOutput = H8Memory.Allocate<byte>(
                 _ecosystemThreatGridCellCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
             NativeArray<byte> echoOutput = H8Memory.Allocate<byte>(
                 _ecosystemThreatGridCellCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
             NativeArray<byte> previousEchoFlags = H8Memory.Allocate<byte>(
                 _ecosystemThreatGridCellCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
             NativeArray<float> previousThreat = H8Memory.Allocate<float>(
                 _ecosystemThreatGridCellCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
             NativeArray<byte> voxelOutput = H8Memory.Allocate<byte>(
                 _ecosystemThreatVoxelCellCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
             if (!threatOutput.IsCreated ||
                 threatOutput.Length < _ecosystemThreatGridCellCount ||
@@ -961,7 +994,7 @@ namespace Hecton8.World
             NativeArray<float2> flowOutput = H8Memory.Allocate<float2>(
                 _ecosystemThreatGridCellCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
             if (!flowOutput.IsCreated ||
                 flowOutput.Length < _ecosystemThreatGridCellCount)
@@ -1002,7 +1035,7 @@ namespace Hecton8.World
             NativeArray<float> threatGridSnapshot = H8Memory.Allocate<float>(
                 _ecosystemThreatGridCellCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
             if (!threatGridSnapshot.IsCreated ||
                 threatGridSnapshot.Length < _ecosystemThreatGridCellCount)
@@ -1098,12 +1131,12 @@ namespace Hecton8.World
             NativeArray<float> thermalOutput = H8Memory.Allocate<float>(
                 _abyssalThermalGridCellCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
             NativeArray<float3> flowVolumeOutput = H8Memory.Allocate<float3>(
                 _abyssalThermalGridCellCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
-                Allocator.TempJob,
+                Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
             if (!thermalOutput.IsCreated ||
                 thermalOutput.Length < _abyssalThermalGridCellCount ||
@@ -1210,7 +1243,7 @@ namespace Hecton8.World
                 previousFlowVolumeSnapshot = H8Memory.Allocate<float3>(
                     _abyssalThermalGridCellCount,
                     VegetationMemorySovereigntyConstants.OwnerSystemId,
-                    Allocator.TempJob,
+                    Allocator.Persistent,
                     NativeArrayOptions.UninitializedMemory);
                 if (previousFlowVolumeSnapshot.IsCreated &&
                     previousFlowVolumeSnapshot.Length >= _abyssalThermalGridCellCount)

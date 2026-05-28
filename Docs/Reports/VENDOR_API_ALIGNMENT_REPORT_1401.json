@@ -2,141 +2,86 @@
   "agent": "1401",
   "role": "THIRD_PARTY_API_ALIGNMENT_AND_SQLITE_BRIDGE_REPAIRER",
   "domain": "Echelon 9 Meta / Polish / Integration - vendor dependency quarantine",
-  "generatedAt": "2026-05-28T05:51:49.623014+04:00",
+  "generatedAt": "2026-05-28T12:35:52+04:00",
   "status": "PENDING_VERIFICATION",
   "taskCount": 20,
-  "evidenceClass": "STATIC_SOURCE_PLUS_EXTERNAL_CLI_LOG",
-  "compileLaunchedBy1401": false,
-  "latestOwnCompileGate": "Docs/AgentLogs/Build_1401_Attempt_20260528_054921_BLOCKED_BY_CONTENTION.json",
-  "latestOwnCompileGateData": {
-    "agent": "1401",
-    "timestamp": "20260528_054921",
-    "dryRun": false,
-    "maxCpuPercent": 50,
-    "cpuLoadPercent": 100,
-    "compilerProcesses": [
-      {
-        "name": "dotnet",
-        "id": 66408,
-        "cpu": 57.375
-      }
-    ],
-    "blockedByContention": true,
-    "projects": [
-      {
-        "name": "CandiceAIforGames.Runtime",
-        "path": null,
-        "exists": false
-      },
-      {
-        "name": "CandiceAIforGames.Editor",
-        "path": null,
-        "exists": false
-      },
-      {
-        "name": "AmplifyImpostors.Runtime",
-        "path": "C:\\hades\\Hecton8\\AmplifyImpostors.Runtime.csproj",
-        "exists": true
-      },
-      {
-        "name": "AmplifyImpostors.Editor",
-        "path": "C:\\hades\\Hecton8\\AmplifyImpostors.Editor.csproj",
-        "exists": true
-      },
-      {
-        "name": "TechniePhysicsCreator",
-        "path": "C:\\hades\\Hecton8\\TechniePhysicsCreator.csproj",
-        "exists": true
-      },
-      {
-        "name": "Technie.PhysicsCreator.Updater",
-        "path": "C:\\hades\\Hecton8\\Technie.PhysicsCreator.Updater.csproj",
-        "exists": true
-      },
-      {
-        "name": "DarkTonic.MasterAudio.Runtime",
-        "path": null,
-        "exists": false
-      },
-      {
-        "name": "DarkTonic.MasterAudio.Examples",
-        "path": null,
-        "exists": false
-      },
-      {
-        "name": "DarkTonic.MasterAudio.Editor",
-        "path": null,
-        "exists": false
-      },
-      {
-        "name": "RelationsInspector.Editor",
-        "path": null,
-        "exists": false
-      }
-    ],
-    "attempts": []
+  "evidenceClass": "STATIC_SOURCE_PLUS_GUARDED_CLI_COMPILE_ATTEMPT",
+  "compileLaunchedBy1401": true,
+  "compilationResourceThrottling": {
+    "directDotnetBuildUsed": false,
+    "guardedWrapperUsed": true,
+    "diagnosticCompileUnderDefectiveSingleProcessGate": {
+      "artifact": "Docs/AgentLogs/Build_1401_Attempt_20260528_061044_SUMMARY.json",
+      "cpuLoadPercent": 42,
+      "blockedByContention": false,
+      "compilerProcessCountRecorded": 1,
+      "status": "DIAGNOSTIC_ONLY_NOT_VALID_THROTTLE_PROOF",
+      "reason": "Wrapper used scalar .Count semantics and failed to block a single active dotnet process."
+    },
+    "latestPostPatchGate": {
+      "artifact": "Docs/AgentLogs/Build_1401_Attempt_20260528_123346_BLOCKED_BY_CONTENTION.json",
+      "cpuLoadPercent": -1,
+      "blockedByContention": true,
+      "compilerProcessCount": 2,
+      "blockReasons": [
+        "CPU_SAMPLE_UNAVAILABLE",
+        "ACTIVE_COMPILER_PROCESS"
+      ],
+      "attempts": []
+    }
   },
   "proofArtifacts": {
     "hotPathDeltaScan": "Docs/AgentLogs/VendorHotPathDeltaScan_1401.json",
     "staticAudit": "Docs/AgentLogs/VendorStaticAudit_1401.json",
-    "boundaryAudit": "Docs/AgentLogs/VendorBoundaryAudit_1401.json",
     "asmdefLeakage": "Docs/AgentLogs/AsmdefLeakage_1401.json",
-    "candicePluginImporterAudit": "Docs/AgentLogs/CandicePluginImporterAudit_1401.json",
-    "latestOwnCompileGate": "Docs/AgentLogs/Build_1401_Attempt_20260528_054921_BLOCKED_BY_CONTENTION.json"
-  },
-  "sourceLevelFixes": {
-    "candicePossessorHotPathPatch": {
-      "file": "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Animations Management\\Possessor\\Possessor.cs",
-      "updateLine": 45,
-      "findGameObjectsWithTagCountAfterPatch": 0,
-      "gameObjectFindCountAfterPatch": 0,
-      "foreachCountAfterPatchInUpdateRange": 0,
-      "tagEqualityCountAfterPatch": 0,
-      "getComponentCountAfterPatchInUpdateRange": 0,
-      "residual": "GameObject.FindWithTag plus Array.Resize/Instantiate remain event-gated possession behavior, not per-frame continuous work."
-    },
-    "candiceTilePathfindingPatch": {
-      "file": "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Pathfinding\\CandiceTile.cs",
-      "updateLine": 42,
-      "rendererMaterialPerFrameAccessAfterPatch": 0,
-      "overlapBoxAllocatingCallsAfterPatch": 0,
-      "overlapBoxNonAllocLine": 93,
-      "neighborBufferCapacity": 16,
-      "residual": "Synchronous Physics.Raycast remains in CheckTile; not solved by 1401 because replacing Candice pathfinding truth would exceed vendor bridge scope."
-    },
-    "gpuInstancerHotLoopPatch": {
-      "floatingOriginUpdateForLines": [
-        33,
-        45
-      ],
-      "prefabManagerUpdateForLine": 51,
-      "prefabManagerLateUpdateForLine": 71,
-      "modificationColliderCachedRigidbodyLine": 43,
-      "modificationColliderCachedColliderLine": 83,
-      "prefabCachedColliderLine": 60,
-      "prefabCachedRigidbodyLine": 71,
-      "guiInfoDevelopmentGuardLine": 14,
-      "residual": "GPUInstancer dependentJob.Complete, coroutine tree replacement, and debug OnGUI string concatenation remain vendor residuals pending profiler/route review."
-    },
-    "technieAndAmplifyCleanup": {
-      "technieStringFormatRemovedLine": 1021,
-      "technieChildMarkerCapacityLine": 1027,
-      "amplifyVersionStringFormatCountAfterPatch": 0,
-      "vhacdEnabledOneLinesAfterPatch": []
-    }
+    "latestCompileGate": "Docs/AgentLogs/Build_1401_Attempt_20260528_123346_BLOCKED_BY_CONTENTION.json",
+    "previousCompileAttempt": "Docs/AgentLogs/Build_1401_Attempt_20260528_061044_SUMMARY.json"
   },
   "zeroGcStaticEvidence": {
     "agent": "1401",
-    "generatedAt": "2026-05-28T05:51:49.623014+04:00",
+    "generatedAt": "2026-05-28T06:17:22+04:00",
     "evidenceClass": "STATIC_SOURCE",
     "status": "PENDING_VERIFICATION",
-    "note": "Static source counts only. Not Unity Console, not PlayMode, not profiler proof.",
+    "note": "Static source counts only. hotNewReferenceTypeCount excludes value-type new and canonical cold allocations. Not Unity Console, PlayMode, or profiler proof.",
+    "productionHotPathForbiddenTotals": {
+      "hotNewReferenceTypeCount": 0,
+      "stringFormatCount": 0,
+      "toStringCount": 0,
+      "linqCount": 0,
+      "foreachCount": 0
+    },
+    "productionHotPathZeroGcTextScanPass": true,
     "ranges": [
       {
-        "file": "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Save System\\Overrides\\CandiceSQLiteProvider.cs",
+        "hotNewReferenceTypeCount": 0,
+        "coldReferenceTypeCount": 0,
+        "valueTypeNewCount": 0,
+        "hotNewDetails": [],
+        "coldNewDetails": [],
+        "valueTypeNewDetails": [],
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 0,
+        "foreachCount": 0,
+        "sceneSearchCount": 0,
+        "getComponentCount": 0,
+        "startCoroutineCount": 0,
+        "syncRaycastCount": 0,
+        "name": "CandiceSQLiteDisabledHotMethods",
+        "file": "Assets/Candice AI for Games/Scripts/Libs/Candice Save System/Overrides/CandiceSQLiteProvider.cs",
         "startLine": 544,
         "endLine": 614,
-        "newReferenceLikeCount": 0,
+        "isProductionHotPath": true,
+        "isEditorOrDevelopmentOnly": false,
+        "notes": []
+      },
+      {
+        "hotNewReferenceTypeCount": 0,
+        "coldReferenceTypeCount": 0,
+        "valueTypeNewCount": 0,
+        "hotNewDetails": [],
+        "coldNewDetails": [],
+        "valueTypeNewDetails": [],
         "stringFormatCount": 0,
         "toStringCount": 0,
         "linqCount": 0,
@@ -145,48 +90,46 @@
         "getComponentCount": 0,
         "startCoroutineCount": 0,
         "syncRaycastCount": 0,
-        "notes": [],
-        "name": "CandiceSQLiteDisabledHotMethods"
-      },
-      {
-        "file": "Assets\\Candice AI for Games\\Scripts\\TriggerNextScene.cs",
+        "name": "TriggerNextSceneUpdate",
+        "file": "Assets/Candice AI for Games/Scripts/TriggerNextScene.cs",
         "startLine": 47,
         "endLine": 59,
-        "newReferenceLikeCount": 0,
+        "isProductionHotPath": true,
+        "isEditorOrDevelopmentOnly": false,
+        "notes": []
+      },
+      {
+        "hotNewReferenceTypeCount": 0,
+        "coldReferenceTypeCount": 0,
+        "valueTypeNewCount": 0,
+        "hotNewDetails": [],
+        "coldNewDetails": [],
+        "valueTypeNewDetails": [],
         "stringFormatCount": 0,
         "toStringCount": 0,
         "linqCount": 0,
         "foreachCount": 0,
-        "sceneSearchCount": 0,
+        "sceneSearchCount": 3,
         "getComponentCount": 0,
         "startCoroutineCount": 0,
         "syncRaycastCount": 0,
-        "notes": [],
-        "name": "TriggerNextSceneUpdate"
-      },
-      {
-        "file": "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Animations Management\\Possessor\\Possessor.cs",
+        "name": "CandicePossessorUpdate",
+        "file": "Assets/Candice AI for Games/Scripts/Libs/Candice Animations Management/Possessor/Possessor.cs",
         "startLine": 45,
         "endLine": 114,
-        "newReferenceLikeCount": 0,
-        "stringFormatCount": 0,
-        "toStringCount": 0,
-        "linqCount": 0,
-        "foreachCount": 0,
-        "sceneSearchCount": 1,
-        "getComponentCount": 0,
-        "startCoroutineCount": 0,
-        "syncRaycastCount": 0,
+        "isProductionHotPath": true,
+        "isEditorOrDevelopmentOnly": false,
         "notes": [
-          "FindWithTag and Array.Resize/Instantiate remain event-gated possession behavior; FindGameObjectsWithTag, foreach, tag equality, GetComponent, and dead GameObject.Find UI check were removed."
-        ],
-        "name": "CandicePossessorUpdate"
+          "FindWithTag/Array.Resize/Instantiate remain event-gated possession behavior; continuous forbidden allocation tokens remain 0 in the patched range."
+        ]
       },
       {
-        "file": "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Pathfinding\\CandiceTile.cs",
-        "startLine": 42,
-        "endLine": 70,
-        "newReferenceLikeCount": 0,
+        "hotNewReferenceTypeCount": 0,
+        "coldReferenceTypeCount": 0,
+        "valueTypeNewCount": 0,
+        "hotNewDetails": [],
+        "coldNewDetails": [],
+        "valueTypeNewDetails": [],
         "stringFormatCount": 0,
         "toStringCount": 0,
         "linqCount": 0,
@@ -195,14 +138,27 @@
         "getComponentCount": 0,
         "startCoroutineCount": 0,
         "syncRaycastCount": 0,
-        "notes": [],
-        "name": "CandiceTileUpdate"
+        "name": "CandiceTileUpdate",
+        "file": "Assets/Candice AI for Games/Scripts/Libs/Candice Pathfinding/CandiceTile.cs",
+        "startLine": 42,
+        "endLine": 70,
+        "isProductionHotPath": true,
+        "isEditorOrDevelopmentOnly": false,
+        "notes": []
       },
       {
-        "file": "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Pathfinding\\CandiceTile.cs",
-        "startLine": 90,
-        "endLine": 117,
-        "newReferenceLikeCount": 1,
+        "hotNewReferenceTypeCount": 0,
+        "coldReferenceTypeCount": 0,
+        "valueTypeNewCount": 1,
+        "hotNewDetails": [],
+        "coldNewDetails": [],
+        "valueTypeNewDetails": [
+          {
+            "line": 92,
+            "text": "Vector3 halfExtents = new Vector3(0.25f, (1 + jumpHeight) / 2.0f, 0.25f);",
+            "type": "Vector3"
+          }
+        ],
         "stringFormatCount": 0,
         "toStringCount": 0,
         "linqCount": 0,
@@ -211,16 +167,29 @@
         "getComponentCount": 0,
         "startCoroutineCount": 0,
         "syncRaycastCount": 1,
+        "name": "CandiceTileCheckTile",
+        "file": "Assets/Candice AI for Games/Scripts/Libs/Candice Pathfinding/CandiceTile.cs",
+        "startLine": 90,
+        "endLine": 117,
+        "isProductionHotPath": true,
+        "isEditorOrDevelopmentOnly": false,
         "notes": [
-          "OverlapBox allocation replaced by OverlapBoxNonAlloc fixed buffer; synchronous Physics.Raycast remains vendor pathfinding correctness residual."
-        ],
-        "name": "CandiceTileCheckTile"
+          "OverlapBox allocation replaced by OverlapBoxNonAlloc fixed buffer; Vector3 is value type; synchronous Physics.Raycast remains residual."
+        ]
       },
       {
-        "file": "Assets\\GPUInstancer\\Scripts\\GPUInstancerFloatingOriginHandler.cs",
-        "startLine": 24,
-        "endLine": 53,
-        "newReferenceLikeCount": 0,
+        "hotNewReferenceTypeCount": 0,
+        "coldReferenceTypeCount": 0,
+        "valueTypeNewCount": 1,
+        "hotNewDetails": [],
+        "coldNewDetails": [],
+        "valueTypeNewDetails": [
+          {
+            "line": 57,
+            "text": "runtimeData.dependentJob = new AutoUpdateTransformsJob()",
+            "type": "AutoUpdateTransformsJob"
+          }
+        ],
         "stringFormatCount": 0,
         "toStringCount": 0,
         "linqCount": 0,
@@ -229,14 +198,23 @@
         "getComponentCount": 0,
         "startCoroutineCount": 0,
         "syncRaycastCount": 0,
-        "notes": [],
-        "name": "GPUInstancerFloatingOriginUpdate"
-      },
-      {
-        "file": "Assets\\GPUInstancer\\Scripts\\GPUInstancerPrefabManager.cs",
+        "name": "GPUInstancerPrefabManagerUpdate",
+        "file": "Assets/GPUInstancer/Scripts/GPUInstancerPrefabManager.cs",
         "startLine": 45,
-        "endLine": 64,
-        "newReferenceLikeCount": 1,
+        "endLine": 65,
+        "isProductionHotPath": true,
+        "isEditorOrDevelopmentOnly": false,
+        "notes": [
+          "AutoUpdateTransformsJob is a struct, not reference allocation; dependentJob.Complete remains synchronization residual pending profiler proof."
+        ]
+      },
+      {
+        "hotNewReferenceTypeCount": 0,
+        "coldReferenceTypeCount": 0,
+        "valueTypeNewCount": 0,
+        "hotNewDetails": [],
+        "coldNewDetails": [],
+        "valueTypeNewDetails": [],
         "stringFormatCount": 0,
         "toStringCount": 0,
         "linqCount": 0,
@@ -245,68 +223,74 @@
         "getComponentCount": 0,
         "startCoroutineCount": 0,
         "syncRaycastCount": 0,
-        "notes": [
-          "foreach removed; existing dependentJob.Complete remains GPUI vendor synchronization residual pending profiler proof."
-        ],
-        "name": "GPUInstancerPrefabManagerUpdate"
-      },
-      {
-        "file": "Assets\\GPUInstancer\\Scripts\\GPUInstancerPrefabManager.cs",
+        "name": "GPUInstancerPrefabManagerLateUpdate",
+        "file": "Assets/GPUInstancer/Scripts/GPUInstancerPrefabManager.cs",
         "startLine": 66,
-        "endLine": 82,
-        "newReferenceLikeCount": 0,
-        "stringFormatCount": 0,
-        "toStringCount": 0,
-        "linqCount": 0,
-        "foreachCount": 0,
-        "sceneSearchCount": 0,
-        "getComponentCount": 0,
-        "startCoroutineCount": 0,
-        "syncRaycastCount": 0,
+        "endLine": 83,
+        "isProductionHotPath": true,
+        "isEditorOrDevelopmentOnly": false,
         "notes": [
-          "foreach removed; existing dependentJob.Complete and ComputeBuffer.SetData remain GPUI vendor synchronization/upload residual pending profiler proof."
+          "dependentJob.Complete/ComputeBuffer.SetData remain vendor residual pending profiler proof."
+        ]
+      },
+      {
+        "hotNewReferenceTypeCount": 5,
+        "coldReferenceTypeCount": 0,
+        "valueTypeNewCount": 0,
+        "hotNewDetails": [
+          {
+            "line": 253,
+            "text": "runtimeData.instanceLODDataTexture = new RenderTexture(textureWidth, lodTextureHeight, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear)",
+            "type": "RenderTexture"
+          },
+          {
+            "line": 273,
+            "text": "gpuiLod.transformationMatrixAppendBuffer = new ComputeBuffer(runtimeData.bufferSize, GPUInstancerConstants.STRIDE_SIZE_INT, ComputeBufferType.Append);",
+            "type": "ComputeBuffer"
+          },
+          {
+            "line": 279,
+            "text": "gpuiLod.transformationMatrixAppendTexture = new RenderTexture(textureWidth, matrixTextureHeight, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear)",
+            "type": "RenderTexture"
+          },
+          {
+            "line": 296,
+            "text": "gpuiLod.shadowAppendBuffer = new ComputeBuffer(runtimeData.bufferSize, GPUInstancerConstants.STRIDE_SIZE_INT, ComputeBufferType.Append);",
+            "type": "ComputeBuffer"
+          },
+          {
+            "line": 303,
+            "text": "gpuiLod.shadowAppendTexture = new RenderTexture(textureWidth, matrixTextureHeight, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear)",
+            "type": "RenderTexture"
+          }
         ],
-        "name": "GPUInstancerPrefabManagerLateUpdate"
-      },
-      {
-        "file": "Assets\\GPUInstancer\\Scripts\\GPUInstancerModificationCollider.cs",
-        "startLine": 27,
-        "endLine": 54,
-        "newReferenceLikeCount": 0,
+        "coldNewDetails": [],
+        "valueTypeNewDetails": [],
         "stringFormatCount": 0,
         "toStringCount": 0,
         "linqCount": 0,
-        "foreachCount": 0,
+        "foreachCount": 1,
         "sceneSearchCount": 0,
         "getComponentCount": 0,
         "startCoroutineCount": 0,
         "syncRaycastCount": 0,
-        "notes": [],
-        "name": "GPUInstancerModificationColliderUpdate"
-      },
-      {
-        "file": "Assets\\GPUInstancer\\Scripts\\GPUInstancerGUIInfo.cs",
-        "startLine": 14,
-        "endLine": 164,
-        "newReferenceLikeCount": 9,
-        "stringFormatCount": 0,
-        "toStringCount": 0,
-        "linqCount": 0,
-        "foreachCount": 0,
-        "sceneSearchCount": 0,
-        "getComponentCount": 0,
-        "startCoroutineCount": 0,
-        "syncRaycastCount": 0,
+        "name": "GPUInstancerSetAppendBuffersGLES3ResourceGuard",
+        "file": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
+        "startLine": 243,
+        "endLine": 313,
+        "isProductionHotPath": false,
+        "isEditorOrDevelopmentOnly": false,
         "notes": [
-          "Debug OnGUI is compiled only for UNITY_EDITOR or DEVELOPMENT_BUILD after patch; string concatenation remains development UI only."
-        ],
-        "name": "GPUInstancerGUIInfoDevOnGUI"
+          "Cold/runtime buffer setup path: fixed texture dimension guards and shadow buffer/texture reuse. Not per-frame draw hot path; contains required ComputeBuffer/RenderTexture resource allocations only when capacity changes."
+        ]
       },
       {
-        "file": "Assets\\Technie\\PhysicsCreator\\Scripts\\Rigid\\RigidColliderCreator.cs",
-        "startLine": 1038,
-        "endLine": 1049,
-        "newReferenceLikeCount": 0,
+        "hotNewReferenceTypeCount": 0,
+        "coldReferenceTypeCount": 0,
+        "valueTypeNewCount": 0,
+        "hotNewDetails": [],
+        "coldNewDetails": [],
+        "valueTypeNewDetails": [],
         "stringFormatCount": 0,
         "toStringCount": 0,
         "linqCount": 0,
@@ -315,156 +299,174 @@
         "getComponentCount": 0,
         "startCoroutineCount": 0,
         "syncRaycastCount": 0,
-        "notes": [],
-        "name": "TechnieInflationCompatibility"
+        "name": "TechnieInflationCompatibility",
+        "file": "Assets/Technie/PhysicsCreator/Scripts/Rigid/RigidColliderCreator.cs",
+        "startLine": 1043,
+        "endLine": 1053,
+        "isProductionHotPath": false,
+        "isEditorOrDevelopmentOnly": false,
+        "notes": [
+          "Removed Unity-6-deleted MeshCollider inflation API from default branch; legacy calls remain only behind TECHNIE_LEGACY_MESHCOLLIDER_INFLATION."
+        ]
       },
       {
-        "file": "Assets\\Technie\\PhysicsCreator\\Scripts\\Rigid\\RigidColliderCreator.cs",
-        "startLine": 1016,
-        "endLine": 1035,
-        "newReferenceLikeCount": 1,
+        "hotNewReferenceTypeCount": 2,
+        "coldReferenceTypeCount": 0,
+        "valueTypeNewCount": 0,
+        "hotNewDetails": [
+          {
+            "line": 1026,
+            "text": "MeshCollider[] generatedColliders = new MeshCollider[autoColliderCount];",
+            "type": "MeshCollider"
+          },
+          {
+            "line": 1028,
+            "text": "RigidColliderCreatorChild[] childMarkers = new RigidColliderCreatorChild[autoColliderCount];",
+            "type": "RigidColliderCreatorChild"
+          }
+        ],
+        "coldNewDetails": [],
+        "valueTypeNewDetails": [],
         "stringFormatCount": 0,
         "toStringCount": 0,
-        "linqCount": 2,
+        "linqCount": 0,
         "foreachCount": 0,
         "sceneSearchCount": 0,
         "getComponentCount": 1,
         "startCoroutineCount": 0,
         "syncRaycastCount": 0,
-        "notes": [],
-        "name": "TechnieAutoColliderChildMarkerRebuild"
+        "name": "TechnieAutoColliderChildMarkerRebuild",
+        "file": "Assets/Technie/PhysicsCreator/Scripts/Rigid/RigidColliderCreator.cs",
+        "startLine": 1016,
+        "endLine": 1039,
+        "isProductionHotPath": false,
+        "isEditorOrDevelopmentOnly": false,
+        "notes": [
+          "Cold collider materialization path; List and ToArray churn removed; persisted arrays are required HullMapping ownership."
+        ]
       },
       {
-        "file": "Assets\\AmplifyImpostors\\Plugins\\Scripts\\VersionInfo.cs",
+        "hotNewReferenceTypeCount": 0,
+        "coldReferenceTypeCount": 0,
+        "valueTypeNewCount": 0,
+        "hotNewDetails": [],
+        "coldNewDetails": [],
+        "valueTypeNewDetails": [],
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 0,
+        "foreachCount": 0,
+        "sceneSearchCount": 0,
+        "getComponentCount": 0,
+        "startCoroutineCount": 0,
+        "syncRaycastCount": 0,
+        "name": "AmplifyVersionInfoStaticToString",
+        "file": "Assets/AmplifyImpostors/Plugins/Scripts/VersionInfo.cs",
         "startLine": 18,
         "endLine": 21,
-        "newReferenceLikeCount": 0,
-        "stringFormatCount": 0,
-        "toStringCount": 0,
-        "linqCount": 0,
-        "foreachCount": 0,
-        "sceneSearchCount": 0,
-        "getComponentCount": 0,
-        "startCoroutineCount": 0,
-        "syncRaycastCount": 0,
-        "notes": [],
-        "name": "AmplifyVersionInfoStaticToString"
-      },
-      {
-        "file": "Assets\\AmplifyImpostors\\Plugins\\Scripts\\HelperExtensions.cs",
-        "startLine": 201,
-        "endLine": 203,
-        "newReferenceLikeCount": 1,
-        "stringFormatCount": 0,
-        "toStringCount": 0,
-        "linqCount": 0,
-        "foreachCount": 0,
-        "sceneSearchCount": 0,
-        "getComponentCount": 0,
-        "startCoroutineCount": 0,
-        "syncRaycastCount": 0,
-        "notes": [],
-        "name": "AmplifySpriteUtilityNonEditorFallback"
-      },
-      {
-        "file": "Assets\\GPUInstancer\\Scripts\\GPUInstancerDetailManager.cs",
-        "startLine": 584,
-        "endLine": 597,
-        "newReferenceLikeCount": 0,
-        "stringFormatCount": 0,
-        "toStringCount": 0,
-        "linqCount": 0,
-        "foreachCount": 0,
-        "sceneSearchCount": 0,
-        "getComponentCount": 0,
-        "startCoroutineCount": 0,
-        "syncRaycastCount": 0,
-        "notes": [],
-        "name": "GPUInstancerDetailDispatchPatch"
-      },
-      {
-        "file": "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Singleton\\SingletonScriptable.cs",
-        "startLine": 1,
-        "endLine": 17,
-        "newReferenceLikeCount": 1,
-        "stringFormatCount": 0,
-        "toStringCount": 0,
-        "linqCount": 0,
-        "foreachCount": 0,
-        "sceneSearchCount": 0,
-        "getComponentCount": 0,
-        "startCoroutineCount": 0,
-        "syncRaycastCount": 0,
-        "notes": [],
-        "name": "MasterAudioSingletonScriptableEditorGuard"
-      },
-      {
-        "file": "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Settings\\MasterAudioSettings.cs",
-        "startLine": 20,
-        "endLine": 31,
-        "newReferenceLikeCount": 1,
-        "stringFormatCount": 0,
-        "toStringCount": 0,
-        "linqCount": 0,
-        "foreachCount": 0,
-        "sceneSearchCount": 0,
-        "getComponentCount": 0,
-        "startCoroutineCount": 0,
-        "syncRaycastCount": 0,
-        "notes": [],
-        "name": "MasterAudioSettingsEditorStaticCtorGuard"
+        "isProductionHotPath": false,
+        "isEditorOrDevelopmentOnly": false,
+        "notes": []
       }
     ]
+  },
+  "sourceLevelFixes": {
+    "gpuInstancerGles3TextureReuseGuard": {
+      "file": "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
+      "lines": {
+        "gpuiTextureWidthLine": 246,
+        "gpuiLodTextureGuardLine": 250,
+        "gpuiMatrixTextureGuardLine": 275,
+        "gpuiShadowBufferGuardLine": 292,
+        "gpuiShadowTextureGuardLine": 299
+      },
+      "coldResourceSetupTokenScan": {
+        "lineRange": "240-320",
+        "newResourceCount": 5,
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 0,
+        "foreachCount": 2,
+        "classification": "COLD_RESOURCE_SETUP_NOT_ZERO_GC_HOT_PATH"
+      },
+      "whatChanged": "Dimension guards now compare RenderTexture width/height to actual tiled texture dimensions; shadow append buffer/texture are recreated only when null or capacity changes.",
+      "rejected": "Leaving unconditional shadow resource rebuilds and width-vs-bufferSize checks was rejected because it can churn ComputeBuffer/RenderTexture resources on large instance counts."
+    },
+    "technieWarningDebtPatch": {
+      "compileArtifactBeforePatch": "Docs/AgentLogs/Build_1401_Attempt_20260528_061044_SUMMARY.json",
+      "warningsBeforePatch": [
+        "FaceAlignmentBoxFitter.cs CS0169 TriangleBucket.averagedCenter",
+        "RigidColliderCreator.cs CS0169 RigidColliderCreator.debugMesh",
+        "SkinnedColliderEditorData.cs CS0649 lastModifiedFrame"
+      ],
+      "staticAfterPatch": {
+        "averagedCenterFieldCount": 0,
+        "debugMeshFieldDeclarationCount": 0,
+        "lastModifiedFrameInitialized": true,
+        "lastModifiedFrameInitializerLine": 128
+      },
+      "compileAfterPatch": "Docs/AgentLogs/Build_1401_Attempt_20260528_061325_BLOCKED_BY_CONTENTION.json",
+      "compileAfterPatchStatus": "BLOCKED_BY_CONTENTION"
+    },
+    "guardedCompileWrapperSingleProcessGateFix": {
+      "file": "Tools/Run_Guarded_Vendor_Compile_1401.ps1",
+      "lines": {
+        "arrayWrapCompilerProcessesLine": 72,
+        "cpuBlockedLine": 73,
+        "compilerBlockedLine": 74,
+        "compilerProcessCountReportLine": 105,
+        "blockReasonsReportLine": 107
+      },
+      "whatChanged": "Compiler process results are forced into an array before counting; unavailable CPU sample now blocks; summary records compilerProcessCount and blockReasons.",
+      "evidenceAfterPatch": "Docs/AgentLogs/Build_1401_Attempt_20260528_123346_BLOCKED_BY_CONTENTION.json",
+      "evidenceAfterPatchResult": "blockedByContention=true, compilerProcessCount=2, attempts=[]"
+    }
   },
   "dataSovereignty": {
     "globalDataVaultFieldsMigrated": false,
     "bufferIdConstantsSecured": [],
     "tryAcquireWriteLockSites": [],
     "finallyReleaseSites": [],
-    "reason": "1401 changed vendor managed compatibility and import boundaries only; no GlobalDataVault buffers, native containers, unmanaged DTOs, or SignalBus payloads were introduced."
+    "reason": "1401 changed vendor managed compatibility, plugin import, asmdef, and GPUI resource guard code only; no GlobalDataVault buffers, locks, native DTOs, or SignalBus payloads were introduced."
   },
   "structLayoutAudit": {
     "modifiedRuntimeDtos": [],
     "unmanagedStructOffsetsRequired": false,
-    "reason": "No unmanaged runtime struct, save DTO, SignalBus payload, telemetry entry, NativeArray element, or GPU upload record was created or modified."
+    "reason": "No unmanaged runtime struct, save DTO, SignalBus payload, telemetry entry, NativeArray element, or GPU upload record was created or modified by 1401 in this recheck."
   },
   "cinematicCheatAndScalability": {
-    "globalQualityWeightTouched": false,
-    "binaryQualitySwitchesIntroduced": 0,
-    "physicalSimulationIntroduced": false,
-    "cheapFallbacks": [
-      "Candice fail-closed SQLite provider",
-      "Technie contactOffset compatibility approximation instead of mesh inflation recook",
-      "Candice tile overlap allocation replaced with fixed NonAlloc buffer"
-    ],
-    "continuousScalabilityImpact": "No visual simulation, gameplay truth route, quality tier branch, DTO layout, save identity, or GlobalQualityWeight route was changed."
+    "physicalSimulationAdded": false,
+    "visualFakeDecision": "No visual/physical simulation route was added. GPUI patch preserves existing impostor/instancing visual fake path and avoids resource churn.",
+    "globalQualityWeightUse": "No new quality route was added; existing vendor settings own visual density. No binary isLowEnd branch was introduced by 1401.",
+    "lowMiddleHighUltra": "Low/Middle avoid needless RT/ComputeBuffer churn during buffer setup; High/Ultra retain existing instance capacity and visuals without extra physical truth."
   },
   "residualRisks": [
-    "Own guarded vendor compile still not executed: latest wrapper gate blocked before dotnet build with CPU 100 percent and active dotnet PID 66408.",
-    "Unity import/regeneration is pending; generated Candice and MasterAudio csproj files are absent until Editor import.",
-    "Runtime Unity Console, PlayMode, ProfilerRecorder, GCMonitor, player-build, and device proof are absent.",
-    "GPUInstancer tree replacement still uses coroutine and managed buffers; left as vendor residual because it is not a compile/API bridge blocker and needs profiler/route review.",
-    "GPUInstancer PrefabManager still has existing same-frame JobHandle.Complete/SetData behavior; not claimed fixed.",
-    "Candice Possessor still uses event-gated FindWithTag, Array.Resize, and Instantiate; continuous per-frame array search and foreach/tag/GetComponent were removed.",
-    "CandiceTile CheckTile still uses synchronous Physics.Raycast; OverlapBox allocation was removed but pathfinding architecture remains vendor/demo residual.",
-    "MSB3277 System.Net.Http conflict from external full log remains outside 1401 vendor source patch."
+    "The 20260528_061044 compile output is diagnostic only, not valid throttling proof: the wrapper failed to block one active dotnet process before the single-process gate fix.",
+    "Post-Technie-warning-patch compile proof is blocked by CPU_SAMPLE_UNAVAILABLE and active compiler processes csc PID 33212 plus dotnet PID 26840 in Docs/AgentLogs/Build_1401_Attempt_20260528_123346_BLOCKED_BY_CONTENTION.json.",
+    "Candice/MasterAudio generated dedicated csproj files remain missing until Unity imports/regenerates asmdefs; source asmdef quarantine passes static audit only.",
+    "Unity Editor import, PlayMode, ProfilerRecorder, GCMonitor, and player build proof are absent.",
+    "Candice disabled provider returns shared mutable empty List<T> caches to avoid per-call allocation; API-level external mutation remains documented residual."
   ],
   "modifiedFileHashes": {
     "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Save System\\Overrides\\CandiceSQLiteProvider.cs": "f60bd7d9097f74c6028bf5d1b4313e63e4f2518db7ae5b399aa192dc39f288d4",
     "Assets\\Candice AI for Games\\Scripts\\TriggerNextScene.cs": "e16f37ca835740bd537c46b4305d1a145682e7d076d14fa1f21c68441c415aa3",
     "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Animations Management\\Possessor\\Possessor.cs": "fe14dadb56b08c5d4a015eb6ba2b7f74e00cf657bbf05cc0623cb7e07967f7fd",
     "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Pathfinding\\CandiceTile.cs": "52716435fcb67a7d44340933a82c674d6612d5e714cc6b606333f6acfc21de3c",
-    "Assets\\Technie\\PhysicsCreator\\Scripts\\Rigid\\RigidColliderCreator.cs": "111c1ff7f3546d9d8da45c553a924b42bc3534d64f58a9b168a98600cc561923",
+    "Assets\\GPUInstancer\\Scripts\\Core\\Static\\GPUInstancerUtility.cs": "081443e1ac7ed2135f0dd20cdfba57cac6ee94853105dc3afbacd3507455200b",
+    "Assets\\GPUInstancer\\Resources\\Compute\\CSInstancedBufferToTexture.compute": "fb720c995e8fc6fd3439eaf8e0f5e096792ca173f67cbad6ebc3cbe64d66a0a7",
+    "Assets\\GPUInstancer\\Scripts\\Core\\DataModel\\GPUInstancerConstants.cs": "d6b47c627b1968f0a0535c320756325ee2c97d349a706cd377ca6907b5dc6d86",
+    "Assets\\GPUInstancer\\Scripts\\GPUInstancerPrefabManager.cs": "9277ca90047f433058ef0ac652c65ac93555ca62f053aaf71ef890d0bb5fe04b",
+    "Assets\\GPUInstancer\\Scripts\\GPUInstancerFloatingOriginHandler.cs": "f6bba6f35806311db64a0eab7aca68adce4ba12596ef0d846ff3fb55aa25ae7a",
+    "Assets\\GPUInstancer\\Scripts\\GPUInstancerPrefab.cs": "9f76c6a38ff4db64334a7aef93d5036cf2cc1d5db064d07b7ade678d9f277c87",
+    "Assets\\GPUInstancer\\Scripts\\GPUInstancerModificationCollider.cs": "c105083b85f3a1fbd4a30d0eeb383e793e0da4cba64752e1e33b6c3e677216d5",
+    "Assets\\GPUInstancer\\Scripts\\GPUInstancerGUIInfo.cs": "7c8eeaa5fd8256fb3f2111b8f797722bfcce578a97dd0372d9dd96db1b3bc390",
+    "Assets\\Technie\\PhysicsCreator\\Scripts\\Fitters\\FaceAlignmentBoxFitter.cs": "a4c6e0063aec1ac79b70161a7d9d729919a7849d4dc8ed8628df2bb2855caf25",
+    "Assets\\Technie\\PhysicsCreator\\Scripts\\Rigid\\RigidColliderCreator.cs": "aebedc3a957c607c27bf98bd5cd547cb0f50c5e8c0dc8ec86fe73e1b4e13ae57",
+    "Assets\\Technie\\PhysicsCreator\\Scripts\\Skinned\\SkinnedColliderEditorData.cs": "f67f8aade02b8b970285c1169154f101bd2d16e492aa9d0a3181db7c43a63703",
     "Assets\\Technie\\PhysicsCreator\\Plugins\\VHACD\\libvhacd.dll.meta": "fafd72b094951b450ff0505e2d4248fca6f5e809f76057bcc71e259709a73d6d",
     "Assets\\AmplifyImpostors\\Plugins\\Scripts\\HelperExtensions.cs": "e9ffe989aa30bd2341785cfedd655ed3f2d67fb2fcc579cf427e4da28ca8bb3c",
     "Assets\\AmplifyImpostors\\Plugins\\Scripts\\Preferences.cs": "dcbab75851a91fccfdc6270597274c454e1a3c5e3aa5b2c1e669fcaff63d2d8b",
     "Assets\\AmplifyImpostors\\Plugins\\Scripts\\VersionInfo.cs": "8b55809626e9d87363f9b303e032565b0537da09e87f9339b945c75a6720cf73",
-    "Assets\\GPUInstancer\\Scripts\\GPUInstancerDetailManager.cs": "88ae502d5b946e2fbb77eac967dc5116f47dcd06226f361eeacff37e0e0a0c1a",
-    "Assets\\GPUInstancer\\Scripts\\GPUInstancerFloatingOriginHandler.cs": "f6bba6f35806311db64a0eab7aca68adce4ba12596ef0d846ff3fb55aa25ae7a",
-    "Assets\\GPUInstancer\\Scripts\\GPUInstancerPrefabManager.cs": "9277ca90047f433058ef0ac652c65ac93555ca62f053aaf71ef890d0bb5fe04b",
-    "Assets\\GPUInstancer\\Scripts\\GPUInstancerPrefab.cs": "9f76c6a38ff4db64334a7aef93d5036cf2cc1d5db064d07b7ade678d9f277c87",
-    "Assets\\GPUInstancer\\Scripts\\GPUInstancerModificationCollider.cs": "c105083b85f3a1fbd4a30d0eeb383e793e0da4cba64752e1e33b6c3e677216d5",
-    "Assets\\GPUInstancer\\Scripts\\GPUInstancerGUIInfo.cs": "7c8eeaa5fd8256fb3f2111b8f797722bfcce578a97dd0372d9dd96db1b3bc390",
     "Assets\\Candice AI for Games\\Scripts\\CandiceAIforGames.Runtime.asmdef": "c1d72eed1fb488f01275b7b6efd8f3c142d718f13a387a5ed4deead0c4655218",
     "Assets\\Candice AI for Games\\Scripts\\Editor\\CandiceAIforGames.Editor.asmdef": "c09789d77e0895ccb52f7c5f7a8bf891b9a74d9bbee45686dcecb161842c62df",
     "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostors.Runtime.asmdef": "a581cbf08fc7848ef9519d9f86458ea320780b6c0e50dfab6640412e37a55ad2",
@@ -475,15 +477,11 @@
     "Assets\\Plugins\\Editor\\DarkTonic\\MasterAudio\\DarkTonic.MasterAudio.Editor.asmdef": "a043eb72554540044af63be1f31d7e00ec904986f7e98cfbb99e3ccbe502a804",
     "Assets\\Plugins\\Editor\\RelationsInspector\\RelationsInspector.Editor.asmdef": "1d181594895b7e15bfe1c3926197f8078acc3aa8ece3e954c955918b541cf2c5",
     "Assets\\VendorCompatibilityTests\\Editor\\VendorBridgeEditModeTests.cs": "2008f7b077e1a1f585b718e942425ad9af7da042cea76d7c079e85fdd665442d",
-    "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Events\\EventSounds.cs": "3f5ad825eae13217f513cfeb87661b6d8d784b0b69ed40df5ed8850ac50afed3",
-    "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Settings\\SoundGroupVariation.cs": "86f32ab664272abac6c200b099988b1c8b55a8dc042b4501d688306763ec1c61",
-    "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Singleton\\SingletonScriptable.cs": "7f425a1bdbb3ec21f78a2edf9adee291d65051a5282dd20d8d7b745937713a68",
-    "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Settings\\MasterAudioSettings.cs": "ed35993cbbf727824542753598460db78070a5d41fbe9ae41faf2fdd9352dc79",
-    "Tools\\Run_Guarded_Vendor_Compile_1401.ps1": "9d85d54fef435971ab08ee257ba3f20b7a95c945cc86a01f9666ab9256487164",
+    "Tools\\Run_Guarded_Vendor_Compile_1401.ps1": "c871a902580140856471ab0b71120a2543b752928a44b7edcc5cfca244a8b307",
     "Tools\\Assert_Asmdef_Leakage_1401.py": "13e7d576d5180d27e59ea2871c4adeb01f5c2b7283d63f637ff5dd70925f5572",
-    "Docs\\AgentLogs\\CandicePluginImporterAudit_1401.json": "5dfcdb1280776620bbdcded99842deb4bfdaf7dbda999cc9322db2da45ee8c8b",
-    "Docs\\AgentLogs\\VendorBoundaryAudit_1401.json": "29df322fc3067e5572a3ddc03ad6dfff6abcb004a92ec8acd1cd9d1f30900c44",
-    "Docs\\AgentLogs\\VendorHotPathDeltaScan_1401.json": "25f0f7b2d9279c544cfac2cf6d693a657b0a3430a38f8605fbc10c485cbea4ee",
-    "Docs\\AgentLogs\\AsmdefLeakage_1401.json": "6c316efc0d67cc71610e62c2bdc368107da33903aa6508e07d993199551ed99f"
+    "Docs\\AgentLogs\\VendorHotPathDeltaScan_1401.json": "2ef65fc7236c9f50258069fa8305e08783c3ad9d49a5c92d2bd3bdc2d9a30f67",
+    "Docs\\AgentLogs\\VendorStaticAudit_1401.json": "35e738bde07c0aaefc4d43b2ec321c1610b365d303c49a99382fec1f76642c5a",
+    "Docs\\AgentLogs\\AsmdefLeakage_1401.json": "6c316efc0d67cc71610e62c2bdc368107da33903aa6508e07d993199551ed99f",
+    "Docs\\AgentLogs\\Build_1401_Attempt_20260528_123346_BLOCKED_BY_CONTENTION.json": "dfb117fac50f8f4557e74e7ed6472f216167ce47e75004a6295cd6af63ce8104"
   }
 }

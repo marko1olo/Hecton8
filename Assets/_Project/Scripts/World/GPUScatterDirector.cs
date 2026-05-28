@@ -295,9 +295,11 @@ namespace Hecton8.World
         private GraphicsBuffer _instanceBuffer;
         private GraphicsBuffer _visibleIndicesBuffer;
         private GraphicsBuffer _visibilityCacheBuffer;
+        private GraphicsBuffer _visibilityCacheUploadBuffer;
         private GraphicsBuffer _scatterDensityBuffer;
         private GraphicsBuffer _scatterBoundsLutBuffer;
         private GraphicsBuffer _argsBuffer;
+        private GraphicsBuffer _argsUploadBuffer;
         private GraphicsBuffer _modInstanceMatrixBufferA;
         private GraphicsBuffer _modInstanceMatrixBufferB;
         private float4x4[] _modInstanceMatrices;
@@ -813,9 +815,15 @@ namespace Hecton8.World
                 return;
 
             ReleaseBuffer(ref _visibilityCacheBuffer);
-            _visibilityCacheBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, requiredCapacity, UnsafeUtility.SizeOf<uint>()); // COLD ALLOC: GraphicsBuffer[gridResolution^2] - GPU-written foveated scatter visibility cache - owner: GPUScatterDirector
+            ReleaseBuffer(ref _visibilityCacheUploadBuffer);
+            _visibilityCacheBuffer = GraphicsBufferUploadUtility.CreateStructuredCopyDestinationBuffer<uint>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[gridResolution^2] - GPU-written foveated scatter visibility cache, CPU clear via staging copy - owner: GPUScatterDirector
+            _visibilityCacheUploadBuffer = GraphicsBufferUploadUtility.CreateStructuredUploadStagingBuffer<uint>(requiredCapacity); // COLD ALLOC: GraphicsBuffer[gridResolution^2] - CPU-visible visibility-cache clear staging, GPU copy source only - owner: GPUScatterDirector
             EnsureVisibilityCacheClearUploadCapacity(requiredCapacity);
-            GraphicsBufferUploadUtility.UploadArraySetData(_visibilityCacheBuffer, _visibilityCacheClearUpload, requiredCapacity);
+            GraphicsBufferUploadUtility.UploadArrayAndCopyWholeBuffer(
+                _visibilityCacheUploadBuffer,
+                _visibilityCacheBuffer,
+                _visibilityCacheClearUpload,
+                requiredCapacity);
             _hasFoveatedVisibilitySnapshot = false;
         }
 
@@ -867,10 +875,21 @@ namespace Hecton8.World
         private void EnsureIndirectArgsBuffer()
         {
             if (_argsBuffer == null)
+            {
                 _argsBuffer = new GraphicsBuffer(
-                    GraphicsBuffer.Target.IndirectArguments,
+                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw | GraphicsBuffer.Target.CopyDestination,
                     1,
                     GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - GPU CopyCount indirect indexed draw args - owner: GPUScatterDirector
+                _argsUploadBuffer = GraphicsBufferUploadUtility.CreateRawIndirectUploadStagingBuffer(
+                    1,
+                    GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - CPU-visible scatter args staging, GPU copy source only - owner: GPUScatterDirector
+            }
+            else if (_argsUploadBuffer == null)
+            {
+                _argsUploadBuffer = GraphicsBufferUploadUtility.CreateRawIndirectUploadStagingBuffer(
+                    1,
+                    GraphicsBuffer.IndirectDrawIndexedArgs.size);
+            }
 
             if (ReferenceEquals(_argsBufferMesh, scatterMesh))
                 return;
@@ -884,7 +903,7 @@ namespace Hecton8.World
                 baseVertexIndex = scatterMesh != null ? (uint)math.max(0, scatterMesh.GetBaseVertex(0)) : 0u,
                 startInstance = 0u
             };
-            GraphicsBufferUploadUtility.UploadArraySetData(_argsBuffer, _argsUpload, 1);
+            GraphicsBufferUploadUtility.UploadArrayAndCopyWholeBuffer(_argsUploadBuffer, _argsBuffer, _argsUpload, 1);
         }
 
         private void PopulateFrustumPlaneUpload(Camera cullCamera)
@@ -1776,9 +1795,11 @@ namespace Hecton8.World
             ReleaseBuffer(ref _instanceBuffer);
             ReleaseBuffer(ref _visibleIndicesBuffer);
             ReleaseBuffer(ref _visibilityCacheBuffer);
+            ReleaseBuffer(ref _visibilityCacheUploadBuffer);
             ReleaseBuffer(ref _scatterDensityBuffer);
             ReleaseBuffer(ref _scatterBoundsLutBuffer);
             ReleaseBuffer(ref _argsBuffer);
+            ReleaseBuffer(ref _argsUploadBuffer);
             ReleaseBuffer(ref _modInstanceMatrixBufferA);
             ReleaseBuffer(ref _modInstanceMatrixBufferB);
             ReleaseDepthPyramidTexture();

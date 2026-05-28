@@ -81,6 +81,7 @@ namespace Hecton8.Graphics.Culling
         private ComputeShader _activeComputeShader;
         private GraphicsBuffer _visibleInstancesBuffer;
         private GraphicsBuffer _indirectArgsBuffer;
+        private GraphicsBuffer _indirectArgsUploadBuffer;
         private readonly uint[] _indirectArgsUpload = new uint[IndirectArgsCount]; // COLD ALLOC: uint[5] - cached indirect args initialization upload - owner: InstanceCullingService
         private VaultGenerationHandle<InstanceCullingTelemetryEntry> _telemetryRingHandle;
         private IDataVault _dataVault;
@@ -361,6 +362,7 @@ namespace Hecton8.Graphics.Culling
             _readbackPending = 0;
             ReleaseBuffer(ref _visibleInstancesBuffer);
             ReleaseBuffer(ref _indirectArgsBuffer);
+            ReleaseBuffer(ref _indirectArgsUploadBuffer);
 
             ReleaseVaultHandle(_dataVault, ref _telemetryRingHandle);
 
@@ -461,7 +463,21 @@ namespace Hecton8.Graphics.Culling
             }
 
             if (_indirectArgsBuffer == null)
-                _indirectArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, IndirectArgsCount, sizeof(uint)); // COLD ALLOC: GraphicsBuffer[5] - indirect args written by CopyCount - owner: InstanceCullingService
+            {
+                _indirectArgsBuffer = new GraphicsBuffer(
+                    GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw | GraphicsBuffer.Target.CopyDestination,
+                    IndirectArgsCount,
+                    sizeof(uint)); // COLD ALLOC: GraphicsBuffer[5] - indirect args written by CopyCount - owner: InstanceCullingService
+                _indirectArgsUploadBuffer = GraphicsBufferUploadUtility.CreateRawIndirectUploadStagingBuffer(
+                    IndirectArgsCount,
+                    sizeof(uint)); // COLD ALLOC: GraphicsBuffer[5] - CPU-visible indirect args staging, GPU copy source only - owner: InstanceCullingService
+            }
+            else if (_indirectArgsUploadBuffer == null)
+            {
+                _indirectArgsUploadBuffer = GraphicsBufferUploadUtility.CreateRawIndirectUploadStagingBuffer(
+                    IndirectArgsCount,
+                    sizeof(uint));
+            }
 
             IDataVault vault = CacheDataVaultCold();
             if (vault == null)
@@ -491,7 +507,11 @@ namespace Hecton8.Graphics.Culling
             _indirectArgsUpload[2] = args.StartIndex;
             _indirectArgsUpload[3] = args.BaseVertexIndex;
             _indirectArgsUpload[4] = args.StartInstance;
-            _indirectArgsBuffer.SetData(_indirectArgsUpload, 0, 0, IndirectArgsCount);
+            GraphicsBufferUploadUtility.UploadArrayAndCopyWholeBuffer(
+                _indirectArgsUploadBuffer,
+                _indirectArgsBuffer,
+                _indirectArgsUpload,
+                IndirectArgsCount);
             _lastArgs0 = args0;
             _lastArgs2 = args2;
             _lastArgs3 = args3;

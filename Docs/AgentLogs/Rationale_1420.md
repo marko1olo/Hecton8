@@ -51,10 +51,10 @@ Hardware Impact: Saved one full project build on saturated CPU; exact time not c
 
 ## Decision 007: APEX Evidence Recheck
 Problem: Final verification required exact proof, not a prose completion claim, and the first case-insensitive scanner counted `math.select` as a false LINQ `.Select` hit.
-Solution: Reran the Zero-GC scan with `-CaseSensitive`, producing 0 matches for `new Native*`, `Allocator.Persistent`, `foreach`, LINQ `.Where/.Select/.ToList/.ToArray`, `string.Format`, `.ToString`, interpolated strings, and literal string concatenation. Final report artifact hash is `312A38081912E6FE8E9227873AD7C7C453DD4700D067473411D34D08148733B5`.
+Solution: Reran the Zero-GC scan with `-CaseSensitive`, producing 0 matches for `new Native*`, `Allocator.Persistent`, `foreach`, LINQ `.Where/.Select/.ToList/.ToArray`, `string.Format`, `.ToString`, interpolated strings, and literal string concatenation. Final report artifact hash is `E57F679DFB487D1AA64C6F8E9914B5F8A986A57C1384F22D464FF1141F31B27F`.
 Rejected Alternatives: Editing the runtime to silence a false positive, or launching a build while CPU/process gates were closed.
 Scalability potential: No runtime cost. Keeps Low/Middle/High/Ultra truth routes unchanged and preserves continuous `GlobalQualityWeight` scaling instead of binary quality switches.
-Hardware Impact: 0 us runtime. Build avoided on host with active `dotnet` PID 24928; final CPU sample was 64.92%, so both CPU and active-dotnet rules blocked a new build.
+Hardware Impact: One targeted runtime build was executed only after gate opened at CPU 37.00% and 0 compiler processes; `Hecton8.Core.csproj` passed with 0 warnings and 0 errors in 19.91s. A second build was rejected after CPU rose to 51.61%.
 
 ## Decision 008: Buoyancy Math LOD Made Real
 Problem: APEX review found `ActiveSampleBudget` was written into the DTO but `CalculateBuoyancyForceJob` still evaluated all four analytical submerged-ratio samples; `quality` algebraically cancelled out, so processing load did not actually scale.
@@ -90,3 +90,45 @@ Solution: The harness now derives `ActiveSampleBudget` from the same continuous 
 Rejected Alternatives: Leaving the harness as a generic ballast stability test while the report implies scalability coverage.
 Scalability potential: The editor proof now covers center-only weak-device math through four-probe high/ultra math without platform booleans.
 Hardware Impact: 0 us runtime. Editor-only proof adds two integer min/max accumulators inside the measured harness loop.
+
+## Decision 013: Mirror Fill Must Not Reenter Tanks Read-Only Under Writer Lock
+Problem: `CompleteBallastSolverJob` holds the ballast solver write locks, then calls `MirrorBallastFillFromTanks`. That method tried to read tanks through `TryReadBallastTanksReadOnly`, which can fail or become contract-ambiguous while the same owner holds the tanks write-lock.
+Solution: Added `TryResolveBallastTanksLocked` and routed mirror-fill through the lock-held mutable tanks view before acquiring the separate ballast fill write-lock.
+Rejected Alternatives: Assuming `TryReadOnlyHandle` can coexist with a writer lease, or releasing solver locks before mirroring. Releasing early would reopen a relocation window before force packet readback.
+Scalability potential: No quality-tier behavior changes. This is deterministic owner-phase correctness for all devices.
+Hardware Impact: No measurable runtime saving claimed; removes a possible silent mirror skip during ballast job completion.
+
+## Decision 014: Report Line Proof Must Match Source Bytes
+Problem: The JSON proof artifact still listed old `H8Memory.cs` line numbers and omitted `TryResolveBallastTanksLocked` from the named mutable locked route list, even though the source and line proof had moved on.
+Solution: Corrected only `Docs/Reports/SUBMARINE_MEMORY_OPTIMIZATION_REPORT_1420.json`: BufferID line proof now matches `Assets/_Project/Scripts/Core/Memory/H8Memory.cs` lines 144-147 and 2111-2118, and the mutable route list includes `TryResolveBallastTanksLocked`.
+Rejected Alternatives: Leaving stale evidence because the C# was correct, or running another compiler pass for a JSON-only edit.
+Scalability potential: No runtime behavior change. This preserves audit integrity across Low/Middle/High/Ultra without touching gameplay truth.
+Hardware Impact: 0 us runtime. Avoided an unnecessary second build while the proof-correction CPU gate sampled at 100.00%; the final compilation gate resampled at CPU 72.46% with active `csc` PID 320 and `dotnet` PID 8104.
+
+## Decision 015: Dynamic Flood Room Inputs Must Be Read-Only Vault Consumers
+Problem: `SubmarineMassSolverJob` only reads room water levels, room volumes, and room local AUPs, but the resolver path still used mutable `TryResolveHandle` through a generic existing-buffer helper. That violated the read-accessor purity doctrine and expanded the accidental write surface for a consumer-side job input.
+Solution: Changed room input DTO views to `NativeArray<T>.ReadOnly`, replaced the mutable existing-buffer helper with `TryReadExistingVaultBuffer<T>`, and routed `RoomWaterLevels`, `RoomVolumes`, `RoomLocalAUPs`, plus SHINOBU_332 gyro counters through `TryReadOnlyHandle`.
+Rejected Alternatives: Keeping mutable views because the current job body was disciplined, or adding comments without narrowing the type. Type-level read-only proof is the safer route under simultaneous-agent edits.
+Scalability potential: Low/Middle/High/Ultra gameplay truth is unchanged. Weak devices skip the flood mass frame cleanly if the vault cannot provide read-only room inputs; stronger devices get the same deterministic inputs and spend quality budget on presentation, not ownership divergence.
+Hardware Impact: Same metadata read cost class as the previous route; expected sub-microsecond. Latest C# build passed after CPU gate sampled 48.10% with 0 compiler processes; no full solution rebuild was run.
+
+## Decision 016: Mutating Accessor Names Must Say Refresh
+Problem: `TryReadExistingVaultBuffer` and `TryResolveRoomBuffers` updated cached handles and recorded telemetry faults while carrying read/resolve-style names. That violated the local purity language even though the route was owner-internal.
+Solution: Renamed the mutating helpers and call sites to `TryRefreshExistingReadOnlyVaultBuffer` and removed the stale room resolver name from the active path.
+Rejected Alternatives: Leaving misleading names because behavior was bounded. Under simultaneous-agent edits, names are part of the contract surface.
+Scalability potential: No device-tier behavior change. This is audit correctness, not runtime fidelity.
+Hardware Impact: 0 us runtime behavior change. Latest source later changed again, so the previous build proof is not current.
+
+## Decision 017: Scheduled Room Inputs Need Pinned Lifetime
+Problem: A read-only Vault view from `TryReadOnlyHandle` is current-phase only. Passing room water levels, volumes, and local AUPs into `SubmarineMassSolverJob` allowed the job to outlive the relocation-safe phase.
+Solution: `AdvanceDynamicFloodSolver` now acquires all three room input buffers through `TryAcquireFloodRoomInputAliases`; each buffer is pinned by `TryLockBuffer`, assigned to the job only after the pin succeeds, and released by `ReleaseFloodRoomInputVaultLocks` from failure cleanup, completion cleanup, and dispose cleanup.
+Rejected Alternatives: Plain `TryReadOnlyHandle` into a scheduled job, forcing `.Complete()` in the same frame, or copying room SOA into managed arrays. Same-frame completion burns the dispatcher window; managed copies violate Zero-GC.
+Scalability potential: Low devices fail closed if the room buffers cannot be pinned; middle/high/ultra keep the same deterministic room truth and spend quality budget on visuals, not divergent physics.
+Hardware Impact: Adds three bounded lock/unlock metadata operations only when the 0.5s flood solve is scheduled. Estimated sub-microsecond to a few microseconds on i3/MX350; profiler proof not run.
+
+## Decision 018: Ballast Tanks Must Not Be Read During Pending Writer Job
+Problem: `ApplyMassDistribution` could read `BallastTankDTO` while `_ballastSolverJobPending` kept the tank write lock alive after a nonblocking completion miss. That creates a possible read/write overlap with `EvaluateBallastTanksJob`.
+Solution: `ApplyMassDistribution` and `SumBallastFill` read tanks only when `_ballastSolverJobPending == false` and `_ballastSolverVaultLocksHeld == false`; otherwise they fall back to the mirrored `SubmarineBallastFill01` buffer.
+Rejected Alternatives: Forcing completion before mass distribution or assuming read-only access can coexist with the writer job. Forcing completion would break the no-hidden-complete rule.
+Scalability potential: Weak hardware keeps frame progress by using the last mirrored fill value. Stronger devices normally complete the job in the swap window and read fresh tanks next frame.
+Hardware Impact: No measured saving. The fix avoids a possible data race without adding allocations; fallback work is the same four-tank accumulation.

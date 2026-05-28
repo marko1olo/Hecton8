@@ -21,7 +21,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
     [AddComponentMenu("Hecton8/Gameplay/Player Health")]
-    public sealed class HectonPlayerHealth : MonoBehaviour, ISaveable, ISlowTickable, IDamageReceiver, ICombatHitProfileSource, ICombatPushbackBodySource, IGlobalRegistryHotSwapListener
+    public sealed class HectonPlayerHealth : MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, IDamageReceiver, ICombatHitProfileSource, ICombatPushbackBodySource, IGlobalRegistryHotSwapListener
     {
         private static int s_x001HectonPlayerHealthSignalPushDropCount;
         private const float MinimumRuntimeMaxHealth = 1f;
@@ -366,6 +366,7 @@ namespace Hecton8.Gameplay
         private double _survivalGraceLockoutExpiresAt;
         private bool _isInitialized;
         private bool _registeredToSlowTickManager;
+        private bool _registeredToLateFrameTick;
         private float _baseMaxHealth = 100f;
         private float _runtimeMaxHealthScale = 1f;
         private float _radiationExposureSeconds;
@@ -389,6 +390,9 @@ namespace Hecton8.Gameplay
         private bool _combatDamageSyncDirty;
         private bool _interactionTargetRegistered;
         private bool _hotSwapRegistered;
+        private bool _pendingSurvivalGraceHeartbeatPulse;
+        private bool _pendingLeviathanTraumaRoar;
+        private Vector3 _pendingLeviathanTraumaRoarPosition;
         private IAudioService _audioService;
         private IAudioLogRuntime _audioLogs;
 
@@ -430,14 +434,20 @@ namespace Hecton8.Gameplay
         {
             TryUnregisterCombatDamageTarget();
             TryUnregisterFromSlowTickManager();
+            TryUnregisterLateFrameTickable();
             TryUnregisterHotSwapListener();
+            _pendingSurvivalGraceHeartbeatPulse = false;
+            _pendingLeviathanTraumaRoar = false;
         }
 
         private void OnDestroy()
         {
             TryUnregisterCombatDamageTarget();
             TryUnregisterFromSlowTickManager();
+            TryUnregisterLateFrameTickable();
             TryUnregisterHotSwapListener();
+            _pendingSurvivalGraceHeartbeatPulse = false;
+            _pendingLeviathanTraumaRoar = false;
         }
 
         /// <summary>Updates low-frequency status and physiology bridge timers.</summary>
@@ -447,6 +457,11 @@ namespace Hecton8.Gameplay
             TryFlushCombatDamageSync();
             RefreshCombatStatusMaskCache();
             UpdateGasPhysiologyBridge(HealthSlowTickDeltaSeconds);
+        }
+
+        public void LateFrameTick()
+        {
+            FlushQueuedPresentationFeedback();
         }
 
         /// <summary>Applies damage to the player.</summary>
@@ -740,7 +755,40 @@ namespace Hecton8.Gameplay
             if (_audioService == null || survivalGraceHeartbeatClip == null)
                 return;
 
-            _audioService.PlayStatic2D(survivalGraceHeartbeatClip, survivalGraceHeartbeatVolume);
+            _pendingSurvivalGraceHeartbeatPulse = true;
+            TryRegisterLateFrameTickable();
+        }
+
+        private void FlushQueuedPresentationFeedback()
+        {
+            if (!_pendingSurvivalGraceHeartbeatPulse && !_pendingLeviathanTraumaRoar)
+            {
+                TryUnregisterLateFrameTickable();
+                return;
+            }
+
+            bool heartbeat = _pendingSurvivalGraceHeartbeatPulse;
+            bool leviathanRoar = _pendingLeviathanTraumaRoar;
+            Vector3 leviathanRoarPosition = _pendingLeviathanTraumaRoarPosition;
+            _pendingSurvivalGraceHeartbeatPulse = false;
+            _pendingLeviathanTraumaRoar = false;
+
+            IAudioService audioService = _audioService;
+            if (heartbeat && audioService != null && survivalGraceHeartbeatClip != null)
+                audioService.PlayStatic2D(survivalGraceHeartbeatClip, survivalGraceHeartbeatVolume);
+
+            if (leviathanRoar)
+            {
+                ProceduralAudioEvents.TryRaiseAudioPingTriggered(
+                    leviathanRoarPosition,
+                    1f,
+                    0.6f,
+                    1f,
+                    260f,
+                    ProceduralAudioPingKind.LeviathanRoar);
+            }
+
+            TryUnregisterLateFrameTickable();
         }
 
         public void ReceiveDamage(in DamagePacket packet)
@@ -834,13 +882,9 @@ namespace Hecton8.Gameplay
 
             _leviathanTraumaAdvisoryIssued = true;
             NarrativeEvents.TryRaiseDiscoveryMade(_leviathanTraumaDiscoveryHash);
-            ProceduralAudioEvents.TryRaiseAudioPingTriggered(
-                CapturePlayerRuntimePositionForPresentation(),
-                1f,
-                0.6f,
-                1f,
-                260f,
-                ProceduralAudioPingKind.LeviathanRoar);
+            _pendingLeviathanTraumaRoarPosition = CapturePlayerRuntimePositionForPresentation();
+            _pendingLeviathanTraumaRoar = true;
+            TryRegisterLateFrameTickable();
             PlayerSignalEvents.TryRaiseTraumaHudSignal(new TraumaHudSignal(1f, 0.7f, 1f, Mathf.Clamp01(HealthPercent), true));
         }
 
@@ -1022,9 +1066,12 @@ namespace Hecton8.Gameplay
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _registeredToSlowTickManager = false;
+                    _registeredToLateFrameTick = false;
                     if (currentService != null)
                     {
                         TryRegisterToSlowTickManager();
+                        if (_pendingSurvivalGraceHeartbeatPulse || _pendingLeviathanTraumaRoar)
+                            TryRegisterLateFrameTickable();
                     }
                     break;
             }
@@ -1048,6 +1095,26 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
             _registeredToSlowTickManager = false;
+        }
+
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_registeredToLateFrameTick || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredToLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (!_registeredToLateFrameTick)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredToLateFrameTick = false;
         }
 
         private void TryRegisterCombatDamageTarget()

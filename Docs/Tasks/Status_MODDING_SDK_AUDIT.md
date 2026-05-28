@@ -2,7 +2,7 @@
 
 Date: 2026-05-28
 Domain: Echelon 1 mod/API cold isolation, SDK package contracts, HectonEventBus boundary
-Status: STATIC_PASS_SCHEMA_86 / WORKBENCH_REVIEW_FRESHNESS_ADDED / HYGIENE_PASS / DOTNET_DEFERRED_RESOURCE_GATE / UNITY_NOT_RUN_RESOURCE_GATE
+Status: STATIC_PASS_SCHEMA_88 / SDK_HUB_ASYNC_VALIDATOR_ADDED / HYGIENE_PASS / DOTNET_DEFERRED_RESOURCE_GATE / UNITY_NOT_RUN_RESOURCE_GATE
 
 ## Mandates Applied
 
@@ -876,3 +876,44 @@ Evidence:
 - PASS: touched-file trailing whitespace scan and editor C# ASCII scan.
 - DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because build/resource gate found CPU `100` and active `dotnet.exe` PID `29008`; no `Temp/UnityLockfile` was present.
 - NOT RUN: Unity batchmode compile was not launched because CPU was above the project gate and an active dotnet process was present.
+
+## Pass 63 - Schema 87 Root No-Unity Launcher
+
+- [x] Task 290: Audit copied starter-kit command usability after Workbench freshness. DOD practice: found that a random external author still had to copy multiple tool commands from README instead of using one root entry point. Rejected alternative: keep README command lists as the main UX. Runtime us estimate: 0 us/frame, offline authoring only.
+- [x] Task 291: Add root `h8mod.ps1` launcher. DOD practice: added a no-Unity menu/action launcher in the starter root for setup, validate, review, prepare, opcode text, and opcode JSON. It delegates to existing `Tools/*.ps1` scripts and does not create a second validation/package contract. Rejected alternative: reimplement validation in the launcher. Runtime us estimate: 0.
+- [x] Task 292: Integrate launcher into SDK Hub, Workbench, and local validation. DOD practice: SDK Hub generator writes `h8mod.ps1`; Workbench requires and opens it; `Tools/validate_structure.ps1` requires it; schema revision 87 and static validation record root launcher generation, Workbench health/file access, validator check, and launcher validation route proof. Rejected alternative: add only the checked-in file and let regenerated starter kits drift. Runtime us estimate: 0.
+- [x] Task 293: Update modder-facing docs and starter report. DOD practice: README, API spec, authoring plan, product blueprint, file contract, runtime playbook, starter README, tools README, and `Reports/review_manifest.json` now record the root launcher as the preferred human no-Unity entry. Rejected alternative: leave docs pointing first at raw Tools commands. Runtime us estimate: 0.
+- [x] Task 294: Verify static/hygiene and obey compile gate. DOD practice: root launcher validate/opcodes/opcodes-json/prepare/review PASS, project static validator PASS at schema 87, schema JSON parse PASS, review manifest parse PASS with `h8mod.ps1` hashed, scoped `git diff --check` PASS, trailing whitespace PASS, editor C# ASCII PASS, CPU/process/Unity gate sampled before build decision. Rejected alternative: launch dotnet while CPU was 78 percent. Runtime us estimate: 0.
+
+Evidence:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action validate` -> `PASS HECTON-8 external starter structure`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action opcodes` -> listed 8 envelope-only graph opcodes.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action opcodes-json` -> schema `hecton8.allowed_graph_opcodes.v1`, count `8`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action prepare` -> structure/review pass and `PASS HECTON-8 starter prepared: com.example.starter`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action review` -> structure/review pass.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `87`, `ExternalStarterKitWritesRootLauncher=True`, `ExternalStarterKitValidatorChecksRootLauncher=True`, `ExternalStarterKitWorkbenchChecksRootLauncher=True`, `ExternalStarterKitRootLauncherPasses=True`.
+- PASS: `Reports/review_manifest.json` parsed with schema `hecton8.external_review_manifest.v1`, `25` hashed files, `47352` total bytes, and `h8mod.ps1` included.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan and editor C# ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because the latest build/resource gate found CPU `97` and active `dotnet.exe` PID `15108`; an earlier sample found CPU `78` with no active build process. No `Temp/UnityLockfile` was present.
+- NOT RUN: Unity batchmode compile was not launched because CPU was above the project gate and an active dotnet process appeared on the retry sample.
+
+## Pass 64 - Schema 88 SDK Hub Async Validator
+
+- [x] Task 295: Audit SDK Hub validator UX after Workbench async runner. DOD practice: found `StandardOutput.ReadToEnd`, `StandardError.ReadToEnd`, and `WaitForExit` in `ModdingSdkHubWindow.RunStaticValidator`, a Unity Editor freeze/deadlock risk on the public SDK entry screen. Rejected alternative: accept synchronous process execution because it is only an editor button. Runtime us estimate: 0 us/frame, editor-only.
+- [x] Task 296: Replace blocking SDK Hub validator launch with async editor polling. DOD practice: SDK Hub now reads stdout/stderr with `BeginOutputReadLine`/`BeginErrorReadLine`, disables the validator button while active, completes through `EditorApplication.update`, and kills/disposes the process on window disable. Rejected alternative: reuse Workbench as the only validator surface and leave the Hub button risky. Runtime us estimate: 0.
+- [x] Task 297: Extend schema/docs/static proof to schema 88. DOD practice: `Signal_Schema.json`, `Validate_Mod_API_Static.ps1`, README, API spec, runtime playbook, authoring plan, and product blueprint now record async SDK Hub validator execution; the static validator fails if blocking `ReadToEnd`/`WaitForExit` returns to the Hub. Rejected alternative: source-only UI responsiveness fix without drift gate. Runtime us estimate: 0.
+- [x] Task 298: Verify public starter and project static gates. DOD practice: root starter `validate` PASS, root starter `prepare` PASS, project static validator PASS at schema 88, schema parse PASS with `ModdingSdkHubRunsStaticValidatorAsync=True`, stale schema-87 scan PASS, blocking Hub process-read scan PASS, `git diff --check` PASS, trailing whitespace PASS, editor C# ASCII PASS. Rejected alternative: report based on manual code inspection only. Runtime us estimate: 0.
+- [x] Task 299: Obey compile/resource gate. DOD practice: sampled CPU/process/Unity state before build decision and retried after delay. Rejected alternative: launch dotnet while CPU was above the 50 percent project gate. Runtime us estimate: 0.
+
+Evidence:
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `88`, `ModdingSdkHubRunsStaticValidatorAsync=True`.
+- PASS: `Signal_Schema.json` parsed with `schemaRevision=88`, `hubRunsStaticValidatorAsync=True`, and last static validation snapshot `moddingSdkHubRunsStaticValidatorAsync=True`.
+- PASS: `rg`/source scan found no `ReadToEnd` or `WaitForExit()` in `ModdingSdkHubWindow.cs` or `ExternalStarterKitWorkbenchWindow.cs`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action validate` -> `PASS HECTON-8 external starter structure`.
+- PASS: `powershell -NoProfile -ExecutionPolicy Bypass -File ModdingSDK/ExternalStarterKit/h8mod.ps1 -Action prepare` -> structure/review pass and `PASS HECTON-8 starter prepared: com.example.starter`.
+- PASS: stale schema-87 scan found no stale current revision text in touched modding docs.
+- PASS: scoped `git diff --check` for touched source/docs. Git line-ending warnings only; no whitespace errors.
+- PASS: touched-file trailing whitespace scan and editor C# ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` was not launched because build/resource gate found CPU `91`, then CPU `95` after a delayed retry; no active `dotnet`, `csc`, `VBCSCompiler`, or `MSBuild` process was present and no `Temp/UnityLockfile` was present.
+- NOT RUN: Unity batchmode compile was not launched because CPU was above the project gate.

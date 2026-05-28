@@ -1,5 +1,4 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -36,22 +35,34 @@ namespace Hecton8.SaveSystem
         private const int ReadWindowPrefetchThresholdBytes = 256 * 1024;
         private const int ReadPrefetchQueueCapacity = 16;
         private const int OsAllocationGranularityBytes = 64 * 1024;
-        private const int FileWriteScratchBytes = 64 * 1024;
-        private const int FileReadScratchBytes = 64 * 1024;
         private const int NativeReadChunkBytes = 1024 * 1024;
+        private const int NativeWriteChunkBytes = 1024 * 1024;
         private const string NativeMemoryOwner = nameof(AsyncWriteManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
         private const uint NativeGenericRead = 0x80000000u;
+        private const uint NativeGenericWrite = 0x40000000u;
         private const uint NativeFileShareRead = 0x00000001u;
         private const uint NativeFileShareReadWriteDelete = 0x00000001u | 0x00000002u | 0x00000004u;
+        private const uint NativeCreateAlways = 2u;
         private const uint NativeOpenExisting = 3u;
+        private const uint NativeFileBegin = 0u;
         private const uint NativeFileAttributeNormal = 0x00000080u;
         private static readonly IntPtr NativeInvalidHandleValue = new IntPtr(-1);
 #elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
         private const int NativeUnixPathCapacity = 4096;
         private const int NativeUnixOpenReadOnly = 0;
+        private const int NativeUnixOpenWriteOnly = 1;
+        private const int NativeUnixCreateModeOwnerReadWrite = 384;
         private const int NativeUnixSeekEnd = 2;
+        private const int NativeUnixSeekSet = 0;
+#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+        private const int NativeUnixOpenCreate = 0x0200;
+        private const int NativeUnixOpenTruncate = 0x0400;
+#else
+        private const int NativeUnixOpenCreate = 0x0040;
+        private const int NativeUnixOpenTruncate = 0x0200;
+#endif
 #endif
 
         private static readonly object s_flushLock = new object();
@@ -72,12 +83,6 @@ namespace Hecton8.SaveSystem
         private static int s_readPrefetchWriteIndex;
         private static int s_readPrefetchCount;
         private static int s_readPrefetchWorkerStarted;
-        private static readonly object s_fileWriteScratchLock = new object();
-        private static readonly byte[] s_fileWriteScratch = new byte[FileWriteScratchBytes];
-        private static readonly byte[] s_fileWriteAsyncScratch = new byte[FileWriteScratchBytes];
-        private static int s_fileWriteAsyncScratchBusy;
-        private static readonly object s_fileReadScratchLock = new object();
-        private static readonly byte[] s_fileReadScratch = new byte[FileReadScratchBytes];
 #if UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
         private static readonly object s_nativeUnixPathLock = new object();
         private static readonly byte[] s_nativeUnixPathUtf8 = new byte[NativeUnixPathCapacity];
@@ -111,18 +116,13 @@ namespace Hecton8.SaveSystem
         private struct CachedReadWindow
         {
             public string AbsolutePath;
-            public byte[] Bytes;
+            public NativeArray<byte> Bytes;
             public long WindowOffset;
             public long WindowLength;
             public long FileLength;
             public int LastUse;
 
-            public bool IsCreated => Bytes != null;
-        }
-
-        internal static bool TryEnableSparseFile(FileStream fileStream)
-        {
-            return false;
+            public bool IsCreated => Bytes.IsCreated;
         }
 
         internal static bool QueueThrottledFlush(string absolutePath, long byteCount, out string error)
@@ -238,8 +238,8 @@ namespace Hecton8.SaveSystem
                         return false;
                     }
 
-                    byte[] windowBytes = window.Bytes;
-                    if (windowBytes == null ||
+                    NativeArray<byte> windowBytes = window.Bytes;
+                    if (!windowBytes.IsCreated ||
                         sourceOffset > windowBytes.Length ||
                         chunkBytes > windowBytes.Length - (int)sourceOffset)
                     {
@@ -247,14 +247,12 @@ namespace Hecton8.SaveSystem
                         return false;
                     }
 
-                    fixed (byte* windowPtr = windowBytes)
+                    byte* windowPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(windowBytes);
+                    if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationBytes + destinationCursor, byteCount - destinationCursor, windowPtr + (int)sourceOffset, chunkBytes))
                     {
-                        if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationBytes + destinationCursor, byteCount - destinationCursor, windowPtr + (int)sourceOffset, chunkBytes))
-                        {
-                            error = "Cached file read copy exceeded destination bounds.";
-                            UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(AsyncWriteManager));
-                            return false;
-                        }
+                        error = "Cached file read copy exceeded destination bounds.";
+                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(AsyncWriteManager));
+                        return false;
                     }
 
                     sourceCursor += chunkBytes;
@@ -334,8 +332,8 @@ namespace Hecton8.SaveSystem
                             return false;
                         }
 
-                        byte[] windowBytes = window.Bytes;
-                        if (windowBytes == null ||
+                        NativeArray<byte> windowBytes = window.Bytes;
+                        if (!windowBytes.IsCreated ||
                             sourceOffset > windowBytes.Length ||
                             chunkBytesLong > windowBytes.Length - sourceOffset)
                         {
@@ -343,14 +341,12 @@ namespace Hecton8.SaveSystem
                             return false;
                         }
 
-                        fixed (byte* windowPtr = windowBytes)
+                        byte* windowPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(windowBytes);
+                        if (!UnsafeMemoryCopyGuard.TryMemCpy((byte*)destinationPtr + destinationCursor, destinationBytes - destinationCursor, windowPtr + (int)sourceOffset, chunkBytesLong))
                         {
-                            if (!UnsafeMemoryCopyGuard.TryMemCpy((byte*)destinationPtr + destinationCursor, destinationBytes - destinationCursor, windowPtr + (int)sourceOffset, chunkBytesLong))
-                            {
-                                error = "Cached file GPU upload copy exceeded destination bounds.";
-                                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(AsyncWriteManager));
-                                return false;
-                            }
+                            error = "Cached file GPU upload copy exceeded destination bounds.";
+                            UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(AsyncWriteManager));
+                            return false;
                         }
 
                         sourceCursor += chunkBytesLong;
@@ -441,17 +437,10 @@ namespace Hecton8.SaveSystem
         {
             try
             {
-                if (string.IsNullOrEmpty(absolutePath) || !File.Exists(absolutePath))
+                if (string.IsNullOrEmpty(absolutePath))
                     return;
 
-                using FileStream stream = new FileStream(
-                    absolutePath,
-                    FileMode.Open,
-                    FileAccess.ReadWrite,
-                    FileShare.ReadWrite | FileShare.Delete,
-                    4096,
-                    FileOptions.WriteThrough);
-                stream.Flush(true);
+                TryFlushPathNative(absolutePath);
             }
             catch
             {
@@ -623,19 +612,16 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            FileStream fileStream = null;
-            byte[] windowBytes = null;
+            NativeArray<byte> windowBytes = default;
             bool transferredWindowBytes = false;
             try
             {
-                fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 4096, FileOptions.RandomAccess);
-                // COLD POOL: byte[windowLength] - portable cached save read window - owner: AsyncWriteManager
-                windowBytes = ArrayPool<byte>.Shared.Rent((int)windowLength);
-                fixed (byte* windowPtr = windowBytes)
-                {
-                    if (!TryReadFileRangeToNativeBuffer(fileStream, windowOffset, windowPtr, (int)windowLength, out error))
-                        return false;
-                }
+                // COLD ALLOC: NativeArray<byte>[windowLength] - cached save read window - owner: AsyncWriteManager
+                windowBytes = new NativeArray<byte>((int)windowLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                NativeMemorySentinel.RegisterNativeArray(windowBytes, NativeMemoryOwner, nameof(CachedReadWindow), NativeMemoryLifetime);
+                byte* windowPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(windowBytes);
+                if (!TryReadAbsoluteFileRangeToNativeBuffer(absolutePath, windowOffset, windowPtr, (int)windowLength, out error))
+                    return false;
 
                 window = new CachedReadWindow
                 {
@@ -650,17 +636,15 @@ namespace Hecton8.SaveSystem
                 transferredWindowBytes = true;
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                error = $"Cached file read-window load failed for '{absolutePath}': {ex.Message}";
+                error = "Cached file read-window load failed.";
                 return false;
             }
             finally
             {
-                if (!transferredWindowBytes && windowBytes != null)
-                    ArrayPool<byte>.Shared.Return(windowBytes, clearArray: false);
-
-                fileStream?.Dispose();
+                if (!transferredWindowBytes && windowBytes.IsCreated)
+                    DisposeCachedReadWindowBytes(ref windowBytes);
             }
         }
 
@@ -757,10 +741,45 @@ namespace Hecton8.SaveSystem
 
         private static void DisposeCachedReadWindow(ref CachedReadWindow window)
         {
-            if (window.Bytes != null)
-                ArrayPool<byte>.Shared.Return(window.Bytes, clearArray: false);
+            NativeArray<byte> bytes = window.Bytes;
+            if (bytes.IsCreated)
+                DisposeCachedReadWindowBytes(ref bytes);
 
             window = default;
+        }
+
+        private static void DisposeCachedReadWindowBytes(ref NativeArray<byte> bytes)
+        {
+            if (!bytes.IsCreated)
+                return;
+
+            bool sentinelUnregistered = false;
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(bytes);
+                sentinelUnregistered = true;
+                bytes.Dispose();
+                bytes = default;
+            }
+            catch
+            {
+                TryRestoreCachedReadWindowSentinel(bytes, sentinelUnregistered);
+                throw;
+            }
+        }
+
+        private static void TryRestoreCachedReadWindowSentinel(NativeArray<byte> bytes, bool sentinelUnregistered)
+        {
+            if (!sentinelUnregistered || !bytes.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.RegisterNativeArray(bytes, NativeMemoryOwner, nameof(CachedReadWindow), NativeMemoryLifetime);
+            }
+            catch
+            {
+            }
         }
 
         internal static bool WriteAll(string absolutePath, void* buffer, int byteCount, out string error)
@@ -813,14 +832,8 @@ namespace Hecton8.SaveSystem
             try
             {
                 InvalidateCachedReadWindows(absolutePath);
-                using FileStream fileStream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.None, FileWriteScratchBytes, FileOptions.Asynchronous | FileOptions.SequentialScan);
-                TryEnableSparseFile(fileStream);
-                fileStream.SetLength(totalBytes);
 
-                if (!TryWritePointerSegmentAsync(fileStream, firstBuffer, firstByteCount, out string writeError))
-                    return new NativeWriteResult(false, writeError);
-
-                if (!TryWritePointerSegmentAsync(fileStream, secondBuffer, secondByteCount, out writeError))
+                if (!TryWriteAllNative(absolutePath, firstBuffer, firstByteCount, secondBuffer, secondByteCount, totalBytes, createAlways: true, out string writeError))
                     return new NativeWriteResult(false, writeError);
 
                 if (!QueueThrottledFlush(absolutePath, totalBytes, out string flushError))
@@ -828,65 +841,10 @@ namespace Hecton8.SaveSystem
 
                 return new NativeWriteResult(true, string.Empty);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return new NativeWriteResult(false, $"Sequential native async write failed for '{absolutePath}': {ex.Message}");
+                return new NativeWriteResult(false, "Sequential native write failed.");
             }
-        }
-
-        private static void AcquireAsyncWriteScratch()
-        {
-            SpinWait wait = default;
-            while (Interlocked.CompareExchange(ref s_fileWriteAsyncScratchBusy, 1, 0) != 0)
-                wait.SpinOnce();
-        }
-
-        private static void ReleaseAsyncWriteScratch()
-        {
-            Volatile.Write(ref s_fileWriteAsyncScratchBusy, 0);
-        }
-
-        private static bool TryWritePointerSegmentAsync(FileStream stream, void* source, int byteCount, out string error)
-        {
-            error = string.Empty;
-            if (stream == null)
-            {
-                error = "Native async write stream is invalid.";
-                return false;
-            }
-
-            if (byteCount <= 0)
-                return true;
-
-            if (source == null)
-            {
-                stream.Position += byteCount;
-                return true;
-            }
-
-            byte* sourceBytes = (byte*)source;
-            int writtenBytes = 0;
-            while (writtenBytes < byteCount)
-            {
-                int chunkBytes = byteCount - writtenBytes;
-                if (chunkBytes > s_fileWriteAsyncScratch.Length)
-                    chunkBytes = s_fileWriteAsyncScratch.Length;
-
-                AcquireAsyncWriteScratch();
-                try
-                {
-                    Marshal.Copy((IntPtr)(sourceBytes + writtenBytes), s_fileWriteAsyncScratch, 0, chunkBytes);
-                    stream.WriteAsync(s_fileWriteAsyncScratch, 0, chunkBytes).GetAwaiter().GetResult();
-                }
-                finally
-                {
-                    ReleaseAsyncWriteScratch();
-                }
-
-                writtenBytes += chunkBytes;
-            }
-
-            return true;
         }
 
         internal static bool OverwriteAll(string absolutePath, void* buffer, int byteCount, out string error)
@@ -901,12 +859,7 @@ namespace Hecton8.SaveSystem
             try
             {
                 InvalidateCachedReadWindows(absolutePath);
-                using FileStream fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None, FileWriteScratchBytes, FileOptions.SequentialScan);
-                TryEnableSparseFile(fileStream);
-                fileStream.SetLength(byteCount);
-                fileStream.Position = 0L;
-
-                if (!TryWritePointerSegment(fileStream, buffer, byteCount, out error))
+                if (!TryWriteAllNative(absolutePath, buffer, byteCount, null, 0, byteCount, createAlways: false, out error))
                     return false;
 
                 if (!QueueThrottledFlush(absolutePath, byteCount, out error))
@@ -914,59 +867,323 @@ namespace Hecton8.SaveSystem
 
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                error = $"Sequential native overwrite failed for '{absolutePath}': {ex.Message}";
+                error = "Sequential native overwrite failed.";
                 return false;
             }
         }
 
-        private static bool TryWritePointerSegment(FileStream stream, void* source, int byteCount, out string error)
+        private static bool TryWriteAllNative(
+            string absolutePath,
+            void* firstBuffer,
+            int firstByteCount,
+            void* secondBuffer,
+            int secondByteCount,
+            int totalBytes,
+            bool createAlways,
+            out string error)
         {
             error = string.Empty;
-            if (stream == null)
+            if (string.IsNullOrEmpty(absolutePath) || totalBytes <= 0)
             {
-                error = "Native write stream is invalid.";
+                error = "Native write request is invalid.";
                 return false;
             }
 
-            if (byteCount <= 0)
-                return true;
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+            return TryWriteAllNativeWindows(absolutePath, firstBuffer, firstByteCount, secondBuffer, secondByteCount, totalBytes, createAlways, out error);
+#elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
+            return TryWriteAllNativeUnix(absolutePath, firstBuffer, firstByteCount, secondBuffer, secondByteCount, totalBytes, createAlways, out error);
+#else
+            error = "Native write is unsupported on this platform.";
+            return false;
+#endif
+        }
 
-            if (source == null)
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+        private static bool TryWriteAllNativeWindows(
+            string absolutePath,
+            void* firstBuffer,
+            int firstByteCount,
+            void* secondBuffer,
+            int secondByteCount,
+            int totalBytes,
+            bool createAlways,
+            out string error)
+        {
+            error = string.Empty;
+            fixed (char* path = absolutePath)
             {
-                stream.Position += byteCount;
-                return true;
-            }
+                IntPtr handle = CreateFileWNative(
+                    path,
+                    NativeGenericWrite,
+                    0u,
+                    IntPtr.Zero,
+                    createAlways ? NativeCreateAlways : NativeOpenExisting,
+                    NativeFileAttributeNormal,
+                    IntPtr.Zero);
 
-            lock (s_fileWriteScratchLock)
-            {
-                byte* sourceBytes = (byte*)source;
-                int writtenBytes = 0;
-                while (writtenBytes < byteCount)
+                if (handle == IntPtr.Zero || handle == NativeInvalidHandleValue)
                 {
-                    int chunkBytes = byteCount - writtenBytes;
-                    if (chunkBytes > s_fileWriteScratch.Length)
-                        chunkBytes = s_fileWriteScratch.Length;
-
-                    Marshal.Copy((IntPtr)(sourceBytes + writtenBytes), s_fileWriteScratch, 0, chunkBytes);
-                    stream.Write(s_fileWriteScratch, 0, chunkBytes);
-                    writtenBytes += chunkBytes;
+                    error = "Native write open failed.";
+                    return false;
                 }
+
+                try
+                {
+                    long cursor = 0L;
+                    if (!TrySeekWindowsHandle(handle, 0L, out error))
+                        return false;
+
+                    if (!TryWriteWindowsSegment(handle, firstBuffer, math.max(firstByteCount, 0), ref cursor, out error))
+                        return false;
+
+                    if (!TryWriteWindowsSegment(handle, secondBuffer, math.max(secondByteCount, 0), ref cursor, out error))
+                        return false;
+
+                    if (!TrySeekWindowsHandle(handle, totalBytes, out error) || !SetEndOfFileNative(handle))
+                    {
+                        error = "Native write truncate failed.";
+                        return false;
+                    }
+
+                    return true;
+                }
+                finally
+                {
+                    CloseHandleNative(handle);
+                }
+            }
+        }
+
+        private static bool TrySeekWindowsHandle(IntPtr handle, long byteOffset, out string error)
+        {
+            error = string.Empty;
+            if (!SetFilePointerExNative(handle, byteOffset, out _, NativeFileBegin))
+            {
+                error = "Native write seek failed.";
+                return false;
             }
 
             return true;
         }
 
-        private static bool TryReadFileRangeToNativeBuffer(
-            FileStream stream,
+        private static bool TryWriteWindowsSegment(IntPtr handle, void* source, int byteCount, ref long cursor, out string error)
+        {
+            error = string.Empty;
+            if (byteCount <= 0)
+                return true;
+
+            if (source == null)
+            {
+                cursor += byteCount;
+                return TrySeekWindowsHandle(handle, cursor, out error);
+            }
+
+            byte* sourceBytes = (byte*)source;
+            int offset = 0;
+            while (offset < byteCount)
+            {
+                int chunkBytes = math.min(NativeWriteChunkBytes, byteCount - offset);
+                if (!WriteFileNative(handle, sourceBytes + offset, (uint)chunkBytes, out uint bytesWritten, IntPtr.Zero))
+                {
+                    error = "Native write failed.";
+                    return false;
+                }
+
+                if (bytesWritten == 0u)
+                {
+                    error = "Native write accepted zero bytes.";
+                    return false;
+                }
+
+                offset += (int)bytesWritten;
+                cursor += bytesWritten;
+            }
+
+            return true;
+        }
+
+        private static bool TryFlushPathNative(string absolutePath)
+        {
+            fixed (char* path = absolutePath)
+            {
+                IntPtr handle = CreateFileWNative(
+                    path,
+                    NativeGenericWrite,
+                    NativeFileShareReadWriteDelete,
+                    IntPtr.Zero,
+                    NativeOpenExisting,
+                    NativeFileAttributeNormal,
+                    IntPtr.Zero);
+
+                if (handle == IntPtr.Zero || handle == NativeInvalidHandleValue)
+                    return false;
+
+                try
+                {
+                    return FlushFileBuffersNative(handle);
+                }
+                finally
+                {
+                    CloseHandleNative(handle);
+                }
+            }
+        }
+#elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
+        private static bool TryWriteAllNativeUnix(
+            string absolutePath,
+            void* firstBuffer,
+            int firstByteCount,
+            void* secondBuffer,
+            int secondByteCount,
+            int totalBytes,
+            bool createAlways,
+            out string error)
+        {
+            error = string.Empty;
+            int fd = -1;
+            lock (s_nativeUnixPathLock)
+            {
+                if (!TryEncodePathUtf8(absolutePath, s_nativeUnixPathUtf8, out _))
+                {
+                    error = "Native write path encoding failed.";
+                    return false;
+                }
+
+                fixed (byte* path = s_nativeUnixPathUtf8)
+                {
+                    int flags = NativeUnixOpenWriteOnly;
+                    if (createAlways)
+                        flags |= NativeUnixOpenCreate | NativeUnixOpenTruncate;
+
+                    fd = createAlways
+                        ? OpenUnixWithMode(path, flags, NativeUnixCreateModeOwnerReadWrite)
+                        : OpenUnix(path, flags);
+                }
+            }
+
+            if (fd < 0)
+            {
+                error = "Native write open failed.";
+                return false;
+            }
+
+            try
+            {
+                long cursor = 0L;
+                if (LSeekUnix(fd, 0L, NativeUnixSeekSet) < 0L)
+                {
+                    error = "Native write seek failed.";
+                    return false;
+                }
+
+                if (!TryWriteUnixSegment(fd, firstBuffer, math.max(firstByteCount, 0), ref cursor, out error))
+                    return false;
+
+                if (!TryWriteUnixSegment(fd, secondBuffer, math.max(secondByteCount, 0), ref cursor, out error))
+                    return false;
+
+                if (FTruncateUnix(fd, totalBytes) != 0)
+                {
+                    error = "Native write truncate failed.";
+                    return false;
+                }
+
+                return true;
+            }
+            finally
+            {
+                CloseUnix(fd);
+            }
+        }
+
+        private static bool TryWriteUnixSegment(int fd, void* source, int byteCount, ref long cursor, out string error)
+        {
+            error = string.Empty;
+            if (byteCount <= 0)
+                return true;
+
+            if (source == null)
+            {
+                cursor += byteCount;
+                if (LSeekUnix(fd, cursor, NativeUnixSeekSet) < 0L)
+                {
+                    error = "Native write seek failed.";
+                    return false;
+                }
+
+                return true;
+            }
+
+            byte* sourceBytes = (byte*)source;
+            int offset = 0;
+            while (offset < byteCount)
+            {
+                int chunkBytes = math.min(NativeWriteChunkBytes, byteCount - offset);
+                long bytesWritten = WriteUnix(fd, sourceBytes + offset, (UIntPtr)chunkBytes).ToInt64();
+                if (bytesWritten < 0L)
+                {
+                    error = "Native write failed.";
+                    return false;
+                }
+
+                if (bytesWritten == 0L)
+                {
+                    error = "Native write accepted zero bytes.";
+                    return false;
+                }
+
+                offset += (int)bytesWritten;
+                cursor += bytesWritten;
+            }
+
+            return true;
+        }
+
+        private static bool TryFlushPathNative(string absolutePath)
+        {
+            int fd = -1;
+            lock (s_nativeUnixPathLock)
+            {
+                if (!TryEncodePathUtf8(absolutePath, s_nativeUnixPathUtf8, out _))
+                    return false;
+
+                fixed (byte* path = s_nativeUnixPathUtf8)
+                {
+                    fd = OpenUnix(path, NativeUnixOpenWriteOnly);
+                }
+            }
+
+            if (fd < 0)
+                return false;
+
+            try
+            {
+                return FSyncUnix(fd) == 0;
+            }
+            finally
+            {
+                CloseUnix(fd);
+            }
+        }
+#else
+        private static bool TryFlushPathNative(string absolutePath)
+        {
+            return false;
+        }
+#endif
+
+        private static bool TryReadAbsoluteFileRangeToNativeBuffer(
+            string absolutePath,
             long byteOffset,
             byte* destination,
             int byteCount,
             out string error)
         {
             error = string.Empty;
-            if (stream == null || byteOffset < 0L || byteCount < 0)
+            if (string.IsNullOrEmpty(absolutePath) || byteOffset < 0L || byteCount < 0)
             {
                 error = "Native file read request is invalid.";
                 return false;
@@ -981,46 +1198,79 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            try
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+            fixed (char* path = absolutePath)
             {
-                stream.Position = byteOffset;
-                int totalRead = 0;
-                lock (s_fileReadScratchLock)
+                IntPtr handle = CreateFileWNative(
+                    path,
+                    NativeGenericRead,
+                    NativeFileShareReadWriteDelete,
+                    IntPtr.Zero,
+                    NativeOpenExisting,
+                    NativeFileAttributeNormal,
+                    IntPtr.Zero);
+
+                if (handle == IntPtr.Zero || handle == NativeInvalidHandleValue)
                 {
-                    fixed (byte* scratchPtr = s_fileReadScratch)
-                    {
-                        while (totalRead < byteCount)
-                        {
-                            int chunkBytes = byteCount - totalRead;
-                            if (chunkBytes > s_fileReadScratch.Length)
-                                chunkBytes = s_fileReadScratch.Length;
-
-                            int read = stream.Read(s_fileReadScratch, 0, chunkBytes);
-                            if (read <= 0)
-                            {
-                                error = "Native file read ended before the requested byte count.";
-                                return false;
-                            }
-
-                            if (!UnsafeMemoryCopyGuard.TryMemCpy(destination + totalRead, byteCount - totalRead, scratchPtr, read))
-                            {
-                                error = "Native file read copy exceeded destination bounds.";
-                                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(AsyncWriteManager));
-                                return false;
-                            }
-
-                            totalRead += read;
-                        }
-                    }
+                    error = "Native file range read open failed.";
+                    return false;
                 }
 
-                return true;
+                try
+                {
+                    if (!SetFilePointerExNative(handle, byteOffset, out _, NativeFileBegin))
+                    {
+                        error = "Native file range read seek failed.";
+                        return false;
+                    }
+
+                    return TryReadWindowsHandleToNativeBuffer(handle, destination, byteCount, out error);
+                }
+                finally
+                {
+                    CloseHandleNative(handle);
+                }
             }
-            catch (Exception ex)
+#elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
+            int fd = -1;
+            lock (s_nativeUnixPathLock)
             {
-                error = $"Native file read failed: {ex.Message}";
+                if (!TryEncodePathUtf8(absolutePath, s_nativeUnixPathUtf8, out _))
+                {
+                    error = "Native file range read path encoding failed.";
+                    return false;
+                }
+
+                fixed (byte* path = s_nativeUnixPathUtf8)
+                {
+                    fd = OpenUnix(path, NativeUnixOpenReadOnly);
+                }
+            }
+
+            if (fd < 0)
+            {
+                error = "Native file range read open failed.";
                 return false;
             }
+
+            try
+            {
+                if (LSeekUnix(fd, byteOffset, NativeUnixSeekSet) < 0L)
+                {
+                    error = "Native file range read seek failed.";
+                    return false;
+                }
+
+                return TryReadUnixFdToNativeBuffer(fd, destination, byteCount, out error);
+            }
+            finally
+            {
+                CloseUnix(fd);
+            }
+#else
+            error = "Native file range read is unsupported on this platform.";
+            return false;
+#endif
         }
 
         internal static bool TryReadAll(string absolutePath, void* buffer, int byteCount, out string error)
@@ -1481,6 +1731,27 @@ namespace Hecton8.SaveSystem
             out uint lpNumberOfBytesRead,
             IntPtr lpOverlapped);
 
+        [DllImport("kernel32.dll", EntryPoint = "WriteFile", SetLastError = true)]
+        private static extern bool WriteFileNative(
+            IntPtr hFile,
+            void* lpBuffer,
+            uint nNumberOfBytesToWrite,
+            out uint lpNumberOfBytesWritten,
+            IntPtr lpOverlapped);
+
+        [DllImport("kernel32.dll", EntryPoint = "SetFilePointerEx", SetLastError = true)]
+        private static extern bool SetFilePointerExNative(
+            IntPtr hFile,
+            long liDistanceToMove,
+            out long lpNewFilePointer,
+            uint dwMoveMethod);
+
+        [DllImport("kernel32.dll", EntryPoint = "SetEndOfFile", SetLastError = true)]
+        private static extern bool SetEndOfFileNative(IntPtr hFile);
+
+        [DllImport("kernel32.dll", EntryPoint = "FlushFileBuffers", SetLastError = true)]
+        private static extern bool FlushFileBuffersNative(IntPtr hFile);
+
         [DllImport("kernel32.dll", EntryPoint = "CloseHandle", SetLastError = true)]
         private static extern bool CloseHandleNative(IntPtr hObject);
 #endif
@@ -1489,11 +1760,23 @@ namespace Hecton8.SaveSystem
         [DllImport("libc", SetLastError = true, EntryPoint = "open")]
         private static extern int OpenUnix(byte* pathname, int flags);
 
+        [DllImport("libc", SetLastError = true, EntryPoint = "open")]
+        private static extern int OpenUnixWithMode(byte* pathname, int flags, int mode);
+
         [DllImport("libc", SetLastError = true, EntryPoint = "lseek")]
         private static extern long LSeekUnix(int fd, long offset, int whence);
 
         [DllImport("libc", SetLastError = true, EntryPoint = "read")]
         private static extern IntPtr ReadUnix(int fd, void* buf, UIntPtr count);
+
+        [DllImport("libc", SetLastError = true, EntryPoint = "write")]
+        private static extern IntPtr WriteUnix(int fd, void* buf, UIntPtr count);
+
+        [DllImport("libc", SetLastError = true, EntryPoint = "ftruncate")]
+        private static extern int FTruncateUnix(int fd, long length);
+
+        [DllImport("libc", SetLastError = true, EntryPoint = "fsync")]
+        private static extern int FSyncUnix(int fd);
 
         [DllImport("libc", SetLastError = true, EntryPoint = "close")]
         private static extern int CloseUnix(int fd);
@@ -4466,31 +4749,26 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            FileStream fileStream = null;
+            if (!AsyncWriteManager.TryOpenReadOnlyMapping(absolutePath, out AsyncWriteManager.ReadOnlyMapping corruptionMapping, out error))
+                return false;
+
             try
             {
-                fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
-                long fileLength = fileStream.Length;
+                long fileLength = corruptionMapping.Length;
+                if (fileLength > int.MaxValue)
+                {
+                    error = "Smoke corruption file exceeds the native overwrite range.";
+                    return false;
+                }
+
                 if (selectedEntry.ByteOffset < 0L || selectedEntry.ByteOffset > fileLength - IndexedSectorBlockHeaderSize)
                 {
                     error = "Smoke corruption block header offset exceeded the file length.";
                     return false;
                 }
 
-                Span<byte> blockHeaderBytes = stackalloc byte[IndexedSectorBlockHeaderSize];
-                fileStream.Position = selectedEntry.ByteOffset;
-                int readBytes = 0;
-                while (readBytes < blockHeaderBytes.Length)
-                {
-                    int justRead = fileStream.Read(blockHeaderBytes.Slice(readBytes));
-                    if (justRead <= 0)
-                    {
-                        error = "Smoke corruption block header read ended early.";
-                        return false;
-                    }
-
-                    readBytes += justRead;
-                }
+                byte* filePtr = (byte*)corruptionMapping.View;
+                byte* blockHeaderBytes = filePtr + (int)selectedEntry.ByteOffset;
 
                 uint blockFlags =
                     (uint)blockHeaderBytes[0] |
@@ -4507,29 +4785,22 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                fileStream.Position = payloadOffset;
-                Span<byte> storedByteBytes = stackalloc byte[1];
-                if (fileStream.Read(storedByteBytes) != storedByteBytes.Length)
-                {
-                    error = "Smoke corruption payload read ended early.";
+                int payloadIndex = (int)payloadOffset;
+                filePtr[payloadIndex] = (byte)(filePtr[payloadIndex] ^ 0x5Au);
+                if (!AsyncWriteManager.OverwriteAll(absolutePath, filePtr, (int)fileLength, out error))
                     return false;
-                }
 
-                fileStream.Position = payloadOffset;
-                fileStream.WriteByte((byte)(storedByteBytes[0] ^ 0x5Au));
-                fileStream.Flush();
-                AsyncWriteManager.QueueThrottledFlush(absolutePath, fileLength, out _);
                 sectorHash = selectedEntry.SectorHash;
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                error = $"Smoke corruption failed: {ex.Message}";
+                error = "Smoke corruption failed.";
                 return false;
             }
             finally
             {
-                fileStream?.Dispose();
+                AsyncWriteManager.CloseReadOnlyMapping(ref corruptionMapping);
             }
         }
 #endif

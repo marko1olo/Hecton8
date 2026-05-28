@@ -3090,22 +3090,46 @@ namespace Hecton8.World
                 return;
             }
 
-            var threatGridUpload = ResolveSargassumVaultArray(in _threatGridUploadHandle, BufferID.SargassumThreatGridUpload, ThreatGridMaxCellCount);
-            if (!threatGridUpload.IsCreated || threatGridUpload.Length < cellCount)
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !IsSargassumVaultHandle(in _threatGridUploadHandle, BufferID.SargassumThreatGridUpload))
             {
                 ResetThreatGridSnapshot();
                 return;
             }
 
-            for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
-                threatGridUpload[cellIndex] = threatGrid[cellIndex];
+            bool uploadLocked = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _threatGridUploadHandle, SystemID.WorldSargassum, out NativeArray<uint> threatGridUpload))
+                {
+                    ResetThreatGridSnapshot();
+                    return;
+                }
 
-            GraphicsBufferUploadUtility.UploadNativeArray(_threatGridBuffer, threatGridUpload, cellCount);
-            _threatGridCellCount = cellCount;
-            _threatGridResolution = gridResolution;
-            _threatGridCenterWS = gridCenter;
-            _threatGridCellSizeWS = math.max(cellSize, ThreatVoxelCellEpsilon);
-            _threatGridDataValid = true;
+                uploadLocked = true;
+                if (!threatGridUpload.IsCreated ||
+                    threatGridUpload.Length < cellCount)
+                {
+                    ResetThreatGridSnapshot();
+                    return;
+                }
+
+                for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
+                    threatGridUpload[cellIndex] = threatGrid[cellIndex];
+
+                GraphicsBufferUploadUtility.UploadNativeArray(_threatGridBuffer, threatGridUpload, cellCount);
+                _threatGridCellCount = cellCount;
+                _threatGridResolution = gridResolution;
+                _threatGridCenterWS = gridCenter;
+                _threatGridCellSizeWS = math.max(cellSize, ThreatVoxelCellEpsilon);
+                _threatGridDataValid = true;
+            }
+            finally
+            {
+                if (uploadLocked)
+                    vault.ReleaseWriteLock(in _threatGridUploadHandle, SystemID.WorldSargassum);
+            }
         }
 
         private static bool EnsureBuffer(ref GraphicsBuffer buffer, int count, int stride)

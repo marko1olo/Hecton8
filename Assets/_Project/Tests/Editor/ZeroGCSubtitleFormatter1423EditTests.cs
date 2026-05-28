@@ -1,8 +1,10 @@
 using System;
 using System.Globalization;
+using System.IO;
 using Hecton.Localization;
 using Hecton8.Core;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace Hecton8.Tests.Editor
 {
@@ -91,6 +93,43 @@ namespace Hecton8.Tests.Editor
             Assert.IsTrue(truncated);
             Assert.AreEqual(buffer.Length, cursor);
             Assert.AreEqual('.', buffer[buffer.Length - 1]);
+        }
+
+        [Test]
+        public void BabelPlaceholderOverflow_DoesNotPromoteCursorToCapacity()
+        {
+            string sourcePath = Path.Combine(Application.dataPath, "_Project/Scripts/LocRegistry.cs");
+            string source = File.ReadAllText(sourcePath);
+
+            StringAssert.DoesNotContain("charCursor = maxGlyphs", source);
+            StringAssert.Contains("charCursor = math.clamp(charCursor, 0, maxGlyphs)", source);
+        }
+
+        [Test]
+        public void LocalizedSpanReadPath_DoesNotRefreshVaultBackedBytes()
+        {
+            string sourcePath = Path.Combine(Application.dataPath, "_Project/Scripts/LocRegistry.cs");
+            string source = File.ReadAllText(sourcePath);
+
+            int methodStart = source.IndexOf("public static bool TryGetLocalizedSpan", StringComparison.Ordinal);
+            Assert.GreaterOrEqual(methodStart, 0);
+            int methodEnd = source.IndexOf("/// <summary>", methodStart + 1, StringComparison.Ordinal);
+            Assert.Greater(methodEnd, methodStart);
+            string methodBody = source.Substring(methodStart, methodEnd - methodStart);
+
+            StringAssert.Contains("IsValidUtf8SliceNoRefresh(slice)", methodBody);
+            StringAssert.DoesNotContain("RefreshUtf8BytesFromVault", methodBody);
+            StringAssert.DoesNotContain("IsValidUtf8Slice(slice)", methodBody);
+        }
+
+        [Test]
+        public void PdaDecryptLabel_DoesNotDoubleDecodeLengthBeforeBufferFetch()
+        {
+            string sourcePath = Path.Combine(Application.dataPath, "_Project/Scripts/UI/PDADataArchaeologyDecryptLabel.cs");
+            string source = File.ReadAllText(sourcePath);
+
+            StringAssert.DoesNotContain("LocRegistry.GetLength(hash)", source);
+            StringAssert.Contains("LocRegistry.TryGetVisualBuffer(hash, out char[] source, out int length)", source);
         }
     }
 }

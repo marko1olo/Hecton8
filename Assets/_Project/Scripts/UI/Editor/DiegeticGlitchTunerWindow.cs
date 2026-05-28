@@ -84,7 +84,12 @@ namespace Hecton8.UI.Editor
 
         private void DrawTuningSliders()
         {
-            ref GlitchTuningDTO tuning = ref _runtime.GetTuningRef();
+            if (!_runtime.TryReadTuningSnapshot(out GlitchTuningDTO tuning))
+            {
+                EditorGUILayout.HelpBox("Tuning snapshot unavailable while the runtime owns vault writes.", MessageType.None);
+                return;
+            }
+
             EditorGUI.BeginChangeCheck();
             float master = EditorGUILayout.Slider("Master Intensity", tuning.MasterIntensity, 0f, 1f);
             float text = EditorGUILayout.Slider("Text Scramble Rate", tuning.TextScrambleRate, 0f, 1f);
@@ -106,8 +111,12 @@ namespace Hecton8.UI.Editor
 
         private void DrawStateReadout()
         {
-            ref GlitchStateDTO state = ref _runtime.GetGlitchStateRef();
-            ref GlitchTuningDTO tuning = ref _runtime.GetTuningRef();
+            if (!_runtime.TryReadGlitchStateSnapshot(out GlitchStateDTO state) ||
+                !_runtime.TryReadTuningSnapshot(out GlitchTuningDTO tuning))
+            {
+                return;
+            }
+
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Global Intensity", state.GlobalIntensity.ToString("0.000"));
             EditorGUILayout.LabelField("Global Quality Weight", tuning.GlobalQualityWeight.ToString("0.000"));

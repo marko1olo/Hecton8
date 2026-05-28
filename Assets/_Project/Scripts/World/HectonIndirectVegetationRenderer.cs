@@ -478,6 +478,7 @@ namespace Hecton8.World
         private GraphicsBuffer _indirectArgsLod1Buffer;
         private GraphicsBuffer _indirectArgsShadowBuffer;
         private GraphicsBuffer _cullTelemetryCountersBuffer;
+        private GraphicsBuffer _cullTelemetryCountersUploadBuffer;
         private int _gpuVisibleIndexCapacity;
         private int _floraAgeCapacity;
         private int _floraSnapFlagCapacity;
@@ -3301,14 +3302,15 @@ namespace Hecton8.World
                 _cullTelemetryCountersBuffer.IsValid() &&
                 _cullTelemetryCountersBuffer.count >= ScatterCullTelemetryCounterCount)
             {
+                if (_cullTelemetryCountersUploadBuffer == null || !_cullTelemetryCountersUploadBuffer.IsValid())
+                    _cullTelemetryCountersUploadBuffer = GraphicsBufferUploadUtility.CreateStructuredUploadStagingBuffer<uint>(ScatterCullTelemetryCounterCount);
                 return;
             }
 
             ReleaseGraphicsBuffer(ref _cullTelemetryCountersBuffer);
-            _cullTelemetryCountersBuffer = new GraphicsBuffer(
-                GraphicsBuffer.Target.Structured,
-                ScatterCullTelemetryCounterCount,
-                sizeof(uint)); // COLD ALLOC: GraphicsBuffer[4] - GPU cull telemetry counters for SHINOBU_09 scatter diagnostics - owner: HectonIndirectVegetationRenderer
+            ReleaseGraphicsBuffer(ref _cullTelemetryCountersUploadBuffer);
+            _cullTelemetryCountersBuffer = GraphicsBufferUploadUtility.CreateStructuredCopyDestinationBuffer<uint>(ScatterCullTelemetryCounterCount); // COLD ALLOC: GraphicsBuffer[4] - GPU cull telemetry counters for SHINOBU_09 scatter diagnostics - owner: HectonIndirectVegetationRenderer
+            _cullTelemetryCountersUploadBuffer = GraphicsBufferUploadUtility.CreateStructuredUploadStagingBuffer<uint>(ScatterCullTelemetryCounterCount); // COLD ALLOC: GraphicsBuffer[4] - CPU-visible telemetry clear staging, GPU copy source only - owner: HectonIndirectVegetationRenderer
             ResetCullComputeBindingStates();
         }
 
@@ -3662,7 +3664,8 @@ namespace Hecton8.World
             }
 
             _lastScatterCullTelemetrySampleFrame = frameIndex;
-            GraphicsBufferUploadUtility.UploadArraySetData(
+            GraphicsBufferUploadUtility.UploadArrayAndCopyWholeBuffer(
+                _cullTelemetryCountersUploadBuffer,
                 _cullTelemetryCountersBuffer,
                 _cullTelemetryClearPayload,
                 ScatterCullTelemetryCounterCount);
@@ -4181,6 +4184,7 @@ namespace Hecton8.World
             ReleaseGraphicsBuffer(ref _indirectArgsLod1Buffer);
             ReleaseGraphicsBuffer(ref _indirectArgsShadowBuffer);
             ReleaseGraphicsBuffer(ref _cullTelemetryCountersBuffer);
+            ReleaseGraphicsBuffer(ref _cullTelemetryCountersUploadBuffer);
             ReleaseDepthPyramidTexture();
             _gpuVisibleIndexCapacity = 0;
             _gpuCullingFrameIndex = 0;

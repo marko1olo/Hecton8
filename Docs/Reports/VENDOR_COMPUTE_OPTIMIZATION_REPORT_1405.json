@@ -2,278 +2,13 @@
     "agent":  "1405",
     "role":  "MOBILE_GPU_COMPUTE_SHADER_THREAD_GROUP_SIZER",
     "status":  "PENDING VERIFICATION",
-    "generatedUtc":  "2026-05-28T01:51:40.5210314Z",
+    "generatedUtc":  "2026-05-28T10:16:15.7745126Z",
     "taskCount":  20,
     "targetDirectories":  [
                               "Assets/Crest/Crest/Shaders",
                               "Assets/GPUInstancer/Resources/Compute",
                               "Assets/GPUInstancer/Scripts"
                           ],
-    "staticScan":  {
-                       "vendorShaderAndIncludeFileCount":  86,
-                       "oversizedThreadGroupViolations":  0,
-                       "literalViolationMatches":  [
-
-                                                   ],
-                       "resolvedThreadGroupEntries":  170,
-                       "maxResolvedThreadGroupProduct":  256,
-                       "unknownTokenCount":  0,
-                       "unknownTokens":  [
-
-                                         ],
-                       "topResolvedThreadGroups":  [
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedCameraCalculationKernelVR.compute",
-                                                           "line":  11,
-                                                           "source":  "numthreads",
-                                                           "x":  256,
-                                                           "y":  1,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedCameraCalculationKernel.compute",
-                                                           "line":  31,
-                                                           "source":  "numthreads",
-                                                           "x":  256,
-                                                           "y":  1,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedCameraCalculationKernel.compute",
-                                                           "line":  11,
-                                                           "source":  "numthreads",
-                                                           "x":  256,
-                                                           "y":  1,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedCameraCalculationKernelVR.compute",
-                                                           "line":  31,
-                                                           "source":  "numthreads",
-                                                           "x":  256,
-                                                           "y":  1,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedRenderingVisibilityKernel.compute",
-                                                           "line":  17,
-                                                           "source":  "numthreads",
-                                                           "x":  256,
-                                                           "y":  1,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedRenderingGrassInstantiationKernel.compute",
-                                                           "line":  40,
-                                                           "source":  "numthreads",
-                                                           "x":  16,
-                                                           "y":  1,
-                                                           "z":  16,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS_2D, 1, GPUI_THREADS_2D)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedComputeBufferSetDataPartialKernel.compute",
-                                                           "line":  16,
-                                                           "source":  "numthreads",
-                                                           "x":  256,
-                                                           "y":  1,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/Crest/Crest/Shaders/Resources/FFT/FFTCompute.compute",
-                                                           "line":  176,
-                                                           "source":  "numthreads",
-                                                           "x":  256,
-                                                           "y":  1,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(TX,TY,1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedBufferToTexture.compute",
-                                                           "line":  18,
-                                                           "source":  "numthreads",
-                                                           "x":  256,
-                                                           "y":  1,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSBillboard.compute",
-                                                           "line":  34,
-                                                           "source":  "numthreads",
-                                                           "x":  16,
-                                                           "y":  16,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS_2D, GPUI_THREADS_2D, 1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSArgsBuffer.compute",
-                                                           "line":  9,
-                                                           "source":  "numthreads",
-                                                           "x":  256,
-                                                           "y":  1,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedBufferToTexture.compute",
-                                                           "line":  37,
-                                                           "source":  "numthreads",
-                                                           "x":  256,
-                                                           "y":  1,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/Crest/Crest/Shaders/Resources/FFT/FFTCompute.compute",
-                                                           "line":  176,
-                                                           "source":  "numthreads",
-                                                           "x":  1,
-                                                           "y":  256,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(TX,TY,1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/Crest/Crest/Shaders/Resources/FFT/FFTCompute.compute",
-                                                           "line":  176,
-                                                           "source":  "numthreads",
-                                                           "x":  256,
-                                                           "y":  1,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(TX,TY,1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/Crest/Crest/Shaders/Resources/FFT/FFTCompute.compute",
-                                                           "line":  176,
-                                                           "source":  "numthreads",
-                                                           "x":  1,
-                                                           "y":  256,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(TX,TY,1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedRenderingVisibilityKernel.compute",
-                                                           "line":  29,
-                                                           "source":  "numthreads",
-                                                           "x":  256,
-                                                           "y":  1,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSRuntimeModification.compute",
-                                                           "line":  59,
-                                                           "source":  "numthreads",
-                                                           "x":  256,
-                                                           "y":  1,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSRuntimeModification.compute",
-                                                           "line":  49,
-                                                           "source":  "numthreads",
-                                                           "x":  256,
-                                                           "y":  1,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSTreeInstantiationKernel.compute",
-                                                           "line":  27,
-                                                           "source":  "numthreads",
-                                                           "x":  256,
-                                                           "y":  1,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSRuntimeModification.compute",
-                                                           "line":  69,
-                                                           "source":  "numthreads",
-                                                           "x":  256,
-                                                           "y":  1,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSTextureUtils.compute",
-                                                           "line":  62,
-                                                           "source":  "numthreads",
-                                                           "x":  16,
-                                                           "y":  16,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS_2D, GPUI_THREADS_2D, 1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSTextureUtils.compute",
-                                                           "line":  42,
-                                                           "source":  "numthreads",
-                                                           "x":  16,
-                                                           "y":  16,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS_2D, GPUI_THREADS_2D, 1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSTextureUtils.compute",
-                                                           "line":  21,
-                                                           "source":  "numthreads",
-                                                           "x":  16,
-                                                           "y":  16,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS_2D, GPUI_THREADS_2D, 1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedRenderingVisibilityKernelVulkan.compute",
-                                                           "line":  29,
-                                                           "source":  "numthreads",
-                                                           "x":  256,
-                                                           "y":  1,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
-                                                       },
-                                                       {
-                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedRenderingVisibilityKernelVulkan.compute",
-                                                           "line":  17,
-                                                           "source":  "numthreads",
-                                                           "x":  256,
-                                                           "y":  1,
-                                                           "z":  1,
-                                                           "product":  256,
-                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
-                                                       }
-                                                   ]
-                   },
     "modifiedShaders":  [
                             {
                                 "file":  "Assets/Crest/Crest/Shaders/Resources/FFT/FFTCompute.compute",
@@ -321,22 +56,24 @@
                             },
                             {
                                 "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedRenderingGrassInstantiationKernel.compute",
-                                "change":  "Grass detail height-map sampling hardened: map dimensions are cast once to uint, zero height-map dimensions return before buffer reads, base height index is fail-closed, and right/top neighbour samples use FixBounds.",
+                                "change":  "Grass detail instancing hardened: map dimensions are cast once to uint, zero source capacities and zero divisor metadata return before buffer reads, detailMapData reads are guarded by detailMapCapacity, heightMapData reads use heightMapCapacity with FixBounds, output-capacity overflow rolls back the atomic counter, and optional healthy/dry noise texture sampling is gated by hasHealthyDryNoiseTexture with deterministic hash scale fallback.",
                                 "keyLines":  [
-                                                 42,
-                                                 43,
-                                                 44,
-                                                 45,
-                                                 48,
-                                                 50,
-                                                 52,
-                                                 66,
-                                                 99,
-                                                 100,
-                                                 101,
-                                                 102,
-                                                 103,
-                                                 104
+                                                 27,
+                                                 28,
+                                                 29,
+                                                 57,
+                                                 60,
+                                                 62,
+                                                 73,
+                                                 87,
+                                                 88,
+                                                 89,
+                                                 90,
+                                                 91,
+                                                 92,
+                                                 127,
+                                                 128,
+                                                 130
                                              ],
                                 "groupshared":  "None"
                             },
@@ -373,13 +110,20 @@
                             },
                             {
                                 "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedBufferToTexture.compute",
-                                "change":  "Buffer-to-texture bridge now clamps args-buffer drift against bufferSize, rejects maxTextureSize zero, uses integer division, and rejects consumed instance IDs beyond matrix buffer capacity.",
+                                "change":  "Buffer-to-texture bridge now guards argsBufferIndex with argsBufferLength, guards matrix/LOD texture writes with textureCapacity, rejects zero maxTextureSize, keeps integer row division, and rejects consumed instance IDs beyond matrix buffer capacity.",
                                 "keyLines":  [
-                                                 21,
-                                                 24,
-                                                 27,
+                                                 12,
+                                                 14,
+                                                 23,
+                                                 26,
+                                                 28,
+                                                 35,
+                                                 36,
+                                                 37,
+                                                 38,
                                                  39,
-                                                 43
+                                                 45,
+                                                 48
                                              ],
                                 "groupshared":  "None"
                             }
@@ -400,10 +144,16 @@
                                                 67,
                                                 72,
                                                 73,
-                                                274,
-                                                275
+                                                160,
+                                                164,
+                                                267,
+                                                268,
+                                                269,
+                                                277,
+                                                278,
+                                                279
                                             ],
-                               "change":  "Central max constants and integer ceil helpers; 2D frame-count denominator uses long math; tree instantiation property ids added for treeDataLength and instanceCapacity guards."
+                               "change":  "Central max constants and integer ceil helpers; 2D frame-count denominator uses long math; shader property IDs include argsBufferLength/textureCapacity, grass source-capacity IDs, optional healthy/dry noise texture flag, plus tree instancing bounds IDs."
                            },
                            {
                                "file":  "Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerSettings.cs",
@@ -418,56 +168,49 @@
                            {
                                "file":  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
                                "keyLines":  [
-                                                21,
-                                                22,
-                                                576,
-                                                614,
-                                                625,
-                                                626,
-                                                627,
-                                                696,
-                                                697,
-                                                698,
-                                                712,
-                                                723,
-                                                733,
-                                                2076,
-                                                2087,
-                                                2088,
-                                                2089,
-                                                2090,
-                                                2095,
-                                                2096,
-                                                3359,
-                                                3371,
-                                                3384,
-                                                3391,
-                                                3408,
-                                                3409,
-                                                3436,
-                                                3446,
-                                                3447,
-                                                3474,
-                                                3495,
-                                                3521,
-                                                3541,
-                                                3582,
-                                                3717,
-                                                3733,
-                                                3763,
-                                                4032,
-                                                4036,
-                                                4040,
-                                                4084
+                                                464,
+                                                469,
+                                                486,
+                                                487,
+                                                492,
+                                                494,
+                                                507,
+                                                517,
+                                                525,
+                                                538,
+                                                552,
+                                                566,
+                                                580,
+                                                598,
+                                                744,
+                                                757,
+                                                795,
+                                                814,
+                                                816,
+                                                825,
+                                                846,
+                                                848,
+                                                884,
+                                                890,
+                                                899,
+                                                904,
+                                                910,
+                                                919,
+                                                925,
+                                                930,
+                                                936,
+                                                2151,
+                                                3504,
+                                                3546
                                             ],
-                               "change":  "Dispatch math routed through integer helpers; billboard dilation per-call SetInts array allocation removed; frameCount sanitized before shader uniform and z dispatch; x512/x1024 custom settings clamp to 256; runtimeDataList foreach loops in touched draw/upload/offset submit methods replaced with index for loops."
+                               "change":  "Dispatch math routed through integer helpers; safe runtime count clamps physical buffers; append/texture/args/CopyCount/indirect draw offset guards; cross-fade append full-capacity guard; debug rendered-amount GPU readback is editor/development-build only. APEX21 adds fail-closed CPU copy helper clamps, null texture helper guards, \u003c=0 buffer-size initialization rejection, and computeRuntimeModification null/count guards for runtime removal kernels."
                            },
                            {
                                "file":  "Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs",
                                "keyLines":  [
                                                 637
                                             ],
-                               "change":  "Args buffer dispatch uses integer helper."
+                               "change":  "XR indirect args double-count dispatch now rejects non-positive count and binds physical argsBuffer length before CSArgsBuffer.compute writes argsBuffer[id*5+1]."
                            },
                            {
                                "file":  "Assets/GPUInstancer/Scripts/GPUInstancerTreeManager.cs",
@@ -484,22 +227,31 @@
                            {
                                "file":  "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs",
                                "keyLines":  [
-                                                379,
-                                                450,
-                                                451,
-                                                452,
-                                                453,
-                                                454,
-                                                465,
-                                                584,
+                                                411,
+                                                423,
+                                                441,
+                                                444,
+                                                487,
+                                                488,
+                                                491,
+                                                499,
+                                                525,
+                                                530,
+                                                548,
+                                                559,
+                                                562,
                                                 585,
-                                                586,
-                                                588,
-                                                591,
-                                                592,
-                                                595
+                                                623,
+                                                638,
+                                                645,
+                                                646,
+                                                972,
+                                                983,
+                                                992,
+                                                996,
+                                                1019
                                             ],
-                               "change":  "Detail/runtime modification dispatches use integer helpers and integer-clamped grass dispatch dimensions; CPU detail fallback now fail-closes height-map base/right neighbour indices and uses R.y for rightBottomH normal parity with HLSL ComputeNormals."
+                               "change":  "Detail dispatch binds physical source capacities and optional healthy/dry noise texture flag; synchronous Matrix4x4 GetData helper is editor/development-build only and guards non-positive instanceCount before allocation; release detail storage uses deterministic CPU bake with physical array guards, world-corner seed parity, density gate, terrainNormalEffect, negative-count fail-closed return, and indexed cell iteration. APEX21 converts detail remove/offset compute paths to indexed prototype-slot traversal with bounds/null guards, clamps merge copy counts to destination capacity, and removes foreach from modified runtime modification paths. Cold persistent detail storage still allocates Matrix4x4[]/Dictionary/ComputeBuffer and is not claimed Zero-GC."
                            }
                        ],
     "algorithmProof":  {
@@ -509,7 +261,7 @@
                            "thread255":  "threadId 255 processes indices 255 and 511; no index above 511 is generated for SIZE=512/ELEMENTS_PER_THREAD=2."
                        },
     "zeroGcProof":  {
-                        "mandate":  "APEX10 scan over modified production C# added lines. Hot surface excludes cold serialized GPUInstancerSettings preset construction; shader files have no managed allocation semantics.",
+                        "mandate":  "APEX19 static scans over modified production hot dispatch/submit ranges. Cold detail storage/bake allocations are disclosed separately and are not claimed Zero-GC.",
                         "hotDispatchHelperAddedLineScan":  {
                                                                "productionAddedLines":  147,
                                                                "newHits":  0,
@@ -545,7 +297,7 @@
 
                                                              ]
                                                 },
-                        "classification":  "Hot production C# diff in GPUInstancerUtility.cs/GPUInstancerConstants.cs: 147 added lines, 0 reference/array new, 0 string.Format, 0 .ToString(), 0 foreach, 0 LINQ, 0 SetData/SetInts/SetFloats new-array callsites. All modified production C# diff: 193 added lines, 3 new hits only in cold GPUIRenderingSettings preset initializers.",
+                        "classification":  "Hot production range scan ManagerXRArgs + RuntimeSubmitUtility + TextureReduceDispatch + DetailDispatch covers 602 lines and reports 0 new, 0 string.Format, 0 .ToString(), 0 foreach, 0 LINQ. Cold DETAIL_STORE_INSTANCE_DATA bake/storage still allocates persistent Matrix4x4[] and Dictionary and is not claimed clean.",
                         "measuredGc":  "PENDING VERIFICATION: no Unity Profiler or GCMonitor capture was produced.",
                         "apex12HotRangeScan":  {
                                                    "evidenceClass":  "STATIC_SOURCE_TEXT_RANGE_SCAN",
@@ -679,6 +431,281 @@
                                                                   "setNewArray":  0
                                                               },
                                                    "caveat":  "Cold/setup vendor code outside these hot dispatch ranges still contains pre-existing foreach/LINQ/new and is not claimed clean by this pass."
+                                               },
+                        "apex13HotRangeScan":  {
+                                                   "evidenceClass":  "STATIC_SOURCE_TEXT_RANGE_SCAN",
+                                                   "file":  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
+                                                   "range":  "450-940",
+                                                   "lines":  491,
+                                                   "newHits":  0,
+                                                   "stringFormatHits":  0,
+                                                   "toStringHits":  0,
+                                                   "foreachHits":  0,
+                                                   "linqHits":  0,
+                                                   "note":  "Covers APEX13 CopyCount, safe-count helpers, visibility dispatch, indirect draw, and buffer-to-texture submit paths. Whole-file cold/vendor code still contains pre-existing allocations/foreach/LINQ and is not claimed clean."
+                                               },
+                        "apex14HotRangeScan":  {
+                                                   "evidenceClass":  "STATIC_SOURCE_TEXT_RANGE_SCAN",
+                                                   "file":  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
+                                                   "startLine":  450,
+                                                   "endLine":  940,
+                                                   "lines":  491,
+                                                   "newKeyword":  0,
+                                                   "stringFormat":  0,
+                                                   "toStringCalls":  0,
+                                                   "foreach":  0,
+                                                   "linq":  0
+                                               },
+                        "apex15HotRangeScan":  {
+                                                   "evidenceClass":  "STATIC_SOURCE_TEXT_RANGE_SCAN",
+                                                   "file":  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
+                                                   "startLine":  450,
+                                                   "endLine":  940,
+                                                   "lines":  491,
+                                                   "newKeyword":  0,
+                                                   "stringFormat":  0,
+                                                   "toStringCalls":  0,
+                                                   "foreach":  0,
+                                                   "linq":  0
+                                               },
+                        "apex16HotRangeScan":  {
+                                                   "evidenceClass":  "STATIC_SOURCE_TEXT_RANGE_SCAN",
+                                                   "ranges":  [
+                                                                  {
+                                                                      "file":  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
+                                                                      "startLine":  450,
+                                                                      "endLine":  940,
+                                                                      "lines":  491,
+                                                                      "newKeyword":  0,
+                                                                      "stringFormat":  0,
+                                                                      "toStringCalls":  0,
+                                                                      "foreach":  0,
+                                                                      "linq":  0
+                                                                  },
+                                                                  {
+                                                                      "file":  "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs",
+                                                                      "startLine":  560,
+                                                                      "endLine":  600,
+                                                                      "lines":  41,
+                                                                      "newKeyword":  0,
+                                                                      "stringFormat":  0,
+                                                                      "toStringCalls":  0,
+                                                                      "foreach":  0,
+                                                                      "linq":  0
+                                                                  }
+                                                              ],
+                                                   "totals":  {
+                                                                  "ranges":  2,
+                                                                  "lines":  532,
+                                                                  "newKeyword":  0,
+                                                                  "stringFormat":  0,
+                                                                  "toStringCalls":  0,
+                                                                  "foreach":  0,
+                                                                  "linq":  0
+                                                              },
+                                                   "caveat":  "Static source scan only. Unity Profiler/GCMonitor capture was not produced."
+                                               },
+                        "apex17HotRangeScan":  {
+                                                   "evidenceClass":  "STATIC_SOURCE_TEXT_RANGE_SCAN",
+                                                   "ranges":  [
+                                                                  "GPUInstancerManager.cs:624-642",
+                                                                  "GPUInstancerUtility.cs:450-940",
+                                                                  "GPUInstancerUtility.cs:4016-4036",
+                                                                  "GPUInstancerDetailManager.cs:560-605",
+                                                                  "GPUInstancerDetailManager.cs:933-962"
+                                                              ],
+                                                   "totalLines":  607,
+                                                   "newReferenceOrArray":  0,
+                                                   "stringFormat":  0,
+                                                   "toString":  0,
+                                                   "foreach":  0,
+                                                   "linq":  0,
+                                                   "note":  "Covers modified production hot submit/dispatch ranges and the modified detail bake route branch. Cold detail generation still allocates Matrix4x4[]/Dictionary by design and is not claimed Zero-GC."
+                                               },
+                        "apex18HotRangeScan":  {
+                                                   "evidenceClass":  "STATIC_SOURCE_TEXT_RANGE_SCAN",
+                                                   "ranges":  [
+                                                                  {
+                                                                      "path":  "Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs",
+                                                                      "newKeyword":  0,
+                                                                      "stringFormat":  0,
+                                                                      "foreach":  0,
+                                                                      "name":  "ManagerArgsXR",
+                                                                      "toStringCalls":  0,
+                                                                      "startLine":  624,
+                                                                      "lines":  19,
+                                                                      "endLine":  642,
+                                                                      "linq":  0
+                                                                  },
+                                                                  {
+                                                                      "path":  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
+                                                                      "newKeyword":  0,
+                                                                      "stringFormat":  0,
+                                                                      "foreach":  0,
+                                                                      "name":  "UtilityCullingSubmit",
+                                                                      "toStringCalls":  0,
+                                                                      "startLine":  450,
+                                                                      "lines":  491,
+                                                                      "endLine":  940,
+                                                                      "linq":  0
+                                                                  },
+                                                                  {
+                                                                      "path":  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
+                                                                      "newKeyword":  0,
+                                                                      "stringFormat":  0,
+                                                                      "foreach":  0,
+                                                                      "name":  "UtilityReduceTexture",
+                                                                      "toStringCalls":  0,
+                                                                      "startLine":  4016,
+                                                                      "lines":  21,
+                                                                      "endLine":  4036,
+                                                                      "linq":  0
+                                                                  },
+                                                                  {
+                                                                      "path":  "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs",
+                                                                      "newKeyword":  0,
+                                                                      "stringFormat":  0,
+                                                                      "foreach":  0,
+                                                                      "name":  "DetailDispatchHotPath",
+                                                                      "toStringCalls":  0,
+                                                                      "startLine":  623,
+                                                                      "lines":  29,
+                                                                      "endLine":  651,
+                                                                      "linq":  0
+                                                                  }
+                                                              ],
+                                                   "totals":  {
+                                                                  "ranges":  4,
+                                                                  "stringFormat":  0,
+                                                                  "newKeyword":  0,
+                                                                  "foreach":  0,
+                                                                  "linq":  0,
+                                                                  "toStringCalls":  0,
+                                                                  "lines":  560
+                                                              },
+                                                   "coldDisclosure":  {
+                                                                          "forbiddenCountsInColdBake":  {
+                                                                                                            "toString":  0,
+                                                                                                            "stringFormat":  0,
+                                                                                                            "foreach":  0,
+                                                                                                            "linq":  0
+                                                                                                        },
+                                                                          "cpuFallbackRange":  "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs:406-542",
+                                                                          "cpuFallbackNewTokens":  4,
+                                                                          "cpuFallbackManagedOutputAllocation":  "Matrix4x4[] result = new Matrix4x4[instanceCount] at line 444; persistent output for stored detail instances",
+                                                                          "setInstanceDataRouteRange":  "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs:978-1024",
+                                                                          "setInstanceDataRouteNewTokens":  1,
+                                                                          "setInstanceDataRouteAllocation":  "new Dictionary\u003cint, Matrix4x4[]\u003e at line 992; persistent per-cell detail storage",
+                                                                          "note":  "Cold bake/storage path is coroutine data construction behind DETAIL_STORE_INSTANCE_DATA, not per-frame dispatch submit. It remains disclosed instead of hidden behind a helper."
+                                                                      }
+                                               },
+                        "apex19HotRangeScan":  {
+                                                   "evidenceClass":  "STATIC_SOURCE_TEXT_RANGE_SCAN",
+                                                   "ranges":  [
+                                                                  {
+                                                                      "name":  "ManagerXRArgs",
+                                                                      "path":  "Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs",
+                                                                      "startLine":  624,
+                                                                      "endLine":  642,
+                                                                      "lines":  19,
+                                                                      "newKeyword":  0,
+                                                                      "stringFormat":  0,
+                                                                      "toStringCalls":  0,
+                                                                      "foreach":  0,
+                                                                      "linq":  0
+                                                                  },
+                                                                  {
+                                                                      "name":  "RuntimeSubmitUtility",
+                                                                      "path":  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
+                                                                      "startLine":  450,
+                                                                      "endLine":  940,
+                                                                      "lines":  491,
+                                                                      "newKeyword":  0,
+                                                                      "stringFormat":  0,
+                                                                      "toStringCalls":  0,
+                                                                      "foreach":  0,
+                                                                      "linq":  0
+                                                                  },
+                                                                  {
+                                                                      "name":  "TextureReduceDispatch",
+                                                                      "path":  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
+                                                                      "startLine":  3980,
+                                                                      "endLine":  4040,
+                                                                      "lines":  61,
+                                                                      "newKeyword":  0,
+                                                                      "stringFormat":  0,
+                                                                      "toStringCalls":  0,
+                                                                      "foreach":  0,
+                                                                      "linq":  0
+                                                                  },
+                                                                  {
+                                                                      "name":  "DetailDispatch",
+                                                                      "path":  "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs",
+                                                                      "startLine":  625,
+                                                                      "endLine":  655,
+                                                                      "lines":  31,
+                                                                      "newKeyword":  0,
+                                                                      "stringFormat":  0,
+                                                                      "toStringCalls":  0,
+                                                                      "foreach":  0,
+                                                                      "linq":  0
+                                                                  }
+                                                              ],
+                                                   "totals":  {
+                                                                  "ranges":  4,
+                                                                  "lines":  602,
+                                                                  "newKeyword":  0,
+                                                                  "stringFormat":  0,
+                                                                  "toStringCalls":  0,
+                                                                  "foreach":  0,
+                                                                  "linq":  0
+                                                              },
+                                                   "coldDisclosure":  {
+                                                                          "cpuDetailBakeRange":  "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs:406-566",
+                                                                          "cpuDetailBakeNewTokens":  5,
+                                                                          "detailStorageCoroutineRange":  "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs:978-1024",
+                                                                          "detailStorageCoroutineNewTokens":  1,
+                                                                          "stringFormat":  0,
+                                                                          "toStringCalls":  0,
+                                                                          "foreach":  0,
+                                                                          "linq":  0,
+                                                                          "note":  "Cold persistent detail bake/storage allocations are construction/storage artifacts, not per-frame dispatch submit. They remain disclosed."
+                                                                      }
+                                               },
+                        "apex20HotRangeScan":  {
+                                                   "ranges":  [
+                                                                  "GPUInstancerManager.cs:624-642",
+                                                                  "GPUInstancerUtility.cs:450-940",
+                                                                  "GPUInstancerUtility.cs:3980-4040",
+                                                                  "GPUInstancerDetailManager.cs:627-665"
+                                                              ],
+                                                   "totalLines":  610,
+                                                   "new":  0,
+                                                   "stringFormat":  0,
+                                                   "toString":  0,
+                                                   "foreach":  0,
+                                                   "linq":  0,
+                                                   "note":  "APEX20 kept production dispatch/submit ranges free of forbidden constructs; cold detail storage allocations remain disclosed."
+                                               },
+                        "apex21HotRangeScan":  {
+                                                   "ranges":  [
+                                                                  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs:450-970",
+                                                                  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs:3550-3650",
+                                                                  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs:3768-3852",
+                                                                  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs:3998-4072",
+                                                                  "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs:227-448",
+                                                                  "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs:695-745"
+                                                              ],
+                                                   "totalLines":  1055,
+                                                   "forbiddenCounts":  {
+                                                                           "newReference":  0,
+                                                                           "stringFormat":  0,
+                                                                           "toString":  0,
+                                                                           "foreach":  0,
+                                                                           "linq":  0
+                                                                       },
+                                                   "evidenceClass":  "STATIC_SOURCE",
+                                                   "note":  "Cold setup ranges still contain pre-existing allocations such as ComputeBuffer, arrays, dictionaries, and args.ToArray; not claimed Zero-GC. APEX21 hot modified runtime dispatch/copy/remove/texture paths scan clean."
                                                }
                     },
     "dataSovereignty":  {
@@ -700,17 +727,47 @@
                                                "ReleaseWriteLock":  0,
                                                "finallyBlocks":  0,
                                                "conclusion":  "N/A: no GlobalDataVault migration or write lock acquired in this vendor compute pass."
+                                           },
+                            "apex16Scan":  {
+                                               "GlobalDataVault":  0,
+                                               "BufferID":  0,
+                                               "TryAcquireWriteLock":  0,
+                                               "ReleaseWriteLock":  0,
+                                               "finallyBlocks":  0,
+                                               "conclusion":  "N/A: APEX16 added scalar shader capacity uniforms only; no GlobalDataVault migration and no write lock route."
+                                           },
+                            "apex17Scan":  {
+                                               "GlobalDataVault":  0,
+                                               "BufferID":  0,
+                                               "TryAcquireWriteLock":  0,
+                                               "ReleaseWriteLock":  0,
+                                               "conclusion":  "N/A: APEX17 added shader capacity guards, scalar C# bindings, compile-time readback containment, and tests only. No GlobalDataVault migration and no write lock acquired."
+                                           },
+                            "apex19Scan":  {
+                                               "GlobalDataVault":  0,
+                                               "BufferID":  0,
+                                               "TryAcquireWriteLock":  0,
+                                               "ReleaseWriteLock":  0,
+                                               "finallyBlocks":  0,
+                                               "conclusion":  "N/A: APEX19 added shader scalar guards, one C# property ID, one SetInt binding, and tests only. No GlobalDataVault migration and no write lock acquired."
+                                           },
+                            "apex21Scan":  {
+                                               "GlobalDataVault":  0,
+                                               "BufferID":  0,
+                                               "TryAcquireWriteLock":  0,
+                                               "ReleaseWriteLock":  0,
+                                               "conclusion":  "N/A: APEX21 changed vendor ComputeBuffer/ComputeShader guard logic and editor static tests only; no GlobalDataVault migration or write lock acquired."
                                            }
                         },
     "cinematicCheatAndScalability":  {
                                          "physicalSimulationAdded":  false,
-                                         "cheatUsed":  "Occupancy-width reduction, scalar uniform binding, and fail-closed bounds guards only. Crest keeps FFT and underwater visual output; GPUInstancer keeps culling/tree/grass/texture-copy visuals while preventing oversized groups and OOB tails.",
-                                         "globalQualityWeightIntegration":  "PENDING / NOT ADDED: modified Crest/GPUInstancer vendor files contain no HomeostasisBrain.GlobalQualityWeight references. Reason: shader numthreads and dispatch group math are static contract values; a continuous quality scalar may scale workload/cadence/density from a first-party owner route, but must not desynchronize CPU dispatch dimensions from HLSL numthreads.",
+                                         "cheatUsed":  "Occupancy-width reduction, scalar uniform binding, fail-closed source/output capacity guards, debug-readback stripping, deterministic CPU detail bake hash fallback, and optional noise texture sampling gate only. Valid vendor visuals are preserved; invalid metadata fails closed.",
+                                         "globalQualityWeightIntegration":  "NOT ADDED / EXPLICITLY NOT CLAIMED: modified Crest/GPUInstancer vendor files contain no HomeostasisBrain.GlobalQualityWeight references. Reason: shader numthreads and dispatch group math are static contracts; continuous quality must scale workload/cadence/density from a first-party owner route, not desynchronize C# dispatch dimensions from HLSL numthreads. No binary isLowEnd branch was introduced.",
                                          "binaryLowEndSwitchesIntroduced":  false,
-                                         "lowMiddleHighUltra":  "Low: legal 128/256 caps, scalar uniforms, fail-closed tails. Middle: preserved output with safer occupancy. High: preserved density/resolution. Ultra: first-party quality owners can spend saved stability budget on density/cadence; no illegal group width is reintroduced."
+                                         "lowMiddleHighUltra":  "Low: legal 128/256 caps, scalar uniforms, fail-closed tails/source capacities. Middle: preserved output with safer occupancy. High: preserved density/resolution. Ultra: first-party quality owners can spend saved stability budget on density/cadence; no illegal group width is reintroduced."
                                      },
     "compilation":  {
-                        "dotnetBuild":  "BLOCKED_BY_CONTENTION",
+                        "dotnetBuild":  "SUCCEEDED_CLI_COMPILE",
                         "prePatchAttempt":  {
                                                 "preflightPath":  "Docs/AgentLogs/Build_1405_Preflight.json",
                                                 "summaryPath":  "Docs/AgentLogs/Build_1405_Final.summary.json",
@@ -725,7 +782,7 @@
                                                "observedCpuLoadPercent":  49,
                                                "compilerProcessCount":  0
                                            },
-                        "rule":  "No dotnet build launched in APEX11 because CPU/compiler gate failed; latest sample is recorded in Docs/AgentLogs/Build_1405_Apex11.summary.json.",
+                        "rule":  "APEX19 build launched once after preflight CPU samples [1,23,18] and zero active dotnet/csc/VBCSCompiler processes.",
                         "actualBuildAttempt":  {
                                                    "launched":  false,
                                                    "reason":  "BLOCKED_BY_CONTENTION",
@@ -855,19 +912,238 @@
                                                 "launched":  false,
                                                 "reason":  "BLOCKED_BY_CONTENTION",
                                                 "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc is active."
-                                            }
+                                            },
+                        "apex13Preflight":  {
+                                                "timestampUtc":  "2026-05-28T02:08:51.6754912Z",
+                                                "cpuLoadSamplesPercent":  [
+                                                                              67,
+                                                                              66,
+                                                                              38
+                                                                          ],
+                                                "cpuLoadMaxPercent":  67,
+                                                "compilerProcessCount":  1,
+                                                "compilerProcesses":  [
+                                                                          {
+                                                                              "ProcessName":  "dotnet",
+                                                                              "Id":  34436,
+                                                                              "CPU":  217.171875,
+                                                                              "StartTime":  "\/Date(1779933949016)\/"
+                                                                          }
+                                                                      ],
+                                                "launched":  false,
+                                                "reason":  "BLOCKED_BY_CONTENTION",
+                                                "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc is active."
+                                            },
+                        "apex14Preflight":  {
+                                                "timestampUtc":  "2026-05-28T02:19:23.6892747Z",
+                                                "cpuLoadSamplesPercent":  [
+                                                                              53,
+                                                                              61,
+                                                                              54
+                                                                          ],
+                                                "cpuLoadMaxPercent":  61,
+                                                "compilerProcessCount":  1,
+                                                "compilerProcesses":  [
+                                                                          {
+                                                                              "ProcessName":  "dotnet",
+                                                                              "Id":  12600,
+                                                                              "CPU":  13.203125,
+                                                                              "StartTime":  "\/Date(1779934754623)\/"
+                                                                          }
+                                                                      ],
+                                                "launched":  false,
+                                                "reason":  "BLOCKED_BY_CONTENTION",
+                                                "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc is active."
+                                            },
+                        "apex15Preflight":  {
+                                                "timestampUtc":  "2026-05-28T02:25:07.7280691Z",
+                                                "cpuLoadSamplesPercent":  [
+                                                                              46,
+                                                                              47,
+                                                                              82
+                                                                          ],
+                                                "cpuLoadMaxPercent":  82,
+                                                "compilerProcessCount":  2,
+                                                "compilerProcesses":  [
+                                                                          {
+                                                                              "ProcessName":  "csc",
+                                                                              "Id":  44804,
+                                                                              "CPU":  6.40625,
+                                                                              "StartTime":  "\/Date(1779935105302)\/"
+                                                                          },
+                                                                          {
+                                                                              "ProcessName":  "dotnet",
+                                                                              "Id":  9696,
+                                                                              "CPU":  24.71875,
+                                                                              "StartTime":  "\/Date(1779935087474)\/"
+                                                                          }
+                                                                      ],
+                                                "launched":  false,
+                                                "reason":  "BLOCKED_BY_CONTENTION",
+                                                "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                                "logPath":  "Docs/AgentLogs/Build_1405_Apex15.dotnet.log",
+                                                "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc is active."
+                                            },
+                        "apex16Preflight":  {
+                                                "timestampUtc":  "2026-05-28T02:35:10.2204755Z",
+                                                "cpuLoadSamplesPercent":  [
+                                                                              63,
+                                                                              66,
+                                                                              22
+                                                                          ],
+                                                "cpuLoadMaxPercent":  66,
+                                                "compilerProcessCount":  1,
+                                                "compilerProcesses":  [
+                                                                          {
+                                                                              "ProcessName":  "dotnet",
+                                                                              "Id":  22412,
+                                                                              "CPU":  168.734375,
+                                                                              "StartTime":  "/Date(1779935530814)/"
+                                                                          }
+                                                                      ],
+                                                "launched":  false,
+                                                "reason":  "BLOCKED_BY_CONTENTION",
+                                                "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                                "summaryPath":  "Docs/AgentLogs/Build_1405_Apex16.summary.json",
+                                                "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc is active."
+                                            },
+                        "apex17Preflight":  {
+                                                "timestampUtc":  "2026-05-28T02:55:19.6042635Z",
+                                                "cpuLoadSamplesPercent":  [
+                                                                              83,
+                                                                              43,
+                                                                              69
+                                                                          ],
+                                                "cpuLoadMaxPercent":  83,
+                                                "compilerProcessCount":  1,
+                                                "compilerProcesses":  [
+                                                                          {
+                                                                              "ProcessName":  "dotnet",
+                                                                              "Id":  10992,
+                                                                              "CPU":  21.3125,
+                                                                              "StartTime":  "\/Date(1779936904649)\/"
+                                                                          }
+                                                                      ],
+                                                "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                                "logPath":  "Docs/AgentLogs/Build_1405_Apex17.dotnet.log",
+                                                "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc is active.",
+                                                "launched":  false,
+                                                "reason":  "BLOCKED_BY_CONTENTION",
+                                                "exitCode":  null
+                                            },
+                        "apex18Preflight":  {
+                                                "timestampUtc":  "2026-05-28T08:47:32.1173896Z",
+                                                "cpuLoadSamplesPercent":  [
+                                                                              73,
+                                                                              91
+                                                                          ],
+                                                "cpuLoadMaxPercent":  91,
+                                                "compilerProcessCount":  3,
+                                                "compilerProcesses":  [
+                                                                          {
+                                                                              "CPU":  377.578125,
+                                                                              "ProcessName":  "dotnet",
+                                                                              "StartTime":  "2026-05-28T12:37:41+04:00",
+                                                                              "Id":  25684
+                                                                          },
+                                                                          {
+                                                                              "CPU":  56.1875,
+                                                                              "ProcessName":  "VBCSCompiler",
+                                                                              "StartTime":  "2026-05-28T12:39:05+04:00",
+                                                                              "Id":  27088
+                                                                          },
+                                                                          {
+                                                                              "CPU":  45.78125,
+                                                                              "ProcessName":  "csc",
+                                                                              "StartTime":  "2026-05-28T12:43:49+04:00",
+                                                                              "Id":  43004
+                                                                          }
+                                                                      ],
+                                                "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                                "summaryPath":  "Docs/AgentLogs/Build_1405_Apex18.summary.json",
+                                                "launched":  false,
+                                                "reason":  "BLOCKED_BY_CONTENTION",
+                                                "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
+                                            },
+                        "apex19Build":  {
+                                            "timestampUtc":  "2026-05-28T09:17:22.3766385Z",
+                                            "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                            "preflightCpuSamplesPercent":  [
+                                                                               1,
+                                                                               23,
+                                                                               18
+                                                                           ],
+                                            "preflightCompilerProcessCount":  0,
+                                            "launched":  true,
+                                            "exitCode":  0,
+                                            "warnings":  0,
+                                            "errors":  0,
+                                            "elapsed":  "00:00:35.03",
+                                            "outputAssembly":  "Temp/CodexBuild/Assembly-CSharp/Assembly-CSharp.dll",
+                                            "summaryPath":  "Docs/AgentLogs/Build_1405_Apex19.summary.json",
+                                            "postBuildCompilerProcesses":  [
+                                                                               {
+                                                                                   "ProcessName":  "VBCSCompiler",
+                                                                                   "Id":  28856,
+                                                                                   "CPU":  6.5,
+                                                                                   "StartTimeLocal":  "2026-05-28T13:12:28+04:00"
+                                                                               }
+                                                                           ]
+                                        },
+                        "apex20Preflight":  {
+                                                "timestampUtc":  "2026-05-28T09:44:21.1751520Z",
+                                                "cpuLoadSamplesPercent":  [
+                                                                              73,
+                                                                              30,
+                                                                              97,
+                                                                              74
+                                                                          ],
+                                                "cpuLoadMaxPercent":  97,
+                                                "compilerProcessCount":  0,
+                                                "compilerProcesses":  [
+
+                                                                      ],
+                                                "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                                "summaryPath":  "Docs/AgentLogs/Build_1405_Apex20.summary.json",
+                                                "launched":  false,
+                                                "reason":  "BLOCKED_BY_CONTENTION",
+                                                "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
+                                            },
+                        "apex21":  {
+                                       "status":  "BLOCKED_BY_CONTENTION",
+                                       "command":  "dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal",
+                                       "cpuLoadSamplesPercent":  [
+                                                                     63
+                                                                 ],
+                                       "compilerProcessCount":  1,
+                                       "compilerProcesses":  [
+                                                                 {
+                                                                     "Id":  10444,
+                                                                     "ProcessName":  "dotnet",
+                                                                     "CPU":  68.9375,
+                                                                     "StartTime":  "2026-05-28T14:10:06+04:00"
+                                                                 }
+                                                             ],
+                                       "launched":  false,
+                                       "artifact":  "Docs/AgentLogs/Build_1405_Apex21.summary.json",
+                                       "artifactSha256":  "391606f76102995f5f31d257ca2e021bf3c602b7bd2af10524d070891e3d31b6",
+                                       "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc/VBCSCompiler is active."
+                                   }
                     },
     "tests":  {
                   "file":  "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs",
-                  "added":  "Crest512FftTwoElementsPerThread_MatchesSingleElementReference; TwoDimensionalFrameCountMultiplier_UsesLongDenominator; SetDataPartialKernel_UsesExplicitSourceAndDestinationCapacityGuards; BufferToTextureKernel_UsesCapacityAndIntegerIndexGuards; RuntimeCullingDispatch_ClampsLogicalInstanceCountToBufferCapacity",
-                  "execution":  "PENDING VERIFICATION: Unity EditMode tests were not executed."
+                  "added":  "Crest512FftTwoElementsPerThread_MatchesSingleElementReference; TwoDimensionalFrameCountMultiplier_UsesLongDenominator; SetDataPartialKernel_UsesExplicitSourceAndDestinationCapacityGuards; BufferToTextureKernel_UsesCapacityAndIntegerIndexGuards; RuntimeCullingDispatch_ClampsLogicalInstanceCountToBufferCapacity; RuntimeSubmitPaths_ClampAppendTextureAndArgsCapacity with APEX14 cross-fade append full-capacity guard assertions; RenderedAmountGpuReadback_IsDebugBuildOnly; GrassInstantiationKernel_GuardsSourceBufferCapacities; ArgsBufferDoubleInstanceCount_GuardsPhysicalArgsBufferLength; InterlockedCapacityOverflow_RollsBackCounterBeforeReturn; DetailInstanceBake_AvoidsSynchronousGpuReadbackInReleaseRoute with no foreach in the modified route; CpuDetailFallback_UsesDeterministicShaderStyleRandomAndDensityGate with negative-count fail-closed proof; ReduceTextureDispatch_ClampsMipDimensionsBeforeDispatch; APEX19 DetailInstanceBake_AvoidsSynchronousGpuReadbackInReleaseRoute now asserts the editor/development helper rejects instanceCount \u003c= 0 before new Matrix4x4[instanceCount]; GrassInstantiationKernel_GuardsSourceBufferCapacities now asserts hasHealthyDryNoiseTexture optional sample gate and deterministic randomScale fallback; DetailComputeBake_UsesPhysicalDetailMapCapacity; CpuCopyHelpers_ClampSourceAndDestinationCapacityBeforeDispatch; DetailRuntimeModificationPaths_UseIndexedPrototypeSlotsAndFailClosedDispatch",
+                  "execution":  "PENDING VERIFICATION: Unity EditMode tests were not executed after APEX21 because build/test gate sampled CPU 63 with active dotnet pid 10444. APEX19 CLI C# compile succeeded before APEX20/APEX21 edits."
               },
     "verificationLimits":  [
                                "No Unity shader import run",
+                               "No Unity EditMode test execution run",
                                "No RenderDoc/GPU capture",
                                "No PlayMode/profiler/GCMonitor",
-                               "No dotnet build because APEX12 compilation resource throttle blocked it: CPU samples [87,82,57], active dotnet pid 66408 CPU 76.8125",
-                               "No online research used; all defects and contracts were local vendor source/mandate issues."
+                               "No online research used; all defects and contracts were local vendor source/mandate issues.",
+                               "C# CLI compile only: dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal succeeded with 0 warnings and 0 errors after CPU/compiler preflight.",
+                               "APEX20 C# compile/EditMode tests not launched: CPU samples [73,30,97,74] exceeded the \u003e50 throttle despite zero active compiler processes.",
+                               "APEX21 C# compile/EditMode tests not launched: CPU sample 63 and active dotnet pid 10444 violated the \u003e50/no-compiler throttle."
                            ],
     "fileHashesSha256":  {
                              "Assets/Crest/Crest/Scripts/Collision/QueryBase.cs":  "2772955e66a8868aeb604c20746d55ecc22a49da3127922bf298184fcb58a51c",
@@ -877,19 +1153,20 @@
                              "Assets/Crest/Crest/Shaders/Resources/QueryFlow.compute":  "253e539980a4275c595445208d1107b753bf5e3c87bf7e0d0f8b4964629516c6",
                              "Assets/Crest/Crest/Shaders/Underwater/Resources/CrestFillMaskArtefacts.compute":  "2f0f085cf81d3caa6f8743ce1f14aae5dc6e69e72dc66d3abc3b3231689fda94",
                              "Assets/GPUInstancer/Resources/Compute/CSBillboard.compute":  "caf79f964c481faf80a64e545503636045a568821b282856934e52fa7a25de2d",
-                             "Assets/GPUInstancer/Resources/Compute/CSInstancedRenderingGrassInstantiationKernel.compute":  "d5be3abe3a4306d3cd0ec3130b8b20f1ea1d7677b8df8957a28ea974913aa635",
-                             "Assets/GPUInstancer/Resources/Compute/CSTextureUtils.compute":  "329d6b5773f42a1a4ffcc7cc5a58227b806b3c32a776cac66658d089111688a3",
-                             "Assets/GPUInstancer/Resources/Compute/CSTreeInstantiationKernel.compute":  "a558d8474d8793c4b5049cb10fc6ac5deece2b207597c5051bb643df2d5bffaa",
                              "Assets/GPUInstancer/Resources/Compute/Include/PlatformDefines.hlsl":  "18754e645a39c6f8493853a801560eba356501bccb5f664bf8adeffc00caae55",
-                             "Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs":  "9245084f86949d964e1dbee3c09a25036753062814664b7aa9fd54c7b12d10d5",
-                             "Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerConstants.cs":  "2fb7dfa631b7b3a9ffdd3244c597184152dd1804e75380988b4215d4af828b21",
+                             "Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerConstants.cs":  "21985f65d9080bb5b562455d23eb86a398fe019fe6a1fc9163535a4588aaeb31",
                              "Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerSettings.cs":  "b3e1221cd96b89909bf9031b0b47697752a00f3e103bd99adf7ff02cacf92024",
-                             "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs":  "31173831199a2e8a5f4cf5f0b44b7646e5ca760b6da2942904418b0fa41d6586",
-                             "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs":  "88ae502d5b946e2fbb77eac967dc5116f47dcd06226f361eeacff37e0e0a0c1a",
                              "Assets/GPUInstancer/Scripts/GPUInstancerTreeManager.cs":  "c4ae148901bce94a771bd6fef508716d4bffc003d78f1af833632daa48246956",
-                             "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs":  "67a8d3e8b5452588366366059c012ad1d4c5c0e3b3d0cd4d38442be2dceae2f8",
-                             "Assets/GPUInstancer/Resources/Compute/CSInstancedBufferToTexture.compute":  "2078cbc0bec4908d6f6f14456b49906504e3582cd226da3dbd34c0523f213863",
-                             "Assets/GPUInstancer/Resources/Compute/CSInstancedComputeBufferSetDataPartialKernel.compute":  "4757f59a4d37f1f32e31d20e5717c06a96be1649f9777bb86be498992439ec6a"
+                             "Assets/GPUInstancer/Resources/Compute/CSInstancedBufferToTexture.compute":  "fb720c995e8fc6fd3439eaf8e0f5e096792ca173f67cbad6ebc3cbe64d66a0a7",
+                             "Assets/GPUInstancer/Resources/Compute/CSInstancedComputeBufferSetDataPartialKernel.compute":  "4757f59a4d37f1f32e31d20e5717c06a96be1649f9777bb86be498992439ec6a",
+                             "Assets/GPUInstancer/Resources/Compute/CSArgsBuffer.compute":  "e992ebe60243fa4dea250bd5683d038f97909bae3979abfab624f784f06a2d43",
+                             "Assets/GPUInstancer/Resources/Compute/CSTreeInstantiationKernel.compute":  "feb8527f66217c636954c3c11e92d6c1845701cb3eec1957ecd7c6f5d6d125c7",
+                             "Assets/GPUInstancer/Resources/Compute/CSInstancedRenderingGrassInstantiationKernel.compute":  "77ac86b9d8f19a937b19132f671962128d6f4cde80e767d636a1ee80ceeb4315",
+                             "Assets/GPUInstancer/Resources/Compute/CSTextureUtils.compute":  "1cefca125b91e7e513aa377162c551a6e1d41d9de7c43a4b9bfa8aa3df4d760d",
+                             "Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs":  "787a23c5a5b91c5c58bed9e68ab0c95b6311c6f7b2c271a8aa1ebcac9e60dad1",
+                             "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs":  "eff409a10dd8998b4b1214e2ef7998f26ecaac3ce915dfa5938e28a63f0a7c5f",
+                             "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs":  "6da746313c9478e203c8f90d77dcf6f726f9f0d97c40f01638da7adc731ee514",
+                             "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs":  "c30b360fa2d316d4b27e61cc713b0073bf8cd34fc6adbc15c3ca3d6bbb07aa21"
                          },
     "apex6PolishFindings":  {
                                 "grassHeightMapBounds":  "FIXED: CSInstancedRenderingGrassInstantiationKernel.compute no longer contains raw heightMapData[heightIndex + 1]; base/right/top/rightTop height-map reads are fail-closed via FixBounds after dimension casts.",
@@ -938,5 +1215,149 @@
                                  "transformOffsetCapacity":  "FIXED: GPUInstancerUtility.cs clamps global position/matrix offset kernels through GetSafeRuntimeTransformBufferCount before binding bufferSize or dispatching CSRuntimeModification.compute.",
                                  "bufferToTextureCrossFade":  "FIXED: normal, shadow, and LOD cross-fade buffer-to-texture paths bind safeInstanceCount and dispatch safeInstanceCount instead of runtimeData.bufferSize.",
                                  "evidence":  "Line proof: GPUInstancerUtility.cs:482-516,397-402,620-664,750-786,3493-3505,3535-3547; ComputeDispatchSizingEditTests.cs:109-121."
+                             },
+    "scalability":  {
+                        "apex12Scan":  {
+                                           "HomeostasisBrain":  0,
+                                           "GlobalQualityWeight":  0,
+                                           "binaryLowEndSwitches":  0,
+                                           "conclusion":  "No new quality branch. Thread group size is static shader contract; continuous GlobalQualityWeight scaling belongs to first-party workload/fidelity owners, not C# dispatch width desync."
+                                       },
+                        "apex17Scan":  {
+                                           "HomeostasisBrain":  0,
+                                           "GlobalQualityWeight":  0,
+                                           "binaryLowEndSwitches":  0,
+                                           "conclusion":  "No new device-tier quality switch. Thread group size remains a static HLSL contract; APEX17 scales safety by physical capacities and compile-time diagnostic containment, not by if(isLowEnd). Continuous GlobalQualityWeight should drive first-party density/cadence/fidelity owners, not vendor numthreads."
+                                       },
+                        "apex19Scan":  {
+                                           "HomeostasisBrain":  0,
+                                           "GlobalQualityWeight":  0,
+                                           "binaryLowEndSwitches":  0,
+                                           "conclusion":  "No new device-tier quality switch. APEX19 scales safety by metadata/descriptor presence and physical capacity, not by if(isLowEnd). Continuous GlobalQualityWeight integration remains outside this vendor static thread-contract pass."
+                                       },
+                        "apex20Scan":  {
+                                           "HomeostasisBrain":  0,
+                                           "GlobalQualityWeight":  0,
+                                           "binaryLowEndSwitches":  0,
+                                           "conclusion":  "No new quality branch. APEX20 scales safety by physical buffer capacity and optional data presence only; no if(isLowEnd) or GlobalQualityWeight misuse was added."
+                                       },
+                        "apex21Scan":  {
+                                           "HomeostasisBrain":  0,
+                                           "GlobalQualityWeight":  0,
+                                           "binaryLowEndSwitches":  0,
+                                           "conclusion":  "No new quality branch. APEX21 scales safety by physical source/destination capacity, null descriptor presence, and non-positive workload rejection only; no if(isLowEnd) or GlobalQualityWeight misuse was added."
+                                       }
+                    },
+    "staticScan":  {
+                       "vendorShaderAndIncludeFileCount":  86,
+                       "oversizedThreadGroupViolations":  0,
+                       "literalViolationMatchesCount":  0,
+                       "resolvedThreadGroupEntries":  170,
+                       "maxResolvedThreadGroupProduct":  256,
+                       "unknownTokenCount":  0,
+                       "apex13LightweightScan":  {
+                                                     "vendorShaderAndIncludeFileCount":  86,
+                                                     "resolvedThreadGroupEntries":  59,
+                                                     "maxResolvedThreadGroupProduct":  256,
+                                                     "oversizedThreadGroupViolations":  0,
+                                                     "unknownTokenCount":  0,
+                                                     "note":  "Lightweight post-APEX13 scan; confirms no new oversized groups. Existing macro-expanded report scan remains recorded separately."
+                                                 },
+                       "apex17LiteralOversizedScan":  {
+                                                          "pattern":  "[numthreads(512|1024), GPUI_THREADS 512/1024, TX=512, TY=512, COMPUTE_SHADER_THREAD_COUNT 512/1024",
+                                                          "result":  "NO_MATCH",
+                                                          "numthreadsLineCount":  46
+                                                      },
+                       "apex18LiteralOversizedScan":  {
+                                                          "pattern":  "numthreads(512|1024), GPUI_THREADS 512/1024, COMPUTE_SHADER_THREAD_COUNT 512/1024",
+                                                          "result":  "NO_MATCH",
+                                                          "command":  "rg -n \"numthreads\\\\((512|1024)|GPUI_THREADS\\\\s+512|GPUI_THREADS\\\\s+1024|COMPUTE_SHADER_THREAD_COUNT\\\\s*=\\\\s*(512|1024)|COMPUTE_SHADER_THREAD_COUNT_2D\\\\s*=\\\\s*(512|1024)\" Assets/Crest Assets/GPUInstancer"
+                                                      },
+                       "apex19LiteralOversizedScan":  {
+                                                          "pattern":  "[numthreads(512|1024), GPUI_THREADS 512/1024, TX=512, TY=512",
+                                                          "result":  "NO_MATCH",
+                                                          "command":  "rg -n \"\\\\[numthreads\\\\((512|1024)|#define\\\\s+(GPUI_THREADS|GPUI_THREADS_2D|TX|TY)\\\\s+(512|1024)\" Assets/GPUInstancer Assets/Crest -g \"*.compute\" -g \"*.hlsl\" -S"
+                                                      },
+                       "apex20LiteralOversizedScan":  {
+                                                          "pattern":  "[numthreads(512|1024), GPUI_THREADS/GPUI_THREADS_2D/TX/TY 512/1024",
+                                                          "result":  "NO_MATCH",
+                                                          "command":  "rg -n \"\\[numthreads\\((512|1024)|#define\\s+(GPUI_THREADS|GPUI_THREADS_2D|TX|TY)\\s+(512|1024)\" Assets/GPUInstancer Assets/Crest -g \"*.compute\" -g \"*.hlsl\" -S"
+                                                      },
+                       "apex21LiteralOversizedScan":  {
+                                                          "pattern":  "[numthreads(512|1024), GPUI_THREADS/GPUI_THREADS_2D/TX/TY 512/1024",
+                                                          "result":  "NO_MATCH",
+                                                          "command":  "rg -n \"\\[numthreads\\((512|1024)|#define\\s+(GPUI_THREADS|GPUI_THREADS_2D|TX|TY)\\s+(512|1024)\" Assets/GPUInstancer Assets/Crest -g \"*.compute\" -g \"*.hlsl\" -S"
+                                                      }
+                   },
+    "apex13PolishFindings":  {
+                                 "appendBufferCapacity":  "FIXED: visibility dispatch count is clamped by every target LOD append buffer count before AppendStructuredBuffer writes are issued.",
+                                 "argsAndCopyCountOffsets":  "FIXED: CopyCount instance-count offsets and DrawMeshInstancedIndirect args offsets now validate args buffer element ranges before GPU copy or draw submit.",
+                                 "bufferToTextureCapacity":  "FIXED: CSInstancedBufferToTexture.compute receives argsBufferLength and textureCapacity; C# binds physical args lengths, texture widths, and capacity-derived dispatch counts for normal, shadow, and LOD cross-fade paths.",
+                                 "residualRisk":  "PARTIALLY REDUCED BY APEX14: physical append capacities are guarded, args/texture surfaces are guarded, and non-shadow cross-fade append passes now require full safeInstanceCount capacity when counters are not reset. Unity shader import/runtime GPU counter telemetry is still PENDING VERIFICATION.",
+                                 "evidence":  "Line proof: CSInstancedBufferToTexture.compute:12/14/23/26/45; GPUInstancerConstants.cs:160/164; GPUInstancerUtility.cs:464-470/507-531/534-577/580-615/744/795/816/825/846-848/884-938; ComputeDispatchSizingEditTests.cs:101-140."
+                             },
+    "apex14PolishFindings":  {
+                                 "crossFadeAppendCapacity":  "FIXED: GetSafeVisibilityDispatchCount now receives lodAppendIndex. For non-shadow lodAppendIndex != 0, the pass appends without resetting the transformation append counters, so it returns 0 unless every target append buffer count is at least safeInstanceCount.",
+                                 "mathematicalProof":  "Normal pass and cross-fade pass together can target the same LOD buffer, but each instance contributes at most one normal LOD and at most one cross-fade LOD. For distance cross-fade, target k receives normalLOD(k) plus cfFromLOD(k-1), disjoint subsets of safeInstanceCount. For animated cross-fade, target k receives normalLOD(k) plus oldLOD(k) where oldLOD != newLOD, also disjoint. Therefore per-target total is \u003c= safeInstanceCount; if target capacity \u003c safeInstanceCount, the only no-stall safe action is to skip the counter-preserving cross-fade pass.",
+                                 "evidence":  "Line proof: GPUInstancerUtility.cs:517/525/538/757; ComputeDispatchSizingEditTests.cs:132-136. Static hot-range scan GPUInstancerUtility.cs:450-940 reports 491 lines, new=0, string.Format=0, .ToString=0, foreach=0, LINQ=0."
+                             },
+    "apex15PolishFindings":  {
+                                 "debugReadbackGuard":  "FIXED: the showRenderedAmount GPU readback path in GPUInstancerUtility.cs is now compiled only for UNITY_EDITOR or DEVELOPMENT_BUILD. Release players cannot enter the synchronous ComputeBuffer.GetData rendered-count path.",
+                                 "evidence":  "Line proof: GPUInstancerUtility.cs:486-497; ComputeDispatchSizingEditTests.cs:146-153. Hot-range scan GPUInstancerUtility.cs:450-940 reports new=0, string.Format=0, .ToString=0, foreach=0, LINQ=0.",
+                                 "residualRisk":  "PENDING VERIFICATION: Unity player build was not produced, so preprocessor stripping is static-source proof only. APEX16 added grass source-capacity guards afterward."
+                             },
+    "apex16PolishFindings":  {
+                                 "grassSourceBufferCapacity":  "FIXED: CSInstancedRenderingGrassInstantiationKernel.compute receives detailMapCapacity and heightMapCapacity, rejects zero capacities, rejects detailIndex \u003e= detailMapCapacity before detailMapData read, and uses heightMapCapacity as the FixBounds source size for all heightMapData reads.",
+                                 "csharpBinding":  "FIXED: GPUInstancerConstants.GrassKernelProperties owns DETAIL_MAP_CAPACITY and HEIGHT_MAP_CAPACITY; GPUInstancerDetailManager.cs binds detailMapBuffer.count and heightMapBuffer.count before dispatch.",
+                                 "zeroGcEvidence":  "GPUInstancerDetailManager.cs:560-600 static scan: 41 lines, new=0, string.Format=0, .ToString=0, foreach=0, LINQ=0.",
+                                 "evidence":  "Line proof: CSInstancedRenderingGrassInstantiationKernel.compute:27-28/57/62/73; GPUInstancerConstants.cs:267-268; GPUInstancerDetailManager.cs:584-585; ComputeDispatchSizingEditTests.cs:157-167.",
+                                 "residualRisk":  "PENDING VERIFICATION: Unity shader import/EditMode execution/player build/profiler/RenderDoc were not run because compilation gate was blocked by CPU/compiler contention."
+                             },
+    "apex17PolishFindings":  {
+                                 "argsBufferPhysicalLength":  "FIXED: CSArgsBuffer.compute declares argsBufferLength, returns on id.x \u003e= count before index multiplication, then rejects argsIndex \u003e= argsBufferLength before argsBuffer write. GPUInstancerManager.cs binds runtimeData.argsBuffer.count before XR dispatch.",
+                                 "interlockedCounterRollback":  "FIXED: tree and grass instancing kernels roll back counterBuffer[0] with atomic add 0xffffffffu before returning from instanceCapacity overflow lanes. This preserves fail-closed no-OOB output and prevents false counter growth.",
+                                 "reduceTextureMipDimensions":  "FIXED: CSTextureUtils.compute rejects zero source/destination dimensions in reduce kernel; GPUInstancerUtility.cs clamps negative mip inputs and uses GetTextureMipDimension for source/destination mip sizes before dispatch.",
+                                 "detailReadbackContainment":  "FIXED: the Matrix4x4[] compute readback helper containing visibilityBuffer.GetData(result) is compiled only for UNITY_EDITOR || DEVELOPMENT_BUILD. Release route in SetInstanceDataForDetailCells uses the existing CPU bake path instead of compiling the synchronous GPU readback helper.",
+                                 "subagentCrossCheck":  "Dewey finding for missing ARGS_BUFFER_LENGTH was stale against current tree: GPUInstancerManager.cs line 640 binds it. Dewey finding for detail GetData was valid and reduced by compile-time containment.",
+                                 "evidence":  "Line proof: CSArgsBuffer.compute:8/13/16/17/20; GPUInstancerManager.cs:638-641; CSTreeInstantiationKernel.compute:55-59; CSInstancedRenderingGrassInstantiationKernel.compute:87-92; CSTextureUtils.compute:45; GPUInstancerUtility.cs:3940/4023-4026; GPUInstancerDetailManager.cs:489-533/933-962; ComputeDispatchSizingEditTests.cs:171-242.",
+                                 "residualRisk":  "PENDING VERIFICATION: release branch now avoids sync GPU readback by using CPU bake. CPU bake already existed for Android Vulkan, but its visual parity with the compute/noise path is not proven by runtime capture; Unity player build and terrain visual comparison remain pending."
+                             },
+    "apex18PolishFindings":  {
+                                 "cpuDetailFallback":  "FIXED: release/detail CPU bake now rejects instanceCount \u003c= 0 before output allocation, rejects null/zero source metadata, uses physical detailMap.Length and heightMapData.Length guards, mirrors shader-style density gate/hash placement/random rotation, applies terrainNormalEffect, and keeps density-skipped lanes as default zero matrices by incrementing counter.",
+                                 "detailRouteIteration":  "FIXED: modified SetInstanceDataForDetailCells route no longer uses foreach; it indexes the List\u003cGPUInstancerCell\u003e returned by GetCellList and skips unexpected non-detail cells.",
+                                 "textureNoiseParity":  "DISCLOSED: CPU bake does not sample healthyDryNoiseTexture; scale uses deterministic hash fake instead of texture readback. This is a cinematic cheat to avoid sync readback/allocation in release detail storage. Visual parity capture is pending.",
+                                 "zeroGcTruth":  "Hot dispatch ranges are zero for forbidden constructs. Cold persistent detail storage still allocates Dictionary and Matrix4x4[] by design and is disclosed as not Zero-GC.",
+                                 "evidence":  "Lines: GPUInstancerDetailManager.cs:411/423/442/444/477/489/497/525/530/548/585/623/645/646/972/983/992/996/1019; ComputeDispatchSizingEditTests.cs:201/225/229/240.",
+                                 "build":  "BLOCKED_BY_CONTENTION: CPU samples [73,91], active compiler processes dotnet 25684, VBCSCompiler 27088, csc 43004. No dotnet build launched.",
+                                 "residualRisk":  "PENDING VERIFICATION: Unity compilation, EditMode tests, player build, profiler/GCMonitor, and terrain detail visual parity capture were not executed."
+                             },
+    "apex19PolishFindings":  {
+                                 "healthyDryNoiseTextureOptionalBinding":  "FIXED: CSInstancedRenderingGrassInstantiationKernel.compute declares hasHealthyDryNoiseTexture at line 29, uses deterministic hash randomScale at line 127, and samples healthyDryNoiseTexture only inside if(hasHealthyDryNoiseTexture != 0) at lines 128-130. GPUInstancerDetailManager.cs binds the flag from healthyDryNoiseTexture != null at line 638; GPUInstancerConstants.cs owns HAS_HEALTHY_DRY_NOISE_TEXTURE at line 269.",
+                                 "zeroDivisorMetadataGuard":  "FIXED: grass shader rejects detailResolution == 0, heightResolution == 0, terrainSize.x == 0, or terrainSize.y == 0 at line 60 before detailHeightMapScale and normalScale divisions.",
+                                 "cpuFallbackSeedParity":  "FIXED: CPU detail bake uses shader-style world-corner seeds: cornerPositionX/cornerPositionZ at lines 487-488, density RandomFloat at line 491, and RandomFloat2 at line 499. This is closer to GPU path than APEX18 grid-index seed.",
+                                 "developmentHelperNegativeCount":  "FIXED: editor/development compute-readback helper now returns Array.Empty\u003cMatrix4x4\u003e() for instanceCount \u003c= 0 at line 559 before allocating new Matrix4x4[instanceCount] at line 562. Static test asserts that order at ComputeDispatchSizingEditTests.cs:218-221.",
+                                 "textureArrayCopyAudit":  "NO CODE CHANGE: CSTextureUtils CSCopyTextureArray already returns when id.x \u003e= sourceSizeX or id.y \u003e= sourceSizeY before dividing by float(sourceSizeX/sourceSizeY); destination zero dimensions also return before write. No proven defect remained in that path.",
+                                 "zeroGcEvidence":  "APEX19 hot-range scan: 602 production dispatch/submit lines, new=0, string.Format=0, .ToString=0, foreach=0, LINQ=0. Cold bake/storage allocations remain disclosed.",
+                                 "build":  "SUCCEEDED: dotnet build Assembly-CSharp.csproj --no-restore -m:1 /v:minimal, 0 warnings, 0 errors, elapsed 00:00:35.03. Preflight CPU samples [1,23,18], active compiler process count 0.",
+                                 "residualRisk":  "PENDING VERIFICATION: Unity shader import, Unity EditMode tests, PlayMode, RenderDoc/GPU capture, profiler, GCMonitor, and terrain detail visual parity capture were not run."
+                             },
+    "apex20PolishFindings":  {
+                                 "physicalDetailMapCapacity":  "FIXED: editor/development compute detail bake now creates detailMapBuffer from detailMap.Length, not detailMapSize*detailMapSize, so shader detailMapCapacity matches real source data count.",
+                                 "mergeRouteBufferReuse":  "FIXED: merge detail bake route now skips null/empty height/detail arrays and recreates height/detail ComputeBuffers when actual array lengths change, preventing stale source data behind oversized buffers.",
+                                 "dispatchFailClosed":  "FIXED: DispatchDetailComputeShader returns before SetBuffer/Dispatch when grass shader or visibility/detail/height/counter buffers are null or have non-positive counts.",
+                                 "zeroGcEvidence":  "APEX20 hot-range scan: 610 production dispatch/submit lines, new=0, string.Format=0, .ToString=0, foreach=0, LINQ=0. New allocations are cold persistent ComputeBuffer creation only.",
+                                 "build":  "BLOCKED_BY_CONTENTION: CPU samples [73,30,97,74], compiler process count 0. No dotnet build launched after APEX20 edits.",
+                                 "evidence":  "Lines: GPUInstancerDetailManager.cs:563/578/607/633/635/853/855/866/872; ComputeDispatchSizingEditTests.cs:239-255.",
+                                 "residualRisk":  "PENDING VERIFICATION: Unity shader import, EditMode tests, PlayMode/profiler/GCMonitor, RenderDoc/GPU capture, and terrain detail visual parity remain unexecuted."
+                             },
+    "apex21PolishFindings":  {
+                                 "cpuCopyHelperCapacity":  "FIXED: SetDataPartial/CopyComputeBuffer clamp count to source and destination capacities before SetData/Dispatch; invalid null, negative, zero, or out-of-range inputs return before GPU copy kernel submission.",
+                                 "textureHelperNullDescriptors":  "FIXED: CopyTextureWithComputeShader, CopyTextureArrayWithComputeShader, and ReduceTextureWithComputeShader return before dereferencing null textures or missing computeTextureUtils; texture-array index rejects negative values.",
+                                 "detailRuntimeModificationIteration":  "FIXED: Detail RemoveInstancesInsideBounds, RemoveInstancesInsideCollider, and SetGlobalPositionOffset now iterate by indexed prototype slots, guard terrain/cell/prototype bounds, use TryGetValue for detail buffers/lists, and avoid foreach in modified runtime modification paths.",
+                                 "runtimeRemoveKernelGuards":  "FIXED: GPUInstancerUtility RemoveInstancesInside* compute routes reject null/zero buffers, null colliders, and missing computeRuntimeModification before dispatch.",
+                                 "zeroGcEvidence":  "APEX21 hot-range scan: 1055 production runtime dispatch/copy/remove/texture lines, newReference=0, string.Format=0, .ToString=0, foreach=0, LINQ=0. Cold setup allocations remain disclosed.",
+                                 "build":  "BLOCKED_BY_CONTENTION: CPU sample 63 and active dotnet pid 10444 CPU 68.9375. No dotnet build launched after APEX21 edits.",
+                                 "evidence":  "Lines: GPUInstancerUtility.cs:40/140/3563-3633/3772/3791/3817/3837/4000/4039/4070; GPUInstancerDetailManager.cs:235-282/312-388/407-442/491; ComputeDispatchSizingEditTests.cs:97-112/282-318.",
+                                 "residualRisk":  "PENDING VERIFICATION: Unity shader import, EditMode tests, PlayMode/profiler/GCMonitor, RenderDoc/GPU capture, and current C# compile remain unexecuted after APEX21 due build throttle."
                              }
 }

@@ -1,0 +1,38 @@
+{
+  "agent_id": "1408",
+  "generated_local_time": "2026-05-28T14:08:35+04:00",
+  "status": "PENDING_VERIFICATION_STATIC_PASS_BUILD_BLOCKED_BY_CPU",
+  "domain": "Echelon 3 / World vegetation residency and flow-field async execution",
+  "prompt_source": "Docs/Tasks/CURRENT_BATCH.md",
+  "prompt_task_count": 20,
+  "proof_source": "Docs/Reports/SYNC_BLOCKER_PURGE_REPORT_1408.json",
+  "finding": "ClearAllResidency was a normal-phase force-drain path.",
+  "fix": "ClearAllResidency now cancels residency-owned async jobs and relies on LateFrame dispatcher completion for native release.",
+  "line_evidence": {
+    "clear_all_residency": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs:8201",
+    "cancel_async_world_jobs": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs:8218",
+    "cancel_all_chunk_jobs": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs:5520",
+    "cancel_flow_jobs": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs:557",
+    "cancel_before_publish": [
+      "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs:384",
+      "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs:442",
+      "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs:480"
+    ],
+    "static_test": "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs:152"
+  },
+  "scan_results": {
+    "world_runtime_raw_run_complete_matches": 0,
+    "assigned_runtime_allocator_tempjob_matches": 0,
+    "hot_method_new_reference_type": 0,
+    "hot_method_string_format": 0,
+    "hot_method_to_string": 0,
+    "hot_method_foreach": 0,
+    "hot_method_linq_like": 0
+  },
+  "build": {
+    "invoked_dotnet_build": false,
+    "cpu_load_percent": 65,
+    "active_dotnet_pid": 1604,
+    "status": "BLOCKED_BY_CONTENTION"
+  }
+}

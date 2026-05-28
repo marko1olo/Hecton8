@@ -232,9 +232,9 @@ namespace Hecton8.Gameplay
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct SubmarineMassSolverJob : IJob
         {
-            [ReadOnly, NoAlias] public NativeArray<float> RoomWaterLevels;
-            [ReadOnly, NoAlias] public NativeArray<float> RoomVolumes;
-            [ReadOnly, NoAlias] public NativeArray<float3> RoomLocalAUPs;
+            [ReadOnly, NoAlias] public NativeArray<float>.ReadOnly RoomWaterLevels;
+            [ReadOnly, NoAlias] public NativeArray<float>.ReadOnly RoomVolumes;
+            [ReadOnly, NoAlias] public NativeArray<float3>.ReadOnly RoomLocalAUPs;
             [NoAlias] public NativeArray<DynamicFloodMassOutput> Output;
             public int RoomCount;
             public float BaseMassKg;
@@ -377,6 +377,9 @@ namespace Hecton8.Gameplay
         private const int VaultBallastForcePacketsFlag = 1 << 8;
         private const int VaultBallastTelemetryFlag = 1 << 9;
         private const int VaultBallastTuningFlag = 1 << 10;
+        private const byte FloodRoomInputLockWaterLevels = 1 << 0;
+        private const byte FloodRoomInputLockVolumes = 1 << 1;
+        private const byte FloodRoomInputLockLocalAups = 1 << 2;
         private const long MaxBallastProfileCsvBytes = SubmarineBallastConstants.CsvScratchBytes;
         private const SystemID OwnerSystem = SystemID.VehiclesPhysics;
         private const uint FloodFeedbackSourceHash = 0x56434d53u;
@@ -459,6 +462,7 @@ namespace Hecton8.Gameplay
         private bool _resetIntegralPending;
         private bool _dumpedTelemetry;
         private bool _dumpedBallastTelemetry;
+        private byte _floodRoomInputVaultLockMask;
         private byte _pumpPowered = 1;
         private byte _authoritativeMathLod;
         private int _targetInstanceId;
@@ -971,6 +975,7 @@ namespace Hecton8.Gameplay
         {
             ReleaseBallastSolverVaultLocks();
             ReleaseFloodMassOutputVaultLock();
+            ReleaseFloodRoomInputVaultLocks();
             ReleasePidOutputVaultLock();
             ReleaseOwnedVaultHandles(_dataVault);
             _ballastFill01Handle = default;
@@ -1030,10 +1035,18 @@ namespace Hecton8.Gameplay
 
         private bool RefreshRoomBufferAliases()
         {
-            return TryResolveRoomBuffers(
-                out NativeArray<float> roomWaterLevels,
-                out NativeArray<float> roomVolumes,
-                out NativeArray<float3> roomLocalAups) &&
+            return TryRefreshExistingReadOnlyVaultBuffer(
+                    ref _roomWaterLevelsHandle,
+                    BufferID.RoomWaterLevels,
+                    out NativeArray<float>.ReadOnly roomWaterLevels) &&
+                TryRefreshExistingReadOnlyVaultBuffer(
+                    ref _roomVolumesHandle,
+                    BufferID.RoomVolumes,
+                    out NativeArray<float>.ReadOnly roomVolumes) &&
+                TryRefreshExistingReadOnlyVaultBuffer(
+                    ref _roomLocalAUPsHandle,
+                    BufferID.RoomLocalAUPs,
+                    out NativeArray<float3>.ReadOnly roomLocalAups) &&
                 roomWaterLevels.IsCreated &&
                 roomVolumes.IsCreated &&
                 roomLocalAups.IsCreated;
@@ -1802,7 +1815,7 @@ namespace Hecton8.Gameplay
 
         private void MirrorBallastFillFromTanks()
         {
-            if (!TryReadBallastTanksReadOnly(out NativeArray<BallastTankDTO>.ReadOnly tanks) ||
+            if (!TryResolveBallastTanksLocked(out NativeArray<BallastTankDTO> tanks) ||
                 !TryAcquireVaultWrite(
                     in _ballastFill01Handle,
                     BufferID.SubmarineBallastFill01,
@@ -1866,7 +1879,9 @@ namespace Hecton8.Gameplay
             float totalBallastMass = 0f;
             float3 weightedSum = ToFloat3(baseCenterOfMassLocal) * baseMass;
 
-            if (TryReadBallastTanksReadOnly(out NativeArray<BallastTankDTO>.ReadOnly tanks))
+            if (!_ballastSolverJobPending &&
+                !_ballastSolverVaultLocksHeld &&
+                TryReadBallastTanksReadOnly(out NativeArray<BallastTankDTO>.ReadOnly tanks))
             {
                 int count = math.min(TankCount, math.min(tanks.Length, tankLocalPositions.Length));
                 for (int i = 0; i < count; i++)
@@ -2342,8 +2357,8 @@ namespace Hecton8.Gameplay
 
         private void RefreshShinobu332GyroRouteHandleCold()
         {
-            NativeArray<SubmarineGyroCounterDTO> counters;
-            TryResolveExistingVaultBuffer(
+            NativeArray<SubmarineGyroCounterDTO>.ReadOnly counters;
+            TryRefreshExistingReadOnlyVaultBuffer(
                 ref _shinobu332GyroCounterHandle,
                 BufferID.Shinobu332GyroCounters,
                 out counters);
@@ -2517,23 +2532,22 @@ namespace Hecton8.Gameplay
             if (_dynamicFloodSignalActive == 0 || _dynamicFloodRoomCount <= 0)
                 return;
 
-            if (!TryResolveRoomBuffers(
-                    out NativeArray<float> roomWaterLevels,
-                    out NativeArray<float> roomVolumes,
-                    out NativeArray<float3> roomLocalAups))
+            if (!TryAcquireFloodRoomInputAliases(
+                    out NativeArray<float>.ReadOnly roomWaterLevels,
+                    out NativeArray<float>.ReadOnly roomVolumes,
+                    out NativeArray<float3>.ReadOnly roomLocalAups,
+                    out int roomCount))
             {
                 return;
             }
 
-            int bufferRoomCount = math.min(roomWaterLevels.Length, math.min(roomVolumes.Length, roomLocalAups.Length));
-            int roomCount = math.min(_dynamicFloodRoomCount, bufferRoomCount);
-            if (roomCount <= 0 ||
-                !TryAcquireVaultWrite(
+            if (!TryAcquireVaultWrite(
                     in _floodMassOutputHandle,
                     BufferID.SubmarineDynamicFloodMassOutput,
                     1,
                     out NativeArray<DynamicFloodMassOutput> floodMassOutput))
             {
+                ReleaseFloodRoomInputVaultLocks();
                 return;
             }
 
@@ -2556,7 +2570,10 @@ namespace Hecton8.Gameplay
             finally
             {
                 if (!_floodMassJobPending)
+                {
                     ReleaseFloodMassOutputVaultLock();
+                    ReleaseFloodRoomInputVaultLocks();
+                }
             }
         }
 
@@ -2565,6 +2582,7 @@ namespace Hecton8.Gameplay
             if (!_floodMassJobPending)
             {
                 ReleaseFloodMassOutputVaultLock();
+                ReleaseFloodRoomInputVaultLocks();
                 return true;
             }
 
@@ -2587,6 +2605,7 @@ namespace Hecton8.Gameplay
             finally
             {
                 ReleaseFloodMassOutputVaultLock();
+                ReleaseFloodRoomInputVaultLocks();
             }
         }
 
@@ -2641,7 +2660,9 @@ namespace Hecton8.Gameplay
 
         private float SumBallastFill()
         {
-            if (TryReadBallastTanksReadOnly(out NativeArray<BallastTankDTO>.ReadOnly tanks))
+            if (!_ballastSolverJobPending &&
+                !_ballastSolverVaultLocksHeld &&
+                TryReadBallastTanksReadOnly(out NativeArray<BallastTankDTO>.ReadOnly tanks))
             {
                 int tankCount = math.min(TankCount, tanks.Length);
                 float sum = 0f;
@@ -3054,6 +3075,21 @@ namespace Hecton8.Gameplay
                 out buffer);
         }
 
+        private bool TryResolveBallastTanksLocked(out NativeArray<BallastTankDTO> buffer)
+        {
+            if (!_ballastSolverVaultLocksHeld)
+            {
+                buffer = default;
+                return false;
+            }
+
+            return TryResolveMutableVaultBuffer(
+                ref _ballastTanksHandle,
+                SubmarineBallastBufferIds.Tanks,
+                TankCount,
+                out buffer);
+        }
+
         private bool TryResolveBallastForcePacketsLocked(out NativeArray<SubmarineBallastForcePacketDTO> buffer)
         {
             if (!_ballastSolverVaultLocksHeld)
@@ -3182,6 +3218,26 @@ namespace Hecton8.Gameplay
             _floodMassOutputVaultLockHeld = false;
         }
 
+        private void ReleaseFloodRoomInputVaultLocks()
+        {
+            byte mask = _floodRoomInputVaultLockMask;
+            if (mask == 0)
+                return;
+
+            IDataVault vault = ResolveDataVault();
+            if (vault != null)
+            {
+                if ((mask & FloodRoomInputLockLocalAups) != 0)
+                    vault.TryUnlockBuffer(BufferID.RoomLocalAUPs, OwnerSystem);
+                if ((mask & FloodRoomInputLockVolumes) != 0)
+                    vault.TryUnlockBuffer(BufferID.RoomVolumes, OwnerSystem);
+                if ((mask & FloodRoomInputLockWaterLevels) != 0)
+                    vault.TryUnlockBuffer(BufferID.RoomWaterLevels, OwnerSystem);
+            }
+
+            _floodRoomInputVaultLockMask = 0;
+        }
+
         private bool TryAcquireVaultWrite<T>(
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
@@ -3267,15 +3323,182 @@ namespace Hecton8.Gameplay
                 out buffer);
         }
 
-        private bool TryResolveRoomBuffers(
-            out NativeArray<float> roomWaterLevels,
-            out NativeArray<float> roomVolumes,
-            out NativeArray<float3> roomLocalAups)
+        private bool TryAcquireFloodRoomInputAliases(
+            out NativeArray<float>.ReadOnly roomWaterLevels,
+            out NativeArray<float>.ReadOnly roomVolumes,
+            out NativeArray<float3>.ReadOnly roomLocalAups,
+            out int roomCount)
         {
-            bool hasWater = TryResolveExistingVaultBuffer(ref _roomWaterLevelsHandle, BufferID.RoomWaterLevels, out roomWaterLevels);
-            bool hasVolumes = TryResolveExistingVaultBuffer(ref _roomVolumesHandle, BufferID.RoomVolumes, out roomVolumes);
-            bool hasAups = TryResolveExistingVaultBuffer(ref _roomLocalAUPsHandle, BufferID.RoomLocalAUPs, out roomLocalAups);
-            return hasWater && hasVolumes && hasAups;
+            roomWaterLevels = default;
+            roomVolumes = default;
+            roomLocalAups = default;
+            roomCount = 0;
+
+            IDataVault vault = ResolveDataVault();
+            if (vault == null)
+            {
+                RecordVaultFault(BufferID.RoomWaterLevels, VaultFaultCodeMissing, PidTelemetryFlagDataVaultMissing);
+                return false;
+            }
+
+            bool waterLocked = false;
+            bool volumesLocked = false;
+            bool aupsLocked = false;
+            bool success = false;
+            byte lockMask = 0;
+            try
+            {
+                if (!TryAcquirePinnedReadOnlyVaultBuffer(
+                        vault,
+                        ref _roomWaterLevelsHandle,
+                        BufferID.RoomWaterLevels,
+                        1,
+                        out roomWaterLevels))
+                {
+                    return false;
+                }
+
+                waterLocked = true;
+                lockMask |= FloodRoomInputLockWaterLevels;
+
+                if (!TryAcquirePinnedReadOnlyVaultBuffer(
+                        vault,
+                        ref _roomVolumesHandle,
+                        BufferID.RoomVolumes,
+                        1,
+                        out roomVolumes))
+                {
+                    return false;
+                }
+
+                volumesLocked = true;
+                lockMask |= FloodRoomInputLockVolumes;
+
+                if (!TryAcquirePinnedReadOnlyVaultBuffer(
+                        vault,
+                        ref _roomLocalAUPsHandle,
+                        BufferID.RoomLocalAUPs,
+                        1,
+                        out roomLocalAups))
+                {
+                    return false;
+                }
+
+                aupsLocked = true;
+                lockMask |= FloodRoomInputLockLocalAups;
+
+                int bufferRoomCount = math.min(roomWaterLevels.Length, math.min(roomVolumes.Length, roomLocalAups.Length));
+                roomCount = math.min(_dynamicFloodRoomCount, bufferRoomCount);
+                if (roomCount <= 0)
+                {
+                    RecordVaultFault(BufferID.RoomWaterLevels, VaultFaultCodeInvalidView, PidTelemetryFlagVaultViewInvalid);
+                    return false;
+                }
+
+                _floodRoomInputVaultLockMask = lockMask;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                {
+                    if (aupsLocked)
+                        vault.TryUnlockBuffer(BufferID.RoomLocalAUPs, OwnerSystem);
+                    if (volumesLocked)
+                        vault.TryUnlockBuffer(BufferID.RoomVolumes, OwnerSystem);
+                    if (waterLocked)
+                        vault.TryUnlockBuffer(BufferID.RoomWaterLevels, OwnerSystem);
+
+                    roomWaterLevels = default;
+                    roomVolumes = default;
+                    roomLocalAups = default;
+                    roomCount = 0;
+                    _floodRoomInputVaultLockMask = 0;
+                }
+            }
+        }
+
+        private bool TryAcquirePinnedReadOnlyVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null || requiredLength <= 0)
+            {
+                RecordVaultFault(bufferId, VaultFaultCodeMissing, PidTelemetryFlagDataVaultMissing);
+                return false;
+            }
+
+            if (vault.IsCompactionFenceActive)
+            {
+                RecordVaultFault(bufferId, VaultFaultCodeContention, PidTelemetryFlagVaultWriteContention);
+                return false;
+            }
+
+            if (!IsVehiclesPhysicsVaultHandle(in handle, bufferId))
+            {
+                if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> refreshed) ||
+                    !IsVehiclesPhysicsVaultHandle(in refreshed, bufferId))
+                {
+                    handle = default;
+                    RecordVaultFault(bufferId, VaultFaultCodeInvalidView, PidTelemetryFlagVaultViewInvalid);
+                    return false;
+                }
+
+                handle = refreshed;
+            }
+
+            if (!vault.TryLockBuffer(bufferId, OwnerSystem))
+            {
+                RecordVaultFault(bufferId, VaultFaultCodeContention, PidTelemetryFlagVaultWriteContention);
+                return false;
+            }
+
+            bool success = false;
+            try
+            {
+                if (!vault.TryReadOnlyHandle(in handle, out buffer) ||
+                    !buffer.IsCreated ||
+                    buffer.Length < requiredLength)
+                {
+                    if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> refreshed) ||
+                        !IsVehiclesPhysicsVaultHandle(in refreshed, bufferId) ||
+                        !vault.TryReadOnlyHandle(in refreshed, out buffer) ||
+                        !buffer.IsCreated ||
+                        buffer.Length < requiredLength)
+                    {
+                        handle = default;
+                        buffer = default;
+                        RecordVaultFault(bufferId, VaultFaultCodeInvalidView, PidTelemetryFlagVaultViewInvalid);
+                        return false;
+                    }
+
+                    handle = refreshed;
+                }
+
+                if (vault.IsCompactionFenceActive)
+                {
+                    buffer = default;
+                    RecordVaultFault(bufferId, VaultFaultCodeContention, PidTelemetryFlagVaultWriteContention);
+                    return false;
+                }
+
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                {
+                    vault.TryUnlockBuffer(bufferId, OwnerSystem);
+                    buffer = default;
+                }
+            }
         }
 
         private bool EnsureVaultBufferCold<T>(
@@ -3391,10 +3614,10 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private bool TryResolveExistingVaultBuffer<T>(
+        private bool TryRefreshExistingReadOnlyVaultBuffer<T>(
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
-            out NativeArray<T> buffer)
+            out NativeArray<T>.ReadOnly buffer)
             where T : struct
         {
             buffer = default;
@@ -3402,20 +3625,37 @@ namespace Hecton8.Gameplay
             if (vault == null)
             {
                 handle = default;
-                _pendingTelemetryFlags |= PidTelemetryFlagDataVaultMissing;
+                RecordVaultFault(bufferId, VaultFaultCodeMissing, PidTelemetryFlagDataVaultMissing);
                 return false;
             }
 
-            if (TryResolveVehiclesPhysicsVaultBuffer(vault, ref handle, bufferId, 1, out buffer))
-                return true;
+            if (vault.IsCompactionFenceActive)
+            {
+                RecordVaultFault(bufferId, VaultFaultCodeContention, PidTelemetryFlagVaultWriteContention);
+                return false;
+            }
 
-            if (vault.TryGetGenerationHandle<T>(bufferId, out handle) &&
-                TryResolveVehiclesPhysicsVaultBuffer(vault, ref handle, bufferId, 1, out buffer))
+            if (IsVehiclesPhysicsVaultHandle(in handle, bufferId) &&
+                vault.TryReadOnlyHandle(in handle, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length > 0)
             {
                 return true;
             }
 
+            if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> refreshed) &&
+                IsVehiclesPhysicsVaultHandle(in refreshed, bufferId) &&
+                vault.TryReadOnlyHandle(in refreshed, out buffer) &&
+                buffer.IsCreated &&
+                buffer.Length > 0)
+            {
+                handle = refreshed;
+                return true;
+            }
+
+            buffer = default;
             handle = default;
+            RecordVaultFault(bufferId, VaultFaultCodeInvalidView, PidTelemetryFlagVaultViewInvalid);
             return false;
         }
 

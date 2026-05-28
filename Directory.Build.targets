@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <HectonVendorGeneratedWarningProjects>|AmplifyImpostors.Editor|AmplifyImpostors.Runtime|AstarPathfindingProject|AstarPathfindingProjectEditor|BakeryEditorAssembly|BakeryRuntimeAssembly|Crest|Crest.Helpers.Editor|Den.Tools|Den.Tools.Editor|EasySave3|EasySave3Editor|GPUInstancer|GPUInstancer.Editor|JBooth.MicroSplat.Core|JBooth.MicroSplat.Core.Editor|Lofelt.NiceVibrations|Lofelt.NiceVibrations.Demo|Lofelt.NiceVibrations.Editor|MapMagic|MapMagic.Editor|MapMagic.MicroSplat|MapMagic.MicroSplat.Editor|MapMagic.Settings|MeshBakerCore|MeshBakerEditor|MoreMountains.Feedbacks|MoreMountains.Feedbacks.Editor|MoreMountains.Tools|MoreMountains.Tools.Editor|PackageToolsEditor|RealtimeCSG|ShapesRuntime|ShapesEditor|Unity.RenderPipelines.Core.Editor|Unity.RenderPipelines.Universal.Editor|Unity.RenderPipelines.Universal.Runtime|Unity.ShaderGraph.Editor|VolumetricLightBeam|VolumetricLightBeam.Editor|</HectonVendorGeneratedWarningProjects>
+    <HectonVendorGeneratedWarningProjects>|AmplifyImpostors.Editor|AmplifyImpostors.Runtime|AstarPathfindingProject|AstarPathfindingProjectEditor|BakeryEditorAssembly|BakeryRuntimeAssembly|Crest|Crest.Helpers.Editor|Den.Tools|Den.Tools.Editor|EasySave3|EasySave3Editor|GPUInstancer|GPUInstancer.Editor|JBooth.MicroSplat.Core|JBooth.MicroSplat.Core.Editor|Lofelt.NiceVibrations|Lofelt.NiceVibrations.Demo|Lofelt.NiceVibrations.Editor|MapMagic|MapMagic.Editor|MapMagic.MicroSplat|MapMagic.MicroSplat.Editor|MapMagic.Settings|MeshBakerCore|MeshBakerEditor|MoreMountains.Feedbacks|MoreMountains.Feedbacks.Editor|MoreMountains.Tools|MoreMountains.Tools.Editor|PackageToolsEditor|RealtimeCSG|ShapesRuntime|ShapesEditor|Tayx.Graphy|Tayx.Graphy.Editor|Unity.RenderPipelines.Core.Editor|Unity.RenderPipelines.Universal.Editor|Unity.RenderPipelines.Universal.Runtime|Unity.ShaderGraph.Editor|VolumetricLightBeam|VolumetricLightBeam.Editor|</HectonVendorGeneratedWarningProjects>
     <HectonUnityPackageCliShimProjects>|Unity.RenderPipelines.Core.Editor|Unity.RenderPipelines.Universal.Editor|Unity.RenderPipelines.Universal.Runtime|Unity.ShaderGraph.Editor|</HectonUnityPackageCliShimProjects>
     <HectonOdinCliReferenceProjects>|Assembly-CSharp|Assembly-CSharp-firstpass|Assembly-CSharp-Editor|Assembly-CSharp-Editor-firstpass|Hecton8.Core|Hecton8.Editor|</HectonOdinCliReferenceProjects>
     <HectonVendorEditorRuntimeProjects>|AstarPathfindingProject|EasySave3|GPUInstancer|JBooth.MicroSplat.Core|MoreMountains.Feedbacks|MoreMountains.Tools|ShapesRuntime|VolumetricLightBeam|</HectonVendorEditorRuntimeProjects>
@@ -143,12 +143,24 @@
   </Target>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Core'">
+    <Reference Remove="Hecton8.Bootstrap.Contracts" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Bootstrap.Contracts.dll" />
+    <Reference Remove="Hecton8.Core.Database" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.Database.dll" />
     <Reference Remove="Hecton8.Core.Memory" />
     <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.Memory.dll" />
     <Reference Remove="Hecton8.Core.Memory.Defrag" />
     <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.Memory.Defrag.dll" />
     <Reference Remove="Hecton8.Core.Bucketing" />
     <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.Bucketing.dll" />
+    <Reference Remove="Hecton8.Lighting" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Lighting.dll" />
+    <Reference Remove="Hecton8.Power.BatteryChargerLogistics.Runtime" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Power.BatteryChargerLogistics.Runtime.dll" />
+    <Reference Remove="Hecton8.UI.Navigation" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.UI.Navigation.dll" />
+    <Reference Remove="Hecton8.World.Contracts" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.World.Contracts.dll" />
     <Reference Remove="Library\ScriptAssemblies\*.Editor.dll" />
     <Reference Remove="Library\ScriptAssemblies\*Tests.dll" />
     <Reference Remove="Library\ScriptAssemblies\MCPForUnity.Editor.dll" />
@@ -370,23 +382,37 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.Core' And '$(HectonBuildProjectReferences)' != 'true'">
+    <Reference Remove="Hecton8.Bootstrap.Contracts" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Bootstrap.Contracts.dll" />
+    <Reference Remove="Hecton8.Core.Database" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.Database.dll" />
     <Reference Remove="Hecton8.Core.Bucketing" />
     <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.Bucketing.dll" />
     <Reference Remove="Hecton8.Core.Scheduling" />
     <Reference Remove="Library\ScriptAssemblies\Hecton8.Core.Scheduling.dll" />
+    <Reference Remove="Hecton8.Lighting" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Lighting.dll" />
+    <Reference Remove="Hecton8.Power.BatteryChargerLogistics.Runtime" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.Power.BatteryChargerLogistics.Runtime.dll" />
     <Reference Remove="Hecton8.Tools.ToolKinematics.Contracts" />
     <Reference Remove="Library\ScriptAssemblies\Hecton8.Tools.ToolKinematics.Contracts.dll" />
+    <Reference Remove="Library\ScriptAssemblies\Unity.RenderPipelines.Core.Runtime.dll" />
+    <Reference Remove="$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.RenderPipelines.Core.Runtime.dll" />
+    <Reference Remove="Hecton8.UI.Navigation" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.UI.Navigation.dll" />
+    <Reference Remove="Hecton8.World.Contracts" />
+    <Reference Remove="Library\ScriptAssemblies\Hecton8.World.Contracts.dll" />
     <ProjectReference Remove="@(ProjectReference)" />
     <Reference Include="GPUInstancer" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\GPUInstancer.dll') And !$([System.String]::Copy('@(Reference)').Contains('GPUInstancer'))">
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\GPUInstancer.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Hecton8.Bootstrap.Contracts" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Bootstrap.Contracts.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.Bootstrap.Contracts'))">
-      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Bootstrap.Contracts.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Hecton8.Input.Generated" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Input.Generated.dll') And !$([System.String]::Copy('@(Reference)').Contains('Hecton8.Input.Generated'))">
       <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Hecton8.Input.Generated.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Core.Runtime" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.RenderPipelines.Core.Runtime.dll')">
+      <HintPath>$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.RenderPipelines.Core.Runtime.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Unity.RenderPipelines.Universal.Runtime" Condition="Exists('$(MSBuildThisFileDirectory)Library\ScriptAssemblies\Unity.RenderPipelines.Universal.Runtime.dll') And !$([System.String]::Copy('@(Reference)').Contains('Unity.RenderPipelines.Universal.Runtime'))">

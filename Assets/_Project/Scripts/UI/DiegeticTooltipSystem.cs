@@ -397,7 +397,9 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                _dataVault = currentService as IDataVault;
+                IDataVault previousVault = previousService is IDataVault oldVault ? oldVault : null;
+                IDataVault nextVault = currentService is IDataVault vault ? vault : null;
+                RebindDataVaultForLifecycle(nextVault, previousVault);
                 if (_dataVault != null)
                     EnsureBlackBox();
                 return;
@@ -1366,41 +1368,95 @@ namespace Hecton8.UI
             if (vault == null)
                 return;
 
-            if (IsVaultHandleCreated(in _blackBoxHandle) &&
+            if (!vault.IsCompactionFenceActive &&
+                IsBlackBoxHandle(in _blackBoxHandle) &&
                 vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<TooltipBlackBoxEntry>.ReadOnly blackBox) &&
+                !vault.IsCompactionFenceActive &&
                 blackBox.IsCreated &&
                 blackBox.Length >= BlackBoxCapacity)
             {
                 return;
             }
 
-            if (IsVaultHandleCreated(in _blackBoxHandle))
-                vault.ReleaseBuffer(in _blackBoxHandle);
+            if (vault.IsCompactionFenceActive)
+                return;
+
+            ReleaseBlackBoxHandle(vault);
 
             _blackBoxHandle = vault.EnsureGenerationHandle<TooltipBlackBoxEntry>(
                 BlackBoxBufferId,
                 BlackBoxCapacity,
                 VaultOwnerSystemId,
                 NativeArrayOptions.ClearMemory);
+            if (!IsBlackBoxHandle(in _blackBoxHandle) ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryReadOnlyHandle(in _blackBoxHandle, out blackBox) ||
+                vault.IsCompactionFenceActive ||
+                !blackBox.IsCreated ||
+                blackBox.Length < BlackBoxCapacity)
+            {
+                ResetBlackBoxNativeEpochState();
+                return;
+            }
+
+            _blackBoxCursor = 0;
+            _blackBoxWrittenCount = 0;
+            _blackBoxDumped = false;
         }
 
         private IDataVault CacheDataVaultCold()
         {
-            if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
+            IDataVault registryVault = GlobalRegistry.DataVault;
+            if (!ReferenceEquals(_dataVault, registryVault))
+                RebindDataVaultForLifecycle(registryVault);
 
             return _dataVault;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
+        private void RebindDataVaultForLifecycle(IDataVault nextVault, IDataVault fallbackReleaseVault = null)
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            ReleaseBlackBoxHandle(_dataVault ?? fallbackReleaseVault);
+            _dataVault = nextVault;
+            ResetBlackBoxNativeEpochState();
+        }
+
+        private void ReleaseBlackBoxHandle(IDataVault vault)
+        {
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsBlackBoxHandle(in _blackBoxHandle) ||
+                !vault.TryGetGenerationHandle(BlackBoxBufferId, out VaultGenerationHandle<TooltipBlackBoxEntry> currentHandle) ||
+                !IsBlackBoxHandle(in currentHandle) ||
+                currentHandle.Generation != _blackBoxHandle.Generation)
+            {
+                return;
+            }
+
+            vault.ReleaseBuffer(in _blackBoxHandle);
+        }
+
+        private void ResetBlackBoxNativeEpochState()
+        {
+            _blackBoxHandle = default;
+            _blackBoxCursor = 0;
+            _blackBoxWrittenCount = 0;
+            _blackBoxDumped = false;
+        }
+
+        private static bool IsBlackBoxHandle(in VaultGenerationHandle<TooltipBlackBoxEntry> handle)
+        {
+            return handle.BufferID == (uint)BlackBoxBufferId &&
+                   handle.SystemID == (uint)VaultOwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private void RecordBlackBox(Vector3 anchor, Vector4 tint, byte tierFlags)
         {
             IDataVault vault = _dataVault;
-            if (vault == null || !IsVaultHandleCreated(in _blackBoxHandle))
+            if (vault == null || !IsBlackBoxHandle(in _blackBoxHandle))
                 return;
 
             float3 anchorPayload = default;
@@ -1409,15 +1465,23 @@ namespace Hecton8.UI
             anchorPayload.z = anchor.z;
 
             _blackBoxDumped = false;
-            if (!vault.TryAcquireWriteLock(in _blackBoxHandle, VaultOwnerSystemId, out NativeArray<TooltipBlackBoxEntry> blackBox) ||
-                !blackBox.IsCreated ||
-                blackBox.Length < BlackBoxCapacity)
-            {
-                return;
-            }
-
+            bool blackBoxLocked = false;
             try
             {
+                if (vault.IsCompactionFenceActive ||
+                    !vault.TryAcquireWriteLock(in _blackBoxHandle, VaultOwnerSystemId, out NativeArray<TooltipBlackBoxEntry> blackBox))
+                {
+                    return;
+                }
+
+                blackBoxLocked = true;
+                if (vault.IsCompactionFenceActive ||
+                    !blackBox.IsCreated ||
+                    blackBox.Length < BlackBoxCapacity)
+                {
+                    return;
+                }
+
                 blackBox[_blackBoxCursor] = new TooltipBlackBoxEntry
                 {
                     Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
@@ -1438,7 +1502,8 @@ namespace Hecton8.UI
             }
             finally
             {
-                vault.ReleaseWriteLock(in _blackBoxHandle, VaultOwnerSystemId);
+                if (blackBoxLocked)
+                    vault.ReleaseWriteLock(in _blackBoxHandle, VaultOwnerSystemId);
             }
         }
 
@@ -1448,7 +1513,7 @@ namespace Hecton8.UI
             if (_blackBoxDumped ||
                 vault == null ||
                 vault.IsCompactionFenceActive ||
-                !IsVaultHandleCreated(in _blackBoxHandle))
+                !IsBlackBoxHandle(in _blackBoxHandle))
             {
                 return;
             }
@@ -1517,7 +1582,7 @@ namespace Hecton8.UI
                 vault.IsCompactionFenceActive ||
                 index < 0 ||
                 index >= BlackBoxCapacity ||
-                !IsVaultHandleCreated(in _blackBoxHandle) ||
+                !IsBlackBoxHandle(in _blackBoxHandle) ||
                 !vault.TryReadOnlyHandle(in _blackBoxHandle, out NativeArray<TooltipBlackBoxEntry>.ReadOnly blackBox) ||
                 vault.IsCompactionFenceActive ||
                 !blackBox.IsCreated ||
@@ -1621,15 +1686,8 @@ namespace Hecton8.UI
             }
 
             IDataVault vault = _dataVault;
-            if (vault != null && IsVaultHandleCreated(in _blackBoxHandle))
-            {
-                vault.ReleaseBuffer(in _blackBoxHandle);
-            }
-            _blackBoxHandle = default;
-
-            _blackBoxCursor = 0;
-            _blackBoxWrittenCount = 0;
-            _blackBoxDumped = false;
+            ReleaseBlackBoxHandle(vault);
+            ResetBlackBoxNativeEpochState();
             _resourceObjectsReady = false;
         }
 

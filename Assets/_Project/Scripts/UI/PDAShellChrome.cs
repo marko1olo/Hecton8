@@ -319,7 +319,8 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                BindGlitchTableVault(currentService as IDataVault);
+                IDataVault nextVault = currentService is IDataVault currentVault ? currentVault : null;
+                BindGlitchTableVault(nextVault);
                 return;
             }
 
@@ -398,7 +399,7 @@ namespace Hecton8.UI
             if (!vault.TryGetGenerationHandle(
                     (BufferID)DiegeticGlitchSurgeonRuntime.GlitchTableBufferIdRaw,
                     out VaultGenerationHandle<byte> acquired) ||
-                !IsVaultHandleCreated(in acquired) ||
+                !IsGlitchTableHandle(in acquired) ||
                 vault.IsCompactionFenceActive ||
                 !vault.TryReadOnlyHandle(in acquired, out NativeArray<byte>.ReadOnly glitchTable) ||
                 vault.IsCompactionFenceActive ||
@@ -424,7 +425,8 @@ namespace Hecton8.UI
             tableLength = 0;
             if (!_glitchTableHandleReady ||
                 _glitchVault == null ||
-                _glitchVault.IsCompactionFenceActive)
+                _glitchVault.IsCompactionFenceActive ||
+                !IsGlitchTableHandle(in _glitchTableHandle))
                 return false;
 
             if (!_glitchVault.TryReadOnlyHandle(in _glitchTableHandle, out NativeArray<byte>.ReadOnly glitchTable) ||
@@ -442,9 +444,11 @@ namespace Hecton8.UI
             return true;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
+        private static bool IsGlitchTableHandle<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == DiegeticGlitchSurgeonRuntime.GlitchTableBufferIdRaw &&
+                   handle.SystemID == (uint)SystemID.UI &&
+                   handle.Generation != 0u;
         }
 
         private void ClearGlitchTableBinding()

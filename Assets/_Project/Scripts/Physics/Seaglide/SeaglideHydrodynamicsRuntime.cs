@@ -359,7 +359,7 @@ namespace Hecton8.Physics
                     return;
                 }
 
-                int metabolismEnabled = AdvanceMetabolismCadence(solverDelta, tuningDto);
+                int metabolismEnabled = AdvanceMetabolismCadence(solverDelta, safeDelta, in tuningDto);
                 _scheduleTimestamp = Stopwatch.GetTimestamp();
                 CalculateSeaglideThrustJob thrustJob = new CalculateSeaglideThrustJob
                 {
@@ -1260,20 +1260,6 @@ namespace Hecton8.Physics
             }
         }
 
-        private int AdvanceMetabolismCadence(float deltaTime, SeaglideTuningDTO tuning)
-        {
-            float minCadence = math.max(0.02f, tuning.MinimumCadenceSeconds);
-            float maxCadence = math.max(minCadence, tuning.MaximumCadenceSeconds);
-            float quality = MathLodApproximation.SaturateFinite(tuning.GlobalQualityWeight, SeaglideSimdMath.AuthoritativeQualityWeight);
-            float cadence = math.lerp(maxCadence, minCadence, quality);
-            _metabolismAccumulator += deltaTime;
-            if (_metabolismAccumulator < cadence)
-                return 0;
-
-            _metabolismAccumulator = 0f;
-            return 1;
-        }
-
         private static string ResolveVehicleProfileCsvPath(string projectRoot)
         {
             if (string.IsNullOrEmpty(projectRoot))
@@ -1288,7 +1274,24 @@ namespace Hecton8.Physics
         }
 #endif
 
+        private int AdvanceMetabolismCadence(float deltaTime, float fixedDeltaTime, in SeaglideTuningDTO tuning)
+        {
+            float quality = MathLodApproximation.SaturateFinite(tuning.GlobalQualityWeight, SeaglideSimdMath.AuthoritativeQualityWeight);
+            float cadence = ResolveContinuousCadenceSeconds(fixedDeltaTime, in tuning, quality);
+            _metabolismAccumulator = math.min(_metabolismAccumulator + math.max(0f, deltaTime), 0.2f);
+            if (_metabolismAccumulator + 0.00001f < cadence)
+                return 0;
+
+            _metabolismAccumulator = math.clamp(_metabolismAccumulator - cadence, 0f, cadence);
+            return 1;
+        }
+
         private static float ResolveThrustCadenceSeconds(float fixedDeltaTime, in SeaglideTuningDTO tuning, float quality)
+        {
+            return ResolveContinuousCadenceSeconds(fixedDeltaTime, in tuning, quality);
+        }
+
+        private static float ResolveContinuousCadenceSeconds(float fixedDeltaTime, in SeaglideTuningDTO tuning, float quality)
         {
             float safeFixedDelta = math.clamp(fixedDeltaTime, 0.0001f, 0.05f);
             float safeQuality = math.saturate(math.select(1f, quality, math.isfinite(quality)));

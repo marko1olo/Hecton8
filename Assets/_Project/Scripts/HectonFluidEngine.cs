@@ -322,6 +322,12 @@ namespace Hecton8.Physics
         private const BufferID FluidAbyssalFlowTelemetryBufferId = (BufferID)1322038;
         private const BufferID FluidSovereigntyTelemetryRingBufferId = (BufferID)1322039;
         private const BufferID FluidSovereigntyTelemetryCursorBufferId = (BufferID)1322040;
+        private const BufferID FluidAdvectedSiltDirtyPagesBufferId = (BufferID)1322041;
+        private const BufferID FluidAdvectedBubbleDirtyPagesBufferId = (BufferID)1322042;
+        private const BufferID FluidAdvectedDebrisDirtyPagesBufferId = (BufferID)1322043;
+        private const int FluidAdvectionDirtyPageSize = 64;
+        private const int FluidAdvectionMinUploadBudgetBytes = 32 * 1024;
+        private const int FluidAdvectionMaxUploadBudgetBytes = 512 * 1024;
         private const int FluidSovereigntyTelemetryCapacity = 300;
         private const int FluidSovereigntyTelemetryEntrySizeBytes = 64;
         private const uint FluidTelemetryFlagResolveOk = 1u << 0;
@@ -1799,6 +1805,9 @@ namespace Hecton8.Physics
         private FluidVaultBuffer<AdvectedSilt> _advectedSiltUpload;
         private FluidVaultBuffer<AdvectedBubble> _advectedBubbleUpload;
         private FluidVaultBuffer<AdvectedDebris> _advectedDebrisUpload;
+        private FluidVaultBuffer<byte> _advectedSiltDirtyPages;
+        private FluidVaultBuffer<byte> _advectedBubbleDirtyPages;
+        private FluidVaultBuffer<byte> _advectedDebrisDirtyPages;
         private FluidVaultBuffer<float4> _emptyAbyssalFlowUpload;
         private FluidVaultBuffer<FluidAdvectionTelemetryEntry> _fluidAdvectionTelemetry;
         private FluidVaultBuffer<float4> _splashdownImpulseUpload;
@@ -3531,8 +3540,8 @@ namespace Hecton8.Physics
             FlushGpuBuoyancySampling();
             EnsureFluidAdvectionVisualState(allowAllocate: false);
             DrainFluidAdvectionSignals();
-            FlushFluidAdvectionGpuUploads();
-            bool fluidAdvectionReady = IsFluidAdvectionReady();
+            bool fluidAdvectionGpuUploadReady = FlushFluidAdvectionGpuUploads();
+            bool fluidAdvectionReady = fluidAdvectionGpuUploadReady && IsFluidAdvectionReady();
             bool hasAdvectionParticles = _activeAdvectedSiltCount > 0 ||
                                          _activeAdvectedBubbleCount > 0 ||
                                          _activeAdvectedDebrisCount > 0;
@@ -3949,10 +3958,9 @@ namespace Hecton8.Physics
                     VelocityWS = velocity,
                     Flags = AdvectedBubbleActiveFlag
                 };
-                _advectedBubbleUpload[slot] = bubble;
+                UploadAdvectedBubble(slot, in bubble);
             }
 
-            _advectedBubbleGpuUploadDirty = true;
             return safeCount;
         }
 
@@ -4498,6 +4506,39 @@ namespace Hecton8.Physics
                     NativeArrayOptions.ClearMemory);
             }
 
+            int siltDirtyPageCount = GraphicsBufferUploadUtility.ResolveDirtyPageCount(
+                MaxAdvectedSiltCount,
+                FluidAdvectionDirtyPageSize);
+            if (!_advectedSiltDirtyPages.IsCreated)
+            {
+                _advectedSiltDirtyPages.Ensure(
+                    FluidAdvectedSiltDirtyPagesBufferId,
+                    siltDirtyPageCount,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            int bubbleDirtyPageCount = GraphicsBufferUploadUtility.ResolveDirtyPageCount(
+                MaxAdvectedBubbleCount,
+                FluidAdvectionDirtyPageSize);
+            if (!_advectedBubbleDirtyPages.IsCreated)
+            {
+                _advectedBubbleDirtyPages.Ensure(
+                    FluidAdvectedBubbleDirtyPagesBufferId,
+                    bubbleDirtyPageCount,
+                    NativeArrayOptions.ClearMemory);
+            }
+
+            int debrisDirtyPageCount = GraphicsBufferUploadUtility.ResolveDirtyPageCount(
+                MaxAdvectedDebrisCount,
+                FluidAdvectionDirtyPageSize);
+            if (!_advectedDebrisDirtyPages.IsCreated)
+            {
+                _advectedDebrisDirtyPages.Ensure(
+                    FluidAdvectedDebrisDirtyPagesBufferId,
+                    debrisDirtyPageCount,
+                    NativeArrayOptions.ClearMemory);
+            }
+
             if (!_emptyAbyssalFlowUpload.IsCreated)
             {
                 _emptyAbyssalFlowUpload.Ensure(
@@ -4530,6 +4571,9 @@ namespace Hecton8.Physics
             return _advectedSiltUpload.IsCreated &&
                    _advectedBubbleUpload.IsCreated &&
                    _advectedDebrisUpload.IsCreated &&
+                   _advectedSiltDirtyPages.IsCreated &&
+                   _advectedBubbleDirtyPages.IsCreated &&
+                   _advectedDebrisDirtyPages.IsCreated &&
                    _emptyAbyssalFlowUpload.IsCreated &&
                    _fluidAdvectionTelemetry.IsCreated;
         }
@@ -4546,32 +4590,32 @@ namespace Hecton8.Physics
             bool emptyAbyssalCreated = false;
             if (_advectedSiltBufferA == null || !_advectedSiltBufferA.IsValid())
             {
-                _advectedSiltBufferA = GraphicsBufferUploadUtility.CreateStructuredBuffer<AdvectedSilt>(MaxAdvectedSiltCount); // COLD ALLOC: GraphicsBuffer[4096] - GPU-write silt advection front buffer - owner: HectonFluidEngine
+                _advectedSiltBufferA = GraphicsBufferUploadUtility.CreateStructuredCopyDestinationBuffer<AdvectedSilt>(MaxAdvectedSiltCount); // COLD ALLOC: GraphicsBuffer[4096] - GPU-write silt advection front buffer, dirty CPU pages use SetData fallback because UAV forbids LockBufferForWrite - owner: HectonFluidEngine
                 siltCreated = true;
             }
             if (_advectedSiltBufferB == null || !_advectedSiltBufferB.IsValid())
             {
-                _advectedSiltBufferB = GraphicsBufferUploadUtility.CreateStructuredBuffer<AdvectedSilt>(MaxAdvectedSiltCount); // COLD ALLOC: GraphicsBuffer[4096] - GPU-write silt advection back buffer - owner: HectonFluidEngine
+                _advectedSiltBufferB = GraphicsBufferUploadUtility.CreateStructuredCopyDestinationBuffer<AdvectedSilt>(MaxAdvectedSiltCount); // COLD ALLOC: GraphicsBuffer[4096] - GPU-write silt advection back buffer, dirty CPU pages use SetData fallback because UAV forbids LockBufferForWrite - owner: HectonFluidEngine
                 siltCreated = true;
             }
             if (_advectedBubbleBufferA == null || !_advectedBubbleBufferA.IsValid())
             {
-                _advectedBubbleBufferA = GraphicsBufferUploadUtility.CreateStructuredBuffer<AdvectedBubble>(MaxAdvectedBubbleCount); // COLD ALLOC: GraphicsBuffer[2000] - GPU-write bubble advection front buffer - owner: HectonFluidEngine
+                _advectedBubbleBufferA = GraphicsBufferUploadUtility.CreateStructuredCopyDestinationBuffer<AdvectedBubble>(MaxAdvectedBubbleCount); // COLD ALLOC: GraphicsBuffer[2000] - GPU-write bubble advection front buffer, dirty CPU pages use SetData fallback because UAV forbids LockBufferForWrite - owner: HectonFluidEngine
                 bubbleCreated = true;
             }
             if (_advectedBubbleBufferB == null || !_advectedBubbleBufferB.IsValid())
             {
-                _advectedBubbleBufferB = GraphicsBufferUploadUtility.CreateStructuredBuffer<AdvectedBubble>(MaxAdvectedBubbleCount); // COLD ALLOC: GraphicsBuffer[2000] - GPU-write bubble advection back buffer - owner: HectonFluidEngine
+                _advectedBubbleBufferB = GraphicsBufferUploadUtility.CreateStructuredCopyDestinationBuffer<AdvectedBubble>(MaxAdvectedBubbleCount); // COLD ALLOC: GraphicsBuffer[2000] - GPU-write bubble advection back buffer, dirty CPU pages use SetData fallback because UAV forbids LockBufferForWrite - owner: HectonFluidEngine
                 bubbleCreated = true;
             }
             if (_advectedDebrisBufferA == null || !_advectedDebrisBufferA.IsValid())
             {
-                _advectedDebrisBufferA = GraphicsBufferUploadUtility.CreateStructuredBuffer<AdvectedDebris>(MaxAdvectedDebrisCount); // COLD ALLOC: GraphicsBuffer[1000] - GPU-write debris advection front buffer - owner: HectonFluidEngine
+                _advectedDebrisBufferA = GraphicsBufferUploadUtility.CreateStructuredCopyDestinationBuffer<AdvectedDebris>(MaxAdvectedDebrisCount); // COLD ALLOC: GraphicsBuffer[1000] - GPU-write debris advection front buffer, dirty CPU pages use SetData fallback because UAV forbids LockBufferForWrite - owner: HectonFluidEngine
                 debrisCreated = true;
             }
             if (_advectedDebrisBufferB == null || !_advectedDebrisBufferB.IsValid())
             {
-                _advectedDebrisBufferB = GraphicsBufferUploadUtility.CreateStructuredBuffer<AdvectedDebris>(MaxAdvectedDebrisCount); // COLD ALLOC: GraphicsBuffer[1000] - GPU-write debris advection back buffer - owner: HectonFluidEngine
+                _advectedDebrisBufferB = GraphicsBufferUploadUtility.CreateStructuredCopyDestinationBuffer<AdvectedDebris>(MaxAdvectedDebrisCount); // COLD ALLOC: GraphicsBuffer[1000] - GPU-write debris advection back buffer, dirty CPU pages use SetData fallback because UAV forbids LockBufferForWrite - owner: HectonFluidEngine
                 debrisCreated = true;
             }
             if (_emptyAdvectedSiltBuffer == null || !_emptyAdvectedSiltBuffer.IsValid())
@@ -4582,15 +4626,21 @@ namespace Hecton8.Physics
                 _emptyAdvectedDebrisBuffer = GraphicsBufferUploadUtility.CreateStructuredBuffer<AdvectedDebris>(1); // COLD ALLOC: GraphicsBuffer[1] - GPU-write debris unbind fallback - owner: HectonFluidEngine
             if (_emptyAbyssalFlowBuffer == null || !_emptyAbyssalFlowBuffer.IsValid())
             {
-                _emptyAbyssalFlowBuffer = GraphicsBufferUploadUtility.CreateStructuredBuffer<float4>(1); // COLD ALLOC: GraphicsBuffer[1] - GPU-write zero abyssal-flow fallback - owner: HectonFluidEngine
+                _emptyAbyssalFlowBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(1); // COLD ALLOC: GraphicsBuffer[1] - GPU-write zero abyssal-flow fallback with mapped CPU upload - owner: HectonFluidEngine
                 emptyAbyssalCreated = true;
             }
 
+            if (siltCreated)
+                MarkAllFluidAdvectionDirtyPages(ref _advectedSiltDirtyPages, MaxAdvectedSiltCount);
+            if (bubbleCreated)
+                MarkAllFluidAdvectionDirtyPages(ref _advectedBubbleDirtyPages, MaxAdvectedBubbleCount);
+            if (debrisCreated)
+                MarkAllFluidAdvectionDirtyPages(ref _advectedDebrisDirtyPages, MaxAdvectedDebrisCount);
             _advectedSiltGpuUploadDirty |= siltCreated;
             _advectedBubbleGpuUploadDirty |= bubbleCreated;
             _advectedDebrisGpuUploadDirty |= debrisCreated;
             if (emptyAbyssalCreated)
-                GraphicsBufferUploadUtility.UploadNativeArraySetData<float4>(_emptyAbyssalFlowBuffer, _emptyAbyssalFlowUpload, 1);
+                GraphicsBufferUploadUtility.UploadNativeArray<float4>(_emptyAbyssalFlowBuffer, _emptyAbyssalFlowUpload, 1);
 
             return IsFluidAdvectionGpuBufferStateReady();
         }
@@ -4727,20 +4777,27 @@ namespace Hecton8.Physics
                    HasFluidAdvectionNativeState();
         }
 
-        private void FlushFluidAdvectionGpuUploads()
+        private bool FlushFluidAdvectionGpuUploads()
         {
             if (!HasFluidAdvectionNativeState())
-                return;
+                return false;
 
+            int remainingBudgetBytes = ResolveFluidAdvectionUploadBudgetBytes();
+            bool uploadsReady = true;
             if (_advectedSiltGpuUploadDirty &&
                 _advectedSiltBufferA != null &&
                 _advectedSiltBufferB != null &&
                 _advectedSiltBufferA.IsValid() &&
                 _advectedSiltBufferB.IsValid())
             {
-                GraphicsBufferUploadUtility.UploadNativeArraySetData<AdvectedSilt>(_advectedSiltBufferA, _advectedSiltUpload, MaxAdvectedSiltCount);
-                GraphicsBufferUploadUtility.UploadNativeArraySetData<AdvectedSilt>(_advectedSiltBufferB, _advectedSiltUpload, MaxAdvectedSiltCount);
-                _advectedSiltGpuUploadDirty = false;
+                uploadsReady &= FlushFluidAdvectionDirtyLane(
+                    _advectedSiltBufferA,
+                    _advectedSiltBufferB,
+                    _advectedSiltUpload,
+                    ref _advectedSiltDirtyPages,
+                    MaxAdvectedSiltCount,
+                    ref remainingBudgetBytes,
+                    ref _advectedSiltGpuUploadDirty);
             }
 
             if (_advectedBubbleGpuUploadDirty &&
@@ -4749,9 +4806,14 @@ namespace Hecton8.Physics
                 _advectedBubbleBufferA.IsValid() &&
                 _advectedBubbleBufferB.IsValid())
             {
-                GraphicsBufferUploadUtility.UploadNativeArraySetData<AdvectedBubble>(_advectedBubbleBufferA, _advectedBubbleUpload, MaxAdvectedBubbleCount);
-                GraphicsBufferUploadUtility.UploadNativeArraySetData<AdvectedBubble>(_advectedBubbleBufferB, _advectedBubbleUpload, MaxAdvectedBubbleCount);
-                _advectedBubbleGpuUploadDirty = false;
+                uploadsReady &= FlushFluidAdvectionDirtyLane(
+                    _advectedBubbleBufferA,
+                    _advectedBubbleBufferB,
+                    _advectedBubbleUpload,
+                    ref _advectedBubbleDirtyPages,
+                    MaxAdvectedBubbleCount,
+                    ref remainingBudgetBytes,
+                    ref _advectedBubbleGpuUploadDirty);
             }
 
             if (_advectedDebrisGpuUploadDirty &&
@@ -4760,9 +4822,133 @@ namespace Hecton8.Physics
                 _advectedDebrisBufferA.IsValid() &&
                 _advectedDebrisBufferB.IsValid())
             {
-                GraphicsBufferUploadUtility.UploadNativeArraySetData<AdvectedDebris>(_advectedDebrisBufferA, _advectedDebrisUpload, MaxAdvectedDebrisCount);
-                GraphicsBufferUploadUtility.UploadNativeArraySetData<AdvectedDebris>(_advectedDebrisBufferB, _advectedDebrisUpload, MaxAdvectedDebrisCount);
-                _advectedDebrisGpuUploadDirty = false;
+                uploadsReady &= FlushFluidAdvectionDirtyLane(
+                    _advectedDebrisBufferA,
+                    _advectedDebrisBufferB,
+                    _advectedDebrisUpload,
+                    ref _advectedDebrisDirtyPages,
+                    MaxAdvectedDebrisCount,
+                    ref remainingBudgetBytes,
+                    ref _advectedDebrisGpuUploadDirty);
+            }
+
+            return uploadsReady;
+        }
+
+        private static bool FlushFluidAdvectionDirtyLane<T>(
+            GraphicsBuffer bufferA,
+            GraphicsBuffer bufferB,
+            FluidVaultBuffer<T> uploadSource,
+            ref FluidVaultBuffer<byte> dirtyPagesHandle,
+            int elementCount,
+            ref int remainingBudgetBytes,
+            ref bool dirtyFlag)
+            where T : struct
+        {
+            if (!uploadSource.TryResolve(out NativeArray<T> source) || !source.IsCreated)
+                return false;
+
+            if (!dirtyPagesHandle.TryAcquireWriteLock(out NativeArray<byte> dirtyPages))
+                return false;
+
+            try
+            {
+                int firstPageBytes = GraphicsBufferUploadUtility.ResolveFirstDirtyPageBytes<T>(
+                    dirtyPages,
+                    elementCount,
+                    FluidAdvectionDirtyPageSize);
+                if (firstPageBytes <= 0)
+                {
+                    dirtyFlag = false;
+                    return true;
+                }
+
+                int firstMirroredPageBytes = firstPageBytes * 2;
+                if (remainingBudgetBytes < firstMirroredPageBytes)
+                    return false;
+
+                int perBufferBudget = math.max(firstPageBytes, remainingBudgetBytes >> 1);
+                GraphicsBufferUploadUtility.PageUploadStats aStats =
+                    GraphicsBufferUploadUtility.UploadNativeArrayDirtyPagesSetData(
+                        bufferA,
+                        source,
+                        dirtyPages,
+                        elementCount,
+                        FluidAdvectionDirtyPageSize,
+                        perBufferBudget,
+                        clearUploadedPages: false);
+                GraphicsBufferUploadUtility.PageUploadStats bStats =
+                    GraphicsBufferUploadUtility.UploadNativeArrayDirtyPagesSetData(
+                        bufferB,
+                        source,
+                        dirtyPages,
+                        elementCount,
+                        FluidAdvectionDirtyPageSize,
+                        perBufferBudget,
+                        clearUploadedPages: true);
+
+                long uploadedBytes = aStats.UploadedBytes + bStats.UploadedBytes;
+                remainingBudgetBytes = uploadedBytes >= remainingBudgetBytes
+                    ? 0
+                    : remainingBudgetBytes - (int)uploadedBytes;
+
+                bool hasDeferredPages = GraphicsBufferUploadUtility.HasAnyDirtyPage(
+                    dirtyPages,
+                    elementCount,
+                    FluidAdvectionDirtyPageSize);
+                dirtyFlag = hasDeferredPages;
+                return !hasDeferredPages;
+            }
+            finally
+            {
+                dirtyPagesHandle.ReleaseWriteLock();
+            }
+        }
+
+        private static int ResolveFluidAdvectionUploadBudgetBytes()
+        {
+            float quality = SmoothFluidAdvectionQuality(ResolveFluidAdvectionQualityWeight());
+            return (int)math.round(math.lerp(
+                FluidAdvectionMinUploadBudgetBytes,
+                FluidAdvectionMaxUploadBudgetBytes,
+                quality));
+        }
+
+        private static void MarkAllFluidAdvectionDirtyPages(ref FluidVaultBuffer<byte> dirtyPagesHandle, int elementCount)
+        {
+            if (!dirtyPagesHandle.TryAcquireWriteLock(out NativeArray<byte> dirtyPages))
+                return;
+
+            try
+            {
+                GraphicsBufferUploadUtility.MarkAllDirtyPages(
+                    dirtyPages,
+                    elementCount,
+                    FluidAdvectionDirtyPageSize);
+            }
+            finally
+            {
+                dirtyPagesHandle.ReleaseWriteLock();
+            }
+        }
+
+        private static void MarkFluidAdvectionDirtyPage(ref FluidVaultBuffer<byte> dirtyPagesHandle, int elementIndex, int elementCount)
+        {
+            if (!dirtyPagesHandle.TryAcquireWriteLock(out NativeArray<byte> dirtyPages))
+                return;
+
+            try
+            {
+                GraphicsBufferUploadUtility.MarkDirtyPageRange(
+                    dirtyPages,
+                    elementIndex,
+                    1,
+                    elementCount,
+                    FluidAdvectionDirtyPageSize);
+            }
+            finally
+            {
+                dirtyPagesHandle.ReleaseWriteLock();
             }
         }
 
@@ -4772,6 +4958,7 @@ namespace Hecton8.Physics
                 return;
 
             _advectedBubbleUpload[slot] = bubble;
+            MarkFluidAdvectionDirtyPage(ref _advectedBubbleDirtyPages, slot, MaxAdvectedBubbleCount);
             _advectedBubbleGpuUploadDirty = true;
         }
 
@@ -4781,6 +4968,7 @@ namespace Hecton8.Physics
                 return;
 
             _advectedDebrisUpload[slot] = debris;
+            MarkFluidAdvectionDirtyPage(ref _advectedDebrisDirtyPages, slot, MaxAdvectedDebrisCount);
             _advectedDebrisGpuUploadDirty = true;
         }
 
@@ -5811,6 +5999,9 @@ namespace Hecton8.Physics
             _advectedSiltUpload.Release();
             _advectedBubbleUpload.Release();
             _advectedDebrisUpload.Release();
+            _advectedSiltDirtyPages.Release();
+            _advectedBubbleDirtyPages.Release();
+            _advectedDebrisDirtyPages.Release();
             _fluidAdvectionTelemetry.Release();
             _fluidAdvectionStateReady = false;
             _fluidAdvectionRenderGraphQueued = false;
@@ -5990,6 +6181,9 @@ namespace Hecton8.Physics
             _advectedSiltUpload.Reset();
             _advectedBubbleUpload.Reset();
             _advectedDebrisUpload.Reset();
+            _advectedSiltDirtyPages.Reset();
+            _advectedBubbleDirtyPages.Reset();
+            _advectedDebrisDirtyPages.Reset();
             _emptyAbyssalFlowUpload.Reset();
             _fluidAdvectionTelemetry.Reset();
             _splashdownImpulseUpload.Reset();
@@ -7205,6 +7399,9 @@ namespace Hecton8.Physics
             _advectedSiltUpload.Release();
             _advectedBubbleUpload.Release();
             _advectedDebrisUpload.Release();
+            _advectedSiltDirtyPages.Release();
+            _advectedBubbleDirtyPages.Release();
+            _advectedDebrisDirtyPages.Release();
             _emptyAbyssalFlowUpload.Release();
             _fluidAdvectionTelemetry.Release();
 
