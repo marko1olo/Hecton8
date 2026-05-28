@@ -443,6 +443,64 @@ namespace Hecton8.Atmosphere
     {
         public static bool TryParse(
             ReadOnlySpan<byte> bytes,
+            Span<StormDepthImpactProfileDTO> profiles,
+            out int profileCount,
+            out uint fileHash)
+        {
+            profileCount = 0;
+            fileHash = HashBytes(bytes);
+            if (profiles.Length <= 0)
+                return false;
+
+            int cursor = 0;
+            while (cursor < bytes.Length && profileCount < profiles.Length)
+            {
+                int lineStart = cursor;
+                while (cursor < bytes.Length && bytes[cursor] != (byte)'\n' && bytes[cursor] != (byte)'\r')
+                    cursor++;
+
+                ReadOnlySpan<byte> line = bytes.Slice(lineStart, cursor - lineStart);
+                while (cursor < bytes.Length && (bytes[cursor] == (byte)'\n' || bytes[cursor] == (byte)'\r'))
+                    cursor++;
+
+                if (IsIgnorableLine(line))
+                    continue;
+
+                int tokenCursor = 0;
+                ReadOnlySpan<byte> id = ReadToken(line, ref tokenCursor);
+                if (id.Length <= 0 || IsHeaderToken(id))
+                    continue;
+
+                if (!TryParseFloat(ReadToken(line, ref tokenCursor), out float minDepth) ||
+                    !TryParseFloat(ReadToken(line, ref tokenCursor), out float maxDepth) ||
+                    !TryParseFloat(ReadToken(line, ref tokenCursor), out float decay) ||
+                    !TryParseFloat(ReadToken(line, ref tokenCursor), out float turbidity) ||
+                    !TryParseFloat(ReadToken(line, ref tokenCursor), out float surge) ||
+                    !TryParseFloat(ReadToken(line, ref tokenCursor), out float acoustic) ||
+                    !TryParseFloat(ReadToken(line, ref tokenCursor), out float biolum))
+                {
+                    continue;
+                }
+
+                profiles[profileCount] = new StormDepthImpactProfileDTO
+                {
+                    ProfileHash = HashAsciiLower(id),
+                    MinDepthMeters = math.max(0f, minDepth),
+                    MaxDepthMeters = math.max(minDepth, maxDepth),
+                    DecayConstant = math.max(0.000001f, decay),
+                    TurbidityGain = math.max(0f, turbidity),
+                    SurgeScale = math.max(0f, surge),
+                    AcousticGain = math.max(0f, acoustic),
+                    BiolumGain = math.max(0f, biolum)
+                };
+                profileCount++;
+            }
+
+            return profileCount > 0;
+        }
+
+        public static bool TryParse(
+            ReadOnlySpan<byte> bytes,
             NativeArray<StormDepthImpactProfileDTO> profiles,
             out int profileCount,
             out uint fileHash)

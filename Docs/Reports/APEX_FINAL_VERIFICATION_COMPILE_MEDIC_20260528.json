@@ -1,0 +1,172 @@
+﻿{
+    "generatedAt":  "2026-05-28T22:10:33.0193932+04:00",
+    "agentId":  "COMPILE_MEDIC",
+    "domain":  "Echelon 9 / The Integrator (Compile Medic)",
+    "taskCount":  1,
+    "status":  "PENDING_UNITY_EDITOR_RUNTIME_VALIDATION",
+    "conclusion":  "Latest consolidated dotnet compiler proof for targeted Core/Assembly/Crest/MapMagic C# targets is green: 9 targets, 0 warnings, 0 errors. This is not Unity Editor import/PlayMode/profiler proof.",
+    "sourceTouchpointsVerified":  [
+                                      {
+                                          "path":  "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+                                          "lines":  "205, 1604-1614, 1966-1991, 2080, 2201",
+                                          "purpose":  "restored continuous GlobalQualityWeight budgets for damage signals, primitive evaluation, ricochet budget"
+                                      },
+                                      {
+                                          "path":  "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+                                          "lines":  "58-59, 1197-1215, 1355-1359, 1384, 1395, 1440-1518, 1536-1539, 1565",
+                                          "purpose":  "DataVault buffer identity and write-lock/finally release proof"
+                                      },
+                                      {
+                                          "path":  "Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs",
+                                          "lines":  "413-489",
+                                          "purpose":  "generation handle validation via IsAcousticVaultHandle"
+                                      },
+                                      {
+                                          "path":  "Assets/_Project/Scripts/Core/PlatformBatteryWatchdog.cs",
+                                          "lines":  "122-124",
+                                          "purpose":  "definite assignment repair for hardware thermal snapshot"
+                                      },
+                                      {
+                                          "path":  "Assets/_Project/Scripts/Visor/HectonRetinaDistortionFeature.cs",
+                                          "lines":  "201-216, 419-421",
+                                          "purpose":  "disposed pass no longer references removed keyword-state field"
+                                      },
+                                      {
+                                          "path":  "Assets/Candice AI for Games/Scripts/Modules/CandiceModuleDetection.cs",
+                                          "lines":  "29, 81, 121, 367, 442",
+                                          "purpose":  "ContactFilter2D.noFilter and non-ref dictionary contract repair"
+                                      },
+                                      {
+                                          "path":  "Assets/Candice AI for Games/Scripts/Modules/CandiceModuleCombat.cs",
+                                          "lines":  "14, 69",
+                                          "purpose":  "ContactFilter2D.noFilter static field repair"
+                                      },
+                                      {
+                                          "path":  "Assets/_Project/Scripts/TetherInstance.cs",
+                                          "lines":  "3721, 3773-3785",
+                                          "purpose":  "continuous SmoothRange01 helper restored"
+                                      },
+                                      {
+                                          "path":  "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
+                                          "lines":  "391-421",
+                                          "purpose":  "mock drainage generation warning cleanup; job construction is value type"
+                                      },
+                                      {
+                                          "path":  "Assets/_Project/Scripts/Construction/SumpPumpPipeGridJobs.cs",
+                                          "lines":  "14-24",
+                                          "purpose":  "GenerateMockPipeNetworkJob verified as struct : IJob for zero-GC classification"
+                                      }
+                                  ],
+    "compileProof":  {
+                         "consolidatedCsv":  "Docs/Reports/APEX_COMPILE_MEDIC_TARGETED_CONSOLIDATED_20260528_1.csv",
+                         "consolidatedCsvSha256":  "76534C04C025243BB51B3185DB7F8791C4D88B54D6756A862D07DD4AD12CFC79",
+                         "summary":  {
+                                         "targets":  9,
+                                         "exitCodeZero":  9,
+                                         "warnings":  0,
+                                         "errors":  0
+                                     },
+                         "latestGreenLogs":  [
+                                                 "Docs/Reports/APEX_COMPILE_MEDIC_CORE_AFTER_TETHER_SUMP_20260528_1.log",
+                                                 "Docs/Reports/APEX_COMPILE_MEDIC_ASSEMBLY_AFTER_CANDICE_20260528_2.log",
+                                                 "Docs/Reports/APEX_COMPILE_MEDIC_TARGET_Assembly-CSharp-Editor_20260528_4.log",
+                                                 "Docs/Reports/APEX_COMPILE_MEDIC_TARGET_Crest_20260528_4.log",
+                                                 "Docs/Reports/APEX_COMPILE_MEDIC_TARGET_Crest.Helpers.Editor_20260528_4.log",
+                                                 "Docs/Reports/APEX_COMPILE_MEDIC_TARGET_MapMagic_20260528_4.log",
+                                                 "Docs/Reports/APEX_COMPILE_MEDIC_TARGET_MapMagic.Editor_20260528_4.log",
+                                                 "Docs/Reports/APEX_COMPILE_MEDIC_TARGET_MapMagic.MicroSplat_20260528_4.log",
+                                                 "Docs/Reports/APEX_COMPILE_MEDIC_TARGET_MapMagic.MicroSplat.Editor_20260528_4.log"
+                                             ],
+                         "caveat":  "Consolidated proof uses latest green log per target because the last single matrix caught a transient Core compile while parallel agents were editing PowerGrid/Tether/SumpPump. Later isolated Core proof is green."
+                     },
+    "zeroGcAudit":  {
+                        "scannerJson":  "Docs/Reports/APEX_COMPILE_MEDIC_ZERO_GC_SCAN_20260528_3.json",
+                        "scannerJsonSha256":  "F6409C7495215893BB10BA7D9156F8D59C3A1B819C49A37F08E69E9804B478FC",
+                        "totals":  {
+                                       "referenceNew":  0,
+                                       "cacheMissReferenceNew":  1,
+                                       "valueOrStackNew":  16,
+                                       "stringFormat":  0,
+                                       "toString":  0,
+                                       "linq":  0,
+                                       "foreachLoop":  0
+                                   },
+                        "strictResult":  "Modified/verified hot ranges have zero managed reference new, zero string.Format, zero ToString, zero LINQ, zero foreach. One Crest FFTCompute constructor remains classified as cache-miss reference allocation at FFTCompute.cs:280.",
+                        "crestResidual":  "FFTCompute cache-miss constructor is pre-existing generator setup/cache path, not introduced by this pass and not proven 0 B/frame by profiler.",
+                        "measuredGcProof":  "ABSENT: no Unity Profiler/GCMonitor run was executed in this dotnet-only pass."
+                    },
+    "dataSovereignty":  {
+                            "migratedFieldsThisPass":  "none newly migrated in APEX pass; verified/contained existing ModularEquipment DataVault route",
+                            "bufferIds":  [
+                                              "BufferID.ShinobuActiveEquipmentToolStates",
+                                              "BufferID.ShinobuActiveEquipmentToolStats",
+                                              "BufferID.ShinobuActiveEquipmentToolTypes",
+                                              "BufferID.ToolRuntimeHeat01",
+                                              "BufferID.ToolRuntimeBatteryCharge",
+                                              "BufferID.ShinobuActiveEquipmentStatusMasks",
+                                              "BufferID.ShinobuActiveEquipmentEnvironmentHeat01",
+                                              "BufferID.ShinobuActiveEquipmentState",
+                                              "BufferID.ShinobuActiveEquipmentPublishedState",
+                                              "BufferID.ShinobuActiveEquipmentAupSamples",
+                                              "BufferID.ShinobuActiveEquipmentGridLoadRequests",
+                                              "BufferID.ShinobuActiveEquipmentWearDrainRates",
+                                              "BufferID.ShinobuActiveEquipmentTelemetryRing",
+                                              "BufferID.ShinobuActiveEquipmentTelemetryCursor",
+                                              "(BufferID)71317 FlashlightTelemetryRingBufferId",
+                                              "(BufferID)71318 FlashlightTelemetryCursorBufferId",
+                                              "BufferID.ShinobuActiveEquipmentIntegrationCounters",
+                                              "BufferID.ShinobuActiveEquipmentTuning",
+                                              "BufferID.ShinobuActiveEquipmentHardwareSpecs"
+                                          ],
+                            "writeLocks":  [
+                                               "ModularEquipmentEngine.cs:1384 TryAcquireWriteLock generic equipment buffer; partial failure release in finally at 1395-1398",
+                                               "ModularEquipmentEngine.cs:1355-1359 caller failure finally releases acquiredCount",
+                                               "ModularEquipmentEngine.cs:1536 and 1539 telemetry write locks; release finally at 1565-1570"
+                                           ],
+                            "acousticHandleOwnership":  "AcousticEchoLocationRuntime.cs:413-489 validates BufferID/SystemID/generation before resolving vault buffers."
+                        },
+    "cinematicCheatAndScalability":  {
+                                         "globalQualityWeightProof":  [
+                                                                          "BallisticsRuntime.cs:1604-1614 resolves HomeostasisBrain.GlobalQualityWeight and lerps damage signal budget 16..128",
+                                                                          "BallisticsRuntime.cs:1966-1991 applies quality to ricochet budget and primitive evaluation",
+                                                                          "BallisticsRuntime.cs:2080 and 2201 use smooth continuous quality curves",
+                                                                          "TetherInstance.cs:3721 and 3779-3785 use SmoothRange01 continuous range weighting",
+                                                                          "ModularEquipmentEngine.cs existing quality weighting retained; no authority/DTO layout switch introduced"
+                                                                      ],
+                                         "binaryLowEndSwitches":  "No new if(isLowEnd) / binary quality switch introduced in verified touchpoints.",
+                                         "cinematicCheat":  "Compile fixes did not introduce new physical simulation. Ballistics budget scaling buys visual signal density; Crest changes are guard/clamp boundaries, not per-droplet/per-proton simulation.",
+                                         "tiers":  "Low: minimal budgets/cadence; Middle: interpolated budgets; High: larger signal/ricochet evaluation budgets; Ultra: visual overkill capacity without changing gameplay ownership."
+                                     },
+    "resourceThrottling":  {
+                               "statement":  "Did not intentionally spam dotnet build; guarded builds waited for CPU \u003c= 50 and no dotnet/csc/MSBuild/VBCSCompiler process. Two stale external aggregate dotnet builds were stopped after approval because they blocked proof collection and had no proof log.",
+                               "cpuSamplesBeforeBuilds":  [
+                                                              "2026-05-28T20:52:10.3377162+04:00 CPU=34 compilerProcessCount=0",
+                                                              "2026-05-28T20:57:24.7455342+04:00 CPU=49 compilerProcessCount=0",
+                                                              "2026-05-28T21:05:40.5395452+04:00 CPU=47 compilerProcessCount=0",
+                                                              "2026-05-28T21:08:59.3567592+04:00 CPU=36 compilerProcessCount=0",
+                                                              "2026-05-28T21:13:13.3502245+04:00 CPU=40 compilerProcessCount=0",
+                                                              "2026-05-28T21:32:27.3311166+04:00 CPU=46 compilerProcessCount=0",
+                                                              "2026-05-28T21:37:29.7999673+04:00 CPU=30 compilerProcessCount=0",
+                                                              "2026-05-28T21:42:15.7677918+04:00 CPU=19 compilerProcessCount=0",
+                                                              "2026-05-28T21:58:12.2904794+04:00 CPU=48 compilerProcessCount=0",
+                                                              "2026-05-28T22:01:20.4154032+04:00 CPU=34 compilerProcessCount=0"
+                                                          ]
+                           },
+    "mapMagicCrestSceneAudit":  {
+                                    "mapMagicDiff":  "git diff --name-only under Assets/MapMagic returned no paths in this final audit.",
+                                    "sceneDiff":  "git diff --name-only for Assets/_Project/Scenes/02_HECTON_WORLD.unity returned no path in this final audit.",
+                                    "crestDiff":  "final git diff scan under Assets/Crest returned no path in current status; latest Crest runtime/editor C# logs are green.",
+                                    "caveat":  "Unity Editor import, compute shader runtime dispatch, serialized MapMagic graph semantics, and Crest water visuals were not validated by dotnet."
+                                },
+    "residualRisks":  [
+                          "Unity Editor Console/PlayMode/Profiler/GCMonitor/player build not executed in this proof pass.",
+                          "Strict Core audit log Docs/Reports/BUILD_COMPILE_MEDIC_CORE_STRICT_AUDIT_AFTER_BUCKETER_20260528_1.log has 904 warnings and 0 errors when normal NoWarn policy is disabled.",
+                          "Crest FFTCompute.cs:280 cache-miss managed allocation remains classified, not proven 0 B/frame by runtime profiler.",
+                          "Consolidated green proof is per-latest-target, not a single simultaneous all-target matrix, because 20+ agents were mutating the workspace."
+                      ],
+    "forensicDump":  {
+                         "dumpPath":  "Docs/AgentLogs/Dump_COMPILE_MEDIC.bin",
+                         "exists":  false,
+                         "reason":  "No crash/NaN dump emitted during dotnet compile verification. Absence is recorded; no runtime black-box claim is made."
+                     }
+}

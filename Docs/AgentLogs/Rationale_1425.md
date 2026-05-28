@@ -83,3 +83,9 @@ Solution: Replaced the ring+state writer-fence helper with `TryResolveCombatTele
 Rejected Alternatives: Splitting ring and cursor into two writer-lock windows; this can advance cursor without entry on partial failure and still performs lock traffic on a diagnostic route.
 Scalability potential: Low/Middle/High/Ultra retain blackbox visibility without a deadlock vector in anomaly telemetry.
 Hardware Impact: Removes two simultaneous telemetry writer locks from the queue-reject route; throughput not measured.
+
+Problem: A private `ClearSlot(int)` wrapper still acquired armor, status, and the full combat target lock bundle, but source search showed no call sites outside the local overload with explicit views.
+Solution: Deleted the unused wrapper and kept the active `ClearSlot(int, ref CombatDamageVaultViews)` helper used by `UnregisterTarget` under the existing structural transaction.
+Rejected Alternatives: Keeping dead lock-bearing code for theoretical reuse; rewriting register/unregister identity moves without compile/test proof.
+Scalability potential: Low devices avoid future accidental resurrection of a wide lock path; high/ultra tiers keep identical combat target cleanup semantics.
+Hardware Impact: 0 us measured. Static call-site count for `ClearSlot(int)` lock wrapper dropped from 1 definition / 0 callers to 0 definitions.

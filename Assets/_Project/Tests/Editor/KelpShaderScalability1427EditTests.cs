@@ -179,6 +179,19 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void WorldChunkResidency_PredictiveVramAbortScalesContinuously()
+        {
+            string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "WorldChunkResidencyManager.cs");
+
+            Assert.That(source, Does.Contain("ResolvePredictiveVramAbortThresholdBytes"));
+            Assert.That(source, Does.Contain("ResolvePredictiveVramCeilingBytes"));
+            Assert.That(source, Does.Contain("ResolveSmoothGlobalQualityWeight01"));
+            Assert.That(source, Does.Contain("PredictiveVramVisualOverkillCeilingBytes"));
+            Assert.That(source, Does.Not.Contain("SystemInfo.graphicsMemorySize > 2048)\r\n                return false"));
+            Assert.That(source, Does.Not.Contain("SystemInfo.graphicsMemorySize > 2048)\n                return false"));
+        }
+
+        [Test]
         public void ProjectVisualShaders_RemoveBinaryQualityAndMathLodKeywords()
         {
             string shaderRoot = ResolveProjectPath("Assets", "_Project", "Art", "Shaders");

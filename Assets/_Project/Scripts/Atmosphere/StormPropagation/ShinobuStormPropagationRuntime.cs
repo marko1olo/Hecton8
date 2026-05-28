@@ -58,6 +58,7 @@ namespace Hecton8.Atmosphere
         private VaultGenerationHandle<StormDepthImpactProfileDTO> _profilesHandle;
 #if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+        private byte[] _impactCsvManagedScratch;
 #endif
         private VaultGenerationHandle<float4> _flowScalarHandle;
         private VaultGenerationHandle<float4> _audioScalarHandle;
@@ -642,62 +643,70 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            bool tuningLocked = false;
-            bool profilesLocked = false;
-            bool scratchLocked = false;
-            if (!_vault.TryLockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem))
+            if (!EnsureImpactCsvManagedScratchCold())
             {
                 return;
             }
 
-            tuningLocked = true;
+            int byteCount = CopyFileIntoScratchCold(path, _impactCsvManagedScratch);
+            if (byteCount <= 0)
+            {
+                _impactProfilesLoaded = true;
+                return;
+            }
+
+            ReadOnlySpan<byte> csvBytes = _impactCsvManagedScratch;
+            Span<StormDepthImpactProfileDTO> parsedProfiles = stackalloc StormDepthImpactProfileDTO[ShinobuStormPropagationConstants.ImpactProfileCapacity];
+            if (!StormDepthImpactCsvParser.TryParse(csvBytes.Slice(0, byteCount), parsedProfiles, out int parsedCount, out _) || parsedCount <= 0)
+            {
+                _impactProfilesLoaded = true;
+                return;
+            }
+
+            bool profilesLocked = false;
             try
             {
-                if (!_vault.TryLockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem))
+                profilesLocked = _vault.TryLockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem);
+                if (!profilesLocked)
                     return;
 
-                profilesLocked = true;
-                if (!_vault.TryLockBuffer(BufferID.ShinobuStormPropagationCsvScratch, OwnerSystem))
-                    return;
-
-                scratchLocked = true;
-                if (!Resolve(in _profilesHandle, out NativeArray<StormDepthImpactProfileDTO> profiles) || profiles.Length <= 0 ||
-                    !Resolve(in _csvScratchHandle, out NativeArray<byte> scratch) || scratch.Length <= 0)
+                if (!Resolve(in _profilesHandle, out NativeArray<StormDepthImpactProfileDTO> profiles) || profiles.Length <= 0)
                 {
-                    _impactProfilesLoaded = true;
                     return;
                 }
 
-                int byteCount = CopyFileIntoScratchCold(path, scratch);
-                if (byteCount <= 0)
-                {
-                    _impactProfilesLoaded = true;
-                    return;
-                }
+                int copyCount = math.min(parsedCount, profiles.Length);
+                for (int i = 0; i < copyCount; i++)
+                    ShinobuStormPropagationNative.ElementAt(profiles, i) = parsedProfiles[i];
 
-                void* csvPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
-                ReadOnlySpan<byte> bytes = new ReadOnlySpan<byte>(csvPtr, byteCount);
-                if (StormDepthImpactCsvParser.TryParse(bytes, profiles, out int count, out _) && count > 0)
-                {
-                    for (int i = count; i < profiles.Length; i++)
-                        ShinobuStormPropagationNative.ElementAt(profiles, i) = default;
-
-                    if (Resolve(in _tuningHandle, out NativeArray<StormPropagationTuningDTO> tuning) && tuning.Length > 0)
-                    {
-                        ref StormPropagationTuningDTO row = ref ShinobuStormPropagationNative.ElementAt(tuning, 0);
-                        if (row.ProfileHash == 0u)
-                            row.ProfileHash = ShinobuStormPropagationConstants.ProfileFallbackHash;
-                    }
-                }
-
-                _impactProfilesLoaded = true;
+                for (int i = copyCount; i < profiles.Length; i++)
+                    ShinobuStormPropagationNative.ElementAt(profiles, i) = default;
             }
             finally
             {
-                if (scratchLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationCsvScratch, OwnerSystem);
                 if (profilesLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem);
+            }
+
+            bool tuningLocked = false;
+            try
+            {
+                tuningLocked = _vault.TryLockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem);
+                if (!tuningLocked)
+                    return;
+
+                if (Resolve(in _tuningHandle, out NativeArray<StormPropagationTuningDTO> tuning) && tuning.Length > 0)
+                {
+                    ref StormPropagationTuningDTO row = ref ShinobuStormPropagationNative.ElementAt(tuning, 0);
+                    if (row.ProfileHash == 0u)
+                        row.ProfileHash = ShinobuStormPropagationConstants.ProfileFallbackHash;
+                }
+            }
+            finally
+            {
                 if (tuningLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem);
             }
+
+            _impactProfilesLoaded = true;
 #endif
         }
 
@@ -1217,10 +1226,24 @@ namespace Hecton8.Atmosphere
             return parent != null ? parent.FullName : null;
         }
 
-        private static int CopyFileIntoScratchCold(string path, NativeArray<byte> scratch)
+        private bool EnsureImpactCsvManagedScratchCold()
+        {
+            if (_impactCsvManagedScratch == null ||
+                _impactCsvManagedScratch.Length < ShinobuStormPropagationConstants.CsvScratchBytes)
+            {
+                _impactCsvManagedScratch = new byte[ShinobuStormPropagationConstants.CsvScratchBytes]; // COLD ALLOC: editor CSV import staging; never inside vault lock.
+            }
+
+            return _impactCsvManagedScratch.Length >= ShinobuStormPropagationConstants.CsvScratchBytes;
+        }
+
+        private static int CopyFileIntoScratchCold(string path, byte[] scratch)
         {
             try
             {
+                if (scratch == null)
+                    return 0;
+
                 using (FileStream stream = File.OpenRead(path))
                 {
                     if (stream.Length <= 0)
@@ -1229,12 +1252,10 @@ namespace Hecton8.Atmosphere
                         return -1;
 
                     int length = (int)stream.Length;
-                    void* destination = NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
-                    Span<byte> target = new Span<byte>(destination, length);
                     int totalRead = 0;
                     while (totalRead < length)
                     {
-                        int read = stream.Read(target.Slice(totalRead));
+                        int read = stream.Read(scratch, totalRead, length - totalRead);
                         if (read <= 0)
                             break;
 

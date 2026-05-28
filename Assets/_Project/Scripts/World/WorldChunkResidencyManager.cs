@@ -637,6 +637,10 @@ namespace Hecton8.World
         private const float ChunkResidencyRuntimeClockMaxSeconds = 16777215f;
         private const long PredictiveVramAbortBytes = 1600L * 1024L * 1024L;
         private const long PredictiveVramResumeBytes = 1400L * 1024L * 1024L;
+        private const long PredictiveVramMinimumThresholdBytes = 512L * 1024L * 1024L;
+        private const long PredictiveVramReservedHeadroomBytes = 256L * 1024L * 1024L;
+        private const long PredictiveVramVisualOverkillCeilingBytes = 4096L * 1024L * 1024L;
+        private const float PredictiveVramResumeRatio = 0.875f;
         private const float StreamerStressSpeedSqRcp = 0.00111111112f;
         private const float AdrenalinePurgeSeconds = 3.0f;
         private const byte CriticalMemoryPressureSeverity = 2;
@@ -5063,17 +5067,50 @@ namespace Hecton8.World
 
         private bool ResolvePredictiveVramAbortState()
         {
-            if (SystemInfo.graphicsMemorySize > 2048)
-                return false;
-
             long usedBytes = VRAMBudgetTracker.EstimatedVRAMBytes;
             IVramBudgetReadModel monitor = _vramMonitor;
             if (monitor != null && monitor.TotalVRAMBytes > usedBytes)
                 usedBytes = monitor.TotalVRAMBytes;
 
+            long abortBytes = ResolvePredictiveVramAbortThresholdBytes();
+            long resumeBytes = ResolvePredictiveVramResumeThresholdBytes(abortBytes);
             return _predictiveVramAborted
-                ? usedBytes >= PredictiveVramResumeBytes
-                : usedBytes >= PredictiveVramAbortBytes;
+                ? usedBytes >= resumeBytes
+                : usedBytes >= abortBytes;
+        }
+
+        private static long ResolvePredictiveVramAbortThresholdBytes()
+        {
+            long ceilingBytes = ResolvePredictiveVramCeilingBytes();
+            float quality = ResolveSmoothGlobalQualityWeight01();
+            long scaledBytes = (long)Math.Round(PredictiveVramAbortBytes + ((ceilingBytes - PredictiveVramAbortBytes) * (double)quality));
+            return Math.Max(PredictiveVramMinimumThresholdBytes, Math.Min(ceilingBytes, scaledBytes));
+        }
+
+        private static long ResolvePredictiveVramResumeThresholdBytes(long abortBytes)
+        {
+            long ratioBytes = (long)Math.Round(abortBytes * (double)PredictiveVramResumeRatio);
+            long hysteresisBytes = Math.Max(64L * 1024L * 1024L, abortBytes - ratioBytes);
+            return Math.Max(PredictiveVramMinimumThresholdBytes, abortBytes - hysteresisBytes);
+        }
+
+        private static long ResolvePredictiveVramCeilingBytes()
+        {
+            if (HardwareTierDetector.SharedMemoryModeActive)
+            {
+                long sharedBudgetBytes = HardwareTierDetector.RecommendedVramBudgetBytes;
+                return sharedBudgetBytes > 0L
+                    ? Math.Max(PredictiveVramMinimumThresholdBytes, sharedBudgetBytes)
+                    : PredictiveVramAbortBytes;
+            }
+
+            int graphicsMemoryMb = SystemInfo.graphicsMemorySize;
+            if (graphicsMemoryMb <= 0)
+                return PredictiveVramAbortBytes;
+
+            long reportedBytes = (long)graphicsMemoryMb * 1024L * 1024L;
+            long ceilingBytes = Math.Max(PredictiveVramAbortBytes, reportedBytes - PredictiveVramReservedHeadroomBytes);
+            return Math.Min(PredictiveVramVisualOverkillCeilingBytes, ceilingBytes);
         }
 
         private float ResolvePredictionDistanceMeters(float3 velocity)

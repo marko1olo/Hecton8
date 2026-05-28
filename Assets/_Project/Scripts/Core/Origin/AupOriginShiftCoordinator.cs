@@ -1727,12 +1727,17 @@ namespace Hecton8.Core
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
                 return false;
 
+            if (!TryReadRuntimeState(vault, out AupOriginShiftRuntimeState runtime))
+                return false;
+
+            bool parsed = false;
+            long ticks = 0L;
             if (!TryAcquireWriteView(vault, in _csvScratchHandle, CsvScratchCapacity, out NativeArray<byte> scratch))
                 return false;
 
             try
             {
-                long ticks = File.GetLastWriteTimeUtc(path).Ticks;
+                ticks = File.GetLastWriteTimeUtc(path).Ticks;
                 if (ticks == _lastCsvWriteTicks)
                     return false;
 
@@ -1745,19 +1750,8 @@ namespace Hecton8.Core
                 if (bytesRead <= 0)
                     return false;
 
-                if (!TryAcquireWriteView(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<AupOriginShiftRuntimeState> runtimeState))
-                    return false;
-
-                try
-                {
-                    ParseCsvOverrides(scratch, bytesRead, runtimeState);
-                    _lastCsvWriteTicks = ticks;
-                    return true;
-                }
-                finally
-                {
-                    vault.ReleaseWriteLock(in _runtimeStateHandle, OwnerSystemId);
-                }
+                ParseCsvOverrides(scratch, bytesRead, ref runtime);
+                parsed = true;
             }
             catch (IOException)
             {
@@ -1771,6 +1765,12 @@ namespace Hecton8.Core
             {
                 vault.ReleaseWriteLock(in _csvScratchHandle, OwnerSystemId);
             }
+
+            if (!parsed || !WriteRuntimeState(vault, in runtime))
+                return false;
+
+            _lastCsvWriteTicks = ticks;
+            return true;
         }
 
         private static void ParseCsvOverrides(
@@ -1779,6 +1779,15 @@ namespace Hecton8.Core
             NativeArray<AupOriginShiftRuntimeState> runtimeState)
         {
             AupOriginShiftRuntimeState runtime = runtimeState[0];
+            ParseCsvOverrides(bytes, length, ref runtime);
+            runtimeState[0] = runtime;
+        }
+
+        private static void ParseCsvOverrides(
+            NativeArray<byte> bytes,
+            int length,
+            ref AupOriginShiftRuntimeState runtime)
+        {
             int index = 0;
             while (index < length)
             {
@@ -1823,7 +1832,6 @@ namespace Hecton8.Core
             runtime.Flags |= RuntimeFlagCsvOverride;
             runtime.CsvRevision++;
             runtime.CsvSourceHash = unchecked(runtime.CsvSourceHash + 0x43535631u);
-            runtimeState[0] = runtime;
         }
 
         private static void SkipCsvWhitespace(NativeArray<byte> bytes, int length, ref int index)
