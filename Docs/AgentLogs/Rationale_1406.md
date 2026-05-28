@@ -147,7 +147,7 @@ Hardware Impact: Exact microseconds are unknown. Static proof after correction: 
 
 ## Decision 020 - Evidence Sync After UberPost Correction
 Problem: The final proof artifact and state ledger had to stop carrying the stale claim that the non-game UberPost guard clears reconstruction state.
-Solution: Updated `QUEST_VR_OPTIMIZATION_REPORT_1406.json`, `Status_1406.md`, and `LOG_1406.md` with the state-preserving guard contract, refreshed SHA-256 values for `HectonVisorUberPostFeature.cs` and `QuestVrOptimizationValidator1406.cs`, and recorded final report SHA-256 `2cbf6ad4e28c8f3df4de36fe4a1a6c6b17b8be9ee8cce4120d54a80f5db1b547`.
+Solution: Updated `QUEST_VR_OPTIMIZATION_REPORT_1406.json`, `Status_1406.md`, and `LOG_1406.md` with the state-preserving guard contract, refreshed SHA-256 values for `HectonVisorUberPostFeature.cs` and `QuestVrOptimizationValidator1406.cs`, and recorded final report SHA-256 `e4fd85e9db83406870a452b773e5b6115678b65532b7f62d27758758e85bdacf`.
 Rejected Alternatives: Leaving stale evidence was rejected because it would mislead the coordinator about an unsafe state mutation. Running `dotnet build` was rejected by the compile throttle gate: CPU_TOTAL_PERCENT=100, CSC_COUNT=1, DOTNET_COUNT=1, VBCS_COUNT=0.
 Scalability potential: No new quality branch. The actual quality scaler remains `HomeostasisBrain.GlobalQualityWeight`; this correction only preserves camera-phase state while stripping non-game presentation work.
 Hardware Impact: Build not run. Unity import, Play Mode, Quest device profiler, Frame Debugger, and GCMonitor remain PENDING VERIFICATION.

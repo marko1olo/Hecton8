@@ -2898,3 +2898,26 @@ Verification:
 - Scoped bad-pattern grep over `PDAEncyclopediaStreamer.cs` and `PdaH8lrLoreStore.cs` returns no hits for direct DataVault cache/cast, ownerless nonzero handle checks, or old resolve/get-element signatures.
 - `git diff --check -- PDAEncyclopediaStreamer.cs PdaH8lrLoreStore.cs` reports only LF/CRLF warnings.
 - Targeted compile/import/profiler proof not launched: external `dotnet` PID `31336`, child `csc` PID `60436`, CPU `100%`.
+
+## 2026-05-28 - Babel Subtitle Teardown Owner Predicate
+
+What was wrong:
+- `BabelSubtitleSyncRuntime` validated exact subtitle Vault handles for write-lock acquisition, but teardown still released by generic nonzero `BufferID`.
+- Three static UI lanes could therefore be confused during subsystem reset: cue state, localization telemetry, and UI optimization telemetry.
+
+What was done:
+- `ReleaseSubtitleBuffers` now passes exact expected BufferIDs into `ReleaseVaultBuffer`.
+- `ReleaseVaultBuffer` now reuses `IsSubtitleVaultHandle` before calling `ReleaseBuffer`.
+- SignalBus settings, subtitle audio-frame timing, DTO layout, and telemetry cadence were not changed.
+
+Cinematic cheats used:
+- None changed. Subtitle presentation timing remains the existing audio-frame driven fake.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+
+Verification:
+- Scoped grep confirms the old `vault != null && handle.BufferID != 0u` release predicate is gone and all three release calls pass expected BufferIDs.
+- `git diff --check -- BabelSubtitleSyncRuntime.cs` reports clean.
+- Targeted compile/import/profiler proof not launched because the compiler/CPU guard was active.
