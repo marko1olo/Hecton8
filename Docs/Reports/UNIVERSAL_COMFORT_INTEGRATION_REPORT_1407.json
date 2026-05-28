@@ -3,7 +3,7 @@
     "role":  "UNIVERSAL_OPENXR_COMFORT_AND_TUNNELING_SHADER_INTEGRATOR",
     "domain":  "Echelon 8 Presentation and UX / VR Somatic Comfort / Diegetic Terminals",
     "taskCount":  20,
-    "generatedAt":  "2026-05-28T05:42:34.6578590+04:00",
+    "generatedAt":  "2026-05-28T05:45:01.5873431+04:00",
     "promptExtraction":  {
                              "path":  "Docs/AgentLogs/Prompt_1407_EXTRACTED.md",
                              "chars":  20052,
@@ -998,20 +998,34 @@
                               },
     "buildGate":  {
                       "dotnetBuildInvoked":  false,
-                      "finalPreflightCpuLoadPercent":  100,
-                      "finalPreflightCompilerProcesses":  {
-                                                              "Id":  32028,
-                                                              "ProcessName":  "dotnet",
-                                                              "CPU":  66.953125,
-                                                              "StartTime":  "\/Date(1779932497116)\/"
-                                                          },
+                      "finalPreflightCpuLoadPercent":  82,
+                      "finalPreflightCompilerProcesses":  [
+                                                              {
+                                                                  "Id":  36844,
+                                                                  "ProcessName":  "csc",
+                                                                  "CPU":  2.109375,
+                                                                  "StartTime":  "\/Date(1779932673868)\/"
+                                                              },
+                                                              {
+                                                                  "Id":  32028,
+                                                                  "ProcessName":  "dotnet",
+                                                                  "CPU":  173.359375,
+                                                                  "StartTime":  "\/Date(1779932497116)\/"
+                                                              },
+                                                              {
+                                                                  "Id":  33780,
+                                                                  "ProcessName":  "dotnet",
+                                                                  "CPU":  31.234375,
+                                                                  "StartTime":  "\/Date(1779932647076)\/"
+                                                              }
+                                                          ],
                       "buildAllowedByGate":  false,
                       "solutionProbe":  {
                                             "hecton8SlnxExists":  true,
                                             "hecton8SlnExists":  false,
                                             "solutionFile":  "Hecton8.slnx"
                                         },
-                      "reason":  "Build forbidden by Compilation Resource Throttling: CPU \u003e50 percent or compiler process active."
+                      "reason":  "Final build preflight artifact Docs/AgentLogs/Build_1407_FinalPreflight.json: CPU 82 percent with active csc/dotnet processes; dotnet build not invoked."
                   },
     "latentRisks":  [
                         {
@@ -1120,5 +1134,6 @@
                        "path":  "Docs/AgentLogs/Prompt_1407_EXTRACTED.md",
                        "sha256":  "CCF6248154A8B07970E1BB514DFE7D60A5DD57B6CC31F7E8D0495572B34119A5"
                    }
-               ]
+               ],
+    "finalBuildPreflightArtifact":  "Docs/AgentLogs/Build_1407_FinalPreflight.json"
 }

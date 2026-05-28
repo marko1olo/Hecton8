@@ -2227,3 +2227,27 @@ Verification:
 - `git diff --check -- InternalFloodWaterlineRuntime.cs` reports only existing LF/CRLF warning.
 - Combined source/doc `git diff --check` reports only existing LF/CRLF warnings.
 - Build/import/profiler/native-ledger proof blocked by external `dotnet` PID `32028` and CPU `97%`.
+
+## 2026-05-28 - Diegetic Visor Lens Native Lifecycle Pass
+
+What was wrong:
+- `DiegeticVisorLensRuntime` still used direct `_vault = currentService as IDataVault` and `_vault = GlobalRegistry.DataVault`.
+- Native epoch replacement could keep `_binaryProbePerformed` and `_blackBoxDumped` true after their Vault buffers were released/recreated.
+
+What was done:
+- Added `RebindDataVaultForLifecycle` for cold cache and DataVault replacement.
+- Rebind completes scheduled work, releases ten `SystemID.Vfx` visor Vault lanes through the old Vault, binds the replacement, then resets native epoch flags.
+- Existing read/write/release helpers continue to require expected `BufferID`, `SystemID.Vfx`, and generation.
+
+Cinematic cheats used:
+- None. Existing visor condensation/crack/dirt shader fake, emergency mock data, and constant-buffer upload behavior are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us; fix is cold lifecycle/state hygiene only.
+
+Verification:
+- Direct `_vault = GlobalRegistry.DataVault/currentService` grep returns no hits.
+- `ReleaseVisorVaultHandle` is still guarded by `IsVisorVaultHandle`.
+- `git diff --check -- DiegeticVisorLensRuntime.cs` reports only existing LF/CRLF warning.
+- Build/import/profiler/native-ledger proof blocked by external `dotnet` PIDs `32028` and `33780`, CPU `100%`.

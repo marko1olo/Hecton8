@@ -498,6 +498,23 @@ namespace GPUInstancer
             return safeCount < 0 ? 0 : safeCount;
         }
 
+        private static int GetSafeRuntimeTransformBufferCount(GPUInstancerRuntimeData runtimeData)
+        {
+            if (runtimeData == null || runtimeData.transformationMatrixVisibilityBuffer == null)
+                return 0;
+
+            int safeCount = runtimeData.instanceCount;
+            if (safeCount < 0)
+                return 0;
+
+            if (runtimeData.bufferSize < safeCount)
+                safeCount = runtimeData.bufferSize;
+            if (runtimeData.transformationMatrixVisibilityBuffer.count < safeCount)
+                safeCount = runtimeData.transformationMatrixVisibilityBuffer.count;
+
+            return safeCount < 0 ? 0 : safeCount;
+        }
+
         public static void DispatchCSInstancedCameraCalculation<T>(ComputeShader cameraComputeShader, int[] cameraComputeKernelIDs, T runtimeData,
             GPUInstancerCameraData cameraData, bool isManagerFrustumCulling, bool isManagerOcclusionCulling, bool isInitial, int safeInstanceCount = -1)
             where T : GPUInstancerRuntimeData
@@ -764,9 +781,9 @@ namespace GPUInstancer
                         bufferToTextureComputeShader.SetTexture(bufferToTextureCrossFadeKernelID, GPUInstancerConstants.BufferToTextureKernelPoperties.LOD_DATA_TEXTURE, runtimeData.instanceLODDataTexture);
                         bufferToTextureComputeShader.SetBuffer(bufferToTextureCrossFadeKernelID, GPUInstancerConstants.VisibilityKernelPoperties.INSTANCE_LOD_BUFFER, runtimeData.instanceLODDataBuffer);
                         bufferToTextureComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.MAX_TEXTURE_SIZE, GPUInstancerConstants.TEXTURE_MAX_SIZE);
-                        bufferToTextureComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_BUFFER_SIZE, runtimeData.bufferSize);
+                        bufferToTextureComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_BUFFER_SIZE, safeInstanceCount);
 
-                        bufferToTextureComputeShader.Dispatch(bufferToTextureCrossFadeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(runtimeData.bufferSize), 1, 1);
+                        bufferToTextureComputeShader.Dispatch(bufferToTextureCrossFadeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(safeInstanceCount), 1, 1);
                     }
                 }
             }
@@ -3473,15 +3490,19 @@ namespace GPUInstancer
                         continue;
                     }
 
+                    int safeInstanceCount = GetSafeRuntimeTransformBufferCount(runtimeData);
+                    if (safeInstanceCount == 0)
+                        continue;
+
                     GPUInstancerConstants.computeRuntimeModification.SetBuffer(GPUInstancerConstants.computeBufferTransformOffsetId,
                         GPUInstancerConstants.VisibilityKernelPoperties.INSTANCE_DATA_BUFFER, runtimeData.transformationMatrixVisibilityBuffer);
                     GPUInstancerConstants.computeRuntimeModification.SetInt(
-                        GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_BUFFER_SIZE, runtimeData.bufferSize);
+                        GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_BUFFER_SIZE, safeInstanceCount);
                     GPUInstancerConstants.computeRuntimeModification.SetVector(
                         GPUInstancerConstants.RuntimeModificationKernelProperties.BUFFER_PARAMETER_POSITION_OFFSET, offsetPosition);
 
                     GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeBufferTransformOffsetId,
-                        GPUInstancerConstants.GetComputeThreadGroupCount(runtimeData.bufferSize), 1, 1);
+                        GPUInstancerConstants.GetComputeThreadGroupCount(safeInstanceCount), 1, 1);
                 }
             }
         }
@@ -3511,15 +3532,19 @@ namespace GPUInstancer
                         continue;
                     }
 
+                    int safeInstanceCount = GetSafeRuntimeTransformBufferCount(runtimeData);
+                    if (safeInstanceCount == 0)
+                        continue;
+
                     GPUInstancerConstants.computeRuntimeModification.SetBuffer(GPUInstancerConstants.computeBufferMatrixOffsetId,
                         GPUInstancerConstants.VisibilityKernelPoperties.INSTANCE_DATA_BUFFER, runtimeData.transformationMatrixVisibilityBuffer);
                     GPUInstancerConstants.computeRuntimeModification.SetInt(
-                        GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_BUFFER_SIZE, runtimeData.bufferSize);
+                        GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_BUFFER_SIZE, safeInstanceCount);
                     GPUInstancerConstants.computeRuntimeModification.SetMatrix(
                         GPUInstancerConstants.RuntimeModificationKernelProperties.BUFFER_PARAMETER_MATRIX_OFFSET, offsetMatrix);
 
                     GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeBufferMatrixOffsetId,
-                        GPUInstancerConstants.GetComputeThreadGroupCount(runtimeData.bufferSize), 1, 1);
+                        GPUInstancerConstants.GetComputeThreadGroupCount(safeInstanceCount), 1, 1);
                 }
             }
         }

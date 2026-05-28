@@ -4,7 +4,7 @@
     "role":  "ANDROID_NDK_AND_AASSETMANAGER_PORTABILITY_ARCHITECT",
     "status":  "PENDING_ANDROID_PLAYER_BUILD_COMPILE_GATE_BLOCKED",
     "evidenceClass":  "STATIC_SOURCE_AND_TEXT_SCAN",
-    "generatedAtLocal":  "2026-05-28T05:41:51+04:00",
+    "generatedAtLocal":  "2026-05-28T05:45:12+04:00",
     "taskCount":  20,
     "promptExtraction":  {
                              "source":  "Docs/Tasks/CURRENT_BATCH.md",
@@ -109,13 +109,13 @@
                             "cinematicCheatScope":  "No physical simulation added; bridge is cold boot I/O and diagnostic dump only."
                         },
     "buildThrottle":  {
-                          "cpuLoadPercentBeforeFinalBuildGate":  64,
+                          "cpuLoadPercentBeforeFinalBuildGate":  96,
                           "activeCompilerProcessCount":  1,
                           "activeCompilerProcesses":  [
                                                           {
                                                               "id":  32028,
                                                               "name":  "dotnet",
-                                                              "cpu":  21.109375,
+                                                              "cpu":  197.265625,
                                                               "startTime":  "2026-05-28T05:41:37+04:00"
                                                           }
                                                       ],

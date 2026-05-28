@@ -29,7 +29,7 @@
     "foreachLoops": 0,
     "tryBlocksAdded": 20,
     "finallyBlocksAdded": 19,
-    "notes": "Editor test file and editor-only CSV FileStream path are excluded from hot-path GC count. Runtime diff scan covered 794 added lines across modified runtime files and shader. The 24 new tokens are all value-type/job-struct initializers; no reference-type constructor survived the added-line scan. Dedicated AsyncReadback runtime hot-range scan over lines 205-243, 687-713, 727-770, 856-904, 1162-1298, and 1751-1889 returned 0 forbidden tokens and 10 allowed value-type initializers. Case-sensitive LINQ scan returned 0 hits; a case-insensitive probe falsely counted math.select as Select."
+    "notes": "Editor test file and editor-only CSV FileStream path are excluded from hot-path GC count. Runtime diff scan covered 795 added lines across modified runtime files and shader. The 24 new tokens are all value-type/job-struct initializers; no reference-type constructor survived the added-line scan. Dedicated AsyncReadback runtime hot-range scan over lines 205-243, 687-713, 727-770, 856-904, 1162-1298, and 1751-1889 returned 0 forbidden tokens and 10 allowed value-type initializers. Case-sensitive LINQ scan returned 0 hits; a case-insensitive probe falsely counted math.select as Select."
   },
   "dataSovereignty": {
     "migratedFieldsToGlobalDataVault": false,
@@ -113,7 +113,7 @@
     "kccDynamicEpsilon": "epsilon = math.lerp(max(0.0005, skin*0.02), max(base, skin*0.75), 1-quality)",
     "buoyancyDisplacement": "quality = min(saturate(job.GlobalQualityWeight), saturate(tuning.GlobalQualityWeight)); existing smoothstep blends consume live q",
     "asyncReadbackWaves": "activeWaveLastIndex = ceil(lerp(2, 6, q)) - 1; shader contribution = saturate(lerp(2, 6, q) - waveIndex)",
-    "seaglideForceCadence": "thrustCadenceSeconds = lerp(maxCadence, minCadence, q*q*(3-2*q)); low q accumulates solverDelta and schedules less often, high q runs at authored minimum cadence",
+    "seaglideForceCadence": "thrustCadenceSeconds = lerp(maxCadence, minCadence, q*q*(3-2*q)); maxCadence is capped to fixedDelta*4 so accumulated solverDelta stays within the existing job force-scale cap; low q schedules less often, high q runs at authored minimum cadence",
     "cavitationSdf": "multiTapWeight = SmoothRange(0.35, 0.85, q); interpolationWeight = Smooth01(saturate((Smooth01(q)-0.18)/0.52))"
   },
   "apexReverificationFixes": [
@@ -127,7 +127,8 @@
     "AsyncBuoyancyReadbackRuntime.cs now fail-closes existing AcquireVaultWriteBuffer routes for request queueing, completed readback copy, seeding, tuning/counter/telemetry writes, editor CSV profile loading, and mock/apply buffer acquisition failure cleanup.",
     "AsyncBuoyancyReadbackRuntime.cs now gates ReleaseVaultWriteBuffer behind local ownership booleans set only from NativeArray.IsCreated, avoiding release-by-handle when acquisition failed under contention.",
     "SubmarineBallastBuoyancyContracts.cs now removes the remaining q/sample-budget denominator path and uses always-on four-sample compensated integration: secondary*q + secondary*(1-q).",
-    "SeaglideHydrodynamicsRuntime.cs now uses q inside ResolveThrustCadenceSeconds instead of accepting q and returning only fixedDeltaTime."
+    "SeaglideHydrodynamicsRuntime.cs now uses q inside ResolveThrustCadenceSeconds instead of accepting q and returning only fixedDeltaTime.",
+    "SeaglideHydrodynamicsRuntime.cs caps low-q max cadence to fixedDelta*4 so cadence scaling remains consistent with the existing ResolveForceCadenceScale 4x compensation cap."
   ],
   "lineEvidence": {
     "submarineDynamics": [
@@ -199,7 +200,8 @@
       "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:866",
       "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:1281"
       ,"Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:1291",
-      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:1300"
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:1298",
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:1301"
     ],
     "analyticalWaves": [
       "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs:212",
@@ -252,10 +254,10 @@
     "ballastBuoyancyUsSaved": 0.0,
     "seaglideDragUsSaved": 0.0,
     "seaglideCadenceSweepSeconds": {
-      "q0": 0.12,
-      "q0_25": 0.104375,
-      "q0_5": 0.07,
-      "q0_75": 0.035625,
+      "q0": 0.08,
+      "q0_25": 0.070625,
+      "q0_5": 0.05,
+      "q0_75": 0.029375,
       "q1": 0.02
     },
     "kccPotentialUsSavedPerEntityLowQ": 0.4,
@@ -303,7 +305,7 @@
     },
     {
       "path": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
-      "sha256": "325d2c4d135d8cf0ccf06b6efe878abd139c5d15f72a8c3bdc20bd63df2c1e78"
+      "sha256": "317806b8831c1fac3f6ca3c0f3fcefa602b2be76e4c75ab673c57998d08b5851"
     },
     {
       "path": "Assets/_Project/Art/Shaders/Hecton_WaveHeightSampler.compute",

@@ -1258,13 +1258,9 @@ namespace Hecton8.SaveSystem
                 if (!TryReadAbsoluteFileToNativeBuffer(absolutePath, filePtr, (int)fileLength, out error))
                     return false;
 
-                mapping = new ReadOnlyMapping
-                {
-                    Bytes = fileBytes,
-                    View = (IntPtr)filePtr,
-                    Length = fileLength
-                };
-
+                mapping.Bytes = fileBytes;
+                mapping.View = (IntPtr)filePtr;
+                mapping.Length = fileLength;
                 fileBytes = default;
                 return true;
             }

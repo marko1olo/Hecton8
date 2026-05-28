@@ -166,13 +166,19 @@
                         "runtime_gc_status":  "NOT_MEASURED_BUILD_BLOCKED_BY_CPU_THROTTLE"
                     },
     "compilation_status":  {
-                               "dotnet_build_launched":  false,
-                               "reason":  "CPU samples after edits were 58.24 percent then 98.85 percent; policy forbids build above 50 percent.",
-                               "csc_process_detected":  false
+                               "dotnet_build_launched":  true,
+                               "reason":  "dotnet build Hecton8.Core.csproj launched after CPU 44.12 percent and no csc.exe; build failed on pre-existing/out-of-domain XRPass reference errors in Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs lines 437 and 476.",
+                               "csc_process_detected":  false,
+                               "exit_code":  1,
+                               "command":  "dotnet build C:\\hades\\Hecton8\\Hecton8.Core.csproj --nologo",
+                               "errors":  [
+                                              "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs(437,64): CS0246 XRPass not found",
+                                              "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs(476,74): CS0246 XRPass not found"
+                                          ]
                            },
     "verification_limits":  [
                                 "No Unity runtime profiler run",
                                 "No GCMonitor sample",
-                                "No dotnet build because CPU throttle failed"
+                                "dotnet build blocked by out-of-domain XRPass compile dependency before final success"
                             ]
 }

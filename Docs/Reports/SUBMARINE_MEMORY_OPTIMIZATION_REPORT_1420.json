@@ -67,6 +67,7 @@
     "claims": [
       "write-lock contention fails closed",
       "ballast Burst jobs integrate extreme commands",
+      "ballast Burst jobs assert ActiveSamples spans 1..4 under continuous quality",
       "managed allocation delta asserted as zero after warmup"
     ]
   },
@@ -100,12 +101,12 @@
     "gitDiffCheck": "clean except repository LF-to-CRLF warning",
     "braceBalance": "balanced for modified C# files",
     "hotPathForbiddenPatternScan": "case-sensitive scan found 0 new Native*, Allocator.Persistent, LINQ .Where/.Select/.ToList/.ToArray, foreach, string.Format, .ToString, interpolated strings, or literal string concatenation matches in modified hot files; reference-type new sites are cold CSV/dump paths only",
-    "fullBuild": "not run: final CPU gate sampled 74.16 percent with active dotnet PID 20440; CPU >50 percent and active dotnet blocked compilation"
+    "fullBuild": "not run: final CPU gate sampled 41.88 percent with active dotnet PID 32028; active dotnet blocked compilation"
   },
   "modifiedCSharpSha256": {
     "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs": "C82ABFD25DBB62D3029D330BEB14C242642DCB61280EF9724ACEE0FA3E6B514B",
     "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs": "3E2EF0153F09656ACA4C33BB09DB54FD12240AADC3679E4BCCE03A61FCDF3FB9",
     "Assets/_Project/Scripts/Physics/Vehicles/Editor/SubmarineNavigationLayoutValidator1420.cs": "2B068D232589D8648075C8AD00B242C64A0780323FB0BD1B658BA53DDDE5CABA",
-    "Assets/_Project/Scripts/Physics/Vehicles/Editor/SubmarineNavigationStressHarness1420.cs": "95F9611B94FCC49DDD6223764B68543449FEA04B85D374782E90913A992D4D22"
+    "Assets/_Project/Scripts/Physics/Vehicles/Editor/SubmarineNavigationStressHarness1420.cs": "95B36E09DD3D62A276BA021D69E9559573EC0FD8B7C8D26B14731527F21BD168"
   }
 }
