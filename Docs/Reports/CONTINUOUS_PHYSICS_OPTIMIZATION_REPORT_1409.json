@@ -13,10 +13,12 @@
   },
   "compileGate": {
     "cpuPercent": 100.0,
-    "cscProcessCount": 0,
+    "cscProcessCount": 1,
     "dotnetProcessCount": 1,
+    "cscPids": "61156",
+    "dotnetPids": "25668",
     "dotnetBuildLaunched": false,
-    "reason": "User forbade heavy compiler use under CPU load; final gate measured 100.0% total processor with one dotnet process active and no csc.exe process active. dotnet build was not launched because CPU remained above 50% and a dotnet process was already active."
+    "reason": "User forbade heavy compiler use under CPU load; final gate measured 100.0% total processor with one csc.exe process and one dotnet process active. dotnet build was not launched because CPU remained above 50% and compiler processes were already active."
   },
   "zeroGcSelfAudit": {
     "scope": "added lines in modified runtime hot path files and Hecton_WaveHeightSampler.compute",
@@ -104,7 +106,16 @@
       "isLowEndDevice",
       "if (quality =="
     ],
-    "hits": 0
+    "ownedDomainHits": 0,
+    "outOfDomainHits": [
+      "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:1744",
+      "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:1798",
+      "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:2118",
+      "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:2746",
+      "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs:2764"
+    ],
+    "hits": 5,
+    "scopeNote": "The five hits are outside agent 1409's hydrodynamic/KCC ownership boundary and remain for the autopilot/navigation owner. Owned hot paths scanned in this report returned 0 exact forbidden binary quality route hits."
   },
   "formulas": {
     "submarineDrag": "dragWorld = math.lerp(-velocity * dragCoefficient * max(0.25,totalMass*0.015), normalize(-velocity) * speedSq * dragCoefficient, quality)",
@@ -328,7 +339,7 @@
   ],
   "remainingOutOfDomainFindings": [
     "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs still contains VehicleDamageConstants.AuthoritativeQualityWeight; combat damage domain, not hydrodynamic/KCC.",
-    "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs still contains SubmarineAutopilotConstants.AuthoritativeQualityWeight; vehicle autopilot/navigation domain.",
+    "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs still contains SubmarineAutopilotConstants.AuthoritativeQualityWeight at lines 1744, 1798, 2118, 2746, and 2764; vehicle autopilot/navigation domain, not hydrodynamic/KCC.",
     "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs still contains HabitatFluidIncursionMath.AuthoritativeQualityWeight; habitat flooding/logistics domain."
   ],
   "dumpStatus": {
@@ -338,7 +349,9 @@
   },
   "verification": {
     "gitDiffCheck": "passed_with_line_ending_warnings_only",
-    "staticForbiddenPatternHits": 0,
+    "staticForbiddenPatternHits": 5,
+    "ownedDomainForbiddenPatternHits": 0,
+    "outOfDomainForbiddenPatternHits": 5,
     "zeroGcAddedHotPathReferenceNewHits": 0,
     "zeroGcAddedHotPathForbiddenCalls": 0,
     "valueTypeNewInitializersInDiff": 24,

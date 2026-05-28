@@ -3620,6 +3620,7 @@ namespace Hecton8.Core.Memory
             if (!_metadata.TryAdd(key, stored))
                 return false;
 
+            WriteMetadataGeneration(key, stored.Version);
             WriteFlatMetadata(key, in stored);
             return true;
         }
@@ -3632,6 +3633,7 @@ namespace Hecton8.Core.Memory
             VaultBufferMeta stored = meta;
             stored.BufferKey = key;
             _metadata[key] = stored;
+            WriteMetadataGeneration(key, stored.Version);
             WriteFlatMetadata(key, in stored);
         }
 
@@ -3648,27 +3650,44 @@ namespace Hecton8.Core.Memory
             uint tombstoneGeneration = ResolveTombstoneGeneration(key);
             if (_metadata.IsCreated)
                 _metadata.Remove(key);
+            WriteMetadataGeneration(key, tombstoneGeneration);
             ClearFlatMetadata(key, tombstoneGeneration);
         }
 
         private uint ResolveInitialGenerationForAllocation(int key)
         {
-            uint previous = ReadFlatMetadataGeneration(key);
+            uint previous = ReadMetadataGeneration(key);
             return previous == 0u ? 1u : NextGeneration(previous);
         }
 
         private uint ResolveTombstoneGeneration(int key)
         {
-            uint previous = ReadFlatMetadataGeneration(key);
+            uint previous = ReadMetadataGeneration(key);
             return previous == 0u ? 1u : NextGeneration(previous);
         }
 
-        private uint ReadFlatMetadataGeneration(int key)
+        private uint ReadMetadataGeneration(int key)
         {
-            if (!_metadataByBufferId.IsCreated || (uint)key >= (uint)_metadataByBufferId.Length)
-                return 0u;
+            if (_metadataByBufferId.IsCreated && (uint)key < (uint)_metadataByBufferId.Length)
+                return _metadataByBufferId[key].Version;
+            if (_metadataGenerationByBufferId.IsCreated &&
+                _metadataGenerationByBufferId.TryGetValue(key, out uint generation))
+            {
+                return generation;
+            }
+            if (_metadata.IsCreated && _metadata.TryGetValue(key, out VaultBufferMeta meta))
+                return meta.Version;
 
-            return _metadataByBufferId[key].Version;
+            return 0u;
+        }
+
+        private void WriteMetadataGeneration(int key, uint generation)
+        {
+            if (!_metadataGenerationByBufferId.IsCreated || key == 0 || generation == 0u)
+                return;
+
+            if (!_metadataGenerationByBufferId.TryAdd(key, generation))
+                _metadataGenerationByBufferId[key] = generation;
         }
 
         private void ClearFlatMetadata(int key, uint tombstoneGeneration)
