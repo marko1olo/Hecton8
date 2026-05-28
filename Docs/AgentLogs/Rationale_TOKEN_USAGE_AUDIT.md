@@ -196,3 +196,11 @@ Solution: Add generated 7d, 30d, and 60d daily chart windows for total tokens, G
 Rejected Alternatives: Keeping only `last_96h` was rejected because it hides monthly burn shape. Adding manual screenshots was rejected because regenerated evidence must come from the Python dashboard pipeline.
 Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected; this is offline reporting. Audit scalability improves because future refreshes produce the same long-range chart set from source telemetry.
 Hardware Impact: 0 us runtime gain. Reporting gain: chart count increased from 29 to 41 with 12 explicit long-range PNG artifacts.
+
+## Decision 33 - 2026-05-28 live stats refresh and compile-throttle fix
+
+Problem: The token/dashboard artifacts became stale again after active-agent JSONL churn, and the apex verifier treated compiler-process presence as the only compile-throttle blocker while the mandate also forbids compile work under CPU load above 50 percent.
+Solution: Rerun the fast token refresh, dashboard, and apex verifier; patch `TokenUsageApexVerification_20260528.py` so `cpu_total_percent > 50` also produces `SKIPPED_BLOCKED_BY_COMPILER_CONTENTION` and a downgraded evidence class.
+Rejected Alternatives: Running `dotnet build` was rejected because CPU was 96 percent with active `csc` and `dotnet`. Leaving the stale 13:55 CPU sample was rejected because evidence must be current to the report. Claiming Python bytecode compile under contention was rejected as false proof.
+Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected; this is offline audit hygiene. Evidence scalability improves because future apex reports cannot silently overclaim compile proof during heavy parallel-agent load.
+Hardware Impact: 0 us runtime gain. Audit correctness gain: refreshed total is 113,292,508,044 tokens, chart count remains 41, and compile proof is explicitly downgraded to no-compile under CPU/compiler contention.

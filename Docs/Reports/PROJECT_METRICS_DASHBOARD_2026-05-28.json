@@ -1,6 +1,6 @@
 {
   "schema": "hecton8.project_metrics_dashboard.v1",
-  "generated_at_samara": "2026-05-28T14:52:02.112810+04:00",
+  "generated_at_samara": "2026-05-28T21:55:21.845596+04:00",
   "token_report": "Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-28.json",
   "dashboard_markdown": "Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-28.md",
   "chart_count": 41,
@@ -258,19 +258,19 @@
     }
   ],
   "token_headline": {
-    "total_tokens": 111059394546,
-    "sessions_with_usage": 2878,
-    "gpt_5_5_standard_cost_usd": 86369.031896,
+    "total_tokens": 113292508044,
+    "sessions_with_usage": 2917,
+    "gpt_5_5_standard_cost_usd": 88114.163298,
     "pricing_context_rules": {
       "base_rate_note": "GPT-5.5 base API-equivalent uses input $5.00, cached input $0.50, output $30.00 per 1M tokens.",
       "long_context_trigger_input_tokens": 272000,
       "long_context_surcharge_note": "Official pricing applies 2x input and 1.5x output when prompts exceed 272K input tokens. Local Codex JSONL does not expose provider-side per-request context classification, so this report adds an upper-bound sensitivity instead of pretending exact surcharge billing.",
       "regional_uplift_note": "Some regions can add about 10 percent. Local JSONL does not expose billing region, so this is a sensitivity row only.",
-      "gpt_5_5_long_context_upper_bound_usd": 166963.978462,
-      "gpt_5_5_long_context_upper_bound_delta_usd": 80594.946566,
-      "gpt_5_5_regional_10pct_usd": 95005.93508560001,
-      "gpt_5_5_regional_10pct_delta_usd": 8636.903189600009,
-      "gpt_5_5_long_context_regional_10pct_upper_bound_usd": 183660.3763082,
+      "gpt_5_5_long_context_upper_bound_usd": 170329.630266,
+      "gpt_5_5_long_context_upper_bound_delta_usd": 82215.466968,
+      "gpt_5_5_regional_10pct_usd": 96925.5796278,
+      "gpt_5_5_regional_10pct_delta_usd": 8811.416329800006,
+      "gpt_5_5_long_context_regional_10pct_upper_bound_usd": 187362.5932926,
       "post_cutoff_long_context_event_rule": "Lower-bound detector for post-cutoff positive delta events whose delta input_tokens exceeds 272000. Provider-side exact long-context classification remains unavailable in local JSONL; zero detected events is not proof of zero all-time surcharge.",
       "post_cutoff_long_context_event_evidence_class": "LOCAL_JSONL_DELTA_LOWER_BOUND_NOT_PROVIDER_INVOICE_CLASSIFICATION",
       "post_cutoff_long_context_event_count": 0,
@@ -283,51 +283,51 @@
       },
       "post_cutoff_long_context_event_base_usd": 0.0,
       "post_cutoff_long_context_event_surcharge_delta_usd": 0.0,
-      "post_cutoff_base_delta_cost_usd": 100.850888
+      "post_cutoff_base_delta_cost_usd": 1745.131402
     },
     "velocity": {
-      "total_tokens_per_hour": 282851878.21349716,
-      "total_tokens_per_day": 6788445077.123932,
-      "total_tokens_per_minute": 4714197.970224952,
-      "total_tokens_per_second": 78569.96617041588,
-      "input_tokens_per_hour": 281835488.0962165,
-      "cached_input_tokens_per_hour": 270825495.6197375,
-      "uncached_input_tokens_per_hour": 11009992.476478996,
-      "output_tokens_per_hour": 1016390.1172806523,
-      "reasoning_output_tokens_per_hour": 268584.86889283883,
-      "sessions_with_usage_per_hour": 8.76360805908554,
-      "jsonl_files_per_hour": 8.76360805908554,
-      "primary_code_lines_per_hour": 1792.1578480829928,
-      "primary_code_lines_per_day": 43011.788353991826,
-      "primary_code_characters_per_hour": 88744.67701032972,
-      "primary_code_characters_per_day": 2129872.248247913,
-      "tokens_per_net_primary_code_line": 157827.5476772616,
-      "input_tokens_per_net_primary_code_line": 157260.41564792176,
-      "output_tokens_per_net_primary_code_line": 567.1320293398533,
-      "reasoning_tokens_per_net_primary_code_line": 149.86674816625916,
-      "tokens_per_1k_net_primary_code_chars": 3187254.579568459,
-      "output_tokens_per_1k_net_primary_code_chars": 11452.969930380685,
-      "gpt_5_5_standard_usd_per_hour": 220.95441371068515,
-      "gpt_5_5_standard_usd_per_day": 5302.905929056444,
-      "gpt_5_5_priority_usd_per_hour": 552.3860342766969,
-      "gpt_5_3_codex_standard_usd_per_hour": 80.89141020921838,
-      "gpt_5_5_standard_usd_per_net_primary_code_line": 0.12328959413203038,
-      "gpt_5_5_standard_usd_per_1k_net_primary_code_chars": 2.4897765269343024
+      "total_tokens_per_hour": 278065144.81320393,
+      "total_tokens_per_day": 6673563475.516894,
+      "total_tokens_per_minute": 4634419.080220065,
+      "total_tokens_per_second": 77240.31800366775,
+      "input_tokens_per_hour": 277030715.35581625,
+      "cached_input_tokens_per_hour": 266418750.4239212,
+      "uncached_input_tokens_per_hour": 10611964.931895051,
+      "output_tokens_per_hour": 1034429.4573876648,
+      "reasoning_output_tokens_per_hour": 275618.65726052015,
+      "sessions_with_usage_per_hour": 4.856242487194421,
+      "jsonl_files_per_hour": 4.856242487194421,
+      "primary_code_lines_per_hour": 2003.884880677431,
+      "primary_code_lines_per_day": 48093.23713625834,
+      "primary_code_characters_per_hour": 98190.60819127038,
+      "primary_code_characters_per_day": 2356574.596590489,
+      "tokens_per_net_primary_code_line": 138763.03349282296,
+      "input_tokens_per_net_primary_code_line": 138246.82147517553,
+      "output_tokens_per_net_primary_code_line": 516.2120176474243,
+      "reasoning_tokens_per_net_primary_code_line": 137.5421611880942,
+      "tokens_per_1k_net_primary_code_chars": 2831891.4602458407,
+      "output_tokens_per_1k_net_primary_code_chars": 10534.912416192066,
+      "gpt_5_5_standard_usd_per_hour": 217.30208359306567,
+      "gpt_5_5_standard_usd_per_day": 5215.250006233577,
+      "gpt_5_5_priority_usd_per_hour": 543.255208982666,
+      "gpt_5_3_codex_standard_usd_per_hour": 79.67623235842989,
+      "gpt_5_5_standard_usd_per_net_primary_code_line": 0.10844040278381899,
+      "gpt_5_5_standard_usd_per_1k_net_primary_code_chars": 2.213063831621983
     }
   },
   "project_metrics": {
     "extension_by_files": [
       {
         "extension": ".meta",
-        "files": 16989,
-        "bytes": 7723219,
-        "lines": 333208
+        "files": 16995,
+        "bytes": 7724308,
+        "lines": 333256
       },
       {
         "extension": ".cs",
-        "files": 6437,
-        "bytes": 132233709,
-        "lines": 3064474
+        "files": 6446,
+        "bytes": 132941190,
+        "lines": 3078822
       },
       {
         "extension": ".asset",
@@ -337,14 +337,14 @@
       },
       {
         "extension": ".json",
-        "files": 2229,
-        "bytes": 656475442,
-        "lines": 17168561
+        "files": 2327,
+        "bytes": 659119359,
+        "lines": 17200330
       },
       {
         "extension": ".png",
-        "files": 1450,
-        "bytes": 1208491907,
+        "files": 1462,
+        "bytes": 1209743706,
         "lines": 0
       },
       {
@@ -361,9 +361,9 @@
       },
       {
         "extension": ".md",
-        "files": 937,
-        "bytes": 30630826,
-        "lines": 312363
+        "files": 967,
+        "bytes": 32124164,
+        "lines": 324141
       },
       {
         "extension": ".mat",
@@ -379,9 +379,9 @@
       },
       {
         "extension": ".txt",
-        "files": 814,
-        "bytes": 6295327,
-        "lines": 65435
+        "files": 834,
+        "bytes": 6330550,
+        "lines": 66001
       },
       {
         "extension": ".pdb",
@@ -391,15 +391,15 @@
       },
       {
         "extension": ".log",
-        "files": 653,
-        "bytes": 80469837,
+        "files": 741,
+        "bytes": 82293348,
         "lines": 0
       },
       {
         "extension": ".shader",
         "files": 477,
-        "bytes": 7989849,
-        "lines": 166582
+        "bytes": 7989123,
+        "lines": 166551
       },
       {
         "extension": ".editorconfig",
@@ -416,14 +416,14 @@
       {
         "extension": ".py",
         "files": 234,
-        "bytes": 5185376,
-        "lines": 113677
+        "bytes": 5205431,
+        "lines": 113915
       },
       {
         "extension": ".asmdef",
         "files": 231,
-        "bytes": 140441,
-        "lines": 5137
+        "bytes": 140473,
+        "lines": 5138
       },
       {
         "extension": ".wav",
@@ -433,8 +433,8 @@
       },
       {
         "extension": ".csv",
-        "files": 173,
-        "bytes": 11394193,
+        "files": 177,
+        "bytes": 11397658,
         "lines": 0
       },
       {
@@ -446,8 +446,8 @@
       {
         "extension": ".hlsl",
         "files": 147,
-        "bytes": 904851,
-        "lines": 22353
+        "bytes": 905189,
+        "lines": 22348
       },
       {
         "extension": ".haptic",
@@ -480,6 +480,12 @@
         "lines": 0
       },
       {
+        "extension": ".sha256",
+        "files": 89,
+        "bytes": 8991,
+        "lines": 0
+      },
+      {
         "extension": ".csproj",
         "files": 75,
         "bytes": 384064,
@@ -488,8 +494,8 @@
       {
         "extension": ".compute",
         "files": 71,
-        "bytes": 647232,
-        "lines": 16173
+        "bytes": 649881,
+        "lines": 16273
       },
       {
         "extension": ".uss",
@@ -516,12 +522,6 @@
         "lines": 0
       },
       {
-        "extension": ".sha256",
-        "files": 45,
-        "bytes": 4231,
-        "lines": 0
-      },
-      {
         "extension": ".unitypackage",
         "files": 44,
         "bytes": 44805027,
@@ -540,9 +540,15 @@
         "lines": 0
       },
       {
+        "extension": ".ps1",
+        "files": 37,
+        "bytes": 900469,
+        "lines": 16296
+      },
+      {
         "extension": ".pyc",
         "files": 37,
-        "bytes": 1960967,
+        "bytes": 1966870,
         "lines": 0
       },
       {
@@ -574,12 +580,6 @@
         "files": 31,
         "bytes": 14630316,
         "lines": 0
-      },
-      {
-        "extension": ".ps1",
-        "files": 30,
-        "bytes": 742877,
-        "lines": 13455
       },
       {
         "extension": ".h8bin",
@@ -696,6 +696,12 @@
         "lines": 0
       },
       {
+        "extension": ".zip",
+        "files": 5,
+        "bytes": 47027822,
+        "lines": 0
+      },
+      {
         "extension": ".kiro",
         "files": 5,
         "bytes": 557,
@@ -705,12 +711,6 @@
         "extension": ".controller",
         "files": 5,
         "bytes": 19606,
-        "lines": 0
-      },
-      {
-        "extension": ".zip",
-        "files": 4,
-        "bytes": 46986253,
         "lines": 0
       },
       {
@@ -846,6 +846,12 @@
         "lines": 124
       },
       {
+        "extension": ".tmp",
+        "files": 2,
+        "bytes": 21928,
+        "lines": 0
+      },
+      {
         "extension": ".inputactions",
         "files": 2,
         "bytes": 69425,
@@ -931,12 +937,6 @@
       },
       {
         "extension": ".sarif",
-        "files": 1,
-        "bytes": 0,
-        "lines": 0
-      },
-      {
-        "extension": ".tmp",
         "files": 1,
         "bytes": 0,
         "lines": 0
@@ -1155,8 +1155,8 @@
     "extension_by_bytes": [
       {
         "extension": ".png",
-        "files": 1450,
-        "bytes": 1208491907,
+        "files": 1462,
+        "bytes": 1209743706,
         "lines": 0
       },
       {
@@ -1173,9 +1173,9 @@
       },
       {
         "extension": ".json",
-        "files": 2229,
-        "bytes": 656475442,
-        "lines": 17168561
+        "files": 2327,
+        "bytes": 659119359,
+        "lines": 17200330
       },
       {
         "extension": ".wav",
@@ -1197,9 +1197,9 @@
       },
       {
         "extension": ".cs",
-        "files": 6437,
-        "bytes": 132233709,
-        "lines": 3064474
+        "files": 6446,
+        "bytes": 132941190,
+        "lines": 3078822
       },
       {
         "extension": ".jpg",
@@ -1227,8 +1227,8 @@
       },
       {
         "extension": ".log",
-        "files": 653,
-        "bytes": 80469837,
+        "files": 741,
+        "bytes": 82293348,
         "lines": 0
       },
       {
@@ -1257,8 +1257,8 @@
       },
       {
         "extension": ".zip",
-        "files": 4,
-        "bytes": 46986253,
+        "files": 5,
+        "bytes": 47027822,
         "lines": 0
       },
       {
@@ -1281,9 +1281,9 @@
       },
       {
         "extension": ".md",
-        "files": 937,
-        "bytes": 30630826,
-        "lines": 312363
+        "files": 967,
+        "bytes": 32124164,
+        "lines": 324141
       },
       {
         "extension": ".fbx",
@@ -1311,8 +1311,8 @@
       },
       {
         "extension": ".csv",
-        "files": 173,
-        "bytes": 11394193,
+        "files": 177,
+        "bytes": 11397658,
         "lines": 0
       },
       {
@@ -1324,20 +1324,20 @@
       {
         "extension": ".shader",
         "files": 477,
-        "bytes": 7989849,
-        "lines": 166582
+        "bytes": 7989123,
+        "lines": 166551
       },
       {
         "extension": ".meta",
-        "files": 16989,
-        "bytes": 7723219,
-        "lines": 333208
+        "files": 16995,
+        "bytes": 7724308,
+        "lines": 333256
       },
       {
         "extension": ".txt",
-        "files": 814,
-        "bytes": 6295327,
-        "lines": 65435
+        "files": 834,
+        "bytes": 6330550,
+        "lines": 66001
       },
       {
         "extension": ".bin",
@@ -1366,8 +1366,8 @@
       {
         "extension": ".py",
         "files": 234,
-        "bytes": 5185376,
-        "lines": 113677
+        "bytes": 5205431,
+        "lines": 113915
       },
       {
         "extension": ".ptx",
@@ -1438,7 +1438,7 @@
       {
         "extension": ".pyc",
         "files": 37,
-        "bytes": 1960967,
+        "bytes": 1966870,
         "lines": 0
       },
       {
@@ -1480,8 +1480,14 @@
       {
         "extension": ".hlsl",
         "files": 147,
-        "bytes": 904851,
-        "lines": 22353
+        "bytes": 905189,
+        "lines": 22348
+      },
+      {
+        "extension": ".ps1",
+        "files": 37,
+        "bytes": 900469,
+        "lines": 16296
       },
       {
         "extension": ".haptic",
@@ -1508,12 +1514,6 @@
         "lines": 0
       },
       {
-        "extension": ".ps1",
-        "files": 30,
-        "bytes": 742877,
-        "lines": 13455
-      },
-      {
         "extension": ".backup",
         "files": 11,
         "bytes": 663952,
@@ -1522,8 +1522,8 @@
       {
         "extension": ".compute",
         "files": 71,
-        "bytes": 647232,
-        "lines": 16173
+        "bytes": 649881,
+        "lines": 16273
       },
       {
         "extension": ".data",
@@ -1624,8 +1624,8 @@
       {
         "extension": ".asmdef",
         "files": 231,
-        "bytes": 140441,
-        "lines": 5137
+        "bytes": 140473,
+        "lines": 5138
       },
       {
         "extension": ".js",
@@ -1754,6 +1754,12 @@
         "lines": 0
       },
       {
+        "extension": ".tmp",
+        "files": 2,
+        "bytes": 21928,
+        "lines": 0
+      },
+      {
         "extension": ".controller",
         "files": 5,
         "bytes": 19606,
@@ -1781,6 +1787,12 @@
         "extension": ".php",
         "files": 1,
         "bytes": 10050,
+        "lines": 0
+      },
+      {
+        "extension": ".sha256",
+        "files": 89,
+        "bytes": 8991,
         "lines": 0
       },
       {
@@ -1823,12 +1835,6 @@
         "extension": ".gso",
         "files": 3,
         "bytes": 4564,
-        "lines": 0
-      },
-      {
-        "extension": ".sha256",
-        "files": 45,
-        "bytes": 4231,
         "lines": 0
       },
       {
@@ -1976,12 +1982,6 @@
         "lines": 0
       },
       {
-        "extension": ".tmp",
-        "files": 1,
-        "bytes": 0,
-        "lines": 0
-      },
-      {
         "extension": ".sgsubgraphdb",
         "files": 1,
         "bytes": 0,
@@ -1991,7 +1991,7 @@
     "root_counts": [
       {
         "label": "Assets",
-        "files": 28274
+        "files": 28289
       },
       {
         "label": ".codexbuild",
@@ -1999,7 +1999,7 @@
       },
       {
         "label": "Docs",
-        "files": 3376
+        "files": 3670
       },
       {
         "label": "Packages",
@@ -2038,12 +2038,12 @@
         "files": 79
       },
       {
-        "label": "ProjectSettings",
-        "files": 33
+        "label": "ModdingSDK",
+        "files": 39
       },
       {
-        "label": "ModdingSDK",
-        "files": 28
+        "label": "ProjectSettings",
+        "files": 33
       },
       {
         "label": ".agent",
@@ -2619,23 +2619,23 @@
     "doc_artifacts": [
       {
         "label": "Docs reports json",
-        "count": 1515
+        "count": 1567
       },
       {
         "label": "Docs reports md",
-        "count": 165
+        "count": 176
       },
       {
         "label": "Agent logs md",
-        "count": 224
+        "count": 236
       },
       {
         "label": "Agent logs json",
-        "count": 128
+        "count": 172
       },
       {
         "label": "Task status md",
-        "count": 92
+        "count": 98
       },
       {
         "label": "Architecture md",
@@ -2647,7 +2647,7 @@
       },
       {
         "label": "Editor tests cs",
-        "count": 52
+        "count": 57
       }
     ]
   },
@@ -3063,11 +3063,11 @@
       },
       {
         "period": "2026-05-28",
-        "commits": 55,
-        "insertions": 1159657,
-        "deletions": 26514,
-        "files_changed": 1964,
-        "churn": 1186171
+        "commits": 56,
+        "insertions": 1160048,
+        "deletions": 26578,
+        "files_changed": 1991,
+        "churn": 1186626
       }
     ],
     "weekly": [
@@ -3137,11 +3137,11 @@
       },
       {
         "period": "2026-W22",
-        "commits": 153,
-        "insertions": 18369359,
-        "deletions": 578413,
-        "files_changed": 12967,
-        "churn": 18947772
+        "commits": 154,
+        "insertions": 18369750,
+        "deletions": 578477,
+        "files_changed": 12994,
+        "churn": 18948227
       }
     ],
     "weekday_hour_commit_heatmap": [
@@ -3238,7 +3238,7 @@
         1,
         4,
         6,
-        19,
+        20,
         3,
         1,
         5,

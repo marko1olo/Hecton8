@@ -512,3 +512,46 @@ Verification:
 
 Cinematic Cheats used -> None; offline reporting only.
 Exact Microseconds saved -> 0 us game runtime. Reporting readability improved.
+
+## 2026-05-28 22:00 Europe/Samara - Live token stats refresh
+
+What was wrong:
+- The 15:05 token/dashboard artifacts were stale after additional active-agent JSONL writes.
+- The apex verifier used an old CPU sample and did not treat `cpu_total_percent > 50` as a Python compile-proof blocker.
+
+What was done:
+- Reran `Tools/CodexTokenUsageFastRefresh_20260528.py`.
+- Reran `Tools/ProjectMetricsDashboard_20260528.py`.
+- Updated `Tools/TokenUsageApexVerification_20260528.py` so compile proof is skipped when CPU is above 50 percent or compiler processes exist.
+- Wrote a fresh CPU sample to `Docs/Reports/TOKEN_USAGE_APEX_CPU_SAMPLE_2026-05-28.json`.
+- Reran `Tools/TokenUsageApexVerification_20260528.py`.
+
+Evidence:
+- Token total: `113,292,508,044`.
+- Delta tokens since actual same-day previous snapshot: `2,233,113,498`.
+- Tokens/hour: `278,065,144.81320393`.
+- GPT-5.5 base API-equivalent: `$88,114.163298`.
+- Chart count: `41`.
+- Long-range windows: `[7, 30, 60]`.
+- Long-range chart count: `12`.
+- Apex JSON SHA-256: `8caf43168aa85d931042985eeba23e85e650d1b4bcc7cd46fbb3ea29965e8320`.
+
+Verification:
+- JSON parser check passed for token report, dashboard, and apex report.
+- Chart path check: missing `0`.
+- PNG signature check: bad `0`.
+- Apex chart manifest exact match: `true`.
+- Apex static C# hot forbidden hits in owned tooling: `0`.
+- Apex SHA check: `true`.
+- Scoped `git diff --check`: no whitespace errors; Git warned only about LF->CRLF normalization on `Tools/TokenUsageApexVerification_20260528.py`.
+
+Compilation/resource throttling:
+- CPU sample: `2026-05-28T21:59:02.3315669+04:00`.
+- CPU: `96%`.
+- Compiler processes: `csc` PID `15916`, `dotnet` PID `67136`.
+- `py_compile`: skipped; evidence class downgraded to `STATIC_SOURCE_AND_STATIC_DOC_CPU_THROTTLE_NO_COMPILE`.
+- `dotnet build`: not invoked by TOKEN_USAGE_AUDIT.
+- Unity build/import/playmode: not invoked.
+
+Cinematic Cheats used -> None; offline telemetry/reporting only.
+Exact Microseconds saved -> 0 us game runtime. Audit freshness and proof boundary improved.

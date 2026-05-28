@@ -216,13 +216,21 @@ def command_log_stub():
     cpu_sample = None
     if CPU_SAMPLE_JSON.exists():
         cpu_sample = load_json(CPU_SAMPLE_JSON)
-    blocked = bool(cpu_sample and int(cpu_sample.get("dotnet_or_csc_process_count", 0) or 0) > 0)
+    dotnet_or_csc_count = int((cpu_sample or {}).get("dotnet_or_csc_process_count", 0) or 0)
+    cpu_total_percent = int((cpu_sample or {}).get("cpu_total_percent", 0) or 0)
+    blocked_reasons = []
+    if dotnet_or_csc_count > 0:
+        blocked_reasons.append("compiler_process_active")
+    if cpu_total_percent > 50:
+        blocked_reasons.append("cpu_above_50_percent")
+    blocked = bool(blocked_reasons)
     return {
         "dotnet_build_invoked_by_token_usage_audit": False,
         "unity_build_invoked_by_token_usage_audit": False,
         "final_compile_check": "SKIPPED_BLOCKED_BY_COMPILER_CONTENTION" if blocked else "python -m py_compile Tools/CodexTokenUsageAudit_20260525.py Tools/CodexTokenUsageFastRefresh_20260528.py Tools/ProjectMetricsDashboard_20260528.py Tools/TokenUsageApexVerification_20260528.py",
         "cpu_sample_before_final_compile": cpu_sample,
-        "throttling_interpretation": "No dotnet build or Unity build was invoked. Python bytecode compile is skipped if another compiler process remains active, to avoid ambiguous contention proof." if blocked else "Compilation throttling rule targets dotnet/csc/Unity. This pass used Python bytecode compile only after sampling CPU and dotnet/csc process state.",
+        "blocked_reasons": blocked_reasons,
+        "throttling_interpretation": "No dotnet build or Unity build was invoked. Python bytecode compile is skipped if CPU is above 50 percent or another compiler process remains active, to avoid ambiguous contention proof." if blocked else "Compilation throttling rule targets dotnet/csc/Unity. This pass used Python bytecode compile only after sampling CPU and dotnet/csc process state.",
     }
 
 
@@ -241,13 +249,20 @@ def build_report():
     delta = token_report["previous_snapshot_delta"]
     velocity = delta["velocity"]
 
+    command_log = command_log_stub()
+    evidence_class = (
+        "STATIC_SOURCE_AND_STATIC_DOC_CPU_THROTTLE_NO_COMPILE"
+        if str(command_log["final_compile_check"]).startswith("SKIPPED_")
+        else "STATIC_SOURCE_AND_STATIC_DOC_PLUS_PYTHON_BYTECODE_COMPILE"
+    )
+
     return {
         "schema": "hecton8.token_usage_apex_verification.v1",
         "generated_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
         "generated_at_samara": dt.datetime.now(SAMARA).isoformat(),
         "agent_id": "TOKEN_USAGE_AUDIT",
         "domain": "offline Codex token telemetry, pricing evidence, dashboards, and documentation artifacts",
-        "evidence_class": "STATIC_SOURCE_AND_STATIC_DOC_PLUS_PYTHON_BYTECODE_COMPILE",
+        "evidence_class": evidence_class,
         "mandates_consulted": MANDATES,
         "owned_runtime_csharp_files": [],
         "owned_executable_files": source_reports,
@@ -312,7 +327,7 @@ def build_report():
             "all_png_non_empty": all(item["bytes"] > 0 for item in charts),
             **chart_manifest,
         },
-        "compilation_resource_throttling": command_log_stub(),
+        "compilation_resource_throttling": command_log,
         "known_faults": [
             "No Unity Editor import, PlayMode, profiler, GCMonitor, player build, RenderDoc, or device capture was run by TOKEN_USAGE_AUDIT.",
             f"Full all-time token replay exceeded 20 minutes under live parallel-agent churn; {REPORT_DATE} report uses fast incremental evidence from the previous full snapshot plus post-cutoff JSONL deltas.",

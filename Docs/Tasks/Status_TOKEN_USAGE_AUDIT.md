@@ -136,3 +136,10 @@
 ## Long-Range Chart Polish 2026-05-28 15:05 Europe/Samara
 
 - [x] Task 94 - Add 7d/30d/60d labeled chart windows | Justification: extended `ProjectMetricsDashboard_20260528.py` from 96h-only hourly windows to explicit 7/30/60-day daily token, cost, I/O, and ratio charts with start/end/peak/min annotations where useful. Alternative rejected: telling the operator to infer month/two-month behavior from 96h plots or unlabeled daily charts. Microseconds saved: 0 audit-only.
+
+## Token Stats Refresh 2026-05-28 22:00 Europe/Samara
+
+- [x] Task 95 - Refresh live token snapshot | Justification: reran the fast JSONL delta generator against current local Codex telemetry and regenerated the archived dated token report plus stable ledger. Alternative rejected: reusing the 15:05 snapshot after more active-agent JSONL churn. Microseconds saved: 0 audit-only.
+- [x] Task 96 - Refresh dashboard and chart artifacts | Justification: regenerated the project metrics dashboard and 41 PNG charts from the new token JSON and current repo filesystem/git counters. Alternative rejected: leaving chart images tied to stale totals. Microseconds saved: 0 audit-only.
+- [x] Task 97 - Fix compile-throttle evidence boundary | Justification: updated the apex verifier so CPU load above 50 percent blocks Python bytecode-compile claims even when compiler processes are absent; current sample had CPU 96 percent and active csc/dotnet, so compile proof is honestly skipped. Alternative rejected: allowing stale CPU sample or false `py_compile` evidence text. Microseconds saved: 0 audit-only.
+- [x] Task 98 - Validate refreshed artifacts | Justification: parsed token/dashboard/apex JSON, checked 41 chart paths and PNG signatures, checked long-range chart count, verified apex SHA, and ran scoped diff whitespace check. Alternative rejected: committing generated stats without machine-readable integrity checks. Microseconds saved: 0 audit-only.
