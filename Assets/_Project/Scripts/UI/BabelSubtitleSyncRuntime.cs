@@ -475,7 +475,7 @@ namespace Hecton8.UI
             int bufferCapacity,
             uint flags = 0u)
         {
-            if (failureCode == UIOptimizationFailureCode.None || !EnsureInitialized())
+            if (failureCode == UIOptimizationFailureCode.None || !s_initialized || s_vault == null)
                 return;
 
             if (!TryAcquireUIOptimizationTelemetryWriteBuffer(out NativeArray<UIOptimizationTelemetryEntry> telemetry))

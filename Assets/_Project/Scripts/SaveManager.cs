@@ -1614,7 +1614,7 @@ namespace Hecton8.SaveSystem
                 _macroDatabaseService == null ||
                 !_macroDatabaseService.IsOpen ||
                 _dataVault == null ||
-                !_wfcOutpostGrid.IsCreated)
+                !IsWfcOutpostGridHandleCreated(in _wfcOutpostGridHandle))
             {
                 RefreshWfcOutpostDependencies();
             }

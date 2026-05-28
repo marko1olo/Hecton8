@@ -2,7 +2,7 @@
   "agentId": "1408",
   "role": "MAIN_THREAD_SYNCHRONOUS_JOB_BLOCKER_PURGER",
   "generatedLocalDate": "2026-05-28",
-  "status": "STATIC_PASS_WORLD_RUNTIME_SYNC_CLEAN_THREAT_FLOW_SNAPSHOT_REPAIRED_BUILD_BLOCKED_BY_CONTENTION",
+  "status": "STATIC_PASS_WORLD_RUNTIME_SYNC_CLEAN_THREAT_FLOW_GPR_STAGING_REPAIRED_BUILD_BLOCKED_BY_CONTENTION",
   "prompt": {
     "source": "Docs/Tasks/CURRENT_BATCH.md",
     "agentPromptId": "1408",
@@ -51,6 +51,11 @@
       "summary": "Copied live VegetationEcosystemThreatGrid DataVault views into TempJob snapshots before scheduling ThreatPropagationJob and BuildAbyssalFlowFieldJob; pending release now owns PreviousThreat and ThreatGridSnapshot."
     },
     {
+      "file": "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+      "lines": [36, 88, 630, 676, 711, 822, 884, 892, 916],
+      "summary": "Moved scheduled GPR raymarch writes out of live DataVault buffers into RadarPendingJob TempJob staging arrays; publish now happens after DispatcherJobFence.TryComplete through short TryAcquireWriteLock calls released in a finally block."
+    },
+    {
       "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
       "lines": [1865, 1882],
       "summary": "Extended threat and flow pending structs with NativeArray<float> snapshot ownership fields for cross-frame DataVault-safe job inputs."
@@ -67,8 +72,8 @@
     },
     {
       "file": "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs",
-      "lines": [16, 54, 63, 67, 78, 128, 138, 139, 148, 164],
-      "summary": "Extended static source-contract tests to cover VegetationNavGridSynchronizer, abyssal path deferred completion, A* threat snapshot ownership, threat/flow current threat grid snapshots, absence of ForceCompleteAbyssalPathDependency, and continuous GlobalQualityWeight budget use."
+      "lines": [16, 54, 63, 67, 78, 128, 138, 139, 148, 160, 175, 196],
+      "summary": "Extended static source-contract tests to cover VegetationNavGridSynchronizer, abyssal path deferred completion, A* threat snapshot ownership, threat/flow current threat grid snapshots, GPR staging/write-lock publish, absence of ForceCompleteAbyssalPathDependency, and continuous GlobalQualityWeight budget use."
     }
   ],
   "zeroGcHotPathAudit": {
@@ -139,6 +144,34 @@
         "toString": 0,
         "linqLikeCalls": 0,
         "foreach": 0
+      },
+      {
+        "method": "ScheduleRadarJob",
+        "newTokens": ["GroundRadarRaymarchJob", "NativeSlice<float3>", "NativeSlice<float>", "NativeSlice<float>", "NativeSlice<int>", "NativeSlice<float4>", "NativeSlice<int>", "NativeSlice<float>"],
+        "referenceTypeNewCount": 0,
+        "valueTypeNewCount": 8,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      },
+      {
+        "method": "TryCopyCurrentGprStateToPending",
+        "referenceTypeNewCount": 0,
+        "valueTypeNewCount": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      },
+      {
+        "method": "TryPublishRadarPendingJob",
+        "referenceTypeNewCount": 0,
+        "valueTypeNewCount": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
       }
     ]
   },
@@ -148,24 +181,34 @@
       "BufferID.VegetationAbyssalPathSnapshot",
       "BufferID.VegetationEcosystemThreatGrid",
       "BufferID.VegetationEcosystemThreatVoxel",
-      "BufferID.AbyssalPathTelemetryRing"
+      "BufferID.AbyssalPathTelemetryRing",
+      "BufferID.GroundRadarHits",
+      "BufferID.GroundRadarSignalStrength",
+      "BufferID.GroundRadarAgeSeconds",
+      "BufferID.GroundRadarOreTypes",
+      "BufferID.GroundRadarPingGpu",
+      "BufferID.GroundRadarCounters",
+      "BufferID.GroundRadarMaxSignalStrength"
     ],
     "writeLockChecks": [
       "Assets/_Project/Scripts/World/VegetationMemorySovereigntyRuntime.cs:302 TryAcquireWriteLock in TryAcquireVegetationMemoryBuffer",
       "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:1967 TryAcquireVegetationMemoryBuffer for BufferID.VegetationAbyssalPathSnapshot",
-      "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:2110 TryAcquireWriteLock for AbyssalPathTelemetryRing"
+      "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:2110 TryAcquireWriteLock for AbyssalPathTelemetryRing",
+      "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:727-745 TryAcquireWriteLock for all GPR publish buffers"
     ],
     "finallyReleases": [
       "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:2000-2003 pathVault.ReleaseWriteLock in finally",
       "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:2144-2146 telemetry vault ReleaseWriteLock in finally",
-      "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:1930-1933 ReleaseAbyssalPathPendingJob in CompleteAbyssalPathJob finally"
+      "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:1930-1933 ReleaseAbyssalPathPendingJob in CompleteAbyssalPathJob finally",
+      "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:759-773 ReleaseWriteLock for every acquired GPR publish buffer in finally",
+      "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:889-893 UnlockSdfSnapshotBuffer and ReleaseRadarPendingJob in CompleteRadarJob finally"
     ],
-    "jobLifetimeProtection": "Threat propagation now reads a copied TempJob PreviousThreat snapshot. Flow-field solving now reads a copied TempJob ThreatGridSnapshot. Abyssal A* now reads copied TempJob snapshots for ecosystem threat grid and threat voxels. Abyssal smoothing reads copied TempJob snapshots for nav passability and ecosystem threat voxels. Optional smoothing overlay snapshot failures degrade to default inputs instead of force-completing the in-flight pathSourceHandle."
+    "jobLifetimeProtection": "Threat propagation now reads a copied TempJob PreviousThreat snapshot. Flow-field solving now reads a copied TempJob ThreatGridSnapshot. Abyssal A* now reads copied TempJob snapshots for ecosystem threat grid and threat voxels. Abyssal smoothing reads copied TempJob snapshots for nav passability and ecosystem threat voxels. GPR raymarch reads/writes RadarPendingJob TempJob staging arrays instead of live DataVault views, then publishes under short write locks after dispatcher completion. Optional smoothing overlay snapshot failures degrade to default inputs instead of force-completing the in-flight pathSourceHandle."
   },
   "structLayoutProof": {
     "addedStructLayoutOrFieldOffsetTokens": 0,
     "modifiedExplicitLayoutDtoCount": 0,
-    "newPendingStruct": "AbyssalPathPendingJob is a private pending-state carrier, not a GlobalDataVault DTO, not a NativeArray element, and not a Burst job payload. No ARM64 explicit layout contract was changed."
+    "newPendingStruct": "AbyssalPathPendingJob and RadarPendingJob are private pending-state carriers, not GlobalDataVault DTOs, not NativeArray element layouts, and not Burst job payload layouts. No ARM64 explicit layout contract was changed."
   },
   "scalabilityAndCinematicCheat": {
     "globalQualityWeightLine": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:576 HomeostasisBrain.GlobalQualityWeight",
@@ -175,22 +218,21 @@
       "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:580-592 lerp/smoothstep quality budget"
     ],
     "binaryLowHighSwitchMatches": 0,
-    "cheatProtocol": "Abyssal path smoothing stays a bounded StringPull/DDA visual-navigation approximation. It does not add physical fluid simulation or gameplay truth ownership."
+    "gprContinuousBudgetLines": [
+      "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:1065 HomeostasisBrain.GlobalQualityWeight",
+      "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs:1070-1083 SelectRayCount and SelectRaymarchStepCount lerp/smoothstep budgets"
+    ],
+    "cheatProtocol": "Abyssal path smoothing stays a bounded StringPull/DDA visual-navigation approximation. GPR remains a bounded visual/sonar raymarch fake over ore/SDF snapshots, not physical acoustic propagation. Neither change adds gameplay truth ownership."
   },
   "compilationResourceThrottling": {
     "dotnetBuildInvocationsThisRecheck": 0,
-    "finalPreflightCpuCounterPercent": 100,
-    "finalPreflightCpuCimPercent": 100,
+    "finalPreflightCpuCounterPercent": 40,
+    "finalPreflightCpuCimPercent": 40,
     "activeCompilerOrDotnetProcesses": [
       {
-        "processName": "csc",
-        "pid": 8756,
-        "cpuSeconds": 5.640625
-      },
-      {
         "processName": "dotnet",
-        "pid": 55080,
-        "cpuSeconds": 524.09375
+        "pid": 52972,
+        "cpuSeconds": 7.6875
       }
     ],
     "buildStatus": "NOT_LAUNCHED_BLOCKED_BY_CONTENTION"
@@ -199,7 +241,8 @@
     "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs": "BBFB5B4533AD8FC489B5F020F35C7C8F5DACAED4D46ED383B8D4F7B34C1BD6C2",
     "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs": "46BC451FBA753FFEC07213CFE75116C94F112731CD85D97372EE8FCA5A6E00F2",
     "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs": "C4A21741B3B96160DD17340B5DDE9676DD566556655D21E7DD208B423139DFE1",
-    "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs": "5C7D56DA9222C8E68B4832D0C97783A7237B2680DBF9E43912F9C2683811C758"
+    "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs": "264A5F22B3A87A8FD48B2AB44556B8602DF3FBF0A8EA15F1661EF48578D24A74",
+    "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs": "0D569A043CE425CF6666703682E5685F5092D484DFC0ACE48B816C25646F97B7"
   },
   "residualRisk": {
     "compileVerified": false,
