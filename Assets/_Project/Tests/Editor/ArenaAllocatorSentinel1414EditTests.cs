@@ -78,6 +78,25 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void GlobalDataVault_SparseBufferIdGenerationSurvivesRelease()
+        {
+            string vault = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs");
+            string initialize = ExtractMethod(vault, "public void Initialize");
+            string addMetadata = ExtractMethod(vault, "private bool TryAddMetadata");
+            string writeMetadata = ExtractMethod(vault, "private void WriteMetadata");
+            string removeMetadata = ExtractMethod(vault, "private void RemoveMetadata");
+            string resolveInitial = ExtractMethod(vault, "private uint ResolveInitialGenerationForAllocation");
+            string readGeneration = ExtractMethod(vault, "private uint ReadMetadataGeneration");
+
+            StringAssert.Contains("_metadataGenerationByBufferId = new UnsafeHashMap<int, uint>", initialize);
+            StringAssert.Contains("WriteMetadataGeneration(key, stored.Version)", addMetadata);
+            StringAssert.Contains("WriteMetadataGeneration(key, stored.Version)", writeMetadata);
+            StringAssert.Contains("WriteMetadataGeneration(key, tombstoneGeneration)", removeMetadata);
+            StringAssert.Contains("ReadMetadataGeneration(key)", resolveInitial);
+            StringAssert.Contains("_metadataGenerationByBufferId.TryGetValue(key, out uint generation)", readGeneration);
+        }
+
+        [Test]
         public void GlobalDataVault_DeferredGrowthChecksBurstLocksOnce()
         {
             string vault = ReadProjectFile("Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs");

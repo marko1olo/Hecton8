@@ -3686,8 +3686,10 @@ namespace Hecton8.Core.Memory
             if (!_metadataGenerationByBufferId.IsCreated || key == 0 || generation == 0u)
                 return;
 
-            if (!_metadataGenerationByBufferId.TryAdd(key, generation))
+            if (_metadataGenerationByBufferId.TryGetValue(key, out _))
                 _metadataGenerationByBufferId[key] = generation;
+            else
+                _metadataGenerationByBufferId.TryAdd(key, generation);
         }
 
         private void ClearFlatMetadata(int key, uint tombstoneGeneration)

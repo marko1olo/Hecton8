@@ -1,0 +1,564 @@
+﻿{
+    "agentId":  "1407",
+    "generatedAt":  "2026-05-28T05:51:28.2584616+04:00",
+    "shaderStereoContext":  [
+                                {
+                                    "path":  "Assets/_Project/Art/Shaders/Hidden_Hecton_VRBrownout.shader",
+                                    "line":  100,
+                                    "argument":  "input",
+                                    "fragmentSignature":  "half4 Frag(Varyings input) : SV_Target",
+                                    "argumentMatchesFragmentParameter":  true
+                                },
+                                {
+                                    "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader",
+                                    "line":  212,
+                                    "argument":  "input",
+                                    "fragmentSignature":  "half4 frag(Varyings input) : SV_Target",
+                                    "argumentMatchesFragmentParameter":  true
+                                },
+                                {
+                                    "path":  "Assets/_Project/Shaders/UI/Hecton_DiegeticPanelDepthFade.shader",
+                                    "line":  149,
+                                    "argument":  "input",
+                                    "fragmentSignature":  "half4 Frag(Varyings input) : SV_Target",
+                                    "argumentMatchesFragmentParameter":  true
+                                },
+                                {
+                                    "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticTerminal.shader",
+                                    "line":  261,
+                                    "argument":  "input",
+                                    "fragmentSignature":  "half4 Frag(Varyings input) : SV_Target",
+                                    "argumentMatchesFragmentParameter":  true
+                                },
+                                {
+                                    "path":  "Assets/_Project/Shaders/UI/Hecton_DiegeticVisorCurvedHUD.shader",
+                                    "line":  201,
+                                    "argument":  "input",
+                                    "fragmentSignature":  "half4 Frag(Varyings input) : SV_Target",
+                                    "argumentMatchesFragmentParameter":  true
+                                },
+                                {
+                                    "path":  "Assets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader",
+                                    "line":  142,
+                                    "argument":  "input",
+                                    "fragmentSignature":  "half4 frag(Varyings input) : SV_Target",
+                                    "argumentMatchesFragmentParameter":  true
+                                },
+                                {
+                                    "path":  "Assets/_Project/Art/Shaders/Hecton_HUD_DiegeticProjectionUnlit.shader",
+                                    "line":  179,
+                                    "argument":  "input",
+                                    "fragmentSignature":  "half4 Frag(Varyings input) : SV_Target",
+                                    "argumentMatchesFragmentParameter":  true
+                                },
+                                {
+                                    "path":  "Assets/_Project/Art/Shaders/Hecton_TerminalTextureArrayPanel.shader",
+                                    "line":  131,
+                                    "argument":  "input",
+                                    "fragmentSignature":  "half4 Frag(Varyings input) : SV_Target",
+                                    "argumentMatchesFragmentParameter":  true
+                                },
+                                {
+                                    "path":  "Assets/_Project/Art/Shaders/Hecton_PdaScreen.shader",
+                                    "line":  184,
+                                    "argument":  "input",
+                                    "fragmentSignature":  "float4 Frag(Varyings input) : SV_Target",
+                                    "argumentMatchesFragmentParameter":  true
+                                },
+                                {
+                                    "path":  "Assets/_Project/Art/Shaders/Hecton_WristHudSDF.shader",
+                                    "line":  221,
+                                    "argument":  "input",
+                                    "fragmentSignature":  "half4 Frag(Varyings input) : SV_Target",
+                                    "argumentMatchesFragmentParameter":  true
+                                },
+                                {
+                                    "path":  "Assets/_Project/Art/Shaders/Hecton_PDA_SonarPointCloud.shader",
+                                    "line":  172,
+                                    "argument":  "input",
+                                    "fragmentSignature":  "half4 frag(Varyings input) : SV_Target",
+                                    "argumentMatchesFragmentParameter":  true
+                                },
+                                {
+                                    "path":  "Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader",
+                                    "line":  229,
+                                    "argument":  "input",
+                                    "fragmentSignature":  "half4 frag(Varyings input) : SV_Target",
+                                    "argumentMatchesFragmentParameter":  true
+                                },
+                                {
+                                    "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipGlyph.shader",
+                                    "line":  129,
+                                    "argument":  "input",
+                                    "fragmentSignature":  "half4 Frag(Varyings input) : SV_Target",
+                                    "argumentMatchesFragmentParameter":  true
+                                },
+                                {
+                                    "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipIndirect.shader",
+                                    "line":  148,
+                                    "argument":  "input",
+                                    "fragmentSignature":  "half4 Frag(Varyings input) : SV_Target",
+                                    "argumentMatchesFragmentParameter":  true
+                                },
+                                {
+                                    "path":  "Assets/_Project/Art/Shaders/Hecton_UI_CompassRibbon.shader",
+                                    "line":  146,
+                                    "argument":  "input",
+                                    "fragmentSignature":  "half4 frag(Varyings input) : SV_Target",
+                                    "argumentMatchesFragmentParameter":  true
+                                },
+                                {
+                                    "path":  "Assets/_Project/Art/Shaders/Hecton_PDA_SonarMap.shader",
+                                    "line":  193,
+                                    "argument":  "i",
+                                    "fragmentSignature":  "half4 frag(v2f i) : SV_Target",
+                                    "argumentMatchesFragmentParameter":  true
+                                },
+                                {
+                                    "path":  "Assets/_Project/Art/Shaders/Hecton_PDA_FrequencyTuningWave.shader",
+                                    "line":  147,
+                                    "argument":  "input",
+                                    "fragmentSignature":  "half4 Frag(Varyings input) : SV_Target",
+                                    "argumentMatchesFragmentParameter":  true
+                                },
+                                {
+                                    "path":  "Assets/_Project/Art/Shaders/Hecton_SubmarineSonarHoloMapStencil.shader",
+                                    "line":  149,
+                                    "argument":  "input",
+                                    "fragmentSignature":  "half4 Frag(Varyings input) : SV_Target",
+                                    "argumentMatchesFragmentParameter":  true
+                                }
+                            ],
+    "shaderBalance":  [
+                          {
+                              "path":  "Assets/_Project/Art/Shaders/Hidden_Hecton_VRBrownout.shader",
+                              "bracesOpen":  18,
+                              "bracesClose":  18,
+                              "bracesBalanced":  true,
+                              "parenOpen":  145,
+                              "parenClose":  145,
+                              "parensBalanced":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader",
+                              "bracesOpen":  27,
+                              "bracesClose":  27,
+                              "bracesBalanced":  true,
+                              "parenOpen":  228,
+                              "parenClose":  228,
+                              "parensBalanced":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Shaders/UI/Hecton_DiegeticPanelDepthFade.shader",
+                              "bracesOpen":  17,
+                              "bracesClose":  17,
+                              "bracesBalanced":  true,
+                              "parenOpen":  100,
+                              "parenClose":  100,
+                              "parensBalanced":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticTerminal.shader",
+                              "bracesOpen":  26,
+                              "bracesClose":  26,
+                              "bracesBalanced":  true,
+                              "parenOpen":  190,
+                              "parenClose":  190,
+                              "parensBalanced":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Shaders/UI/Hecton_DiegeticVisorCurvedHUD.shader",
+                              "bracesOpen":  23,
+                              "bracesClose":  23,
+                              "bracesBalanced":  true,
+                              "parenOpen":  153,
+                              "parenClose":  153,
+                              "parensBalanced":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader",
+                              "bracesOpen":  18,
+                              "bracesClose":  18,
+                              "bracesBalanced":  true,
+                              "parenOpen":  137,
+                              "parenClose":  137,
+                              "parensBalanced":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Art/Shaders/Hecton_HUD_DiegeticProjectionUnlit.shader",
+                              "bracesOpen":  22,
+                              "bracesClose":  22,
+                              "bracesBalanced":  true,
+                              "parenOpen":  135,
+                              "parenClose":  135,
+                              "parensBalanced":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Art/Shaders/Hecton_TerminalTextureArrayPanel.shader",
+                              "bracesOpen":  15,
+                              "bracesClose":  15,
+                              "bracesBalanced":  true,
+                              "parenOpen":  67,
+                              "parenClose":  67,
+                              "parensBalanced":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Art/Shaders/Hecton_PdaScreen.shader",
+                              "bracesOpen":  22,
+                              "bracesClose":  22,
+                              "bracesBalanced":  true,
+                              "parenOpen":  189,
+                              "parenClose":  189,
+                              "parensBalanced":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Art/Shaders/Hecton_WristHudSDF.shader",
+                              "bracesOpen":  28,
+                              "bracesClose":  28,
+                              "bracesBalanced":  true,
+                              "parenOpen":  138,
+                              "parenClose":  138,
+                              "parensBalanced":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Art/Shaders/Hecton_PDA_SonarPointCloud.shader",
+                              "bracesOpen":  15,
+                              "bracesClose":  15,
+                              "bracesBalanced":  true,
+                              "parenOpen":  132,
+                              "parenClose":  132,
+                              "parensBalanced":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader",
+                              "bracesOpen":  23,
+                              "bracesClose":  23,
+                              "bracesBalanced":  true,
+                              "parenOpen":  205,
+                              "parenClose":  205,
+                              "parensBalanced":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipGlyph.shader",
+                              "bracesOpen":  13,
+                              "bracesClose":  13,
+                              "bracesBalanced":  true,
+                              "parenOpen":  76,
+                              "parenClose":  76,
+                              "parensBalanced":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipIndirect.shader",
+                              "bracesOpen":  16,
+                              "bracesClose":  16,
+                              "bracesBalanced":  true,
+                              "parenOpen":  79,
+                              "parenClose":  79,
+                              "parensBalanced":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Art/Shaders/Hecton_UI_CompassRibbon.shader",
+                              "bracesOpen":  17,
+                              "bracesClose":  17,
+                              "bracesBalanced":  true,
+                              "parenOpen":  129,
+                              "parenClose":  129,
+                              "parensBalanced":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Art/Shaders/Hecton_PDA_SonarMap.shader",
+                              "bracesOpen":  25,
+                              "bracesClose":  25,
+                              "bracesBalanced":  true,
+                              "parenOpen":  190,
+                              "parenClose":  190,
+                              "parensBalanced":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Art/Shaders/Hecton_PDA_FrequencyTuningWave.shader",
+                              "bracesOpen":  13,
+                              "bracesClose":  13,
+                              "bracesBalanced":  true,
+                              "parenOpen":  96,
+                              "parenClose":  96,
+                              "parensBalanced":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Art/Shaders/Hecton_SubmarineSonarHoloMapStencil.shader",
+                              "bracesOpen":  17,
+                              "bracesClose":  17,
+                              "bracesBalanced":  true,
+                              "parenOpen":  93,
+                              "parenClose":  93,
+                              "parensBalanced":  true
+                          }
+                      ],
+    "shaderQualityLines":  [
+                               {
+                                   "path":  "Assets/_Project/Art/Shaders/Hidden_Hecton_VRBrownout.shader",
+                                   "qualityDecls":  1,
+                                   "ditherFloorLines":  1,
+                                   "ditherCeilingLines":  1,
+                                   "oldFixedDitherLines":  0,
+                                   "sha256":  "90F12CD6E9D663B452643F64503FDDD66327920502D54DC401CDFAD2C42D9C26"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader",
+                                   "qualityDecls":  1,
+                                   "ditherFloorLines":  1,
+                                   "ditherCeilingLines":  1,
+                                   "oldFixedDitherLines":  0,
+                                   "sha256":  "DB394EE83DCAE843B6A07F1B5F2D38083E9EF42B9CDD35119E6F2AF8D4CBB1CA"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Shaders/UI/Hecton_DiegeticPanelDepthFade.shader",
+                                   "qualityDecls":  1,
+                                   "ditherFloorLines":  1,
+                                   "ditherCeilingLines":  1,
+                                   "oldFixedDitherLines":  0,
+                                   "sha256":  "F5EB7C9CEFDFC053310252930FEC16B3DEDBBF568F83A2CF7A5671754002F4F6"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticTerminal.shader",
+                                   "qualityDecls":  1,
+                                   "ditherFloorLines":  1,
+                                   "ditherCeilingLines":  1,
+                                   "oldFixedDitherLines":  0,
+                                   "sha256":  "578EB164CA80F5F19FC5D948AC3DF2208F1820AE99AFF2E733382CD3629BB607"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Shaders/UI/Hecton_DiegeticVisorCurvedHUD.shader",
+                                   "qualityDecls":  1,
+                                   "ditherFloorLines":  1,
+                                   "ditherCeilingLines":  1,
+                                   "oldFixedDitherLines":  0,
+                                   "sha256":  "9489636C73E3BCB4A4296C5A295AD91BA3DCE6145B24ECDBAEEA459A95BBD888"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader",
+                                   "qualityDecls":  1,
+                                   "ditherFloorLines":  1,
+                                   "ditherCeilingLines":  1,
+                                   "oldFixedDitherLines":  0,
+                                   "sha256":  "DF531E60A2F4FD450C467FE8C92BADA671D57EC11C789B697EF4A68C289301D4"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Art/Shaders/Hecton_HUD_DiegeticProjectionUnlit.shader",
+                                   "qualityDecls":  1,
+                                   "ditherFloorLines":  1,
+                                   "ditherCeilingLines":  1,
+                                   "oldFixedDitherLines":  0,
+                                   "sha256":  "7933BF7DEB6610E0185A675EAB10E78415B90E93407A7B8979B416B2624B7C16"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Art/Shaders/Hecton_TerminalTextureArrayPanel.shader",
+                                   "qualityDecls":  1,
+                                   "ditherFloorLines":  1,
+                                   "ditherCeilingLines":  1,
+                                   "oldFixedDitherLines":  0,
+                                   "sha256":  "D913CD40ECE6581436113AAE3CBBCC8C33B7323D8EE0D21EDE641EF59D5C75A4"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Art/Shaders/Hecton_PdaScreen.shader",
+                                   "qualityDecls":  1,
+                                   "ditherFloorLines":  1,
+                                   "ditherCeilingLines":  1,
+                                   "oldFixedDitherLines":  0,
+                                   "sha256":  "BF0827A4B77E10F2BFE0E4B6ED7D4367C9245A2A87DAC3731A3486B80AB00627"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Art/Shaders/Hecton_WristHudSDF.shader",
+                                   "qualityDecls":  1,
+                                   "ditherFloorLines":  1,
+                                   "ditherCeilingLines":  1,
+                                   "oldFixedDitherLines":  0,
+                                   "sha256":  "66CC928CE8A25E02974EB18C91D1855044CFC0A2B9385E9E6B0668197466150B"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Art/Shaders/Hecton_PDA_SonarPointCloud.shader",
+                                   "qualityDecls":  1,
+                                   "ditherFloorLines":  1,
+                                   "ditherCeilingLines":  1,
+                                   "oldFixedDitherLines":  0,
+                                   "sha256":  "7C05BD705BBA8D1FB76889590B8D5DC1BA426DD67FAFD390D98FCBA507949E8F"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader",
+                                   "qualityDecls":  1,
+                                   "ditherFloorLines":  1,
+                                   "ditherCeilingLines":  1,
+                                   "oldFixedDitherLines":  0,
+                                   "sha256":  "7D91EF308859B2E7BA29B76B82EA758F942BA32C18C02671DDE7C504270CC213"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipGlyph.shader",
+                                   "qualityDecls":  1,
+                                   "ditherFloorLines":  1,
+                                   "ditherCeilingLines":  1,
+                                   "oldFixedDitherLines":  0,
+                                   "sha256":  "C3571893EF1A597032DC007D8FA5206E0D50017813CA755D867691FE22FA98EC"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipIndirect.shader",
+                                   "qualityDecls":  1,
+                                   "ditherFloorLines":  1,
+                                   "ditherCeilingLines":  1,
+                                   "oldFixedDitherLines":  0,
+                                   "sha256":  "E43CBDA626C90EDD87FADE234F2D091DBDA6E886CC1DD6043CC958BA601F4F22"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Art/Shaders/Hecton_UI_CompassRibbon.shader",
+                                   "qualityDecls":  1,
+                                   "ditherFloorLines":  1,
+                                   "ditherCeilingLines":  1,
+                                   "oldFixedDitherLines":  0,
+                                   "sha256":  "C0C50FBDBDF4A68CF730C4D05C26511136D227F5EAE968BCD653EA0241CCFA43"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Art/Shaders/Hecton_PDA_SonarMap.shader",
+                                   "qualityDecls":  1,
+                                   "ditherFloorLines":  1,
+                                   "ditherCeilingLines":  1,
+                                   "oldFixedDitherLines":  0,
+                                   "sha256":  "958F509F1594734699E789B851F1C83B18D363427CFBF5AA07617BC8ACE163BA"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Art/Shaders/Hecton_PDA_FrequencyTuningWave.shader",
+                                   "qualityDecls":  1,
+                                   "ditherFloorLines":  1,
+                                   "ditherCeilingLines":  1,
+                                   "oldFixedDitherLines":  0,
+                                   "sha256":  "7F1BAE0ABE74A9403CDC914DFAA12D83D806F066503771543EDF561D7309BA6E"
+                               },
+                               {
+                                   "path":  "Assets/_Project/Art/Shaders/Hecton_SubmarineSonarHoloMapStencil.shader",
+                                   "qualityDecls":  1,
+                                   "ditherFloorLines":  1,
+                                   "ditherCeilingLines":  1,
+                                   "oldFixedDitherLines":  0,
+                                   "sha256":  "E48C6966A758E2C1339E6ADD8E03B0D29888652366F7CB912D51805EEEC3299D"
+                               }
+                           ],
+    "rendererProof":  [
+                          {
+                              "path":  "Assets/_Project/Data/Mobile_Renderer.asset",
+                              "sha256":  "77772AFEA02FCE5DF2B7DB44833B829393473A51A5E571D45AFCB364C62B7E2D",
+                              "brownoutNameCount":  1,
+                              "brownoutScriptGuidCount":  1,
+                              "brownoutActive":  true,
+                              "featureCount":  13,
+                              "brownoutIndex1Based":  13,
+                              "brownoutIsLast":  true,
+                              "mapLength":  208,
+                              "expectedMapLength":  208,
+                              "rendererFeatureMapMatchesList":  true,
+                              "afterAllKnownLateOverlays":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Data/Quest_VR_Renderer.asset",
+                              "sha256":  "CE8AAE6512EF1CBC3162872754B835406DDE43C5943FB8591141003AA8482668",
+                              "brownoutNameCount":  1,
+                              "brownoutScriptGuidCount":  1,
+                              "brownoutActive":  true,
+                              "featureCount":  13,
+                              "brownoutIndex1Based":  13,
+                              "brownoutIsLast":  true,
+                              "mapLength":  208,
+                              "expectedMapLength":  208,
+                              "rendererFeatureMapMatchesList":  true,
+                              "afterAllKnownLateOverlays":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Data/PC_Renderer.asset",
+                              "sha256":  "7D1A3389C38E183208D8B8F66257A4F1F0201ECC8B09A26C1685F2A019783F05",
+                              "brownoutNameCount":  1,
+                              "brownoutScriptGuidCount":  1,
+                              "brownoutActive":  true,
+                              "featureCount":  17,
+                              "brownoutIndex1Based":  17,
+                              "brownoutIsLast":  true,
+                              "mapLength":  272,
+                              "expectedMapLength":  272,
+                              "rendererFeatureMapMatchesList":  true,
+                              "afterAllKnownLateOverlays":  true
+                          },
+                          {
+                              "path":  "Assets/_Project/Data/PC_High_Renderer.asset",
+                              "sha256":  "748A0C2EBE98E842A321D16AC6F9FC33E38C5DAF3AC92494614C7E5CF76E83BC",
+                              "brownoutNameCount":  1,
+                              "brownoutScriptGuidCount":  1,
+                              "brownoutActive":  true,
+                              "featureCount":  16,
+                              "brownoutIndex1Based":  16,
+                              "brownoutIsLast":  true,
+                              "mapLength":  256,
+                              "expectedMapLength":  256,
+                              "rendererFeatureMapMatchesList":  true,
+                              "afterAllKnownLateOverlays":  true
+                          }
+                      ],
+    "runtimeForbiddenTokenScan":  {
+                                      "tryGetLatestCreated":  0,
+                                      "globalDataVault":  0,
+                                      "tryAcquireWriteLock":  0,
+                                      "releaseWriteLock":  0,
+                                      "nativeArrayPersistent":  0,
+                                      "foreach":  0,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0
+                                  },
+    "jsonProof":  [
+                      {
+                          "path":  "Docs/Reports/APEX_FINAL_VERIFICATION_1407.json",
+                          "jsonValid":  true,
+                          "sha256":  "AC465BF33B378206155AD6A842547485C573EA43C4901A14E21197169D50A10A",
+                          "sidecar":  "AC465BF33B378206155AD6A842547485C573EA43C4901A14E21197169D50A10A",
+                          "sidecarMatches":  true
+                      },
+                      {
+                          "path":  "Docs/Reports/APEX_ZERO_GC_SCAN_1407.json",
+                          "jsonValid":  true,
+                          "sha256":  "A6B714E4C8825C0EED7D26BF6D13EDD22C2BAF0B98DD79B4A95539AE6ADA31EB",
+                          "sidecar":  "A6B714E4C8825C0EED7D26BF6D13EDD22C2BAF0B98DD79B4A95539AE6ADA31EB",
+                          "sidecarMatches":  true
+                      },
+                      {
+                          "path":  "Docs/Reports/UNIVERSAL_COMFORT_INTEGRATION_REPORT_1407.json",
+                          "jsonValid":  true,
+                          "sha256":  "AC465BF33B378206155AD6A842547485C573EA43C4901A14E21197169D50A10A",
+                          "sidecar":  "AC465BF33B378206155AD6A842547485C573EA43C4901A14E21197169D50A10A",
+                          "sidecarMatches":  true
+                      }
+                  ],
+    "buildPreflight":  {
+                           "agentId":  "1407",
+                           "sampledAt":  "2026-05-28T05:51:28.2584616+04:00",
+                           "cpuLoadPercent":  94,
+                           "compilerProcesses":  [
+                                                     {
+                                                         "Id":  12816,
+                                                         "ProcessName":  "csc",
+                                                         "CPU":  1.9375,
+                                                         "StartTime":  "\/Date(1779933088266)\/"
+                                                     },
+                                                     {
+                                                         "Id":  10056,
+                                                         "ProcessName":  "dotnet",
+                                                         "CPU":  47.796875,
+                                                         "StartTime":  "\/Date(1779933051392)\/"
+                                                     }
+                                                 ],
+                           "buildInvoked":  false,
+                           "buildExitCode":  null,
+                           "reason":  "Gate closed: CPU \u003e50 percent or compiler process active; dotnet build not invoked."
+                       },
+    "aggregate":  {
+                      "stereoBad":  0,
+                      "shaderBalanceBad":  0,
+                      "shaderQualityBad":  0,
+                      "rendererBad":  0,
+                      "jsonBad":  0,
+                      "runtimeForbiddenTokenTotal":  0
+                  }
+}

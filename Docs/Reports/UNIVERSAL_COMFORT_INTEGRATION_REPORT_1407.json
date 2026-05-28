@@ -3,7 +3,7 @@
     "role":  "UNIVERSAL_OPENXR_COMFORT_AND_TUNNELING_SHADER_INTEGRATOR",
     "domain":  "Echelon 8 Presentation and UX / VR Somatic Comfort / Diegetic Terminals",
     "taskCount":  20,
-    "generatedAt":  "2026-05-28T05:45:01.5873431+04:00",
+    "generatedAt":  "2026-05-28T05:51:30.8904394+04:00",
     "promptExtraction":  {
                              "path":  "Docs/AgentLogs/Prompt_1407_EXTRACTED.md",
                              "chars":  20052,
@@ -998,25 +998,19 @@
                               },
     "buildGate":  {
                       "dotnetBuildInvoked":  false,
-                      "finalPreflightCpuLoadPercent":  82,
+                      "finalPreflightCpuLoadPercent":  94,
                       "finalPreflightCompilerProcesses":  [
                                                               {
-                                                                  "Id":  36844,
+                                                                  "Id":  12816,
                                                                   "ProcessName":  "csc",
-                                                                  "CPU":  2.109375,
-                                                                  "StartTime":  "\/Date(1779932673868)\/"
+                                                                  "CPU":  1.9375,
+                                                                  "StartTime":  "\/Date(1779933088266)\/"
                                                               },
                                                               {
-                                                                  "Id":  32028,
+                                                                  "Id":  10056,
                                                                   "ProcessName":  "dotnet",
-                                                                  "CPU":  173.359375,
-                                                                  "StartTime":  "\/Date(1779932497116)\/"
-                                                              },
-                                                              {
-                                                                  "Id":  33780,
-                                                                  "ProcessName":  "dotnet",
-                                                                  "CPU":  31.234375,
-                                                                  "StartTime":  "\/Date(1779932647076)\/"
+                                                                  "CPU":  47.796875,
+                                                                  "StartTime":  "\/Date(1779933051392)\/"
                                                               }
                                                           ],
                       "buildAllowedByGate":  false,
@@ -1025,7 +1019,7 @@
                                             "hecton8SlnExists":  false,
                                             "solutionFile":  "Hecton8.slnx"
                                         },
-                      "reason":  "Final build preflight artifact Docs/AgentLogs/Build_1407_FinalPreflight.json: CPU 82 percent with active csc/dotnet processes; dotnet build not invoked."
+                      "reason":  "Gate closed: CPU \u003e50 percent or compiler process active; dotnet build not invoked."
                   },
     "latentRisks":  [
                         {
@@ -1135,5 +1129,17 @@
                        "sha256":  "CCF6248154A8B07970E1BB514DFE7D60A5DD57B6CC31F7E8D0495572B34119A5"
                    }
                ],
-    "finalBuildPreflightArtifact":  "Docs/AgentLogs/Build_1407_FinalPreflight.json"
+    "finalBuildPreflightArtifact":  "Docs/AgentLogs/Build_1407_FinalPreflight.json",
+    "latestDomainRecheck":  {
+                                "path":  "Docs/Reports/APEX_DOMAIN_RECHECK_1407.json",
+                                "sha256":  "19E1FBCE981B70301825D21FEB8D17AADCAA09E47B7713BEAF1F888C475DB067",
+                                "aggregate":  {
+                                                  "stereoBad":  0,
+                                                  "shaderBalanceBad":  0,
+                                                  "shaderQualityBad":  0,
+                                                  "rendererBad":  0,
+                                                  "jsonBad":  0,
+                                                  "runtimeForbiddenTokenTotal":  0
+                                              }
+                            }
 }

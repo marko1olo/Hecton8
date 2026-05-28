@@ -2,7 +2,7 @@
     "agent":  "1405",
     "role":  "MOBILE_GPU_COMPUTE_SHADER_THREAD_GROUP_SIZER",
     "status":  "PENDING VERIFICATION",
-    "generatedUtc":  "2026-05-28T01:33:28.0578841Z",
+    "generatedUtc":  "2026-05-28T01:51:40.5210314Z",
     "taskCount":  20,
     "targetDirectories":  [
                               "Assets/Crest/Crest/Shaders",
@@ -15,7 +15,7 @@
                        "literalViolationMatches":  [
 
                                                    ],
-                       "resolvedThreadGroupEntries":  59,
+                       "resolvedThreadGroupEntries":  170,
                        "maxResolvedThreadGroupProduct":  256,
                        "unknownTokenCount":  0,
                        "unknownTokens":  [
@@ -546,7 +546,140 @@
                                                              ]
                                                 },
                         "classification":  "Hot production C# diff in GPUInstancerUtility.cs/GPUInstancerConstants.cs: 147 added lines, 0 reference/array new, 0 string.Format, 0 .ToString(), 0 foreach, 0 LINQ, 0 SetData/SetInts/SetFloats new-array callsites. All modified production C# diff: 193 added lines, 3 new hits only in cold GPUIRenderingSettings preset initializers.",
-                        "measuredGc":  "PENDING VERIFICATION: no Unity Profiler or GCMonitor capture was produced."
+                        "measuredGc":  "PENDING VERIFICATION: no Unity Profiler or GCMonitor capture was produced.",
+                        "apex12HotRangeScan":  {
+                                                   "evidenceClass":  "STATIC_SOURCE_TEXT_RANGE_SCAN",
+                                                   "ranges":  [
+                                                                  {
+                                                                      "name":  "GPUInstancerUtility culling/draw/buffer-to-texture",
+                                                                      "path":  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
+                                                                      "start":  375,
+                                                                      "end":  789,
+                                                                      "scannedLines":  415,
+                                                                      "new":  0,
+                                                                      "stringFormat":  0,
+                                                                      "toString":  0,
+                                                                      "foreach":  0,
+                                                                      "linq":  0,
+                                                                      "setNewArray":  0
+                                                                  },
+                                                                  {
+                                                                      "name":  "GPUInstancerUtility billboard dilation",
+                                                                      "path":  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
+                                                                      "start":  2118,
+                                                                      "end":  2153,
+                                                                      "scannedLines":  36,
+                                                                      "new":  0,
+                                                                      "stringFormat":  0,
+                                                                      "toString":  0,
+                                                                      "foreach":  0,
+                                                                      "linq":  0,
+                                                                      "setNewArray":  0
+                                                                  },
+                                                                  {
+                                                                      "name":  "GPUInstancerUtility SetData fallback dispatch",
+                                                                      "path":  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
+                                                                      "start":  3355,
+                                                                      "end":  3432,
+                                                                      "scannedLines":  78,
+                                                                      "new":  0,
+                                                                      "stringFormat":  0,
+                                                                      "toString":  0,
+                                                                      "foreach":  0,
+                                                                      "linq":  0,
+                                                                      "setNewArray":  0
+                                                                  },
+                                                                  {
+                                                                      "name":  "GPUInstancerUtility global transform offsets",
+                                                                      "path":  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
+                                                                      "start":  3467,
+                                                                      "end":  3548,
+                                                                      "scannedLines":  82,
+                                                                      "new":  0,
+                                                                      "stringFormat":  0,
+                                                                      "toString":  0,
+                                                                      "foreach":  0,
+                                                                      "linq":  0,
+                                                                      "setNewArray":  0
+                                                                  },
+                                                                  {
+                                                                      "name":  "GPUInstancerUtility texture copy dispatch",
+                                                                      "path":  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
+                                                                      "start":  3800,
+                                                                      "end":  3874,
+                                                                      "scannedLines":  75,
+                                                                      "new":  0,
+                                                                      "stringFormat":  0,
+                                                                      "toString":  0,
+                                                                      "foreach":  0,
+                                                                      "linq":  0,
+                                                                      "setNewArray":  0
+                                                                  },
+                                                                  {
+                                                                      "name":  "Crest QueryBase query submit",
+                                                                      "path":  "Assets/Crest/Crest/Scripts/Collision/QueryBase.cs",
+                                                                      "start":  248,
+                                                                      "end":  318,
+                                                                      "scannedLines":  71,
+                                                                      "new":  0,
+                                                                      "stringFormat":  0,
+                                                                      "toString":  0,
+                                                                      "foreach":  0,
+                                                                      "linq":  0,
+                                                                      "setNewArray":  0
+                                                                  },
+                                                                  {
+                                                                      "name":  "Crest QueryBase query process dispatch",
+                                                                      "path":  "Assets/Crest/Crest/Scripts/Collision/QueryBase.cs",
+                                                                      "start":  486,
+                                                                      "end":  499,
+                                                                      "scannedLines":  14,
+                                                                      "new":  0,
+                                                                      "stringFormat":  0,
+                                                                      "toString":  0,
+                                                                      "foreach":  0,
+                                                                      "linq":  0,
+                                                                      "setNewArray":  0
+                                                                  },
+                                                                  {
+                                                                      "name":  "Crest underwater mask binding",
+                                                                      "path":  "Assets/Crest/Crest/Scripts/Underwater/UnderwaterRenderer.Mask.cs",
+                                                                      "start":  340,
+                                                                      "end":  352,
+                                                                      "scannedLines":  13,
+                                                                      "new":  0,
+                                                                      "stringFormat":  0,
+                                                                      "toString":  0,
+                                                                      "foreach":  0,
+                                                                      "linq":  0,
+                                                                      "setNewArray":  0
+                                                                  },
+                                                                  {
+                                                                      "name":  "GPUInstancer grass dispatch",
+                                                                      "path":  "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs",
+                                                                      "start":  570,
+                                                                      "end":  598,
+                                                                      "scannedLines":  29,
+                                                                      "new":  0,
+                                                                      "stringFormat":  0,
+                                                                      "toString":  0,
+                                                                      "foreach":  0,
+                                                                      "linq":  0,
+                                                                      "setNewArray":  0
+                                                                  }
+                                                              ],
+                                                   "totals":  {
+                                                                  "ranges":  9,
+                                                                  "lines":  813,
+                                                                  "new":  0,
+                                                                  "stringFormat":  0,
+                                                                  "toString":  0,
+                                                                  "foreach":  0,
+                                                                  "linq":  0,
+                                                                  "setNewArray":  0
+                                                              },
+                                                   "caveat":  "Cold/setup vendor code outside these hot dispatch ranges still contains pre-existing foreach/LINQ/new and is not claimed clean by this pass."
+                                               }
                     },
     "dataSovereignty":  {
                             "migratedToGlobalDataVault":  false,
@@ -559,7 +692,15 @@
                             "governancePatternHitsInModifiedVendorSurface":  [
 
                                                                              ],
-                            "proof":  "No DataVault/native ownership surface was introduced or migrated in this vendor compute sizing/bounds pass. BufferID constants=0; TryAcquireWriteLock=0; ReleaseWriteLock=0; lock/finally proof is N/A because no lock is acquired. Governance keyword hits in modified vendor production surface=0."
+                            "proof":  "No DataVault/native ownership surface was introduced or migrated in this vendor compute sizing/bounds pass. BufferID constants=0; TryAcquireWriteLock=0; ReleaseWriteLock=0; lock/finally proof is N/A because no lock is acquired. Governance keyword hits in modified vendor production surface=0.",
+                            "apex12Scan":  {
+                                               "GlobalDataVault":  0,
+                                               "BufferID":  0,
+                                               "TryAcquireWriteLock":  0,
+                                               "ReleaseWriteLock":  0,
+                                               "finallyBlocks":  0,
+                                               "conclusion":  "N/A: no GlobalDataVault migration or write lock acquired in this vendor compute pass."
+                                           }
                         },
     "cinematicCheatAndScalability":  {
                                          "physicalSimulationAdded":  false,
@@ -693,18 +834,39 @@
                                                 "launched":  false,
                                                 "reason":  "BLOCKED_BY_CONTENTION",
                                                 "rule":  "Build not launched because max CPU \u003e 50 and compiler process count \u003e 0."
+                                            },
+                        "apex12Preflight":  {
+                                                "timestampUtc":  "2026-05-28T01:49:58.5493652Z",
+                                                "cpuLoadSamplesPercent":  [
+                                                                              87,
+                                                                              82,
+                                                                              57
+                                                                          ],
+                                                "cpuLoadMaxPercent":  87,
+                                                "compilerProcessCount":  1,
+                                                "compilerProcesses":  [
+                                                                          {
+                                                                              "ProcessName":  "dotnet",
+                                                                              "Id":  66408,
+                                                                              "CPU":  76.8125,
+                                                                              "StartTime":  "\/Date(1779932907777)\/"
+                                                                          }
+                                                                      ],
+                                                "launched":  false,
+                                                "reason":  "BLOCKED_BY_CONTENTION",
+                                                "rule":  "Do not launch dotnet build if CPU \u003e 50 or dotnet/csc is active."
                                             }
                     },
     "tests":  {
                   "file":  "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs",
-                  "added":  "Crest512FftTwoElementsPerThread_MatchesSingleElementReference; TwoDimensionalFrameCountMultiplier_UsesLongDenominator; SetDataPartialKernel_UsesExplicitSourceAndDestinationCapacityGuards; BufferToTextureKernel_UsesCapacityAndIntegerIndexGuards",
+                  "added":  "Crest512FftTwoElementsPerThread_MatchesSingleElementReference; TwoDimensionalFrameCountMultiplier_UsesLongDenominator; SetDataPartialKernel_UsesExplicitSourceAndDestinationCapacityGuards; BufferToTextureKernel_UsesCapacityAndIntegerIndexGuards; RuntimeCullingDispatch_ClampsLogicalInstanceCountToBufferCapacity",
                   "execution":  "PENDING VERIFICATION: Unity EditMode tests were not executed."
               },
     "verificationLimits":  [
                                "No Unity shader import run",
                                "No RenderDoc/GPU capture",
                                "No PlayMode/profiler/GCMonitor",
-                               "No dotnet build because compilation resource throttle blocked it in APEX11: CPU samples [100,100,100], active dotnet pid 55080 CPU 673.46875",
+                               "No dotnet build because APEX12 compilation resource throttle blocked it: CPU samples [87,82,57], active dotnet pid 66408 CPU 76.8125",
                                "No online research used; all defects and contracts were local vendor source/mandate issues."
                            ],
     "fileHashesSha256":  {
@@ -722,10 +884,10 @@
                              "Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs":  "9245084f86949d964e1dbee3c09a25036753062814664b7aa9fd54c7b12d10d5",
                              "Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerConstants.cs":  "2fb7dfa631b7b3a9ffdd3244c597184152dd1804e75380988b4215d4af828b21",
                              "Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerSettings.cs":  "b3e1221cd96b89909bf9031b0b47697752a00f3e103bd99adf7ff02cacf92024",
-                             "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs":  "5202c5ae3e942b27bfae62b5fa3dbd24e20099840751641a9ad2cda1370c2247",
+                             "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs":  "31173831199a2e8a5f4cf5f0b44b7646e5ca760b6da2942904418b0fa41d6586",
                              "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs":  "88ae502d5b946e2fbb77eac967dc5116f47dcd06226f361eeacff37e0e0a0c1a",
                              "Assets/GPUInstancer/Scripts/GPUInstancerTreeManager.cs":  "c4ae148901bce94a771bd6fef508716d4bffc003d78f1af833632daa48246956",
-                             "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs":  "6403258ca1258d172dfe204f7f157565b699befb71beadaeaad5a1ab345985ca",
+                             "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs":  "67a8d3e8b5452588366366059c012ad1d4c5c0e3b3d0cd4d38442be2dceae2f8",
                              "Assets/GPUInstancer/Resources/Compute/CSInstancedBufferToTexture.compute":  "2078cbc0bec4908d6f6f14456b49906504e3582cd226da3dbd34c0523f213863",
                              "Assets/GPUInstancer/Resources/Compute/CSInstancedComputeBufferSetDataPartialKernel.compute":  "4757f59a4d37f1f32e31d20e5717c06a96be1649f9777bb86be498992439ec6a"
                          },
@@ -759,7 +921,7 @@
                              },
     "promptExtraction":  {
                              "path":  "Docs/AgentLogs/Prompt_1405_EXTRACTED.md",
-                             "sha256":  "f5eab5ac3e77ed5be238d74cf70025a807d037d3aa9e9f10ff3f487defb0af2d",
+                             "sha256":  "e1395a79af08bb65d2c2680c7a23041f4f94817d82b066db0d16a2e53e04a76c",
                              "source":  "Docs/Tasks/CURRENT_BATCH.md",
                              "startLine":  454,
                              "endLine":  542,
@@ -770,5 +932,11 @@
                                  "billboardInvalidFrameContract":  "FIXED: GPUInstancerUtility.cs clamps safeFrameCount to [1,billboardTexture.width], and CSBillboard.compute rejects frameCount=0, frameCount\u003ebillboardWidth, or zero height before division.",
                                  "bufferToTextureCapacity":  "FIXED: CSInstancedBufferToTexture.compute rejects args-buffer drift with id.x \u003e= bufferSize, rejects maxTextureSize=0, uses integer division for texture row calculation, and rejects consumed instanceId \u003e= bufferSize before matrix-buffer read; GPUInstancerUtility.cs binds bufferSize on normal and shadow transform texture dispatches.",
                                  "evidence":  "Line proof: CSInstancedComputeBufferSetDataPartialKernel.compute:12-13/19/23/26/32; CSBillboard.compute:37; GPUInstancerUtility.cs:711/723/2079-2081; CSInstancedBufferToTexture.compute:21/24/27/39/43; ComputeDispatchSizingEditTests.cs:85/97."
+                             },
+    "apex12PolishFindings":  {
+                                 "runtimeCullingCapacity":  "FIXED: GPUInstancerUtility.cs clamps runtimeData.instanceCount through GetSafeRuntimeInstanceCount before camera/visibility dispatch and before buffer-to-texture dispatch.",
+                                 "transformOffsetCapacity":  "FIXED: GPUInstancerUtility.cs clamps global position/matrix offset kernels through GetSafeRuntimeTransformBufferCount before binding bufferSize or dispatching CSRuntimeModification.compute.",
+                                 "bufferToTextureCrossFade":  "FIXED: normal, shadow, and LOD cross-fade buffer-to-texture paths bind safeInstanceCount and dispatch safeInstanceCount instead of runtimeData.bufferSize.",
+                                 "evidence":  "Line proof: GPUInstancerUtility.cs:482-516,397-402,620-664,750-786,3493-3505,3535-3547; ComputeDispatchSizingEditTests.cs:109-121."
                              }
 }
