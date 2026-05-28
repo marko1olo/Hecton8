@@ -277,6 +277,14 @@ namespace Hecton8.Core
         private const byte ScheduleLockTetherCablePreviousFlag = 1 << 5;
         private const byte ScheduleLockTetherVisualSegmentFlag = 1 << 6;
         private const byte ScheduleLockTetherVisualAnchorFlag = 1 << 7;
+        private const ulong RebaseScheduleMutationGuardMask =
+            (1UL << 3) |
+            (1UL << 4) |
+            (1UL << 6) |
+            (1UL << 7) |
+            (1UL << 8) |
+            (1UL << 10) |
+            (1UL << 13);
 
         private static IDataVault _cachedVault;
         private static VaultGenerationHandle<AUP_StateDTO> _statesHandle;
@@ -699,18 +707,10 @@ namespace Hecton8.Core
             return local;
         }
 
-        private static bool TryLockScheduledBuffer(
-            IDataVault vault,
-            BufferID bufferId,
-            byte flag,
-            ref AupOriginShiftScheduleInfo info)
+        private static bool TryMarkScheduledBuffer(byte flag, ref AupOriginShiftScheduleInfo info)
         {
-            if (vault == null)
-                return false;
             if ((info.Flags & flag) != 0)
                 return true;
-            if (!vault.TryLockBuffer(bufferId, OwnerSystemId))
-                return false;
 
             info.Flags |= flag;
             return true;
@@ -721,22 +721,7 @@ namespace Hecton8.Core
             if (vault == null || info.Flags == 0)
                 return;
 
-            if ((info.Flags & ScheduleLockTetherVisualAnchorFlag) != 0)
-                vault.TryUnlockBuffer(BufferID.TetherVisualAnchorPositions, OwnerSystemId);
-            if ((info.Flags & ScheduleLockTetherVisualSegmentFlag) != 0)
-                vault.TryUnlockBuffer(BufferID.TetherVisualSegmentPositions, OwnerSystemId);
-            if ((info.Flags & ScheduleLockTetherCablePreviousFlag) != 0)
-                vault.TryUnlockBuffer(BufferID.TetherCablePreviousPositions, OwnerSystemId);
-            if ((info.Flags & ScheduleLockTetherCableFlag) != 0)
-                vault.TryUnlockBuffer(BufferID.TetherCablePositions, OwnerSystemId);
-            if ((info.Flags & ScheduleLockHotEntityFlag) != 0)
-                vault.TryUnlockBuffer(BufferID.VaultHotEntityData, OwnerSystemId);
-            if ((info.Flags & ScheduleLockHistoricalFlag) != 0)
-                vault.TryUnlockBuffer(MockHistoricalPointsBuffer, OwnerSystemId);
-            if ((info.Flags & ScheduleLockCounterFlag) != 0)
-                vault.TryUnlockBuffer(CounterBuffer, OwnerSystemId);
-            if ((info.Flags & ScheduleLockStatesFlag) != 0)
-                vault.TryUnlockBuffer(MockStatesBuffer, OwnerSystemId);
+            vault.ReleaseMutationGuard(RebaseScheduleMutationGuardMask);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
