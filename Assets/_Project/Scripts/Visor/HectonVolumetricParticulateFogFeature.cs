@@ -2094,20 +2094,80 @@ namespace Hecton8.Visor
                 _hasScheduledPointLightJob = false;
             }
 
+            private static bool IsFogHandle<T>(
+                in VaultGenerationHandle<T> handle,
+                BufferID bufferId) where T : unmanaged
+            {
+                return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                       handle.SystemID == (uint)OwnerSystemId &&
+                       handle.Generation != 0u;
+            }
+
+            private static bool TryReadFogBuffer<T>(
+                IDataVault vault,
+                in VaultGenerationHandle<T> handle,
+                BufferID bufferId,
+                int minLength,
+                out NativeArray<T>.ReadOnly buffer) where T : unmanaged
+            {
+                buffer = default;
+                return vault != null &&
+                       !vault.IsCompactionFenceActive &&
+                       minLength > 0 &&
+                       IsFogHandle(in handle, bufferId) &&
+                       vault.TryReadOnlyHandle(in handle, out buffer) &&
+                       !vault.IsCompactionFenceActive &&
+                       buffer.IsCreated &&
+                       buffer.Length >= minLength;
+            }
+
+            private static bool TryAcquireFogWriteBuffer<T>(
+                IDataVault vault,
+                in VaultGenerationHandle<T> handle,
+                BufferID bufferId,
+                int minLength,
+                out NativeArray<T> buffer) where T : unmanaged
+            {
+                buffer = default;
+                if (vault == null ||
+                    vault.IsCompactionFenceActive ||
+                    minLength <= 0 ||
+                    !IsFogHandle(in handle, bufferId) ||
+                    !vault.TryAcquireWriteLock(in handle, OwnerSystemId, out buffer))
+                {
+                    return false;
+                }
+
+                if (vault.IsCompactionFenceActive ||
+                    !buffer.IsCreated ||
+                    buffer.Length < minLength)
+                {
+                    vault.ReleaseWriteLock(in handle, OwnerSystemId);
+                    buffer = default;
+                    return false;
+                }
+
+                return true;
+            }
+
             private void ReleaseVaultHandles()
             {
                 IDataVault vault = _vault;
-                if (vault == null)
-                    return;
+                ReleaseFogVaultHandle(vault, ref _paramsHandle, BufferID.ShinobuVolumetricFogParams);
+                ReleaseFogVaultHandle(vault, ref _pointLightsHandle, BufferID.ShinobuVolumetricFogPointLights);
+                ReleaseFogVaultHandle(vault, ref _telemetryHandle, BufferID.ShinobuVolumetricFogTelemetryRing);
+                ReleaseFogVaultHandle(vault, ref _extinctionProfilesHandle, BufferID.ShinobuVolumetricFogExtinctionProfiles);
+            }
 
-                if (_paramsHandle.BufferID != 0u)
-                    vault.ReleaseBuffer(in _paramsHandle);
-                if (_pointLightsHandle.BufferID != 0u)
-                    vault.ReleaseBuffer(in _pointLightsHandle);
-                if (_telemetryHandle.BufferID != 0u)
-                    vault.ReleaseBuffer(in _telemetryHandle);
-                if (_extinctionProfilesHandle.BufferID != 0u)
-                    vault.ReleaseBuffer(in _extinctionProfilesHandle);
+            private static void ReleaseFogVaultHandle<T>(
+                IDataVault vault,
+                ref VaultGenerationHandle<T> handle,
+                BufferID bufferId) where T : unmanaged
+            {
+                if (vault != null && IsFogHandle(in handle, bufferId))
+                    vault.ReleaseBuffer(in handle);
+
+                handle = default;
             }
 
             private static TextureDesc CreateGraphTextureDesc(
