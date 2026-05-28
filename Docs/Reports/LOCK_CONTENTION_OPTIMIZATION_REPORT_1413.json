@@ -1,5 +1,6 @@
 {
   "agentId": "1413",
+  "apexHashPolicy": "LOCK_CONTENTION_APEX_VERIFICATION_1413.json is hashed after generation in final evidence; it is not embedded in optimization report modifiedFiles to avoid a self-referential stale hash.",
   "compilationThrottle": {
     "cpuLoadPercent": 100,
     "cscCount": 0,
@@ -15,7 +16,7 @@
     "globalDataVault": "TryEnterBlockMutationGate false now records RecordLockContentionFault(key) and returns false immediately. ClearActiveLockBitIfUnused no longer spins. Release paths use TryEnterReleaseMutationGate with no wait loop.",
     "zeroGc": "No string, collection, Debug.Log, exception, LINQ, or allocation in RecordLockContentionFault."
   },
-  "generatedUtc": "2026-05-28T01:46:34Z",
+  "generatedUtc": "2026-05-28T01:46:56Z",
   "implementedChanges": [
     {
       "change": "Removed bounded Thread.SpinWait from ClearActiveLockBitIfUnused; added O(1) numeric contention telemetry; split release gate from acquire gate so releases can clear already-held locks without compaction-fence wait.",
@@ -34423,10 +34424,6 @@
     {
       "path": "Docs/Reports/LOCK_CONTENTION_SPAN_LEDGER_1413.json",
       "sha256": "23ed043fe774fa28d8c6aed1dd4bf25a70495a5ec6d255ea6a0861b1b3e70220"
-    },
-    {
-      "path": "Docs/Reports/LOCK_CONTENTION_APEX_VERIFICATION_1413.json",
-      "sha256": "7b228fd14365d3303efe48ef2552c1f453986e5a52510fdd1f27e98d436def69"
     }
   ],
   "nestedLockAudit": {
@@ -34584,6 +34581,7 @@
   },
   "role": "ATOMIC_LOCK_CONTENTION_AND_FAIL_CLOSED_COORDINATOR",
   "staticVerification": {
+    "apexHashPolicy": "APEX hashes optimization report in reportHashesBeforeApexWrite; final chat/log provide APEX SHA-256 after write.",
     "apexVerification": "Docs/Reports/LOCK_CONTENTION_APEX_VERIFICATION_1413.json",
     "deferredReleaseAcceptedReturn": "ReleaseWriteLock/TryUnlockBuffer return the QueueDeferredRelease result when the release mutation gate is busy; accepted deferred release returns true, full/invalid queue returns false.",
     "deferredReleaseDuplicateCoalescing": "QueueDeferredRelease coalesces identical pending writer releases only. Buffer-pin releases are not coalesced because the same owner may hold multiple legitimate pins.",

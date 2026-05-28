@@ -48,8 +48,9 @@ namespace GPUInstancer
 
             if (runtimeDataList != null && Application.isPlaying)
             {
-                foreach (GPUInstancerRuntimeData runtimeData in runtimeDataList)
+                for (int i = 0; i < runtimeDataList.Count; i++)
                 {
+                    GPUInstancerRuntimeData runtimeData = runtimeDataList[i];
                     if (runtimeData.prototype.autoUpdateTransformData && runtimeData.instanceCount > 0 && runtimeData.instanceDataNativeArray.IsCreated && runtimeData.instanceTransformAccessArray.isCreated)
                     {
                         runtimeData.dependentJob.Complete();
@@ -67,8 +68,9 @@ namespace GPUInstancer
         {
             if (runtimeDataList != null && Application.isPlaying)
             {
-                foreach (GPUInstancerRuntimeData runtimeData in runtimeDataList)
+                for (int i = 0; i < runtimeDataList.Count; i++)
                 {
+                    GPUInstancerRuntimeData runtimeData = runtimeDataList[i];
                     if (runtimeData.transformDataModified)
                     {
                         runtimeData.dependentJob.Complete();

@@ -22,6 +22,10 @@ namespace GPUInstancer
 
         protected bool _isMatrixSet;
         protected Matrix4x4 _localToWorldMatrix;
+        private bool _isColliderCached;
+        private Collider _cachedCollider;
+        private bool _isRigidbodyCached;
+        private Rigidbody _cachedRigidbody;
 
         public virtual void AddVariation<T>(string bufferName, T value)
         {
@@ -51,6 +55,28 @@ namespace GPUInstancer
                 _isMatrixSet = true;
             }
             return _localToWorldMatrix;
+        }
+
+        public virtual Collider GetCachedCollider(bool forceNew = false)
+        {
+            if (!_isColliderCached || forceNew)
+            {
+                TryGetComponent(out _cachedCollider);
+                _isColliderCached = true;
+            }
+
+            return _cachedCollider;
+        }
+
+        public virtual Rigidbody GetCachedRigidbody(bool forceNew = false)
+        {
+            if (!_isRigidbodyCached || forceNew)
+            {
+                TryGetComponent(out _cachedRigidbody);
+                _isRigidbodyCached = true;
+            }
+
+            return _cachedRigidbody;
         }
 
         public virtual void SetupPrefabInstance(GPUInstancerRuntimeData runtimeData, bool forceNew = false)

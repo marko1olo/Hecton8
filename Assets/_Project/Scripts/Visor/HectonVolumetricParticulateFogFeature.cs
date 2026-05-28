@@ -174,6 +174,7 @@ namespace Hecton8.Visor
             private const int DumpThresholdMicroseconds = 2000;
             private const float DearLieProxyBypassThreshold = 0.999f;
             private const string DumpRelativePath = "Docs/AgentLogs/Dump_1335_VolumetricParticulateFog.bin";
+            private const SystemID OwnerSystemId = SystemID.Vfx;
             private const string GridBuildKernelName = "BuildVolumetricFogGrid";
             private const string RaymarchKernelName = "RaymarchVolumetricFog";
             private const string RaymarchXrKernelName = "RaymarchVolumetricFogXR";
@@ -515,10 +516,10 @@ namespace Hecton8.Visor
 
             public bool HasNativeState => _vault != null &&
                                           !_vault.IsCompactionFenceActive &&
-                                          _paramsHandle.BufferID != 0u &&
-                                          _pointLightsHandle.BufferID != 0u &&
-                                          _telemetryHandle.BufferID != 0u &&
-                                          _extinctionProfilesHandle.BufferID != 0u;
+                                          IsFogHandle(in _paramsHandle, BufferID.ShinobuVolumetricFogParams) &&
+                                          IsFogHandle(in _pointLightsHandle, BufferID.ShinobuVolumetricFogPointLights) &&
+                                          IsFogHandle(in _telemetryHandle, BufferID.ShinobuVolumetricFogTelemetryRing) &&
+                                          IsFogHandle(in _extinctionProfilesHandle, BufferID.ShinobuVolumetricFogExtinctionProfiles);
 
             public bool HasGpuState => HasGpuBuffers() &&
                                        _emptyFogDensityTexture != null &&
@@ -566,14 +567,14 @@ namespace Hecton8.Visor
                 if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
                     return false;
 
-                if (_paramsHandle.BufferID == 0u)
-                    _paramsHandle = vault.EnsureGenerationHandle<FogConstantsDTO>(BufferID.ShinobuVolumetricFogParams, 1, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
-                if (_pointLightsHandle.BufferID == 0u)
-                    _pointLightsHandle = vault.EnsureGenerationHandle<PointLightDTO>(BufferID.ShinobuVolumetricFogPointLights, VolumetricFogConstants.MaxPointLights, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
-                if (_telemetryHandle.BufferID == 0u)
-                    _telemetryHandle = vault.EnsureGenerationHandle<VolumetricFogTelemetryEntry>(BufferID.ShinobuVolumetricFogTelemetryRing, VolumetricFogConstants.TelemetryCapacity, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
-                if (_extinctionProfilesHandle.BufferID == 0u)
-                    _extinctionProfilesHandle = vault.EnsureGenerationHandle<WaterExtinctionProfileDTO>(BufferID.ShinobuVolumetricFogExtinctionProfiles, VolumetricFogConstants.ExtinctionProfileCapacity, SystemID.Vfx, NativeArrayOptions.UninitializedMemory);
+                if (!IsFogHandle(in _paramsHandle, BufferID.ShinobuVolumetricFogParams))
+                    _paramsHandle = vault.EnsureGenerationHandle<FogConstantsDTO>(BufferID.ShinobuVolumetricFogParams, 1, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+                if (!IsFogHandle(in _pointLightsHandle, BufferID.ShinobuVolumetricFogPointLights))
+                    _pointLightsHandle = vault.EnsureGenerationHandle<PointLightDTO>(BufferID.ShinobuVolumetricFogPointLights, VolumetricFogConstants.MaxPointLights, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+                if (!IsFogHandle(in _telemetryHandle, BufferID.ShinobuVolumetricFogTelemetryRing))
+                    _telemetryHandle = vault.EnsureGenerationHandle<VolumetricFogTelemetryEntry>(BufferID.ShinobuVolumetricFogTelemetryRing, VolumetricFogConstants.TelemetryCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
+                if (!IsFogHandle(in _extinctionProfilesHandle, BufferID.ShinobuVolumetricFogExtinctionProfiles))
+                    _extinctionProfilesHandle = vault.EnsureGenerationHandle<WaterExtinctionProfileDTO>(BufferID.ShinobuVolumetricFogExtinctionProfiles, VolumetricFogConstants.ExtinctionProfileCapacity, OwnerSystemId, NativeArrayOptions.UninitializedMemory);
 
                 if (!HasNativeState)
                     return false;
@@ -651,8 +652,12 @@ namespace Hecton8.Visor
 
             public void FlushDeferredDiagnosticDump()
             {
-                if (!_deferredDumpRequested || _vault == null || _telemetryHandle.BufferID == 0u)
+                if (!_deferredDumpRequested ||
+                    _vault == null ||
+                    !IsFogHandle(in _telemetryHandle, BufferID.ShinobuVolumetricFogTelemetryRing))
+                {
                     return;
+                }
 
                 if (!TryReadTelemetryDumpLength(out int telemetryLength) ||
                     telemetryLength <= 0)

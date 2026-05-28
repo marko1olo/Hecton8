@@ -95,7 +95,7 @@ Hardware Impact: Static report is file I/O only. Heavy execution is manually gat
 
 ## Decision 013 - Build Gate Refusal
 Problem: Final `dotnet build` is required only if the machine is free, but the sampled host was already saturated.
-Solution: Refused build execution when CPU sampled above the allowed threshold. Latest APEX gate saw CPU 71 percent, csc 0, dotnet 1. Marked Task 15 blocked by contention and wrote a non-passing report with runtime iterations set to zero.
+Solution: Refused build execution when CPU sampled above the allowed threshold. Latest APEX gate saw CPU 53 percent, csc 0, dotnet 1. Marked Task 15 blocked by contention and wrote a non-passing report with runtime iterations set to zero.
 Rejected Alternatives: Launching a second compiler anyway; directly violates user CPU constraint and would produce noisy failure data.
 Scalability potential: No runtime impact. On weak devices the gate protects the workstation; on high-end hardware it allows the final compile when CPU is actually free.
 Hardware Impact: Avoided adding compiler load on i3/MX350-class contention; saved an unbounded build stall.
