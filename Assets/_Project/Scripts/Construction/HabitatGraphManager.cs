@@ -2262,73 +2262,107 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatFloodPropagationSummaryBufferId,
-                    1,
-                    in _floodPropagationSummaryHandle,
-                    out NativeArray<HabitatFloodPropagationSummary> floodPropagationSummary,
-                    out IDataVault floodPropagationSummaryVault))
+            IDataVault floodPropagationVault = _dataVault;
+            if (floodPropagationVault == null ||
+                !floodPropagationVault.TryAcquireMutationGuard(HabitatFloodPropagationMutationGuardMask))
             {
                 return false;
             }
-
-            if (!TryAcquireFloodRoomWriteBuffers(
-                    moduleCount,
-                    out NativeArray<float> roomWaterLevels,
-                    out NativeArray<float> roomVolumes,
-                    out NativeArray<float> roomFloodDeltaLevels,
-                    out NativeArray<byte> roomFlags,
-                    out IDataVault floodRoomVault))
-            {
-                floodPropagationSummaryVault.ReleaseWriteLock(in _floodPropagationSummaryHandle, SystemID.Construction);
-                return false;
-            }
-
-            if (!TryAcquireFloodGraphJobBuffers(
-                    moduleCount,
-                    math.max(1, _edgeCount),
-                    out HabitatFloodGraphJobViews graph,
-                    out IDataVault floodGraphVault))
-            {
-                floodPropagationSummaryVault.ReleaseWriteLock(in _floodPropagationSummaryHandle, SystemID.Construction);
-                ReleaseFloodRoomWriteLocks(floodRoomVault);
-                return false;
-            }
-
-            floodPropagationSummary[0] = default;
-            HabitatFloodPropagationJob job = new HabitatFloodPropagationJob
-            {
-                NodeCount = moduleCount,
-                EdgeCount = math.min(_edgeCount, graph.EdgeFlags.Length),
-                StartNodeIndex = startNodeIndex,
-                ProcessNodeCount = processNodeCount,
-                DeltaTime = deltaTime,
-                FlowRate01PerSecond = GraphFloodTransferRateM3PerSecond,
-                MaxTransferPerEdgeM3 = GraphFloodMaxTransferPerEdgeM3,
-                WaterEpsilon01 = GraphFloodWaterEpsilonM3,
-                EdgeOffsets = graph.EdgeOffsets,
-                EdgeDestinations = graph.EdgeDestinations,
-                EdgeResistance = graph.EdgeResistance,
-                RoomWaterLevels = roomWaterLevels,
-                RoomVolumes = roomVolumes,
-                RoomFlags = roomFlags,
-                EdgeFlags = graph.EdgeFlags,
-                RoomDeltaLevels = roomFloodDeltaLevels,
-                Result = floodPropagationSummary
-            };
 
             bool scheduled = false;
             try
             {
+                if (!TryOpenHabitatVaultBuffer(
+                        floodPropagationVault,
+                        in _floodPropagationSummaryHandle,
+                        HabitatFloodPropagationSummaryBufferId,
+                        1,
+                        out NativeArray<HabitatFloodPropagationSummary> floodPropagationSummary) ||
+                    !TryOpenHabitatVaultBuffer(
+                        floodPropagationVault,
+                        in _roomWaterLevelsHandle,
+                        HabitatRoomWaterLevelsBufferId,
+                        moduleCount,
+                        out NativeArray<float> roomWaterLevels) ||
+                    !TryOpenHabitatVaultBuffer(
+                        floodPropagationVault,
+                        in _roomVolumesHandle,
+                        HabitatRoomVolumesBufferId,
+                        moduleCount,
+                        out NativeArray<float> roomVolumes) ||
+                    !TryOpenHabitatVaultBuffer(
+                        floodPropagationVault,
+                        in _roomFloodDeltaLevelsHandle,
+                        HabitatRoomFloodDeltaLevelsBufferId,
+                        moduleCount,
+                        out NativeArray<float> roomFloodDeltaLevels) ||
+                    !TryOpenHabitatVaultBuffer(
+                        floodPropagationVault,
+                        in _roomFlagsHandle,
+                        HabitatRoomFlagsBufferId,
+                        moduleCount,
+                        out NativeArray<byte> roomFlags) ||
+                    !TryOpenHabitatVaultBuffer(
+                        floodPropagationVault,
+                        in _edgeOffsetsHandle,
+                        HabitatGraphEdgeOffsetsBufferId,
+                        moduleCount + 1,
+                        out NativeArray<int> edgeOffsets) ||
+                    !TryOpenHabitatVaultBuffer(
+                        floodPropagationVault,
+                        in _edgeDestinationsHandle,
+                        HabitatGraphEdgeDestinationsBufferId,
+                        math.max(1, _edgeCount),
+                        out NativeArray<int> edgeDestinations) ||
+                    !TryOpenHabitatVaultBuffer(
+                        floodPropagationVault,
+                        in _edgeResistanceHandle,
+                        HabitatGraphEdgeResistanceBufferId,
+                        math.max(1, _edgeCount),
+                        out NativeArray<float> edgeResistance) ||
+                    !TryOpenHabitatVaultBuffer(
+                        floodPropagationVault,
+                        in _edgeFlagsHandle,
+                        HabitatGraphEdgeFlagsBufferId,
+                        math.max(1, _edgeCount),
+                        out NativeArray<byte> edgeFlags))
+                {
+                    return false;
+                }
+
+                floodPropagationSummary[0] = default;
+                HabitatFloodPropagationJob job = new HabitatFloodPropagationJob
+                {
+                    NodeCount = moduleCount,
+                    EdgeCount = math.min(_edgeCount, edgeFlags.Length),
+                    StartNodeIndex = startNodeIndex,
+                    ProcessNodeCount = processNodeCount,
+                    DeltaTime = deltaTime,
+                    FlowRate01PerSecond = GraphFloodTransferRateM3PerSecond,
+                    MaxTransferPerEdgeM3 = GraphFloodMaxTransferPerEdgeM3,
+                    WaterEpsilon01 = GraphFloodWaterEpsilonM3,
+                    EdgeOffsets = edgeOffsets,
+                    EdgeDestinations = edgeDestinations,
+                    EdgeResistance = edgeResistance,
+                    RoomWaterLevels = roomWaterLevels,
+                    RoomVolumes = roomVolumes,
+                    RoomFlags = roomFlags,
+                    EdgeFlags = edgeFlags,
+                    RoomDeltaLevels = roomFloodDeltaLevels,
+                    Result = floodPropagationSummary
+                };
+
                 JobHandle pendingHandle = job.Schedule();
                 _floodPropagationHandle = pendingHandle;
                 _floodPropagationPending = true;
-                _floodPropagationSummaryWriteLockHeld = true;
-                _floodPropagationSummaryWriteLockVault = floodPropagationSummaryVault;
-                _floodPropagationRoomWriteLockHeld = true;
-                _floodPropagationRoomWriteLockVault = floodRoomVault;
-                _floodPropagationGraphWriteLockHeld = true;
-                _floodPropagationGraphWriteLockVault = floodGraphVault;
+                _floodPropagationGuardHeld = true;
+                _floodPropagationGuardVault = floodPropagationVault;
+                _floodPropagationSummaryWriteLockHeld = false;
+                _floodPropagationSummaryWriteLockVault = null;
+                _floodPropagationRoomWriteLockHeld = false;
+                _floodPropagationRoomWriteLockVault = null;
+                _floodPropagationGraphWriteLockHeld = false;
+                _floodPropagationGraphWriteLockVault = null;
                 _pendingFloodPropagationModuleCount = moduleCount;
                 scheduled = true;
                 H8Memory.RegisterActiveJob(SystemID.Construction, pendingHandle);
@@ -2338,9 +2372,7 @@ namespace Hecton8.Construction
             {
                 if (!scheduled)
                 {
-                    floodPropagationSummaryVault.ReleaseWriteLock(in _floodPropagationSummaryHandle, SystemID.Construction);
-                    ReleaseFloodRoomWriteLocks(floodRoomVault);
-                    ReleaseFloodGraphWriteLocks(floodGraphVault, 4);
+                    floodPropagationVault.ReleaseMutationGuard(HabitatFloodPropagationMutationGuardMask);
                 }
             }
         }
@@ -2373,41 +2405,37 @@ namespace Hecton8.Construction
         private bool FinishFloodPropagationJob()
         {
             _floodPropagationPending = false;
+            IDataVault floodPropagationVault = _floodPropagationGuardVault;
 
             if (!TryOpenHabitatVaultBuffer(
-                    _floodPropagationSummaryWriteLockVault,
+                    floodPropagationVault,
                     in _floodPropagationSummaryHandle,
                     HabitatFloodPropagationSummaryBufferId,
                     1,
                     out NativeArray<HabitatFloodPropagationSummary> floodPropagationSummary))
             {
-                ReleaseFloodPropagationSummaryWriteLock();
-                ReleaseFloodPropagationRoomWriteLocks();
-                ReleaseFloodPropagationGraphWriteLocks();
+                ReleaseFloodPropagationGuard();
                 return false;
             }
 
             if (!TryOpenHabitatVaultBuffer(
-                    _floodPropagationRoomWriteLockVault,
+                    floodPropagationVault,
                     in _roomVolumesHandle,
                     HabitatRoomVolumesBufferId,
                     _pendingFloodPropagationModuleCount,
                     out NativeArray<float> roomVolumes) ||
                 !TryOpenHabitatVaultBuffer(
-                    _floodPropagationRoomWriteLockVault,
+                    floodPropagationVault,
                     in _roomFloodDeltaLevelsHandle,
                     HabitatRoomFloodDeltaLevelsBufferId,
                     _pendingFloodPropagationModuleCount,
                     out NativeArray<float> roomFloodDeltaLevels))
             {
-                ReleaseFloodPropagationSummaryWriteLock();
-                ReleaseFloodPropagationRoomWriteLocks();
-                ReleaseFloodPropagationGraphWriteLocks();
+                ReleaseFloodPropagationGuard();
                 return false;
             }
 
             HabitatFloodPropagationSummary summary = floodPropagationSummary[0];
-            ReleaseFloodPropagationSummaryWriteLock();
             if (summary.NonFiniteCount > 0)
             {
                 WriteFloodBlackBoxSample(FloodBlackBoxNonFiniteFlag);
@@ -2425,8 +2453,7 @@ namespace Hecton8.Construction
             }
             finally
             {
-                ReleaseFloodPropagationRoomWriteLocks();
-                ReleaseFloodPropagationGraphWriteLocks();
+                ReleaseFloodPropagationGuard();
             }
 
             return changed || summary.FlowedEdgeCount > 0;
@@ -5924,6 +5951,7 @@ namespace Hecton8.Construction
         {
             ClearSiegeTargetSnapshot();
 
+            ReleaseFloodPropagationGuard();
             ReleaseFloodPropagationGraphWriteLocks();
             ReleaseDeconstructionCsrLanes();
             ReleaseHabitatVaultHandle(ref _nodesHandle);
@@ -6196,6 +6224,19 @@ namespace Hecton8.Construction
             ReleaseFloodGraphWriteLocks(_floodPropagationGraphWriteLockVault, 4);
             _floodPropagationGraphWriteLockHeld = false;
             _floodPropagationGraphWriteLockVault = null;
+        }
+
+        private void ReleaseFloodPropagationGuard()
+        {
+            if (!_floodPropagationGuardHeld)
+                return;
+
+            IDataVault vault = _floodPropagationGuardVault;
+            if (vault != null)
+                vault.ReleaseMutationGuard(HabitatFloodPropagationMutationGuardMask);
+
+            _floodPropagationGuardHeld = false;
+            _floodPropagationGuardVault = null;
         }
 
         internal void ReleaseDeconstructionCsrLanes()

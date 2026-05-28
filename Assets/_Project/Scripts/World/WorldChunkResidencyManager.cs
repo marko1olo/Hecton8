@@ -887,6 +887,7 @@ namespace Hecton8.World
         private float _fadeTimer;
         private float _pendingChunkFadeMask;
         private bool _chunkFadeMaskDirty;
+        private long _predictiveVramCeilingBytes;
         private int _streamingLedgerCapacity;
         private float _lastPredictionDistanceMeters;
         private float _loadQueueCapacityRcp;
@@ -1509,7 +1510,6 @@ namespace Hecton8.World
             {
                 AdvanceChunkResidencyRuntimeClock(deltaTime);
                 TickPredictiveSuspension();
-                ApplyAsyncUploadBudgetForQuality();
                 DetectAndHandleTeleport();
                 CompleteResidencyJobIfFinished();
                 ProcessResidencyResults();
@@ -1539,6 +1539,7 @@ namespace Hecton8.World
         public void LateFrameTick()
         {
             CompleteResidencyJobIfFinished();
+            ApplyAsyncUploadBudgetForQuality();
             RetireAsyncPagerReadTickets(ResolvePagerReadRetireBudget());
             DrainAupShiftSignals();
             DrainHlodSwapSignals();
@@ -2442,6 +2443,7 @@ namespace Hecton8.World
             _macroDatabaseService = GlobalRegistry.MacroDatabase;
             _assetLifecycleGovernor = GlobalRegistry.AssetLifecycle;
             _vramMonitor = GlobalRegistry.VRAMBudgetReadModel;
+            _predictiveVramCeilingBytes = ResolvePredictiveVramCeilingBytesCold();
 
             _objectPoolManager = GlobalRegistry.ObjectPoolService;
 
@@ -2515,6 +2517,7 @@ namespace Hecton8.World
             _macroDatabaseService = null;
             _assetLifecycleGovernor = null;
             _vramMonitor = null;
+            _predictiveVramCeilingBytes = 0L;
             _objectPoolManager = null;
             _ambientBiotaService = null;
         }
@@ -5079,9 +5082,11 @@ namespace Hecton8.World
                 : usedBytes >= abortBytes;
         }
 
-        private static long ResolvePredictiveVramAbortThresholdBytes()
+        private long ResolvePredictiveVramAbortThresholdBytes()
         {
-            long ceilingBytes = ResolvePredictiveVramCeilingBytes();
+            long ceilingBytes = _predictiveVramCeilingBytes > 0L
+                ? _predictiveVramCeilingBytes
+                : PredictiveVramAbortBytes;
             float quality = ResolveSmoothGlobalQualityWeight01();
             long scaledBytes = (long)Math.Round(PredictiveVramAbortBytes + ((ceilingBytes - PredictiveVramAbortBytes) * (double)quality));
             return Math.Max(PredictiveVramMinimumThresholdBytes, Math.Min(ceilingBytes, scaledBytes));
@@ -5094,8 +5099,9 @@ namespace Hecton8.World
             return Math.Max(PredictiveVramMinimumThresholdBytes, abortBytes - hysteresisBytes);
         }
 
-        private static long ResolvePredictiveVramCeilingBytes()
+        private static long ResolvePredictiveVramCeilingBytesCold()
         {
+            HardwareTierDetector.EnsureInitialized();
             if (HardwareTierDetector.SharedMemoryModeActive)
             {
                 long sharedBudgetBytes = HardwareTierDetector.RecommendedVramBudgetBytes;

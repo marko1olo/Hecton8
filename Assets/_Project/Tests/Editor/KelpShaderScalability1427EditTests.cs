@@ -204,9 +204,11 @@ namespace Hecton8.Tests.Editor
             string source = ReadProjectFile("Assets", "_Project", "Scripts", "World", "WorldChunkResidencyManager.cs");
 
             Assert.That(source, Does.Contain("ResolvePredictiveVramAbortThresholdBytes"));
-            Assert.That(source, Does.Contain("ResolvePredictiveVramCeilingBytes"));
+            Assert.That(source, Does.Contain("ResolvePredictiveVramCeilingBytesCold"));
             Assert.That(source, Does.Contain("ResolveSmoothGlobalQualityWeight01"));
             Assert.That(source, Does.Contain("PredictiveVramVisualOverkillCeilingBytes"));
+            Assert.That(source, Does.Contain("_predictiveVramCeilingBytes = ResolvePredictiveVramCeilingBytesCold()"));
+            Assert.That(source, Does.Not.Contain("long ceilingBytes = ResolvePredictiveVramCeilingBytes();"));
             Assert.That(source, Does.Not.Contain("SystemInfo.graphicsMemorySize > 2048)\r\n                return false"));
             Assert.That(source, Does.Not.Contain("SystemInfo.graphicsMemorySize > 2048)\n                return false"));
         }
