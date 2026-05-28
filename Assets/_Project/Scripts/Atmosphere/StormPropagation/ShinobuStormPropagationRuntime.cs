@@ -585,6 +585,8 @@ namespace Hecton8.Atmosphere
             if (_vault == null || _vault.IsCompactionFenceActive)
                 return;
 
+            StormPropagationTuningDTO tuningRow = default;
+            bool hasTuningRow = false;
             bool tuningLocked = false;
             try
             {
@@ -594,11 +596,8 @@ namespace Hecton8.Atmosphere
 
                 if (Resolve(in _tuningHandle, out NativeArray<StormPropagationTuningDTO> tuning) && tuning.Length > 0)
                 {
-                    ref StormPropagationTuningDTO row = ref ShinobuStormPropagationNative.ElementAt(tuning, 0);
-                    row = ShinobuStormPropagationNative.SanitizeTuning(row, SampleGlobalQualityWeightForTick());
-
-                    if (math.isfinite(row.PublicationCadenceHz) && row.PublicationCadenceHz > 0.001f)
-                        _cachedPublicationCadenceHz = row.PublicationCadenceHz;
+                    tuningRow = ShinobuStormPropagationNative.ReadElement(tuning, 0);
+                    hasTuningRow = true;
                 }
             }
             finally
@@ -606,6 +605,30 @@ namespace Hecton8.Atmosphere
                 if (tuningLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem);
             }
 
+            if (hasTuningRow)
+            {
+                tuningRow = ShinobuStormPropagationNative.SanitizeTuning(tuningRow, SampleGlobalQualityWeightForTick());
+                tuningLocked = false;
+                try
+                {
+                    tuningLocked = _vault.TryLockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem);
+                    if (!tuningLocked)
+                        return;
+
+                    if (Resolve(in _tuningHandle, out NativeArray<StormPropagationTuningDTO> tuning) && tuning.Length > 0)
+                        ShinobuStormPropagationNative.ElementAt(tuning, 0) = tuningRow;
+                }
+                finally
+                {
+                    if (tuningLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem);
+                }
+
+                if (math.isfinite(tuningRow.PublicationCadenceHz) && tuningRow.PublicationCadenceHz > 0.001f)
+                    _cachedPublicationCadenceHz = tuningRow.PublicationCadenceHz;
+            }
+
+            StormDepthImpactProfileDTO profileRow = default;
+            bool hasProfileRow = false;
             bool profilesLocked = false;
             try
             {
@@ -615,14 +638,32 @@ namespace Hecton8.Atmosphere
 
                 if (Resolve(in _profilesHandle, out NativeArray<StormDepthImpactProfileDTO> profiles) && profiles.Length > 0)
                 {
-                    ref StormDepthImpactProfileDTO row = ref ShinobuStormPropagationNative.ElementAt(profiles, 0);
-                    if (row.ProfileHash == 0u)
-                        row = ShinobuStormPropagationNative.CreateFallbackProfile();
+                    profileRow = ShinobuStormPropagationNative.ReadElement(profiles, 0);
+                    hasProfileRow = true;
                 }
             }
             finally
             {
                 if (profilesLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem);
+            }
+
+            if (hasProfileRow && profileRow.ProfileHash == 0u)
+            {
+                profileRow = ShinobuStormPropagationNative.CreateFallbackProfile();
+                profilesLocked = false;
+                try
+                {
+                    profilesLocked = _vault.TryLockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem);
+                    if (!profilesLocked)
+                        return;
+
+                    if (Resolve(in _profilesHandle, out NativeArray<StormDepthImpactProfileDTO> profiles) && profiles.Length > 0)
+                        ShinobuStormPropagationNative.ElementAt(profiles, 0) = profileRow;
+                }
+                finally
+                {
+                    if (profilesLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem);
+                }
             }
         }
 

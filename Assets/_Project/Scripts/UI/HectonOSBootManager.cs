@@ -428,14 +428,14 @@ namespace Hecton8.UI
             ReadOnlySpan<char> zoneName = currentZone != null
                 ? currentZone.ResolveDisplayNameSpan(manager)
                 : DefaultUnknownZone.AsSpan();
-            ReadOnlySpan<char> bootVector = ResolveBootVector(reason).AsSpan();
+            ReadOnlySpan<char> bootVector = ResolveBootVector(reason);
             bool hasStats = stats != null;
             bool hasZone = currentZone != null;
             ReadOnlySpan<char> memoryStatus = (hasStats ? DefaultOkStatus : DefaultFailedStatus).AsSpan();
             ReadOnlySpan<char> dataStatus = (hasZone ? DefaultOkStatus : DefaultDegradedStatus).AsSpan();
             ReadOnlySpan<char> localizationStatus = (manager != null ? DefaultOkStatus : DefaultDegradedStatus).AsSpan();
-            ReadOnlySpan<char> hullStatus = ResolveHullIntegrityStatus(integrityNormalized, _survivalSystem, reason).AsSpan();
-            ReadOnlySpan<char> pressureStatus = ResolvePressureBusStatus(_survivalSystem).AsSpan();
+            ReadOnlySpan<char> hullStatus = ResolveHullIntegrityStatus(integrityNormalized, _survivalSystem, reason);
+            ReadOnlySpan<char> pressureStatus = ResolvePressureBusStatus(_survivalSystem);
 
             writer.AppendLine(DefaultBootHeader.AsSpan());
             writer.Append("BOOT VECTOR ....... ".AsSpan());
@@ -564,47 +564,47 @@ namespace Hecton8.UI
             writer.Append((char)('0' + (scaled % 10)));
         }
 
-        private static string ResolveBootVector(BootReason reason)
+        private static ReadOnlySpan<char> ResolveBootVector(BootReason reason)
         {
             switch (reason)
             {
                 case BootReason.IntrusionRecovery:
-                    return DefaultIntrusionVector;
+                    return DefaultIntrusionVector.AsSpan();
 
                 case BootReason.PressureRecovery:
-                    return DefaultRecoveryVector;
+                    return DefaultRecoveryVector.AsSpan();
 
                 default:
-                    return DefaultLoadVector;
+                    return DefaultLoadVector.AsSpan();
             }
         }
 
-        private static string ResolveHullIntegrityStatus(float integrityNormalized, HectonSurvivalSystem survivalSystem, BootReason reason)
+        private static ReadOnlySpan<char> ResolveHullIntegrityStatus(float integrityNormalized, HectonSurvivalSystem survivalSystem, BootReason reason)
         {
             if (survivalSystem == null)
-                return DefaultFailedStatus;
+                return DefaultFailedStatus.AsSpan();
 
             if (integrityNormalized < IntegrityDegradedThreshold01)
-                return DefaultFailedStatus;
+                return DefaultFailedStatus.AsSpan();
 
             if (reason == BootReason.PressureRecovery ||
                 integrityNormalized < IntegrityFailureThreshold01 ||
                 survivalSystem.IsBeyondSafeDepth)
             {
-                return DefaultDegradedStatus;
+                return DefaultDegradedStatus.AsSpan();
             }
 
-            return DefaultOkStatus;
+            return DefaultOkStatus.AsSpan();
         }
 
-        private static string ResolvePressureBusStatus(HectonSurvivalSystem survivalSystem)
+        private static ReadOnlySpan<char> ResolvePressureBusStatus(HectonSurvivalSystem survivalSystem)
         {
             if (survivalSystem == null)
-                return DefaultFailedStatus;
+                return DefaultFailedStatus.AsSpan();
 
             return survivalSystem.IsBeyondSafeDepth
-                ? DefaultDegradedStatus
-                : DefaultOkStatus;
+                ? DefaultDegradedStatus.AsSpan()
+                : DefaultOkStatus.AsSpan();
         }
 
         private void RegisterToTickManager()

@@ -317,8 +317,8 @@ namespace Hecton8.Construction
                 return;
 
             float deltaTime = _solveAccumulator;
-            _solveAccumulator = 0f;
-            ScheduleDrainageSolve(deltaTime, quality);
+            if (ScheduleDrainageSolve(deltaTime, quality))
+                _solveAccumulator = 0f;
         }
 
         /// <summary>Completes the scheduled chain in the dispatcher visual-sync lane and uploads flow scalars.</summary>
@@ -572,10 +572,10 @@ namespace Hecton8.Construction
                    handle.Generation != 0u;
         }
 
-        private void ScheduleDrainageSolve(float deltaTime, float quality)
+        private bool ScheduleDrainageSolve(float deltaTime, float quality)
         {
             if (!TryLockJobBuffers())
-                return;
+                return false;
 
             if (!TryBorrowMutable(in _pumpNodesHandle, SumpPumpDrainageBufferIds.PumpNodes, out NativeArray<DrainageNodeDTO> pumps) ||
                 !TryBorrowMutable(in _pipeEdgesHandle, SumpPumpDrainageBufferIds.PipeEdges, out NativeArray<PipeEdgeDTO> edges) ||
@@ -609,7 +609,7 @@ namespace Hecton8.Construction
                 !telemetryCursor.IsCreated || !counters.IsCreated || !frameSummary.IsCreated || !flowGpu.IsCreated)
             {
                 UnlockJobBuffers();
-                return;
+                return false;
             }
 
             int nodeCount = ResolveNodeCount(counters);
@@ -797,6 +797,8 @@ namespace Hecton8.Construction
                     UnlockJobBuffers();
                 }
             }
+
+            return scheduled;
         }
 
         private bool TryFinalizeScheduledSolverNoWait()

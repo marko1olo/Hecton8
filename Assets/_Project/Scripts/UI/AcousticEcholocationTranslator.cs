@@ -1113,9 +1113,9 @@ namespace Hecton8.UI
         private const float OverlayHeight = 148f;
         private const int SequenceTextCapacity = 256;
         private const string OverlayName = "TerminalBootSequenceOverlay";
-        private const string DefaultStatusOk = "[OK]";
-        private const string DefaultStatusDegraded = "[DEGRADED]";
-        private const string DefaultStatusFailed = "[FAILED]";
+        private static ReadOnlySpan<char> StatusOkChars => "[OK]".AsSpan();
+        private static ReadOnlySpan<char> StatusDegradedChars => "[DEGRADED]".AsSpan();
+        private static ReadOnlySpan<char> StatusFailedChars => "[FAILED]".AsSpan();
 
         [Header("── Font ──────────────────")]
         [Tooltip("Optional readable font override for the sonar terminal boot feed.")]
@@ -1232,46 +1232,46 @@ namespace Hecton8.UI
             float integrity01 = _survivalSystem != null ? _survivalSystem.IntegrityNormalized : 0f;
             float energy01 = _survivalSystem != null ? _survivalSystem.EnergyNormalized : 0f;
             float hullStress01 = _survivalSystem != null ? math.saturate(1f - integrity01) : 1f;
-            string hullStatus = ResolveIntegrityStatus(integrity01);
-            string powerStatus = energy01 >= 0.25f ? DefaultStatusOk : DefaultStatusDegraded;
-            string linkStatus = hullStress01 <= 0.18f ? DefaultStatusOk : DefaultStatusDegraded;
+            ReadOnlySpan<char> hullStatus = ResolveIntegrityStatusChars(integrity01);
+            ReadOnlySpan<char> powerStatus = energy01 >= 0.25f ? StatusOkChars : StatusDegradedChars;
+            ReadOnlySpan<char> linkStatus = hullStress01 <= 0.18f ? StatusOkChars : StatusDegradedChars;
 
             int cursor = 0;
-            cursor = AppendString(buffer, cursor, DefaultStatusOk);
-            cursor = AppendLine(buffer, cursor, " MOUNTING SONAR_DRIVER...");
-            cursor = AppendString(buffer, cursor, DefaultStatusOk);
-            cursor = AppendString(buffer, cursor, " AUP SECTOR 0x");
+            cursor = AppendSpan(buffer, cursor, StatusOkChars);
+            cursor = AppendLine(buffer, cursor, " MOUNTING SONAR_DRIVER...".AsSpan());
+            cursor = AppendSpan(buffer, cursor, StatusOkChars);
+            cursor = AppendSpan(buffer, cursor, " AUP SECTOR 0x".AsSpan());
             cursor = AppendHex8(buffer, cursor, ResolveFakeAupSectorHash());
             cursor = AppendChar(buffer, cursor, '\n');
-            cursor = AppendString(buffer, cursor, DefaultStatusOk);
-            cursor = AppendLine(buffer, cursor, " LOADING NEURAL INTERFACE...");
-            cursor = AppendString(buffer, cursor, DefaultStatusOk);
-            cursor = AppendLine(buffer, cursor, " CALIBRATING LIDAR ARRAY...");
-            cursor = AppendString(buffer, cursor, linkStatus);
-            cursor = AppendString(buffer, cursor, " ACOUSTIC BUS LINK... HULL ");
+            cursor = AppendSpan(buffer, cursor, StatusOkChars);
+            cursor = AppendLine(buffer, cursor, " LOADING NEURAL INTERFACE...".AsSpan());
+            cursor = AppendSpan(buffer, cursor, StatusOkChars);
+            cursor = AppendLine(buffer, cursor, " CALIBRATING LIDAR ARRAY...".AsSpan());
+            cursor = AppendSpan(buffer, cursor, linkStatus);
+            cursor = AppendSpan(buffer, cursor, " ACOUSTIC BUS LINK... HULL ".AsSpan());
             cursor = AppendInt(buffer, cursor, _survivalSystem != null ? (int)math.round(integrity01 * 100f) : 0);
             cursor = AppendChar(buffer, cursor, '%');
             cursor = AppendChar(buffer, cursor, '\n');
-            cursor = AppendString(buffer, cursor, powerStatus);
-            cursor = AppendString(buffer, cursor, " POWER FEED... ");
+            cursor = AppendSpan(buffer, cursor, powerStatus);
+            cursor = AppendSpan(buffer, cursor, " POWER FEED... ".AsSpan());
             cursor = AppendInt(buffer, cursor, _survivalSystem != null ? (int)math.round(energy01 * 100f) : 0);
             cursor = AppendChar(buffer, cursor, '%');
             cursor = AppendChar(buffer, cursor, '\n');
-            cursor = AppendString(buffer, cursor, hullStatus);
-            cursor = AppendString(buffer, cursor, " NOISE FILTER... STRESS ");
+            cursor = AppendSpan(buffer, cursor, hullStatus);
+            cursor = AppendSpan(buffer, cursor, " NOISE FILTER... STRESS ".AsSpan());
             cursor = AppendInt(buffer, cursor, _survivalSystem != null ? (int)math.round(hullStress01 * 100f) : 100);
             return AppendChar(buffer, cursor, '%');
         }
 
-        private static int AppendLine(char[] buffer, int cursor, string value)
+        private static int AppendLine(char[] buffer, int cursor, ReadOnlySpan<char> value)
         {
-            cursor = AppendString(buffer, cursor, value);
+            cursor = AppendSpan(buffer, cursor, value);
             return AppendChar(buffer, cursor, '\n');
         }
 
-        private static int AppendString(char[] buffer, int cursor, string value)
+        private static int AppendSpan(char[] buffer, int cursor, ReadOnlySpan<char> value)
         {
-            if (buffer == null || string.IsNullOrEmpty(value) || cursor >= buffer.Length)
+            if (buffer == null || value.IsEmpty || cursor >= buffer.Length)
                 return cursor;
 
             int available = buffer.Length - cursor;
@@ -1320,15 +1320,15 @@ namespace Hecton8.UI
             return cursor + 1;
         }
 
-        private static string ResolveIntegrityStatus(float integrity01)
+        private static ReadOnlySpan<char> ResolveIntegrityStatusChars(float integrity01)
         {
             if (integrity01 < 0.55f)
-                return DefaultStatusFailed;
+                return StatusFailedChars;
 
             if (integrity01 < 0.82f)
-                return DefaultStatusDegraded;
+                return StatusDegradedChars;
 
-            return DefaultStatusOk;
+            return StatusOkChars;
         }
 
         private void EnsureUiBuilt()
