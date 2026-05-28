@@ -48,8 +48,8 @@
       "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:2784-2798 DumpBlackBox",
       "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:3445-3546 TryQueueTelemetryDump",
       "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:3909-3985 UploadFromVault",
-      "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:2837-2851 UploadSpawnDataToBoidBuffersVisualSync",
-      "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:6101-6123 UploadSingleBoidToBuffer",
+      "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:2837-2850 UploadSpawnDataToBoidBuffersVisualSync",
+      "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:6101-6122 UploadSingleBoidToBuffer",
       "Assets/_Project/Scripts/World/EcosystemDirector.cs:5861-5938 PublishFloraPredatorAupBufferImmediate",
       "Assets/_Project/Scripts/World/EcosystemDirector.cs:2465-2503 TryGetSectorPopulation",
       "Assets/_Project/Scripts/World/EcosystemDirector.cs:2504-2541 TryGetBiomassAvailability",
@@ -129,8 +129,8 @@
       "ShinobuSpatialGridSolver.cs:1620 finally and 1623 ReleaseWriteLock spatial dump snapshot",
       "EcosystemDirector.cs:5877 TryAcquireWriteLock flora/predator AUP upload",
       "EcosystemDirector.cs:5916 finally and 5919 ReleaseWriteLock flora/predator AUP upload",
-      "SargassumMicroFaunaBoids.cs:6114 LockBufferForWrite<BoidData>",
-      "SargassumMicroFaunaBoids.cs:6118 finally and 6121 UnlockBufferAfterWrite<BoidData>"
+      "SargassumMicroFaunaBoids.cs:6113 LockBufferForWrite<BoidData>",
+      "SargassumMicroFaunaBoids.cs:6117 finally and 6120 UnlockBufferAfterWrite<BoidData>"
     ],
     "failClosedReadAccessors": [
       "EcosystemDirector.cs:2465-2503 TryGetSectorPopulation",
@@ -152,7 +152,7 @@
       "SystemDispatcher.cs:7111-7132 GraphicsBufferUploadUtility.UploadNativeArray uses LockBufferForWrite and UnsafeMemoryCopyGuard.TryMemCpy with finally UnlockBufferAfterWrite",
       "ShinobuEcosystemBalancer.cs:3939-3977 ShinobuBoidGpuUploadDispatcher.UploadFromVault maps matrix/custom/args buffers and unlocks each lane in finally",
       "EcosystemDirector.cs:5910 uploads locked flora/predator AUP NativeArray<float4> through GraphicsBufferUploadUtility.UploadNativeArray",
-      "SargassumMicroFaunaBoids.cs:6114-6121 single boid live update uses LockBufferForWrite<BoidData> and finally unlocks"
+      "SargassumMicroFaunaBoids.cs:6113-6120 single boid live update uses LockBufferForWrite<BoidData> and finally unlocks"
     ],
     "staticMx350Estimate": {
       "bulk5000BoidUploadSavedMicroseconds": "35-120",
@@ -174,7 +174,7 @@
     ],
     "boidDataGpuGuard": [
       "SargassumMicroFaunaBoids.cs:823-828 BoidData constants: position 0, velocity 12, panic 24, stateFlags 28, stride 32, align 4",
-      "SargassumMicroFaunaBoids.cs:8431-8436 validates BoidData SizeOf, AlignOf, and Marshal.OffsetOf against those constants"
+      "SargassumMicroFaunaBoids.cs:8430-8435 validates BoidData SizeOf, AlignOf, and Marshal.OffsetOf against those constants"
     ],
     "editorHarness": [
       "EcosystemSwarmVault1419EditTests.cs:41-59 asserts 64B EcosystemTelemetryEntry, 64B SpatialGridTelemetryEntry, 16B SpatialGridEntryDTO, 32B SpatialGridBucketRangeDTO"

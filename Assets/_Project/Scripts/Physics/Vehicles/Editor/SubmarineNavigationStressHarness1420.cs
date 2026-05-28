@@ -74,17 +74,23 @@ namespace Hecton8.Physics.Vehicles.Editor
                 uint hash = 2166136261u;
                 bool allFinite = true;
                 bool allValid = true;
+                int minActiveSamples = 4;
+                int maxActiveSamples = 0;
                 for (uint frame = 1u; frame <= Attempts; frame++)
                 {
                     SubmarineBallastForcePacketDTO packet = RunBallastIteration(vault, in handles, frame);
                     allFinite &= math.all(math.isfinite(packet.NetForce));
                     allValid &= (packet.Flags & SubmarineBallastConstants.ForceFlagValid) != 0u;
+                    minActiveSamples = math.min(minActiveSamples, packet.ActiveSamples);
+                    maxActiveSamples = math.max(maxActiveSamples, packet.ActiveSamples);
                     hash = Mix(hash, packet.StateHash);
                 }
 
                 long afterBytes = GC.GetAllocatedBytesForCurrentThread();
                 Assert.IsTrue(allFinite);
                 Assert.IsTrue(allValid);
+                Assert.AreEqual(1, minActiveSamples);
+                Assert.AreEqual(4, maxActiveSamples);
                 Assert.AreNotEqual(0u, hash);
                 Assert.AreEqual(0L, afterBytes - beforeBytes);
             }
@@ -228,6 +234,8 @@ namespace Hecton8.Physics.Vehicles.Editor
                 };
             }
 
+            float quality = math.saturate((frame & 255u) * (1f / 255f));
+            int activeSampleBudget = math.clamp(1 + (int)math.ceil(quality * 3f), 1, 4);
             samples[0] = new SubmarineBallastFluidSampleDTO
             {
                 HullAup = new double3(0d, -160d - frame * 0.05d, 0d),
@@ -237,12 +245,12 @@ namespace Hecton8.Physics.Vehicles.Editor
                 HullVolumeCubicMeters = 22f,
                 FluidDensityKgPerM3 = SubmarineBallastConstants.DefaultWaterDensityKgPerM3,
                 AmbientPressureATM = SubmarineBallastConstants.AtmosphericPressureAtm + 160f * SubmarineBallastConstants.SeaWaterAtmPerMeter,
-                GlobalQualityWeight = math.saturate((frame & 255u) * (1f / 255f)),
+                GlobalQualityWeight = quality,
                 SimulationDeltaTime = 0.02f,
                 TargetEntityHash = 1420u,
                 Frame = frame,
                 Flags = 0u,
-                ActiveSampleBudget = 4
+                ActiveSampleBudget = activeSampleBudget
             };
         }
 

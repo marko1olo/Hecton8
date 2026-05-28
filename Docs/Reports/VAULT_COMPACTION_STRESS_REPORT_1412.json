@@ -74,11 +74,12 @@
     "h8memory_register_active_job_removed_from_workers": true,
     "native_job_failure_flags_preallocated_persistent_by_slot": true,
     "timeout_path_skips_native_dispose_when_tasks_live": true,
+    "timeout_path_queues_deferred_cleanup_after_tasks_complete": true,
     "telemetry_dump_locks_blackbox_ring": true,
     "arena_resolver_timeout_records_failure_flag": true,
     "conditional_editmode_test_asmdef_references_added": true
   },
-  "source_sha256": "7c4ba08bb040e7fc4101d7c1e52ae030518fcd0cb4b0ddf83f3eef25b1bbdec5",
+  "source_sha256": "bf9d91cedb07a75fb28926d9fc01178ca745d3afc474ebe6133a8061f338c7f8",
   "implemented_entrypoints": [
     "HECTON-8/Memory/Run DataVault Compaction Stress Fuzzer 1412",
     "HECTON-8/Memory/Run DataVault False Positive Probe 1412"

@@ -1,0 +1,27 @@
+﻿{
+    "agentId":  "1407",
+    "sampledAt":  "2026-05-28T05:44:35.8493855+04:00",
+    "cpuLoadPercent":  82,
+    "compilerProcesses":  [
+                              {
+                                  "Id":  36844,
+                                  "ProcessName":  "csc",
+                                  "CPU":  2.109375,
+                                  "StartTime":  "\/Date(1779932673868)\/"
+                              },
+                              {
+                                  "Id":  32028,
+                                  "ProcessName":  "dotnet",
+                                  "CPU":  173.359375,
+                                  "StartTime":  "\/Date(1779932497116)\/"
+                              },
+                              {
+                                  "Id":  33780,
+                                  "ProcessName":  "dotnet",
+                                  "CPU":  31.234375,
+                                  "StartTime":  "\/Date(1779932647076)\/"
+                              }
+                          ],
+    "buildInvoked":  false,
+    "reason":  "Gate closed: CPU \u003e50 percent or compiler process active; dotnet build not invoked."
+}
