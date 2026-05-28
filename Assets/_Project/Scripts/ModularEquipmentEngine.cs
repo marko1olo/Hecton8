@@ -1277,62 +1277,34 @@ namespace Hecton8.Tools
                 return false;
 
             int acquiredCount = 0;
-            if (TryAcquireEquipmentWriteBuffer(vault, in _toolStatesHandle, MaxTrackedTools, out views.ToolStates) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _toolStatsHandle, MaxTrackedTools, out views.ToolStats) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _toolTypesHandle, MaxTrackedTools, out views.ToolTypes) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _currentHeatHandle, MaxTrackedTools, out views.CurrentHeat) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _batteryChargeHandle, MaxTrackedTools, out views.BatteryCharge) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _statusMasksHandle, MaxTrackedTools, out views.StatusMasks) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _environmentHeat01Handle, MaxTrackedTools, out views.EnvironmentHeat01) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _activeEquipmentStatesHandle, MaxTrackedTools, out views.ActiveEquipmentStates) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _publishedActiveEquipmentStatesHandle, MaxTrackedTools, out views.PublishedActiveEquipmentStates) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _activeEquipmentAupSamplesHandle, MaxTrackedTools, out views.ActiveEquipmentAupSamples) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _activeEquipmentGridLoadRequestsHandle, MaxTrackedTools, out views.ActiveEquipmentGridLoadRequests) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _activeEquipmentWearDrainRatesHandle, MaxTrackedTools, out views.ActiveEquipmentWearDrainRates) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _equipmentTelemetryRingHandle, EquipmentTelemetryRingLength, out views.EquipmentTelemetryRing) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _equipmentTelemetryCursorHandle, 1, out views.EquipmentTelemetryCursor) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _flashlightTelemetryRingHandle, EquipmentTelemetryRingLength, out views.FlashlightTelemetryRing) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _flashlightTelemetryCursorHandle, 1, out views.FlashlightTelemetryCursor) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _equipmentIntegrationCountersHandle, MaxTrackedTools, out views.EquipmentIntegrationCounters) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _equipmentTuningHandle, 1, out views.EquipmentTuning) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _equipmentHardwareSpecsHandle, EquipmentHardwareSpecCapacity, out views.EquipmentHardwareSpecs) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixMasksHandle, MaxTrackedTools, out views.UpgradeMasks) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixBaseStatsHandle, MaxTrackedTools, out views.UpgradeBaseStats) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixCompiledStatsHandle, MaxTrackedTools, out views.UpgradeCompiledStats) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixToolLutHandle, MaxTrackedTools * UpgradeMatrixConstants.ToolModuleLutEntriesPerEquipment, out views.UpgradeToolLut) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixToolRulesHandle, MaxTrackedTools * UpgradeMatrixConstants.ToolModuleSlotsPerEquipment, out views.UpgradeToolModuleRules) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixToolProfilesHandle, MaxTrackedTools, out views.UpgradeToolProfiles) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixTelemetryRingHandle, UpgradeMatrixConstants.TelemetryFrameCount, out views.UpgradeTelemetryRing) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixTelemetryCursorHandle, 1, out views.UpgradeTelemetryCursor) &&
-                CountAcquiredWriteLock(ref acquiredCount) &&
-                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixVisualStatesHandle, MaxTrackedTools, out views.UpgradeVisualStates) &&
-                CountAcquiredWriteLock(ref acquiredCount))
+            if (TryAcquireEquipmentWriteBuffer(vault, in _toolStatesHandle, MaxTrackedTools, ref acquiredCount, out views.ToolStates) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _toolStatsHandle, MaxTrackedTools, ref acquiredCount, out views.ToolStats) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _toolTypesHandle, MaxTrackedTools, ref acquiredCount, out views.ToolTypes) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _currentHeatHandle, MaxTrackedTools, ref acquiredCount, out views.CurrentHeat) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _batteryChargeHandle, MaxTrackedTools, ref acquiredCount, out views.BatteryCharge) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _statusMasksHandle, MaxTrackedTools, ref acquiredCount, out views.StatusMasks) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _environmentHeat01Handle, MaxTrackedTools, ref acquiredCount, out views.EnvironmentHeat01) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _activeEquipmentStatesHandle, MaxTrackedTools, ref acquiredCount, out views.ActiveEquipmentStates) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _publishedActiveEquipmentStatesHandle, MaxTrackedTools, ref acquiredCount, out views.PublishedActiveEquipmentStates) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _activeEquipmentAupSamplesHandle, MaxTrackedTools, ref acquiredCount, out views.ActiveEquipmentAupSamples) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _activeEquipmentGridLoadRequestsHandle, MaxTrackedTools, ref acquiredCount, out views.ActiveEquipmentGridLoadRequests) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _activeEquipmentWearDrainRatesHandle, MaxTrackedTools, ref acquiredCount, out views.ActiveEquipmentWearDrainRates) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _equipmentTelemetryRingHandle, EquipmentTelemetryRingLength, ref acquiredCount, out views.EquipmentTelemetryRing) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _equipmentTelemetryCursorHandle, 1, ref acquiredCount, out views.EquipmentTelemetryCursor) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _flashlightTelemetryRingHandle, EquipmentTelemetryRingLength, ref acquiredCount, out views.FlashlightTelemetryRing) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _flashlightTelemetryCursorHandle, 1, ref acquiredCount, out views.FlashlightTelemetryCursor) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _equipmentIntegrationCountersHandle, MaxTrackedTools, ref acquiredCount, out views.EquipmentIntegrationCounters) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _equipmentTuningHandle, 1, ref acquiredCount, out views.EquipmentTuning) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _equipmentHardwareSpecsHandle, EquipmentHardwareSpecCapacity, ref acquiredCount, out views.EquipmentHardwareSpecs) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixMasksHandle, MaxTrackedTools, ref acquiredCount, out views.UpgradeMasks) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixBaseStatsHandle, MaxTrackedTools, ref acquiredCount, out views.UpgradeBaseStats) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixCompiledStatsHandle, MaxTrackedTools, ref acquiredCount, out views.UpgradeCompiledStats) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixToolLutHandle, MaxTrackedTools * UpgradeMatrixConstants.ToolModuleLutEntriesPerEquipment, ref acquiredCount, out views.UpgradeToolLut) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixToolRulesHandle, MaxTrackedTools * UpgradeMatrixConstants.ToolModuleSlotsPerEquipment, ref acquiredCount, out views.UpgradeToolModuleRules) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixToolProfilesHandle, MaxTrackedTools, ref acquiredCount, out views.UpgradeToolProfiles) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixTelemetryRingHandle, UpgradeMatrixConstants.TelemetryFrameCount, ref acquiredCount, out views.UpgradeTelemetryRing) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixTelemetryCursorHandle, 1, ref acquiredCount, out views.UpgradeTelemetryCursor) &&
+                TryAcquireEquipmentWriteBuffer(vault, in _upgradeMatrixVisualStatesHandle, MaxTrackedTools, ref acquiredCount, out views.UpgradeVisualStates))
             {
                 if (acquiredCount != EquipmentWriteLockBufferCount)
                 {
@@ -1353,16 +1325,11 @@ namespace Hecton8.Tools
             return false;
         }
 
-        private static bool CountAcquiredWriteLock(ref int acquiredCount)
-        {
-            acquiredCount++;
-            return true;
-        }
-
         private static bool TryAcquireEquipmentWriteBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
             int requiredLength,
+            ref int acquiredCount,
             out EquipmentVaultView<T> view)
             where T : unmanaged
         {
@@ -1375,11 +1342,9 @@ namespace Hecton8.Tools
                 return false;
             }
 
+            acquiredCount++;
             if (!buffer.IsCreated || buffer.Length < requiredLength)
-            {
-                vault.ReleaseWriteLock(in handle, EquipmentVaultOwnerSystemId);
                 return false;
-            }
 
             view = new EquipmentVaultView<T>(buffer);
             return true;
