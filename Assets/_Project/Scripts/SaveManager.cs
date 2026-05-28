@@ -1884,23 +1884,31 @@ namespace Hecton8.SaveSystem
                     hydrationSectors[hydrationSectorCount++] = signal.SectorHash;
             }
 
-            for (int sectorIndex = 0; sectorIndex < hydrationSectorCount; sectorIndex++)
+            try
             {
-                if (!hasGrid)
+                for (int sectorIndex = 0; sectorIndex < hydrationSectorCount; sectorIndex++)
                 {
-                    if (!TryEnsureWfcOutpostGrid(out wfcGrid))
+                    if (!hasGrid)
                     {
-                        RecordWfcOutpostEventBlackBox(
-                            WfcOutpostBlackBoxOperationHydration,
-                            WfcOutpostPersistenceStatus.InvalidGrid,
-                            hydrationSectors[sectorIndex]);
-                        return;
+                        if (!TryAcquireWfcOutpostGridWrite(out wfcGrid))
+                        {
+                            RecordWfcOutpostEventBlackBox(
+                                WfcOutpostBlackBoxOperationHydration,
+                                WfcOutpostPersistenceStatus.InvalidGrid,
+                                hydrationSectors[sectorIndex]);
+                            return;
+                        }
+
+                        hasGrid = true;
                     }
 
-                    hasGrid = true;
+                    TryApplyWfcOutpostStateOverrideFromHydration(hydrationSectors[sectorIndex], wfcGrid);
                 }
-
-                TryApplyWfcOutpostStateOverrideFromHydration(hydrationSectors[sectorIndex], wfcGrid);
+            }
+            finally
+            {
+                if (hasGrid)
+                    ReleaseWfcOutpostGridWrite();
             }
         }
 
@@ -2065,10 +2073,19 @@ namespace Hecton8.SaveSystem
             _wfcOutpostSnapshotCacheCount = 0;
             _wfcOutpostSnapshotCacheNextIndex = 0;
             _wfcOutpostSnapshotCacheRetryIndex = 0;
-            if (clearMutableGrid && IsValidWfcOutpostGrid(_wfcOutpostGrid))
-                ClearWfcOutpostMutableStateGrid(_wfcOutpostGrid);
+            if (clearMutableGrid && TryAcquireWfcOutpostGridWrite(out NativeArray<byte> wfcGrid))
+            {
+                try
+                {
+                    ClearWfcOutpostMutableStateGrid(wfcGrid);
+                }
+                finally
+                {
+                    ReleaseWfcOutpostGridWrite();
+                }
+            }
 
-            _wfcOutpostGrid = default;
+            _wfcOutpostGridHandle = default;
         }
 
         private unsafe bool IsWfcOutpostHydrationCandidate(
@@ -2800,7 +2817,7 @@ namespace Hecton8.SaveSystem
                 flags |= 1u << 0;
             if (_wfcOutpostDependenciesReady)
                 flags |= 1u << 1;
-            if (_wfcOutpostGrid.IsCreated)
+            if (IsWfcOutpostGridHandleCreated(in _wfcOutpostGridHandle))
                 flags |= 1u << 2;
             if (_macroDatabaseService != null && _macroDatabaseService.IsOpen)
                 flags |= 1u << 3;
