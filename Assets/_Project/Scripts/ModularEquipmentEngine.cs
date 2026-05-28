@@ -1515,10 +1515,16 @@ namespace Hecton8.Tools
             }
             finally
             {
-                if (cursorLocked)
-                    vault.ReleaseWriteLock(in _equipmentTelemetryCursorHandle, EquipmentVaultOwnerSystemId);
-                if (ringLocked)
-                    vault.ReleaseWriteLock(in _equipmentTelemetryRingHandle, EquipmentVaultOwnerSystemId);
+                uint failedMask = 0u;
+                if (cursorLocked && !vault.ReleaseWriteLock(in _equipmentTelemetryCursorHandle, EquipmentVaultOwnerSystemId))
+                    failedMask |= 1u << 13;
+                if (ringLocked && !vault.ReleaseWriteLock(in _equipmentTelemetryRingHandle, EquipmentVaultOwnerSystemId))
+                    failedMask |= 1u << 12;
+                if (failedMask != 0u)
+                {
+                    _equipmentPendingReleaseVault = vault;
+                    _equipmentPendingReleaseMask |= failedMask;
+                }
             }
         }
 

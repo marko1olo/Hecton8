@@ -710,15 +710,18 @@ namespace Hecton8.UI
 
         private static void ReleaseSubtitleBuffers(IDataVault vault)
         {
-            ReleaseVaultBuffer(vault, ref s_cueHandle);
-            ReleaseVaultBuffer(vault, ref s_telemetryHandle);
-            ReleaseVaultBuffer(vault, ref s_uiOptimizationTelemetryHandle);
+            ReleaseVaultBuffer(vault, ref s_cueHandle, SubtitleCueStateBufferId);
+            ReleaseVaultBuffer(vault, ref s_telemetryHandle, SubtitleCueTelemetryBufferId);
+            ReleaseVaultBuffer(vault, ref s_uiOptimizationTelemetryHandle, UIOptimizationTelemetryBufferId);
         }
 
-        private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+        private static void ReleaseVaultBuffer<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId)
             where T : unmanaged
         {
-            if (vault != null && handle.BufferID != 0u)
+            if (vault != null && IsSubtitleVaultHandle(in handle, bufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
