@@ -36,7 +36,7 @@ namespace Hecton8.Gameplay
         {
             EffectType = effectType;
             ModuleTargetInstanceId = ResolveModuleTargetInstanceId(moduleTarget);
-            SourceTransformInstanceId = sourceTransform != null ? sourceTransform.GetInstanceID() : 0;
+            SourceTransformInstanceId = ResolveComponentEntityId(sourceTransform);
             Magnitude = magnitude;
             HitPointWorld = hitPointWorld;
             SourcePositionWorld = sourceTransform != null ? sourceTransform.position : hitPointWorld;
@@ -46,11 +46,11 @@ namespace Hecton8.Gameplay
         [FieldOffset(0)]
         public readonly EffectType EffectType;
 
-        /// <summary>Unity instance id of the repairable module target under the active tool beam.</summary>
+        /// <summary>Unity entity-derived id of the repairable module target under the active tool beam.</summary>
         [FieldOffset(4)]
         public readonly int ModuleTargetInstanceId;
 
-        /// <summary>Unity instance id of the transform that emitted the tool effect, when available.</summary>
+        /// <summary>Unity entity-derived id of the transform that emitted the tool effect, when available.</summary>
         [FieldOffset(8)]
         public readonly int SourceTransformInstanceId;
 
@@ -68,7 +68,12 @@ namespace Hecton8.Gameplay
 
         private static int ResolveModuleTargetInstanceId(IRepairableModuleTarget moduleTarget)
         {
-            return moduleTarget is Component component ? component.GetInstanceID() : 0;
+            return moduleTarget is Component component ? ResolveComponentEntityId(component) : 0;
+        }
+
+        private static int ResolveComponentEntityId(Component component)
+        {
+            return component != null ? unchecked((int)UnityEngine.EntityId.ToULong(component.GetEntityId())) : 0;
         }
     }
 

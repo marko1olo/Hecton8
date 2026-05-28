@@ -113,3 +113,11 @@ Solution: Rebalance now acquires one low-bit `RebalanceVaultMutationGuardMask` c
 Rejected Alternatives: Scheduling tiny split jobs per buffer; that would increase job overhead and same-frame readback pressure. Retaining sequential write-lock groups in ClearEntityState; it is cold but still unnecessary after low-bit guard semantics exist.
 Scalability potential: Low gets deterministic fail-closed rebalance under memory pressure. Middle keeps amortized rebalance cadence. High/Ultra spend saved lock overhead on finer bucket load smoothing, not synchronization recovery.
 Hardware Impact: Rebalance job setup removes four pin/unpin paths and replaces them with one guard release. Expected low-end saving is 10-80 us per rebalance schedule/finalize window; deadlock vector is the larger win.
+
+## Decision 14 - AUP Scheduled Rebase Guard
+
+Problem: `AupOriginShiftCoordinator.ScheduleVaultOriginRebase` held the runtime-state write lock while acquiring multiple scheduled buffer pins for state, counter, hot-entity, historical, and tether rebase jobs. That stacked DataVault ownership across one thread before the JobHandle was returned.
+Solution: Replaced scheduled buffer pins with one low-bit `RebaseScheduleMutationGuardMask`. The schedule route now opens runtime state through a transient handle while the guard is held, marks scheduled buffer flags without acquiring pins, and transfers the single guard to the caller for release after the returned job completes.
+Rejected Alternatives: Keeping per-buffer pins because AUP shifts are rare; rare shifts are exactly where large cross-domain buffers collide. Splitting each rebase lane into isolated same-frame jobs was rejected because it raises scheduling overhead and complicates the origin-shift barrier.
+Scalability potential: Low avoids origin-shift stalls and relocation races on weak CPUs. Middle keeps deterministic time slicing. High/Ultra can spend saved frame budget on richer post-shift visual realignment instead of lock recovery.
+Hardware Impact: Removes runtime write-lock plus multi-pin stacking from the scheduled rebase path. Expected low-end saving is 10-120 us per origin shift schedule/release window; the main gain is eliminating the deadlock and relocation race vector.

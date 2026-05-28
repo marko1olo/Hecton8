@@ -835,7 +835,7 @@ namespace Hecton8.Inventory
         {
             if (_vaultBufferBase == 0)
             {
-                int instanceBucket = GetInstanceID() & PlayerInventoryVaultBufferInstanceMask;
+                int instanceBucket = unchecked((int)UnityEngine.EntityId.ToULong(GetEntityId())) & PlayerInventoryVaultBufferInstanceMask;
                 _vaultBufferBase = PlayerInventoryVaultBufferBase + (instanceBucket * PlayerInventoryVaultBufferStride);
             }
 

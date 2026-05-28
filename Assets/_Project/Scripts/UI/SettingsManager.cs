@@ -53,6 +53,7 @@ namespace Hecton8.UI
         private const int DefaultGraphicsPreset = 2; // High
         private const float DefaultFOV = 75f;
         private const float DefaultVrHeadRelativeSwimBias = 0.55f;
+        public const int MaxContinuousQualityLevel = 3;
 
         // ══════════════════════════════════════════════════════════
         // REGISTRY CACHE
@@ -227,20 +228,20 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Gets or sets the Unity quality level (0-based index into QualitySettings.names).
-        /// Automatically clamped to valid range and persisted to PlayerPrefs.
+        /// Gets or sets the user quality preference.
+        /// The saved index is mapped to HomeostasisBrain.GlobalQualityWeight instead of Unity quality presets.
         /// </summary>
         public int QualityLevel
         {
             get => _cachedQualityLevel;
             set
             {
-                int clamped = Mathf.Clamp(value, 0, QualitySettings.names.Length - 1);
+                int clamped = Mathf.Clamp(value, 0, MaxContinuousQualityLevel);
                 if (_cachedQualityLevel == clamped)
                     return;
 
                 _cachedQualityLevel = clamped;
-                QualitySettings.SetQualityLevel(clamped, true);
+                TryApplyQualityLevel(clamped);
                 SaveInt(QualityLevelKey, clamped);
             }
         }
@@ -824,13 +825,12 @@ namespace Hecton8.UI
 
         private static int ValidateQualityLevel(int value)
         {
-            int maxLevel = QualitySettings.names.Length - 1;
-            if (value < 0 || value > maxLevel)
+            if (value < 0 || value > MaxContinuousQualityLevel)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 H8Debug.LogWarning("[SettingsManager] Invalid quality level; clamping.");
 #endif
-                return Mathf.Clamp(value, 0, maxLevel);
+                return Mathf.Clamp(value, 0, MaxContinuousQualityLevel);
             }
             return value;
         }
@@ -1043,7 +1043,8 @@ namespace Hecton8.UI
         {
             try
             {
-                QualitySettings.SetQualityLevel(level, true);
+                float qualityWeight01 = ResolveQualityWeightFromLevel(level);
+                HomeostasisBrain.SetUserGlobalQualityWeightPreference(qualityWeight01, true);
                 return true;
             }
             catch (System.Exception ex)
@@ -1051,6 +1052,12 @@ namespace Hecton8.UI
                 LogApplyQualityLevelFailed(level, ex);
                 return false;
             }
+        }
+
+        private static float ResolveQualityWeightFromLevel(int level)
+        {
+            float normalized = Mathf.Clamp01(level / (float)MaxContinuousQualityLevel);
+            return normalized * normalized * (3f - 2f * normalized);
         }
 
         private static bool TryApplyVSync(bool enabled)

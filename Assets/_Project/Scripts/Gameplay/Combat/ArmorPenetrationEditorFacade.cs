@@ -365,7 +365,7 @@ namespace Hecton8.Gameplay
                         targetObject.transform.position = Vector3.zero;
                         targetObject.transform.rotation = Quaternion.identity;
                         targetObject.transform.localScale = Vector3.one;
-                        targetId = targetObject.GetInstanceID();
+                        targetId = unchecked((int)UnityEngine.EntityId.ToULong(targetObject.GetEntityId()));
 
                         targetRegistered = CombatDamageRuntime.RegisterTarget(
                             targetId,

@@ -867,7 +867,7 @@ namespace Hecton8.Tools.ToolKinematics
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.DataVault:
-                    QueueDataVaultRebind(currentService as IDataVault);
+                    QueueDataVaultRebind(currentService is IDataVault currentVault ? currentVault : null);
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _fixedRegistered = false;
@@ -884,9 +884,13 @@ namespace Hecton8.Tools.ToolKinematics
             }
         }
 
-        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsOwnedVaultHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == (uint)expectedBufferId &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)SystemID.GameplayTools;
         }
 
         private static bool TryResolveVaultView<T>(
@@ -903,7 +907,7 @@ namespace Hecton8.Tools.ToolKinematics
             if (vault == null || requiredLength <= 0)
                 return false;
 
-            if (IsHandleCreated(in handle) &&
+            if (IsOwnedVaultHandle(in handle, bufferId) &&
                 vault.TryResolveHandle(in handle, out buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)
@@ -911,15 +915,22 @@ namespace Hecton8.Tools.ToolKinematics
                 return true;
             }
 
+            if (!IsOwnedVaultHandle(in handle, bufferId))
+                handle = default;
+
             if (!allowCreate)
                 return false;
 
             VaultGenerationHandle<T> acquired = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, SystemID.GameplayTools, options);
-            if (!IsHandleCreated(in acquired) ||
-                !vault.TryResolveHandle(in acquired, out buffer) ||
+            if (!IsOwnedVaultHandle(in acquired, bufferId))
+                return false;
+
+            if (!vault.TryResolveHandle(in acquired, out buffer) ||
                 !buffer.IsCreated ||
                 buffer.Length < requiredLength)
             {
+                vault.ReleaseBuffer(in acquired);
+                buffer = default;
                 return false;
             }
 
@@ -1470,27 +1481,33 @@ namespace Hecton8.Tools.ToolKinematics
             if (vault == null)
                 return;
 
-            ReleaseVaultHandle(vault, ref _statesHandle);
-            ReleaseVaultHandle(vault, ref _frameInputsHandle);
-            ReleaseVaultHandle(vault, ref _hitResultsHandle);
-            ReleaseVaultHandle(vault, ref _ikOutputsHandle);
-            ReleaseVaultHandle(vault, ref _recoilStatesHandle);
-            ReleaseVaultHandle(vault, ref _tuningHandle);
-            ReleaseVaultHandle(vault, ref _screenExportsHandle);
-            ReleaseVaultHandle(vault, ref _telemetryHandle);
-            ReleaseVaultHandle(vault, ref _mockTriggerSignalsHandle);
-            ReleaseVaultHandle(vault, ref _carveRequestsHandle);
-            ReleaseVaultHandle(vault, ref _heatSignalsHandle);
-            ReleaseVaultHandle(vault, ref _sparkRequestsHandle);
-            ReleaseVaultHandle(vault, ref _beamVerticesHandle);
-            ReleaseVaultHandle(vault, ref _beamVertexCountsHandle);
-            ReleaseVaultHandle(vault, ref _poseOutputsHandle);
+            ReleaseVaultHandle(vault, ref _statesHandle, BufferID.ToolKinematicsStates);
+            ReleaseVaultHandle(vault, ref _frameInputsHandle, BufferID.ToolKinematicsFrameInputs);
+            ReleaseVaultHandle(vault, ref _hitResultsHandle, BufferID.ToolKinematicsHitResults);
+            ReleaseVaultHandle(vault, ref _ikOutputsHandle, BufferID.ToolKinematicsIkOutputs);
+            ReleaseVaultHandle(vault, ref _recoilStatesHandle, BufferID.ToolKinematicsRecoilStates);
+            ReleaseVaultHandle(vault, ref _tuningHandle, BufferID.ToolKinematicsTuning);
+            ReleaseVaultHandle(vault, ref _screenExportsHandle, BufferID.ToolKinematicsScreenExports);
+            ReleaseVaultHandle(vault, ref _telemetryHandle, BufferID.ToolKinematicsTelemetryRing);
+            ReleaseVaultHandle(vault, ref _mockTriggerSignalsHandle, BufferID.ToolKinematicsMockTriggerSignals);
+            ReleaseVaultHandle(vault, ref _carveRequestsHandle, BufferID.ToolKinematicsMockCarveRequests);
+            ReleaseVaultHandle(vault, ref _heatSignalsHandle, BufferID.ToolKinematicsHeatSignals);
+            ReleaseVaultHandle(vault, ref _sparkRequestsHandle, BufferID.ToolKinematicsSparkRequests);
+            ReleaseVaultHandle(vault, ref _beamVerticesHandle, BufferID.ToolKinematicsBeamVertices);
+            ReleaseVaultHandle(vault, ref _beamVertexCountsHandle, BufferID.ToolKinematicsBeamVertexCounts);
+            ReleaseVaultHandle(vault, ref _poseOutputsHandle, BufferID.ToolKinematicsPoseOutputs);
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        private static void ReleaseVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : struct
         {
-            if (!IsHandleCreated(in handle))
+            if (!IsOwnedVaultHandle(in handle, expectedBufferId))
+            {
+                handle = default;
                 return;
+            }
 
             vault.ReleaseBuffer(in handle);
             handle = default;

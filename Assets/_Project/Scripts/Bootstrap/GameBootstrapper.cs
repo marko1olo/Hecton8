@@ -7208,7 +7208,7 @@ namespace Hecton8.Bootstrap
             text.fontStyle = FontStyles.Bold;
             text.fontSize = 28f;
             text.alignment = TextAlignmentOptions.Center;
-            text.enableWordWrapping = true;
+            text.textWrappingMode = TextWrappingModes.Normal;
             text.overflowMode = TextOverflowModes.Overflow;
             text.color = Color.white;
             text.richText = false;

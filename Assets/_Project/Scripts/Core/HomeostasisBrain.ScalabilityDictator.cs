@@ -2386,9 +2386,22 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Runtime user preference facade for continuous quality. Hardware ceilings still clamp the effective value.
+        /// </summary>
+        public static void SetUserGlobalQualityWeightPreference(float qualityWeight, bool enabled)
+        {
+            SetForcedGlobalQualityWeightOverride(qualityWeight, enabled);
+        }
+
+        /// <summary>
         /// Editor/test facade for forced continuous quality. Negative values disable the override.
         /// </summary>
         public static void SetForcedGlobalQualityWeightForTuner(float qualityWeight, bool enabled)
+        {
+            SetForcedGlobalQualityWeightOverride(qualityWeight, enabled);
+        }
+
+        private static void SetForcedGlobalQualityWeightOverride(float qualityWeight, bool enabled)
         {
             float sanitizedWeight = ForcedQualityWeightDisabled;
             bool validOverride = enabled && TrySanitizeForcedQualityWeight(qualityWeight, out sanitizedWeight);

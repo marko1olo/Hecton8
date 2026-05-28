@@ -2823,7 +2823,7 @@ namespace Hecton8.UI
             if (prefab == null)
                 return null;
 
-            int prefabId = prefab.GetInstanceID();
+            int prefabId = unchecked((int)UnityEngine.EntityId.ToULong(prefab.GetEntityId()));
             for (int i = 0; i < _prefabToolCacheCount; i++)
             {
                 if (_prefabToolCacheIds[i] == prefabId)

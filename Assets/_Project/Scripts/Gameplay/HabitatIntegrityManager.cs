@@ -901,7 +901,7 @@ namespace Hecton8.Gameplay
         {
             if (signal.EffectType != EffectType.Weld ||
                 _baseModule == null ||
-                signal.ModuleTargetInstanceId != _baseModule.GetInstanceID())
+                signal.ModuleTargetInstanceId != unchecked((int)UnityEngine.EntityId.ToULong(_baseModule.GetEntityId())))
             {
                 return;
             }

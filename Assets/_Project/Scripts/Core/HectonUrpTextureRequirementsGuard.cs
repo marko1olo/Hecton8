@@ -127,7 +127,7 @@ namespace Hecton8.Core
 
         private static bool TryResolveCameraData(Camera camera, out UniversalAdditionalCameraData cameraData)
         {
-            int instanceId = camera.GetInstanceID();
+            int instanceId = unchecked((int)UnityEngine.EntityId.ToULong(camera.GetEntityId()));
             for (int index = 0; index < s_cameraDataCacheCount; index++)
             {
                 if (s_cameraInstanceIdCache[index] != instanceId)

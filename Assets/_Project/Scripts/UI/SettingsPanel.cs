@@ -556,9 +556,8 @@ namespace Hecton8.UI
             if (txtQualityLevel == null)
                 return;
 
-            string[] qualityNames = QualitySettings.names;
-            if (_cachedQualityLevel >= 0 && _cachedQualityLevel < qualityNames.Length)
-                SetValueTextIfChanged(txtQualityLevel, ResolveLocalizedQualityName(qualityNames[_cachedQualityLevel]), ref _prevQualityLevelTextHash);
+            if (_cachedQualityLevel >= 0 && _cachedQualityLevel <= SettingsManager.MaxContinuousQualityLevel)
+                SetValueTextIfChanged(txtQualityLevel, ResolveLocalizedQualityName(_cachedQualityLevel), ref _prevQualityLevelTextHash);
             else
                 SetValueTextIfChanged(txtQualityLevel, "--".AsSpan(), ref _prevQualityLevelTextHash);
         }
@@ -721,15 +720,13 @@ namespace Hecton8.UI
 
         private void OnQualityDecrease()
         {
-            int maxLevel = QualitySettings.names.Length - 1;
-            _cachedQualityLevel = Mathf.Clamp(_cachedQualityLevel - 1, 0, maxLevel);
+            _cachedQualityLevel = Mathf.Clamp(_cachedQualityLevel - 1, 0, SettingsManager.MaxContinuousQualityLevel);
             RefreshQualityUI();
         }
 
         private void OnQualityIncrease()
         {
-            int maxLevel = QualitySettings.names.Length - 1;
-            _cachedQualityLevel = Mathf.Clamp(_cachedQualityLevel + 1, 0, maxLevel);
+            _cachedQualityLevel = Mathf.Clamp(_cachedQualityLevel + 1, 0, SettingsManager.MaxContinuousQualityLevel);
             RefreshQualityUI();
         }
 
@@ -1001,21 +998,16 @@ namespace Hecton8.UI
             return AntiAliasingNames[Mathf.Clamp(antiAliasingIndex, 0, AntiAliasingNames.Length - 1)].AsSpan();
         }
 
-        private static ReadOnlySpan<char> ResolveLocalizedQualityName(string qualityName)
+        private static ReadOnlySpan<char> ResolveLocalizedQualityName(int qualityIndex)
         {
-            if (string.IsNullOrWhiteSpace(qualityName))
-                return "--".AsSpan();
-
-            if (qualityName.IndexOf("Low", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                return ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_LOW, "LOW");
-            if (qualityName.IndexOf("Medium", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                return ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_MEDIUM, "MEDIUM");
-            if (qualityName.IndexOf("High", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                return ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_HIGH, "HIGH");
-            if (qualityName.IndexOf("Ultra", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                return ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_ULTRA, "ULTRA");
-
-            return qualityName.AsSpan();
+            return qualityIndex switch
+            {
+                0 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_LOW, "LOW"),
+                1 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_MEDIUM, "MEDIUM"),
+                2 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_HIGH, "HIGH"),
+                3 => ResolveLocalizedSpan(LocalizationKeys.SETTINGS_PRESET_ULTRA, "ULTRA"),
+                _ => "--".AsSpan()
+            };
         }
 
         // ══════════════════════════════════════════════════════════

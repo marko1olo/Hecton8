@@ -6248,59 +6248,35 @@ namespace Hecton8.Construction
             if (!EnsureFloodRoomHandles(safeLength))
                 return false;
 
-            bool waterLocked = false;
-            bool volumeLocked = false;
-            bool deltaLocked = false;
-            bool flagsLocked = false;
-            IDataVault ignoredVault;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatRoomWaterLevelsBufferId,
-                    safeLength,
-                    in _roomWaterLevelsHandle,
-                    out roomWaterLevels,
-                    out vault))
+            vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(HabitatFloodRoomMutationGuardMask))
             {
+                vault = null;
                 return false;
             }
 
-            waterLocked = true;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatRoomVolumesBufferId,
-                    safeLength,
-                    in _roomVolumesHandle,
-                    out roomVolumes,
-                    out ignoredVault))
+            bool acquired = false;
+            try
             {
-                ReleaseFloodRoomWriteLocks(vault, waterLocked, volumeLocked, deltaLocked, flagsLocked);
-                return false;
+                acquired =
+                    TryOpenHabitatVaultBuffer(vault, in _roomWaterLevelsHandle, HabitatRoomWaterLevelsBufferId, safeLength, out roomWaterLevels) &&
+                    TryOpenHabitatVaultBuffer(vault, in _roomVolumesHandle, HabitatRoomVolumesBufferId, safeLength, out roomVolumes) &&
+                    TryOpenHabitatVaultBuffer(vault, in _roomFloodDeltaLevelsHandle, HabitatRoomFloodDeltaLevelsBufferId, safeLength, out roomFloodDeltaLevels) &&
+                    TryOpenHabitatVaultBuffer(vault, in _roomFlagsHandle, HabitatRoomFlagsBufferId, safeLength, out roomFlags);
+                return acquired;
             }
-
-            volumeLocked = true;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatRoomFloodDeltaLevelsBufferId,
-                    safeLength,
-                    in _roomFloodDeltaLevelsHandle,
-                    out roomFloodDeltaLevels,
-                    out ignoredVault))
+            finally
             {
-                ReleaseFloodRoomWriteLocks(vault, waterLocked, volumeLocked, deltaLocked, flagsLocked);
-                return false;
+                if (!acquired)
+                {
+                    vault.ReleaseMutationGuard(HabitatFloodRoomMutationGuardMask);
+                    roomWaterLevels = default;
+                    roomVolumes = default;
+                    roomFloodDeltaLevels = default;
+                    roomFlags = default;
+                    vault = null;
+                }
             }
-
-            deltaLocked = true;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatRoomFlagsBufferId,
-                    safeLength,
-                    in _roomFlagsHandle,
-                    out roomFlags,
-                    out ignoredVault))
-            {
-                ReleaseFloodRoomWriteLocks(vault, waterLocked, volumeLocked, deltaLocked, flagsLocked);
-                return false;
-            }
-
-            flagsLocked = true;
-            return true;
         }
 
         private void ReleaseFloodRoomWriteLocks(IDataVault vault)
@@ -6318,14 +6294,8 @@ namespace Hecton8.Construction
             if (vault == null)
                 return;
 
-            if (flagsLocked)
-                vault.ReleaseWriteLock(in _roomFlagsHandle, SystemID.Construction);
-            if (deltaLocked)
-                vault.ReleaseWriteLock(in _roomFloodDeltaLevelsHandle, SystemID.Construction);
-            if (volumeLocked)
-                vault.ReleaseWriteLock(in _roomVolumesHandle, SystemID.Construction);
-            if (waterLocked)
-                vault.ReleaseWriteLock(in _roomWaterLevelsHandle, SystemID.Construction);
+            if (waterLocked || volumeLocked || deltaLocked || flagsLocked)
+                vault.ReleaseMutationGuard(HabitatFloodRoomMutationGuardMask);
         }
 
         private void ReleaseFloodPropagationRoomWriteLocks()
@@ -6381,59 +6351,35 @@ namespace Hecton8.Construction
             if (!EnsureModuleStressHandles(safeLength))
                 return false;
 
-            bool moduleStressLocked = false;
-            bool previousStressLocked = false;
-            bool impactStressLocked = false;
-            bool compromisedFlagsLocked = false;
-            IDataVault ignoredVault;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatModuleStressScalarsBufferId,
-                    safeLength,
-                    in _moduleStressScalarsHandle,
-                    out moduleStressScalars,
-                    out vault))
+            vault = _dataVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(HabitatModuleStressMutationGuardMask))
             {
+                vault = null;
                 return false;
             }
 
-            moduleStressLocked = true;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatPreviousModuleStressScalarsBufferId,
-                    safeLength,
-                    in _previousModuleStressScalarsHandle,
-                    out previousModuleStressScalars,
-                    out ignoredVault))
+            bool acquired = false;
+            try
             {
-                ReleaseModuleStressWriteLocks(vault, moduleStressLocked, previousStressLocked, impactStressLocked, compromisedFlagsLocked);
-                return false;
+                acquired =
+                    TryOpenHabitatVaultBuffer(vault, in _moduleStressScalarsHandle, HabitatModuleStressScalarsBufferId, safeLength, out moduleStressScalars) &&
+                    TryOpenHabitatVaultBuffer(vault, in _previousModuleStressScalarsHandle, HabitatPreviousModuleStressScalarsBufferId, safeLength, out previousModuleStressScalars) &&
+                    TryOpenHabitatVaultBuffer(vault, in _moduleImpactStressSpikesHandle, HabitatModuleImpactStressSpikesBufferId, safeLength, out moduleImpactStressSpikes) &&
+                    TryOpenHabitatVaultBuffer(vault, in _moduleCompromisedFlagsHandle, HabitatModuleCompromisedFlagsBufferId, safeLength, out moduleCompromisedFlags);
+                return acquired;
             }
-
-            previousStressLocked = true;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatModuleImpactStressSpikesBufferId,
-                    safeLength,
-                    in _moduleImpactStressSpikesHandle,
-                    out moduleImpactStressSpikes,
-                    out ignoredVault))
+            finally
             {
-                ReleaseModuleStressWriteLocks(vault, moduleStressLocked, previousStressLocked, impactStressLocked, compromisedFlagsLocked);
-                return false;
+                if (!acquired)
+                {
+                    vault.ReleaseMutationGuard(HabitatModuleStressMutationGuardMask);
+                    moduleStressScalars = default;
+                    previousModuleStressScalars = default;
+                    moduleImpactStressSpikes = default;
+                    moduleCompromisedFlags = default;
+                    vault = null;
+                }
             }
-
-            impactStressLocked = true;
-            if (!TryAcquireHabitatVaultWriteBuffer(
-                    HabitatModuleCompromisedFlagsBufferId,
-                    safeLength,
-                    in _moduleCompromisedFlagsHandle,
-                    out moduleCompromisedFlags,
-                    out ignoredVault))
-            {
-                ReleaseModuleStressWriteLocks(vault, moduleStressLocked, previousStressLocked, impactStressLocked, compromisedFlagsLocked);
-                return false;
-            }
-
-            compromisedFlagsLocked = true;
-            return true;
         }
 
         private void ReleaseModuleStressWriteLocks(IDataVault vault)
@@ -6451,14 +6397,8 @@ namespace Hecton8.Construction
             if (vault == null)
                 return;
 
-            if (compromisedFlagsLocked)
-                vault.ReleaseWriteLock(in _moduleCompromisedFlagsHandle, SystemID.Construction);
-            if (impactStressLocked)
-                vault.ReleaseWriteLock(in _moduleImpactStressSpikesHandle, SystemID.Construction);
-            if (previousStressLocked)
-                vault.ReleaseWriteLock(in _previousModuleStressScalarsHandle, SystemID.Construction);
-            if (moduleStressLocked)
-                vault.ReleaseWriteLock(in _moduleStressScalarsHandle, SystemID.Construction);
+            if (moduleStressLocked || previousStressLocked || impactStressLocked || compromisedFlagsLocked)
+                vault.ReleaseMutationGuard(HabitatModuleStressMutationGuardMask);
         }
 
         private void ReleaseFloodPropagationSummaryWriteLock()

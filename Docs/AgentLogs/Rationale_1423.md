@@ -393,3 +393,11 @@ Solution: Replaced those static `char[]` clones with `ReadOnlySpan<char>` litera
 Rejected Alternatives: Blindly converting `SuitHUDV4CanvasOverlay` in the same patch; that file has 29 remaining `.ToCharArray()` hits and one mutable static memory-breach hex buffer. Changing it safely requires a local mutable instance buffer route, not a mechanical span property. `LocRegistry` also still exposes one missing-key `char[]` fallback because legacy `TryGetVisualBuffer` returns `char[]`.
 Scalability potential: Low devices avoid small cold managed array clones during UI screen bootstrap. Middle/high/ultra behavior is unchanged. This does not alter gameplay truth, save identity, DTO layout, or authority routes.
 Hardware Impact: Static/source/report estimate 1250000 us. Expected i3/MX350 gain is reduced cold managed UI allocation surface. Runtime profiler proof remains absent. Build was not launched because CPU sampled 100% and active `dotnet.exe` PID 13464 was present.
+
+## Decision 050 - Terminal Boot Span Status Purge
+
+Problem: Fresh source scan superseded stale CONT32 `.ToCharArray()` residuals, but found a live 1423-domain contract smell in terminal boot presentation: `TerminalBootSequence` built a TMP payload through string-typed status variables and `AppendString(string)`, while `HectonOSBootManager` private resolvers returned strings only to call `.AsSpan()`.
+Solution: Converted those private status/vector routes to `ReadOnlySpan<char>` and kept all writes bounded through existing preallocated `char[]` buffers before `TMP_Text.SetCharArray`. No public API changed, no new DataVault route, no new signal, no new managed queue.
+Rejected Alternatives: Writing another JSON proof artifact, deleting compatibility string APIs outside the local terminal builders, or running `dotnet build` while CPU was 100% and `VBCSCompiler.exe` PID 53464 was active.
+Scalability potential: Low devices keep the same cheap terminal fake with fewer managed text surfaces. Middle/high/ultra devices keep identical payload truth and may spend `GlobalQualityWeight` budget on presentation styling elsewhere; no binary quality switch was added.
+Hardware Impact: Static/source scan estimate 45000000 us including broad domain and hot-method scans. Runtime GC/profiler proof remains absent.

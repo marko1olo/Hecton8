@@ -5590,7 +5590,7 @@ namespace Hecton8.Core
             set
             {
                 _collider = value;
-                _dto.ColliderInstanceId = value != null ? value.GetInstanceID() : 0;
+                _dto.ColliderInstanceId = ResolveColliderEntityId(value);
                 _dto.Layer = value != null ? value.gameObject.layer : _dto.Layer;
                 MarkHit();
             }
@@ -5615,7 +5615,7 @@ namespace Hecton8.Core
             hit._dto.Point = point;
             hit._dto.Normal = normal;
             hit._dto.Distance = distance;
-            hit._dto.ColliderInstanceId = collider != null ? collider.GetInstanceID() : 0;
+            hit._dto.ColliderInstanceId = ResolveColliderEntityId(collider);
             hit._dto.Layer = collider != null ? collider.gameObject.layer : layer;
             hit._dto.Flags = InteractionSurfaceHitDTO.FlagHit;
             hit._collider = collider;
@@ -5625,6 +5625,11 @@ namespace Hecton8.Core
         private void MarkHit()
         {
             _dto.Flags |= InteractionSurfaceHitDTO.FlagHit;
+        }
+
+        private static int ResolveColliderEntityId(Collider collider)
+        {
+            return collider != null ? unchecked((int)UnityEngine.EntityId.ToULong(collider.GetEntityId())) : 0;
         }
     }
 
