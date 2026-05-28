@@ -12,7 +12,7 @@
   },
   "apexVerification": {
     "path": "Docs/Reports/ARENA_ALLOCATOR_APEX_VERIFICATION_1414.json",
-    "sha256": "3dccc87eeef4fec2e2cf2d833dbfb84809cb1132003adf348e1cc128e40b3e93",
+    "sha256": "65cb1949a2e732e7175862301f685684a80a846d60a24f69bd76c45f371f85a6",
     "jsonParse": "PASS",
     "zeroGcHotPathScanElapsedMicroseconds": 1477291,
     "defectsFoundDuringApex": [
@@ -115,12 +115,12 @@
   },
   "hashes": {
     "Assets/_Project/Scripts/Core/Memory/H8Memory.cs": "5244a1a957fc131c908190f6734a54ad2a17a186901d62306faa44384d083657",
-    "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs": "1bf5afd57181118d831f9502afb2b76439c7b058bfb85db18b35d1acfd94f243",
+    "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs": "a0233a4e583874e84a7425741dcdf21bd21a7bf3ec6a2b282eb7076c1d32d4e4",
     "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs": "d6cc77f5fb89f2cbde4147a7bd1364f9632aa8c6da3ce856c043138ecdd3c2cc",
     "Assets/_Project/Scripts/Core/SystemDispatcher.cs": "2764521680859df474d966e08c278aad7be7b8a03f95ef0a5dcb057bf3429c74",
     "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs": "ade4c888cbd116a8ee5b3c7fd6f3c41f3e3926f0e73b295541f87cac9e80db33",
     "Docs/Reports/ARENA_ALLOCATOR_FLOW_LEDGER_1414.json": "b1266508b3f520343f13cd15c1b289ddca60e073a5592321c8fdda5da8cffc2f",
     "Docs/Reports/ARENA_ALLOCATOR_STATIC_AUDIT_1414.json": "54582dda5a6748da761b83be9a9698110582aad879500b246385aa64d3d31b66",
-    "Docs/Reports/ARENA_ALLOCATOR_APEX_VERIFICATION_1414.json": "3dccc87eeef4fec2e2cf2d833dbfb84809cb1132003adf348e1cc128e40b3e93"
+    "Docs/Reports/ARENA_ALLOCATOR_APEX_VERIFICATION_1414.json": "65cb1949a2e732e7175862301f685684a80a846d60a24f69bd76c45f371f85a6"
   }
 }

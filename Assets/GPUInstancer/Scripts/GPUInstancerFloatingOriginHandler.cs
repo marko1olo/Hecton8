@@ -30,8 +30,9 @@ namespace GPUInstancer
                     Matrix4x4 newMatrix = _cachedTransform.localToWorldMatrix;
                     if (newMatrix != _previousMatrix)
                     {
-                        foreach (GPUInstancerManager manager in gPUIManagers)
+                        for (int i = 0; gPUIManagers != null && i < gPUIManagers.Count; i++)
                         {
+                            GPUInstancerManager manager = gPUIManagers[i];
                             if (manager != null)
                                 GPUInstancerAPI.SetGlobalMatrixOffset(manager, newMatrix * _previousMatrix.inverse);
                         }
@@ -41,8 +42,9 @@ namespace GPUInstancer
                 }
                 else if (_cachedTransform.position != _previousPosition)
                 {
-                    foreach (GPUInstancerManager manager in gPUIManagers)
+                    for (int i = 0; gPUIManagers != null && i < gPUIManagers.Count; i++)
                     {
+                        GPUInstancerManager manager = gPUIManagers[i];
                         if (manager != null)
                             GPUInstancerAPI.SetGlobalPositionOffset(manager, _cachedTransform.position - _previousPosition);
                     }

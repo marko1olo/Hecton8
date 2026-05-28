@@ -8,6 +8,9 @@ $targets = @(
     "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
     "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
     "Assets/_Project/Scripts/World/HectonIndirectVegetationContracts.cs",
+    "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+    "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+    "Assets/_Project/Scripts/World/VegetationMemoryPool.cs",
     "Assets/_Project/Scripts/World/PcieBandwidthGuard1411SelfTest.cs",
     "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs"
 )
@@ -24,11 +27,15 @@ function Read-Target([string]$relativePath) {
 $systemDispatcher = Read-Target $targets[0]
 $renderer = Read-Target $targets[1]
 $contracts = Read-Target $targets[2]
-$selfTest = Read-Target $targets[3]
-$carveDebris = Read-Target $targets[4]
+$mapMagicBridge = Read-Target $targets[3]
+$residencyDirector = Read-Target $targets[4]
+$vegetationMemoryPool = Read-Target $targets[5]
+$selfTest = Read-Target $targets[6]
+$carveDebris = Read-Target $targets[7]
 
 $checks = [ordered]@{
     UploadRangeMethodPresent = $systemDispatcher.Contains("private static void UploadNativeArrayRange<T>")
+    MarkDirtyPageRangePresent = $systemDispatcher.Contains("public static void MarkDirtyPageRange(NativeArray<byte> dirtyPages")
     OffsetLockPresent = $systemDispatcher.Contains("destination.LockBufferForWrite<T>(startIndex, count)")
     LongByteOffsetPresent = $systemDispatcher.Contains("((long)startIndex * stride)")
     GuardedMemcpyPresent = $systemDispatcher.Contains("UnsafeMemoryCopyGuard.TryMemCpy")
@@ -40,6 +47,17 @@ $checks = [ordered]@{
     RendererPartialUploadPresent = $renderer.Contains("BindInstanceNativeDirtyPages")
     RendererBudgetUsesQuality = $renderer.Contains("ResolveNativeUploadBudgetBytes") -and $renderer.Contains("_cachedQualityWeight01")
     RendererCombinedBudgetGatePresent = $renderer.Contains("remainingBudgetBytes >= dataFirstDirtyPageBytes") -and $renderer.Contains("dataDeferredByBudget")
+    RendererAbsorbsSourceDirtyOnce = $renderer.Contains("HasAbsorbedNativeSourceDirtyPages(in readBuffer)") -and $renderer.Contains("RecordNativeSourceDirtyPagesAbsorbed(in readBuffer)")
+    RendererBacklogBlocksFullFallback = $renderer.Contains("!HasUploadedWriteDirtyPageBacklog(instanceCount)") -and $renderer.Contains("HasUploadedWriteDirtyPageBacklog(readBuffer.InstanceCount)")
+    MapMagicDirtyPageIdsPresent = $mapMagicBridge.Contains("SurfaceAggregateFrontMatrixDirtyPagesId = (BufferID)74607") -and $mapMagicBridge.Contains("UnderwaterAggregateBackMetadataDirtyPagesId = (BufferID)74614")
+    MapMagicDirtyPageStoragePresent = $mapMagicBridge.Contains("EnsureAggregateDirtyPageBuffer(ref buffers.MatrixDirtyPagesHandle") -and $mapMagicBridge.Contains("EnsureAggregateDirtyPageBuffer(ref buffers.MetadataDirtyPagesHandle")
+    MapMagicDirtyPageLocksPresent = $mapMagicBridge.Contains("TryAcquireActiveAggregateDirtyPagesForWrite") -and $mapMagicBridge.Contains("ReleaseActiveAggregateDirtyPageWriteLocks")
+    MapMagicDirtyPageReleaseFinallyPresent = $mapMagicBridge.Contains("finally") -and $mapMagicBridge.Contains("ReleaseWriteLock(in buffers.MetadataDirtyPagesHandle") -and $mapMagicBridge.Contains("ReleaseWriteLock(in buffers.MatrixDirtyPagesHandle")
+    MapMagicBufferIndexResolverPresent = $mapMagicBridge.Contains("ResolveSurfaceAggregateMatrixBufferId(int bufferIndex)") -and $mapMagicBridge.Contains("ResolveUnderwaterAggregateMatrixBufferId(int bufferIndex)") -and $mapMagicBridge.Contains("ResolveSurfaceAggregateMatrixDirtyPageBufferId(int bufferIndex)") -and $mapMagicBridge.Contains("ResolveUnderwaterAggregateMetadataDirtyPageBufferId(int bufferIndex)")
+    MapMagicReadTokenPublishesDirtyPages = $mapMagicBridge.Contains("TryReadAggregateBuffer(in buffers.MatrixDirtyPagesHandle, dirtyPageCount, out matrixDirtyPages)") -and $mapMagicBridge.Contains("TryReadAggregateBuffer(in buffers.MetadataDirtyPagesHandle, dirtyPageCount, out metadataDirtyPages)") -and $mapMagicBridge.Contains("ActiveAggregateDirtyPageSize);")
+    ResidencyUsesBufferIndexSpecificBackIds = $residencyDirector.Contains("ResolveSurfaceAggregateMatrixBufferId(_surfaceBackBufferIndex)") -and $residencyDirector.Contains("ResolveUnderwaterAggregateMatrixBufferId(_underwaterBackBufferIndex)")
+    ResidencyClearsAndMarksDirtyRanges = $residencyDirector.Contains("ClearDirtyPages(surfaceMatrixDirtyPages") -and $residencyDirector.Contains("MarkDirtyPageRange(") -and $residencyDirector.Contains("ReleaseActiveAggregateDirtyPageWriteLocks")
+    VegetationPoolTracksDirtyHandles = $vegetationMemoryPool.Contains("VaultGenerationHandle<byte> MatrixDirtyPagesHandle") -and $vegetationMemoryPool.Contains("VaultGenerationHandle<byte> MetadataDirtyPagesHandle") -and $vegetationMemoryPool.Contains("int DirtyPageCapacity")
     SelfTestSinglePagePresent = $selfTest.Contains("AssertSingleDirtyPageForLastMatrix")
     SelfTestCombinedBudgetPresent = $selfTest.Contains("AssertCombinedMatrixAndMetadataBudgetDoesNotOvershoot")
     SelfTestPingPongPresent = $selfTest.Contains("AssertDoubleBufferBacklogFuzzer")

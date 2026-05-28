@@ -8,10 +8,10 @@
       "dotnetBuild": "BLOCKED_BY_CONTENTION",
       "dotnetCount": 1,
       "sampleCommand": "Get-Counter \"\\Processor(_Total)\\% Processor Time\" plus Get-Process dotnet/csc",
-      "sampleUtc": "2026-05-28T01:41:52Z"
+      "sampleUtc": "2026-05-28T01:46:34Z"
     },
     "sample": {
-      "cpuLoadPercent": 74.326591,
+      "cpuLoadPercent": 74.462564,
       "cscCount": 0,
       "dotnetBuild": "BLOCKED_BY_CONTENTION",
       "dotnetCount": 1,
@@ -60,7 +60,7 @@
       }
     }
   },
-  "generatedUtc": "2026-05-28T01:45:57Z",
+  "generatedUtc": "2026-05-28T01:46:41Z",
   "knownResidualRisk": [
     "GlobalDataVault release APIs now queue a fixed-size unmanaged deferred-release request if the block mutation gate is busy. Runtime drain is static-only verified; compiler and Unity runtime proof are still pending.",
     "Project-wide scanner still reports loop-shaped and nested-lock candidates outside the edited window; they are report-ranked but not all fixed in this pass."
@@ -81,7 +81,7 @@
   },
   "reportHashesBeforeApexWrite": {
     "lockSpanLedgerSha256": "23ed043fe774fa28d8c6aed1dd4bf25a70495a5ec6d255ea6a0861b1b3e70220",
-    "optimizationReportSha256": "eed3a266d12f8cb231b7192aeab7776347f8db49c47f703276141e8e281c6165"
+    "optimizationReportSha256": "a0fb98f6a2a23364dde7bca6db00f9c98217a5564a67236c5b3a7ab544320932"
   },
   "role": "ATOMIC_LOCK_CONTENTION_AND_FAIL_CLOSED_COORDINATOR",
   "zeroGcTextScan": {
