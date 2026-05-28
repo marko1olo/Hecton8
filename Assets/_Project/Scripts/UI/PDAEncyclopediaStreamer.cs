@@ -1531,7 +1531,7 @@ namespace Hecton8.UI
         private static bool IsPdaHandleCreated<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId)
             where T : unmanaged
         {
-            return handle.BufferID == expectedBufferId &&
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
                    handle.SystemID == (uint)VaultOwnerSystemId &&
                    handle.Generation != 0u;
         }

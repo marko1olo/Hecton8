@@ -8,11 +8,17 @@
                                      "sha256":  "08124D34399C8F54138C9F181114ABA9FF74B7FF9C5CF100E0E40BA7C2449E24",
                                      "counts":  {
                                                     "string_format":  0,
+                                                    "to_string_call":  0,
                                                     "tmp_text_assignment":  0,
-                                                    "to_string":  0,
-                                                    "interpolation":  0,
+                                                    "set_text_call":  0,
+                                                    "new_string":  0,
                                                     "string_builder":  0,
-                                                    "new_string":  0
+                                                    "array_resize":  0,
+                                                    "foreach":  0,
+                                                    "linq_using":  0,
+                                                    "linq_methods":  0,
+                                                    "interpolation":  0,
+                                                    "scene_search":  0
                                                 }
                                  },
                                  {
@@ -21,11 +27,17 @@
                                      "sha256":  "DF0E50E0EDEA48D8CE2FADBEE1EB2842C1E27C78D78580D68EDBC52DC8A16CB0",
                                      "counts":  {
                                                     "string_format":  0,
+                                                    "to_string_call":  0,
                                                     "tmp_text_assignment":  0,
-                                                    "to_string":  0,
-                                                    "interpolation":  0,
+                                                    "set_text_call":  0,
+                                                    "new_string":  0,
                                                     "string_builder":  0,
-                                                    "new_string":  0
+                                                    "array_resize":  0,
+                                                    "foreach":  0,
+                                                    "linq_using":  0,
+                                                    "linq_methods":  0,
+                                                    "interpolation":  0,
+                                                    "scene_search":  0
                                                 }
                                  },
                                  {
@@ -34,11 +46,17 @@
                                      "sha256":  "9BD64EB488B606B4E759DC8455F6FC200390E47558A7671D2C4E8C8DA2A50CFB",
                                      "counts":  {
                                                     "string_format":  0,
+                                                    "to_string_call":  0,
                                                     "tmp_text_assignment":  0,
-                                                    "to_string":  0,
-                                                    "interpolation":  0,
+                                                    "set_text_call":  0,
+                                                    "new_string":  0,
                                                     "string_builder":  0,
-                                                    "new_string":  0
+                                                    "array_resize":  0,
+                                                    "foreach":  0,
+                                                    "linq_using":  0,
+                                                    "linq_methods":  0,
+                                                    "interpolation":  0,
+                                                    "scene_search":  0
                                                 }
                                  },
                                  {
@@ -47,11 +65,17 @@
                                      "sha256":  "E29798E924AED1DAEB42912860B43547341F465D4CC2288FA78552BEED9134A4",
                                      "counts":  {
                                                     "string_format":  0,
+                                                    "to_string_call":  0,
                                                     "tmp_text_assignment":  0,
-                                                    "to_string":  0,
-                                                    "interpolation":  0,
+                                                    "set_text_call":  0,
+                                                    "new_string":  0,
                                                     "string_builder":  0,
-                                                    "new_string":  0
+                                                    "array_resize":  0,
+                                                    "foreach":  0,
+                                                    "linq_using":  0,
+                                                    "linq_methods":  0,
+                                                    "interpolation":  0,
+                                                    "scene_search":  0
                                                 }
                                  },
                                  {
@@ -60,11 +84,17 @@
                                      "sha256":  "EA6D91974BEBD1BEE214EF1ED1E69978D4ED929083D61AB0E7B811BC9A052104",
                                      "counts":  {
                                                     "string_format":  0,
+                                                    "to_string_call":  0,
                                                     "tmp_text_assignment":  0,
-                                                    "to_string":  0,
-                                                    "interpolation":  0,
+                                                    "set_text_call":  0,
+                                                    "new_string":  0,
                                                     "string_builder":  0,
-                                                    "new_string":  0
+                                                    "array_resize":  0,
+                                                    "foreach":  0,
+                                                    "linq_using":  0,
+                                                    "linq_methods":  0,
+                                                    "interpolation":  0,
+                                                    "scene_search":  0
                                                 }
                                  },
                                  {
@@ -73,11 +103,17 @@
                                      "sha256":  "A56BD6C648B6A0A4C8F2E7FF71F69351FE65B33138D5818B7940BF55DDB2CA29",
                                      "counts":  {
                                                     "string_format":  0,
+                                                    "to_string_call":  0,
                                                     "tmp_text_assignment":  0,
-                                                    "to_string":  0,
-                                                    "interpolation":  0,
+                                                    "set_text_call":  0,
+                                                    "new_string":  0,
                                                     "string_builder":  0,
-                                                    "new_string":  0
+                                                    "array_resize":  0,
+                                                    "foreach":  0,
+                                                    "linq_using":  0,
+                                                    "linq_methods":  0,
+                                                    "interpolation":  0,
+                                                    "scene_search":  0
                                                 }
                                  },
                                  {
@@ -86,24 +122,55 @@
                                      "sha256":  "294DFCA23D14A8E5B304CEC53CC6376D1CC7190086B37D9FD9071FD999FE63E7",
                                      "counts":  {
                                                     "string_format":  0,
+                                                    "to_string_call":  0,
                                                     "tmp_text_assignment":  0,
-                                                    "to_string":  0,
-                                                    "interpolation":  0,
+                                                    "set_text_call":  0,
+                                                    "new_string":  0,
                                                     "string_builder":  0,
-                                                    "new_string":  0
+                                                    "array_resize":  0,
+                                                    "foreach":  0,
+                                                    "linq_using":  0,
+                                                    "linq_methods":  0,
+                                                    "interpolation":  0,
+                                                    "scene_search":  0
                                                 }
                                  },
                                  {
                                      "path":  "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs",
                                      "exists":  true,
-                                     "sha256":  "726201C59AFBA6AB0FA0C8A7350DC6B5D76B10617B4D528840CDB87C41B6E0C3",
+                                     "sha256":  "8FA0AB00B05431444D26336409079F339F7E17DD83859E5F0203E82B4AD6AAFE",
                                      "counts":  {
                                                     "string_format":  0,
+                                                    "to_string_call":  0,
                                                     "tmp_text_assignment":  0,
-                                                    "to_string":  0,
-                                                    "interpolation":  0,
+                                                    "set_text_call":  0,
+                                                    "new_string":  0,
                                                     "string_builder":  0,
-                                                    "new_string":  0
+                                                    "array_resize":  0,
+                                                    "foreach":  0,
+                                                    "linq_using":  0,
+                                                    "linq_methods":  0,
+                                                    "interpolation":  0,
+                                                    "scene_search":  0
+                                                }
+                                 },
+                                 {
+                                     "path":  "Assets/_Project/Scripts/UI/LabelSwapScheduler.cs",
+                                     "exists":  true,
+                                     "sha256":  "5A9254E45F2F32E638CEBAC24E6E4A58060022C17DBA83D1CD3A4F5B3BF25F1C",
+                                     "counts":  {
+                                                    "string_format":  0,
+                                                    "to_string_call":  0,
+                                                    "tmp_text_assignment":  0,
+                                                    "set_text_call":  0,
+                                                    "new_string":  0,
+                                                    "string_builder":  0,
+                                                    "array_resize":  0,
+                                                    "foreach":  0,
+                                                    "linq_using":  0,
+                                                    "linq_methods":  0,
+                                                    "interpolation":  0,
+                                                    "scene_search":  0
                                                 }
                                  }
                              ],
@@ -182,15 +249,15 @@
                             ],
     "ast_audit_report":  {
                              "path":  "Docs/Reports/UI_STRING_ALLOCATION_AST_AUDIT_1423.json",
-                             "sha256":  "D3121EA00D189DFBD1C31A7DA4F26F8BB507E1FF8DF4B212448A95B6CEF2D902"
+                             "sha256":  "25C429201E32CE3B5B0F39D2804704F9BC47D7C82206335610A0F213E08D541A"
                          },
     "apex_verification_report":  {
                                      "path":  "Docs/Reports/UI_ZERO_GC_APEX_VERIFICATION_1423.json",
-                                     "sha256":  "F860CEAE374E1C8D4C6F2C7E657CE2F9D6A2A547AB5C9A41A591D16396606977",
-                                     "current_cpu_sample_percent":  67,
+                                     "sha256":  "F6B81458B26F9921C0B021D1756749C8156FA952BAEA2D93D37F357E545EF975",
+                                     "current_cpu_sample_percent":  73,
                                      "final_build_launched":  false
                                  },
-    "generated_local":  "2026-05-28T14:00:32.7229736+04:00",
+    "generated_local":  "2026-05-28T14:28:42.6783343+04:00",
     "continuation_audit_2026_05_28":  {
                                           "path":  "Docs/Reports/UI_ZERO_GC_CONTINUATION_AUDIT_1423.json",
                                           "sha256":  "B2A869217C094F8DB46A74030276BF1BD3045C76F8D7F7C84CDFFB900B43721B",
@@ -305,5 +372,30 @@
                                            "build_decision":  "NO_BUILD: CPU 65 with no compiler/dotnet, then CPU 100 with active dotnet.exe PID 67140.",
                                            "runtime_gc_bytes_for_500_subtitle_test":  null,
                                            "runtime_gc_status":  "NOT_MEASURED_CPU_THROTTLED_AND_PROJECT_PREVIOUSLY_BLOCKED_BY_XRPASS"
+                                       },
+    "continuation6_audit_2026_05_28":  {
+                                           "path":  "Docs/Reports/UI_ZERO_GC_CONTINUATION6_AUDIT_1423.json",
+                                           "sha256":  "1F4840AF3A7A9D2AF480AC86B53EB309F55B26206ED800DB9BC371F7BEB23D68",
+                                           "label_swap_scheduler_rich_text_policy":  "FIXED_AT_LabelSwapScheduler.cs:128_BEFORE_SetCharArray_LINE_155",
+                                           "label_swap_scheduler_sha256":  "5A9254E45F2F32E638CEBAC24E6E4A58060022C17DBA83D1CD3A4F5B3BF25F1C",
+                                           "editor_test_sha256":  "8FA0AB00B05431444D26336409079F339F7E17DD83859E5F0203E82B4AD6AAFE",
+                                           "broad_non_editor_domain_scan_files":  154,
+                                           "broad_forbidden_counts":  {
+                                                                          "string_format":  0,
+                                                                          "to_string_call":  0,
+                                                                          "tmp_text_assignment":  0,
+                                                                          "set_text_call":  0,
+                                                                          "new_string":  0,
+                                                                          "string_builder":  0,
+                                                                          "array_resize":  0,
+                                                                          "foreach":  0,
+                                                                          "linq_using":  0,
+                                                                          "linq_methods":  0,
+                                                                          "interpolation":  0,
+                                                                          "scene_search":  0
+                                                                      },
+                                           "build_decision":  "NO_BUILD: CPU 69 then 73; active csc.exe PID 60436 and dotnet.exe PID 31336",
+                                           "runtime_gc_bytes_for_500_subtitle_test":  null,
+                                           "runtime_gc_status":  "NOT_MEASURED_ACTIVE_COMPILER_AND_CPU_OVER_50"
                                        }
 }

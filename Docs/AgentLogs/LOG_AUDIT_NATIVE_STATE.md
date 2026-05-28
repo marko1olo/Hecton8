@@ -2872,3 +2872,29 @@ Verification:
 - Combined grep returns no hits for direct DataVault cast/cache in touched files, ownerless `handle.BufferID != 0u`, old `IsVaultHandleCreated`, or old cockpit release helper.
 - Combined `git diff --check` reports only LF/CRLF warnings.
 - Targeted compile not launched: latest guard has no `dotnet/csc`, but CPU sample remains `100%`.
+
+## 2026-05-28 - PDA Encyclopedia Streamer And H8LR Mirror Vault Lifecycle
+
+What was wrong:
+- `PDAEncyclopediaStreamer` reset ten UI Vault handles on DataVault replacement without releasing them through the previous Vault.
+- Generic handle proof was unsafe for byte lanes: mock UTF-8, CSV scratch, and H8LR mirror all have `VaultGenerationHandle<byte>`.
+- `PdaH8lrLoreStore` still accepted any nonzero byte mirror handle before write-lock/read-only use.
+
+What was done:
+- Added streamer DataVault lifecycle binding that releases previous Vault handles before rebinding.
+- Added exact expected `BufferID` plus `SystemID.UI` plus generation checks to every streamer resolve/ref/release path.
+- Added OnDestroy release for the streamer-owned PDA Vault buffers.
+- Added exact H8LR mirror-handle validation inside `PdaH8lrLoreStore`.
+- Lore payload streaming, B-tree lookup, Babel fallback, TMP typewriter cadence, and telemetry layout were not changed.
+
+Cinematic cheats used:
+- None changed. Existing typewriter reveal and mock lore fallback remain presentation fakes over byte-addressed payloads.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us.
+
+Verification:
+- Scoped bad-pattern grep over `PDAEncyclopediaStreamer.cs` and `PdaH8lrLoreStore.cs` returns no hits for direct DataVault cache/cast, ownerless nonzero handle checks, or old resolve/get-element signatures.
+- `git diff --check -- PDAEncyclopediaStreamer.cs PdaH8lrLoreStore.cs` reports only LF/CRLF warnings.
+- Targeted compile/import/profiler proof not launched: external `dotnet` PID `31336`, child `csc` PID `60436`, CPU `100%`.

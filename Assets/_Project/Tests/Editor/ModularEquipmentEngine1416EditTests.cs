@@ -39,10 +39,17 @@ namespace Hecton8.Tests.Editor
         public void StaticLockDiscipline_UsesCapturedJobLocksAndReleaseMask()
         {
             string source = ReadProjectFile(EquipmentSourcePath);
+            string acquireViews = ExtractMethod(source, "private bool TryAcquireEquipmentViewsWriteLock");
+            string acquireBuffer = ExtractMethod(source, "private static bool TryAcquireEquipmentWriteBuffer");
             string lateFrame = ExtractMethod(source, "public void LateFrameTick");
             string complete = ExtractMethod(source, "private unsafe void CompleteActiveEquipmentJob");
             string releaseMask = ExtractMethod(source, "private uint ReleaseEquipmentWriteLockMask");
 
+            Assert.AreEqual(28, Regex.Matches(acquireViews, @"TryAcquireEquipmentWriteBuffer\(").Count);
+            StringAssert.DoesNotContain("CountAcquiredWriteLock", source);
+            StringAssert.Contains("ref int acquiredCount", acquireBuffer);
+            StringAssert.Contains("acquiredCount++;", acquireBuffer);
+            StringAssert.DoesNotContain("ReleaseWriteLock(in handle", acquireBuffer);
             StringAssert.Contains("CompleteActiveEquipmentJob();", lateFrame);
             StringAssert.DoesNotContain("forceComplete: true", lateFrame);
             StringAssert.Contains("TryFinalizeCompleted", complete);

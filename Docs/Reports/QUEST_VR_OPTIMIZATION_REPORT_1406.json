@@ -178,7 +178,8 @@
     "existingSecuredSystemId": "SystemID.GraphicsScalability",
     "tryAcquireWriteLock": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:1205",
     "releaseInFinally": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:986-988",
-    "failedValidationRelease": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:1217",
+    "releaseWrapper": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:1221-1225",
+    "failedValidationRelease": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:1216",
     "dumpPath": "Docs/AgentLogs/Dump_1406.bin"
   },
   "unmanagedStructLayoutProof": {

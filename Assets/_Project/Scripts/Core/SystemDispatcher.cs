@@ -7215,7 +7215,7 @@ namespace Hecton8.Core
                 return;
 
             UploadNativeArray(uploadStaging, source, safeCount);
-            Graphics.CopyBuffer(uploadStaging, destination);
+            UnityEngine.Graphics.CopyBuffer(uploadStaging, destination);
         }
 
         public static void UploadArrayAndCopyWholeBuffer<T>(
@@ -7230,7 +7230,7 @@ namespace Hecton8.Core
                 return;
 
             UploadArray(uploadStaging, source, safeCount);
-            Graphics.CopyBuffer(uploadStaging, destination);
+            UnityEngine.Graphics.CopyBuffer(uploadStaging, destination);
         }
 
         /// <summary>

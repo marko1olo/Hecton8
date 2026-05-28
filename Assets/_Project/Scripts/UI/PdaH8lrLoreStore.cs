@@ -534,7 +534,7 @@ namespace Hecton8.UI
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsVaultMirrorHandle(in VaultGenerationHandle<byte> handle)
         {
-            return handle.BufferID == PDAEncyclopediaStreamer.H8lrMirrorBufferId &&
+            return handle.BufferID == unchecked((uint)(int)PDAEncyclopediaStreamer.H8lrMirrorBufferId) &&
                    handle.SystemID == (uint)VaultOwnerSystemId &&
                    handle.Generation != 0u;
         }
