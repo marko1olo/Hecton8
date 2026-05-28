@@ -1,9 +1,18 @@
 ﻿{
-    "sampled_at_samara":  "2026-05-28T12:13:45.8127797+04:00",
-    "cpu_total_percent":  20,
-    "dotnet_or_csc_process_count":  0,
+    "sampled_at_samara":  "2026-05-28T12:45:54.9946069+04:00",
+    "cpu_total_percent":  30.41,
+    "dotnet_or_csc_process_count":  2,
     "dotnet_or_csc_processes":  [
-
+                                    {
+                                        "ProcessName":  "dotnet",
+                                        "Id":  25684,
+                                        "CPU":  401.75
+                                    },
+                                    {
+                                        "ProcessName":  "VBCSCompiler",
+                                        "Id":  27088,
+                                        "CPU":  56.40625
+                                    }
                                 ],
-    "note":  "Sample taken before final python -m py_compile after verifier patch. No dotnet build invoked by TOKEN_USAGE_AUDIT."
+    "note":  "Blocked by compiler contention before TOKEN_USAGE_AUDIT polish py_compile. No dotnet build invoked."
 }

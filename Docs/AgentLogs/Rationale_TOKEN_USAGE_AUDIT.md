@@ -156,3 +156,11 @@ Solution: Add `Tools/TokenUsageApexVerification_20260528.py` and generate `Docs/
 Rejected Alternatives: Claiming Zero-GC completion from text search was rejected. Claiming DataVault compliance without a DataVault migration was rejected. Re-running dotnet build was rejected because TOKEN_USAGE_AUDIT did not touch runtime code and compile throttling forbids unnecessary dotnet/csc load.
 Scalability potential: Runtime Low/Middle/High/Ultra tiers are unaffected. Verification quality improves because future token/report refreshes can reuse a deterministic, hash-backed artifact instead of chat-only proof.
 Hardware Impact: 0 us runtime gain. Audit safety gain: false runtime claims reduced to explicit `PENDING_RUNTIME_VERIFICATION_FOR_ANY_RUNTIME_CLAIM`.
+
+## Decision 28 - 2026-05-28 polish pricing and verifier hardening
+
+Problem: The apex verifier used fixed 2026-05-28 report paths and the token report exposed only the base GPT-5.5 API-equivalent estimate, leaving long-context surcharge and regional uplift as implicit billing risks.
+Solution: Make apex report paths derive from the current Samara date, add GPT-5.5 long-context surcharge and regional +10% sensitivity rows, and regenerate token/dashboard/apex artifacts from live JSONL deltas.
+Rejected Alternatives: Keeping only the base GPT-5.5 row was rejected because official pricing has a >272K input surcharge risk. Running `dotnet build` was rejected because TOKEN_USAGE_AUDIT changed offline Python/docs only and active `dotnet`/`VBCSCompiler` processes made compile contention explicit.
+Scalability potential: Future daily refreshes can validate the current dated report without stale hard-coded paths and can separate base cost, surcharge risk, and no-cache theoretical ceiling.
+Hardware Impact: 0 us runtime gain. Audit precision gain: false certainty around billing context reduced by explicit sensitivity rows.

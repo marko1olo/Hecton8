@@ -44,10 +44,13 @@ EXCLUDE_DIRS = {
 }
 USAGE_KEYS = ("input_tokens", "cached_input_tokens", "output_tokens", "reasoning_output_tokens", "total_tokens")
 PRIMARY_PRICE_KEY = "gpt-5.5_standard_short_context_equivalent"
-PRIMARY_PRICE_LABEL = "gpt-5.5 standard short-context API-equivalent"
+PRIMARY_PRICE_LABEL = "gpt-5.5 standard under-272K-input API-equivalent"
 PRIMARY_JSON_PREFIX = "gpt_5_5_standard"
 CODEX_STANDARD_PRICE_KEY = "gpt-5.3-codex_standard_api_equivalent"
 CODEX_PRICE_LABEL = "gpt-5.3-codex standard specialized Codex API-equivalent"
+GPT55_LONG_CONTEXT_PRICE_KEY = "gpt-5.5_standard_long_context_surcharge_upper_bound_equivalent"
+GPT55_REGIONAL_PRICE_KEY = "gpt-5.5_standard_regional_10pct_equivalent"
+LONG_CONTEXT_INPUT_TOKEN_TRIGGER = 272_000
 
 
 def zero_usage():
@@ -722,6 +725,8 @@ def build_report():
         "gpt-5.5_flex_short_context_equivalent": {"input": 2.5, "cached_input": 0.25, "output": 15.0},
         "gpt-5.5_priority_short_context_equivalent": {"input": 12.5, "cached_input": 1.25, "output": 75.0},
         "gpt-5.4_mini_standard_equivalent": {"input": 0.75, "cached_input": 0.075, "output": 4.5},
+        GPT55_LONG_CONTEXT_PRICE_KEY: {"input": 10.0, "cached_input": 1.0, "output": 45.0},
+        GPT55_REGIONAL_PRICE_KEY: {"input": 5.5, "cached_input": 0.55, "output": 33.0},
     }
     model_rate_catalog = {
         "gpt-5.3-codex": {"input": 1.75, "cached_input": 0.175, "output": 14.0, "source": "developers.openai.com/api/docs/pricing specialized Codex standard"},
@@ -734,6 +739,8 @@ def build_report():
     for name, rate in pricing.items():
         price_rows[name] = usage_cost(total, rate)
         upper_no_cache[name] = total["input_tokens"] / 1_000_000 * rate["input"] + total["output_tokens"] / 1_000_000 * rate["output"]
+    long_context_delta = price_rows[GPT55_LONG_CONTEXT_PRICE_KEY]["total_cost_usd"] - price_rows[PRIMARY_PRICE_KEY]["total_cost_usd"]
+    regional_delta = price_rows[GPT55_REGIONAL_PRICE_KEY]["total_cost_usd"] - price_rows[PRIMARY_PRICE_KEY]["total_cost_usd"]
 
     session_totals = [int(record["final_usage"]["total_tokens"]) for record in selected_with_usage]
     first_ts = min((parse_ts(record.get("final_timestamp")) for record in selected_with_usage if record.get("final_timestamp")), default=None)
@@ -1011,6 +1018,16 @@ def build_report():
         "pricing_upper_bound_no_cache_usd": upper_no_cache,
         "primary_price_key": PRIMARY_PRICE_KEY,
         "primary_price_label": PRIMARY_PRICE_LABEL,
+        "pricing_context_rules": {
+            "base_rate_note": "GPT-5.5 base API-equivalent uses input $5.00, cached input $0.50, output $30.00 per 1M tokens.",
+            "long_context_trigger_input_tokens": LONG_CONTEXT_INPUT_TOKEN_TRIGGER,
+            "long_context_surcharge_note": "Official pricing applies 2x input and 1.5x output when prompts exceed 272K input tokens. Local Codex JSONL does not expose provider-side per-request context classification, so this report adds an upper-bound sensitivity instead of pretending exact surcharge billing.",
+            "regional_uplift_note": "Some regions can add about 10 percent. Local JSONL does not expose billing region, so this is a sensitivity row only.",
+            "gpt_5_5_long_context_upper_bound_usd": price_rows[GPT55_LONG_CONTEXT_PRICE_KEY]["total_cost_usd"],
+            "gpt_5_5_long_context_upper_bound_delta_usd": long_context_delta,
+            "gpt_5_5_regional_10pct_usd": price_rows[GPT55_REGIONAL_PRICE_KEY]["total_cost_usd"],
+            "gpt_5_5_regional_10pct_delta_usd": regional_delta,
+        },
         "daily_gpt_5_5_standard_costs_usd": daily_primary_costs,
         "hourly_gpt_5_5_standard_costs_usd": hourly_primary_costs,
         "weekly_gpt_5_5_standard_costs_usd": weekly_primary_costs,
@@ -1064,11 +1081,12 @@ def build_report():
         "top_output_sessions": [session_report_row(record, pricing[PRIMARY_PRICE_KEY], pricing[CODEX_STANDARD_PRICE_KEY], model_rate_catalog) for record in top_output_sessions],
         "top_reasoning_sessions": [session_report_row(record, pricing[PRIMARY_PRICE_KEY], pricing[CODEX_STANDARD_PRICE_KEY], model_rate_catalog) for record in top_reasoning_sessions],
         "pricing_sources": [
-            f"https://developers.openai.com/api/docs/pricing checked {REPORT_DATE}; lines 700-708 list GPT-5.5/GPT-5.4/GPT-5.4-mini standard short-context rates and regional uplift",
-            f"https://developers.openai.com/api/docs/pricing checked {REPORT_DATE}; lines 740-745 list GPT-5.5/GPT-5.4/GPT-5.4-mini priority short-context rates",
-            f"https://developers.openai.com/api/docs/pricing checked {REPORT_DATE}; lines 865-881 list specialized gpt-5.3-codex standard and priority rates",
-            f"https://developers.openai.com/api/docs/guides/prompt-caching checked {REPORT_DATE}; lines 741-757 define GPT-5.5 cache retention default and cached token reporting",
-            f"https://developers.openai.com/api/docs/guides/reasoning checked {REPORT_DATE}; lines 813-829 define reasoning effort, including xhigh, and lines 837-842 define reasoning tokens as output-billed",
+            f"https://developers.openai.com/api/docs/pricing checked {REPORT_DATE}; GPT-5.5/GPT-5.4/GPT-5.4-mini standard rates and regional uplift were checked",
+            f"https://developers.openai.com/api/docs/models/gpt-5.5 checked {REPORT_DATE}; long-context surcharge over 272K input is represented as a separate sensitivity, not exact invoice proof",
+            f"https://developers.openai.com/api/docs/pricing checked {REPORT_DATE}; GPT-5.5/GPT-5.4/GPT-5.4-mini priority rates were checked",
+            f"https://developers.openai.com/api/docs/pricing checked {REPORT_DATE}; specialized gpt-5.3-codex standard and priority rates were checked",
+            f"https://developers.openai.com/api/docs/guides/prompt-caching checked {REPORT_DATE}; cached token reporting was checked",
+            f"https://developers.openai.com/api/docs/guides/reasoning checked {REPORT_DATE}; reasoning effort including xhigh and output billing were checked",
             "All dollar values are API-equivalent estimates, not local invoice proof",
         ],
     }
@@ -1356,10 +1374,14 @@ def write_reports(report):
         ledger.append(f"| tokens / primary code line | {change['tokens_per_primary_code_line_delta']:,.2f} |")
         ledger.append(f"| tokens / 1k primary code chars | {change['tokens_per_1k_primary_code_chars_delta']:,.2f} |")
         append_velocity_table(ledger, change.get("velocity") or {})
-    ledger += ["", "`cached_input_tokens` is a telemetry subcounter of input-token reuse, not an extra token class to add on top of `total_tokens`.", "", "## API-Equivalent Cost Snapshot", "", f"Local Codex telemetry is not an invoice. The primary estimate uses official `gpt-5.5` standard short-context API-equivalent rates checked on {REPORT_DATE}: input $5.00/1M, cached input $0.50/1M, output $30.00/1M. `xhigh` is a reasoning-effort setting; it changes observed token shape, not the public rate row.", "", "| Scenario | Total | No-cache upper bound |", "|---|---:|---:|"]
+    pricing_context = report.get("pricing_context_rules") or {}
+    ledger += ["", "`cached_input_tokens` is a telemetry subcounter of input-token reuse, not an extra token class to add on top of `total_tokens`.", "", "## API-Equivalent Cost Snapshot", "", f"Local Codex telemetry is not an invoice. The primary estimate uses official `gpt-5.5` standard under-272K-input API-equivalent rates checked on {REPORT_DATE}: input $5.00/1M, cached input $0.50/1M, output $30.00/1M. `xhigh` is a reasoning-effort setting; it changes observed token shape, not the public rate row. Long-context surcharge over 272K input and regional uplift are separate sensitivity rows because local JSONL does not expose provider-side billing classification.", "", "| Scenario | Total | No-cache upper bound |", "|---|---:|---:|"]
     ledger.append(f"| {PRIMARY_PRICE_LABEL} | {fmt_money(primary['total_cost_usd'])} | {fmt_money(upper_primary)} |")
-    for name in ("gpt-5.5_priority_short_context_equivalent", "gpt-5.5_batch_short_context_equivalent", "gpt-5.5_flex_short_context_equivalent", "gpt-5.4_standard_short_context_equivalent", "gpt-5.3-codex_standard_api_equivalent", "gpt-5.3-codex_priority_api_equivalent"):
+    for name in ("gpt-5.5_priority_short_context_equivalent", GPT55_LONG_CONTEXT_PRICE_KEY, GPT55_REGIONAL_PRICE_KEY, "gpt-5.5_batch_short_context_equivalent", "gpt-5.5_flex_short_context_equivalent", "gpt-5.4_standard_short_context_equivalent", "gpt-5.3-codex_standard_api_equivalent", "gpt-5.3-codex_priority_api_equivalent"):
         ledger.append(f"| {name} | {fmt_money(report['pricing'][name]['total_cost_usd'])} | {fmt_money(report['pricing_upper_bound_no_cache_usd'][name])} |")
+    if pricing_context:
+        ledger.append("")
+        ledger.append(f"Long-context trigger: `{pricing_context.get('long_context_trigger_input_tokens')}` input tokens. Long-context sensitivity delta: {fmt_money(pricing_context.get('gpt_5_5_long_context_upper_bound_delta_usd', 0))}. Regional +10% sensitivity delta: {fmt_money(pricing_context.get('gpt_5_5_regional_10pct_delta_usd', 0))}.")
     ledger += ["", "## Model Attribution", "", "Exact model labels are available only where JSONL contains structured `turn_context` model fields. Unknown sessions are not guessed in the main total.", "", "| Model | Sessions | Total tokens | Standard cost if rate known |", "|---|---:|---:|---:|"]
     for model, usage in sorted(report["model_final_session_usage"].items(), key=lambda item: item[1]["total_tokens"], reverse=True):
         cost = report["model_specific_standard_costs"].get(model)

@@ -10,14 +10,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_DIR = ROOT / "Docs" / "Reports"
-TOKEN_REPORT_JSON = ROOT / "Docs" / "DEPRECATED" / "Root_Docs_Noise_2026-05-26" / "TOKEN_USAGE_AUDIT_2026-05-28.json"
-TOKEN_REPORT_MD = ROOT / "Docs" / "DEPRECATED" / "Root_Docs_Noise_2026-05-26" / "TOKEN_USAGE_AUDIT_2026-05-28.md"
-DASHBOARD_JSON = REPORT_DIR / "PROJECT_METRICS_DASHBOARD_2026-05-28.json"
-DASHBOARD_MD = REPORT_DIR / "PROJECT_METRICS_DASHBOARD_2026-05-28.md"
-CHART_DIR = REPORT_DIR / "MetricCharts" / "2026-05-28"
-CPU_SAMPLE_JSON = REPORT_DIR / "TOKEN_USAGE_APEX_CPU_SAMPLE_2026-05-28.json"
-OUTPUT_JSON = REPORT_DIR / "TOKEN_USAGE_APEX_VERIFICATION_2026-05-28.json"
-OUTPUT_MD = REPORT_DIR / "TOKEN_USAGE_APEX_VERIFICATION_2026-05-28.md"
+SAMARA = dt.timezone(dt.timedelta(hours=4))
+REPORT_DATE = dt.datetime.now(SAMARA).date().isoformat()
+TOKEN_REPORT_JSON = ROOT / "Docs" / "DEPRECATED" / "Root_Docs_Noise_2026-05-26" / f"TOKEN_USAGE_AUDIT_{REPORT_DATE}.json"
+TOKEN_REPORT_MD = ROOT / "Docs" / "DEPRECATED" / "Root_Docs_Noise_2026-05-26" / f"TOKEN_USAGE_AUDIT_{REPORT_DATE}.md"
+DASHBOARD_JSON = REPORT_DIR / f"PROJECT_METRICS_DASHBOARD_{REPORT_DATE}.json"
+DASHBOARD_MD = REPORT_DIR / f"PROJECT_METRICS_DASHBOARD_{REPORT_DATE}.md"
+CHART_DIR = REPORT_DIR / "MetricCharts" / REPORT_DATE
+CPU_SAMPLE_JSON = REPORT_DIR / f"TOKEN_USAGE_APEX_CPU_SAMPLE_{REPORT_DATE}.json"
+OUTPUT_JSON = REPORT_DIR / f"TOKEN_USAGE_APEX_VERIFICATION_{REPORT_DATE}.json"
+OUTPUT_MD = REPORT_DIR / f"TOKEN_USAGE_APEX_VERIFICATION_{REPORT_DATE}.md"
 
 OWNED_EXECUTABLE_FILES = [
     ROOT / "Tools" / "CodexTokenUsageAudit_20260525.py",
@@ -189,12 +191,13 @@ def command_log_stub():
     cpu_sample = None
     if CPU_SAMPLE_JSON.exists():
         cpu_sample = load_json(CPU_SAMPLE_JSON)
+    blocked = bool(cpu_sample and int(cpu_sample.get("dotnet_or_csc_process_count", 0) or 0) > 0)
     return {
         "dotnet_build_invoked_by_token_usage_audit": False,
         "unity_build_invoked_by_token_usage_audit": False,
-        "final_compile_check": "python -m py_compile Tools/CodexTokenUsageAudit_20260525.py Tools/CodexTokenUsageFastRefresh_20260528.py Tools/ProjectMetricsDashboard_20260528.py Tools/TokenUsageApexVerification_20260528.py",
+        "final_compile_check": "SKIPPED_BLOCKED_BY_COMPILER_CONTENTION" if blocked else "python -m py_compile Tools/CodexTokenUsageAudit_20260525.py Tools/CodexTokenUsageFastRefresh_20260528.py Tools/ProjectMetricsDashboard_20260528.py Tools/TokenUsageApexVerification_20260528.py",
         "cpu_sample_before_final_compile": cpu_sample,
-        "throttling_interpretation": "Compilation throttling rule targets dotnet/csc/Unity. This pass used Python bytecode compile only after sampling CPU and dotnet/csc process state.",
+        "throttling_interpretation": "No dotnet build or Unity build was invoked. Python bytecode compile is skipped if another compiler process remains active, to avoid ambiguous contention proof." if blocked else "Compilation throttling rule targets dotnet/csc/Unity. This pass used Python bytecode compile only after sampling CPU and dotnet/csc process state.",
     }
 
 
@@ -215,7 +218,7 @@ def build_report():
     return {
         "schema": "hecton8.token_usage_apex_verification.v1",
         "generated_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
-        "generated_at_samara": dt.datetime.now(dt.timezone(dt.timedelta(hours=4))).isoformat(),
+        "generated_at_samara": dt.datetime.now(SAMARA).isoformat(),
         "agent_id": "TOKEN_USAGE_AUDIT",
         "domain": "offline Codex token telemetry, pricing evidence, dashboards, and documentation artifacts",
         "evidence_class": "STATIC_SOURCE_AND_STATIC_DOC_PLUS_PYTHON_BYTECODE_COMPILE",
@@ -259,10 +262,15 @@ def build_report():
             "tokens_per_second": velocity["total_tokens_per_second"],
             "gpt_5_5_standard_usd_per_hour": velocity["gpt_5_5_standard_usd_per_hour"],
         },
+        "pricing_context_rules": token_report.get("pricing_context_rules") or {},
         "official_pricing_sources_checked": [
             {
                 "url": "https://developers.openai.com/api/docs/pricing",
-                "fact_used": "GPT-5.5 standard short-context public API-equivalent pricing: input $5.00, cached input $0.50, output $30.00 per 1M tokens.",
+                "fact_used": "GPT-5.5 base public API-equivalent pricing used by the report: input $5.00, cached input $0.50, output $30.00 per 1M tokens.",
+            },
+            {
+                "url": "https://developers.openai.com/api/docs/models/gpt-5.5",
+                "fact_used": "Prompts above 272K input tokens get a long-context surcharge. Report records this as a sensitivity because local JSONL does not expose exact provider-side billing classification.",
             },
             {
                 "url": "https://developers.openai.com/api/docs/guides/prompt-caching",
@@ -280,7 +288,7 @@ def build_report():
         "compilation_resource_throttling": command_log_stub(),
         "known_faults": [
             "No Unity Editor import, PlayMode, profiler, GCMonitor, player build, RenderDoc, or device capture was run by TOKEN_USAGE_AUDIT.",
-            "Full all-time token replay exceeded 20 minutes under live parallel-agent churn; 2026-05-28 report uses fast incremental evidence from the 2026-05-27 full snapshot plus post-cutoff JSONL deltas.",
+            f"Full all-time token replay exceeded 20 minutes under live parallel-agent churn; {REPORT_DATE} report uses fast incremental evidence from the previous full snapshot plus post-cutoff JSONL deltas.",
             "Workspace remains live-dirty from other agents after remote push; those changes are outside TOKEN_USAGE_AUDIT ownership.",
         ],
     }
@@ -292,7 +300,7 @@ def write_bom(path, text):
 
 def write_markdown(report):
     lines = [
-        "# Token Usage Apex Verification 2026-05-28",
+        f"# Token Usage Apex Verification {REPORT_DATE}",
         "",
         f"Generated Samara: `{report['generated_at_samara']}`",
         f"Evidence class: `{report['evidence_class']}`",
@@ -315,6 +323,23 @@ def write_markdown(report):
     ]
     for key, value in report["token_report_headline"].items():
         lines.append(f"| {key} | {value} |")
+
+    pricing_context = report.get("pricing_context_rules") or {}
+    if pricing_context:
+        lines.extend(
+            [
+                "",
+                "## Pricing Sensitivity",
+                "",
+                "| Metric | Value |",
+                "|---|---:|",
+                f"| long_context_trigger_input_tokens | {pricing_context.get('long_context_trigger_input_tokens')} |",
+                f"| gpt_5_5_long_context_upper_bound_usd | {pricing_context.get('gpt_5_5_long_context_upper_bound_usd')} |",
+                f"| gpt_5_5_long_context_upper_bound_delta_usd | {pricing_context.get('gpt_5_5_long_context_upper_bound_delta_usd')} |",
+                f"| gpt_5_5_regional_10pct_usd | {pricing_context.get('gpt_5_5_regional_10pct_usd')} |",
+                f"| gpt_5_5_regional_10pct_delta_usd | {pricing_context.get('gpt_5_5_regional_10pct_delta_usd')} |",
+            ]
+        )
 
     lines.extend(
         [

@@ -311,3 +311,54 @@ Cinematic Cheats used:
 
 Exact Microseconds saved:
 - 0 runtime microseconds. Audit-only verification.
+
+## 2026-05-28 12:55 Europe/Samara - Polish re-audit and pricing-risk patch
+
+What was wrong:
+- Apex verifier paths were date-fixed to `2026-05-28`; that would validate stale artifacts after the next date rollover.
+- Token cost headline had base GPT-5.5 API-equivalent pricing but did not surface official long-context surcharge or regional +10% risk as first-class numbers.
+- A clean bytecode compile proof was not available during polish because `dotnet` and `VBCSCompiler` were already active.
+
+What was done:
+- Updated `Tools/TokenUsageApexVerification_20260528.py` to derive token/dashboard/apex paths from current Samara date.
+- Updated `Tools/CodexTokenUsageFastRefresh_20260528.py` and `Tools/CodexTokenUsageAudit_20260525.py` with GPT-5.5 long-context and regional +10% sensitivity rows.
+- Updated `Tools/ProjectMetricsDashboard_20260528.py` to show pricing sensitivity in dashboard Markdown/JSON.
+- Regenerated `TOKEN_USAGE_AUDIT_2026-05-28`, `TOKEN_USAGE_LEDGER.md`, `PROJECT_METRICS_DASHBOARD_2026-05-28`, 29 charts, and `TOKEN_USAGE_APEX_VERIFICATION_2026-05-28`.
+
+Evidence:
+- Token total: `110,775,514,778`.
+- Delta tokens since previous snapshot: `2,531,127,235`.
+- Tokens/hour: `184,544,812.69385818`.
+- GPT-5.5 base API-equivalent: `$86,143.412684`.
+- GPT-5.5 long-context cache-aware sensitivity upper bound: `$166,527.892498`.
+- GPT-5.5 regional +10% sensitivity: `$94,757.7539524`.
+- Chart count: `29`.
+- Static hot-path symbol hits in owned tooling: `0`.
+- Static C# forbidden text hits in owned tooling: `0`.
+- Static global-authority hits in owned tooling: `0`.
+- Final JSON SHA-256: `b36fb4fe72ce680d91c1edd4a613a33acfdfade6d3f15615791210086d797433`.
+- Markdown SHA-256: `982f18264b0cce389ffd9bb9e542fa84a21c960bf9aed00c6aa3e5b4709192c7`.
+- Token report JSON SHA-256: `83c30566ea02958be6d73dc96f9675c10376854cac8d84651872827b3714a3e3`.
+- Dashboard JSON SHA-256: `0b571bda9b5a6674019c884750fdbbc3446ef10ddc068b3b51ee641b1259063d`.
+
+Compilation/resource throttling:
+- CPU sample before compile proof attempt ended at `2026-05-28T12:45:54.9946069+04:00`.
+- CPU: `30.41%`.
+- Compiler contention: `dotnet` pid `25684`, `VBCSCompiler` pid `27088`.
+- `dotnet build`: not invoked.
+- Unity build/import/playmode: not invoked.
+- Python bytecode compile: `SKIPPED_BLOCKED_BY_COMPILER_CONTENTION`.
+
+Cinematic cheats and scalability:
+- No runtime visual/physics/audio system was changed.
+- `GlobalQualityWeight` runtime scaling is not applicable to this offline audit tooling.
+- The audit itself improved scalability by carrying base price, surcharge risk, and region uplift without changing gameplay truth or runtime authority.
+
+Exact microseconds saved:
+- Runtime: `0 us`.
+- Audit wall-time saved versus full replay remains bounded by fast incremental refresh; polish refresh completed with fast report plus dashboard generation, not a full all-time replay.
+
+Known faults:
+- Runtime 0 B/frame remains `PENDING_RUNTIME_VERIFICATION_FOR_ANY_RUNTIME_CLAIM`.
+- Local JSONL still lacks provider invoice id, billing region, exact per-request long-context classification, enterprise discount, and subscription route.
+- No `Docs/AgentLogs/Dump_TOKEN_USAGE_AUDIT.bin` was generated because TOKEN_USAGE_AUDIT hit no runtime crash/NaN fault.

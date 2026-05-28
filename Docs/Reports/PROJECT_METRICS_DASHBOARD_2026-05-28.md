@@ -1,22 +1,24 @@
 ﻿# Project Metrics Dashboard 2026-05-28
 
-Generated Samara: `2026-05-28T05:38:48.683487+04:00`
+Generated Samara: `2026-05-28T12:51:29.325864+04:00`
 Evidence class: static local Codex JSONL, git history, and filesystem scan. Token cost is API-equivalent, not invoice proof.
 
 ## Headline
 
 | Metric | Value |
 |---|---:|
-| Total tokens | 110,159,445,798 |
-| Input tokens | 109,776,871,191 |
-| Cached input tokens | 105,482,603,520 |
-| Output tokens | 381,541,007 |
-| Reasoning output tokens | 119,780,195 |
-| Sessions with usage | 2,856 |
-| GPT-5.5 standard API-equivalent total | $85,658.87 |
-| Tokens/hour since previous snapshot | 297,297,721 |
-| GPT-5.5 standard USD/hour since previous snapshot | $228.26 |
-| Primary C# LOC/hour since previous snapshot | 2,975.37 |
+| Total tokens | 110,775,514,778 |
+| Input tokens | 110,390,552,320 |
+| Cached input tokens | 106,072,714,368 |
+| Output tokens | 383,928,858 |
+| Reasoning output tokens | 120,444,690 |
+| Sessions with usage | 2,871 |
+| GPT-5.5 standard API-equivalent total | $86,143.41 |
+| GPT-5.5 long-context sensitivity upper bound | $166,527.89 |
+| GPT-5.5 regional +10% sensitivity | $94,757.75 |
+| Tokens/hour since previous snapshot | 184,544,812 |
+| GPT-5.5 standard USD/hour since previous snapshot | $142.53 |
+| Primary C# LOC/hour since previous snapshot | 1,724.83 |
 | Chart count | 29 |
 
 ## Chart Index
@@ -174,6 +176,7 @@ Evidence class: static local Codex JSONL, git history, and filesystem scan. Toke
 - Machine-readable dashboard: `Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-28.json`
 - Token report JSON: `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-28.json`
 - OpenAI pricing source: https://developers.openai.com/api/docs/pricing
+- GPT-5.5 model pricing source: https://developers.openai.com/api/docs/models/gpt-5.5
 - Prompt caching source: https://developers.openai.com/api/docs/guides/prompt-caching
 - Reasoning source: https://developers.openai.com/api/docs/guides/reasoning
 

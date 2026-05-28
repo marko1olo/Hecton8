@@ -394,6 +394,7 @@ def markdown_report(report, project_metrics, git_metrics, charts):
     total = report["totals"]
     primary = report["pricing"][report["primary_price_key"]]
     velocity = ((report.get("previous_snapshot_delta") or {}).get("velocity") or {})
+    pricing_context = report.get("pricing_context_rules") or {}
     generated = datetime.datetime.now(SAMARA).isoformat()
     lines = [
         f"# Project Metrics Dashboard {REPORT_DATE}",
@@ -412,6 +413,8 @@ def markdown_report(report, project_metrics, git_metrics, charts):
         f"| Reasoning output tokens | {fmt_int(total['reasoning_output_tokens'])} |",
         f"| Sessions with usage | {fmt_int(report['sessions_with_usage'])} |",
         f"| GPT-5.5 standard API-equivalent total | {fmt_money(primary['total_cost_usd'])} |",
+        f"| GPT-5.5 long-context sensitivity upper bound | {fmt_money(pricing_context.get('gpt_5_5_long_context_upper_bound_usd', primary['total_cost_usd']))} |",
+        f"| GPT-5.5 regional +10% sensitivity | {fmt_money(pricing_context.get('gpt_5_5_regional_10pct_usd', primary['total_cost_usd']))} |",
         f"| Tokens/hour since previous snapshot | {fmt_int(velocity.get('total_tokens_per_hour', 0))} |",
         f"| GPT-5.5 standard USD/hour since previous snapshot | {fmt_money(velocity.get('gpt_5_5_standard_usd_per_hour', 0))} |",
         f"| Primary C# LOC/hour since previous snapshot | {velocity.get('primary_code_lines_per_hour', 0):,.2f} |",
@@ -436,6 +439,7 @@ def markdown_report(report, project_metrics, git_metrics, charts):
         f"- Machine-readable dashboard: `{DASHBOARD_JSON.relative_to(PROJECT).as_posix()}`",
         f"- Token report JSON: `{TOKEN_JSON.relative_to(PROJECT).as_posix()}`",
         "- OpenAI pricing source: https://developers.openai.com/api/docs/pricing",
+        "- GPT-5.5 model pricing source: https://developers.openai.com/api/docs/models/gpt-5.5",
         "- Prompt caching source: https://developers.openai.com/api/docs/guides/prompt-caching",
         "- Reasoning source: https://developers.openai.com/api/docs/guides/reasoning",
         "",
@@ -466,6 +470,7 @@ def main():
             "total_tokens": report["totals"]["total_tokens"],
             "sessions_with_usage": report["sessions_with_usage"],
             "gpt_5_5_standard_cost_usd": report["pricing"][report["primary_price_key"]]["total_cost_usd"],
+            "pricing_context_rules": report.get("pricing_context_rules") or {},
             "velocity": (report.get("previous_snapshot_delta") or {}).get("velocity") or {},
         },
         "project_metrics": project_metrics,
