@@ -2352,18 +2352,16 @@ namespace Hecton8.Gameplay
         {
             FillContextualIkSdfHits();
 
-            ContextualPhysicalIkGroundResponseJob responseJob = new ContextualPhysicalIkGroundResponseJob
-            {
-                Entities = _scheduledEntityStates,
-                Hits = _scheduledHits,
-                PreviousTargets = _frontTargetFrames,
-                NextTargets = _backTargetFrames,
-                IkTargets = _ikTargets,
-                IkWeights = _ikWeights,
-                FootData = _footIkData,
-                FootTargets = _footTargets,
-                FootCurrentPos = _footCurrentPos,
-            };
+            ContextualPhysicalIkGroundResponseJob responseJob = default;
+            responseJob.Entities = _scheduledEntityStates;
+            responseJob.Hits = _scheduledHits;
+            responseJob.PreviousTargets = _frontTargetFrames;
+            responseJob.NextTargets = _backTargetFrames;
+            responseJob.IkTargets = _ikTargets;
+            responseJob.IkWeights = _ikWeights;
+            responseJob.FootData = _footIkData;
+            responseJob.FootTargets = _footTargets;
+            responseJob.FootCurrentPos = _footCurrentPos;
 
             JobHandle responseHandle = responseJob.Schedule(MaxEntities, 32);
             _pendingGroundResponseHandle = responseHandle;

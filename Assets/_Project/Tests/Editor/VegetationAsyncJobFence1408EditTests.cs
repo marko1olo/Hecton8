@@ -157,16 +157,43 @@ namespace Hecton8.Tests.Editor
             string scheduleBody = ExtractMethodBody(source, "ScheduleRadarJob");
             string completeBody = ExtractMethodBody(source, "CompleteRadarJob");
 
+            AssertOrdered(scheduleBody, "TryCreateRadarPendingJob(out pending)", "GroundRadarRaymarchJob job = new GroundRadarRaymarchJob");
+            AssertOrdered(scheduleBody, "TryCopyCurrentGprStateToPending(ref pending)", "GroundRadarRaymarchJob job = new GroundRadarRaymarchJob");
             AssertOrdered(scheduleBody, "JobHandle handle = job.Schedule()", "_radarJobScheduled = 1");
             AssertOrdered(scheduleBody, "_radarSdfSnapshotLocked = sdfSnapshotLocked", "oreDependencySink.RegisterOreReadDependency(handle)");
             AssertOrdered(scheduleBody, "oreDependencySink == null", "GroundRadarRaymarchJob job = new GroundRadarRaymarchJob");
             Assert.That(scheduleBody, Does.Not.Contain("CommitCompletedScan"));
             Assert.That(scheduleBody, Does.Not.Contain(".Run("));
 
-            AssertOrdered(completeBody, "DispatcherJobFence.TryComplete(ref _radarJobHandle, forceComplete)", "CommitCompletedScan()");
-            AssertOrdered(completeBody, "CommitCompletedScan()", "ReleaseScanJobBufferLocks()");
+            AssertOrdered(completeBody, "DispatcherJobFence.TryComplete(ref _radarJobHandle, forceComplete)", "CommitCompletedScan(ref pending)");
+            AssertOrdered(completeBody, "CommitCompletedScan(ref pending)", "ReleaseRadarPendingJob(ref pending)");
             Assert.That(completeBody, Does.Contain("_radarJobScheduled = 0"));
             Assert.That(completeBody, Does.Not.Contain(".Complete("));
+        }
+
+        [Test]
+        public void GroundRadarRaymarch_UsesTempStagingAndShortWriteLockPublish()
+        {
+            string source = ReadProjectScript("World/GroundPenetratingRadarRuntime.cs");
+            string scheduleBody = ExtractMethodBody(source, "ScheduleRadarJob");
+            string copyBody = ExtractMethodBody(source, "TryCopyCurrentGprStateToPending");
+            string publishBody = ExtractMethodBody(source, "TryPublishRadarPendingJob");
+
+            Assert.That(scheduleBody, Does.Contain("new NativeSlice<float3>(pending.Hits)"));
+            Assert.That(scheduleBody, Does.Contain("new NativeSlice<float>(pending.SignalStrength)"));
+            Assert.That(scheduleBody, Does.Contain("new NativeSlice<float4>(pending.PingGpu)"));
+            Assert.That(scheduleBody, Does.Not.Contain("new NativeSlice<float3>(hits)"));
+            Assert.That(scheduleBody, Does.Not.Contain("new NativeSlice<float4>(pingGpu)"));
+
+            AssertOrdered(copyBody, "TryLockScanJobBuffers()", "NativeArray<float3>.Copy(hits, pending.Hits");
+            AssertOrdered(copyBody, "NativeArray<float4>.Copy(pingGpu, pending.PingGpu", "ReleaseScanJobBufferLocks()");
+
+            AssertOrdered(publishBody, "TryAcquireWriteLock(in _gprHitsHandle", "NativeArray<float3>.Copy(pending.Hits, hits");
+            AssertOrdered(publishBody, "TryAcquireWriteLock(in _gprPingGpuHandle", "NativeArray<float4>.Copy(pending.PingGpu, pingGpu");
+            AssertOrdered(publishBody, "NativeArray<float4>.Copy(pending.PingGpu, pingGpu", "ReleaseWriteLock(in _gprPingGpuHandle");
+            AssertOrdered(publishBody, "NativeArray<float3>.Copy(pending.Hits, hits", "ReleaseWriteLock(in _gprHitsHandle");
+            Assert.That(publishBody, Does.Contain("ReleaseWriteLock(in _maxSignalStrengthHandle"));
+            Assert.That(publishBody, Does.Contain("finally"));
         }
 
         [Test]
