@@ -1282,114 +1282,124 @@ namespace Hecton8.Core
 
         private static void ContinueTimeSlicedRebase(IDataVault vault, MockEntityArrays arrays)
         {
-            if (!TryAcquireWriteView(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<AupOriginShiftRuntimeState> runtimeState))
+            if (!TryReadRuntimeState(vault, out AupOriginShiftRuntimeState runtime))
                 return;
 
-            try
+            if (runtime.TimeSliceActive == 0)
+                return;
+
+            int activeCount = math.clamp(runtime.ActiveEntityCount, 0, arrays.States.Length);
+            int startIndex = math.clamp(runtime.TimeSliceStartIndex, 0, activeCount);
+            int totalHistoricalCount = math.max(
+                math.clamp(runtime.ActiveHistoricalCount, 0, arrays.HistoricalPoints.Length),
+                ResolveSupplementalHistoricalMaxLength(vault));
+            int historicalStartIndex = math.clamp(runtime.HistoricalTimeSliceStartIndex, 0, totalHistoricalCount);
+            float qualityWeight = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
+            int batchCount = activeCount > startIndex
+                ? math.min(ResolveQualityScaledBatchSize(runtime.BatchSize, activeCount, qualityWeight), activeCount - startIndex)
+                : 0;
+            int historicalBatchCount = totalHistoricalCount > historicalStartIndex
+                ? math.min(ResolveQualityScaledBatchSize(runtime.BatchSize, totalHistoricalCount, qualityWeight), totalHistoricalCount - historicalStartIndex)
+                : 0;
+
+            if (batchCount <= 0 && historicalBatchCount <= 0)
             {
-                AupOriginShiftRuntimeState runtime = runtimeState[0];
-                if (runtime.TimeSliceActive == 0)
-                    return;
+                runtime.TimeSliceActive = 0;
+                runtime.TimeSliceStartIndex = 0;
+                runtime.HistoricalTimeSliceStartIndex = 0;
+                runtime.PendingTimeSliceShiftSequence = 0u;
+                runtime.Flags &= ~RuntimeFlagTimeSliced;
+                WriteRuntimeState(vault, in runtime);
+                return;
+            }
 
-                int activeCount = math.clamp(runtime.ActiveEntityCount, 0, arrays.States.Length);
-                int startIndex = math.clamp(runtime.TimeSliceStartIndex, 0, activeCount);
-                int totalHistoricalCount = math.max(
-                    math.clamp(runtime.ActiveHistoricalCount, 0, arrays.HistoricalPoints.Length),
-                    ResolveSupplementalHistoricalMaxLength(vault));
-                int historicalStartIndex = math.clamp(runtime.HistoricalTimeSliceStartIndex, 0, totalHistoricalCount);
-                float qualityWeight = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
-                int batchCount = activeCount > startIndex
-                    ? math.min(ResolveQualityScaledBatchSize(runtime.BatchSize, activeCount, qualityWeight), activeCount - startIndex)
-                    : 0;
-                int historicalBatchCount = totalHistoricalCount > historicalStartIndex
-                    ? math.min(ResolveQualityScaledBatchSize(runtime.BatchSize, totalHistoricalCount, qualityWeight), totalHistoricalCount - historicalStartIndex)
-                    : 0;
+            float3 pendingShift = default;
+            pendingShift.x = (float)runtime.PendingTimeSliceShiftDelta.x;
+            pendingShift.y = (float)runtime.PendingTimeSliceShiftDelta.y;
+            pendingShift.z = (float)runtime.PendingTimeSliceShiftDelta.z;
+            uint shiftFrameId = runtime.PendingTimeSliceShiftSequence != 0u
+                ? runtime.PendingTimeSliceShiftSequence
+                : (runtime.LastShiftSequence != 0u ? runtime.LastShiftSequence : 1u);
 
-                if (batchCount <= 0 && historicalBatchCount <= 0)
+            int stateNonFiniteDelta = 0;
+            if (batchCount > 0 &&
+                TryAcquireWriteView(vault, in _statesHandle, MockEntityCapacity, out NativeArray<AUP_StateDTO> stateWrite))
+            {
+                try
                 {
-                    runtime.TimeSliceActive = 0;
-                    runtime.TimeSliceStartIndex = 0;
-                    runtime.HistoricalTimeSliceStartIndex = 0;
-                    runtime.PendingTimeSliceShiftSequence = 0u;
-                    runtime.Flags &= ~RuntimeFlagTimeSliced;
-                    runtimeState[0] = runtime;
-                    return;
-                }
-
-                if (batchCount > 0)
-                {
-                    NativeArray<AUP_StateDTO> stateWrite = default;
-                    NativeArray<AupPaddedAtomicCounter> counterWrite = default;
-                    try
+                    int safeCount = math.min(batchCount, math.max(0, stateWrite.Length - startIndex));
+                    for (int i = 0; i < safeCount; i++)
                     {
-                        if (!TryAcquireWriteView(vault, in _statesHandle, MockEntityCapacity, out stateWrite) ||
-                            !TryAcquireWriteView(vault, in _counterHandle, CounterCount, out counterWrite))
+                        int index = startIndex + i;
+                        AUP_StateDTO state = stateWrite[index];
+                        float3 local = state.LocalPosition - pendingShift;
+                        uint finiteFlags = AupStateFlagFinite;
+                        if (!math.all(math.isfinite(local)) || !math.all(math.isfinite(state.GlobalPosition)))
                         {
-                            return;
+                            local = float3.zero;
+                            finiteFlags = 0u;
+                            stateNonFiniteDelta++;
                         }
 
-                        AupStateRebaseJob stateRebaseJob = default;
-                        stateRebaseJob.States = (AUP_StateDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(stateWrite);
-                        stateRebaseJob.NonFiniteCounter = (AupPaddedAtomicCounter*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(counterWrite);
-                        stateRebaseJob.ShiftDelta = runtime.PendingTimeSliceShiftDelta;
-                        stateRebaseJob.NewSectorHash = runtime.PendingTimeSliceSectorHash;
-                        stateRebaseJob.ShiftFrameId = runtime.PendingTimeSliceShiftSequence != 0u
-                            ? runtime.PendingTimeSliceShiftSequence
-                            : (runtime.LastShiftSequence != 0u ? runtime.LastShiftSequence : 1u);
-                        stateRebaseJob.StartIndex = startIndex;
-                        for (int i = 0; i < batchCount; i++)
-                            stateRebaseJob.Execute(i);
-                    }
-                    finally
-                    {
-                        if (counterWrite.IsCreated)
-                            vault.ReleaseWriteLock(in _counterHandle, OwnerSystemId);
-                        if (stateWrite.IsCreated)
-                            vault.ReleaseWriteLock(in _statesHandle, OwnerSystemId);
+                        state.LocalPosition = local;
+                        state.SectorHash = runtime.PendingTimeSliceSectorHash;
+                        state.ShiftFrameId = shiftFrameId;
+                        state.LocalMillimeters = QuantizeLocalMillimeters(local);
+                        state.FiniteFlags = finiteFlags;
+                        state.SourceSystemId = unchecked((uint)OwnerSystemId);
+                        stateWrite[index] = state;
                     }
                 }
-
-                float3 pendingShift = default;
-                pendingShift.x = (float)runtime.PendingTimeSliceShiftDelta.x;
-                pendingShift.y = (float)runtime.PendingTimeSliceShiftDelta.y;
-                pendingShift.z = (float)runtime.PendingTimeSliceShiftDelta.z;
-                uint shiftFrameId = runtime.PendingTimeSliceShiftSequence != 0u
-                    ? runtime.PendingTimeSliceShiftSequence
-                    : (runtime.LastShiftSequence != 0u ? runtime.LastShiftSequence : 1u);
-                int hotShifted = RunHotEntityRebaseSlice(
-                    vault,
-                    startIndex,
-                    batchCount,
-                    activeCount,
-                    pendingShift,
-                    shiftFrameId);
-                int historicalShifted = RunHistoricalRebaseBatch(
-                    vault,
-                    arrays,
-                    historicalStartIndex,
-                    historicalBatchCount,
-                    pendingShift);
-
-                runtime.TimeSliceStartIndex = startIndex + batchCount;
-                runtime.HistoricalTimeSliceStartIndex = historicalStartIndex + historicalBatchCount;
-                runtime.LastEntitiesShifted += batchCount;
-                runtime.LastHotEntitiesShifted += hotShifted;
-                runtime.LastHistoricalPointsShifted += historicalShifted;
-                if (runtime.TimeSliceStartIndex >= activeCount && runtime.HistoricalTimeSliceStartIndex >= totalHistoricalCount)
+                finally
                 {
-                    runtime.TimeSliceActive = 0;
-                    runtime.TimeSliceStartIndex = 0;
-                    runtime.HistoricalTimeSliceStartIndex = 0;
-                    runtime.PendingTimeSliceShiftSequence = 0u;
-                    runtime.Flags &= ~RuntimeFlagTimeSliced;
+                    vault.ReleaseWriteLock(in _statesHandle, OwnerSystemId);
                 }
+            }
 
-                runtimeState[0] = runtime;
-            }
-            finally
+            if (stateNonFiniteDelta > 0 &&
+                TryAcquireWriteView(vault, in _counterHandle, CounterCount, out NativeArray<AupPaddedAtomicCounter> counterWrite))
             {
-                vault.ReleaseWriteLock(in _runtimeStateHandle, OwnerSystemId);
+                try
+                {
+                    AupPaddedAtomicCounter counter = counterWrite[0];
+                    counter.NonFiniteCount += stateNonFiniteDelta;
+                    counterWrite[0] = counter;
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _counterHandle, OwnerSystemId);
+                }
             }
+
+            int hotShifted = RunHotEntityRebaseSlice(
+                vault,
+                startIndex,
+                batchCount,
+                activeCount,
+                pendingShift,
+                shiftFrameId);
+            int historicalShifted = RunHistoricalRebaseBatch(
+                vault,
+                arrays,
+                historicalStartIndex,
+                historicalBatchCount,
+                pendingShift);
+
+            runtime.TimeSliceStartIndex = startIndex + batchCount;
+            runtime.HistoricalTimeSliceStartIndex = historicalStartIndex + historicalBatchCount;
+            runtime.LastEntitiesShifted += batchCount;
+            runtime.LastHotEntitiesShifted += hotShifted;
+            runtime.LastHistoricalPointsShifted += historicalShifted;
+            if (runtime.TimeSliceStartIndex >= activeCount && runtime.HistoricalTimeSliceStartIndex >= totalHistoricalCount)
+            {
+                runtime.TimeSliceActive = 0;
+                runtime.TimeSliceStartIndex = 0;
+                runtime.HistoricalTimeSliceStartIndex = 0;
+                runtime.PendingTimeSliceShiftSequence = 0u;
+                runtime.Flags &= ~RuntimeFlagTimeSliced;
+            }
+
+            WriteRuntimeState(vault, in runtime);
         }
 
         private static void RecordFrameTelemetry(

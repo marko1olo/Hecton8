@@ -2159,39 +2159,6 @@ namespace Hecton8.Gameplay
                 views.Counters[i] = 0;
         }
 
-        private static bool ClearSlot(int slot)
-        {
-            if (!TryAcquireArmorTargetWriteLocks(out ArmorPenetrationVaultViews armorViews, out int armorLockCount))
-                return false;
-
-            bool statusLocked = false;
-            bool targetLocked = false;
-            int targetLockCount = 0;
-            IDataVault statusVault = null;
-            NativeArray<CombatStatusEffectState> statusStates = default;
-            try
-            {
-                if (!TryAcquireStatusEffectStatesWriteLock(out statusVault, out statusStates, out statusLocked))
-                    return false;
-
-                if (!TryAcquireCombatTargetWriteLocks(out CombatDamageVaultViews views, out targetLockCount))
-                    return false;
-
-                targetLocked = true;
-                if (!ClearTargetSideStateLocked(slot, statusLocked, statusStates, ref armorViews))
-                    return false;
-
-                return ClearSlot(slot, ref views);
-            }
-            finally
-            {
-                if (targetLocked)
-                    ReleaseCombatTargetWriteLocks(targetLockCount);
-                ReleaseStatusEffectStatesWriteLock(statusVault, statusLocked);
-                ReleaseArmorTargetWriteLocks(armorLockCount);
-            }
-        }
-
         private static bool ClearSlot(int slot, ref CombatDamageVaultViews views)
         {
             if (!CanUseRegistrationTargetSlot(slot, ref views))
