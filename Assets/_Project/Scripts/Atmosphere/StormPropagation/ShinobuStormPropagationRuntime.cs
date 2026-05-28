@@ -586,17 +586,12 @@ namespace Hecton8.Atmosphere
                 return;
 
             bool tuningLocked = false;
-            bool profilesLocked = false;
-            if (!_vault.TryLockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem))
-                return;
-
-            tuningLocked = true;
             try
             {
-                if (!_vault.TryLockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem))
+                tuningLocked = _vault.TryLockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem);
+                if (!tuningLocked)
                     return;
 
-                profilesLocked = true;
                 if (Resolve(in _tuningHandle, out NativeArray<StormPropagationTuningDTO> tuning) && tuning.Length > 0)
                 {
                     ref StormPropagationTuningDTO row = ref ShinobuStormPropagationNative.ElementAt(tuning, 0);
@@ -605,6 +600,18 @@ namespace Hecton8.Atmosphere
                     if (math.isfinite(row.PublicationCadenceHz) && row.PublicationCadenceHz > 0.001f)
                         _cachedPublicationCadenceHz = row.PublicationCadenceHz;
                 }
+            }
+            finally
+            {
+                if (tuningLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem);
+            }
+
+            bool profilesLocked = false;
+            try
+            {
+                profilesLocked = _vault.TryLockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem);
+                if (!profilesLocked)
+                    return;
 
                 if (Resolve(in _profilesHandle, out NativeArray<StormDepthImpactProfileDTO> profiles) && profiles.Length > 0)
                 {
@@ -616,7 +623,6 @@ namespace Hecton8.Atmosphere
             finally
             {
                 if (profilesLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationImpactProfiles, OwnerSystem);
-                if (tuningLocked) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationTuning, OwnerSystem);
             }
         }
 
