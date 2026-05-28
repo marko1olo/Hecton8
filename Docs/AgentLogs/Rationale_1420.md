@@ -51,10 +51,10 @@ Hardware Impact: Saved one full project build on saturated CPU; exact time not c
 
 ## Decision 007: APEX Evidence Recheck
 Problem: Final verification required exact proof, not a prose completion claim, and the first case-insensitive scanner counted `math.select` as a false LINQ `.Select` hit.
-Solution: Reran the Zero-GC scan with `-CaseSensitive`, producing 0 matches for `new Native*`, `Allocator.Persistent`, `foreach`, LINQ `.Where/.Select/.ToList/.ToArray`, `string.Format`, `.ToString`, interpolated strings, and literal string concatenation. Final report artifact hash is `88D22C99238EBB8CBAC582311A866FED7DBC96C977247886099EA07BDB28260A`.
+Solution: Reran the Zero-GC scan with `-CaseSensitive`, producing 0 matches for `new Native*`, `Allocator.Persistent`, `foreach`, LINQ `.Where/.Select/.ToList/.ToArray`, `string.Format`, `.ToString`, interpolated strings, and literal string concatenation. Final report artifact hash is pending final hash update after Decision 012.
 Rejected Alternatives: Editing the runtime to silence a false positive, or launching a build while CPU/process gates were closed.
 Scalability potential: No runtime cost. Keeps Low/Middle/High/Ultra truth routes unchanged and preserves continuous `GlobalQualityWeight` scaling instead of binary quality switches.
-Hardware Impact: 0 us runtime. Build avoided on saturated host: final CPU sample 74.16%, active `dotnet` PID 20440, blocked by the >50% CPU and active-dotnet rule.
+Hardware Impact: 0 us runtime. Build avoided on host with active `dotnet` PID 32028; final CPU sample was 41.88%, but active-dotnet rule still blocked a new build.
 
 ## Decision 008: Buoyancy Math LOD Made Real
 Problem: APEX review found `ActiveSampleBudget` was written into the DTO but `CalculateBuoyancyForceJob` still evaluated all four analytical submerged-ratio samples; `quality` algebraically cancelled out, so processing load did not actually scale.
@@ -83,3 +83,10 @@ Solution: Reapplied the `ActiveSampleBudget` buoyancy Math LOD and rewrote parti
 Rejected Alternatives: Keeping manual release paths because they were short, or relying on report text while the source disagreed. Evidence must follow source bytes.
 Scalability potential: Weak devices keep center-only submerged-ratio math; middle/high/ultra get progressively richer analytical probes. Fail-closed lock cleanup is identical across devices and does not alter gameplay truth.
 Hardware Impact: Lock cleanup adds a few boolean writes only on acquisition paths; estimated sub-microsecond. Prevents leaked write locks under failed multi-buffer acquisition.
+
+## Decision 012: Stress Harness Must Exercise Math LOD
+Problem: The opt-in stress harness varied `GlobalQualityWeight` but pinned `ActiveSampleBudget = 4`, so it did not prove low/middle/high/ultra sample budget behavior.
+Solution: The harness now derives `ActiveSampleBudget` from the same continuous scalar route and asserts that completed packets span `ActiveSamples == 1..4` across the 1000-iteration measured loop.
+Rejected Alternatives: Leaving the harness as a generic ballast stability test while the report implies scalability coverage.
+Scalability potential: The editor proof now covers center-only weak-device math through four-probe high/ultra math without platform booleans.
+Hardware Impact: 0 us runtime. Editor-only proof adds two integer min/max accumulators inside the measured harness loop.
