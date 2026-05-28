@@ -172,6 +172,44 @@ namespace Hecton8.Tests.Editor
             Assert.Greater(Count(flush, @"\bShader\.SetGlobal"), 0);
         }
 
+        [Test]
+        public void FeedbackPresentationRoutes_QueueUntilLateFrame()
+        {
+            string interaction = File.ReadAllText(PlayerInteractionPath());
+            AssertNoFeedbackPresentationWrite(interaction, "SetHover");
+            AssertNoFeedbackPresentationWrite(interaction, "ExecuteInteraction");
+            AssertNoFeedbackPresentationWrite(interaction, "QueueStaticAudio");
+            Assert.That(ExtractMethodBody(interaction, "LateFrameTick"), Does.Contain("FlushQueuedStaticAudio();"));
+
+            string terminal = File.ReadAllText(MessageTerminalPath());
+            AssertNoFeedbackPresentationWrite(terminal, "Interact");
+            AssertNoFeedbackPresentationWrite(terminal, "AddMessage");
+            AssertNoFeedbackPresentationWrite(terminal, "QueueStaticAudio");
+            Assert.That(ExtractMethodBody(terminal, "LateFrameTick"), Does.Contain("FlushQueuedStaticAudio();"));
+
+            string health = File.ReadAllText(HectonPlayerHealthPath());
+            AssertNoFeedbackPresentationWrite(health, "PlaySurvivalGraceHeartbeatPulse");
+            AssertNoFeedbackPresentationWrite(health, "TryIssueLeviathanTraumaAdvisory");
+            Assert.That(ExtractMethodBody(health, "LateFrameTick"), Does.Contain("FlushQueuedPresentationFeedback();"));
+
+            string kinematics = File.ReadAllText(PlayerKinematicsRuntimePath());
+            AssertNoFeedbackPresentationWrite(kinematics, "PublishMovementAcoustics");
+            AssertNoFeedbackPresentationWrite(kinematics, "TryPublishSdfSqueezeFeedback");
+            AssertNoFeedbackPresentationWrite(kinematics, "EmitBraceHaptic");
+            AssertNoFeedbackPresentationWrite(kinematics, "TryEmitGloveScrape");
+            Assert.That(ExtractMethodBody(kinematics, "LateFrameTick"), Does.Contain("FlushQueuedFeedbackSignals();"));
+
+            string trauma = File.ReadAllText(TraumaDispatcherPath());
+            AssertNoFeedbackPresentationWrite(trauma, "UpdateActiveParasiteAudioState");
+            AssertNoFeedbackPresentationWrite(trauma, "PublishParasiteAudioLoad");
+            Assert.That(ExtractMethodBody(trauma, "LateFrameTick"), Does.Contain("FlushParasiteAudioLoad();"));
+
+            string thermal = File.ReadAllText(AbyssalThermalManagerPath());
+            AssertNoFeedbackPresentationWrite(thermal, "EmitThermalShock");
+            AssertNoFeedbackPresentationWrite(thermal, "TryQueueThermalRoar");
+            Assert.That(ExtractMethodBody(thermal, "LateFrameTick"), Does.Contain("FlushThermalFeedbackSignals();"));
+        }
+
         private static string RuntimeScriptsRoot()
         {
             return Path.Combine(ProjectRoot(), "Assets", "_Project", "Scripts");
@@ -217,6 +255,36 @@ namespace Hecton8.Tests.Editor
             return Path.Combine(RuntimeScriptsRoot(), "Visor", "SpectrumSystem.cs");
         }
 
+        private static string PlayerInteractionPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Interaction", "PlayerInteraction.cs");
+        }
+
+        private static string MessageTerminalPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Gameplay", "MessageTerminal.cs");
+        }
+
+        private static string HectonPlayerHealthPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Gameplay", "HectonPlayerHealth.cs");
+        }
+
+        private static string PlayerKinematicsRuntimePath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Gameplay", "PlayerKinematicsRuntime.cs");
+        }
+
+        private static string TraumaDispatcherPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "Gameplay", "TraumaDispatcher.cs");
+        }
+
+        private static string AbyssalThermalManagerPath()
+        {
+            return Path.Combine(RuntimeScriptsRoot(), "World", "AbyssalThermalManager.cs");
+        }
+
         private static string ProjectRoot()
         {
             return Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
@@ -254,6 +322,15 @@ namespace Hecton8.Tests.Editor
         {
             string body = ExtractMethodBody(text, methodName);
             Assert.AreEqual(0, Count(body, @"\bPlayStatic2D\s*\(|\bAudioSource\.Play\s*\(|\.PlayOneShot\s*\("), methodName + " audio presentation write");
+        }
+
+        private static void AssertNoFeedbackPresentationWrite(string text, string methodName)
+        {
+            string body = ExtractMethodBody(text, methodName);
+            Assert.AreEqual(
+                0,
+                Count(body, @"\bPlayStatic2D\s*\(|\bTryRaiseAudioPingTriggered\s*\(|\bSetParasiteRoomAcousticLoad\s*\(|\bSignalBus<(?:MovementAcousticSignal|HapticRequest|AcousticPingSignal)>\.TryPushTracked"),
+                methodName + " feedback presentation write");
         }
 
         private static string ExtractMethodBody(string text, string methodName)

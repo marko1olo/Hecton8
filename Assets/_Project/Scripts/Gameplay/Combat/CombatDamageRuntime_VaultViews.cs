@@ -323,57 +323,67 @@ namespace Hecton8.Gameplay
             if (vault == null || vault.IsCompactionFenceActive)
                 return false;
 
-            if (!vault.TryLockBuffer(CombatDamageSignalsBufferId, CombatDamageMemoryOwner)) return false;
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageSignalDetailsBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageTargetLookupKeysBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageTargetLookupSlotsBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageInstanceIdsBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageHealthBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageMaxHealthBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageInvMaxHealthBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageArmorValuesBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageShieldValuesBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageMinorAccumulatorsBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageTargetForwardBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageTargetHeightsBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageTargetFlagsBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageStatusMasksBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageStatusDurations0123BufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageLegacyStatusDurations4567BufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageBrittleDurationsBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageArmorLutBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageResultsBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageStatusResultsBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageStatusResultActiveBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageCountersBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageTelemetryRingBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(CombatDamageTelemetryStateBufferId, CombatDamageMemoryOwner)) { UnlockCombatDamageVaultBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            return true;
+            bool success = false;
+            try
+            {
+                if (!vault.TryLockBuffer(CombatDamageSignalsBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageSignalDetailsBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageTargetLookupKeysBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageTargetLookupSlotsBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageInstanceIdsBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageHealthBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageMaxHealthBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageInvMaxHealthBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageArmorValuesBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageShieldValuesBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageMinorAccumulatorsBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageTargetForwardBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageTargetHeightsBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageTargetFlagsBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageStatusMasksBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageStatusDurations0123BufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageLegacyStatusDurations4567BufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageBrittleDurationsBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageArmorLutBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageResultsBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageStatusResultsBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageStatusResultActiveBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageCountersBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageTelemetryRingBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(CombatDamageTelemetryStateBufferId, CombatDamageMemoryOwner)) return false;
+                lockedCount++;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                    UnlockCombatDamageVaultBuffersForJobs(lockedCount);
+            }
         }
 
         private static void UnlockCombatDamageVaultBuffersForJobs(int lockedCount)

@@ -258,3 +258,19 @@ Solution: Re-open current source with numbered line output, update only the proo
 Rejected Alternatives: Leaving stale line numbers was rejected because the user explicitly requires exact file paths and line numbers. Re-running compiler was rejected because this was documentation evidence only and the latest compiler gate was already blocked by CPU/process contention.
 Scalability potential: No runtime effect. Accurate proof preserves future Low/Middle/High/Ultra allocator review without repeating archaeology.
 Hardware Impact: No runtime cost. Avoided one unnecessary MSBuild/Roslyn invocation.
+
+## Decision 032 - Final CPU Gate Refresh
+
+Problem: The final proof still named an older compiler-process sample. A fresh gate is required before any claim about build throttling.
+Solution: Sample CPU and active compiler processes again. Latest CPU was 76 percent; `Get-Process dotnet,csc,VBCSCompiler` returned no active compiler processes. Because CPU is still above 50 percent, no `dotnet build` was launched. APEX and optimization reports were updated and re-parsed.
+Rejected Alternatives: Launching a build at 76 percent CPU was rejected by the explicit compilation resource throttling rule. Keeping the old `dotnet#15108` sample as the "latest" result was rejected as stale evidence.
+Scalability potential: No runtime effect. Protects shared low-end host throughput while preserving exact verification state.
+Hardware Impact: Avoided one MSBuild/Roslyn invocation under CPU contention.
+
+## Decision 033 - Source Hash Reconciliation
+
+Problem: The reports still contained the previous SHA-256 for `Assets/_Project/Scripts/Core/SystemDispatcher.cs`, while the current workspace file hash is `d19dc4fedbb6b8dca919b2eefc4ecc4ec897ce6d786cedf64de82b974f3c612a`.
+Solution: Update the APEX and optimization JSON source hash fields, re-parse both JSON files, and refresh final report hashes. `git status --short -- Assets/_Project/Scripts/Core/SystemDispatcher.cs` reported no local modification in this path, so this was artifact drift, not a new source edit.
+Rejected Alternatives: Leaving the stale source hash was rejected because cryptographic proof must match the current file bytes. Editing runtime code to match an old report was rejected as destructive and unrelated.
+Scalability potential: No runtime effect. Accurate hashes keep future allocator review anchored to the actual dispatcher hook bytes.
+Hardware Impact: No runtime cost.

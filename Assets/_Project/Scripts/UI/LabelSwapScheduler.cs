@@ -125,6 +125,7 @@ namespace Hecton8.UI
 
             if (!entry.IsUserInput && entry.HasLocalizationKey)
             {
+                text.richText = BabelRichTextLodPolicy.ShouldEnableTmpRichTextParsing();
                 text.isRightToLeftText = LocalizationManager.IsRightToLeftLanguage(LocRegistry.ActiveLanguage);
                 if (CharBufferPool.TryAcquireBabel(out CharBufferPool.BabelLease lease))
                 {

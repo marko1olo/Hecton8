@@ -902,3 +902,15 @@ Rejected Alternatives: Reimplementing validation inside `h8mod.ps1` was rejected
 Scalability potential: Low tier authors get one command/menu in a copied folder with no Unity install. Middle tier authors can use the same starter through the Unity Workbench. High tier can later wrap the same action names in a richer CLI or GUI. Ultra tier can add simulation, package diff, preview, and visual diagnostics after the same review manifest without changing runtime authority.
 
 Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is offline authoring only. It prevents user-error package churn before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, Burst/job paths, or device quality scaling.
+
+## Decision 76 - SDK Hub validator must not block the Unity Editor
+
+Problem: `ModdingSdkHubWindow.RunStaticValidator` launched `Validate_Mod_API_Static.ps1` with blocking `StandardOutput.ReadToEnd`, `StandardError.ReadToEnd`, and `WaitForExit` directly from the EditorWindow path. That left the public SDK Hub vulnerable to Unity Editor freezes and pipe deadlock on large validator output, while the Workbench had already moved starter tools to async execution.
+
+Solution: Convert the SDK Hub validator button to the same editor-safe process pattern: async stdout/stderr reads, disabled validator button while a process is active, process completion through `EditorApplication.update`, and process kill/dispose on window disable. Schema revision 88 and `Validate_Mod_API_Static.ps1` now fail if `ReadToEnd`/`WaitForExit` returns to the Hub.
+
+Rejected Alternatives: Leaving the Hub synchronous because the Workbench has async tools was rejected; the Hub is still the first public integrated SDK entry. Removing the Hub validator button was rejected because the static validator is a useful source/doc proof route. Reimplementing the validator in C# was rejected because the PowerShell validator is the current single source-backed contract gate.
+
+Scalability potential: Low tier Unity Editor users avoid UI stalls while static validation runs. Middle tier authors keep the same Hub workflow. High tier can run heavier static checks without freezing the entry screen. Ultra tier can add richer diagnostics over the same async process lane without changing runtime authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is Editor/offline tooling only. It prevents authoring UI stalls before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, Burst/job paths, or device quality scaling.

@@ -1144,31 +1144,39 @@ namespace Hecton8.Gameplay
                 return false;
 
             int locked = 0;
-            if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectRequests, SystemID.GameplayCombat)) return false;
-            locked++;
-            if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectStates, SystemID.GameplayCombat)) { UnlockStatusEffectVaultBuffersForJobs(locked); return false; }
-            locked++;
-            if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectTuning, SystemID.GameplayCombat)) { UnlockStatusEffectVaultBuffersForJobs(locked); return false; }
-            locked++;
-            if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectTelemetryRing, SystemID.GameplayCombat)) { UnlockStatusEffectVaultBuffersForJobs(locked); return false; }
-            locked++;
-            if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectTelemetryCursor, SystemID.GameplayCombat)) { UnlockStatusEffectVaultBuffersForJobs(locked); return false; }
-            locked++;
-            if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectCounters, SystemID.GameplayCombat)) { UnlockStatusEffectVaultBuffersForJobs(locked); return false; }
-            locked++;
-
-            if (!includeSimulationBuffers)
+            bool success = false;
+            try
             {
+                if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectRequests, SystemID.GameplayCombat)) return false;
+                locked++;
+                if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectStates, SystemID.GameplayCombat)) return false;
+                locked++;
+                if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectTuning, SystemID.GameplayCombat)) return false;
+                locked++;
+                if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectTelemetryRing, SystemID.GameplayCombat)) return false;
+                locked++;
+                if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectTelemetryCursor, SystemID.GameplayCombat)) return false;
+                locked++;
+                if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectCounters, SystemID.GameplayCombat)) return false;
+                locked++;
+
+                if (includeSimulationBuffers)
+                {
+                    if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectVfxRequests, SystemID.GameplayCombat)) return false;
+                    locked++;
+                    if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectDamageSignals, SystemID.GameplayCombat)) return false;
+                    locked++;
+                }
+
                 _statusLockedVaultBufferCount = locked;
+                success = true;
                 return true;
             }
-
-            if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectVfxRequests, SystemID.GameplayCombat)) { UnlockStatusEffectVaultBuffersForJobs(locked); return false; }
-            locked++;
-            if (!_statusEffectVault.TryLockBuffer(BufferID.Shinobu319StatusEffectDamageSignals, SystemID.GameplayCombat)) { UnlockStatusEffectVaultBuffersForJobs(locked); return false; }
-            locked++;
-            _statusLockedVaultBufferCount = locked;
-            return true;
+            finally
+            {
+                if (!success)
+                    UnlockStatusEffectVaultBuffersForJobs(locked);
+            }
         }
 
         private static bool CanUseStatusEffectJobBuffers(

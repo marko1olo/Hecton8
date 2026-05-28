@@ -43,6 +43,7 @@
   "growth_resolve_attempts": 0,
   "growth_resolve_misses": 0,
   "locked_skip_count": 0,
+  "lock_contention_evidence_count": 0,
   "arena_growth_probe_executed": false,
   "arena_bytes": 0,
   "total_bytes_allocated": 0,
@@ -105,10 +106,11 @@
     "failure_telemetry_active_mask_try_enter_finally": true,
     "runtime_report_sha256_sidecar_writer": true,
     "legacy_1310_editor_fuzzer_quarantined_by_define": true,
+    "lock_contention_evidence_accepts_active_mask_gate": true,
     "native_disable_container_safety_justification_paragraphs": 3,
     "conditional_editmode_test_asmdef_references_added": true
   },
-  "source_sha256": "12104cee7f0b133a4eb141ad50f27dc19485f175e98a2e239fcc81988e383bd3",
+  "source_sha256": "5088524f4cef6e028bb27a6f6e023c29a03adba139fb0457fdbb20fdc60afd02",
   "legacy_1310_editor_fuzzer_sha256": "2beddc35dc0bc66451a03cb65b01c34a916f3df31dc9fe754a0afc9a234e28c7",
   "implemented_entrypoints": [
     "HECTON-8/Memory/Run DataVault Compaction Stress Fuzzer 1412",

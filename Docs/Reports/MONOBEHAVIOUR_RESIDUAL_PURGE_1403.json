@@ -2,7 +2,7 @@
   "agentId": "1403",
   "role": "MONOBEHAVIOUR_RESIDUAL_NATIVE_FIELD_PURGER",
   "domain": "ECHELON 1 CORE MEMORY AND LIFECYCLE",
-  "generatedAt": "2026-05-28T14:04:44+04:00",
+  "generatedAt": "2026-05-28T14:28:00+04:00",
   "status": "PENDING_VERIFICATION",
   "reasonStatusIsPending": "No successful full project build, Unity Test Runner pass, or profiler capture exists. One gated full solution build exited 1 after 99.9 seconds with no diagnostic lines and left a child dotnet process that was stopped. A gated targeted Hecton8.Core.csproj build failed on out-of-domain XRPass errors in HectonVRBrownoutFeature.cs lines 441 and 480.",
   "promptExtraction": {
@@ -22,7 +22,7 @@
   "sourceSha256": [
     {
       "path": "Assets/_Project/Scripts/SaveManager.cs",
-      "hash": "F08512494BE555CBFF06E3BD07A16742486FD82DEADF20C03EF263B678157B4F"
+      "hash": "9F09ACCA8C0D000E16304F4FE230A0FA11D55DB112840E579F6BA728464CBA92"
     },
     {
       "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
@@ -78,8 +78,8 @@
     },
     {
       "file": "Assets/_Project/Scripts/SaveManager.cs",
-      "lines": "894, 1041, 1395-1398, 1546-1550",
-      "change": "H8BinaryWorldPager is warmed from Awake/InitializeService and EnsureWorldPager delegates to EnsureWorldPagerInitialized, removing hot-reachable lazy allocation from Tick -> DrainChunkDehydratedSignals -> EnqueueChunkDehydrationPayloads"
+      "lines": "894-895, 1042-1043, 1395-1401, 1549-1566, 1939",
+      "change": "H8BinaryWorldPager reference allocation is isolated in EnsureWorldPagerCold; Awake/InitializeService cold-warm the pager, EnsureWorldPager delegates through the cold route, and Tick-driven EnqueueChunkDehydrationPayloads only reaches EnsureWorldPagerInitialized, whose body has no reference-type new"
     },
     {
       "file": "Assets/_Project/Scripts/SaveManager.cs",
@@ -123,7 +123,7 @@
     ],
     "braceBalance": [
       "Assets/_Project/Scripts/SaveBinaryStorage.cs open=1117 close=1117 balanced=True",
-      "Assets/_Project/Scripts/SaveManager.cs open=629 close=629 balanced=True",
+      "Assets/_Project/Scripts/SaveManager.cs open=630 close=630 balanced=True",
       "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs open=387 close=387 balanced=True",
       "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs open=225 close=225 balanced=True",
       "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs open=267 close=267 balanced=True"
@@ -178,10 +178,15 @@
     "hotReachableWorldPagerScan": {
       "routeBeforeFix": "Tick -> DrainChunkDehydratedSignals -> EnqueueChunkDehydrationPayloads -> EnsureWorldPagerInitialized -> new H8BinaryWorldPager",
       "fixEvidence": [
-        "Assets/_Project/Scripts/SaveManager.cs:894 Awake calls EnsureWorldPagerInitialized",
-        "Assets/_Project/Scripts/SaveManager.cs:1041 InitializeService calls EnsureWorldPagerInitialized",
-        "Assets/_Project/Scripts/SaveManager.cs:1397 EnsureWorldPager delegates to EnsureWorldPagerInitialized",
-        "Assets/_Project/Scripts/SaveManager.cs:1549 only remaining H8BinaryWorldPager allocation is tagged COLD ALLOC and warmed before Tick"
+        "Assets/_Project/Scripts/SaveManager.cs:894 Awake calls EnsureWorldPagerCold",
+        "Assets/_Project/Scripts/SaveManager.cs:895 Awake calls EnsureWorldPagerInitialized",
+        "Assets/_Project/Scripts/SaveManager.cs:1042 InitializeService calls EnsureWorldPagerCold",
+        "Assets/_Project/Scripts/SaveManager.cs:1043 InitializeService calls EnsureWorldPagerInitialized",
+        "Assets/_Project/Scripts/SaveManager.cs:1399 EnsureWorldPager calls EnsureWorldPagerCold",
+        "Assets/_Project/Scripts/SaveManager.cs:1400 EnsureWorldPager calls EnsureWorldPagerInitialized",
+        "Assets/_Project/Scripts/SaveManager.cs:1552 only remaining H8BinaryWorldPager allocation is in EnsureWorldPagerCold and tagged COLD ALLOC",
+        "Assets/_Project/Scripts/SaveManager.cs:1555-1566 EnsureWorldPagerInitialized contains no reference-type new",
+        "Assets/_Project/Scripts/SaveManager.cs:1939 Tick-driven chunk dehydration calls EnsureWorldPagerInitialized only"
       ],
       "methodScanAfterFix": "Tick/DrainChunkDehydratedSignals/EnqueueChunkDehydrationPayloads/EnsureWorldPager/EnsureWorldPagerInitialized allNew=0 newRefCandidate=0 stringFormat=0 toString=0 linq=0 foreach=0 interpolated=0"
     },
@@ -213,16 +218,16 @@
       "H8BinaryWorldPager._telemetryRingHandle"
     ],
     "tryAcquireWriteLockLines": [
-      "Assets/_Project/Scripts/SaveManager.cs:1498",
+      "Assets/_Project/Scripts/SaveManager.cs:1501",
       "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs:1153"
     ],
     "releaseInvalidBufferLine": "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs:1164 and Assets/_Project/Scripts/SaveManager.cs:1509",
-    "releaseHelperLines": "Assets/_Project/Scripts/SaveManager.cs:1511-1520 and Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs:1168-1175",
+    "releaseHelperLines": "Assets/_Project/Scripts/SaveManager.cs:1514-1523 and Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs:1168-1175",
     "finallyReleaseProof": [
-      "dirty signal route: acquire line 1704, finally line 1739, release line 1742",
-      "storm route: acquire line 1770, finally line 1804, release line 1807",
-      "hydration route: acquire line 1895, finally line 1910, release line 1913",
-      "cache reset route: acquire line 2078, finally line 2084, release line 2086",
+      "dirty signal route: acquire line 1713, finally line 1748, release line 1751",
+      "storm route: acquire line 1779, finally line 1813, release line 1816",
+      "hydration route: acquire line 1904, finally line 1919, release line 1922",
+      "cache reset route: acquire line 2087, finally line 2093, release line 2095",
       "world pager telemetry route: acquire line 2950, finally line 2986, release line 2988"
     ],
     "knownResidualDataVaultDebt": [
@@ -329,6 +334,14 @@
       "vbcsCompilerProcesses": 0,
       "buildLaunched": false,
       "reason": "CPU exceeded 50% and a dotnet process was active."
+    },
+    "finalGateAfterColdPagerSplit": {
+      "cpuLoadPercent": 96,
+      "dotnetProcesses": 1,
+      "cscProcesses": 0,
+      "vbcsCompilerProcesses": 1,
+      "buildLaunched": false,
+      "reason": "CPU exceeded 50% and dotnet/VBCSCompiler processes were active."
     },
     "dotnetBuildSpam": false
   },

@@ -795,24 +795,34 @@ namespace Hecton8.Gameplay
                 return false;
 
             int locked = 0;
-            if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.SignalImpactAups, ArmorMemoryOwner)) return false;
-            locked++;
-            if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TargetRootAups, ArmorMemoryOwner)) { UnlockArmorVaultBuffersForJobs(locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TargetRotations, ArmorMemoryOwner)) { UnlockArmorVaultBuffersForJobs(locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TargetHalfExtents, ArmorMemoryOwner)) { UnlockArmorVaultBuffersForJobs(locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TargetArmorProfiles, ArmorMemoryOwner)) { UnlockArmorVaultBuffersForJobs(locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TelemetryRing, ArmorMemoryOwner)) { UnlockArmorVaultBuffersForJobs(locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.DebugHits, ArmorMemoryOwner)) { UnlockArmorVaultBuffersForJobs(locked); return false; }
-            locked++;
-            if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.Tuning, ArmorMemoryOwner)) { UnlockArmorVaultBuffersForJobs(locked); return false; }
+            bool success = false;
+            try
+            {
+                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.SignalImpactAups, ArmorMemoryOwner)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TargetRootAups, ArmorMemoryOwner)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TargetRotations, ArmorMemoryOwner)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TargetHalfExtents, ArmorMemoryOwner)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TargetArmorProfiles, ArmorMemoryOwner)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TelemetryRing, ArmorMemoryOwner)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.DebugHits, ArmorMemoryOwner)) return false;
+                locked++;
+                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.Tuning, ArmorMemoryOwner)) return false;
 
-            _armorVaultBuffersLocked = true;
-            return true;
+                _armorVaultBuffersLocked = true;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                    UnlockArmorVaultBuffersForJobs(locked);
+            }
         }
 
         private static void UnlockArmorVaultBuffersForJobs()
@@ -885,15 +895,25 @@ namespace Hecton8.Gameplay
             if (vault == null)
                 return false;
 
-            if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.MockRequests, ArmorMemoryOwner)) return false;
-            lockedCount++;
-            if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.MockDetails, ArmorMemoryOwner)) { UnlockArmorMockBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.MockAups, ArmorMemoryOwner)) { UnlockArmorMockBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.MockTargetSlots, ArmorMemoryOwner)) { UnlockArmorMockBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            return true;
+            bool success = false;
+            try
+            {
+                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.MockRequests, ArmorMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.MockDetails, ArmorMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.MockAups, ArmorMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.MockTargetSlots, ArmorMemoryOwner)) return false;
+                lockedCount++;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                    UnlockArmorMockBuffersForJobs(lockedCount);
+            }
         }
 
         private static void UnlockArmorMockBuffersForJobs(int lockedCount)
@@ -915,17 +935,27 @@ namespace Hecton8.Gameplay
             if (vault == null)
                 return false;
 
-            if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TortureRequests, ArmorMemoryOwner)) return false;
-            lockedCount++;
-            if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TortureDetails, ArmorMemoryOwner)) { UnlockArmorEvaluatorTortureBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TortureAups, ArmorMemoryOwner)) { UnlockArmorEvaluatorTortureBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TortureTargetSlots, ArmorMemoryOwner)) { UnlockArmorEvaluatorTortureBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TortureResolvedHits, ArmorMemoryOwner)) { UnlockArmorEvaluatorTortureBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            return true;
+            bool success = false;
+            try
+            {
+                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TortureRequests, ArmorMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TortureDetails, ArmorMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TortureAups, ArmorMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TortureTargetSlots, ArmorMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.TortureResolvedHits, ArmorMemoryOwner)) return false;
+                lockedCount++;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                    UnlockArmorEvaluatorTortureBuffersForJobs(lockedCount);
+            }
         }
 
         private static void UnlockArmorEvaluatorTortureBuffersForJobs(int lockedCount)
@@ -948,11 +978,21 @@ namespace Hecton8.Gameplay
             if (vault == null)
                 return false;
 
-            if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.CasTortureHealth, ArmorMemoryOwner)) return false;
-            lockedCount++;
-            if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.CasTortureSuccesses, ArmorMemoryOwner)) { UnlockArmorCasTortureBuffersForJobs(lockedCount); return false; }
-            lockedCount++;
-            return true;
+            bool success = false;
+            try
+            {
+                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.CasTortureHealth, ArmorMemoryOwner)) return false;
+                lockedCount++;
+                if (!vault.TryLockBuffer(ArmorPenetrationVaultBufferIds.CasTortureSuccesses, ArmorMemoryOwner)) return false;
+                lockedCount++;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                    UnlockArmorCasTortureBuffersForJobs(lockedCount);
+            }
         }
 
         private static void UnlockArmorCasTortureBuffersForJobs(int lockedCount)

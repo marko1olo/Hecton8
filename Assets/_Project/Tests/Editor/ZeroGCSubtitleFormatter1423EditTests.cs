@@ -131,5 +131,20 @@ namespace Hecton8.Tests.Editor
             StringAssert.DoesNotContain("LocRegistry.GetLength(hash)", source);
             StringAssert.Contains("LocRegistry.TryGetVisualBuffer(hash, out char[] source, out int length)", source);
         }
+
+        [Test]
+        public void LabelSwapScheduler_SyncsRichTextLodPolicyBeforeCharArrayPush()
+        {
+            string sourcePath = Path.Combine(Application.dataPath, "_Project/Scripts/UI/LabelSwapScheduler.cs");
+            string source = File.ReadAllText(sourcePath);
+
+            string richTextPolicy = "text.richText = BabelRichTextLodPolicy.ShouldEnableTmpRichTextParsing();";
+            string charArrayPush = "text.SetCharArray(lease.TmpBuffer, 0, length);";
+            int policyIndex = source.IndexOf(richTextPolicy, StringComparison.Ordinal);
+            int pushIndex = source.IndexOf(charArrayPush, StringComparison.Ordinal);
+
+            Assert.GreaterOrEqual(policyIndex, 0);
+            Assert.Greater(pushIndex, policyIndex);
+        }
     }
 }

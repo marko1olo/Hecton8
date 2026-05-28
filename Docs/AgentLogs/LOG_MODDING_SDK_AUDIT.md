@@ -1944,3 +1944,37 @@ Verification:
 
 Evidence class:
 - STATIC_SOURCE / STATIC_DOC / CLI_SCRIPT. No Unity Console, PlayMode, profiler, player build, or runtime GC proof claimed.
+
+## 2026-05-28 - Pass 64 - Schema 88 SDK Hub Async Validator
+
+What was wrong:
+- `ModdingSdkHubWindow.RunStaticValidator` used blocking `StandardOutput.ReadToEnd`, `StandardError.ReadToEnd`, and `WaitForExit` from the EditorWindow path.
+- That made the public SDK Hub capable of freezing Unity Editor or deadlocking on validator pipe output, while Workbench starter tools already used async process IO.
+
+What was done:
+- Replaced the SDK Hub validator launch with async stdout/stderr reads, active-process button disable, completion polling through `EditorApplication.update`, and cleanup on `OnDisable`.
+- Added `ModdingSdkHubRunsStaticValidatorAsync` to `Signal_Schema.json` schema revision `88`.
+- Extended `Validate_Mod_API_Static.ps1` so it fails if SDK Hub regresses to blocking `ReadToEnd` or `WaitForExit`.
+- Updated README, API spec, runtime playbook, SDK authoring plan, and product blueprint.
+
+Cinematic Cheats used:
+- Editor/offline responsiveness fix only. No managed DLL execution, Harmony/BepInEx patching, loose AssetBundle/PNG/localization runtime ingress, loader bypass, or hot-path event route was enabled.
+
+Exact Microseconds saved:
+- Runtime frame: `0 us/frame` measured/claimed. No gameplay, render, physics, save, SignalBus, HectonEventBus, NativeQueue, GlobalDataVault, or Burst/job path changed.
+- Editor/offline: removes blocking process waits from the SDK Hub validator button; no frame-time metric claimed.
+
+Verification:
+- PASS: `Docs/Modding/Validate_Mod_API_Static.ps1` -> schema revision `88`, `ModdingSdkHubRunsStaticValidatorAsync=True`.
+- PASS: `Signal_Schema.json` parse -> `schemaRevision=88`, `hubRunsStaticValidatorAsync=True`, snapshot `moddingSdkHubRunsStaticValidatorAsync=True`.
+- PASS: source scan found no `ReadToEnd` or `WaitForExit()` in `ModdingSdkHubWindow.cs` or `ExternalStarterKitWorkbenchWindow.cs`.
+- PASS: `h8mod.ps1 -Action validate`.
+- PASS: `h8mod.ps1 -Action prepare`.
+- PASS: stale schema-87 scan.
+- PASS: scoped `git diff --check`; line-ending warnings only.
+- PASS: touched-file trailing whitespace scan.
+- PASS: editor C# ASCII scan.
+- DEFERRED: dotnet/Unity compile by resource gate. Samples: CPU `91`, then CPU `95` after delayed retry; no active build process, no Unity lock.
+
+Evidence class:
+- STATIC_SOURCE / STATIC_DOC / CLI_SCRIPT. No Unity Console, PlayMode, profiler, player build, or runtime GC proof claimed.

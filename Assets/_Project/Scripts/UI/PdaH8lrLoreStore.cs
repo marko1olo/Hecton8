@@ -53,6 +53,7 @@ namespace Hecton8.UI
         private const int MaxRecordCount = 4096;
         private const int FileStreamBufferBytes = 64 * 1024;
         private const int VaultMirrorCopyChunkBytes = 8 * 1024;
+        private const SystemID VaultOwnerSystemId = SystemID.UI;
 
 #if HECTON8_PDA_H8LR_MMF_AVAILABLE
         private MemoryMappedFile _mappedFile;
@@ -208,7 +209,7 @@ namespace Hecton8.UI
         {
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
-                vaultMirrorHandle.BufferID == 0u ||
+                !IsVaultMirrorHandle(in vaultMirrorHandle) ||
                 fileBytes <= 0)
             {
                 return false;
@@ -274,7 +275,7 @@ namespace Hecton8.UI
         {
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
-                vaultMirrorHandle.BufferID == 0u ||
+                !IsVaultMirrorHandle(in vaultMirrorHandle) ||
                 source.Length <= 0 ||
                 destinationOffset < 0 ||
                 requiredBytes <= 0 ||
@@ -283,7 +284,7 @@ namespace Hecton8.UI
                 return false;
             }
 
-            if (!vault.TryAcquireWriteLock(in vaultMirrorHandle, SystemID.UI, out NativeArray<byte> vaultMirror))
+            if (!vault.TryAcquireWriteLock(in vaultMirrorHandle, VaultOwnerSystemId, out NativeArray<byte> vaultMirror))
                 return false;
 
             try
@@ -302,7 +303,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                vault.ReleaseWriteLock(in vaultMirrorHandle, SystemID.UI);
+                vault.ReleaseWriteLock(in vaultMirrorHandle, VaultOwnerSystemId);
             }
         }
 
@@ -313,14 +314,14 @@ namespace Hecton8.UI
         {
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
-                vaultMirrorHandle.BufferID == 0u ||
+                !IsVaultMirrorHandle(in vaultMirrorHandle) ||
                 fileBytes <= 0)
             {
                 ClearMappedState();
                 return false;
             }
 
-            if (!vault.TryAcquireWriteLock(in vaultMirrorHandle, SystemID.UI, out NativeArray<byte> vaultMirror))
+            if (!vault.TryAcquireWriteLock(in vaultMirrorHandle, VaultOwnerSystemId, out NativeArray<byte> vaultMirror))
             {
                 ClearMappedState();
                 return false;
@@ -353,7 +354,7 @@ namespace Hecton8.UI
             }
             finally
             {
-                vault.ReleaseWriteLock(in vaultMirrorHandle, SystemID.UI);
+                vault.ReleaseWriteLock(in vaultMirrorHandle, VaultOwnerSystemId);
             }
         }
 
@@ -511,7 +512,7 @@ namespace Hecton8.UI
                 IDataVault vault = _vault;
                 if (vault == null ||
                     vault.IsCompactionFenceActive ||
-                    _vaultMirrorHandle.BufferID == 0u ||
+                    !IsVaultMirrorHandle(in _vaultMirrorHandle) ||
                     _vaultMirrorLength < _mappedBytes ||
                     !vault.TryReadOnlyHandle(in _vaultMirrorHandle, out NativeArray<byte>.ReadOnly vaultMirror) ||
                     vault.IsCompactionFenceActive ||
@@ -528,6 +529,14 @@ namespace Hecton8.UI
             }
 
             return basePointer != null && mappedBytes >= HeaderSizeBytes && _entryCount > 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsVaultMirrorHandle(in VaultGenerationHandle<byte> handle)
+        {
+            return handle.BufferID == PDAEncyclopediaStreamer.H8lrMirrorBufferId &&
+                   handle.SystemID == (uint)VaultOwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

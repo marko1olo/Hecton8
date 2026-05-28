@@ -274,3 +274,10 @@ Solution: Added an opt-in define guard: `#if UNITY_EDITOR && HECTON8_ENABLE_LEGA
 Rejected Alternatives: Rewriting the 1310 harness into a second active fuzzer; rejected because it duplicates the 1412 domain and increases verification surface. Leaving the legacy menu compiled by default; rejected because it can create raw-thread disposal failures in the same memory domain.
 Scalability potential: No gameplay-tier behavior change. The active fuzzer remains continuous through `GlobalQualityWeight`; the legacy raw-thread path is disabled unless explicitly requested.
 Hardware Impact: Removes a default editor menu that can run a 100000-frame raw-thread memory stress tool on weak machines. Latest build gate sampled CPU 99%, dotnet 1, csc 0, so no compiler was launched.
+
+## Decision 039 - Active-Mask Lock Evidence Metric
+Problem: The fuzzer treated raw `_defragLockedSkipCount > 0` as the only acceptable lock-contention proof. `GlobalDataVault.FrostTickDefrag(..., activeBurstLockMask)` correctly halts before block scanning when active locks are present, so a valid fast active-mask barrier can produce `masked_defrag_passes > 0` while `_defragLockedSkipCount` remains zero.
+Solution: Added `LockContentionEvidenceCount` and report field `lock_contention_evidence_count`. The pass criterion now accepts `locked_skip_count + masked_defrag_passes > 0`, while still reporting raw `locked_skip_count`.
+Rejected Alternatives: Calling private direct compaction with `0u` to force block-scan skip counts; rejected because the active-mask route is the actual DataVault contract and previous audit already required `direct(activeMask)`. Keeping raw skip count as the sole criterion; rejected because it can fail a correct fast barrier.
+Scalability potential: No tier behavior change. Low/Middle/High/Ultra collision volume still scales through `GlobalQualityWeight`; the metric now matches both cheap active-mask and deeper block-scan barriers.
+Hardware Impact: One integer sum in report snapshot. No player runtime impact because the fuzzer is editor-only.
