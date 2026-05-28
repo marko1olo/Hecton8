@@ -134,7 +134,7 @@ Hardware Impact: No measurable runtime impact expected; generated struct assignm
 ## Decision 016 - APEX JSON Evidence Repair
 
 Problem: The first APEX JSON artifact failed PowerShell `ConvertFrom-Json` because case-insensitive duplicate keys `lowEnd` and `LowEnd` collided.
-Solution: Convert the binary switch scan object into an array of `{ term, count }` records and re-run JSON parsing. Current APEX report SHA-256 is `3dccc87eeef4fec2e2cf2d833dbfb84809cb1132003adf348e1cc128e40b3e93`.
+Solution: Convert the binary switch scan object into an array of `{ term, count }` records and re-run JSON parsing. Current APEX report SHA-256 is `65cb1949a2e732e7175862301f685684a80a846d60a24f69bd76c45f371f85a6`.
 Rejected Alternatives: Keeping a JSON file that only some parsers accept was rejected because project evidence must be machine-verifiable on the host shell.
 Scalability potential: No runtime effect. Tooling stability improves for later allocator audits.
 Hardware Impact: No runtime cost.

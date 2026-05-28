@@ -138,3 +138,11 @@ Solution: Wrapped the pre-return drain in `try/catch` guards that call `ReleaseB
 Rejected Alternatives: Swallow the exception and return false. Rejected because a drain fault is structural corruption or safety-check failure; hiding it would produce unverifiable memory state. Rejected spin/retry because fail-closed forbids waits.
 Scalability potential: Low/Middle/High/Ultra behavior is identical; mutation-gate correctness is authority infrastructure, not visual fidelity. `GlobalQualityWeight` remains intentionally unused.
 Hardware Impact: Normal path adds no loops and no allocations. Fault path releases one atomic gate before propagating the error; runtime microseconds remain PENDING COMPILER/UNITY RUNTIME VERIFICATION.
+
+## R17 - Alias-Open Contention Dump Removal
+
+Problem: `TryOpenAliasBuffer` used `DumpPhiVodBlackBox()` when `TryEnterBlockMutationGate()` failed. That branch is normal contention, not memory corruption. `DumpPhiVodBlackBox()` performs managed path handling and file writes, so it violates the fail-closed rule for a lock contention path.
+Solution: Replaced that branch with `RecordLockContentionFault(key)` and `return false`. Left dumps on pointer/meta/type/alignment corruption branches because those are forensic evidence routes, not expected contention.
+Rejected Alternatives: Remove all dumps from `TryOpenAliasBuffer`. Rejected because real corruption must keep black-box proof. Rejected async dump request on contention because even request escalation is unnecessary for a routine busy gate.
+Scalability potential: Low devices avoid filesystem work on alias-open contention. Middle/High/Ultra keep identical truth behavior; no `GlobalQualityWeight` usage because alias lock correctness is not visual fidelity.
+Hardware Impact: Contended alias-open path now performs only numeric fault writes and returns. Runtime microseconds remain PENDING COMPILER/UNITY RUNTIME VERIFICATION.

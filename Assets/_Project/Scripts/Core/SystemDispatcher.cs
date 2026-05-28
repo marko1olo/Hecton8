@@ -5422,6 +5422,7 @@ namespace Hecton8.Core
                 HectonXRRuntimeState.FlushVisualSyncShaderState();
                 WfcLaserCutRuntime.FlushVisualSync();
                 HectonShaderGlobalDataVaultBridge.FlushFallbackVisualSync();
+                GlobalRegistry.FlushMathPrecisionShaderState();
                 HomeostasisBrain.FlushVisualSyncShaderState();
                 RunMasterVisualSyncPhase();
                 BeginLateFrameEventBudget();

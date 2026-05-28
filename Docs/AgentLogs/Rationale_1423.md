@@ -97,3 +97,51 @@ Solution: Checked compiler process and CPU before building. No `csc.exe` was obs
 Rejected Alternatives: Launching `dotnet build` against policy; claiming successful compile without running it.
 Scalability potential: Not runtime-facing; protects integration throughput with 20+ active agents.
 Hardware Impact: Avoided additional build CPU contention. Runtime impact none.
+
+## Decision 013 - Hash To Caller-Owned Localization Writer
+
+Problem: Hash-addressed localization consumers needed an explicit contract route that cannot return a new managed string.
+Solution: Added `IBabelLocalization.TryWriteLocalized(uint, Span<char>, out int, bool)` and implemented it with `LocRegistry.TryWriteVisualSpanFromUtf8`. This exposes the already-owned UTF-8 database through caller-owned char storage.
+Rejected Alternatives: Mutating legacy `Get(string)` behavior and pretending ring-buffer spans are permanent pinned char memory.
+Scalability potential: Low tier can call with small fixed buffers and truncate. Middle/High/Ultra can use larger prewarmed presentation buffers without changing the contract.
+Hardware Impact: Static/source edit estimate 2100000 us. Expected gain is avoiding future hash-to-string bridge calls; measured runtime gain absent.
+
+## Decision 014 - UI Optimization Telemetry Ring
+
+Problem: Overflow and missing localization failures needed numeric, unmanaged proof instead of managed warning strings.
+Solution: Added `UIOptimizationTelemetryEntry` as a 64-byte DataVault-backed ring with 300 entries, buffer id 15070552, numeric `UIOptimizationFailureCode`, and dump path `Docs/AgentLogs/Dump_1423.bin`. Failure branches in `LocRegistry` write `MissingLocalizationHash`, `TextBufferOverflow`, or `FormatterOverflow`.
+Rejected Alternatives: `Debug.Log` strings in failure branches; resizing text buffers; using HectonEventBus for hot UI failure telemetry.
+Scalability potential: Low tier records truncated failures without heap pressure. Middle/High/Ultra keep the same ring and can add richer diagnostic visualization later.
+Hardware Impact: Static/source edit estimate 4200000 us. Runtime overhead only on failure branches; no profiler proof.
+
+## Decision 015 - VWS Reconciliation Scope
+
+Problem: The task demanded a VWS rewrite, but source inspection showed the active route already dispatches unmanaged `VocalCueSignal` and `SubtitleCueSignal` instead of managed text.
+Solution: Preserve the existing VWS signal route and do not add UI references to VWS. Presentation remains the only layer that resolves text hashes and calls `SetCharArray`.
+Rejected Alternatives: Adding subtitle strings to VWS DTOs; adding direct TMP references in the audio system; changing signal layout without a real dynamic value requirement from current source.
+Scalability potential: Low tier drops bounded subtitle signals. Middle/High/Ultra add visual presentation only after the signal is consumed by UI.
+Hardware Impact: Static inspection estimate 1900000 us. Runtime change is zero by design; it avoids damaging an already-correct route.
+
+## Decision 016 - Build Result
+
+Problem: A build was required once the CPU gate allowed it, but failures outside the assignment domain can block syntax proof.
+Solution: Ran `dotnet build Hecton8.Core.csproj --nologo` after CPU sampled 44.12% and no `csc.exe` was running. Build failed on `Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs` missing `XRPass` at lines 437 and 476.
+Rejected Alternatives: Fixing Visor/XR from a localization agent; rerunning builds without addressing dependency; claiming compile success.
+Scalability potential: Not runtime-facing.
+Hardware Impact: Build wall time 54690 ms; no runtime impact.
+
+## Decision 017 - Fuzzer And Truncation Tests
+
+Problem: The formatter needed repeatable proof that spam writes and overflow handling stay inside fixed buffers.
+Solution: Added `ZeroGCSubtitleFormatter1423EditTests` with a 500-warning mock formatter loop, invariant-culture numeric assertion, and fixed-buffer ellipsis/cursor assertions.
+Rejected Alternatives: Runtime-only manual testing with no source artifact; using string.Format as an oracle.
+Scalability potential: Low/Middle/High/Ultra all depend on the same bounded writer invariants.
+Hardware Impact: Static/source edit estimate 3000000 us. Tests were not executed because build is blocked by out-of-domain XRPass errors.
+
+## Decision 018 - Final Proof Honesty
+
+Problem: Task 20 requested measured 0B GC for a 500-subtitle test, but no runtime/profiler pass could run after the compile dependency failure.
+Solution: Final report records `runtime_gc_bytes = null` and `NOT_MEASURED_BUILD_BLOCKED_BY_CPU_THROTTLE`/build dependency status instead of inventing zero allocation evidence. Static scan and SHA-256 hashes are included.
+Rejected Alternatives: Fake 0B result; hiding build failure; presenting regex audit as profiler proof.
+Scalability potential: Proof schema can accept real low/middle/high/ultra runtime captures later without changing source code.
+Hardware Impact: Report generation estimate 2700000 us. Runtime impact none.

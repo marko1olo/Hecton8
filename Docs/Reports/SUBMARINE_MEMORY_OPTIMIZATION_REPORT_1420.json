@@ -101,7 +101,7 @@
     "gitDiffCheck": "clean except repository LF-to-CRLF warning",
     "braceBalance": "balanced for modified C# files",
     "hotPathForbiddenPatternScan": "case-sensitive scan found 0 new Native*, Allocator.Persistent, LINQ .Where/.Select/.ToList/.ToArray, foreach, string.Format, .ToString, interpolated strings, or literal string concatenation matches in modified hot files; reference-type new sites are cold CSV/dump paths only",
-    "fullBuild": "not run: final CPU gate sampled 41.88 percent with active dotnet PID 32028; active dotnet blocked compilation"
+    "fullBuild": "not run: final CPU gate sampled 64.92 percent with active dotnet PID 24928; CPU >50 percent and active dotnet blocked compilation"
   },
   "modifiedCSharpSha256": {
     "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs": "C82ABFD25DBB62D3029D330BEB14C242642DCB61280EF9724ACEE0FA3E6B514B",

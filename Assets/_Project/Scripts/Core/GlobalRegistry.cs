@@ -334,6 +334,9 @@ namespace Hecton8.Core
         private static int _mathPrecisionTransitionFramesRemaining;
         private static int _mathPrecisionTransitionTotalFrames;
         private static int _mathPrecisionLowBlendMilli = MathPrecisionBlendScale;
+        private static int _pendingMathPrecisionShaderLevel = (int)MathPrecisionLevel.Low;
+        private static int _pendingMathPrecisionShaderLowBlendMilli = MathPrecisionBlendScale;
+        private static int _mathPrecisionShaderDirty;
         private static int _currentDomain = (int)Domain.Unknown;
         private static object _currentDomainOwner;
 
@@ -2405,8 +2408,29 @@ namespace Hecton8.Core
                 ? 0
                 : lowBlendMilli > MathPrecisionBlendScale ? MathPrecisionBlendScale : lowBlendMilli;
             Volatile.Write(ref _mathPrecisionLowBlendMilli, clampedBlendMilli);
+            QueueMathPrecisionShaderState(level, clampedBlendMilli);
+        }
+
+        private static void QueueMathPrecisionShaderState(MathPrecisionLevel level, int lowBlendMilli)
+        {
+            int clampedBlendMilli = lowBlendMilli < 0
+                ? 0
+                : lowBlendMilli > MathPrecisionBlendScale ? MathPrecisionBlendScale : lowBlendMilli;
+            Volatile.Write(ref _pendingMathPrecisionShaderLevel, (int)level);
+            Volatile.Write(ref _pendingMathPrecisionShaderLowBlendMilli, clampedBlendMilli);
+            Volatile.Write(ref _mathPrecisionShaderDirty, 1);
+        }
+
+        internal static void FlushMathPrecisionShaderState()
+        {
+            if (Volatile.Read(ref _mathPrecisionShaderDirty) == 0)
+                return;
+
+            Volatile.Write(ref _mathPrecisionShaderDirty, 0);
+            int clampedBlendMilli = Volatile.Read(ref _pendingMathPrecisionShaderLowBlendMilli);
             Shader.SetGlobalFloat(_mathLodLowBlendId, clampedBlendMilli * 0.001f);
 
+            MathPrecisionLevel level = (MathPrecisionLevel)Volatile.Read(ref _pendingMathPrecisionShaderLevel);
             bool lowPrecision = level == MathPrecisionLevel.Low;
             if (lowPrecision)
             {
@@ -2581,6 +2605,9 @@ namespace Hecton8.Core
             _mathPrecisionTransitionFramesRemaining = 0;
             _mathPrecisionTransitionTotalFrames = 0;
             _mathPrecisionLowBlendMilli = MathPrecisionBlendScale;
+            _pendingMathPrecisionShaderLevel = (int)MathPrecisionLevel.Low;
+            _pendingMathPrecisionShaderLowBlendMilli = MathPrecisionBlendScale;
+            _mathPrecisionShaderDirty = 0;
             Volatile.Write(ref _systemKillSwitchMask, 0);
             Volatile.Write(ref _transientLowScalabilityOverrideMask, 0);
             _currentDomain = (int)Domain.Unknown;
@@ -2923,7 +2950,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Registers the BIOS-selected math precision tier and immediately applies the shader keyword contract.
+        /// Registers the BIOS-selected math precision tier and queues the shader keyword contract for visual sync.
         /// </summary>
         /// <param name="level">Boot-time precision level.</param>
         public static void RegisterMathPrecisionLevel(MathPrecisionLevel level)
@@ -2969,7 +2996,7 @@ namespace Hecton8.Core
                 ? MathPrecisionBlendScale
                 : (elapsed * MathPrecisionBlendScale) / total;
             Volatile.Write(ref _mathPrecisionLowBlendMilli, blendMilli);
-            Shader.SetGlobalFloat(_mathLodLowBlendId, blendMilli * 0.001f);
+            QueueMathPrecisionShaderState((MathPrecisionLevel)Volatile.Read(ref _mathPrecisionTargetLevel), blendMilli);
 
             if (nextRemaining <= 0)
                 CompleteMathPrecisionTransition();

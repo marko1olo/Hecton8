@@ -40,7 +40,7 @@ namespace GPUInstancer
                     }
                     if (!IsInsideCollider(prefabInstance))
                     {
-                        rb = prefabInstance.GetComponent<Rigidbody>();
+                        rb = prefabInstance.GetCachedRigidbody();
                         if (rb != null && !rb.IsSleeping())
                             continue;
                         GPUInstancerAPI.EnableInstancingForInstance(prefabManager, prefabInstance);
@@ -80,7 +80,7 @@ namespace GPUInstancer
 
         public bool IsInsideCollider(GPUInstancerPrefab prefabInstance)
         {
-            Collider instanceCollider = prefabInstance.GetComponent<Collider>();
+            Collider instanceCollider = prefabInstance.GetCachedCollider();
             if (instanceCollider == null)
                 return false;
             else

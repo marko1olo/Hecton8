@@ -126,6 +126,15 @@ Status: ACTIVE / PENDING VERIFICATION
 - [x] Final artifact hashes after Loop 13 | DOD: `GlobalDataVault.cs` SHA-256 = `1bf5afd57181118d831f9502afb2b76439c7b058bfb85db18b35d1acfd94f243`; `agent1413_apex_verifier.py` SHA-256 = `db9e48738423c983d4edf84dabfaf35f8dc341b463fd1f7b3b7688dc19cfc912`; optimization report SHA-256 = `eed3a266d12f8cb231b7192aeab7776347f8db49c47f703276141e8e281c6165`; APEX SHA-256 = `fac5c1a3621bcc34d06e656da59a080efab37f3eabc614717754291d033d166c`.
 - [BLOCKED_BY_CONTENTION] Compiler/runtime proof | DOD: APEX runtime sample = 99.422646%, `dotnetCount=1`, `cscCount=0`; CPU exceeds 50% and dotnet is active, so no `dotnet build`, no Unity Test Runner.
 
+## Loop 14 / Alias-Open Contention Dump Audit
+
+- [x] Fail-closed dump violation found | DOD: reviewed `TryOpenAliasBuffer`. The corruption branches legitimately dump black-box evidence, but the pure mutation-gate contention branch at line 1357 also called `DumpPhiVodBlackBox()`, which performs directory/file IO and managed string work. Estimate: 1,000,000 us static branch classification.
+- [x] Contention branch corrected | DOD: `TryOpenAliasBuffer` gate failure now calls `RecordLockContentionFault(key)` and returns false. Corruption/type/pointer mismatch branches still call `DumpPhiVodBlackBox()`.
+- [x] APEX scanner extended | DOD: `agent1413_apex_verifier.py` now scans the full `TryOpenAliasBuffer<T>` method as a modified hot window.
+- [x] Reports regenerated | DOD: APEX generatedUtc = `2026-05-28T01:46:58Z`; zero-GC total forbidden hits = 0; `TryOpenAliasBuffer<T>` lines 1309-1449 forbidden hits = 0; optimization report hash before APEX write = `a519682ce0b5a9bfbf22426b3c2a38cfc85b90005d7a5d00d99eb08c8ad67fc9`.
+- [x] Final artifact hashes after Loop 14 | DOD: `GlobalDataVault.cs` SHA-256 = `a0233a4e583874e84a7425741dcdf21bd21a7bf3ec6a2b282eb7076c1d32d4e4`; `agent1413_apex_verifier.py` SHA-256 = `d32312469b43f054207e17576d5698ca94dcd4b7d94fe04778990e8c76f94bec`; optimization report SHA-256 = `a519682ce0b5a9bfbf22426b3c2a38cfc85b90005d7a5d00d99eb08c8ad67fc9`; APEX SHA-256 = `dd4f343fe87b43c0a44faf864fb0c9c364855d5827161d23911fc12dd6216941`.
+- [BLOCKED_BY_CONTENTION] Compiler/runtime proof | DOD: APEX runtime sample = 57.268876%, `dotnetCount=1`, `cscCount=0`; CPU exceeds 50% and dotnet is active, so no `dotnet build`, no Unity Test Runner.
+
 ## Current Build Policy
 
 No `dotnet build` until source modifications require syntax proof and host CPU is <= 50% with no active `csc.exe`.

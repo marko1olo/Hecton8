@@ -1087,20 +1087,16 @@ namespace Hecton8.Visor
                 IDataVault vault = _vault;
                 return vault != null &&
                        !vault.IsCompactionFenceActive &&
-                       vault.TryReadOnlyHandle(in _paramsHandle, out NativeArray<FogConstantsDTO>.ReadOnly fogParams) &&
-                       !vault.IsCompactionFenceActive &&
+                       TryReadFogBuffer(vault, in _paramsHandle, BufferID.ShinobuVolumetricFogParams, 1, out NativeArray<FogConstantsDTO>.ReadOnly fogParams) &&
                        fogParams.IsCreated &&
                        fogParams.Length > 0 &&
-                       vault.TryReadOnlyHandle(in _pointLightsHandle, out NativeArray<PointLightDTO>.ReadOnly pointLights) &&
-                       !vault.IsCompactionFenceActive &&
+                       TryReadFogBuffer(vault, in _pointLightsHandle, BufferID.ShinobuVolumetricFogPointLights, VolumetricFogConstants.MaxPointLights, out NativeArray<PointLightDTO>.ReadOnly pointLights) &&
                        pointLights.IsCreated &&
                        pointLights.Length >= VolumetricFogConstants.MaxPointLights &&
-                       vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<VolumetricFogTelemetryEntry>.ReadOnly telemetry) &&
-                       !vault.IsCompactionFenceActive &&
+                       TryReadFogBuffer(vault, in _telemetryHandle, BufferID.ShinobuVolumetricFogTelemetryRing, VolumetricFogConstants.TelemetryCapacity, out NativeArray<VolumetricFogTelemetryEntry>.ReadOnly telemetry) &&
                        telemetry.IsCreated &&
                        telemetry.Length >= VolumetricFogConstants.TelemetryCapacity &&
-                       vault.TryReadOnlyHandle(in _extinctionProfilesHandle, out NativeArray<WaterExtinctionProfileDTO>.ReadOnly profiles) &&
-                       !vault.IsCompactionFenceActive &&
+                       TryReadFogBuffer(vault, in _extinctionProfilesHandle, BufferID.ShinobuVolumetricFogExtinctionProfiles, VolumetricFogConstants.ExtinctionProfileCapacity, out NativeArray<WaterExtinctionProfileDTO>.ReadOnly profiles) &&
                        profiles.IsCreated &&
                        profiles.Length >= VolumetricFogConstants.ExtinctionProfileCapacity;
             }
@@ -1110,8 +1106,7 @@ namespace Hecton8.Visor
                 IDataVault vault = _vault;
                 if (vault == null ||
                     vault.IsCompactionFenceActive ||
-                    _extinctionProfilesHandle.BufferID == 0u ||
-                    !vault.TryAcquireWriteLock(in _extinctionProfilesHandle, SystemID.Vfx, out NativeArray<WaterExtinctionProfileDTO> profiles))
+                    !TryAcquireFogWriteBuffer(vault, in _extinctionProfilesHandle, BufferID.ShinobuVolumetricFogExtinctionProfiles, VolumetricFogConstants.ExtinctionProfileCapacity, out NativeArray<WaterExtinctionProfileDTO> profiles))
                 {
                     return;
                 }
@@ -1133,7 +1128,7 @@ namespace Hecton8.Visor
                 }
                 finally
                 {
-                    vault.ReleaseWriteLock(in _extinctionProfilesHandle, SystemID.Vfx);
+                    vault.ReleaseWriteLock(in _extinctionProfilesHandle, OwnerSystemId);
                 }
             }
 
@@ -1159,9 +1154,9 @@ namespace Hecton8.Visor
                 IDataVault vault = _vault;
                 if (vault == null ||
                     vault.IsCompactionFenceActive ||
-                    _paramsHandle.BufferID == 0u ||
-                    _pointLightsHandle.BufferID == 0u ||
-                    _telemetryHandle.BufferID == 0u ||
+                    !IsFogHandle(in _paramsHandle, BufferID.ShinobuVolumetricFogParams) ||
+                    !IsFogHandle(in _pointLightsHandle, BufferID.ShinobuVolumetricFogPointLights) ||
+                    !IsFogHandle(in _telemetryHandle, BufferID.ShinobuVolumetricFogTelemetryRing) ||
                     activePointLightBuffer == null ||
                     !activePointLightBuffer.IsValid())
                 {
@@ -1171,21 +1166,21 @@ namespace Hecton8.Visor
                 bool paramsLocked = false;
                 bool pointLightsLocked = false;
                 bool telemetryLocked = false;
-                if (!vault.TryAcquireWriteLock(in _paramsHandle, SystemID.Vfx, out NativeArray<FogConstantsDTO> fogParams))
+                if (!TryAcquireFogWriteBuffer(vault, in _paramsHandle, BufferID.ShinobuVolumetricFogParams, 1, out NativeArray<FogConstantsDTO> fogParams))
                     return false;
                 paramsLocked = true;
 
                 try
                 {
                     if (vault.IsCompactionFenceActive ||
-                        !vault.TryAcquireWriteLock(in _pointLightsHandle, SystemID.Vfx, out NativeArray<PointLightDTO> pointLights))
+                        !TryAcquireFogWriteBuffer(vault, in _pointLightsHandle, BufferID.ShinobuVolumetricFogPointLights, VolumetricFogConstants.MaxPointLights, out NativeArray<PointLightDTO> pointLights))
                     {
                         return false;
                     }
                     pointLightsLocked = true;
 
                     if (vault.IsCompactionFenceActive ||
-                        !vault.TryAcquireWriteLock(in _telemetryHandle, SystemID.Vfx, out NativeArray<VolumetricFogTelemetryEntry> telemetry))
+                        !TryAcquireFogWriteBuffer(vault, in _telemetryHandle, BufferID.ShinobuVolumetricFogTelemetryRing, VolumetricFogConstants.TelemetryCapacity, out NativeArray<VolumetricFogTelemetryEntry> telemetry))
                     {
                         return false;
                     }
@@ -1269,11 +1264,11 @@ namespace Hecton8.Visor
                 finally
                 {
                     if (telemetryLocked)
-                        vault.ReleaseWriteLock(in _telemetryHandle, SystemID.Vfx);
+                        vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
                     if (pointLightsLocked)
-                        vault.ReleaseWriteLock(in _pointLightsHandle, SystemID.Vfx);
+                        vault.ReleaseWriteLock(in _pointLightsHandle, OwnerSystemId);
                     if (paramsLocked)
-                        vault.ReleaseWriteLock(in _paramsHandle, SystemID.Vfx);
+                        vault.ReleaseWriteLock(in _paramsHandle, OwnerSystemId);
                 }
             }
 
@@ -1342,7 +1337,7 @@ namespace Hecton8.Visor
             {
                 if (_vault == null ||
                     _vault.IsCompactionFenceActive ||
-                    !_vault.TryReadOnlyHandle(in _extinctionProfilesHandle, out NativeArray<WaterExtinctionProfileDTO>.ReadOnly profiles) ||
+                    !TryReadFogBuffer(_vault, in _extinctionProfilesHandle, BufferID.ShinobuVolumetricFogExtinctionProfiles, VolumetricFogConstants.ExtinctionProfileCapacity, out NativeArray<WaterExtinctionProfileDTO>.ReadOnly profiles) ||
                     _vault.IsCompactionFenceActive)
                 {
                     return;
@@ -1729,8 +1724,7 @@ namespace Hecton8.Visor
                 telemetryLength = 0;
                 if (_vault == null ||
                     _vault.IsCompactionFenceActive ||
-                    _telemetryHandle.BufferID == 0u ||
-                    !_vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<VolumetricFogTelemetryEntry>.ReadOnly telemetry) ||
+                    !TryReadFogBuffer(_vault, in _telemetryHandle, BufferID.ShinobuVolumetricFogTelemetryRing, VolumetricFogConstants.TelemetryCapacity, out NativeArray<VolumetricFogTelemetryEntry>.ReadOnly telemetry) ||
                     _vault.IsCompactionFenceActive ||
                     !telemetry.IsCreated)
                 {
@@ -1746,9 +1740,8 @@ namespace Hecton8.Visor
                 entry = default;
                 if (_vault == null ||
                     _vault.IsCompactionFenceActive ||
-                    _telemetryHandle.BufferID == 0u ||
                     index < 0 ||
-                    !_vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<VolumetricFogTelemetryEntry>.ReadOnly telemetry) ||
+                    !TryReadFogBuffer(_vault, in _telemetryHandle, BufferID.ShinobuVolumetricFogTelemetryRing, VolumetricFogConstants.TelemetryCapacity, out NativeArray<VolumetricFogTelemetryEntry>.ReadOnly telemetry) ||
                     _vault.IsCompactionFenceActive ||
                     !telemetry.IsCreated ||
                     index >= telemetry.Length)

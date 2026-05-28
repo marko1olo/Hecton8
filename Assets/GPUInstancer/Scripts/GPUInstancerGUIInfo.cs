@@ -11,7 +11,9 @@ namespace GPUInstancer
         public bool showDetailManagers = true;
         public bool showTreeManagers = true;
 
-        private static List<GPUInstancerRuntimeData> singlesList = new List<GPUInstancerRuntimeData>() { null };
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // COLD ALLOC: List<GPUInstancerRuntimeData>[1] - debug OnGUI single-row scratch - owner: GPUInstancerGUIInfo
+        private static readonly List<GPUInstancerRuntimeData> singlesList = new List<GPUInstancerRuntimeData>(1) { null };
 
         private void OnGUI()
         {
@@ -151,5 +153,6 @@ namespace GPUInstancer
 
             return totalRendered + " (" + lodstr + ")";
         }
+#endif
     }
 }
