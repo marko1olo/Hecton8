@@ -1445,6 +1445,75 @@ namespace Hecton8.Core
             telemetryDetailRing[cursor] = detail;
         }
 
+        private static void RecordFrameTelemetry(
+            IDataVault vault,
+            in AupOriginShiftRuntimeState runtime,
+            in MockCameraAUP camera,
+            double3 totalUniverseOffset,
+            uint extraFlags)
+        {
+            float3 cameraLocal = camera.LocalPosition;
+            bool finite = math.all(math.isfinite(cameraLocal)) &&
+                math.all(math.isfinite(camera.GlobalPosition)) &&
+                math.all(math.isfinite(totalUniverseOffset));
+            uint flags = TelemetryFlagFrameSample | extraFlags;
+            if (!finite)
+                flags |= TelemetryFlagNaN;
+            if (runtime.TimeSliceActive != 0)
+                flags |= TelemetryFlagTimeSliced;
+
+            float qualityWeight = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 1f);
+            int telemetryActiveCount = math.clamp(runtime.ActiveEntityCount, 0, MockEntityCapacity);
+            int telemetryBatchCount = ResolveQualityScaledBatchSize(runtime.BatchSize, telemetryActiveCount, qualityWeight);
+            int cursor = SystemDispatcher.CurrentFrameIndex % TelemetryCapacity;
+
+            AupOriginShiftTelemetryEntry entry = default;
+            entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+            entry.RebaseCount = runtime.RebaseCount;
+            entry.ShiftSequence = runtime.LastShiftSequence;
+            entry.SectorHash = camera.SectorHash;
+            entry.EntitiesShifted = runtime.LastEntitiesShifted;
+            entry.HistoricalPointsShifted = runtime.LastHistoricalPointsShifted;
+            entry.BatchStartIndex = runtime.TimeSliceStartIndex;
+            entry.BatchCount = telemetryBatchCount;
+            entry.NonFiniteCount = runtime.LastNonFiniteCount;
+            entry.Flags = flags;
+            entry.ShiftDelta = double3.zero;
+
+            if (TryAcquireWriteView(vault, in _telemetryHandle, TelemetryCapacity, out NativeArray<AupOriginShiftTelemetryEntry> telemetryRing))
+            {
+                try
+                {
+                    telemetryRing[cursor] = entry;
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
+                }
+            }
+
+            AupOriginShiftTelemetryDetailEntry detail = default;
+            detail.TotalUniverseOffset = totalUniverseOffset;
+            detail.CameraLocalPosition = finite ? cameraLocal : float3.zero;
+            detail.RebaseComputeTimeMs = runtime.LastComputeTimeMs;
+            detail.SystemHealthIndex01 = math.saturate(HomeostasisBrain.SystemHealthIndex01);
+            detail.CameraSectorHash = camera.SectorHash;
+            detail.PositionHash = finite ? math.hash(cameraLocal) : 0u;
+            detail.HotEntitiesShifted = runtime.LastHotEntitiesShifted;
+
+            if (TryAcquireWriteView(vault, in _telemetryDetailHandle, TelemetryCapacity, out NativeArray<AupOriginShiftTelemetryDetailEntry> telemetryDetailRing))
+            {
+                try
+                {
+                    telemetryDetailRing[cursor] = detail;
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _telemetryDetailHandle, OwnerSystemId);
+                }
+            }
+        }
+
         private static JobHandle ScheduleHotEntityRebase(
             IDataVault vault,
             int startIndex,
@@ -1815,6 +1884,17 @@ namespace Hecton8.Core
             WriteOriginShiftDump(ResolveH8DumpPath(), basePtr, detailBasePtr, entryCount, entryStride, detailStride, writeCursor);
         }
 
+        private static void DumpOriginShiftBlackBox(IDataVault vault)
+        {
+            if (!TryOpenVaultBuffer(vault, in _telemetryHandle, TelemetryRingBuffer, TelemetryCapacity, out NativeArray<AupOriginShiftTelemetryEntry> telemetryRing) ||
+                !TryOpenVaultBuffer(vault, in _telemetryDetailHandle, TelemetryDetailRingBuffer, TelemetryCapacity, out NativeArray<AupOriginShiftTelemetryDetailEntry> telemetryDetailRing))
+            {
+                return;
+            }
+
+            DumpOriginShiftBlackBox(telemetryRing, telemetryDetailRing);
+        }
+
         private static void WriteOriginShiftDump(
             string path,
             byte* basePtr,
@@ -2003,6 +2083,37 @@ namespace Hecton8.Core
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void IncrementMockCameraAup(
+            ref MockCameraAUP camera,
+            ref AupOriginShiftRuntimeState runtime,
+            double3 stepDelta,
+            double3 realGlobalPosition,
+            double3 totalUniverseOffset,
+            int hasRealAnchor)
+        {
+            camera.GlobalPosition = hasRealAnchor != 0 ? realGlobalPosition : camera.GlobalPosition + stepDelta;
+            double3 localDouble = camera.GlobalPosition - totalUniverseOffset;
+            if (!math.all(math.isfinite(localDouble)))
+            {
+                localDouble = double3.zero;
+                runtime.LastNonFiniteCount++;
+            }
+
+            float3 cameraLocal = default;
+            cameraLocal.x = (float)localDouble.x;
+            cameraLocal.y = (float)localDouble.y;
+            cameraLocal.z = (float)localDouble.z;
+            camera.LocalPosition = cameraLocal;
+            if (!math.all(math.isfinite(camera.LocalPosition)))
+            {
+                camera.LocalPosition = float3.zero;
+                runtime.LastNonFiniteCount++;
+            }
+
+            camera.SectorHash = ResolveSectorHash(camera.GlobalPosition, SanitizeSectorSize(runtime.SectorSizeMeters));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void IncrementMockCameraAup(
             NativeArray<MockCameraAUP> cameraArray,
             NativeArray<AupOriginShiftRuntimeState> runtimeStateArray,
             double3 stepDelta,
@@ -2034,6 +2145,26 @@ namespace Hecton8.Core
             camera.SectorHash = ResolveSectorHash(camera.GlobalPosition, SanitizeSectorSize(runtime.SectorSizeMeters));
             cameraArray[0] = camera;
             runtimeStateArray[0] = runtime;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void MonitorAupThreshold(
+            ref MockCameraAUP camera,
+            ref AupOriginShiftRuntimeState runtime,
+            double3 totalUniverseOffset)
+        {
+            double3 local = camera.GlobalPosition - totalUniverseOffset;
+            double threshold = math.max((double)runtime.RebaseLimitMeters, 1d);
+            double lengthSq = H8DoubleMath.DistanceSq(camera.GlobalPosition, totalUniverseOffset);
+            if (!math.all(math.isfinite(local)) || !math.isfinite(lengthSq))
+            {
+                runtime.LastNonFiniteCount++;
+                runtime.IsOriginShiftPending = 0;
+            }
+            else if (lengthSq > threshold * threshold)
+            {
+                runtime.IsOriginShiftPending = 1;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -1,0 +1,481 @@
+﻿{
+    "generatedAt":  "2026-05-28T22:08:11.8002523+04:00",
+    "agentId":  "COMPILE_MEDIC",
+    "scanner":  "PowerShell case-sensitive regex range scan; managed reference new separated from stack/ref-struct/value-type; GenerateMockPipeNetworkJob verified as struct : IJob in SumpPumpPipeGridJobs.cs:14; Crest cache-miss constructor isolated.",
+    "totals":  {
+                   "referenceNew":  0,
+                   "cacheMissReferenceNew":  1,
+                   "valueOrStackNew":  16,
+                   "stringFormat":  0,
+                   "toString":  0,
+                   "linq":  0,
+                   "foreachLoop":  0
+               },
+    "caveats":  [
+                    "EquipmentVaultView\u003cT\u003e is internal ref struct in Assets/_Project/Scripts/Tools/EquipmentVaultView.cs:11.",
+                    "EquipmentTelemetryEntry is explicit-layout struct in Assets/_Project/Scripts/Tools/EquipmentThermalBatteryContracts.cs:59.",
+                    "CandiceDetectionResults is a struct in Assets/Candice AI for Games/Scripts/Modules/CandiceModuleDetection.cs:442.",
+                    "FFTCompute constructor hit is a pre-existing Crest generator cache miss at FFTCompute.cs:280, not a steady-state managed allocation when wave conditions are cached.",
+                    "GenerateMockPipeNetworkJob is a struct : IJob in Assets/_Project/Scripts/Construction/SumpPumpPipeGridJobs.cs:14; construction at SumpPumpPipeGridRuntime.cs:421 is value-type job setup, not managed reference allocation."
+                ],
+    "ranges":  [
+                   {
+                       "name":  "H8Memory descriptor public API",
+                       "file":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                       "startLine":  3178,
+                       "endLine":  3320,
+                       "hotPathClaim":  true,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  0,
+                                      "valueOrStackNew":  0,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+
+                                ]
+                   },
+                   {
+                       "name":  "H8Memory register pointer descriptor path",
+                       "file":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                       "startLine":  4227,
+                       "endLine":  4300,
+                       "hotPathClaim":  true,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  0,
+                                      "valueOrStackNew":  0,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+
+                                ]
+                   },
+                   {
+                       "name":  "H8Memory descriptor mutation helpers",
+                       "file":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                       "startLine":  4418,
+                       "endLine":  4627,
+                       "hotPathClaim":  true,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  0,
+                                      "valueOrStackNew":  0,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+
+                                ]
+                   },
+                   {
+                       "name":  "ModularEquipment write acquisition",
+                       "file":  "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+                       "startLine":  1288,
+                       "endLine":  1400,
+                       "hotPathClaim":  true,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  0,
+                                      "valueOrStackNew":  1,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+                                    {
+                                        "line":  1391,
+                                        "category":  "valueOrStackNew",
+                                        "text":  "view = new EquipmentVaultView\u003cT\u003e(buffer);"
+                                    }
+                                ]
+                   },
+                   {
+                       "name":  "ModularEquipment write release and telemetry",
+                       "file":  "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+                       "startLine":  1440,
+                       "endLine":  1572,
+                       "hotPathClaim":  true,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  0,
+                                      "valueOrStackNew":  1,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+                                    {
+                                        "line":  1546,
+                                        "category":  "valueOrStackNew",
+                                        "text":  "ring[index] = new EquipmentTelemetryEntry"
+                                    }
+                                ]
+                   },
+                   {
+                       "name":  "Ballistics quality/damage budget",
+                       "file":  "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+                       "startLine":  1604,
+                       "endLine":  1620,
+                       "hotPathClaim":  true,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  0,
+                                      "valueOrStackNew":  0,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+
+                                ]
+                   },
+                   {
+                       "name":  "Ballistics job quality and primitive admission",
+                       "file":  "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+                       "startLine":  1964,
+                       "endLine":  1994,
+                       "hotPathClaim":  true,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  0,
+                                      "valueOrStackNew":  0,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+
+                                ]
+                   },
+                   {
+                       "name":  "Ballistics primitive gate and ricochet budget",
+                       "file":  "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+                       "startLine":  2080,
+                       "endLine":  2208,
+                       "hotPathClaim":  true,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  0,
+                                      "valueOrStackNew":  9,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+                                    {
+                                        "line":  2104,
+                                        "category":  "valueOrStackNew",
+                                        "text":  "worldNormal = new float3(0f, 0f, 1f);"
+                                    },
+                                    {
+                                        "line":  2113,
+                                        "category":  "valueOrStackNew",
+                                        "text":  "float3 half = math.max(math.abs(primitive.HalfExtents), new float3(0.01f));"
+                                    },
+                                    {
+                                        "line":  2135,
+                                        "category":  "valueOrStackNew",
+                                        "text":  "float3 localDirection = BallisticsRuntime.NormalizeOrDefault(math.mul(inverseRotation, direction), new float3(0f, 0f, 1f));"
+                                    },
+                                    {
+                                        "line":  2139,
+                                        "category":  "valueOrStackNew",
+                                        "text":  "worldNormal = BallisticsRuntime.NormalizeOrDefault(math.mul(rotation, localNormal), new float3(0f, 0f, 1f));"
+                                    },
+                                    {
+                                        "line":  2157,
+                                        "category":  "valueOrStackNew",
+                                        "text":  "math.select(new float3(Epsilon), new float3(-Epsilon), direction \u003c 0f),"
+                                    },
+                                    {
+                                        "line":  2178,
+                                        "category":  "valueOrStackNew",
+                                        "text":  "normal = new float3(-math.sign(direction.x), 0f, 0f);"
+                                    },
+                                    {
+                                        "line":  2180,
+                                        "category":  "valueOrStackNew",
+                                        "text":  "normal = new float3(0f, -math.sign(direction.y), 0f);"
+                                    },
+                                    {
+                                        "line":  2182,
+                                        "category":  "valueOrStackNew",
+                                        "text":  "normal = new float3(0f, 0f, -math.sign(direction.z));"
+                                    },
+                                    {
+                                        "line":  2184,
+                                        "category":  "valueOrStackNew",
+                                        "text":  "return BallisticsRuntime.NormalizeOrDefault(normal, new float3(0f, 0f, 1f));"
+                                    }
+                                ]
+                   },
+                   {
+                       "name":  "ModuloSimulationBucketer rebalance pin lifetime",
+                       "file":  "Assets/_Project/Scripts/Core/Bucketing/ModuloSimulationBucketer.cs",
+                       "startLine":  792,
+                       "endLine":  920,
+                       "hotPathClaim":  true,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  0,
+                                      "valueOrStackNew":  0,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+
+                                ]
+                   },
+                   {
+                       "name":  "Acoustic echo vault buffer ensure",
+                       "file":  "Assets/_Project/Scripts/AI/Sensory/AcousticEchoLocationRuntime.cs",
+                       "startLine":  430,
+                       "endLine":  465,
+                       "hotPathClaim":  true,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  0,
+                                      "valueOrStackNew":  0,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+
+                                ]
+                   },
+                   {
+                       "name":  "Platform battery snapshot pressure",
+                       "file":  "Assets/_Project/Scripts/Core/PlatformBatteryWatchdog.cs",
+                       "startLine":  118,
+                       "endLine":  140,
+                       "hotPathClaim":  true,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  0,
+                                      "valueOrStackNew":  0,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+
+                                ]
+                   },
+                   {
+                       "name":  "Retina distortion dispose",
+                       "file":  "Assets/_Project/Scripts/Visor/HectonRetinaDistortionFeature.cs",
+                       "startLine":  201,
+                       "endLine":  212,
+                       "hotPathClaim":  false,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  0,
+                                      "valueOrStackNew":  0,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+
+                                ]
+                   },
+                   {
+                       "name":  "Candice 2D detection scan",
+                       "file":  "Assets/Candice AI for Games/Scripts/Modules/CandiceModuleDetection.cs",
+                       "startLine":  90,
+                       "endLine":  125,
+                       "hotPathClaim":  true,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  0,
+                                      "valueOrStackNew":  3,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+                                    {
+                                        "line":  98,
+                                        "category":  "valueOrStackNew",
+                                        "text":  "Vector2 center2D = new Vector2(center.x, center.y);"
+                                    },
+                                    {
+                                        "line":  117,
+                                        "category":  "valueOrStackNew",
+                                        "text":  "float angle = Vector2.Angle((new Vector2(go.transform.position.x, go.transform.position.y) - center2D), transform.forward);"
+                                    },
+                                    {
+                                        "line":  125,
+                                        "category":  "valueOrStackNew",
+                                        "text":  "objectDetectedCallback(new CandiceDetectionResults(_detectedObjects));"
+                                    }
+                                ]
+                   },
+                   {
+                       "name":  "Candice tag compare reuse",
+                       "file":  "Assets/Candice AI for Games/Scripts/Modules/CandiceModuleDetection.cs",
+                       "startLine":  366,
+                       "endLine":  420,
+                       "hotPathClaim":  true,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  0,
+                                      "valueOrStackNew":  0,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+
+                                ]
+                   },
+                   {
+                       "name":  "Candice combat 2D damage scan",
+                       "file":  "Assets/Candice AI for Games/Scripts/Modules/CandiceModuleCombat.cs",
+                       "startLine":  55,
+                       "endLine":  85,
+                       "hotPathClaim":  true,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  0,
+                                      "valueOrStackNew":  1,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+                                    {
+                                        "line":  69,
+                                        "category":  "valueOrStackNew",
+                                        "text":  "int hitCount = Physics2D.CircleCast(new Vector2(transform.position.x, transform.position.y), attackRange, transform.up, Damage2DFilter, DamageHits2D, attackRange);"
+                                    }
+                                ]
+                   },
+                   {
+                       "name":  "Tether taut-line visual smooth range",
+                       "file":  "Assets/_Project/Scripts/TetherInstance.cs",
+                       "startLine":  3715,
+                       "endLine":  3785,
+                       "hotPathClaim":  true,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  0,
+                                      "valueOrStackNew":  0,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+
+                                ]
+                   },
+                   {
+                       "name":  "Sump pump mock scheduling warning cleanup",
+                       "file":  "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
+                       "startLine":  398,
+                       "endLine":  452,
+                       "hotPathClaim":  false,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  0,
+                                      "valueOrStackNew":  1,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+                                    {
+                                        "line":  421,
+                                        "category":  "valueOrStackNew",
+                                        "text":  "GenerateMockPipeNetworkJob job = new GenerateMockPipeNetworkJob"
+                                    }
+                                ]
+                   },
+                   {
+                       "name":  "Crest ClearToBlack dispatch guard",
+                       "file":  "Assets/Crest/Crest/Scripts/Helpers/TextureArrayHelpers.cs",
+                       "startLine":  47,
+                       "endLine":  85,
+                       "hotPathClaim":  true,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  0,
+                                      "valueOrStackNew":  0,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+
+                                ]
+                   },
+                   {
+                       "name":  "Crest AnimWaves dispatch bounds",
+                       "file":  "Assets/Crest/Crest/Scripts/LodData/LodDataMgrAnimWaves.cs",
+                       "startLine":  365,
+                       "endLine":  430,
+                       "hotPathClaim":  true,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  0,
+                                      "valueOrStackNew":  0,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+
+                                ]
+                   },
+                   {
+                       "name":  "Crest FFT resolution clamp/generator lookup",
+                       "file":  "Assets/Crest/Crest/Scripts/Shapes/FFT/FFTCompute.cs",
+                       "startLine":  257,
+                       "endLine":  288,
+                       "hotPathClaim":  true,
+                       "counts":  {
+                                      "referenceNew":  0,
+                                      "cacheMissReferenceNew":  1,
+                                      "valueOrStackNew":  0,
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "linq":  0,
+                                      "foreachLoop":  0
+                                  },
+                       "hits":  [
+                                    {
+                                        "line":  280,
+                                        "category":  "cacheMissReferenceNew",
+                                        "text":  "generator = new FFTCompute(resolution, loopPeriod, windSpeed, windTurbulence, windDirRad, spectrum);"
+                                    }
+                                ]
+                   }
+               ]
+}

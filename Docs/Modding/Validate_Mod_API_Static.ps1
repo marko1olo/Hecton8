@@ -1527,9 +1527,11 @@ $externalStarterKitValidatorChecksGraphOpcodes =
     $externalStarterKitTemplateValidatorSource.Contains('Reference/allowed_opcodes.csv contains invalid opcode token') -and
     $externalStarterKitTemplateValidatorSource.Contains('node Opcode is not in Reference/allowed_opcodes.csv') -and
     $externalStarterKitTemplateValidatorSource.Contains('duplicate node Id') -and
+    $externalStarterKitTemplateValidatorSource.Contains('Nodes exceeds 256 entries') -and
     $externalStarterKitTemplateValidatorSource.Contains('node Opcode is required') -and
     $moddingSdkHubSource.Contains('function Read-AllowedGraphOpcodeTokens') -and
     $moddingSdkHubSource.Contains('node Opcode is not in Reference/allowed_opcodes.csv') -and
+    $moddingSdkHubSource.Contains('Nodes exceeds 256 entries') -and
     $externalStarterKitContractText.Contains('graph opcode allowlist') -and
     $externalStarterKitValidatorRejectsInvalidGraphOpcode
 $externalStarterKitValidatorChecksGraphBudget =

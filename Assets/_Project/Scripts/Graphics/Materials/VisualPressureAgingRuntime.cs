@@ -190,6 +190,9 @@ namespace Hecton8.Graphics.Materials
         private string _degradationDumpPath;
         private FileStream _dumpStream;
         private FileStream _degradationDumpStream;
+#if UNITY_EDITOR
+        private byte[] _csvManagedScratch;
+#endif
         private long _csvLastWriteTicks;
         private long _degradationCsvLastWriteTicks;
         private int _lockedBufferMask;
@@ -1729,57 +1732,81 @@ namespace Hecton8.Graphics.Materials
             if (!force && ticks == lastWriteTicks)
                 return false;
 
-            bool tuningLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
-            if (!tuningLocked)
+            if (!EnsureCsvManagedScratchCold())
                 return false;
 
-            bool scratchLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingCsvScratch, OwnerSystemId);
-            if (!scratchLocked)
-            {
-                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
+            int bytesRead = ReadFileIntoScratch(csvPath, _csvManagedScratch);
+            if (bytesRead <= 0)
                 return false;
-            }
 
+            VisualAgingTuningDTO dto;
+            bool tuningLocked = false;
             try
             {
-                bool scratchReady = IsCurrentOwnedBuffer(
-                    vault,
-                    in _csvScratchHandle,
-                    BufferID.VisualPressureAgingCsvScratch,
-                    CsvScratchBytes,
-                    out NativeArray<byte> scratch);
+                tuningLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
+                if (!tuningLocked)
+                    return false;
+
                 vault.TryResolveHandle(in _tuningHandle, out NativeArray<VisualAgingTuningDTO> tuning);
-                if (!scratchReady || !scratch.IsCreated || !tuning.IsCreated || tuning.Length == 0)
+                if (!tuning.IsCreated || tuning.Length == 0)
                     return false;
 
-                int bytesRead = ReadFileIntoScratch(csvPath, scratch);
-                if (bytesRead <= 0)
-                    return false;
-
-                VisualAgingTuningDTO dto = tuning[0];
-                if (!ParseAgingRulesCsv(scratch, bytesRead, ref dto))
-                    return false;
-
-                dto.CsvGeneration = unchecked(dto.CsvGeneration + 1u);
-                dto.RuntimeFlags |= FlagCsvLoaded;
-                tuning[0] = dto;
-                s_pendingEditorTuning = dto;
-                _csvGeneration = dto.CsvGeneration;
-                lastWriteTicks = ticks;
-                _runtimeFlags |= FlagCsvLoaded;
-                _agingDirty = true;
-                _degradationDirty = true;
-                return true;
+                dto = tuning[0];
             }
             finally
             {
-                vault.TryUnlockBuffer(BufferID.VisualPressureAgingCsvScratch, OwnerSystemId);
-                vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
+                if (tuningLocked)
+                    vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
             }
+
+            ReadOnlySpan<byte> csvBytes = _csvManagedScratch;
+            if (!ParseAgingRulesCsv(csvBytes.Slice(0, bytesRead), ref dto))
+                return false;
+
+            dto.CsvGeneration = unchecked(dto.CsvGeneration + 1u);
+            dto.RuntimeFlags |= FlagCsvLoaded;
+
+            tuningLocked = false;
+            try
+            {
+                tuningLocked = vault.TryLockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
+                if (!tuningLocked)
+                    return false;
+
+                vault.TryResolveHandle(in _tuningHandle, out NativeArray<VisualAgingTuningDTO> tuning);
+                if (!tuning.IsCreated || tuning.Length == 0)
+                    return false;
+
+                tuning[0] = dto;
+            }
+            finally
+            {
+                if (tuningLocked)
+                    vault.TryUnlockBuffer(BufferID.VisualPressureAgingTuning, OwnerSystemId);
+            }
+
+            s_pendingEditorTuning = dto;
+            _csvGeneration = dto.CsvGeneration;
+            lastWriteTicks = ticks;
+            _runtimeFlags |= FlagCsvLoaded;
+            _agingDirty = true;
+            _degradationDirty = true;
+            return true;
         }
 
-        private static int ReadFileIntoScratch(string path, NativeArray<byte> scratch)
+        private bool EnsureCsvManagedScratchCold()
         {
+            if (_csvManagedScratch == null || _csvManagedScratch.Length < CsvScratchBytes)
+                _csvManagedScratch = new byte[CsvScratchBytes]; // COLD ALLOC: editor CSV import staging; never inside vault lock.
+
+            return _csvManagedScratch.Length >= CsvScratchBytes;
+        }
+
+        private static int ReadFileIntoScratch(string path, byte[] scratch)
+        {
+            if (scratch == null)
+                return 0;
+
             using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             {
                 long length = stream.Length;
@@ -1787,12 +1814,10 @@ namespace Hecton8.Graphics.Materials
                     return 0;
 
                 int readLength = (int)length;
-                byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-                Span<byte> span = new Span<byte>(ptr, readLength);
                 int totalRead = 0;
                 while (totalRead < readLength)
                 {
-                    int read = stream.Read(span.Slice(totalRead));
+                    int read = stream.Read(scratch, totalRead, readLength - totalRead);
                     if (read <= 0)
                         return 0;
 
@@ -1803,10 +1828,11 @@ namespace Hecton8.Graphics.Materials
             }
         }
 
-        private static bool ParseAgingRulesCsv(NativeArray<byte> bytes, int byteCount, ref VisualAgingTuningDTO tuning)
+        private static bool ParseAgingRulesCsv(ReadOnlySpan<byte> bytes, ref VisualAgingTuningDTO tuning)
         {
             bool parsed = false;
             int index = 0;
+            int byteCount = bytes.Length;
             while (index < byteCount)
             {
                 SkipWhitespaceAndLineEnds(bytes, byteCount, ref index);
@@ -2150,7 +2176,7 @@ namespace Hecton8.Graphics.Materials
         }
 #endif
 
-        private static uint HashToken(NativeArray<byte> bytes, int start, int end)
+        private static uint HashToken(ReadOnlySpan<byte> bytes, int start, int end)
         {
             uint hash = 2166136261u;
             for (int i = start; i < end; i++)
@@ -2164,7 +2190,7 @@ namespace Hecton8.Graphics.Materials
             return hash;
         }
 
-        private static float ParseFloat(NativeArray<byte> bytes, int byteCount, ref int index, out bool ok)
+        private static float ParseFloat(ReadOnlySpan<byte> bytes, int byteCount, ref int index, out bool ok)
         {
             SkipSpaces(bytes, byteCount, ref index);
             ok = false;
@@ -2208,7 +2234,7 @@ namespace Hecton8.Graphics.Materials
             return result;
         }
 
-        private static int TrimTokenEnd(NativeArray<byte> bytes, int start, int end)
+        private static int TrimTokenEnd(ReadOnlySpan<byte> bytes, int start, int end)
         {
             int result = end;
             while (result > start)
@@ -2221,7 +2247,7 @@ namespace Hecton8.Graphics.Materials
             return result;
         }
 
-        private static void SkipWhitespaceAndLineEnds(NativeArray<byte> bytes, int byteCount, ref int index)
+        private static void SkipWhitespaceAndLineEnds(ReadOnlySpan<byte> bytes, int byteCount, ref int index)
         {
             while (index < byteCount)
             {
@@ -2232,7 +2258,7 @@ namespace Hecton8.Graphics.Materials
             }
         }
 
-        private static void SkipSpaces(NativeArray<byte> bytes, int byteCount, ref int index)
+        private static void SkipSpaces(ReadOnlySpan<byte> bytes, int byteCount, ref int index)
         {
             while (index < byteCount)
             {
@@ -2243,7 +2269,7 @@ namespace Hecton8.Graphics.Materials
             }
         }
 
-        private static void SkipLine(NativeArray<byte> bytes, int byteCount, ref int index)
+        private static void SkipLine(ReadOnlySpan<byte> bytes, int byteCount, ref int index)
         {
             while (index < byteCount)
             {

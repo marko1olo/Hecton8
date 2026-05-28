@@ -343,15 +343,16 @@ try {
         Remove-Item -LiteralPath $manifestBackupPath -Force
     }
 } catch {
-    foreach ($path in @($targetPath.Full, $manifestPath.Full)) {
-        if (Test-Path -LiteralPath $path -PathType Leaf) {
-            Remove-Item -LiteralPath $path -Force
-        }
-    }
     if (Test-Path -LiteralPath $graphBackupPath -PathType Leaf) {
+        if (Test-Path -LiteralPath $targetPath.Full -PathType Leaf) {
+            Remove-Item -LiteralPath $targetPath.Full -Force
+        }
         Move-Item -LiteralPath $graphBackupPath -Destination $targetPath.Full -Force
     }
     if (Test-Path -LiteralPath $manifestBackupPath -PathType Leaf) {
+        if (Test-Path -LiteralPath $manifestPath.Full -PathType Leaf) {
+            Remove-Item -LiteralPath $manifestPath.Full -Force
+        }
         Move-Item -LiteralPath $manifestBackupPath -Destination $manifestPath.Full -Force
     }
     Fail $_.Exception.Message

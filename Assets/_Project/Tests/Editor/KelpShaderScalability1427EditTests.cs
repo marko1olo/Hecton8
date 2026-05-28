@@ -174,8 +174,8 @@ namespace Hecton8.Tests.Editor
             Assert.That(source, Does.Contain("ResolveHardwareVisualCapacity01"));
             Assert.That(source, Does.Contain("HomeostasisBrain.GlobalQualityWeight"));
             Assert.That(source, Does.Contain("SmoothRange01(0.28f, 1f, weight)"));
-            Assert.That(source, Does.Not.Contain("SystemInfo.graphicsMemorySize <= 2048)\r\n                return ResolveLowVisualBudget"));
-            Assert.That(source, Does.Not.Contain("SystemInfo.graphicsMemorySize > 4096 ? ContentTier.Overkill : ContentTier.HighRes"));
+            Assert.That(source, Does.Not.Contain("SystemInfo.graphicsMemorySize <= 2048"));
+            Assert.That(source, Does.Not.Contain("SystemInfo.graphicsMemorySize > 4096 ?"));
         }
 
         [Test]
