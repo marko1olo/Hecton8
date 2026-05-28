@@ -134,15 +134,31 @@ Hardware Impact: No measurable runtime impact expected; generated struct assignm
 ## Decision 016 - APEX JSON Evidence Repair
 
 Problem: The first APEX JSON artifact failed PowerShell `ConvertFrom-Json` because case-insensitive duplicate keys `lowEnd` and `LowEnd` collided.
-Solution: Convert the binary switch scan object into an array of `{ term, count }` records and re-run JSON parsing. Current APEX report SHA-256 is `0e175def72717c9c0c5f5c9e082c59cbb262598f573129155308ff7c315129de`.
+Solution: Convert the binary switch scan object into an array of `{ term, count }` records and re-run JSON parsing. Current APEX report SHA-256 is `3dccc87eeef4fec2e2cf2d833dbfb84809cb1132003adf348e1cc128e40b3e93`.
 Rejected Alternatives: Keeping a JSON file that only some parsers accept was rejected because project evidence must be machine-verifiable on the host shell.
 Scalability potential: No runtime effect. Tooling stability improves for later allocator audits.
 Hardware Impact: No runtime cost.
 
 ## Decision 017 - Final Compilation Throttle Honesty
 
-Problem: A compiler check remains desirable after unsafe memory changes, but the latest gate still shows CPU 100 percent with active `csc` PID 61328 and `dotnet` PID 55080.
+Problem: A compiler check remains desirable after unsafe memory changes, but the latest gate still shows CPU 66 percent with active `csc` PID 67916 and `dotnet` PID 20440.
 Solution: Do not launch `dotnet build`. Record static verification, exact CPU/process evidence, and mark build/test execution as blocked rather than green.
 Rejected Alternatives: Starting another build was rejected because it violates the explicit no-spam rule and the project's >50 percent CPU gate.
 Scalability potential: No runtime effect. Protects parallel agent throughput and cheap hardware from avoidable Roslyn load.
 Hardware Impact: Avoided one additional MSBuild/Roslyn invocation while host CPU was saturated.
+
+## Decision 018 - Sparse BufferID Write-Lock Completion
+
+Problem: APEX sparse metadata fallback fixed `TryReadFlatMetadata`, but generic `TryAcquireWriteLock<T>`, `ReleaseWriteLock<T>`, and `QueueDeferredRelease` still rejected keys above `_metadataByBufferId.Length` or directly indexed flat metadata. A high sparse `BufferID` could be resolved through map metadata but still fail writer release or deferred release.
+Solution: Remove flat-array length rejects from those paths, keep all mutation under the block mutation gate, and route `ActiveWriterSystemID` updates through `WriteMetadata`, which writes flat metadata when possible and sparse map metadata otherwise.
+Rejected Alternatives: Increasing `MaxGenerationHandleCapacity` above the sparse enum range was rejected because it would waste native memory for mostly empty IDs. Keeping generic write locks flat-only was rejected because the public handle contract does not state that sparse IDs are read/pin-only.
+Scalability potential: Low tier avoids native capacity bloat. Middle/High/Ultra can keep sparse domain IDs without changing DTO layout or memory authority.
+Hardware Impact: Saves approximately 14 MB if avoiding a 315736-entry 64-byte metadata array expansion; hot-path scan still reports zero forbidden allocation terms.
+
+## Decision 019 - Deferred Growth Predicate Cleanup
+
+Problem: Concurrent deferred-release edits left `ProcessDeferredArenaGrowth` checking `HasActiveBurstLocks(0u)` twice before testing pinned external views.
+Solution: Remove the duplicated predicate and add `GlobalDataVault_DeferredGrowthChecksBurstLocksOnce` to make the regression machine-detectable.
+Rejected Alternatives: Leaving the duplicate as harmless was rejected because allocator maintenance runs every PostSimulation frame when pressure exists; redundant native scans are debt in a 0.1 ms suspicious-budget system.
+Scalability potential: Low tier removes one redundant lock scan in the pressure path. Middle/High/Ultra preserve the same safety predicate while keeping room for larger arena pressure.
+Hardware Impact: Microsecond saving is not claimed without profiler data; static work removed one unnecessary scan call.

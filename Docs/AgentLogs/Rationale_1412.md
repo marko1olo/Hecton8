@@ -218,3 +218,10 @@ Solution: Expanded `StructuralGate` to all fuzzer-owned `GlobalDataVault` entry 
 Rejected Alternatives: Leaving DataVault read/lock APIs outside the gate; rejected because the fuzzer would still test harness-induced native map/list races. Keeping per-operation `TempJob` flags; rejected by Zero-GC hot-path audit. Disposing native resources after a timed-out task join; rejected because safety beats cleanup aesthetics in a failing stress tool.
 Scalability potential: Low/Middle/High/Ultra workload scaling remains continuous through `GlobalQualityWeight`. The gate only removes invalid harness races; it does not reduce lock/pin/compaction collision coverage.
 Hardware Impact: Removes hot native allocation from each pin job. Adds monitor enters around editor-only vault calls. On i3/MX350 this trades invalid crash noise for deterministic failure reports; player runtime cost remains 0 because the file is editor-only.
+
+## Decision 031 - Deferred Cleanup After Timeout
+Problem: Timeout containment prevented use-after-free by skipping native disposal while tasks might still hold aliases, but that created a deliberate leak if workers later exited cleanly.
+Solution: Stored the running `Task[]` in `FuzzerState` and queued exactly one long-running deferred cleanup when `TasksCompleted == 0`. The cleanup waits for the captured task array, then releases active slots, the per-slot job failure array, blackbox ring, isolated vault, and cancellation source only after workers complete.
+Rejected Alternatives: Immediate disposal after timeout; rejected as unsafe because Burst/job aliases may still exist. Permanent leak on every timeout; rejected because a failing editor stress test should still clean up if late task completion makes it safe.
+Scalability potential: No gameplay tier change. Low/Middle/High/Ultra stress profiles still scale through `GlobalQualityWeight`; deferred cleanup only runs on failed timeout paths.
+Hardware Impact: One failure-path long-running managed task. Low-end machines avoid use-after-free and avoid permanent native leak if delayed worker completion occurs; player runtime remains unaffected.
