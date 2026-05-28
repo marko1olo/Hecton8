@@ -963,16 +963,16 @@ namespace Hecton8.Gameplay
 
                 if (!TryLockCombatDamageVaultBuffersForJobs(out int damageLockedCount))
                     return;
-                if (!TryLockArmorVaultBuffersForJobs())
-                {
-                    UnlockCombatDamageVaultBuffersForJobs(damageLockedCount);
-                    return;
-                }
 
+                bool armorVaultBuffersLocked = false;
                 bool armorVaultLockOwnedByScheduledJob = false;
                 bool damageVaultLockOwnedByScheduledJob = false;
                 try
                 {
+                    if (!TryLockArmorVaultBuffersForJobs())
+                        return;
+                    armorVaultBuffersLocked = true;
+
                     if (!TryResolveCombatDamageVaultViews(out damageViews, ensure: false) ||
                         !TryResolveStatusEffectVaultViews(out statusViews, ensure: false) ||
                         !TryResolveArmorPenetrationVaultViews(out armorViews, ensure: false))
@@ -1037,7 +1037,7 @@ namespace Hecton8.Gameplay
                 }
                 finally
                 {
-                    if (!armorVaultLockOwnedByScheduledJob)
+                    if (armorVaultBuffersLocked && !armorVaultLockOwnedByScheduledJob)
                         UnlockArmorVaultBuffersForJobs();
                     if (!damageVaultLockOwnedByScheduledJob)
                         UnlockCombatDamageVaultBuffersForJobs(damageLockedCount);

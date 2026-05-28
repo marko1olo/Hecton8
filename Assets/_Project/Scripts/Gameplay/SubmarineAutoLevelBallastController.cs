@@ -3440,10 +3440,10 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            if (!IsVehiclesPhysicsVaultHandle(in handle, bufferId))
+            if (!IsVaultHandleForBuffer(in handle, bufferId))
             {
                 if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> refreshed) ||
-                    !IsVehiclesPhysicsVaultHandle(in refreshed, bufferId))
+                    !IsVaultHandleForBuffer(in refreshed, bufferId))
                 {
                     handle = default;
                     RecordVaultFault(bufferId, VaultFaultCodeInvalidView, PidTelemetryFlagVaultViewInvalid);
@@ -3467,7 +3467,7 @@ namespace Hecton8.Gameplay
                     buffer.Length < requiredLength)
                 {
                     if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> refreshed) ||
-                        !IsVehiclesPhysicsVaultHandle(in refreshed, bufferId) ||
+                        !IsVaultHandleForBuffer(in refreshed, bufferId) ||
                         !vault.TryReadOnlyHandle(in refreshed, out buffer) ||
                         !buffer.IsCreated ||
                         buffer.Length < requiredLength)
@@ -3635,7 +3635,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            if (IsVehiclesPhysicsVaultHandle(in handle, bufferId) &&
+            if (IsVaultHandleForBuffer(in handle, bufferId) &&
                 vault.TryReadOnlyHandle(in handle, out buffer) &&
                 buffer.IsCreated &&
                 buffer.Length > 0)
@@ -3644,7 +3644,7 @@ namespace Hecton8.Gameplay
             }
 
             if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> refreshed) &&
-                IsVehiclesPhysicsVaultHandle(in refreshed, bufferId) &&
+                IsVaultHandleForBuffer(in refreshed, bufferId) &&
                 vault.TryReadOnlyHandle(in refreshed, out buffer) &&
                 buffer.IsCreated &&
                 buffer.Length > 0)
@@ -3719,6 +3719,15 @@ namespace Hecton8.Gameplay
         {
             return handle.BufferID == unchecked((uint)(int)bufferId) &&
                    handle.SystemID == (uint)OwnerSystem &&
+                   handle.Generation != 0u;
+        }
+
+        private static bool IsVaultHandleForBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
                    handle.Generation != 0u;
         }
 

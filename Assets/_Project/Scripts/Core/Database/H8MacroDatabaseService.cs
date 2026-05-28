@@ -2129,33 +2129,50 @@ namespace Hecton8.Core.Database
 
         private void RecordBlackBox(ulong playerSectorHash, MacroDatabaseTier tier, int hydratedThisCall)
         {
-            if (!TryResolveBlackBox(out NativeArray<MacroDatabaseTelemetryEntry> blackBox))
+            IDataVault vault = _dataVault;
+            if (vault == null || _blackBoxHandle.BufferID == 0u)
                 return;
+
+            if (!vault.TryAcquireWriteLock(in _blackBoxHandle, SystemID.SavePersistence, out NativeArray<MacroDatabaseTelemetryEntry> blackBox))
+                return;
+
+            try
+            {
+                if (!blackBox.IsCreated || blackBox.Length <= 0)
+                    return;
 
             MacroDatabaseNativeCacheStats cacheStats = _cacheOwner != null
                 ? _cacheOwner.GetMacroDatabaseCacheStats()
                 : default;
 
-            blackBox[_blackBoxWriteIndex] = new MacroDatabaseTelemetryEntry
+                MacroDatabaseTelemetryEntry entry = default;
+                entry.PlayerSectorHash = playerSectorHash;
+                entry.RootNodeOffset = IsOpen ? ReadRootNodeOffset() : 0L;
+                entry.CacheBytes = cacheStats.Bytes;
+                entry.DeadBytes = _deadBytes;
+                entry.CacheEntries = cacheStats.Entries;
+                entry.PageFaults = hydratedThisCall;
+                entry.PageFaultsTotal = _pageFaults;
+                entry.HydratedSectors = _hydratedSectors;
+                entry.EvictedSectors = _evictedSectors;
+                entry.LastCompactionStallMicroseconds = SaturateToInt(_lastCompactionStallMicroseconds);
+                entry.FrameIndex = _frameIndex;
+                entry.Tier = (byte)tier;
+                entry.CompactionState = (byte)_compactionState;
+                entry.Flags = (byte)((IsOpen ? 1 : 0) | (_compactionFlags << 1));
+
+                int slot = _blackBoxWriteIndex;
+                if ((uint)slot >= (uint)blackBox.Length)
+                    slot = 0;
+
+                blackBox[slot] = entry;
+                slot++;
+                _blackBoxWriteIndex = slot >= blackBox.Length ? 0 : slot;
+            }
+            finally
             {
-                PlayerSectorHash = playerSectorHash,
-                RootNodeOffset = IsOpen ? ReadRootNodeOffset() : 0L,
-                CacheBytes = cacheStats.Bytes,
-                DeadBytes = _deadBytes,
-                CacheEntries = cacheStats.Entries,
-                PageFaults = hydratedThisCall,
-                PageFaultsTotal = _pageFaults,
-                HydratedSectors = _hydratedSectors,
-                EvictedSectors = _evictedSectors,
-                LastCompactionStallMicroseconds = SaturateToInt(_lastCompactionStallMicroseconds),
-                FrameIndex = _frameIndex,
-                Tier = (byte)tier,
-                CompactionState = (byte)_compactionState,
-                Flags = (byte)((IsOpen ? 1 : 0) | (_compactionFlags << 1))
-            };
-            _blackBoxWriteIndex++;
-            if (_blackBoxWriteIndex >= blackBox.Length)
-                _blackBoxWriteIndex = 0;
+                vault.ReleaseWriteLock(in _blackBoxHandle, SystemID.SavePersistence);
+            }
         }
 
         private int ResolveRadiusMeters(MacroDatabaseTier tier)
@@ -2825,13 +2842,24 @@ namespace Hecton8.Core.Database
 
         private void ClearBlackBoxLocked()
         {
-            if (!TryResolveBlackBox(out NativeArray<MacroDatabaseTelemetryEntry> blackBox))
+            IDataVault vault = _dataVault;
+            if (vault == null || _blackBoxHandle.BufferID == 0u)
                 return;
 
-            for (int i = 0; i < blackBox.Length; i++)
-                blackBox[i] = default;
+            if (!vault.TryAcquireWriteLock(in _blackBoxHandle, SystemID.SavePersistence, out NativeArray<MacroDatabaseTelemetryEntry> blackBox))
+                return;
 
-            _blackBoxWriteIndex = 0;
+            try
+            {
+                for (int i = 0; i < blackBox.Length; i++)
+                    blackBox[i] = default;
+
+                _blackBoxWriteIndex = 0;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _blackBoxHandle, SystemID.SavePersistence);
+            }
         }
 
         private static MacroDatabaseConfig NormalizeConfig(MacroDatabaseConfig config)

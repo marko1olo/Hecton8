@@ -909,126 +909,130 @@ namespace Hecton8.Gameplay
             float evaluationDelta = hasSimulationWork ? _statusEvaluationAccumulatorSeconds : 0f;
             ArmorPenetrationVaultViews armorViews = default;
             bool lockedArmorVaultBuffers = false;
-            if (hasSimulationWork)
+            bool lockedStatusVaultBuffers = false;
+            bool lockedDamageVaultBuffers = false;
+            bool locksOwnedByScheduledJob = false;
+            int damageLockedCount = 0;
+            try
             {
-                if (!TryResolveArmorPenetrationVaultViews(out armorViews, ensure: true) ||
-                    !armorViews.TargetRootAups.IsCreated)
+                if (hasSimulationWork)
+                {
+                    if (!TryResolveArmorPenetrationVaultViews(out armorViews, ensure: true) ||
+                        !armorViews.TargetRootAups.IsCreated)
+                    {
+                        return false;
+                    }
+
+                    if (!TryLockArmorVaultBuffersForJobs())
+                        return false;
+
+                    lockedArmorVaultBuffers = true;
+                }
+
+                if (!TryLockStatusEffectVaultBuffersForJobs(hasSimulationWork))
+                    return false;
+
+                lockedStatusVaultBuffers = true;
+
+                if (!TryLockCombatDamageVaultBuffersForJobs(out damageLockedCount))
+                    return false;
+
+                lockedDamageVaultBuffers = true;
+
+                if (!TryResolveStatusEffectVaultViews(out statusViews, ensure: false) ||
+                    !TryResolveCombatDamageVaultViews(out damageViews, ensure: false) ||
+                    (hasSimulationWork && !TryResolveArmorPenetrationVaultViews(out armorViews, ensure: false)))
                 {
                     return false;
                 }
 
-                if (!TryLockArmorVaultBuffersForJobs())
+                if (hasSimulationWork)
+                    RefreshArmorTargetSnapshotsLocked(ref armorViews);
+                if (!CanUseStatusEffectJobBuffers(hasSimulationWork, ref statusViews, ref damageViews, in armorViews))
                     return false;
 
-                lockedArmorVaultBuffers = true;
-            }
+                statusViews.Tuning[0] = SanitizeStatusEffectTuning(tuning);
+                _statusLockedArmorVaultBuffers = lockedArmorVaultBuffers;
+                _statusScheduledSimulationWork = hasSimulationWork;
+                ClearStatusEffectCountersImmediate(ref statusViews);
+                _statusLastEvaluationDeltaSeconds = evaluationDelta;
+                if (hasSimulationWork)
+                    _statusEvaluationAccumulatorSeconds = 0f;
 
-            if (!TryLockStatusEffectVaultBuffersForJobs(hasSimulationWork))
-            {
-                if (lockedArmorVaultBuffers)
-                    UnlockArmorVaultBuffersForJobs();
+                ApplyStatusEffectRequestsJob applyJob = new ApplyStatusEffectRequestsJob
+                {
+                    Requests = statusViews.Requests,
+                    RequestCount = _queuedStatusEffectRequestCount,
+                    TargetLookupKeys = damageViews.TargetLookupKeys,
+                    TargetLookupSlots = damageViews.TargetLookupSlots,
+                    StatusEffectStates = statusViews.States,
+                    StatusMasks = damageViews.StatusMasks,
+                    StatusDurations0123 = damageViews.StatusDurations0123,
+                    LegacyStatusDurations4567 = damageViews.LegacyStatusDurations4567,
+                    BrittleDurations = damageViews.BrittleDurations,
+                    Counters = statusViews.Counters,
+                    RequestBudget = StatusEffectRequestBudget
+                };
+                JobHandle applyHandle = applyJob.Schedule();
 
-                return false;
-            }
+                if (!hasSimulationWork)
+                {
+                    _statusScheduleTicks = Stopwatch.GetTimestamp();
+                    _statusJobHandle = applyHandle;
+                    _statusJobScheduled = true;
+                    H8Memory.RegisterActiveJob(CombatDamageMemoryOwner, _statusJobHandle);
+                    H8Memory.RegisterActiveJob(SystemID.GameplayCombat, _statusJobHandle);
+                    JobHandle.ScheduleBatchedJobs();
+                    locksOwnedByScheduledJob = true;
+                    return true;
+                }
 
-            if (!TryLockCombatDamageVaultBuffersForJobs(out int damageLockedCount))
-            {
-                UnlockStatusEffectVaultBuffersForJobs();
-                if (lockedArmorVaultBuffers)
-                    UnlockArmorVaultBuffersForJobs();
-
-                return false;
-            }
-
-            if (!TryResolveStatusEffectVaultViews(out statusViews, ensure: false) ||
-                !TryResolveCombatDamageVaultViews(out damageViews, ensure: false) ||
-                (hasSimulationWork && !TryResolveArmorPenetrationVaultViews(out armorViews, ensure: false)))
-            {
-                UnlockCombatDamageVaultBuffersForJobs(damageLockedCount);
-                UnlockStatusEffectVaultBuffersForJobs();
-                if (lockedArmorVaultBuffers)
-                    UnlockArmorVaultBuffersForJobs();
-
-                return false;
-            }
-
-            if (hasSimulationWork)
-                RefreshArmorTargetSnapshotsLocked(ref armorViews);
-            if (!CanUseStatusEffectJobBuffers(hasSimulationWork, ref statusViews, ref damageViews, in armorViews))
-            {
-                UnlockCombatDamageVaultBuffersForJobs(damageLockedCount);
-                UnlockStatusEffectVaultBuffersForJobs();
-                if (lockedArmorVaultBuffers)
-                    UnlockArmorVaultBuffersForJobs();
-
-                return false;
-            }
-
-            statusViews.Tuning[0] = SanitizeStatusEffectTuning(tuning);
-            _statusLockedArmorVaultBuffers = lockedArmorVaultBuffers;
-            _statusScheduledSimulationWork = hasSimulationWork;
-            ClearStatusEffectCountersImmediate(ref statusViews);
-            _statusLastEvaluationDeltaSeconds = evaluationDelta;
-            if (hasSimulationWork)
-                _statusEvaluationAccumulatorSeconds = 0f;
-
-            ApplyStatusEffectRequestsJob applyJob = new ApplyStatusEffectRequestsJob
-            {
-                Requests = statusViews.Requests,
-                RequestCount = _queuedStatusEffectRequestCount,
-                TargetLookupKeys = damageViews.TargetLookupKeys,
-                TargetLookupSlots = damageViews.TargetLookupSlots,
-                StatusEffectStates = statusViews.States,
-                StatusMasks = damageViews.StatusMasks,
-                StatusDurations0123 = damageViews.StatusDurations0123,
-                LegacyStatusDurations4567 = damageViews.LegacyStatusDurations4567,
-                BrittleDurations = damageViews.BrittleDurations,
-                Counters = statusViews.Counters,
-                RequestBudget = StatusEffectRequestBudget
-            };
-            JobHandle applyHandle = applyJob.Schedule();
-
-            if (!hasSimulationWork)
-            {
+                EvaluateStatusEffectsJob evaluateJob = new EvaluateStatusEffectsJob
+                {
+                    DeltaTime = evaluationDelta,
+                    FrameIndex = _statusEffectFrameIndex,
+                    InstanceIds = damageViews.InstanceIds,
+                    Health = damageViews.Health,
+                    MaxHealth = damageViews.MaxHealth,
+                    InvMaxHealth = damageViews.InvMaxHealth,
+                    TargetRootAups = armorViews.TargetRootAups,
+                    StatusEffectStates = statusViews.States,
+                    StatusMasks = damageViews.StatusMasks,
+                    StatusDurations0123 = damageViews.StatusDurations0123,
+                    LegacyStatusDurations4567 = damageViews.LegacyStatusDurations4567,
+                    BrittleDurations = damageViews.BrittleDurations,
+                    ResultsBySlot = damageViews.StatusResults,
+                    ResultActiveBySlot = damageViews.StatusResultActive,
+                    Tuning = statusViews.Tuning,
+                    TelemetryCursor = statusViews.TelemetryCursor,
+                    Counters = statusViews.Counters,
+                    VfxRequests = statusViews.VfxRequests,
+                    DamageSignals = statusViews.DamageSignals,
+                    GlobalQualityWeight01 = statusQualityWeight01
+                };
                 _statusScheduleTicks = Stopwatch.GetTimestamp();
-                _statusJobHandle = applyHandle;
+                _statusJobHandle = evaluateJob.Schedule(_targetCount, ResolveStatusEffectBatchSize(statusQualityWeight01), applyHandle);
                 _statusJobScheduled = true;
                 H8Memory.RegisterActiveJob(CombatDamageMemoryOwner, _statusJobHandle);
                 H8Memory.RegisterActiveJob(SystemID.GameplayCombat, _statusJobHandle);
                 JobHandle.ScheduleBatchedJobs();
+                locksOwnedByScheduledJob = true;
                 return true;
             }
-
-            EvaluateStatusEffectsJob evaluateJob = new EvaluateStatusEffectsJob
+            finally
             {
-                DeltaTime = evaluationDelta,
-                FrameIndex = _statusEffectFrameIndex,
-                InstanceIds = damageViews.InstanceIds,
-                Health = damageViews.Health,
-                MaxHealth = damageViews.MaxHealth,
-                InvMaxHealth = damageViews.InvMaxHealth,
-                TargetRootAups = armorViews.TargetRootAups,
-                StatusEffectStates = statusViews.States,
-                StatusMasks = damageViews.StatusMasks,
-                StatusDurations0123 = damageViews.StatusDurations0123,
-                LegacyStatusDurations4567 = damageViews.LegacyStatusDurations4567,
-                BrittleDurations = damageViews.BrittleDurations,
-                ResultsBySlot = damageViews.StatusResults,
-                ResultActiveBySlot = damageViews.StatusResultActive,
-                Tuning = statusViews.Tuning,
-                TelemetryCursor = statusViews.TelemetryCursor,
-                Counters = statusViews.Counters,
-                VfxRequests = statusViews.VfxRequests,
-                DamageSignals = statusViews.DamageSignals,
-                GlobalQualityWeight01 = statusQualityWeight01
-            };
-            _statusScheduleTicks = Stopwatch.GetTimestamp();
-            _statusJobHandle = evaluateJob.Schedule(_targetCount, ResolveStatusEffectBatchSize(statusQualityWeight01), applyHandle);
-            _statusJobScheduled = true;
-            H8Memory.RegisterActiveJob(CombatDamageMemoryOwner, _statusJobHandle);
-            H8Memory.RegisterActiveJob(SystemID.GameplayCombat, _statusJobHandle);
-            JobHandle.ScheduleBatchedJobs();
-            return true;
+                if (!locksOwnedByScheduledJob)
+                {
+                    if (lockedDamageVaultBuffers)
+                        UnlockCombatDamageVaultBuffersForJobs(damageLockedCount);
+                    if (lockedStatusVaultBuffers)
+                        UnlockStatusEffectVaultBuffersForJobs();
+                    if (lockedArmorVaultBuffers)
+                        UnlockArmorVaultBuffersForJobs();
+                    _statusLockedArmorVaultBuffers = false;
+                    _statusScheduledSimulationWork = false;
+                }
+            }
         }
 
         private static void CompleteStatusEffectFrame()

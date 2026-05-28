@@ -208,7 +208,7 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(28)] private uint _pad0;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 72)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct MacroDatabaseTelemetryEntry
     {
         [FieldOffset(0)] public ulong PlayerSectorHash;
@@ -226,9 +226,6 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(61)] public byte CompactionState;
         [FieldOffset(62)] public byte Flags;
         [FieldOffset(63)] private byte _pad0;
-        [FieldOffset(64)] public ushort Reserved;
-        [FieldOffset(66)] private ushort _pad1;
-        [FieldOffset(68)] private uint _pad2;
     }
 
     public interface IMacroDatabaseSignalSink

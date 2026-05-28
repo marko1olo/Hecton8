@@ -36,7 +36,7 @@ Prompt: Docs/Tasks/CURRENT_BATCH.md id="1412"
 - Pre-build gate: CPU 17%, csc 0, dotnet 0.
 - Result: 0 errors, 0 warnings, 98.45 s.
 - Limitation: generated `.csproj` files do not include `Hecton8.Core.Memory.Editor.csproj` or `OOP_MemorySentryConcurrentRelocationFuzzer.cs`; this is not proof that the fuzzer asmdef compiles in Unity.
-- Latest post-build/no-more-build gate: CPU 99%, csc 0, dotnet 1 (`Hecton8.slnx -nologo -clp:ErrorsOnly -maxcpucount:1`, external PID 10444 sample). No second build launched because CPU/dotnet gate is closed and the generated project graph still omits the fuzzer asmdef/source.
+- Latest post-build/no-more-build gate: CPU 66%, csc 0, dotnet 0. No second build launched because CPU remains above the project 50% build threshold and the generated project graph still omits the fuzzer asmdef/source.
 
 ## APEX Final Verification
 - [x] Isolated vault latest pointer fix | DOD: replaced `GlobalDataVault.Create(...)` with `CreateIsolatedVault(...)`, restoring private `_latestCreated` immediately after initialization | Alternative rejected: leaving editor diagnostics pointed at a destructive fuzzer vault | Estimate: 3100 us
