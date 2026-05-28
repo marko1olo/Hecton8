@@ -1,0 +1,15 @@
+{
+  "agentId": 1420,
+  "scanTarget": "Assets/_Project/Scripts/Vehicles/SubmarineNavigationRuntime.cs",
+  "scanUtc": "2026-05-28",
+  "targetFileExists": false,
+  "canonicalRuntimeInspected": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+  "forbiddenClassScopeAliasPattern": "NativeArray<T>|NativeList<T>|NativeQueue<T>|NativeHashMap<K,V>|NativeParallelHashMap<K,V>",
+  "forbiddenAliases": [],
+  "canonicalRuntimeForbiddenClassScopeAliases": 0,
+  "notes": [
+    "The named batch target is absent in this workspace.",
+    "The active submarine ballast/navigation runtime is SubmarineAutoLevelBallastController.",
+    "NativeArray fields present in Burst job structs are local job views, not MonoBehaviour persistent fields."
+  ]
+}

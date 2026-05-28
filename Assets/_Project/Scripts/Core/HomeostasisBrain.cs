@@ -250,7 +250,7 @@ namespace Hecton8.Core
                 return;
 
             _dataVault = GlobalRegistry.DataVault;
-            if (!TryResolveRuntimeBuffers(
+            if (!OpenOrAcquireRuntimeBuffers(
                     out NativeArray<float> hardwareMetrics,
                     out NativeArray<float> frameTimes,
                     out NativeArray<HomeostasisBlackBoxEntry> blackBox))
@@ -989,7 +989,7 @@ namespace Hecton8.Core
                    ResolveScalabilityDictatorRequestedVaultBytes();
         }
 
-        private static bool TryResolveRuntimeBuffers(
+        private static bool OpenOrAcquireRuntimeBuffers(
             out NativeArray<float> hardwareMetrics,
             out NativeArray<float> frameTimes,
             out NativeArray<HomeostasisBlackBoxEntry> blackBox)
@@ -1044,28 +1044,36 @@ namespace Hecton8.Core
                    blackBox.Length >= BlackBoxCapacity;
         }
 
-        private static bool TryResolveHardwareMetrics(out NativeArray<float> metrics)
+        private static bool TryResolveRuntimeBuffers(
+            out NativeArray<float> hardwareMetrics,
+            out NativeArray<float> frameTimes,
+            out NativeArray<HomeostasisBlackBoxEntry> blackBox)
         {
-            metrics = default;
+            hardwareMetrics = default;
+            frameTimes = default;
+            blackBox = default;
+
             IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            if (!TryResolveOrAcquire(
-                    vault,
-                    ref _globalHardwareMetricsHandle,
-                    BufferID.HardwareMetrics,
-                    (int)HardwareMetricSlot.Count,
-                    NativeArrayOptions.UninitializedMemory,
-                    out metrics,
-                    out bool metricsCreated))
-            {
+            if (_globalHardwareMetricsHandle.BufferID == 0u ||
+                _globalHardwareMetricsHandle.Generation == 0u ||
+                _frameTimeMsHandle.BufferID == 0u ||
+                _frameTimeMsHandle.Generation == 0u ||
+                _blackBoxHandle.BufferID == 0u ||
+                _blackBoxHandle.Generation == 0u)
                 return false;
-            }
 
-            if (metricsCreated)
-                MemClearIfCreated(metrics);
-            return metrics.IsCreated && metrics.Length >= (int)HardwareMetricSlot.Count;
+            return vault.TryResolveHandle(in _globalHardwareMetricsHandle, out hardwareMetrics) &&
+                   hardwareMetrics.IsCreated &&
+                   hardwareMetrics.Length >= (int)HardwareMetricSlot.Count &&
+                   vault.TryResolveHandle(in _frameTimeMsHandle, out frameTimes) &&
+                   frameTimes.IsCreated &&
+                   frameTimes.Length >= FrameTimeWindow &&
+                   vault.TryResolveHandle(in _blackBoxHandle, out blackBox) &&
+                   blackBox.IsCreated &&
+                   blackBox.Length >= BlackBoxCapacity;
         }
 
         private static bool TryReadHardwareMetrics(out NativeArray<float>.ReadOnly metrics)
@@ -1179,6 +1187,23 @@ namespace Hecton8.Core
             _globalHardwareMetricsHandle = default;
             _frameTimeMsHandle = default;
             _blackBoxHandle = default;
+            ReopenRuntimeBuffersAfterDataVaultRebindCold();
+        }
+
+        private static void ReopenRuntimeBuffersAfterDataVaultRebindCold()
+        {
+            if (!_initialized || _dataVault == null)
+                return;
+
+            if (!OpenOrAcquireRuntimeBuffers(
+                    out NativeArray<float> hardwareMetrics,
+                    out NativeArray<float> frameTimes,
+                    out NativeArray<HomeostasisBlackBoxEntry> blackBox))
+            {
+                return;
+            }
+
+            InitializeScalabilityDictator(hardwareMetrics, frameTimes, blackBox);
         }
 
         private sealed class DependencyHotSwapBridge : IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener

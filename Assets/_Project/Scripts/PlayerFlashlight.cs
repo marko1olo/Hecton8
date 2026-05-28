@@ -34,11 +34,13 @@ using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
+using Hecton8.Lighting.Shafts;
 using Hecton8.UI;
 using Hecton8.Tools;
 using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Hecton8.Gameplay
 {
@@ -389,7 +391,11 @@ namespace Hecton8.Gameplay
         [Tooltip("Gromkost zvukov fonarya.")]
         [SerializeField, Range(0f, 1f)] private float audioVolume = 0.5f;
 
-        [Header("— Screen-Space Shaft Response —")]
+        [Header("Screen-Space Shaft Response")]
+        [FormerlySerializedAs("volumetricBeam")]
+        [Tooltip("Legacy VLB component reference used only as a cold migration hint for the screen-space shaft source.")]
+        [SerializeField] private MonoBehaviour legacyVolumetricBeamSource;
+
         [Header("— Underwater Beam Response —")]
         [Tooltip("Makes the flashlight beam feel denser underwater without touching the spotlight owner.")]
         [SerializeField] private bool enableUnderwaterBeamResponse = true;
@@ -412,7 +418,9 @@ namespace Hecton8.Gameplay
         [SerializeField] private bool _debugIsFlickering;
         [SerializeField] private bool _debugIsOverheated;
         [SerializeField] private float _debugCooldownRemaining;
+        [FormerlySerializedAs("_debugVolumetricMultiplier")]
         [SerializeField] private float _debugLightShaftMultiplier;
+        [FormerlySerializedAs("_debugVolumetricDepth")]
         [SerializeField] private float _debugLightShaftDepth;
 
         // ══════════════════════════════════════════════════════════
@@ -476,6 +484,7 @@ namespace Hecton8.Gameplay
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IModularEquipmentService _modularEquipmentService;
         private IAudioService _audioService;
+        private ScreenSpaceLightShaftSource _lightShaftSource;
         private bool _hotSwapRegistered;
         private float _nextCameraResolveTime;
         private uint _lastPlayerInputSignalSequence;
@@ -516,6 +525,7 @@ namespace Hecton8.Gameplay
             {
                 ConfigureFlashlightLight();
                 flashlightLight.enabled = false;
+                EnsureScreenSpaceLightShaftSourceCold();
             }
         }
 
@@ -556,7 +566,10 @@ namespace Hecton8.Gameplay
         {
             ResolveReferences();
             if (flashlightLight != null)
+            {
                 ConfigureFlashlightLight();
+                EnsureScreenSpaceLightShaftSourceCold();
+            }
 
             BaselineFlashlightInputSignalSequence();
         }
@@ -898,6 +911,14 @@ namespace Hecton8.Gameplay
             if (flashlightLight != null)
                 return;
 
+            if (legacyVolumetricBeamSource != null &&
+                legacyVolumetricBeamSource.TryGetComponent(out Light legacyLight) &&
+                legacyLight.type == LightType.Spot)
+            {
+                flashlightLight = legacyLight;
+                return;
+            }
+
             Transform mainCameraTransform = ResolveMainCameraReference(true);
             if (mainCameraTransform == null || _cachedMainCamera == null)
                 return;
@@ -950,6 +971,26 @@ namespace Hecton8.Gameplay
             flashlightLight.spotAngle = ResolveModeSpotAngle();
             flashlightLight.shadows = LightShadows.None;
             flashlightLight.enabled = false;
+        }
+
+        private void EnsureScreenSpaceLightShaftSourceCold()
+        {
+            Light shaftLight = flashlightLight;
+            if (shaftLight == null && legacyVolumetricBeamSource != null)
+                legacyVolumetricBeamSource.TryGetComponent(out shaftLight);
+
+            if (shaftLight == null)
+            {
+                _lightShaftSource = null;
+                return;
+            }
+
+            GameObject sourceObject = shaftLight.gameObject;
+            if (_lightShaftSource != null && _lightShaftSource.gameObject == sourceObject)
+                return;
+
+            if (!sourceObject.TryGetComponent(out _lightShaftSource))
+                _lightShaftSource = sourceObject.AddComponent<ScreenSpaceLightShaftSource>(); // COLD ALLOC: ScreenSpaceLightShaftSource[1] - flashlight shaft migration bridge - owner: PlayerFlashlight
         }
 
         private float ResolveModeRange()

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Unity.Burst;
@@ -6,6 +7,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
+using UnityEngine.Serialization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Caves;
@@ -1258,8 +1260,9 @@ namespace Hecton8.Gameplay
         [Tooltip("Enables short camera-forward collision rays that retract the hands before the held tool clips into geometry.")]
         [SerializeField] private bool enableToolRetraction = true;
 
-        [Tooltip("If enabled, low/MX350/unknown tiers keep tool retraction but skip wall-touch hand bracing.")]
-        [SerializeField] private bool disableWallTouchOnLowTier = true;
+        [Tooltip("Minimum GlobalQualityWeight before wall-touch reaches non-zero weight. Values near zero keep the feature visible on weak devices; higher values defer it continuously.")]
+        [FormerlySerializedAs("disableWallTouchOnLowTier")]
+        [SerializeField, Range(0.0f, 0.95f)] private float wallTouchQualityRampFloor01 = MinimumWallTouchQualityWeight01;
 
         [Tooltip("Left palm can brace against walls only while the left hand is empty.")]
         [SerializeField] private bool leftHandEmptyForWallTouch = true;
@@ -2294,77 +2297,22 @@ namespace Hecton8.Gameplay
             _secondaryHandleStartIndex = _spineHandleStartIndex + spineHandleCount;
             int totalHandleCount = _secondaryHandleStartIndex + totalSecondaryHandleCount;
 
-            _streamHandles = new NativeArray<TransformStreamHandle>(
+            _nativeBuffers.Allocate(
                 totalHandleCount,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<TransformStreamHandle>[dynamic] - sequential cached stream handles for contextual IK bones - owner: ContextualPhysicalIkRig
-            _twoBoneSetups = new NativeArray<ContextualPhysicalIkTwoBoneSetup>(
-                4,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkTwoBoneSetup>[4] - fixed humanoid limb solve descriptors - owner: ContextualPhysicalIkRig
+                validAppendageChainCount,
+                totalAppendageLengthCount,
+                totalAppendageScratchCount,
+                hasValidSpineChain,
+                validSecondaryChainCount,
+                totalSecondaryStateCount);
 
             if (validAppendageChainCount > 0)
             {
-                _appendageChainRuntimes = new NativeArray<ContextualPhysicalIkAppendageChainRuntime>(
-                    validAppendageChainCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkAppendageChainRuntime>[dynamic] - appendage FABRIK descriptors - owner: ContextualPhysicalIkRig
-                _appendageSegmentLengths = new NativeArray<float>(
-                    totalAppendageLengthCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[dynamic] - appendage segment lengths - owner: ContextualPhysicalIkRig
-                _appendageTargets = new NativeArray<ContextualPhysicalIkAppendageTarget>(
-                    validAppendageChainCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkAppendageTarget>[dynamic] - appendage target positions and weights - owner: ContextualPhysicalIkRig
-                _appendageScratchPositions = new NativeArray<float3>(
-                    totalAppendageScratchCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[dynamic] - appendage FABRIK scratch positions - owner: ContextualPhysicalIkRig
                 _appendageTargetSources = new Transform[validAppendageChainCount]; // COLD ALLOC: Transform[dynamic] - appendage target source cache - owner: ContextualPhysicalIkRig
                 _appendageFallbackTips = new Transform[validAppendageChainCount]; // COLD ALLOC: Transform[dynamic] - appendage fallback tip cache - owner: ContextualPhysicalIkRig
-            }
-
-            if (validAppendageChainCount > 0)
-            {
                 _appendageVoxelVolumes = new HectonVoxelVolume[validAppendageChainCount]; // COLD ALLOC: HectonVoxelVolume[dynamic] - appendage voxel snap owners - owner: ContextualPhysicalIkRig
                 _appendageSurfaceNormalSources = new Transform[validAppendageChainCount]; // COLD ALLOC: Transform[dynamic] - appendage wall-normal source cache - owner: ContextualPhysicalIkRig
             }
-
-            if (hasValidSpineChain)
-            {
-                _spineChainRuntimes = new NativeArray<ContextualPhysicalIkSpineChainRuntime>(
-                    1,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkSpineChainRuntime>[1] - spline spine chain descriptor - owner: ContextualPhysicalIkRig
-                _spineTargets = new NativeArray<float3>(
-                    SpineTargetCountPerChain,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[3] - chest/head spline targets - owner: ContextualPhysicalIkRig
-            }
-
-            if (validSecondaryChainCount > 0)
-            {
-                _secondaryChainRuntimes = new NativeArray<ContextualPhysicalIkSecondaryChainRuntime>(
-                    validSecondaryChainCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkSecondaryChainRuntime>[dynamic] - secondary motion chain descriptors - owner: ContextualPhysicalIkRig
-                _secondaryStates = new NativeArray<ContextualPhysicalIkSecondaryState>(
-                    totalSecondaryStateCount,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkSecondaryState>[dynamic] - secondary motion positions and velocities - owner: ContextualPhysicalIkRig
-            }
-
-            _cachedLocalPoseStates = new NativeArray<ContextualPhysicalIkCachedPoseState>(
-                totalHandleCount,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkCachedPoseState>[dynamic] - cached limb and appendage local pose states - owner: ContextualPhysicalIkRig
-            _muscleBulgeOutput = new NativeArray<float>(
-                1,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1] - previous-frame muscle tension signal - owner: ContextualPhysicalIkRig
-
-            RegisterNativeMemorySentinel();
             BindCoreHandles();
             BuildTwoBoneSetups();
             CacheCoreReachLengths();
@@ -2920,56 +2868,58 @@ namespace Hecton8.Gameplay
 
         private void DisposeRuntimeArrays()
         {
-            DisposeNativeArray(ref _nativeBuffers.StreamHandles);
-            DisposeNativeArray(ref _nativeBuffers.TwoBoneSetups);
-            DisposeNativeArray(ref _nativeBuffers.AppendageChainRuntimes);
-            DisposeNativeArray(ref _nativeBuffers.AppendageSegmentLengths);
-            DisposeNativeArray(ref _nativeBuffers.AppendageTargets);
-            DisposeNativeArray(ref _nativeBuffers.AppendageScratchPositions);
-            DisposeNativeArray(ref _nativeBuffers.SpineChainRuntimes);
-            DisposeNativeArray(ref _nativeBuffers.SpineTargets);
-            DisposeNativeArray(ref _nativeBuffers.SecondaryChainRuntimes);
-            DisposeNativeArray(ref _nativeBuffers.SecondaryStates);
-            DisposeNativeArray(ref _nativeBuffers.CachedLocalPoseStates);
-            DisposeNativeArray(ref _nativeBuffers.MuscleBulgeOutput);
-            _nativeBuffers.CurrentTargetFrames = default;
-            _appendageTargetSources = null;
-            _appendageFallbackTips = null;
-            _appendageVoxelVolumes = null;
-            _appendageSurfaceNormalSources = null;
-            _spineHandleStartIndex = BaseHandleCount;
-            _secondaryHandleStartIndex = BaseHandleCount;
-            _cachedLeftLegReach = 0.0f;
-            _cachedRightLegReach = 0.0f;
-            _cachedLeftArmReach = 0.0f;
-            _cachedRightArmReach = 0.0f;
-            _baseLeftArmPoleLocalOffset = float3.zero;
-            _baseRightArmPoleLocalOffset = float3.zero;
-            _predictiveLeftHandBlend = 0.0f;
-            _predictiveRightHandBlend = 0.0f;
-            _leftToolRecoilOffset = Vector3.zero;
-            _rightToolRecoilOffset = Vector3.zero;
-            _terminalRightHandBlend = 0.0f;
-            _terminalRightHandTargetBlend = 0.0f;
-            _terminalRightHandHoldTimer = 0.0f;
-            _terminalRightHandActive = false;
-            _externalWallLeftHandBlend = 0.0f;
-            _externalWallRightHandBlend = 0.0f;
-            _externalWallLeftHandHoldTimer = 0.0f;
-            _externalWallRightHandHoldTimer = 0.0f;
-            _breathingBlend = 0.0f;
-            _breathingPhase = 0.0f;
-            _playerStress01 = 0.0f;
-            _externalSqueezePoleBlend = 0.0f;
-            _externalSqueezePoleHoldTimer = 0.0f;
-            _lastPlayerStressSignalSequence = 0;
-            _hasPreviousLeftPredictiveControllerPose = false;
-            _hasPreviousRightPredictiveControllerPose = false;
-            ReleaseMuscleBulgeMaterial();
-            _runtimeInitialized = false;
+            Exception disposeException = null;
+            try
+            {
+                _nativeBuffers.Dispose();
+            }
+            catch (Exception exception)
+            {
+                disposeException = exception;
+            }
+            finally
+            {
+                _appendageTargetSources = null;
+                _appendageFallbackTips = null;
+                _appendageVoxelVolumes = null;
+                _appendageSurfaceNormalSources = null;
+                _spineHandleStartIndex = BaseHandleCount;
+                _secondaryHandleStartIndex = BaseHandleCount;
+                _cachedLeftLegReach = 0.0f;
+                _cachedRightLegReach = 0.0f;
+                _cachedLeftArmReach = 0.0f;
+                _cachedRightArmReach = 0.0f;
+                _baseLeftArmPoleLocalOffset = float3.zero;
+                _baseRightArmPoleLocalOffset = float3.zero;
+                _predictiveLeftHandBlend = 0.0f;
+                _predictiveRightHandBlend = 0.0f;
+                _leftToolRecoilOffset = Vector3.zero;
+                _rightToolRecoilOffset = Vector3.zero;
+                _terminalRightHandBlend = 0.0f;
+                _terminalRightHandTargetBlend = 0.0f;
+                _terminalRightHandHoldTimer = 0.0f;
+                _terminalRightHandActive = false;
+                _externalWallLeftHandBlend = 0.0f;
+                _externalWallRightHandBlend = 0.0f;
+                _externalWallLeftHandHoldTimer = 0.0f;
+                _externalWallRightHandHoldTimer = 0.0f;
+                _breathingBlend = 0.0f;
+                _breathingPhase = 0.0f;
+                _playerStress01 = 0.0f;
+                _externalSqueezePoleBlend = 0.0f;
+                _externalSqueezePoleHoldTimer = 0.0f;
+                _lastPlayerStressSignalSequence = 0;
+                _hasPreviousLeftPredictiveControllerPose = false;
+                _hasPreviousRightPredictiveControllerPose = false;
+                ReleaseMuscleBulgeMaterial();
+                _runtimeInitialized = false;
+            }
+
+            if (disposeException != null)
+                throw disposeException;
         }
 
-        private sealed class RigNativeBufferSet
+        private sealed class RigNativeBufferSet : IDisposable
         {
             public NativeArray<TransformStreamHandle> StreamHandles;
             public NativeArray<ContextualPhysicalIkTwoBoneSetup> TwoBoneSetups;
@@ -2984,22 +2934,133 @@ namespace Hecton8.Gameplay
             public NativeArray<ContextualPhysicalIkCachedPoseState> CachedLocalPoseStates;
             public NativeArray<float> MuscleBulgeOutput;
             public NativeArray<ContextualPhysicalIkTargetFrame>.ReadOnly CurrentTargetFrames;
-        }
 
-        private void RegisterNativeMemorySentinel()
-        {
-            NativeMemorySentinel.RegisterNativeArray(_streamHandles, NativeMemoryOwner, nameof(_streamHandles), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_twoBoneSetups, NativeMemoryOwner, nameof(_twoBoneSetups), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_appendageChainRuntimes, NativeMemoryOwner, nameof(_appendageChainRuntimes), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_appendageSegmentLengths, NativeMemoryOwner, nameof(_appendageSegmentLengths), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_appendageTargets, NativeMemoryOwner, nameof(_appendageTargets), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_appendageScratchPositions, NativeMemoryOwner, nameof(_appendageScratchPositions), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_spineChainRuntimes, NativeMemoryOwner, nameof(_spineChainRuntimes), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_spineTargets, NativeMemoryOwner, nameof(_spineTargets), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_secondaryChainRuntimes, NativeMemoryOwner, nameof(_secondaryChainRuntimes), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_secondaryStates, NativeMemoryOwner, nameof(_secondaryStates), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_cachedLocalPoseStates, NativeMemoryOwner, nameof(_cachedLocalPoseStates), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_muscleBulgeOutput, NativeMemoryOwner, nameof(_muscleBulgeOutput), NativeMemoryLifetime);
+            public void Allocate(
+                int totalHandleCount,
+                int validAppendageChainCount,
+                int totalAppendageLengthCount,
+                int totalAppendageScratchCount,
+                bool hasValidSpineChain,
+                int validSecondaryChainCount,
+                int totalSecondaryStateCount)
+            {
+                Dispose();
+                try
+                {
+
+                    StreamHandles = new NativeArray<TransformStreamHandle>(
+                        totalHandleCount,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<TransformStreamHandle>[dynamic] - sequential cached stream handles for contextual IK bones - owner: RigNativeBufferSet
+                    NativeMemorySentinel.RegisterNativeArray(StreamHandles, NativeMemoryOwner, nameof(StreamHandles), NativeMemoryLifetime);
+
+                    TwoBoneSetups = new NativeArray<ContextualPhysicalIkTwoBoneSetup>(
+                        4,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkTwoBoneSetup>[4] - fixed humanoid limb solve descriptors - owner: RigNativeBufferSet
+                    NativeMemorySentinel.RegisterNativeArray(TwoBoneSetups, NativeMemoryOwner, nameof(TwoBoneSetups), NativeMemoryLifetime);
+
+                if (validAppendageChainCount > 0)
+                {
+                    AppendageChainRuntimes = new NativeArray<ContextualPhysicalIkAppendageChainRuntime>(
+                        validAppendageChainCount,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkAppendageChainRuntime>[dynamic] - appendage FABRIK descriptors - owner: RigNativeBufferSet
+                    NativeMemorySentinel.RegisterNativeArray(AppendageChainRuntimes, NativeMemoryOwner, nameof(AppendageChainRuntimes), NativeMemoryLifetime);
+
+                    AppendageSegmentLengths = new NativeArray<float>(
+                        totalAppendageLengthCount,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[dynamic] - appendage segment lengths - owner: RigNativeBufferSet
+                    NativeMemorySentinel.RegisterNativeArray(AppendageSegmentLengths, NativeMemoryOwner, nameof(AppendageSegmentLengths), NativeMemoryLifetime);
+
+                    AppendageTargets = new NativeArray<ContextualPhysicalIkAppendageTarget>(
+                        validAppendageChainCount,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkAppendageTarget>[dynamic] - appendage target positions and weights - owner: RigNativeBufferSet
+                    NativeMemorySentinel.RegisterNativeArray(AppendageTargets, NativeMemoryOwner, nameof(AppendageTargets), NativeMemoryLifetime);
+
+                    AppendageScratchPositions = new NativeArray<float3>(
+                        totalAppendageScratchCount,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[dynamic] - appendage FABRIK scratch positions - owner: RigNativeBufferSet
+                    NativeMemorySentinel.RegisterNativeArray(AppendageScratchPositions, NativeMemoryOwner, nameof(AppendageScratchPositions), NativeMemoryLifetime);
+                }
+
+                if (hasValidSpineChain)
+                {
+                    SpineChainRuntimes = new NativeArray<ContextualPhysicalIkSpineChainRuntime>(
+                        1,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkSpineChainRuntime>[1] - spline spine chain descriptor - owner: RigNativeBufferSet
+                    NativeMemorySentinel.RegisterNativeArray(SpineChainRuntimes, NativeMemoryOwner, nameof(SpineChainRuntimes), NativeMemoryLifetime);
+
+                    SpineTargets = new NativeArray<float3>(
+                        SpineTargetCountPerChain,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[3] - chest/head spline targets - owner: RigNativeBufferSet
+                    NativeMemorySentinel.RegisterNativeArray(SpineTargets, NativeMemoryOwner, nameof(SpineTargets), NativeMemoryLifetime);
+                }
+
+                if (validSecondaryChainCount > 0)
+                {
+                    SecondaryChainRuntimes = new NativeArray<ContextualPhysicalIkSecondaryChainRuntime>(
+                        validSecondaryChainCount,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkSecondaryChainRuntime>[dynamic] - secondary motion chain descriptors - owner: RigNativeBufferSet
+                    NativeMemorySentinel.RegisterNativeArray(SecondaryChainRuntimes, NativeMemoryOwner, nameof(SecondaryChainRuntimes), NativeMemoryLifetime);
+
+                    SecondaryStates = new NativeArray<ContextualPhysicalIkSecondaryState>(
+                        totalSecondaryStateCount,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkSecondaryState>[dynamic] - secondary motion positions and velocities - owner: RigNativeBufferSet
+                    NativeMemorySentinel.RegisterNativeArray(SecondaryStates, NativeMemoryOwner, nameof(SecondaryStates), NativeMemoryLifetime);
+                }
+
+                CachedLocalPoseStates = new NativeArray<ContextualPhysicalIkCachedPoseState>(
+                    totalHandleCount,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkCachedPoseState>[dynamic] - cached limb and appendage local pose states - owner: RigNativeBufferSet
+                NativeMemorySentinel.RegisterNativeArray(CachedLocalPoseStates, NativeMemoryOwner, nameof(CachedLocalPoseStates), NativeMemoryLifetime);
+
+                    MuscleBulgeOutput = new NativeArray<float>(
+                        1,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1] - previous-frame muscle tension signal - owner: RigNativeBufferSet
+                    NativeMemorySentinel.RegisterNativeArray(MuscleBulgeOutput, NativeMemoryOwner, nameof(MuscleBulgeOutput), NativeMemoryLifetime);
+                }
+                catch
+                {
+                    try
+                    {
+                        Dispose();
+                    }
+                    catch
+                    {
+                    }
+
+                    throw;
+                }
+            }
+
+            public void Dispose()
+            {
+                Exception firstException = null;
+                DisposeNativeArrayBestEffort(ref StreamHandles, ref firstException, nameof(StreamHandles));
+                DisposeNativeArrayBestEffort(ref TwoBoneSetups, ref firstException, nameof(TwoBoneSetups));
+                DisposeNativeArrayBestEffort(ref AppendageChainRuntimes, ref firstException, nameof(AppendageChainRuntimes));
+                DisposeNativeArrayBestEffort(ref AppendageSegmentLengths, ref firstException, nameof(AppendageSegmentLengths));
+                DisposeNativeArrayBestEffort(ref AppendageTargets, ref firstException, nameof(AppendageTargets));
+                DisposeNativeArrayBestEffort(ref AppendageScratchPositions, ref firstException, nameof(AppendageScratchPositions));
+                DisposeNativeArrayBestEffort(ref SpineChainRuntimes, ref firstException, nameof(SpineChainRuntimes));
+                DisposeNativeArrayBestEffort(ref SpineTargets, ref firstException, nameof(SpineTargets));
+                DisposeNativeArrayBestEffort(ref SecondaryChainRuntimes, ref firstException, nameof(SecondaryChainRuntimes));
+                DisposeNativeArrayBestEffort(ref SecondaryStates, ref firstException, nameof(SecondaryStates));
+                DisposeNativeArrayBestEffort(ref CachedLocalPoseStates, ref firstException, nameof(CachedLocalPoseStates));
+                DisposeNativeArrayBestEffort(ref MuscleBulgeOutput, ref firstException, nameof(MuscleBulgeOutput));
+                CurrentTargetFrames = default;
+                ThrowFirstDisposeException(firstException);
+            }
         }
 
         private void TryRegisterOriginShiftListener()
@@ -3080,14 +3141,63 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, string sentinelLabel = null) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            bool sentinelUnregistered = false;
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
+                sentinelUnregistered = true;
+                array.Dispose();
+                array = default;
+            }
+            catch
+            {
+                TryRestoreNativeSentinelRecord(array, sentinelUnregistered, sentinelLabel);
+                throw;
+            }
+        }
+
+        private static void TryRestoreNativeSentinelRecord<T>(
+            NativeArray<T> array,
+            bool sentinelUnregistered,
+            string sentinelLabel) where T : struct
+        {
+            if (!sentinelUnregistered || !array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel ?? nameof(DisposeNativeArray), NativeMemoryLifetime);
+            }
+            catch
+            {
+            }
+        }
+
+        private static void DisposeNativeArrayBestEffort<T>(
+            ref NativeArray<T> array,
+            ref Exception firstException,
+            string sentinelLabel) where T : struct
+        {
+            try
+            {
+                DisposeNativeArray(ref array, sentinelLabel);
+            }
+            catch (Exception exception)
+            {
+                if (firstException == null)
+                    firstException = exception;
+            }
+        }
+
+        private static void ThrowFirstDisposeException(Exception firstException)
+        {
+            if (firstException != null)
+                throw firstException;
         }
 
         private void TryResolveReferences()
@@ -3500,9 +3610,9 @@ namespace Hecton8.Gameplay
         private float ResolveWallTouchQualityWeight01(float qualityWeight01)
         {
             float quality = SanitizeUnitScalar(qualityWeight01);
-            return disableWallTouchOnLowTier
-                ? math.saturate((quality - MinimumWallTouchQualityWeight01) * math.rcp(1.0f - MinimumWallTouchQualityWeight01))
-                : quality;
+            float floor = math.min(SanitizeUnitScalar(wallTouchQualityRampFloor01), 0.95f);
+            float span = math.max(0.0001f, 1.0f - floor);
+            return math.saturate((quality - floor) * math.rcp(span));
         }
 
         private static Vector3 NormalizeVectorNoSqrt(Vector3 value, Vector3 fallback)

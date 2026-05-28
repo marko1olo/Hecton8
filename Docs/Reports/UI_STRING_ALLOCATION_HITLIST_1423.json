@@ -1,0 +1,1425 @@
+﻿{
+    "agent":  "1423",
+    "task":  "Task 01: EXHAUSTIVE_STRING_ALLOCATION_INQUISITION",
+    "generatedUtc":  "2026-05-28T01:17:43.5683218Z",
+    "targetPaths":  [
+                        "Assets/_Project/Scripts/UI",
+                        "Assets/_Project/Scripts/Audio",
+                        "Assets/_Project/Scripts/LocalizationManager.cs",
+                        "Assets/_Project/Scripts/LocalizationKeys.cs",
+                        "Assets/_Project/Scripts/LocalizationEvents.cs",
+                        "Assets/_Project/Scripts/LocRegistry.cs",
+                        "Assets/_Project/Scripts/Core/Data/BabelDictionaryStore.cs",
+                        "Assets/_Project/Scripts/Core/Contracts/BabelLocalizationContract.cs"
+                    ],
+    "targetFileCount":  33,
+    "elapsedMicroseconds":  1083702,
+    "lexicalHitLines":  165,
+    "hitCount":  154,
+    "note":  "Static lexical scan. Editor hits are recorded but not runtime rewrite targets unless they feed gameplay presentation.",
+    "summary":  [
+                    {
+                        "category":  ".ToString",
+                        "count":  96
+                    },
+                    {
+                        "category":  "string_interpolation",
+                        "count":  26
+                    },
+                    {
+                        "category":  "TMP_Text.text_assignment",
+                        "count":  32
+                    }
+                ],
+    "runtimeSummary":  {
+
+                       },
+    "hits":  [
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AbyssalAcousticsTunerWindow.cs",
+                     "lineNumber":  189,
+                     "variableName":  "_statsLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_statsLabel.text = \"Material CSV missing: \" + MaterialCsvAssetPath;"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AbyssalAcousticsTunerWindow.cs",
+                     "lineNumber":  196,
+                     "variableName":  "_statsLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_statsLabel.text = \"Material rows loaded: \" + rows;"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AbyssalAcousticsTunerWindow.cs",
+                     "lineNumber":  204,
+                     "variableName":  "_statsLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_statsLabel.text ="
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AbyssalAcousticsTunerWindow.cs",
+                     "lineNumber":  207,
+                     "variableName":  "_stats.AcousticOcclusionTimeMs",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "\" | SDF \" + _stats.AcousticOcclusionTimeMs.ToString(\"0.000\") + \"ms\" +"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AbyssalAcousticsTunerWindow.cs",
+                     "lineNumber":  208,
+                     "variableName":  "_stats.AverageRt60Seconds",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "\" | RT60 \" + _stats.AverageRt60Seconds.ToString(\"0.00\") +"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AbyssalAcousticsTunerWindow.cs",
+                     "lineNumber":  209,
+                     "variableName":  "_stats.AverageLowPassHertz",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "\" | LPF \" + _stats.AverageLowPassHertz.ToString(\"0\");"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AudioImportDictator.cs",
+                     "lineNumber":  208,
+                     "variableName":  "policy.LoadType",
+                     "variableType":  "AudioClipLoadType",
+                     "isEditorPath":  true,
+                     "lineText":  "AppendPolicyIssue(builder, assetPath, \"loadType\", policy.LoadType.ToString(), settings.loadType.ToString());"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AudioImportDictator.cs",
+                     "lineNumber":  208,
+                     "variableName":  "settings.loadType",
+                     "variableType":  "AudioClipLoadType",
+                     "isEditorPath":  true,
+                     "lineText":  "AppendPolicyIssue(builder, assetPath, \"loadType\", policy.LoadType.ToString(), settings.loadType.ToString());"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AudioImportDictator.cs",
+                     "lineNumber":  214,
+                     "variableName":  "policy.CompressionFormat",
+                     "variableType":  "AudioCompressionFormat",
+                     "isEditorPath":  true,
+                     "lineText":  "AppendPolicyIssue(builder, assetPath, \"compressionFormat\", policy.CompressionFormat.ToString(), settings.compressionFormat.ToString());"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AudioImportDictator.cs",
+                     "lineNumber":  214,
+                     "variableName":  "settings.compressionFormat",
+                     "variableType":  "AudioCompressionFormat",
+                     "isEditorPath":  true,
+                     "lineText":  "AppendPolicyIssue(builder, assetPath, \"compressionFormat\", policy.CompressionFormat.ToString(), settings.compressionFormat.ToString());"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AudioImportDictator.cs",
+                     "lineNumber":  220,
+                     "variableName":  "AudioSampleRateSetting.OverrideSampleRate",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "AppendPolicyIssue(builder, assetPath, \"sampleRateSetting\", AudioSampleRateSetting.OverrideSampleRate.ToString(), settings.sampleRateSetting.ToString());"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AudioImportDictator.cs",
+                     "lineNumber":  220,
+                     "variableName":  "settings.sampleRateSetting",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "AppendPolicyIssue(builder, assetPath, \"sampleRateSetting\", AudioSampleRateSetting.OverrideSampleRate.ToString(), settings.sampleRateSetting.ToString());"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AudioImportDictator.cs",
+                     "lineNumber":  660,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "return builder.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AudioImportDictator.cs",
+                     "lineNumber":  671,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "return builder.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AudioImportDictator.cs",
+                     "lineNumber":  768,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "return builder.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AudioImportDictator.cs",
+                     "lineNumber":  800,
+                     "variableName":  "issue.LoadType",
+                     "variableType":  "AudioClipLoadType",
+                     "isEditorPath":  true,
+                     "lineText":  "builder.AppendLine(issue.LoadType.ToString());"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AudioImportDictator.cs",
+                     "lineNumber":  803,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "return builder.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AudioImportDictator.cs",
+                     "lineNumber":  921,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "return builder.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AdvancedAcousticsSmokeTester.cs",
+                     "lineNumber":  786,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "report = builder.ToString();"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AbyssalDspTunerWindow.cs",
+                     "lineNumber":  142,
+                     "variableName":  "_statusLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_statusLabel.text = hasRenderer"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\DSPThreadSafetySmokeTester.cs",
+                     "lineNumber":  183,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "report = builder.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\AudioOmegaAutonomySmokeTester.cs",
+                     "lineNumber":  90,
+                     "variableName":  "json",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "jsonReport = json.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\OOP_Voice_Scanner_SHINOBU_352.cs",
+                     "lineNumber":  323,
+                     "variableName":  "i]",
+                     "variableType":  "int",
+                     "isEditorPath":  true,
+                     "lineText":  "string value = arguments[i].ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\OOP_Voice_Scanner_SHINOBU_352.cs",
+                     "lineNumber":  336,
+                     "variableName":  "i]",
+                     "variableType":  "int",
+                     "isEditorPath":  true,
+                     "lineText":  "string value = arguments[i].ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\OOP_Voice_Scanner_SHINOBU_352.cs",
+                     "lineNumber":  358,
+                     "variableName":  "type",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "string value = type.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\OOP_Voice_Scanner_SHINOBU_352.cs",
+                     "lineNumber":  489,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "return builder.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\OOP_AudioSource_Scanner.cs",
+                     "lineNumber":  114,
+                     "variableName":  "objectCreation.Type",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "string typeName = objectCreation.Type.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\OOP_AudioSource_Scanner.cs",
+                     "lineNumber":  129,
+                     "variableName":  "arrayCreation.Type.ElementType",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "TypeNameEquals(arrayCreation.Type.ElementType.ToString(), \"AudioSource\"))"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\OOP_AudioSource_Scanner.cs",
+                     "lineNumber":  137,
+                     "variableName":  "variableDeclaration.Type",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "if (TypeNameEquals(variableDeclaration.Type.ToString(), \"AudioSource\"))"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\OOP_AudioSource_Scanner.cs",
+                     "lineNumber":  143,
+                     "variableName":  "variableDeclaration.Type",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "if (TypeNameEquals(variableDeclaration.Type.ToString(), \"AudioClip\"))"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\OOP_AudioSource_Scanner.cs",
+                     "lineNumber":  169,
+                     "variableName":  "memberAccess.Expression",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "string receiver = memberAccess.Expression.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\OOP_AudioSource_Scanner.cs",
+                     "lineNumber":  249,
+                     "variableName":  "type",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "string value = type.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\OOP_AudioSource_Scanner.cs",
+                     "lineNumber":  275,
+                     "variableName":  "i]",
+                     "variableType":  "int",
+                     "isEditorPath":  true,
+                     "lineText":  "if (TypeNameEquals(arguments[i].ToString(), expectedTypeName))"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\OOP_AudioSource_Scanner.cs",
+                     "lineNumber":  316,
+                     "variableName":  "namespaceDeclaration.Name",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "string value = namespaceDeclaration.Name.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\OOP_AudioSource_Scanner.cs",
+                     "lineNumber":  323,
+                     "variableName":  "fileScoped.Name",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "string value = fileScoped.Name.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\OOP_AudioSource_Scanner.cs",
+                     "lineNumber":  413,
+                     "variableName":  "root",
+                     "variableType":  "string",
+                     "isEditorPath":  true,
+                     "lineText":  "File.WriteAllText(tempPath, root.ToString(Formatting.Indented) + \"\\n\", Encoding.UTF8);"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\OOP_Voice_Scanner_X_011.cs",
+                     "lineNumber":  195,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "return builder.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\VocalWarningStormTorture_X_011.cs",
+                     "lineNumber":  169,
+                     "variableName":  "result.PriorityWord",
+                     "variableType":  "ulong",
+                     "isEditorPath":  true,
+                     "lineText":  "builder.Append(\"  \\\"priorityWordHex\\\": \\\"0x\").Append(result.PriorityWord.ToString(\"X16\")).Append(\"\\\",\\n\");"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\VocalWarningStormTorture_X_011.cs",
+                     "lineNumber":  174,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "File.WriteAllText(absolutePath, builder.ToString(), Encoding.UTF8);"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\ShinobuAcousticDspSmokeTester.cs",
+                     "lineNumber":  135,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "report = builder.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\Shinobu351HullStressDspSmokeTester.cs",
+                     "lineNumber":  122,
+                     "variableName":  "json",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "jsonReport = json.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\SabineReverbDspTunerWindow.cs",
+                     "lineNumber":  119,
+                     "variableName":  "_stats.TotalVoices",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "EditorGUILayout.LabelField(\"Total Virtual Voices\", _stats.TotalVoices.ToString());"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\SabineReverbDspTunerWindow.cs",
+                     "lineNumber":  120,
+                     "variableName":  "_stats.AudibleVoices",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "EditorGUILayout.LabelField(\"Audible Virtual Voices\", _stats.AudibleVoices.ToString());"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\SabineReverbDspTunerWindow.cs",
+                     "lineNumber":  121,
+                     "variableName":  "_stats.ActivePhysicalVoices",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "EditorGUILayout.LabelField(\"Hydrated Voices\", _stats.ActivePhysicalVoices.ToString());"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\SabineReverbDspTunerWindow.cs",
+                     "lineNumber":  122,
+                     "variableName":  "_stats.CulledVoices",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "EditorGUILayout.LabelField(\"Culled Voices\", _stats.CulledVoices.ToString());"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\SabineReverbDspTunerWindow.cs",
+                     "lineNumber":  123,
+                     "variableName":  "_stats.SortTimeMs",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "EditorGUILayout.LabelField(\"Average Sort Time ms\", _stats.SortTimeMs.ToString(\"0.000\"));"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\SabineReverbDspTunerWindow.cs",
+                     "lineNumber":  124,
+                     "variableName":  "_stats.AcousticOcclusionTimeMs",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "EditorGUILayout.LabelField(\"SDF Occlusion Time ms\", _stats.AcousticOcclusionTimeMs.ToString(\"0.000\"));"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\SabineReverbDspTunerWindow.cs",
+                     "lineNumber":  125,
+                     "variableName":  "_stats.AverageRt60Seconds",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "EditorGUILayout.LabelField(\"Average RT60 s\", _stats.AverageRt60Seconds.ToString(\"0.000\"));"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\SabineReverbDspTunerWindow.cs",
+                     "lineNumber":  126,
+                     "variableName":  "_stats.AverageLowPassHertz",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "EditorGUILayout.LabelField(\"Average LPF Hz\", _stats.AverageLowPassHertz.ToString(\"0\"));"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\SabineReverbDspTunerWindow.cs",
+                     "lineNumber":  127,
+                     "variableName":  "_stats.MaximumDelaySeconds",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "EditorGUILayout.LabelField(\"Max Delay s\", _stats.MaximumDelaySeconds.ToString(\"0.000\"));"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\SabineReverbDspTunerWindow.cs",
+                     "lineNumber":  200,
+                     "variableName":  "defaults.SoundSpeedMetersPerSecond",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "\"speed_of_sound,\" + defaults.SoundSpeedMetersPerSecond.ToString(\"0.###\", CultureInfo.InvariantCulture) + System.Environment.NewLine +"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\SabineReverbDspTunerWindow.cs",
+                     "lineNumber":  201,
+                     "variableName":  "defaults.GlobalOcclusionPenalty",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "\"global_occlusion_penalty,\" + defaults.GlobalOcclusionPenalty.ToString(\"0.########\", CultureInfo.InvariantCulture) + System.Environment.NewLine +"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\SabineReverbDspTunerWindow.cs",
+                     "lineNumber":  202,
+                     "variableName":  "defaults.OccludedLowPassHertz",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "\"occluded_lowpass_hz,\" + defaults.OccludedLowPassHertz.ToString(\"0.###\", CultureInfo.InvariantCulture) + System.Environment.NewLine +"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\SabineReverbDspTunerWindow.cs",
+                     "lineNumber":  203,
+                     "variableName":  "defaults.SabineDecayScale",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "\"sabine_decay_scale,\" + defaults.SabineDecayScale.ToString(\"0.###\", CultureInfo.InvariantCulture) + System.Environment.NewLine +"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\VocalWarningQueueDebugGizmo.cs",
+                     "lineNumber":  21,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "$\"VWS word {system.PendingCount}/{system.EditorQueueCapacity}\\nID {system.CurrentWarningId} P {system.EditorCurrentPriorityScore:0.0}\\n{FormatPriorityEntry(system, 0)}\\n{FormatPriorityEntry(system, 1)}\\n{FormatPriorityEntry(system, 2)}\");"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\VocalWarningQueueDebugGizmo.cs",
+                     "lineNumber":  28,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "? $\"[{index}] 0x{hash:X8} P {priority:0.0}\""
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\VocalWarningQueueDebugGizmo.cs",
+                     "lineNumber":  29,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  ": $\"[{index}] empty\";"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\VocalWarningQueueTunerWindow.cs",
+                     "lineNumber":  141,
+                     "variableName":  "_status",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_status.text = \"No VocalWarningSystem in loaded scene.\";"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\VocalWarningQueueTunerWindow.cs",
+                     "lineNumber":  170,
+                     "variableName":  "_status",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_status.text ="
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\VocalWarningQueueTunerWindow.cs",
+                     "lineNumber":  171,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "$\"Initialized: {runtime.IsInitialized}\\n\" +"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\VocalWarningQueueTunerWindow.cs",
+                     "lineNumber":  172,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "$\"Pending: {runtime.PendingCount}/{runtime.EditorQueueCapacity}\\n\" +"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\VocalWarningQueueTunerWindow.cs",
+                     "lineNumber":  173,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "$\"Current ID: {runtime.CurrentWarningId}\\n\" +"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\VocalWarningQueueTunerWindow.cs",
+                     "lineNumber":  174,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "$\"Current priority: {runtime.EditorCurrentPriorityScore:0.0}\\n\" +"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\VocalWarningQueueTunerWindow.cs",
+                     "lineNumber":  175,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "$\"Burst micros: {runtime.EditorLastBurstExecutionMicros:0.0}\\n\" +"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\VocalWarningQueueTunerWindow.cs",
+                     "lineNumber":  176,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "$\"DTO size: {VocalWarningSystem.EditorVocalWarningDtoSizeBytes} bytes\\n\" +"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\VocalWarningQueueTunerWindow.cs",
+                     "lineNumber":  177,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "$\"Tuning DTO size: {VocalWarningSystem.EditorVocalWarningTuningDtoSizeBytes} bytes\\n\" +"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/Audio\\Editor\\VocalWarningQueueTunerWindow.cs",
+                     "lineNumber":  178,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "$\"Direction hash: 0x{runtime.EditorLastDirectionHash:X4}\";"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\UIAudioPlaceholderGenerator.cs",
+                     "lineNumber":  43,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "Debug.Log($\"[UIAudioPlaceholderGenerator] Generated placeholder audio clips in {folderPath}\");"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\UIAudioPlaceholderGenerator.cs",
+                     "lineNumber":  113,
+                     "variableName":  "filePath",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "string filePath = $\"{folderPath}/{name}.wav\";"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\SettingsPanelAnimatorEditor.cs",
+                     "lineNumber":  60,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "Debug.Log($\"[SettingsPanelAnimatorEditor] Header CanvasGroup assigned: {header.name}\");"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\SettingsPanelAnimatorEditor.cs",
+                     "lineNumber":  82,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "Debug.Log($\"[SettingsPanelAnimatorEditor] Preset button CanvasGroups assigned: {presetGroups.Length}\");"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\SettingsPanelAnimatorEditor.cs",
+                     "lineNumber":  104,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "Debug.Log($\"[SettingsPanelAnimatorEditor] Settings row CanvasGroups assigned: {settingsGroups.Length}\");"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\SettingsPanelAnimatorEditor.cs",
+                     "lineNumber":  115,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "Debug.Log($\"[SettingsPanelAnimatorEditor] Action buttons CanvasGroup assigned: {actionsContainer.name}\");"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\PDAEncyclopediaTunerWindow.cs",
+                     "lineNumber":  76,
+                     "variableName":  "_stateLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_stateLabel.text = \"No PDAEncyclopediaStreamer in the loaded scene.\";"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\PDAEncyclopediaTunerWindow.cs",
+                     "lineNumber":  82,
+                     "variableName":  "_stateLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_stateLabel.text = \"Streamer found. Vault buffers are not available.\";"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\PDAEncyclopediaTunerWindow.cs",
+                     "lineNumber":  101,
+                     "variableName":  "_stateLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_stateLabel.text ="
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\PDAEncyclopediaTunerWindow.cs",
+                     "lineNumber":  102,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "$\"Entry: 0x{state.LastEntryHash:X8}\\n\" +"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\PDAEncyclopediaTunerWindow.cs",
+                     "lineNumber":  103,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "$\"Unlocked: {state.UnlockedCount}/256  Revision: {state.Revision}\\n\" +"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\PDAEncyclopediaTunerWindow.cs",
+                     "lineNumber":  104,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "$\"Decoded/Visible: {state.DecodedChars}/{state.VisibleChars}  Bytes: {state.SourceBytes}\\n\" +"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\PDAEncyclopediaTunerWindow.cs",
+                     "lineNumber":  105,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "$\"State: {(PdaEncyclopediaStreamState)state.StreamState}  Fault: 0x{state.FaultHash:X8}\\n\" +"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\PDAEncyclopediaTunerWindow.cs",
+                     "lineNumber":  106,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "$\"Mask[0..3]: {mask.Mask0:X16} {mask.Mask1:X16} {mask.Mask2:X16} {mask.Mask3:X16}\\n\" +"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\PDAEncyclopediaTunerWindow.cs",
+                     "lineNumber":  107,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "$\"Layout: {sizeBytes} bytes  Mask0@{mask0Offset} Mask3@{mask3Offset}\\n\" +"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\PDAEncyclopediaTunerWindow.cs",
+                     "lineNumber":  108,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "$\"DTOs: {(layoutsValid ? \"OK\" : \"FAIL\")}  E/R/M/T/TW/AUP/H8H/H8R={encyclopediaBytes}/{runtimeBytes}/{entryMetaBytes}/{telemetryBytes}/{typewriterBytes}/{aupBytes}/{h8lrHeaderBytes}/{h8lrRecordBytes}\\n\" +"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\PDAEncyclopediaTunerWindow.cs",
+                     "lineNumber":  109,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "$\"Offsets: SourceBytes@{runtimeSourceBytesOffset} TelemetryFlags@{telemetryFlagsOffset} TypewriterPad@{typewriterReserved3Offset} AUPPad@{aupReserved1Offset} H8LRPad@{h8lrRecordReserved0Offset}\";"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\PDAEncyclopediaTunerWindow.cs",
+                     "lineNumber":  159,
+                     "variableName":  "_rawLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_rawLabel.text = new string(_rawBuffer, 0, written);"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\PDAEncyclopediaTunerWindow.cs",
+                     "lineNumber":  161,
+                     "variableName":  "_rawLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_rawLabel.text = \"Raw UTF-8 x-ray unavailable for this hash.\";"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\OOP_Canvas_Scanner_SHINOBU_348.cs",
+                     "lineNumber":  135,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "return builder.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\OOP_Canvas_Scanner_SHINOBU_348.cs",
+                     "lineNumber":  179,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "return builder.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\OOP_Canvas_Scanner_SHINOBU_348.cs",
+                     "lineNumber":  189,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "return builder.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\Minigame_Canvas_Inquisition.cs",
+                     "lineNumber":  61,
+                     "variableName":  "DateTimeOffset.Now",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "builder.Append(\"    \\\"timestampLocal\\\": \\\"\").Append(DateTimeOffset.Now.ToString(\"yyyy-MM-ddTHH:mm:sszzz\")).AppendLine(\"\\\",\");"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\Minigame_Canvas_Inquisition.cs",
+                     "lineNumber":  100,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "return builder.ToString();"
+                 },
+                 {
+                     "category":  "string_interpolation",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\HUDCanvasInquisition.cs",
+                     "lineNumber":  75,
+                     "variableName":  "interpolated_literal",
+                     "variableType":  "System.String",
+                     "isEditorPath":  true,
+                     "lineText":  "Debug.Log($\"HUD Canvas Inquisition wrote {reportPath}\");"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\HUDCanvasInquisition.cs",
+                     "lineNumber":  119,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "return builder.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\HUDCanvasInquisition.cs",
+                     "lineNumber":  153,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "File.WriteAllText(reportPath, builder.ToString());"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\HUDCanvasInquisition.cs",
+                     "lineNumber":  164,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "return builder.ToString();"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\DiegeticUiTunerWindow.cs",
+                     "lineNumber":  111,
+                     "variableName":  "_statusLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_statusLabel.text = \"No runtime selected.\";"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\DiegeticUiTunerWindow.cs",
+                     "lineNumber":  115,
+                     "variableName":  "_statusLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_statusLabel.text ="
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\DiegeticGlitchTunerWindow.cs",
+                     "lineNumber":  112,
+                     "variableName":  "state.GlobalIntensity",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "EditorGUILayout.LabelField(\"Global Intensity\", state.GlobalIntensity.ToString(\"0.000\"));"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\DiegeticGlitchTunerWindow.cs",
+                     "lineNumber":  113,
+                     "variableName":  "tuning.GlobalQualityWeight",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "EditorGUILayout.LabelField(\"Global Quality Weight\", tuning.GlobalQualityWeight.ToString(\"0.000\"));"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\DiegeticGlitchTunerWindow.cs",
+                     "lineNumber":  114,
+                     "variableName":  "state.GlitchTableOffset",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "EditorGUILayout.LabelField(\"Table Offset\", state.GlitchTableOffset.ToString());"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\BabelSyncTunerWindow.cs",
+                     "lineNumber":  110,
+                     "variableName":  "_stateLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_stateLabel.text ="
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\BabelSyncTunerWindow.cs",
+                     "lineNumber":  118,
+                     "variableName":  "u)",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "\"\\nLast token: 0x\" + (hasTelemetry ? entry.LastTokenHash : 0u).ToString(\"X8\") +"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\BabelSyncTunerWindow.cs",
+                     "lineNumber":  120,
+                     "variableName":  "f)",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "\"\\nDecode ms: \" + (hasTelemetry ? entry.Utf8DecodeMilliseconds : 0f).ToString(\"0.000\", CultureInfo.InvariantCulture) +"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\BabelSyncTunerWindow.cs",
+                     "lineNumber":  130,
+                     "variableName":  "_decodedLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_decodedLabel.text = \"Hash parse failed.\";"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\BabelSyncTunerWindow.cs",
+                     "lineNumber":  131,
+                     "variableName":  "_hexLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_hexLabel.text = \"Raw UTF-8 hex unavailable.\";"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\BabelSyncTunerWindow.cs",
+                     "lineNumber":  140,
+                     "variableName":  "_decodedLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_decodedLabel.text = found \u0026\u0026 decodedLength \u003e 0"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\BabelSyncTunerWindow.cs",
+                     "lineNumber":  142,
+                     "variableName":  "hash",
+                     "variableType":  "uint",
+                     "isEditorPath":  true,
+                     "lineText":  ": \"Decoded preview unavailable for 0x\" + hash.ToString(\"X8\") + \".\";"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\BabelSyncTunerWindow.cs",
+                     "lineNumber":  146,
+                     "variableName":  "_hexLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_hexLabel.text = \"Raw UTF-8 hex unavailable for 0x\" + hash.ToString(\"X8\") + \".\";"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\BabelSyncTunerWindow.cs",
+                     "lineNumber":  146,
+                     "variableName":  "hash",
+                     "variableType":  "uint",
+                     "isEditorPath":  true,
+                     "lineText":  "_hexLabel.text = \"Raw UTF-8 hex unavailable for 0x\" + hash.ToString(\"X8\") + \".\";"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\BabelSyncTunerWindow.cs",
+                     "lineNumber":  151,
+                     "variableName":  "_hexLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_hexLabel.text = hexLength \u003e 0"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\BabelLocalizationManagerWindow.cs",
+                     "lineNumber":  100,
+                     "variableName":  "entry.Hash",
+                     "variableType":  "uint",
+                     "isEditorPath":  true,
+                     "lineText":  "\"0x\" + entry.Hash.ToString(\"X8\") + \"  +\" + entry.Offset + \"  len \" + entry.Length,"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\BabelLocalizationManagerWindow.cs",
+                     "lineNumber":  110,
+                     "variableName":  "length",
+                     "variableType":  "uint",
+                     "isEditorPath":  true,
+                     "lineText":  "EditorGUILayout.LabelField(\"Binary Bytes\", length.ToString());"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\BabelLocalizationManagerWindow.cs",
+                     "lineNumber":  112,
+                     "variableName":  "_paddingBytes",
+                     "variableType":  "int",
+                     "isEditorPath":  true,
+                     "lineText":  "EditorGUILayout.LabelField(\"Trailing Zero Padding\", _paddingBytes.ToString());"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\BabelLocalizationManagerWindow.cs",
+                     "lineNumber":  125,
+                     "variableName":  "i]",
+                     "variableType":  "int",
+                     "isEditorPath":  true,
+                     "lineText":  "builder.Append(_bytes[start + i].ToString(\"X2\"));"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\BabelLocalizationManagerWindow.cs",
+                     "lineNumber":  128,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "EditorGUILayout.LabelField(\"Padding Bytes\", builder.ToString(), EditorStyles.boldLabel);"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\BabelLocalizationManagerWindow.cs",
+                     "lineNumber":  154,
+                     "variableName":  "entry.Hash",
+                     "variableType":  "uint",
+                     "isEditorPath":  true,
+                     "lineText":  "GUI.Label(new Rect(28f, 24f, 496f, 18f), \"Babel Preview 0x\" + entry.Hash.ToString(\"X8\"), EditorStyles.boldLabel);"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\BabelLocalizationManagerWindow.cs",
+                     "lineNumber":  236,
+                     "variableName":  "payloadCrc",
+                     "variableType":  "uint",
+                     "isEditorPath":  true,
+                     "lineText":  "(computedCrc == payloadCrc ? \"OK\" : \"MISMATCH\") + \" 0x\" + payloadCrc.ToString(\"X8\") +"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\Editor\\BabelLocalizationManagerWindow.cs",
+                     "lineNumber":  343,
+                     "variableName":  "entry.Hash",
+                     "variableType":  "uint",
+                     "isEditorPath":  true,
+                     "lineText":  "string hash = entry.Hash.ToString(\"X8\");"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\DigitalVoiceForgeWindow.cs",
+                     "lineNumber":  121,
+                     "variableName":  "_status",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_status.text = \"voice_baker.py missing.\";"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\DigitalVoiceForgeWindow.cs",
+                     "lineNumber":  125,
+                     "variableName":  "_codecField.value",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "string codec = _codecField.value.ToString();"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\DigitalVoiceForgeWindow.cs",
+                     "lineNumber":  156,
+                     "variableName":  "_status",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_status.text = \"voice_baker.py running.\";"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\DigitalVoiceForgeWindow.cs",
+                     "lineNumber":  171,
+                     "variableName":  "_stdout",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "stdout = _stdout.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\DigitalVoiceForgeWindow.cs",
+                     "lineNumber":  172,
+                     "variableName":  "_stderr",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "stderr = _stderr.ToString();"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\DigitalVoiceForgeWindow.cs",
+                     "lineNumber":  181,
+                     "variableName":  "_status",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_status.text = code == 0 ? stdout.Trim() : stderr.Trim();"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\DigitalVoiceForgeWindow.cs",
+                     "lineNumber":  188,
+                     "variableName":  "_stateLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_stateLabel.text = string.Concat("
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\DigitalVoiceForgeWindow.cs",
+                     "lineNumber":  190,
+                     "variableName":  "state.PhraseHashID",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "state.PhraseHashID.ToString(\"X8\"),"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\DigitalVoiceForgeWindow.cs",
+                     "lineNumber":  192,
+                     "variableName":  "state.PlaybackSpeed",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "state.PlaybackSpeed.ToString(\"0.00\", CultureInfo.InvariantCulture),"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\DigitalVoiceForgeWindow.cs",
+                     "lineNumber":  194,
+                     "variableName":  "state.VolumeScalar",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "state.VolumeScalar.ToString(\"0.00\", CultureInfo.InvariantCulture),"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\DigitalVoiceForgeWindow.cs",
+                     "lineNumber":  196,
+                     "variableName":  "codec.QualityWeight01",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "codec.QualityWeight01.ToString(\"0.00\", CultureInfo.InvariantCulture));"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\DigitalVoiceForgeWindow.cs",
+                     "lineNumber":  200,
+                     "variableName":  "_stateLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_stateLabel.text = \"Phrase 00000000 | speed 0.00 | volume 0.00 | q 0.00\";"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\AudioSynthesisMemorySovereigntyValidator.cs",
+                     "lineNumber":  763,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "File.WriteAllText(ReportPath, builder.ToString());"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\AudioSynthesisMemorySovereigntyValidator.cs",
+                     "lineNumber":  774,
+                     "variableName":  "value",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "builder.Append(\"  \\\"\").Append(key).Append(\"\\\": \").Append(value.ToString(CultureInfo.InvariantCulture));"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\AudioSynthesisMemorySovereigntyValidator.cs",
+                     "lineNumber":  780,
+                     "variableName":  "value",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "builder.Append(\"  \\\"\").Append(key).Append(\"\\\": \").Append(value.ToString(CultureInfo.InvariantCulture));"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\AudioSynthesisMemorySovereigntyValidator.cs",
+                     "lineNumber":  786,
+                     "variableName":  "value",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "builder.Append(\"  \\\"\").Append(key).Append(\"\\\": \").Append(value.ToString(CultureInfo.InvariantCulture));"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\AudioSynthesisMemorySovereigntyValidator.cs",
+                     "lineNumber":  792,
+                     "variableName":  "value",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "builder.Append(\"  \\\"\").Append(key).Append(\"\\\": \").Append(value.ToString(\"R\", CultureInfo.InvariantCulture));"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\AudioSynthesisMemorySovereigntyValidator.cs",
+                     "lineNumber":  798,
+                     "variableName":  "value",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "builder.Append(\"  \\\"\").Append(key).Append(\"\\\": \").Append(value.ToString(\"R\", CultureInfo.InvariantCulture));"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\AbyssalSynthTunerWindow.cs",
+                     "lineNumber":  197,
+                     "variableName":  "_statusLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_statusLabel.text = loaded ? \"synth_presets.csv applied.\" : \"synth_presets.csv unavailable.\";"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\AbyssalSynthTunerWindow.cs",
+                     "lineNumber":  213,
+                     "variableName":  "_statusLabel",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_statusLabel.text ="
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\AbyssalSynthTunerWindow.cs",
+                     "lineNumber":  215,
+                     "variableName":  "_telemetry.TensionIndex",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "\" | Tension \" + _telemetry.TensionIndex.ToString(\"0.000\") +"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\AbyssalSynthTunerWindow.cs",
+                     "lineNumber":  216,
+                     "variableName":  "_telemetry.DepthMeters",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "\" | Depth \" + _telemetry.DepthMeters.ToString(\"0\") + \"m\" +"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\AbyssalSynthTunerWindow.cs",
+                     "lineNumber":  217,
+                     "variableName":  "_telemetry.LpfCutoffHz",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "\" | LPF \" + _telemetry.LpfCutoffHz.ToString(\"0\") + \"Hz\" +"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/Audio\\Synthesis\\Editor\\AbyssalSynthTunerWindow.cs",
+                     "lineNumber":  218,
+                     "variableName":  "_telemetry.DspJobMicroseconds",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "\" | DSP \" + _telemetry.DspJobMicroseconds.ToString(\"0.0\") + \"us\";"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/UI\\TerminalOS\\Editor\\OscilloscopeDecryptionTunerWindow.cs",
+                     "lineNumber":  225,
+                     "variableName":  "_status",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_status.text = \"No runtime selected.\";"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/UI\\TerminalOS\\Editor\\OscilloscopeDecryptionTunerWindow.cs",
+                     "lineNumber":  232,
+                     "variableName":  "_status",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_status.text = \"Puzzle DTO unavailable or job in flight.\";"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/UI\\TerminalOS\\Editor\\OscilloscopeDecryptionTunerWindow.cs",
+                     "lineNumber":  251,
+                     "variableName":  "_status",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_status.text = \"Telemetry readout active.\";"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/UI\\TerminalOS\\Editor\\DiegeticTerminalXRayWindow.cs",
+                     "lineNumber":  166,
+                     "variableName":  "_status",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_status.text = \"No runtime selected.\";"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/UI\\TerminalOS\\Editor\\DiegeticTerminalXRayWindow.cs",
+                     "lineNumber":  172,
+                     "variableName":  "_status",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_status.text = \"Telemetry unavailable. Enter Play Mode or select an initialized TerminalOsRuntime.\";"
+                 },
+                 {
+                     "category":  "TMP_Text.text_assignment",
+                     "file":  "Assets/_Project/Scripts/UI\\TerminalOS\\Editor\\DiegeticTerminalXRayWindow.cs",
+                     "lineNumber":  185,
+                     "variableName":  "_status",
+                     "variableType":  "Label",
+                     "isEditorPath":  true,
+                     "lineText":  "_status.text = \"Vault buffer 71381, projection DTO stride 64, rollback excluded.\";"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\TerminalOS\\Editor\\OOP_Canvas_Scanner.cs",
+                     "lineNumber":  129,
+                     "variableName":  "objectCreation.Type",
+                     "variableType":  "string",
+                     "isEditorPath":  true,
+                     "lineText":  "string type = objectCreation.Type.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\TerminalOS\\Editor\\OOP_Canvas_Scanner.cs",
+                     "lineNumber":  151,
+                     "variableName":  "assignment.Left",
+                     "variableType":  "string",
+                     "isEditorPath":  true,
+                     "lineText":  "string left = assignment.Left.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\TerminalOS\\Editor\\OOP_Canvas_Scanner.cs",
+                     "lineNumber":  152,
+                     "variableName":  "assignment.Right",
+                     "variableType":  "string",
+                     "isEditorPath":  true,
+                     "lineText":  "string right = assignment.Right.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\TerminalOS\\Editor\\OOP_Canvas_Scanner.cs",
+                     "lineNumber":  164,
+                     "variableName":  "invocation",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "string invocationText = invocation.ToString();"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\TerminalOS\\Editor\\OOP_Canvas_Scanner.cs",
+                     "lineNumber":  246,
+                     "variableName":  "DateTimeOffset.Now",
+                     "variableType":  "expression_or_member_unknown",
+                     "isEditorPath":  true,
+                     "lineText":  "builder.Append(\"    \\\"timestampLocal\\\": \\\"\").Append(DateTimeOffset.Now.ToString(\"yyyy-MM-ddTHH:mm:sszzz\")).AppendLine(\"\\\",\");"
+                 },
+                 {
+                     "category":  ".ToString",
+                     "file":  "Assets/_Project/Scripts/UI\\TerminalOS\\Editor\\OOP_Canvas_Scanner.cs",
+                     "lineNumber":  263,
+                     "variableName":  "builder",
+                     "variableType":  "StringBuilder",
+                     "isEditorPath":  true,
+                     "lineText":  "return builder.ToString();"
+                 }
+             ]
+}

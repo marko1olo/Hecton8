@@ -634,7 +634,7 @@ namespace GPUInstancer
                         int count = runtimeData.argsBuffer.count / 5;
                         _argsBufferComputeShader.SetBuffer(_argsBufferDoubleInstanceCountComputeKernelID, GPUInstancerConstants.VisibilityKernelPoperties.ARGS_BUFFER, runtimeData.argsBuffer);
                         _argsBufferComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.COUNT, count);
-                        _argsBufferComputeShader.Dispatch(_argsBufferDoubleInstanceCountComputeKernelID, Mathf.CeilToInt(count / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);
+                        _argsBufferComputeShader.Dispatch(_argsBufferDoubleInstanceCountComputeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(count), 1, 1);
                     }
                 }
 #endif

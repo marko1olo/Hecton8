@@ -441,69 +441,124 @@ namespace Hecton8.Physics
             if (!TryLockJobBuffers(vault))
                 return;
 
-            BuoyancyTuningDTO tuningDto = tuning[0];
-            float quality = ResolveGlobalQualityWeight(ref tuningDto);
-            tuningDto.SectorAUP = ResolveCachedSectorAUP();
-            tuningDto.ResolvedQualityWeight = quality;
-            tuningDto.SimulationTickDelta = safeFixedDeltaTime;
-            tuningDto.FrameIndex = _simulationFrame;
-            tuning[0] = tuningDto;
-
-            int authoredActiveCount = math.select(_stateCapacity, tuningDto.ActiveStateCount, tuningDto.ActiveStateCount > 0);
-            _activeStateCount = math.clamp(authoredActiveCount, 0, states.Length);
-            if (_activeStateCount <= 0)
+            bool scheduled = false;
+            try
             {
-                WriteCompletedSimdUtilizationTelemetry(0f);
-                UnlockJobBuffers();
-                return;
-            }
+                BuoyancyTuningDTO tuningDto = tuning[0];
+                float quality = ResolveGlobalQualityWeight(ref tuningDto);
+                tuningDto.SectorAUP = ResolveCachedSectorAUP();
+                tuningDto.ResolvedQualityWeight = quality;
+                tuningDto.SimulationTickDelta = safeFixedDeltaTime;
+                tuningDto.FrameIndex = _simulationFrame;
+                tuning[0] = tuningDto;
 
-            if (!PhysicsApplySystem.TryPrepareBuoyancyForcePackets(forcePackets, counters))
-            {
-                UnlockJobBuffers();
-                return;
-            }
-
-            NativeArray<WakeRequestSignal>.ReadOnly wakeRequests = SignalBus<WakeRequestSignal>.GetFrameSnapshotArray();
-            int wakeRequestCount = wakeRequests.IsCreated ? wakeRequests.Length : 0;
-            JobHandle sleepPrepassHandle = default;
-            if (wakeRequestCount > 0)
-            {
-                ProcessBuoyancyWakeTriggersJob wakeJob = new ProcessBuoyancyWakeTriggersJob
+                int authoredActiveCount = math.select(_stateCapacity, tuningDto.ActiveStateCount, tuningDto.ActiveStateCount > 0);
+                _activeStateCount = math.clamp(authoredActiveCount, 0, states.Length);
+                if (_activeStateCount <= 0)
                 {
-                    States = states,
-                    WakeRequests = wakeRequests,
-                    StateCount = _activeStateCount,
-                    WakeRequestCount = wakeRequestCount
-                };
-                sleepPrepassHandle = wakeJob.Schedule(_activeStateCount, 64);
-            }
+                    WriteCompletedSimdUtilizationTelemetry(0f);
+                    return;
+                }
 
-            int currentPollCadence = ResolveAmbientCurrentPollCadence(quality);
-            if ((_simulationFrame % (uint)currentPollCadence) == 0u)
-            {
-                BuoyancySleepSdfConfigDTO sdfConfig = sleepSdfConfig.Length > 0
+                if (!PhysicsApplySystem.TryPrepareBuoyancyForcePackets(forcePackets, counters))
+                    return;
+
+                NativeArray<WakeRequestSignal>.ReadOnly wakeRequests = SignalBus<WakeRequestSignal>.GetFrameSnapshotArray();
+                int wakeRequestCount = wakeRequests.IsCreated ? wakeRequests.Length : 0;
+                JobHandle sleepPrepassHandle = default;
+                if (wakeRequestCount > 0)
+                {
+                    ProcessBuoyancyWakeTriggersJob wakeJob = new ProcessBuoyancyWakeTriggersJob
+                    {
+                        States = states,
+                        WakeRequests = wakeRequests,
+                        StateCount = _activeStateCount,
+                        WakeRequestCount = wakeRequestCount
+                    };
+                    sleepPrepassHandle = wakeJob.Schedule(_activeStateCount, 64);
+                }
+
+                int currentPollCadence = ResolveAmbientCurrentPollCadence(quality);
+                if ((_simulationFrame % (uint)currentPollCadence) == 0u)
+                {
+                    BuoyancySleepSdfConfigDTO sdfConfig = sleepSdfConfig.Length > 0
+                        ? sleepSdfConfig[0]
+                        : BuoyancySleepSdfConfigDTO.Default();
+                    PollAmbientCurrentsJob currentWakeJob = new PollAmbientCurrentsJob
+                    {
+                        States = states,
+                        FlowSamples = flowSamples,
+                        StateCount = _activeStateCount,
+                        FlowSampleCount = flowSamples.Length,
+                        StirThresholdSq = sdfConfig.AmbientStirThresholdSq,
+                        SimulationFrame = _simulationFrame
+                    };
+                    sleepPrepassHandle = currentWakeJob.Schedule(_activeStateCount, 64, sleepPrepassHandle);
+                }
+
+                int stride = ResolveEvaluationStride(quality);
+                int evaluationOffset = math.select((int)(_simulationFrame % (uint)stride), 0, stride == 1);
+                int scheduledEvaluationCount = ResolveScheduledEvaluationCount(_activeStateCount, stride, evaluationOffset);
+                _scheduleTimestamp = Stopwatch.GetTimestamp();
+                if (scheduledEvaluationCount <= 0)
+                {
+                    ReduceBuoyancyTelemetryJob emptyReduceJob = new ReduceBuoyancyTelemetryJob
+                    {
+                        DebugForces = debugForces,
+                        Counters = counters,
+                        TelemetryRing = telemetry,
+                        TelemetryCursor = telemetryCursor,
+                        SleepTelemetryRing = sleepTelemetry,
+                        SleepTelemetryCursor = sleepTelemetryCursor,
+                        ActiveStateCount = _activeStateCount,
+                        WakeRequestCount = wakeRequestCount,
+                        SimulationFrame = _simulationFrame,
+                        GlobalQualityWeight = quality,
+                        SleepEnergyThreshold = tuningDto.SleepSpeedSq,
+                        ComputeMicros = 0f
+                    };
+                    _pendingHandle = emptyReduceJob.Schedule(sleepPrepassHandle);
+                    _jobScheduled = true;
+                    scheduled = true;
+                    return;
+                }
+
+                BuoyancySleepSdfConfigDTO sleepConfig = sleepSdfConfig.Length > 0
                     ? sleepSdfConfig[0]
                     : BuoyancySleepSdfConfigDTO.Default();
-                PollAmbientCurrentsJob currentWakeJob = new PollAmbientCurrentsJob
+                EvaluateBuoyancyJob evaluateJob = new EvaluateBuoyancyJob
                 {
                     States = states,
+                    StateCount = states.Length,
                     FlowSamples = flowSamples,
-                    StateCount = _activeStateCount,
                     FlowSampleCount = flowSamples.Length,
-                    StirThresholdSq = sdfConfig.AmbientStirThresholdSq,
-                    SimulationFrame = _simulationFrame
+                    SleepSdfDensity = sleepSdfDensity,
+                    MaterialSettlingProfiles = materialSettlingProfiles,
+                    MaterialSettlingProfileCount = materialSettlingProfiles.Length,
+                    SleepSdfConfig = sleepConfig,
+                    Tuning = tuningDto,
+                    DebugForces = debugForces,
+                    DebugForceCount = debugForces.Length,
+                    ForcePackets = forcePackets,
+                    ForcePacketCount = forcePackets.Length,
+                    ForcePacketWriteEnabled = 1,
+                    ActiveStateCount = _activeStateCount,
+                    EvaluationStride = stride,
+                    EvaluationOffset = evaluationOffset,
+                    SimulationFrame = _simulationFrame,
+                    SimulationTickDelta = safeFixedDeltaTime,
+                    GlobalQualityWeight = quality
                 };
-                sleepPrepassHandle = currentWakeJob.Schedule(_activeStateCount, 64, sleepPrepassHandle);
-            }
 
-            int stride = ResolveEvaluationStride(quality);
-            int evaluationOffset = math.select((int)(_simulationFrame % (uint)stride), 0, stride == 1);
-            int scheduledEvaluationCount = ResolveScheduledEvaluationCount(_activeStateCount, stride, evaluationOffset);
-            _scheduleTimestamp = Stopwatch.GetTimestamp();
-            if (scheduledEvaluationCount <= 0)
-            {
-                ReduceBuoyancyTelemetryJob emptyReduceJob = new ReduceBuoyancyTelemetryJob
+                JobHandle evaluateHandle = evaluateJob.Schedule(scheduledEvaluationCount, 64, sleepPrepassHandle);
+                CompactBuoyancyForcePacketsJob compactForcePacketsJob = new CompactBuoyancyForcePacketsJob
+                {
+                    ForcePackets = forcePackets,
+                    Counters = counters,
+                    CandidateCount = scheduledEvaluationCount
+                };
+                JobHandle compactHandle = compactForcePacketsJob.Schedule(evaluateHandle);
+                ReduceBuoyancyTelemetryJob reduceJob = new ReduceBuoyancyTelemetryJob
                 {
                     DebugForces = debugForces,
                     Counters = counters,
@@ -518,63 +573,15 @@ namespace Hecton8.Physics
                     SleepEnergyThreshold = tuningDto.SleepSpeedSq,
                     ComputeMicros = 0f
                 };
-                _pendingHandle = emptyReduceJob.Schedule(sleepPrepassHandle);
+                _pendingHandle = reduceJob.Schedule(compactHandle);
                 _jobScheduled = true;
-                return;
+                scheduled = true;
             }
-
-            BuoyancySleepSdfConfigDTO sleepConfig = sleepSdfConfig.Length > 0
-                ? sleepSdfConfig[0]
-                : BuoyancySleepSdfConfigDTO.Default();
-            EvaluateBuoyancyJob evaluateJob = new EvaluateBuoyancyJob
+            finally
             {
-                States = states,
-                StateCount = states.Length,
-                FlowSamples = flowSamples,
-                FlowSampleCount = flowSamples.Length,
-                SleepSdfDensity = sleepSdfDensity,
-                MaterialSettlingProfiles = materialSettlingProfiles,
-                MaterialSettlingProfileCount = materialSettlingProfiles.Length,
-                SleepSdfConfig = sleepConfig,
-                Tuning = tuningDto,
-                DebugForces = debugForces,
-                DebugForceCount = debugForces.Length,
-                ForcePackets = forcePackets,
-                ForcePacketCount = forcePackets.Length,
-                ForcePacketWriteEnabled = 1,
-                ActiveStateCount = _activeStateCount,
-                EvaluationStride = stride,
-                EvaluationOffset = evaluationOffset,
-                SimulationFrame = _simulationFrame,
-                SimulationTickDelta = safeFixedDeltaTime,
-                GlobalQualityWeight = BuoyancyDisplacementConstants.AuthoritativeQualityWeight
-            };
-
-            JobHandle evaluateHandle = evaluateJob.Schedule(scheduledEvaluationCount, 64, sleepPrepassHandle);
-            CompactBuoyancyForcePacketsJob compactForcePacketsJob = new CompactBuoyancyForcePacketsJob
-            {
-                ForcePackets = forcePackets,
-                Counters = counters,
-                CandidateCount = scheduledEvaluationCount
-            };
-            JobHandle compactHandle = compactForcePacketsJob.Schedule(evaluateHandle);
-            ReduceBuoyancyTelemetryJob reduceJob = new ReduceBuoyancyTelemetryJob
-            {
-                DebugForces = debugForces,
-                Counters = counters,
-                TelemetryRing = telemetry,
-                TelemetryCursor = telemetryCursor,
-                SleepTelemetryRing = sleepTelemetry,
-                SleepTelemetryCursor = sleepTelemetryCursor,
-                ActiveStateCount = _activeStateCount,
-                WakeRequestCount = wakeRequestCount,
-                SimulationFrame = _simulationFrame,
-                GlobalQualityWeight = quality,
-                SleepEnergyThreshold = tuningDto.SleepSpeedSq,
-                ComputeMicros = 0f
-            };
-            _pendingHandle = reduceJob.Schedule(compactHandle);
-            _jobScheduled = true;
+                if (!scheduled)
+                    UnlockJobBuffers();
+            }
         }
 
         public void PostFixedTick(float fixedDeltaTime)
@@ -1318,11 +1325,19 @@ namespace Hecton8.Physics
         private bool FinishPendingSolverCompletion()
         {
             _jobScheduled = false;
-            float micros = ResolveElapsedMicros(_scheduleTimestamp);
-            WriteCompletedComputeMicros(micros);
-            WriteCompletedSimdUtilizationTelemetry(micros);
-            bool shouldDumpFault = !_dumpedFault && TryLatestCounterHasFault();
-            UnlockJobBuffers();
+            bool shouldDumpFault = false;
+            try
+            {
+                float micros = ResolveElapsedMicros(_scheduleTimestamp);
+                WriteCompletedComputeMicros(micros);
+                WriteCompletedSimdUtilizationTelemetry(micros);
+                shouldDumpFault = !_dumpedFault && TryLatestCounterHasFault();
+            }
+            finally
+            {
+                UnlockJobBuffers();
+            }
+
             if (shouldDumpFault)
             {
                 DumpBlackBoxOnce();

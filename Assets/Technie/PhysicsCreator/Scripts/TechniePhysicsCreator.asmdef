@@ -1,3 +1,14 @@
-﻿{
-	"name": "TechniePhysicsCreator"
+{
+    "name": "TechniePhysicsCreator",
+    "rootNamespace": "Technie.PhysicsCreator",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

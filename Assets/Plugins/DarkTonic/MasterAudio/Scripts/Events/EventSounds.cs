@@ -252,8 +252,12 @@ namespace DarkTonic.MasterAudio {
 
         private bool _isVisible;
         private bool _needsCoroutine;
+#if PHY3D_ENABLED
         private float? _triggerEnterTime;
+#endif
+#if PHY2D_ENABLED
         private float? _triggerEnter2dTime;
+#endif
 
 #if UNITY_IPHONE || UNITY_ANDROID
     // no mouse events!

@@ -1,0 +1,70 @@
+{
+  "agentId": "1416",
+  "target": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+  "timestampLocal": "2026-05-28",
+  "evidenceClass": "STATIC_SOURCE",
+  "managerPersistentNativeCollectionFieldsAfter": 0,
+  "deletedForbiddenManagerViewFields": 28,
+  "replacementDescriptorFields": {
+    "count": 28,
+    "lineRange": "94-121",
+    "type": "VaultGenerationHandle<T>"
+  },
+  "stackOnlyViewCarrier": {
+    "lineRange": "168-195",
+    "fieldCount": 28,
+    "type": "EquipmentVaultView<T>",
+    "persistence": "ref struct local method scope only"
+  },
+  "remainingNativeArrayFieldDeclarationsInTarget": [
+    {
+      "line": 3759,
+      "field": "OverheatWriterBudget",
+      "scope": "Burst job parameter field",
+      "classification": "allowed Task 10 job physical view"
+    },
+    {
+      "line": 3767,
+      "field": "DepletedWriterBudget",
+      "scope": "Burst job parameter field",
+      "classification": "allowed Task 10 job physical view"
+    }
+  ],
+  "bufferRoutes": [
+    "BufferID.ShinobuActiveEquipmentToolStates @ ModularEquipmentEngine.cs:1182",
+    "BufferID.ShinobuActiveEquipmentToolStats @ ModularEquipmentEngine.cs:1183",
+    "BufferID.ShinobuActiveEquipmentToolTypes @ ModularEquipmentEngine.cs:1184",
+    "BufferID.ToolRuntimeHeat01 @ ModularEquipmentEngine.cs:1185",
+    "BufferID.ToolRuntimeBatteryCharge @ ModularEquipmentEngine.cs:1186",
+    "BufferID.ShinobuActiveEquipmentStatusMasks @ ModularEquipmentEngine.cs:1187",
+    "BufferID.ShinobuActiveEquipmentEnvironmentHeat01 @ ModularEquipmentEngine.cs:1188",
+    "BufferID.ShinobuActiveEquipmentState @ ModularEquipmentEngine.cs:1189",
+    "BufferID.ShinobuActiveEquipmentPublishedState @ ModularEquipmentEngine.cs:1190",
+    "BufferID.ShinobuActiveEquipmentAupSamples @ ModularEquipmentEngine.cs:1191",
+    "BufferID.ShinobuActiveEquipmentGridLoadRequests @ ModularEquipmentEngine.cs:1192",
+    "BufferID.ShinobuActiveEquipmentWearDrainRates @ ModularEquipmentEngine.cs:1193",
+    "BufferID.ShinobuActiveEquipmentTelemetryRing @ ModularEquipmentEngine.cs:1194",
+    "BufferID.ShinobuActiveEquipmentTelemetryCursor @ ModularEquipmentEngine.cs:1195",
+    "(BufferID)71317 FlashlightTelemetryRingBufferId @ ModularEquipmentEngine.cs:1196",
+    "(BufferID)71318 FlashlightTelemetryCursorBufferId @ ModularEquipmentEngine.cs:1197",
+    "BufferID.ShinobuActiveEquipmentIntegrationCounters @ ModularEquipmentEngine.cs:1198",
+    "BufferID.ShinobuActiveEquipmentTuning @ ModularEquipmentEngine.cs:1199",
+    "BufferID.ShinobuActiveEquipmentHardwareSpecs @ ModularEquipmentEngine.cs:1200",
+    "UpgradeMatrixConstants.UpgradeMasksBuffer @ ModularEquipmentEngine.cs:1201",
+    "UpgradeMatrixConstants.UpgradeBaseStatsBuffer @ ModularEquipmentEngine.cs:1202",
+    "UpgradeMatrixConstants.UpgradeCompiledStatsBuffer @ ModularEquipmentEngine.cs:1203",
+    "UpgradeMatrixConstants.UpgradeLutBuffer @ ModularEquipmentEngine.cs:1204",
+    "UpgradeMatrixConstants.UpgradeToolModuleRulesBuffer @ ModularEquipmentEngine.cs:1205",
+    "UpgradeMatrixConstants.UpgradeToolProfilesBuffer @ ModularEquipmentEngine.cs:1206",
+    "UpgradeMatrixConstants.UpgradeTelemetryRingBuffer @ ModularEquipmentEngine.cs:1207",
+    "UpgradeMatrixConstants.UpgradeTelemetryCursorBuffer @ ModularEquipmentEngine.cs:1208",
+    "UpgradeMatrixConstants.UpgradeVisualStateBuffer @ ModularEquipmentEngine.cs:1209"
+  ],
+  "staticEvidence": {
+    "managerNativeCollectionFieldRegex": "rg -n \"^        (private|public|internal|protected).*Native(Array|List|Queue|HashMap|ParallelHashMap)<.*;\" Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+    "managerNativeCollectionFieldResult": "0 matches, exit code 1",
+    "vaultHandleFieldCount": 28,
+    "equipmentVaultViewFieldCount": 28,
+    "braceBalance": "open=364 close=364"
+  }
+}

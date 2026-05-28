@@ -1,0 +1,75 @@
+{
+  "agent": "1414",
+  "scanner": "ARENA_ALLOCATOR_STATIC_AUDIT_1414",
+  "elapsedMicroseconds": 334004,
+  "h8MemoryGuardRequired": true,
+  "reallocateRawCallCountInGlobalDataVault": 1,
+  "deferredGrowthUsesCompareExchange": true,
+  "deferredGrowthHasNoBlindZero": true,
+  "sentinelFatalLeakException": true,
+  "editorTestsPresent": true,
+  "hotPathFindings": [
+    {
+      "signature": "private bool TryGrowArenaForBytes",
+      "found": true,
+      "forbiddenTerms": []
+    },
+    {
+      "signature": "private bool TryGrowArena",
+      "found": true,
+      "forbiddenTerms": []
+    },
+    {
+      "signature": "public bool ProcessDeferredArenaGrowth",
+      "found": true,
+      "forbiddenTerms": []
+    },
+    {
+      "signature": "private void QueueDeferredArenaGrowth",
+      "found": true,
+      "forbiddenTerms": []
+    },
+    {
+      "signature": "private void ClearDeferredArenaGrowthIfSatisfied",
+      "found": true,
+      "forbiddenTerms": []
+    },
+    {
+      "signature": "private bool CanSatisfyContiguousFreeBlock",
+      "found": true,
+      "forbiddenTerms": []
+    }
+  ],
+  "pointerRouteFindings": [
+    {
+      "signature": "public bool TryResolveHandle<T>",
+      "found": true,
+      "checksFence": true
+    },
+    {
+      "signature": "public bool TryReadHandle<T>",
+      "found": true,
+      "checksFence": true
+    },
+    {
+      "signature": "public bool TryReadOnlyHandle<T>",
+      "found": true,
+      "checksFence": true
+    },
+    {
+      "signature": "public bool TryResolveSlice<T>",
+      "found": true,
+      "checksFence": true
+    },
+    {
+      "signature": "public bool TryAcquireWriteLock<T>",
+      "found": true,
+      "checksFence": true
+    },
+    {
+      "signature": "public bool TryLockBuffer(BufferID bufferId, SystemID lockOwner)",
+      "found": true,
+      "checksFence": true
+    }
+  ]
+}

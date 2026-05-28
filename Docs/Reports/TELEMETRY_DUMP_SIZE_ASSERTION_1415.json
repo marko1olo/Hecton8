@@ -1,0 +1,168 @@
+{
+    "agent":  "1415",
+    "generatedUtc":  "2026-05-28T01:33:35Z",
+    "failureCount":  0,
+    "checks":  [
+                   {
+                       "file":  "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
+                       "description":  "DRS entry byte constant is 64",
+                       "passed":  true,
+                       "pattern":  "DrsTelemetryEntryBytes\\s*=\\s*64\\s*;",
+                       "line":  39
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
+                       "description":  "DRS dump stackalloc uses entry constant",
+                       "passed":  true,
+                       "pattern":  "Span\u003cbyte\u003e\\s+telemetryBytes\\s*=\\s*stackalloc\\s+byte\\[DrsTelemetryEntryBytes\\]",
+                       "line":  1981
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
+                       "description":  "DRS manual writer stores UpscalerComputeTimeMsBits at offset 36",
+                       "passed":  true,
+                       "pattern":  "WriteUInt32LittleEndian\\(destination\\.Slice\\(36,\\s*4\\),\\s*entry\\.UpscalerComputeTimeMsBits\\)",
+                       "line":  2029
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+                       "description":  "Scalability telemetry validator expects 64",
+                       "passed":  true,
+                       "pattern":  "SizeOf\u003cScalabilityTelemetryEntry\u003e\\(\\)\\s*==\\s*64",
+                       "line":  1965
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+                       "description":  "Scalability dump header writes entry size 64",
+                       "passed":  true,
+                       "pattern":  "WriteInt32LittleEndian\\(header\\.Slice\\(16,\\s*4\\),\\s*64\\)",
+                       "line":  2015
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+                       "description":  "Scalability dump stackalloc is 64",
+                       "passed":  true,
+                       "pattern":  "Span\u003cbyte\u003e\\s+entryBytes\\s*=\\s*stackalloc\\s+byte\\[64\\]",
+                       "line":  2018
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+                       "description":  "Biolum black-box entry size constant is 64",
+                       "passed":  true,
+                       "pattern":  "BlackBoxEntrySizeBytes\\s*=\\s*64\\s*;",
+                       "line":  222
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+                       "description":  "Biolum validator expects telemetry size 64",
+                       "passed":  true,
+                       "pattern":  "SizeOf\u003cBiolumPulseTelemetryEntry\u003e\\(\\)\\s*!=\\s*64",
+                       "line":  1277
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Construction/FluidPipeGraphTypes.cs",
+                       "description":  "Fluid pipe validator expects telemetry size 64",
+                       "passed":  true,
+                       "pattern":  "SizeOf\u003cFluidPipeTelemetryEntry\u003e\\(\\)\\s*!=\\s*64",
+                       "line":  216
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/PlayerInventory.cs",
+                       "description":  "Salinity corrosion dump entry constant is 64",
+                       "passed":  true,
+                       "pattern":  "SalinityCorrosionBlackBoxEntrySizeBytes\\s*=\\s*64\\s*;",
+                       "line":  75
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/PlayerInventory.cs",
+                       "description":  "Salinity corrosion dump stackalloc is 64-byte row",
+                       "passed":  true,
+                       "pattern":  "Span\u003cbyte\u003e\\s+row\\s*=\\s*stackalloc\\s+byte\\[SalinityCorrosionBlackBoxEntrySizeBytes\\]",
+                       "line":  5221
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/PlayerInventory.cs",
+                       "description":  "Salinity corrosion dump avoids BinaryWriter in patched method",
+                       "passed":  true,
+                       "pattern":  "method block token BinaryWriter",
+                       "line":  null
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
+                       "description":  "UberNoir telemetry entry byte constant is 64",
+                       "passed":  true,
+                       "pattern":  "TelemetryEntrySizeBytes\\s*=\\s*64\\s*;",
+                       "line":  20
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
+                       "description":  "UberNoir dump row stackalloc uses telemetry entry constant",
+                       "passed":  true,
+                       "pattern":  "Span\u003cbyte\u003e\\s+rowBytes\\s*=\\s*stackalloc\\s+byte\\[TelemetryEntrySizeBytes\\]",
+                       "line":  490
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
+                       "description":  "UberNoir dump serializer clears full 64-byte destination before writing 0-47 payload",
+                       "passed":  true,
+                       "pattern":  "destination\\.Clear\\(\\)",
+                       "line":  598
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                       "description":  "ActiveSonarGeoTelemetryEntry dump entry constant is 64",
+                       "passed":  true,
+                       "pattern":  "entry size constant == 64",
+                       "line":  1571
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                       "description":  "ActiveSonarGeoTelemetryEntry serializer clears full 64-byte row",
+                       "passed":  true,
+                       "pattern":  "destination.Clear()",
+                       "line":  3538
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+                       "description":  "SwayTelemetryEntry dump entry constant is 64",
+                       "passed":  true,
+                       "pattern":  "entry size constant == 64",
+                       "line":  301
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+                       "description":  "SwayTelemetryEntry serializer clears full 64-byte row",
+                       "passed":  true,
+                       "pattern":  "destination.Clear()",
+                       "line":  1137
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs",
+                       "description":  "WaterlineTelemetryEntry dump entry constant is 64",
+                       "passed":  true,
+                       "pattern":  "entry size constant == 64",
+                       "line":  21
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs",
+                       "description":  "WaterlineTelemetryEntry serializer clears full 64-byte row",
+                       "passed":  true,
+                       "pattern":  "destination.Clear()",
+                       "line":  853
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs",
+                       "description":  "VisorRefractionTelemetryEntry dump entry constant is 64",
+                       "passed":  true,
+                       "pattern":  "entry size constant == 64",
+                       "line":  39
+                   },
+                   {
+                       "file":  "Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs",
+                       "description":  "VisorRefractionTelemetryEntry serializer clears full 64-byte row",
+                       "passed":  true,
+                       "pattern":  "destination.Clear()",
+                       "line":  1688
+                   }
+               ]
+}

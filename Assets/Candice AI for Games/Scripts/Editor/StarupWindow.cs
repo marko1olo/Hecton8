@@ -6,10 +6,6 @@ namespace CandiceAIforGames.AI
 {
     public class StartupWindow : EditorWindow
     {
-        Rect headerRect;
-        Rect reviewRect;
-        Rect patreonRect;
-        Rect closeRect;
         public bool shouldLoad = true;
         public StartupWindow()
         {

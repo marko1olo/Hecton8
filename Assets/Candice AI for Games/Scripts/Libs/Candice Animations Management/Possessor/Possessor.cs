@@ -15,7 +15,6 @@ public class Possessor : MonoBehaviour
     public bool PlayerCanPossessProjectile = false;
     public float ProjectilePossessionTimer = 10f;
     private GameObject[] projectiles;
-    private GameObject[] tempProjectile;
     [HideInInspector]
     public CandiceAnimationManager animationManager;
     private Transform vsfx;       

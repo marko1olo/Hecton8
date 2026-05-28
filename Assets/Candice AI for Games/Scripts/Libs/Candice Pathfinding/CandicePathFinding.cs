@@ -11,8 +11,6 @@ namespace CandiceAIforGames.AI.Pathfinding
     public class CandicePathFinding
     {
         CandiceGrid grid;
-        GameObject[] tiles;
-
         public CandicePathFinding(CandiceGrid _grid)
         {
             grid = _grid;

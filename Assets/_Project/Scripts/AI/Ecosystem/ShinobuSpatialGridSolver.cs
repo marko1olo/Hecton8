@@ -38,6 +38,7 @@ namespace Hecton8.AI.Ecosystem
         public const uint DefaultHashMultiplierZ = 83492791u;
         public const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_301.bin";
         public const string Agent1301DumpRelativePath = "Docs/AgentLogs/Dump_1301_AIEcology.bin";
+        public const string Agent1419DumpRelativePath = "Docs/AgentLogs/Dump_1419_EcosystemSpatialGrid.bin";
         public const string ProfileCsvRelativePath = "spatial_grid_profiles.csv";
         public const string ProfileCsvPrecomputedRelativePath = "Data/Precomputed/spatial_grid_profiles.csv";
     }
@@ -1353,6 +1354,7 @@ namespace Hecton8.AI.Ecosystem
         private const int DumpFailureOwnerPath = 1;
         private const int DumpFailureAgentPath = 2;
         private const int DumpFailureQueue = 4;
+        private const int DumpFailureAgent1419Path = 8;
         public const int DumpSnapshotBytes =
             DumpHeaderBytes + (ShinobuSpatialGridConstants.TelemetryCapacity * 64);
 
@@ -1362,6 +1364,7 @@ namespace Hecton8.AI.Ecosystem
         private static AutoResetEvent s_dumpSignal;
         private static string s_ownerDumpPath;
         private static string s_agentDumpPath;
+        private static string s_agent1419DumpPath;
         private static int s_dumpState;
         private static int s_stopRequested;
         private static int s_pendingByteCount;
@@ -1454,12 +1457,16 @@ namespace Hecton8.AI.Ecosystem
                 s_dumpSnapshotHandle = snapshotHandle;
                 s_ownerDumpPath = Path.Combine(projectRoot, ShinobuSpatialGridConstants.DumpRelativePath);
                 s_agentDumpPath = Path.Combine(projectRoot, ShinobuSpatialGridConstants.Agent1301DumpRelativePath);
+                s_agent1419DumpPath = Path.Combine(projectRoot, ShinobuSpatialGridConstants.Agent1419DumpRelativePath);
                 string ownerDirectory = Path.GetDirectoryName(s_ownerDumpPath);
                 if (ownerDirectory != null && ownerDirectory.Length != 0)
                     Directory.CreateDirectory(ownerDirectory);
                 string agentDirectory = Path.GetDirectoryName(s_agentDumpPath);
                 if (agentDirectory != null && agentDirectory.Length != 0)
                     Directory.CreateDirectory(agentDirectory);
+                string agent1419Directory = Path.GetDirectoryName(s_agent1419DumpPath);
+                if (agent1419Directory != null && agent1419Directory.Length != 0)
+                    Directory.CreateDirectory(agent1419Directory);
 
                 Volatile.Write(ref s_stopRequested, 0);
                 if (s_dumpSignal == null)
@@ -1671,11 +1678,14 @@ namespace Hecton8.AI.Ecosystem
             int baselineFailureFlags = Volatile.Read(ref s_lastDumpFailureFlags);
             bool wroteOwner = TryWriteQueuedDumpFile(s_ownerDumpPath);
             bool wroteAgent = TryWriteQueuedDumpFile(s_agentDumpPath);
+            bool wroteAgent1419 = TryWriteQueuedDumpFile(s_agent1419DumpPath);
             int failureFlags = 0;
             if (!wroteOwner)
                 failureFlags |= DumpFailureOwnerPath;
             if (!wroteAgent)
                 failureFlags |= DumpFailureAgentPath;
+            if (!wroteAgent1419)
+                failureFlags |= DumpFailureAgent1419Path;
             if (failureFlags != 0)
             {
                 AddDumpFailureFlags(failureFlags);

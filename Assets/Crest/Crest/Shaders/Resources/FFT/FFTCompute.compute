@@ -17,11 +17,15 @@
 #pragma kernel ComputeFFT SIZE=128 PASSES=7 CHANNEL=y TX=1 TY=128 FINAL=1
 #pragma kernel ComputeFFT SIZE=256 PASSES=8 CHANNEL=x TX=256 TY=1 FINAL=0
 #pragma kernel ComputeFFT SIZE=256 PASSES=8 CHANNEL=y TX=1 TY=256 FINAL=1
-#pragma kernel ComputeFFT SIZE=512 PASSES=9 CHANNEL=x TX=512 TY=1 FINAL=0
-#pragma kernel ComputeFFT SIZE=512 PASSES=9 CHANNEL=y TX=1 TY=512 FINAL=1
+#pragma kernel ComputeFFT SIZE=512 PASSES=9 CHANNEL=x TX=256 TY=1 FINAL=0 ELEMENTS_PER_THREAD=2
+#pragma kernel ComputeFFT SIZE=512 PASSES=9 CHANNEL=y TX=1 TY=256 FINAL=1 ELEMENTS_PER_THREAD=2
 
 // Must match CASCADE_COUNT in FFTCompute.cs
 #define CASCADE_COUNT 16
+
+#ifndef ELEMENTS_PER_THREAD
+#define ELEMENTS_PER_THREAD 1
+#endif
 
 Texture2DArray<float2> _InputH;
 Texture2DArray<float2> _InputX;
@@ -133,18 +137,51 @@ float2 conj(float2 v)
 	return float2(v.x, -v.y);
 }
 
-[numthreads(TX,TY,1)]
-void ComputeFFT(uint3 id : SV_DispatchThreadID)
+void LoadInputs(uint3 id, uint coord)
 {
-	const uint coord = id.CHANNEL;
+	uint3 loadId = id;
+	loadId.CHANNEL = coord;
+
 #if !FINAL
-	_IntermediatesH[coord] = conj(_InputH[id]);
-	_IntermediatesX[coord] = conj(_InputX[id]);
-	_IntermediatesZ[coord] = conj(_InputZ[id]);
+	_IntermediatesH[coord] = conj(_InputH[loadId]);
+	_IntermediatesX[coord] = conj(_InputX[loadId]);
+	_IntermediatesZ[coord] = conj(_InputZ[loadId]);
 #else
-	_IntermediatesH[coord] = _InputH[id];
-	_IntermediatesX[coord] = _InputX[id];
-	_IntermediatesZ[coord] = _InputZ[id];
+	_IntermediatesH[coord] = _InputH[loadId];
+	_IntermediatesX[coord] = _InputX[loadId];
+	_IntermediatesZ[coord] = _InputZ[loadId];
+#endif
+}
+
+void StoreOutputs(uint3 id, uint coord, bool pingpong)
+{
+	uint3 storeId = id;
+	storeId.CHANNEL = coord;
+
+	const float2 resultH = pingpong ? _IntermediatesH[coord] : _ScratchH[coord];
+	const float2 resultX = pingpong ? _IntermediatesX[coord] : _ScratchX[coord];
+	const float2 resultZ = pingpong ? _IntermediatesZ[coord] : _ScratchZ[coord];
+
+#if !FINAL
+	_Output1[storeId] = resultH;
+	_Output2[storeId] = resultX;
+	_Output3[storeId] = resultZ;
+#else
+	const float sign = ((storeId.x + storeId.y) % 2) == 1 ? -1.0 : 1.0;
+	// Write zero to W to clear garbage.
+	_Output[storeId] = float4(sign * resultX.x, sign * resultH.x, sign * resultZ.x, 0.0);
+#endif
+}
+
+[numthreads(TX,TY,1)]
+void ComputeFFT(uint3 id : SV_DispatchThreadID, uint3 threadId : SV_GroupThreadID)
+{
+	const uint coord = threadId.CHANNEL;
+	LoadInputs(id, coord);
+
+#if ELEMENTS_PER_THREAD > 1
+	const uint coord2 = coord + (SIZE / ELEMENTS_PER_THREAD);
+	LoadInputs(id, coord2);
 #endif
 
 	[unroll(PASSES)]
@@ -152,23 +189,16 @@ void ComputeFFT(uint3 id : SV_DispatchThreadID)
 	{
 		GroupMemoryBarrierWithGroupSync();
 		ButterflyPass(_InputButterfly[uint2(coord, passIndex)].xy, coord, passIndex, id.z);
+#if ELEMENTS_PER_THREAD > 1
+		ButterflyPass(_InputButterfly[uint2(coord2, passIndex)].xy, coord2, passIndex, id.z);
+#endif
 	}
 
 	GroupMemoryBarrierWithGroupSync();
 
 	const bool pingpong = (PASSES % 2) == 0;
-	const float2 resultH = pingpong ? _IntermediatesH[coord] : _ScratchH[coord];
-	const float2 resultX = pingpong ? _IntermediatesX[coord] : _ScratchX[coord];
-	const float2 resultZ = pingpong ? _IntermediatesZ[coord] : _ScratchZ[coord];
-
-#if !FINAL
-	_Output1[id] = resultH;
-	_Output2[id] = resultX;
-	_Output3[id] = resultZ;
-#else
-	const float sign = ((id.x + id.y) % 2) == 1 ? -1.0 : 1.0;
-	const float3 res = float3(sign * resultX.x, sign * resultH.x, sign * resultZ.x);
-	// Write zero to W to clear garbage.
-	_Output[id] = float4(sign * resultX.x, sign * resultH.x, sign * resultZ.x, 0.0);
+	StoreOutputs(id, coord, pingpong);
+#if ELEMENTS_PER_THREAD > 1
+	StoreOutputs(id, coord2, pingpong);
 #endif
 }

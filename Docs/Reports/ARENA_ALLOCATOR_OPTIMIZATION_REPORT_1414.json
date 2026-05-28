@@ -1,0 +1,122 @@
+{
+  "agent": "1414",
+  "role": "UNMANAGED_MEMORY_SENTINEL_AND_ARENA_ALLOCATOR_AUDITOR",
+  "domain": "ECHELON 1 Core & Memory Infrastructure / Native Arena Allocator",
+  "status": "APEX_STATIC_VERIFIED_BUILD_BLOCKED_BY_HOST_CONTENTION",
+  "taskCount": 20,
+  "prompt": {
+    "path": "Docs/Tasks/CURRENT_BATCH.md",
+    "length": 21926,
+    "taskMarkers": 20,
+    "sha256": "22323d22279e444c27790cf29585eacf5528bb19964887e38f8c1efb5dab014e"
+  },
+  "apexVerification": {
+    "path": "Docs/Reports/ARENA_ALLOCATOR_APEX_VERIFICATION_1414.json",
+    "sha256": "16adb3c664b730aa978648712aee8298b51edf5db34d145377f715460253e606",
+    "jsonParse": "PASS",
+    "zeroGcHotPathScanElapsedMicroseconds": 7612199,
+    "defectsFoundDuringApex": [
+      "TryEnsureVaultBuffer queued deferred arena growth only when _arenaGrowthInProgress was set; fixed to queue on any active compaction fence.",
+      "TryEnsureVaultBuffer contained a textual struct initializer 'new VaultBufferMeta'; replaced with default plus explicit field assignments to make the hot-path forbidden-term scan unambiguous.",
+      "Sparse BufferID values above MaxGenerationHandleCapacity could build handles through map metadata but fail later public resolve/lock routes that called TryReadFlatMetadata; fixed with a flat fast path plus map fallback."
+    ]
+  },
+  "raceConditionsEliminated": [
+    {
+      "id": "RAW_REALLOCATE_WITH_EXPORTED_POINTERS",
+      "previousRisk": "H8Memory.ReallocateRaw could malloc/copy/free old arena memory without proving GlobalDataVault views and locks had drained.",
+      "fix": "Added H8RawReallocationGuard and required ReallocateRaw to reject relocation unless compaction fence is held, active lock mask is zero, and pinned external views are absent.",
+      "proofSites": [
+        "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:2209",
+        "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:2945",
+        "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:2969",
+        "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:4825"
+      ],
+      "unsafePathsEliminated": 1
+    },
+    {
+      "id": "DEFERRED_GROWTH_LOST_UPDATE",
+      "previousRisk": "A blind zero clear could erase a larger concurrent deferred arena growth request.",
+      "fix": "Deferred target is a monotonic Interlocked max; clear is CompareExchange to zero only when current contiguous free space satisfies the observed value.",
+      "proofSites": [
+        "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:4919",
+        "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:4938"
+      ],
+      "interleavingProof": "Writer-before-reader: reader observes the larger target. Writer-after-reader: clear CAS fails because current != observed. No writer: clear is legal only after CanSatisfyContiguousFreeBlock(observed)."
+    },
+    {
+      "id": "SENTINEL_RECORD_MUTATION_RACE",
+      "previousRisk": "NativeMemorySentinel fixed arrays were mutated from register/unregister and leak audit paths without a shared gate.",
+      "fix": "Serialized register, unregister, refresh, reset, scene leak report/reap, and transient audit mutation with an Interlocked mutation gate.",
+      "proofSites": [
+        "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs:743",
+        "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs:792",
+        "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs:895",
+        "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs:980"
+      ]
+    }
+  ],
+  "deferredGrowthQueue": {
+    "implemented": true,
+    "targetField": "_deferredArenaGrowthBytes",
+    "writer": "Interlocked.CompareExchange max loop",
+    "clear": "Interlocked.CompareExchange(ref _deferredArenaGrowthBytes, 0L, observed) after contiguous free block satisfaction",
+    "maintenancePhase": "SystemDispatcher.RunMasterPostSimulationPhase",
+    "proofSites": [
+      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:4892",
+      "Assets/_Project/Scripts/Core/SystemDispatcher.cs:2899"
+    ]
+  },
+  "sentinel": {
+    "usesDictionaryHotPath": false,
+    "storageReality": "Fixed NativeAllocationRecord[1024] and PersistentReallocationRecord[128] arrays existed; rewrite targeted serialization and fatal teardown instead of inventing a NativeHashMap migration.",
+    "fatalLeakException": true,
+    "proofSites": [
+      "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs:69",
+      "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs:876",
+      "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs:994"
+    ]
+  },
+  "verification": {
+    "gitDiffCheck": "PASS_WITH_CRLF_WARNINGS_ONLY",
+    "braceBalance": "PASS",
+    "reallocateRawCallCountInProject": 1,
+    "hotAllocatorForbiddenTerms": 0,
+    "publicPointerRouteFenceChecks": 6,
+    "staticAuditReport": "Docs/Reports/ARENA_ALLOCATOR_STATIC_AUDIT_1414.json",
+    "editorTestsAdded": [
+      "GlobalDataVault_ReallocateRaw_CallRequiresRelocationGuard",
+      "GlobalDataVault_DeferredGrowth_ClearUsesCompareExchange",
+      "GlobalDataVault_PublicPointerRoutes_CheckCompactionFence",
+      "GlobalDataVault_SparseBufferIdMetadataReadFallsBackToMap",
+      "NativeMemorySentinel_FatalLeakAssertion_IdentifiesLeakedBuffer"
+    ],
+    "editorTestsExecuted": false,
+    "buildExecuted": false,
+    "buildBlockReason": "Initial gate: CPU_PERCENT=100.0 and active dotnet PID 66768. Final pre-APEX gate: CPU_PERCENT=100.0 with active dotnet PID 40436 and csc PID 58904. APEX gate: CPU_PERCENT=100 with active dotnet PID 53704. Latest final gate: CPU_PERCENT=100 with active csc PID 61328 and dotnet PID 55080. No build launched."
+  },
+  "microsecondEstimates": {
+    "hotPathArenaAllocation": 0,
+    "pendingZeroDeferredGrowthCheck": 1,
+    "blockedGrowthStringLoggingAvoided": 15,
+    "managedLockAvoidedUnderContention": 20,
+    "staticAuditWallMicroseconds": 334004,
+    "compileMicrosecondsAvoidedByContentionGate": "unmeasured_full_msbuild_startup"
+  },
+  "scalabilityPillar": {
+    "low": "Fail closed, no relocation under locks/pins, no build launched under CPU saturation.",
+    "middle": "Deferred growth drains in deterministic PostSimulation maintenance without gameplay truth changes.",
+    "high": "Larger arena caps remain legal through existing quality capacity policy while preserving CAS queue semantics.",
+    "ultra": "Visual overkill tiers may consume larger memory budgets, but relocation authority and DTO layout are unchanged."
+  },
+  "hashes": {
+    "Assets/_Project/Scripts/Core/Memory/H8Memory.cs": "5244a1a957fc131c908190f6734a54ad2a17a186901d62306faa44384d083657",
+    "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs": "f5066a576ba44403058844e45d3f12b5e132851dc5ea0ae006e8e9f1b54e64a7",
+    "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs": "d6cc77f5fb89f2cbde4147a7bd1364f9632aa8c6da3ce856c043138ecdd3c2cc",
+    "Assets/_Project/Scripts/Core/SystemDispatcher.cs": "885450a5163a4b9b603ae6d83589b0cc5fdb4b25640668f62226756cb9402961",
+    "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs": "e8d7dff51eb04e85c61c94756584d29ddd9f0417c84d31f3c474a8120c0cd02e",
+    "Docs/Reports/ARENA_ALLOCATOR_FLOW_LEDGER_1414.json": "b1266508b3f520343f13cd15c1b289ddca60e073a5592321c8fdda5da8cffc2f",
+    "Docs/Reports/ARENA_ALLOCATOR_STATIC_AUDIT_1414.json": "54582dda5a6748da761b83be9a9698110582aad879500b246385aa64d3d31b66",
+    "Docs/Reports/ARENA_ALLOCATOR_APEX_VERIFICATION_1414.json": "16adb3c664b730aa978648712aee8298b51edf5db34d145377f715460253e606"
+  }
+}

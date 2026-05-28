@@ -1306,33 +1306,74 @@ namespace Hecton8.Caves
             }
 
             Transform cachedTransform = transform;
-            if (!TryResolveNearestSolidDistance(preyWorldPosition, localBounds, out float preySolidDistance) ||
-                preySolidDistance > Mathf.Max(1f, seabedTriggerDistanceMeters))
+            if (!TryAcquirePublishedSonarSdfPayloadReadLease(
+                    out NativeArray<byte>.ReadOnly encodedSdf,
+                    out Vector3Int gridDimensions,
+                    out Vector3 volumeOrigin,
+                    out Vector3 voxelCellSize,
+                    out float sdfRange,
+                    out _,
+                    out PublishedSonarSdfReadLease sdfLease))
             {
                 return false;
             }
 
-            Vector3 preyLocal = cachedTransform.InverseTransformPoint(preyWorldPosition);
-            if (!TryResolveTopSolidAnchor(
-                    cachedTransform,
-                    localBounds,
-                    preyLocal.x,
-                    preyLocal.z,
-                    Mathf.Max(_voxelSize, breachOffsetMeters),
-                    out Vector3 localSolidAnchor))
+            try
             {
-                return false;
+                if (!TryResolveNearestSolidDistance(
+                        preyWorldPosition,
+                        localBounds,
+                        encodedSdf,
+                        gridDimensions,
+                        volumeOrigin,
+                        voxelCellSize,
+                        sdfRange,
+                        out float preySolidDistance) ||
+                    preySolidDistance > Mathf.Max(1f, seabedTriggerDistanceMeters))
+                {
+                    return false;
+                }
+
+                Vector3 preyLocal = cachedTransform.InverseTransformPoint(preyWorldPosition);
+                if (!TryResolveTopSolidAnchor(
+                        cachedTransform,
+                        localBounds,
+                        preyLocal.x,
+                        preyLocal.z,
+                        Mathf.Max(_voxelSize, breachOffsetMeters),
+                        encodedSdf,
+                        gridDimensions,
+                        volumeOrigin,
+                        voxelCellSize,
+                        sdfRange,
+                        out Vector3 localSolidAnchor))
+                {
+                    return false;
+                }
+
+                Vector3 localBreach = localSolidAnchor + new Vector3(0f, Mathf.Max(_voxelSize, breachOffsetMeters), 0f);
+                Vector3 candidateSolidAnchor = cachedTransform.TransformPoint(localSolidAnchor);
+                Vector3 candidateBreach = cachedTransform.TransformPoint(localBreach);
+                if (!HasSolidDensityPath(
+                        predatorWorldPosition,
+                        candidateSolidAnchor,
+                        encodedSdf,
+                        gridDimensions,
+                        volumeOrigin,
+                        voxelCellSize,
+                        sdfRange))
+                {
+                    return false;
+                }
+
+                solidAnchorWorldPosition = candidateSolidAnchor;
+                breachWorldPosition = candidateBreach;
+                return true;
             }
-
-            Vector3 localBreach = localSolidAnchor + new Vector3(0f, Mathf.Max(_voxelSize, breachOffsetMeters), 0f);
-            Vector3 candidateSolidAnchor = cachedTransform.TransformPoint(localSolidAnchor);
-            Vector3 candidateBreach = cachedTransform.TransformPoint(localBreach);
-            if (!HasSolidDensityPath(predatorWorldPosition, candidateSolidAnchor))
-                return false;
-
-            solidAnchorWorldPosition = candidateSolidAnchor;
-            breachWorldPosition = candidateBreach;
-            return true;
+            finally
+            {
+                ReleasePublishedSonarSdfPayloadReadLease(in sdfLease);
+            }
         }
 
         private static int ResolveDominantAxis(Vector3 normal)
@@ -2873,28 +2914,67 @@ namespace Hecton8.Caves
         private float ResolveOrganicRootMoundWeldRadius(Vector3 runtimePosition, float authoredRadius)
         {
             float safeRadius = Mathf.Max(0.01f, authoredRadius);
-            if (!TrySampleDensity(runtimePosition, out float densityAtRoot))
-                return safeRadius;
-
-            if (densityAtRoot >= 0f)
-                return safeRadius;
-
-            float distanceToSeabed = Mathf.Abs(densityAtRoot);
-            for (int i = 1; i <= OrganicRootMoundSeabedProbeSteps; i++)
+            if (!TryAcquirePublishedSonarSdfPayloadReadLease(
+                    out NativeArray<byte>.ReadOnly encodedSdf,
+                    out Vector3Int gridDimensions,
+                    out Vector3 volumeOrigin,
+                    out Vector3 voxelCellSize,
+                    out float sdfRange,
+                    out _,
+                    out PublishedSonarSdfReadLease sdfLease))
             {
-                float probeDistance = i * OrganicRootMoundSeabedProbeStepMeters;
-                Vector3 probePosition = runtimePosition + Vector3.down * probeDistance;
-                if (!TrySampleDensity(probePosition, out float probeDensity))
-                    continue;
-
-                if (probeDensity >= 0f)
-                {
-                    distanceToSeabed = Mathf.Min(distanceToSeabed, probeDistance);
-                    break;
-                }
+                return safeRadius;
             }
 
-            return Mathf.Max(safeRadius, distanceToSeabed + OrganicRootMoundMinimumOverlapMeters);
+            try
+            {
+                if (!TrySamplePublishedDensity(
+                        encodedSdf,
+                        gridDimensions,
+                        volumeOrigin,
+                        voxelCellSize,
+                        sdfRange,
+                        runtimePosition,
+                        out float densityAtRoot,
+                        out _))
+                {
+                    return safeRadius;
+                }
+
+                if (densityAtRoot >= 0f)
+                    return safeRadius;
+
+                float distanceToSeabed = Mathf.Abs(densityAtRoot);
+                for (int i = 1; i <= OrganicRootMoundSeabedProbeSteps; i++)
+                {
+                    float probeDistance = i * OrganicRootMoundSeabedProbeStepMeters;
+                    Vector3 probePosition = runtimePosition + Vector3.down * probeDistance;
+                    if (!TrySamplePublishedDensity(
+                            encodedSdf,
+                            gridDimensions,
+                            volumeOrigin,
+                            voxelCellSize,
+                            sdfRange,
+                            probePosition,
+                            out float probeDensity,
+                            out _))
+                    {
+                        continue;
+                    }
+
+                    if (probeDensity >= 0f)
+                    {
+                        distanceToSeabed = Mathf.Min(distanceToSeabed, probeDistance);
+                        break;
+                    }
+                }
+
+                return Mathf.Max(safeRadius, distanceToSeabed + OrganicRootMoundMinimumOverlapMeters);
+            }
+            finally
+            {
+                ReleasePublishedSonarSdfPayloadReadLease(in sdfLease);
+            }
         }
 
         /// <summary>
@@ -4400,28 +4480,57 @@ namespace Hecton8.Caves
             bool hasPreviousSample = false;
             bool previousSolid = false;
 
-            for (float sampleY = startY; sampleY >= minY; sampleY -= sampleStep)
+            if (!TryAcquirePublishedSonarSdfPayloadReadLease(
+                    out NativeArray<byte>.ReadOnly encodedSdf,
+                    out Vector3Int gridDimensions,
+                    out Vector3 volumeOrigin,
+                    out Vector3 voxelCellSize,
+                    out float sdfRange,
+                    out _,
+                    out PublishedSonarSdfReadLease sdfLease))
             {
-                Vector3 worldSample = cachedTransform.TransformPoint(new Vector3(localX, sampleY, localZ));
-                if (!TrySampleDensity(worldSample, out float density, out _))
-                    continue;
-
-                bool currentSolid = density > 0f;
-                if (hasPreviousSample && previousSolid && !currentSolid)
-                {
-                    float anchorY = Mathf.Clamp(
-                        sampleY + sampleStep * 0.35f + craterRadius * 0.15f,
-                        localBounds.min.y + _voxelSize,
-                        localBounds.max.y - _voxelSize * 0.5f);
-                    localAnchor = new Vector3(localX, anchorY, localZ);
-                    return true;
-                }
-
-                previousSolid = currentSolid;
-                hasPreviousSample = true;
+                return false;
             }
 
-            return false;
+            try
+            {
+                for (float sampleY = startY; sampleY >= minY; sampleY -= sampleStep)
+                {
+                    Vector3 worldSample = cachedTransform.TransformPoint(new Vector3(localX, sampleY, localZ));
+                    if (!TrySamplePublishedDensity(
+                            encodedSdf,
+                            gridDimensions,
+                            volumeOrigin,
+                            voxelCellSize,
+                            sdfRange,
+                            worldSample,
+                            out float density,
+                            out _))
+                    {
+                        continue;
+                    }
+
+                    bool currentSolid = density > 0f;
+                    if (hasPreviousSample && previousSolid && !currentSolid)
+                    {
+                        float anchorY = Mathf.Clamp(
+                            sampleY + sampleStep * 0.35f + craterRadius * 0.15f,
+                            localBounds.min.y + _voxelSize,
+                            localBounds.max.y - _voxelSize * 0.5f);
+                        localAnchor = new Vector3(localX, anchorY, localZ);
+                        return true;
+                    }
+
+                    previousSolid = currentSolid;
+                    hasPreviousSample = true;
+                }
+
+                return false;
+            }
+            finally
+            {
+                ReleasePublishedSonarSdfPayloadReadLease(in sdfLease);
+            }
         }
 
         private bool TryResolveTopSolidAnchor(
@@ -4430,6 +4539,11 @@ namespace Hecton8.Caves
             float localX,
             float localZ,
             float cutDepth,
+            NativeArray<byte>.ReadOnly encodedSdf,
+            Vector3Int gridDimensions,
+            Vector3 volumeOrigin,
+            Vector3 voxelCellSize,
+            float sdfRange,
             out Vector3 localAnchor)
         {
             localAnchor = default;
@@ -4440,8 +4554,18 @@ namespace Hecton8.Caves
             for (float sampleY = startY; sampleY >= minY; sampleY -= sampleStep)
             {
                 Vector3 worldSample = cachedTransform.TransformPoint(new Vector3(localX, sampleY, localZ));
-                if (!TrySampleDensity(worldSample, out float density, out _))
+                if (!TrySamplePublishedDensity(
+                        encodedSdf,
+                        gridDimensions,
+                        volumeOrigin,
+                        voxelCellSize,
+                        sdfRange,
+                        worldSample,
+                        out float density,
+                        out _))
+                {
                     continue;
+                }
 
                 if (density <= 0f)
                     continue;
@@ -4457,7 +4581,15 @@ namespace Hecton8.Caves
             return false;
         }
 
-        private bool TryResolveNearestSolidDistance(Vector3 worldPosition, Bounds localBounds, out float distanceMeters)
+        private bool TryResolveNearestSolidDistance(
+            Vector3 worldPosition,
+            Bounds localBounds,
+            NativeArray<byte>.ReadOnly encodedSdf,
+            Vector3Int gridDimensions,
+            Vector3 volumeOrigin,
+            Vector3 voxelCellSize,
+            float sdfRange,
+            out float distanceMeters)
         {
             distanceMeters = float.PositiveInfinity;
             Transform cachedTransform = transform;
@@ -4469,7 +4601,15 @@ namespace Hecton8.Caves
             {
                 Vector3 upSample = localPoint + new Vector3(0f, offset, 0f);
                 if (localBounds.Contains(upSample) &&
-                    TrySampleDensity(cachedTransform.TransformPoint(upSample), out float upDensity) &&
+                    TrySamplePublishedDensity(
+                        encodedSdf,
+                        gridDimensions,
+                        volumeOrigin,
+                        voxelCellSize,
+                        sdfRange,
+                        cachedTransform.TransformPoint(upSample),
+                        out float upDensity,
+                        out _) &&
                     upDensity > 0f)
                 {
                     distanceMeters = offset;
@@ -4481,7 +4621,15 @@ namespace Hecton8.Caves
 
                 Vector3 downSample = localPoint - new Vector3(0f, offset, 0f);
                 if (localBounds.Contains(downSample) &&
-                    TrySampleDensity(cachedTransform.TransformPoint(downSample), out float downDensity) &&
+                    TrySamplePublishedDensity(
+                        encodedSdf,
+                        gridDimensions,
+                        volumeOrigin,
+                        voxelCellSize,
+                        sdfRange,
+                        cachedTransform.TransformPoint(downSample),
+                        out float downDensity,
+                        out _) &&
                     downDensity > 0f)
                 {
                     distanceMeters = offset;
@@ -4492,7 +4640,14 @@ namespace Hecton8.Caves
             return false;
         }
 
-        private bool HasSolidDensityPath(Vector3 startWorldPosition, Vector3 endWorldPosition)
+        private bool HasSolidDensityPath(
+            Vector3 startWorldPosition,
+            Vector3 endWorldPosition,
+            NativeArray<byte>.ReadOnly encodedSdf,
+            Vector3Int gridDimensions,
+            Vector3 volumeOrigin,
+            Vector3 voxelCellSize,
+            float sdfRange)
         {
             Vector3 pathDelta = endWorldPosition - startWorldPosition;
             float dominantAxisLength = math.cmax(math.abs(new float3(pathDelta.x, pathDelta.y, pathDelta.z)));
@@ -4503,8 +4658,19 @@ namespace Hecton8.Caves
 
             for (int i = 0; i <= sampleCount; i++)
             {
-                if (!TrySampleDensity(samplePosition, out float density) || density <= 0f)
+                if (!TrySamplePublishedDensity(
+                        encodedSdf,
+                        gridDimensions,
+                        volumeOrigin,
+                        voxelCellSize,
+                        sdfRange,
+                        samplePosition,
+                        out float density,
+                        out _) ||
+                    density <= 0f)
+                {
                     return false;
+                }
 
                 samplePosition += sampleDelta;
             }

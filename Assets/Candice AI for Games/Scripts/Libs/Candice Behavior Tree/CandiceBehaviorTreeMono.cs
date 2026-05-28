@@ -1,4 +1,5 @@
 ﻿using System;
+#pragma warning disable CS0169
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -232,4 +233,5 @@ namespace CandiceAIforGames.AI
 
     }
 }
+#pragma warning restore CS0169
 

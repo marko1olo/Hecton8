@@ -623,3 +623,67 @@ Solution: Stage loot DTOs and item data first, commit the loot Vault buffer unde
 Rejected Alternatives: Keeping prewarm before the lock is rejected because external side effects must not outrun authoritative state. Calling prewarm inside the write-lock window is rejected because catalog/Addressables work must not happen while a Vault buffer is pinned.
 Scalability potential: Low devices avoid wasted prewarm tickets after failed generation. Middle/High/Ultra keep the same loot presentation path; the route is cleaner and still fail-closed when prefabs are not loaded.
 Hardware Impact: No frame-time saving is claimed. The change prevents cold Addressables work from being triggered for uncommitted loot and keeps the Vault lock window free of catalog calls.
+
+## Decision 078 - Runtime Registration Restoration After Re-enable
+
+Problem: `OnDisable()` unregisters Tick, LateFrameTick, and SlowTick routes, but resident debris/artifact state and pending black-box dumps can survive until re-enable. `OnEnable()` restored cold services and hot-swap listening only; it did not restore runtime dispatcher registrations.
+Solution: Add `RestoreRuntimeRegistrations()` after cold service cache/hot-swap listener setup. The helper restores loot/black-box LateFrame through `TryRegisterLootTick()` and restores wreck SlowTick when debris or artifact records are resident.
+Rejected Alternatives: Requiring a fresh generation to restore runtime routes is rejected because existing generated wreck state can remain valid. Registering unconditionally is rejected because empty components would keep useless dispatcher lanes.
+Scalability potential: Low devices avoid stale debris/artifact work being stranded after component disable/enable. Middle/High/Ultra keep identical visuals and restore the same continuous quality-scaled runtime systems.
+Hardware Impact: Re-enable cost is bounded to two state checks and conditional registry calls. Frame-time cost is 0 when no resident state exists.
+
+## Decision 079 - Pending Debris Pickup Rollback On Queue Clear
+
+Problem: `ProcessNearFieldDebris()` commits `ActivePickup` before queueing the pooled pickup spawn. Spawn-failure paths now rolled back the flag, but `ClearPendingLootQueue()` still discarded pending entries on disable/dispose/DataVault hot-swap without clearing the source debris record.
+Solution: Store `DebrisRecordIndex` in `PendingWreckLootSpawn`, call `RollbackPendingDebrisPickup()` for spawn-failure codes 60-62, and call the same rollback from `ClearPendingLootQueue()` with failure code 63 before zeroing the ring.
+Rejected Alternatives: Clearing the pending queue without rollback is rejected because it can strand a loot node as permanently active. Re-scanning all debris to clear flags is rejected because the queue already carries exact source indices and a bounded rollback loop is cheaper.
+Scalability potential: Low devices avoid permanent loss of small debris loot after lifecycle interruptions. Middle/High/Ultra keep the same pickup presentation and stronger state consistency.
+Hardware Impact: Normal successful spawn path adds one int to the pending DTO and no extra allocations. Clear path is bounded by `MaxPendingLootSpawns`; static estimate is below 5 us for the current queue size on i3/MX350-class hardware.
+
+## Decision 080 - Dispatcher Hot-Swap Black-Box Route
+
+Problem: Dispatcher replacement reset `_registeredLootLateFrame`, but re-registration only happened when pending loot existed. A pending black-box dump with no loot could miss the deferred LateFrame route after dispatcher hot-swap.
+Solution: Re-register through `TryRegisterLootTick()` when `_pendingLootCount > 0 || _blackBoxDumpRequested`. Strengthen the scanner so dispatcher hot-swap must reset every latch and prove black-box LateFrame restoration.
+Rejected Alternatives: Calling `FlushBlackBoxDumpIfRequested()` directly from hot-swap is rejected because the dump is intentionally deferred to the phase route when the dispatcher exists. Keeping only direct registration in `RequestBlackBoxDump()` is rejected because that method may have already run before dispatcher replacement.
+Scalability potential: Low/Middle/High/Ultra behavior is identical except crash/fault evidence is less likely to be lost during service replacement.
+Hardware Impact: No steady-state frame cost. Hot-swap path adds one boolean branch and one conditional registry call.
+
+## Decision 081 - State-Driven Wreck Material Registry Runtime Routes
+
+Problem: `WreckMaterialRegistry.OnEnable()` registered SlowTick/LateFrame and floating-origin listener routes even when `_hasPublishedWreck` was false. Empty registry instances could keep dispatcher lanes and origin-shift callbacks alive with no renderer payload, and publish replacement/dispose paths could leave pending signal or visibility flags latched after payload invalidation.
+Solution: Add `HasRuntimeDispatcherWork()` and `RefreshRuntimeTickRegistration()` as the single dispatcher route authority. Slow/Late registration is now allowed only when published payload, visibility upload, or pending wreck signal work exists. Publish replacement and disposal clear stale flags before refreshing runtime registration.
+Rejected Alternatives: Keeping unconditional registration is rejected because empty components should not occupy hot runtime lanes. Direct unregister calls scattered across every branch are rejected because service replacement and re-enable paths need one route authority.
+Scalability potential: Low devices avoid empty renderer ticks and origin callbacks. Middle/High/Ultra keep identical BRG visibility behavior once payload exists; the route scales by actual work rather than binary quality switches.
+Hardware Impact: Steady-state empty registry saves two dispatcher callbacks and one origin-listener callback path per frame/shift event. Exact profiler proof is unavailable; static cost is small but real on i3/MX350-class hardware.
+
+## Decision 082 - Payload-Gated Origin Shift Listener
+
+Problem: Origin-shift callbacks can adjust renderer-owned state only after a payload exists. Registering before publication and accepting shifts while `_hasPublishedWreck` is false creates useless callback work and risks future state drift if fields are reset independently.
+Solution: Add `_originShiftListenerRegistered`, register through `TryRegisterOriginShiftListener()` only when `_hasPublishedWreck` is true, unregister through `TryUnregisterOriginShiftListener()` when payload is cleared, and guard `OnOriginShift()` with `!_hasPublishedWreck || !_HasUsableShift(...)`.
+Rejected Alternatives: Relying on zero matrix counts inside `OnOriginShift()` is rejected because it hides the ownership rule and still dispatches an empty callback. Leaving registration to `OnEnable()` is rejected because payload lifetime, not component lifetime, owns renderer-origin adjustment.
+Scalability potential: Low/Middle/High/Ultra keep the same origin-correction result for published wrecks. Empty or disposed registries no longer participate in origin-shift traffic.
+Hardware Impact: No claimed frame-time measurement. Static benefit is elimination of empty origin callback work and one fewer lifecycle leak vector after dispose/publish replacement.
+
+## Decision 083 - LateFrame Work Predicate Split
+
+Problem: The first state-driven route fix still treated `_hasPublishedWreck` as sufficient reason to keep LateFrame registered. SlowTick needs resident published payload to sample player distance and request visibility uploads, but LateFrame only needs to run when visibility upload or wreck-signal work is pending.
+Solution: Split route predicates into `HasSlowTickWork()` and `HasLateFrameTickWork()`. SlowTick registers only for published payload. LateFrame registers only for `_visibilityUploadRequested || _pendingWreckSignalPing`. SlowTick refreshes runtime registration immediately after setting pending LateFrame work.
+Rejected Alternatives: Keeping one `HasRuntimeDispatcherWork()` predicate for both interfaces is rejected because it preserves an avoidable empty frame callback. Registering LateFrame permanently after publication is rejected because visibility uploads are already request-driven.
+Scalability potential: Low devices avoid an empty LateFrame callback for every resident wreck renderer. Middle/High/Ultra keep identical visibility refresh and PDA signal behavior while spending frame lanes only on pending work.
+Hardware Impact: No profiler-backed microsecond claim. Static benefit is one fewer empty LateFrame callback per published-but-idle wreck registry per frame.
+
+## Decision 084 - Deferred Origin-Shift BRG Upload
+
+Problem: `WreckMaterialRegistry.OnOriginShift()` delegated to `ModuleBatch.ApplyOriginShift()`, and that method immediately touched `GraphicsBuffer.LockBufferForWrite`, `Material.SetBuffer`, `SyncBatchBuffer()`, and `BatchRendererGroup.SetGlobalBounds()`. Origin-shift callback should update deterministic CPU state and request visual sync, not perform GPU buffer mutation in the callback phase.
+Solution: `ApplyOriginShift()` now shifts CPU matrices, visible matrices, and draw bounds only, then sets `_matrixUploadDirty` when a published visible subset needs GPU refresh. `OnOriginShift()` no longer calls `EnsureBatches()` and no longer performs any GPU work; it sets `_originShiftUploadRequested` and refreshes dispatcher registration. `LateFrameTick()` drains `_visibilityUploadRequested`, `_originShiftUploadRequested`, and pending signal work, with `FlushOriginShiftUploads()` retrying failed matrix uploads without dropping dirty state.
+Rejected Alternatives: Immediate upload in the origin callback is rejected because it mixes AUP correction with BRG upload work and can run outside the intended visual-sync phase. Forcing a full visibility recull for every origin shift is rejected because matrix translation preserves visible order and can be flushed cheaply. Allocating replacement buffers in the callback is rejected because the renderer already prewarms upload resources at publish time.
+Scalability potential: Low devices keep origin-shift callback work to bounded CPU array translation plus a deferred upload request. Middle/High/Ultra preserve the same BRG visual fidelity and can still spend quality budget on larger published payloads; origin-shift upload retry is state-driven, not a binary tier path.
+Hardware Impact: Removes `LockBufferForWrite`, material buffer rebinding, and BRG bounds upload from the origin-shift callback. Exact microseconds require Unity profiler evidence; static impact is moving GPU sync risk out of the callback and into one LateFrame drain per shifted published wreck.
+
+## Decision 085 - Debris Pickup Commit/Rollback Completeness
+
+Problem: `ProcessNearFieldDebris()` reserved a debris node by setting `ActivePickup` and clearing `DotOnly` before queuing the pooled pickup spawn. Failure cleanup cleared `ActivePickup` but did not restore `DotOnly`, and the successful `PickupItem` path configured the pickup without committing the source record to `Harvested`. A debris node could therefore be stranded in an intermediate non-pickable state or be eligible for inconsistent future processing.
+Solution: Add `CommitPendingDebrisPickupSpawned()` and call it before `pickup.Configure()`. The helper reads the source debris record, writes `Harvested`, clears `Pickable|ActivePickup|DotOnly`, and fails closed with numeric WFAI telemetry if the Vault read/write fails. The spawn path despawns the pooled object and calls rollback if the commit fails. `RollbackPendingDebrisPickup()` now restores `Pickable|DotOnly` and clears `ActivePickup` for non-harvested records, and queue-failure cleanup uses the same restored flag set.
+Rejected Alternatives: Leaving success state implicit is rejected because `ActivePickup` is not final ownership state. Destroying the source debris immediately when queueing is rejected because the pooled spawn can still fail. Scanning all debris to recover stranded flags is rejected because the pending queue already carries the exact `DebrisRecordIndex`.
+Scalability potential: Low devices avoid permanent loss of small debris loot after pooled-spawn failures or lifecycle interruptions. Middle/High/Ultra keep identical pickup presentation while the authoritative debris state remains deterministic and bounded by the same pending queue.
+Hardware Impact: Successful pickup adds one Vault read/write pair before configuring the pooled object. That cost is paid only when a near-field debris node becomes an interactable pickup, not per frame for all debris. The concrete benefit is state consistency; no profiler-backed frame saving is claimed.

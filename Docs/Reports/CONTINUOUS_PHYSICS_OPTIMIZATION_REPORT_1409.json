@@ -1,0 +1,346 @@
+{
+  "agent": "1409",
+  "role": "CONTINUOUS_QUALITY_WEIGHT_PHYSICS_HOMEOSTAT",
+  "date": "2026-05-28",
+  "domain": "Echelon 4 Kinematics/Physics - Hydrodynamic Drag, Buoyancy, KCC",
+  "taskCount": 20,
+  "status": "apex_static_verified_compile_deferred_cpu_gate_seaglide_cadence_repaired",
+  "promptReextract": {
+    "source": "Docs/Tasks/CURRENT_BATCH.md",
+    "agentId": "1409",
+    "taskCount": 20,
+    "chars": 19978
+  },
+  "compileGate": {
+    "cpuPercent": 100.0,
+    "cscProcessCount": 0,
+    "dotnetProcessCount": 1,
+    "dotnetBuildLaunched": false,
+    "reason": "User forbade heavy compiler use under CPU load; final gate measured 100.0% total processor with one dotnet process active and no csc.exe process active. dotnet build was not launched because CPU remained above 50% and a dotnet process was already active."
+  },
+  "zeroGcSelfAudit": {
+    "scope": "added lines in modified runtime hot path files and Hecton_WaveHeightSampler.compute",
+    "newReferenceTypeExpressions": 0,
+    "newConstructorTokens": 24,
+    "knownValueTypeNewInitializers": 24,
+    "stringFormatCalls": 0,
+    "toStringCalls": 0,
+    "linqCalls": 0,
+    "foreachLoops": 0,
+    "tryBlocksAdded": 20,
+    "finallyBlocksAdded": 19,
+    "notes": "Editor test file and editor-only CSV FileStream path are excluded from hot-path GC count. Runtime diff scan covered 794 added lines across modified runtime files and shader. The 24 new tokens are all value-type/job-struct initializers; no reference-type constructor survived the added-line scan. Dedicated AsyncReadback runtime hot-range scan over lines 205-243, 687-713, 727-770, 856-904, 1162-1298, and 1751-1889 returned 0 forbidden tokens and 10 allowed value-type initializers. Case-sensitive LINQ scan returned 0 hits; a case-insensitive probe falsely counted math.select as Select."
+  },
+  "dataSovereignty": {
+    "migratedFieldsToGlobalDataVault": false,
+    "addedBufferIds": [],
+    "addedTryAcquireWriteLockCalls": 0,
+    "addedTryLockBufferCalls": 0,
+    "addedTryReleaseCalls": 0,
+    "addedFinallyBlocks": 19,
+    "addedReleaseVaultWriteBufferCalls": 15,
+    "addedReleaseSimulationWriteLocksCalls": 1,
+    "addedLockOwnershipBooleans": 12,
+    "addedUnlockJobBuffersCalls": 6,
+    "addedEndPostFixedSwapWindowCalls": 2,
+    "addedGlobalDataVaultLines": 0,
+    "securedExistingBufferIdGroups": [
+      "AnalyticalGerstnerWaveBufferIds.Spectrum",
+      "AnalyticalGerstnerWaveBufferIds.Tuning",
+      "AnalyticalGerstnerWaveBufferIds.Requests",
+      "AnalyticalGerstnerWaveBufferIds.Results",
+      "AnalyticalGerstnerWaveBufferIds.MacroGrid",
+      "AnalyticalGerstnerWaveBufferIds.Counters",
+      "AnalyticalGerstnerWaveBufferIds.TelemetryRing",
+      "AnalyticalGerstnerWaveBufferIds.TelemetryCursor",
+      "BuoyancyDisplacementBufferIds.States",
+      "BuoyancyDisplacementBufferIds.ForcePackets",
+      "BuoyancyDisplacementBufferIds.FlowSamples",
+      "BuoyancyDisplacementBufferIds.Tuning",
+      "BuoyancyDisplacementBufferIds.TelemetryRing",
+      "BuoyancyDisplacementBufferIds.TelemetryCursor",
+      "BuoyancyDisplacementBufferIds.SleepTelemetryRing",
+      "BuoyancyDisplacementBufferIds.SleepTelemetryCursor",
+      "BuoyancyDisplacementBufferIds.SleepSdfDensity",
+      "BuoyancyDisplacementBufferIds.SleepSdfConfig",
+      "BuoyancyDisplacementBufferIds.MaterialSettlingProfiles",
+      "BuoyancyDisplacementBufferIds.DebugForces",
+      "BuoyancyDisplacementBufferIds.Counters",
+      "SeaglideHydrodynamicsBufferIds.States",
+      "SeaglideHydrodynamicsBufferIds.Requests",
+      "SeaglideHydrodynamicsBufferIds.ForcePackets",
+      "SeaglideHydrodynamicsBufferIds.FlowSamples",
+      "SeaglideHydrodynamicsBufferIds.Tuning",
+      "SeaglideHydrodynamicsBufferIds.TelemetryRing",
+      "SeaglideHydrodynamicsBufferIds.TelemetryCursor",
+      "SeaglideHydrodynamicsBufferIds.Counters",
+      "SeaglideHydrodynamicsBufferIds.VisualStates",
+      "SeaglideHydrodynamicsBufferIds.AudioSignals",
+      "SeaglideHydrodynamicsBufferIds.CavitationSignals"
+    ],
+    "proof": "git diff scan over modified hot-path files found 0 added BufferID, 0 added GlobalDataVault, 0 added TryAcquireWriteLock, 0 added TryLockBuffer, 0 added TryUnlockBuffer, 15 added ReleaseVaultWriteBuffer calls, 1 added ReleaseSimulationWriteLocks call, 12 added lock ownership booleans, 6 added UnlockJobBuffers calls, 2 added EndPostFixedSwapWindow calls, and 19 added finally blocks. Existing owner lock routes were hardened, not migrated."
+  },
+  "binarySwitchAudit": {
+    "targetDirectories": [
+      "Assets/_Project/Scripts/Physics",
+      "Assets/_Project/Scripts/Physics/Vehicles",
+      "Assets/_Project/Scripts/Physics/KCC",
+      "Assets/_Project/Scripts/Physics/Seaglide",
+      "Assets/_Project/Scripts/Physics/Buoyancy",
+      "Assets/_Project/Scripts/Physics/Cavitation"
+    ],
+    "missingDirectories": [
+      "Assets/_Project/Scripts/Player"
+    ],
+    "patterns": [
+      "ResolvedQualityWeight = SeaglideSimdMath.AuthoritativeQualityWeight",
+      "GlobalQualityWeight = BuoyancyDisplacementConstants.AuthoritativeQualityWeight",
+      "GlobalQualityWeight = SubmarineBallastConstants.AuthoritativeQualityWeight",
+      "SetFloat(OceanQualityId, AsyncBuoyancyReadbackConstants.AuthoritativeQualityWeight",
+      "SetVector(WaveSampleLodId, new Vector4(maxWavelength, activeWaveCount, AsyncBuoyancyReadbackConstants.AuthoritativeQualityWeight",
+      "Smooth01(AbyssalCavitationConstants.AuthoritativeQualityWeight",
+      "float quality = HydrodynamicKccMath.AuthoritativeQualityWeight",
+      "useSimplifiedPhysics",
+      "isLowEndDevice",
+      "if (quality =="
+    ],
+    "hits": 0
+  },
+  "formulas": {
+    "submarineDrag": "dragWorld = math.lerp(-velocity * dragCoefficient * max(0.25,totalMass*0.015), normalize(-velocity) * speedSq * dragCoefficient, quality)",
+    "seaglideDrag": "dragForce = math.lerp(linearDrag, quadraticDrag, presentationQuality)",
+    "ballastBuoyancy": "submerged = (center + (bow+stern+beam)*quality + (bow+stern+beam)*(1-quality)) * 0.25",
+    "kccDynamicEpsilon": "epsilon = math.lerp(max(0.0005, skin*0.02), max(base, skin*0.75), 1-quality)",
+    "buoyancyDisplacement": "quality = min(saturate(job.GlobalQualityWeight), saturate(tuning.GlobalQualityWeight)); existing smoothstep blends consume live q",
+    "asyncReadbackWaves": "activeWaveLastIndex = ceil(lerp(2, 6, q)) - 1; shader contribution = saturate(lerp(2, 6, q) - waveIndex)",
+    "seaglideForceCadence": "thrustCadenceSeconds = lerp(maxCadence, minCadence, q*q*(3-2*q)); low q accumulates solverDelta and schedules less often, high q runs at authored minimum cadence",
+    "cavitationSdf": "multiTapWeight = SmoothRange(0.35, 0.85, q); interpolationWeight = Smooth01(saturate((Smooth01(q)-0.18)/0.52))"
+  },
+  "apexReverificationFixes": [
+    "SubmarineBallastBuoyancyContracts.cs now sanitizes SurfaceSwellMeters with SafeFinite(..., 0f) before bow/stern/beam sample math.",
+    "AbyssalCavitationRuntime.cs now routes the remaining runtime Smooth01 helper and telemetry GlobalQualityWeight through finite fallback.",
+    "ContinuousPhysicsQuality1409EditTests.cs now asserts NaN swell cannot produce NaN ballast force.",
+    "AnalyticalGerstnerWaveRuntime.cs now fail-closes job and telemetry lock lifecycles with try/finally around existing TryLockBuffer routes.",
+    "SeaglideHydrodynamicsRuntime.cs now fail-closes post-lock scheduling and active-job cleanup with try/finally around existing TryLockBuffer routes.",
+    "AnalyticalGerstnerWaveRuntime.cs now fail-closes PostFixed swap windows with try/finally EndPostFixedSwapWindow calls.",
+    "BuoyancyDisplacementRuntime.cs now fail-closes post-lock scheduling and completion telemetry writes with try/finally around existing TryLockBuffer routes.",
+    "AsyncBuoyancyReadbackRuntime.cs now fail-closes existing AcquireVaultWriteBuffer routes for request queueing, completed readback copy, seeding, tuning/counter/telemetry writes, editor CSV profile loading, and mock/apply buffer acquisition failure cleanup.",
+    "AsyncBuoyancyReadbackRuntime.cs now gates ReleaseVaultWriteBuffer behind local ownership booleans set only from NativeArray.IsCreated, avoiding release-by-handle when acquisition failed under contention.",
+    "SubmarineBallastBuoyancyContracts.cs now removes the remaining q/sample-budget denominator path and uses always-on four-sample compensated integration: secondary*q + secondary*(1-q).",
+    "SeaglideHydrodynamicsRuntime.cs now uses q inside ResolveThrustCadenceSeconds instead of accepting q and returning only fixedDeltaTime."
+  ],
+  "lineEvidence": {
+    "submarineDynamics": [
+      "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs:83",
+      "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs:625",
+      "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs:823",
+      "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs:1742",
+      "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs:1744"
+    ],
+    "ballastBuoyancy": [
+      "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs:590",
+      "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs:591",
+      "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs:597",
+      "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs:598",
+      "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs:599",
+      "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs:600"
+    ],
+    "buoyancyDisplacement": [
+      "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementJobs.cs:522",
+      "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs:444",
+      "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs:521",
+      "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs:577",
+      "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs:580",
+      "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs:583",
+      "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs:1327",
+      "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs:1328",
+      "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs:1336",
+      "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs:1338"
+    ],
+    "asyncReadback": [
+      "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs:211",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs:608",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs:624",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs:634",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs:688",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs:1252",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs:1256",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs:1257",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs:1294",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs:1296",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs:1354",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs:1366",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs:1367",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs:1414",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs:1416",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs:1786",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs:1798",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs:1833",
+      "Assets/_Project/Art/Shaders/Hecton_WaveHeightSampler.compute:50",
+      "Assets/_Project/Art/Shaders/Hecton_WaveHeightSampler.compute:53"
+    ],
+    "kcc": [
+      "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs:444",
+      "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs:450",
+      "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs:1910",
+      "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs:4074"
+    ],
+    "seaglide": [
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs:228",
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs:230",
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:309",
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:326",
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:346",
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:416",
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:420",
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:423",
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:859",
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:864",
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:866",
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:1281"
+      ,"Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:1291",
+      "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:1300"
+    ],
+    "analyticalWaves": [
+      "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs:212",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs:265",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs:269",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs:272",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs:282",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs:287",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs:289",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs:328",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs:330",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs:331",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs:750",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs:755",
+      "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs:757"
+    ],
+    "cavitation": [
+      "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:540",
+      "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:1549",
+      "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:1817",
+      "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:1943",
+      "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:1986",
+      "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:2301"
+    ]
+  },
+  "structOffsetProof": [
+    "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs:44 FieldOffset(32) GlobalQualityWeight",
+    "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs:114 FieldOffset(124) GlobalQualityWeight",
+    "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs:120 FieldOffset(148) ActiveSampleBudget",
+    "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs:139 FieldOffset(92) ActiveSamples",
+    "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementContracts.cs:218 FieldOffset(124) ResolvedQualityWeight",
+    "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackContracts.cs:128 FieldOffset(32) GlobalQualityWeight",
+    "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsContracts.cs:106 FieldOffset(124) ResolvedQualityWeight"
+  ],
+  "forceInvarianceProof": {
+    "method": "Editor test sweeps q=0, q=0.5, q=1 through CalculateBuoyancyForceJob.",
+    "assertions": [
+      "ActiveSamples remains 4.",
+      "SubmergedRatio equal within 0.000001.",
+      "NetForce.y equal within 0.01 N."
+    ],
+    "testFile": "Assets/_Project/Tests/Editor/ContinuousPhysicsQuality1409EditTests.cs",
+    "runtimeExecuted": false,
+    "runtimeExecutionReason": "CPU gate measured 100.0%; compiler/test runner not invoked."
+  },
+  "microseconds": {
+    "measuredProfilerUs": null,
+    "staticScanUsApprox": 5200000,
+    "submarineDragUsSaved": 0.0,
+    "ballastBuoyancyUsSaved": 0.0,
+    "seaglideDragUsSaved": 0.0,
+    "seaglideCadenceSweepSeconds": {
+      "q0": 0.12,
+      "q0_25": 0.104375,
+      "q0_5": 0.07,
+      "q0_75": 0.035625,
+      "q1": 0.02
+    },
+    "kccPotentialUsSavedPerEntityLowQ": 0.4,
+    "asyncReadbackPotentialGpuWaveLaneReduction": "6 lanes at q=1, 2 lanes plus fractional fade at q=0",
+    "cavitationPotentialReduction": "nearest SDF and single midpoint dampening at low q; trilinear and multi-tap at high q",
+    "lockLifecycleRuntimeCost": "nineteen added finally blocks plus twelve ownership booleans across lock/swap/async readback hardening; no managed allocation; no new steady-state physics math",
+    "note": "No profiler, tests, or compile run was launched because CPU gate measured 100.0% on the final gate and one dotnet process was active."
+  },
+  "modifiedFileHashesSha256": [
+    {
+      "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+      "sha256": "abb0fd3f77d4d59a436beb8b82dc275a23b5d0692a91770c8387f9e6b98f9bc3"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+      "sha256": "6451602d3d60e821ef8559314a3e0283160bfaf32bc8fcd89f77b780fd6cac3e"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementJobs.cs",
+      "sha256": "a2fd39ea5ffcbd4e428aeba2b86f1b9ed2130b44649a262d50613c3c5248d6da"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+      "sha256": "b7ce43cfde3d68c377119c8303e465bab242218d1b7af9266e3ac71ad402d8d5"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+      "sha256": "563377bcc09cdf2ad6f36232c300ef7d149ec257458d6bc63c833f7e6809c93d"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+      "sha256": "dff2bcf7f14cb3f6220be3d1f7134069c4dadd7c53a864947369bc8309430199"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+      "sha256": "cb44bad60b1558fe929bfccf508dab3b14d398660f4dbd2ecf43b386189eb88d"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+      "sha256": "6c9490925d832be8c4afe25aeb89c65877e1db3c042bb86c2e1eae65e509602d"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+      "sha256": "6b51960805bed3f90462c7a0905400db46947805ac97577478fac72e4580ff17"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+      "sha256": "325d2c4d135d8cf0ccf06b6efe878abd139c5d15f72a8c3bdc20bd63df2c1e78"
+    },
+    {
+      "path": "Assets/_Project/Art/Shaders/Hecton_WaveHeightSampler.compute",
+      "sha256": "f863e77573af8f36884e49ae73e7ae833968fa289b6d9468076a8c421b6472c9"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/ContinuousPhysicsQuality1409EditTests.cs",
+      "sha256": "5129c7dec232e25d9cdc19f99f86d8ef497261f5d629d2e87a1aef0d1d81378f"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/ContinuousPhysicsQuality1409EditTests.cs.meta",
+      "sha256": "5d19e1dc1164fb47ac2c8133d6c8136d98d3f4803cc438c56f3283a1f6cd2276"
+    }
+  ],
+  "testsAdded": [
+    "BallastBuoyancy_QualitySweep_PreservesIntegratedForce",
+    "BallastBuoyancy_NonFiniteSwell_FailsClosedWithoutNaN",
+    "KccDynamicEpsilon_QualitySweep_IsContinuousAndMonotonic",
+    "ContinuousPhysics1409_StaticAudit_BansReintroducedQualityConstants"
+  ],
+  "remainingOutOfDomainFindings": [
+    "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs still contains VehicleDamageConstants.AuthoritativeQualityWeight; combat damage domain, not hydrodynamic/KCC.",
+    "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs still contains SubmarineAutopilotConstants.AuthoritativeQualityWeight; vehicle autopilot/navigation domain.",
+    "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs still contains HabitatFluidIncursionMath.AuthoritativeQualityWeight; habitat flooding/logistics domain."
+  ],
+  "dumpStatus": {
+    "dumpPath": "Docs/AgentLogs/Dump_1409.bin",
+    "generated": false,
+    "reason": "No runtime crash, NaN execution, or failing test run was executed in this pass."
+  },
+  "verification": {
+    "gitDiffCheck": "passed_with_line_ending_warnings_only",
+    "staticForbiddenPatternHits": 0,
+    "zeroGcAddedHotPathReferenceNewHits": 0,
+    "zeroGcAddedHotPathForbiddenCalls": 0,
+    "valueTypeNewInitializersInDiff": 24,
+    "testsExecuted": false,
+    "compilationExecuted": false
+  }
+}

@@ -814,7 +814,7 @@ namespace Hecton8.Lighting
 
         private void CacheDependencies()
         {
-            _vault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
         }
 
         private NativeArray<T> ResolveArray<T>(
@@ -1033,10 +1033,7 @@ namespace Hecton8.Lighting
             {
                 case GlobalRegistryServiceSlot.DataVault:
                     if (!ReferenceEquals(_vault, currentService))
-                    {
-                        ReleaseRuntimeState(blockingComplete: true);
-                        _vault = currentService as IDataVault;
-                    }
+                        RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
 
                     if (_vault != null && isActiveAndEnabled)
                         EnsureNativeState();
@@ -1050,6 +1047,15 @@ namespace Hecton8.Lighting
                         TryRegister();
                     break;
             }
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault vault, IDataVault releaseVaultOverride = null)
+        {
+            if (ReferenceEquals(_vault, vault))
+                return;
+
+            ReleaseRuntimeState(blockingComplete: true, releaseVaultOverride: _vault ?? releaseVaultOverride);
+            _vault = vault;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1069,7 +1075,7 @@ namespace Hecton8.Lighting
             _registeredHotSwapListener = false;
         }
 
-        private bool ReleaseRuntimeState(bool blockingComplete)
+        private bool ReleaseRuntimeState(bool blockingComplete, IDataVault releaseVaultOverride = null)
         {
             if (_simulationJobActive)
             {
@@ -1086,7 +1092,7 @@ namespace Hecton8.Lighting
             _gridClearRequested = false;
             _nativeReady = false;
             CompletePendingGpuUpload();
-            ReleaseInteriorGIVaultHandles(_vault);
+            ReleaseInteriorGIVaultHandles(releaseVaultOverride ?? _vault);
             _probeFront = default;
             _probeBack = default;
             _sources = default;
@@ -1104,25 +1110,26 @@ namespace Hecton8.Lighting
 
         private void ReleaseInteriorGIVaultHandles(IDataVault vault)
         {
-            ReleaseInteriorGIVaultHandle(vault, ref _probeFront);
-            ReleaseInteriorGIVaultHandle(vault, ref _probeBack);
-            ReleaseInteriorGIVaultHandle(vault, ref _sources);
-            ReleaseInteriorGIVaultHandle(vault, ref _occlusion);
-            ReleaseInteriorGIVaultHandle(vault, ref _tuning);
-            ReleaseInteriorGIVaultHandle(vault, ref _telemetryRing);
-            ReleaseInteriorGIVaultHandle(vault, ref _telemetryScratch);
-            ReleaseInteriorGIVaultHandle(vault, ref _mockPower);
-            ReleaseInteriorGIVaultHandle(vault, ref _faults);
-            ReleaseInteriorGIVaultHandle(vault, ref _csvBytes);
-            ReleaseInteriorGIVaultHandle(vault, ref _ambientProfiles);
-            ReleaseInteriorGIVaultHandle(vault, ref _ambientProfileCount);
+            ReleaseInteriorGIVaultHandle(vault, ref _probeFront, ProbeFrontBuffer);
+            ReleaseInteriorGIVaultHandle(vault, ref _probeBack, ProbeBackBuffer);
+            ReleaseInteriorGIVaultHandle(vault, ref _sources, ProbeSourcesBuffer);
+            ReleaseInteriorGIVaultHandle(vault, ref _occlusion, ProbeOcclusionBuffer);
+            ReleaseInteriorGIVaultHandle(vault, ref _tuning, ProbeTuningBuffer);
+            ReleaseInteriorGIVaultHandle(vault, ref _telemetryRing, ProbeTelemetryRingBuffer);
+            ReleaseInteriorGIVaultHandle(vault, ref _telemetryScratch, ProbeTelemetryScratchBuffer);
+            ReleaseInteriorGIVaultHandle(vault, ref _mockPower, ProbeMockPowerBuffer);
+            ReleaseInteriorGIVaultHandle(vault, ref _faults, ProbeFaultBuffer);
+            ReleaseInteriorGIVaultHandle(vault, ref _csvBytes, ProbeCsvBytesBuffer);
+            ReleaseInteriorGIVaultHandle(vault, ref _ambientProfiles, ProbeAmbientProfileBuffer);
+            ReleaseInteriorGIVaultHandle(vault, ref _ambientProfileCount, ProbeAmbientProfileCountBuffer);
         }
 
         private static void ReleaseInteriorGIVaultHandle<T>(
             IDataVault vault,
-            ref VaultGenerationHandle<T> handle) where T : struct
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
         {
-            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+            if (vault != null && IsInteriorGIHandle(in handle, bufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;

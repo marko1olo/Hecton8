@@ -63,6 +63,7 @@ Shader "Hecton8/UI/DiegeticVisorCurvedHUD"
 
             struct Varyings
             {
+                UNITY_VERTEX_OUTPUT_STEREO
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
             };
@@ -90,7 +91,12 @@ Shader "Hecton8/UI/DiegeticVisorCurvedHUD"
             SAMPLER(sampler_DirtTex);
 
             float _HectonVRBrownoutIntensity;
+            float4 _HectonVrComfortSignals;
+            float4 _HectonVrComfortMotion;
+            float4 _HectonVRSomaticComfortState;
+            float _HectonTunnelingIntensity;
 
+            float _H8GlobalQualityWeight;
             float ResolveLinearRamp01(float edge0, float edge1, float value)
             {
                 return saturate((value - edge0) / max(edge1 - edge0, 1e-5));
@@ -141,9 +147,46 @@ Shader "Hecton8/UI/DiegeticVisorCurvedHUD"
                 clip(saturate(coverage + _DitherCoverageBias) - threshold);
             }
 
+            float HectonComfortIgn(float2 pixel)
+            {
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
+            float2 ResolveHectonComfortEyeStableScreenUV(float2 positionCS)
+            {
+                float2 screenUV = saturate(positionCS * rcp(max(_ScreenParams.xy, float2(1.0, 1.0))));
+#if defined(UNITY_SINGLE_PASS_STEREO) || defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
+                float4 stereoScaleOffset = unity_StereoScaleOffset[unity_StereoEyeIndex];
+                screenUV = (screenUV - stereoScaleOffset.zw) * rcp(max(stereoScaleOffset.xy, float2(0.0001, 0.0001)));
+#endif
+                return saturate(screenUV);
+            }
+
+            float ResolveHectonComfortBlackAmount(float2 screenUV, float2 positionCS)
+            {
+                float vrComfortEnabled = saturate(_HectonVrComfortSignals.w);
+                float somaticTunnel = saturate(_HectonVRSomaticComfortState.x);
+                float vrComfortTunnel = saturate(max(max(_HectonVrComfortSignals.x, _HectonVrComfortMotion.z) * vrComfortEnabled, max(_HectonTunnelingIntensity, somaticTunnel)));
+                float vrComfortBlackout = saturate(max(_HectonVrComfortSignals.y * vrComfortEnabled, _HectonVRBrownoutIntensity));
+                float2 radial = screenUV * 2.0 - 1.0;
+                radial.x *= _ScreenParams.x * rcp(max(_ScreenParams.y, 1.0));
+                float radialMagnitudeSq = saturate(dot(radial, radial));
+                float tunnelInner = lerp(0.74, 0.34, vrComfortTunnel);
+                float tunnelInnerSq = tunnelInner * tunnelInner;
+                float tunnelMask = saturate((radialMagnitudeSq - tunnelInnerSq) * rcp(max(1.0 - tunnelInnerSq, 0.0009765625))) * vrComfortTunnel;
+                float ign = HectonComfortIgn(floor(positionCS));
+                float tunnelDither = step(ign, saturate(tunnelMask + vrComfortTunnel * 0.0625));
+                float comfortQualityWeight = saturate(_H8GlobalQualityWeight);
+                float ditherFloor = 0.56 - 0.06 * comfortQualityWeight;
+                float ditherCeiling = 0.90 + 0.06 * comfortQualityWeight;
+                float ditheredTunnel = tunnelMask * lerp(ditherFloor, ditherCeiling, tunnelDither);
+                return saturate(max(ditheredTunnel, vrComfortBlackout));
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 float3 positionOS = input.positionOS.xyz;
                 float tearBand = step(0.82, frac(input.uv.y * 18.0 + _Time.y * 5.0));
                 float tearWave = SignedTriangleWave((input.uv.y * 96.0) + (_Time.y * 70.0));
@@ -155,6 +198,7 @@ Shader "Hecton8/UI/DiegeticVisorCurvedHUD"
 
             half4 Frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float2 centered = input.uv - 0.5;
                 float2 absCenter = abs(centered) * 2.0;
                 float edge = max(absCenter.x, absCenter.y);
@@ -179,6 +223,10 @@ Shader "Hecton8/UI/DiegeticVisorCurvedHUD"
                 float3 color = hudRgb * _Tint.rgb * _EmissionGain * lerp(0.24, 1.0, power);
                 color = lerp(color, (color * 0.42) + (_Tint.rgb * 0.08), dirtMask);
                 alpha = max(alpha, dirtMask * 0.22) * power;
+                float2 screenUV = ResolveHectonComfortEyeStableScreenUV(input.positionCS.xy);
+                float comfortBlackAmount = ResolveHectonComfortBlackAmount(screenUV, input.positionCS.xy);
+                color = lerp(color, float3(0.0015, 0.0023, 0.0031), comfortBlackAmount);
+                alpha = max(alpha, comfortBlackAmount);
 
                 ClipDitheredCoverage(alpha, input.positionCS.xy);
                 return half4(color, 1.0h);

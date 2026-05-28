@@ -7,6 +7,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
+using Hecton8.Visor;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -62,7 +63,7 @@ namespace Hecton8.Graphics.VR
         private const ushort FlagQuestClassificationPending = 1 << 13;
         private const ushort FlagFreshGpuTimeEscalation = 1 << 14;
         private const string RuntimeObjectName = "[FoveatedRenderCommander]";
-        private const string DumpFileName = "Dump_1335_FoveatedRenderCommander.bin";
+        private const string DumpFileName = "Dump_1406.bin";
 
         // COLD ALLOC: List<XRDisplaySubsystem>[8] - XR display enumeration scratch reused on policy commits - owner: FoveatedRenderCommander
         private static readonly List<XRDisplaySubsystem> s_displays = new List<XRDisplaySubsystem>(8);
@@ -242,7 +243,7 @@ namespace Hecton8.Graphics.VR
                 return;
 
             _disposed = false;
-            _dataVault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
             RefreshGlobalQualityWeight01();
             EnsureTelemetry();
             _hardwareThermal = GlobalRegistry.HardwareThermal;
@@ -397,10 +398,7 @@ namespace Hecton8.Graphics.VR
 
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
-                ReleaseVaultBuffer(previousService as IDataVault ?? _dataVault, ref _telemetryHandle);
-                _dataVault = currentService as IDataVault;
-                _telemetryCursor = 0;
-                _telemetryVaultGeneration = 0u;
+                RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
                 EnsureTelemetry();
                 return;
             }
@@ -480,6 +478,7 @@ namespace Hecton8.Graphics.VR
             FoveatedRenderingCaps caps = SystemInfo.foveatedRenderingCaps;
             bool capsSupported = caps != FoveatedRenderingCaps.None;
             bool quest2Runtime = IsQuest2Runtime(out bool questClassificationPending);
+            bool questFamilyRuntime = Application.platform == RuntimePlatform.Android && IsQuestFamilyDevice();
             float qualityWeight01 = RefreshGlobalQualityWeight01();
             bool thermalPressure =
                 _thermalSeverity >= (byte)HardwareThermalSeverity.Throttling ||
@@ -547,12 +546,16 @@ namespace Hecton8.Graphics.VR
                 out bool hysteresisHeld);
             if (hysteresisHeld)
                 flags |= FlagHysteresisHold;
-            float targetLevel = ResolveLevel01(levelCode);
+            float targetLevel = QuestFoveationDriver.ResolveTargetLevel01(
+                qualityWeight01,
+                policyPressure01,
+                levelCode,
+                quest2Runtime && lockQuest2HighFoveation,
+                questFamilyRuntime);
             float qualityRelief01 = ResolveQualityRelief01(
                 qualityWeight01,
                 policyPressure01,
                 quest2Runtime && lockQuest2HighFoveation);
-            targetLevel = math.lerp(targetLevel, 0f, qualityRelief01);
             if (qualityRelief01 > ApplyEpsilon)
                 flags |= FlagQualityReliefActive;
             bool gazeTracked = ShouldUseGazeTrackedVrs(xrActive, caps, quest2Runtime, out bool gazeGraceHeld);
@@ -601,12 +604,16 @@ namespace Hecton8.Graphics.VR
                 if (gpuTimeHysteresisHeld)
                     flags |= FlagHysteresisHold;
 
-                targetLevel = ResolveLevel01(levelCode);
+                targetLevel = QuestFoveationDriver.ResolveTargetLevel01(
+                    qualityWeight01,
+                    1f,
+                    levelCode,
+                    quest2Runtime && lockQuest2HighFoveation,
+                    questFamilyRuntime);
                 qualityRelief01 = ResolveQualityRelief01(
                     qualityWeight01,
                     1f,
                     quest2Runtime && lockQuest2HighFoveation);
-                targetLevel = math.lerp(targetLevel, 0f, qualityRelief01);
                 if (qualityRelief01 > ApplyEpsilon)
                     flags |= FlagQualityReliefActive;
                 mode = gazeTracked ? FoveatedRenderMode.GazeTracked : FoveatedRenderMode.Fixed;
@@ -658,63 +665,26 @@ namespace Hecton8.Graphics.VR
             appliedLevel = 0f;
             displayCount = 0;
 
-            bool stateUnchanged = !force &&
-                math.abs(_appliedLevel01 - targetLevel) <= ApplyEpsilon &&
-                _appliedFlags == targetFlags &&
-                _appliedMode == mode;
+            bool applied = QuestFoveationDriver.TryApplyUnityXrFoveation(
+                s_displays,
+                targetLevel,
+                targetFlags,
+                force,
+                _appliedLevel01,
+                _appliedFlags,
+                _appliedMode == mode,
+                ApplyEpsilon,
+                out QuestFoveationDriver.ApplyResult result);
 
-            s_displays.Clear();
-            SubsystemManager.GetSubsystems(s_displays);
-            float sampledGpuTimeMs = 0f;
-            bool gpuTimeSampled = false;
-            _displayLevelNonFinite = false;
-            for (int i = 0; i < s_displays.Count; i++)
-            {
-                XRDisplaySubsystem display = s_displays[i];
-                if (display == null || !display.running)
-                    continue;
-
-                float displayLevel = display.foveatedRenderingLevel;
-                bool displayLevelFinite = math.isfinite(displayLevel);
-                if (!displayLevelFinite)
-                    _displayLevelNonFinite = true;
-                bool displayDrifted = display.foveatedRenderingFlags != targetFlags ||
-                    !displayLevelFinite ||
-                    math.abs(displayLevel - targetLevel) > ApplyEpsilon;
-
-                if (!stateUnchanged || displayDrifted)
-                {
-                    display.foveatedRenderingFlags = targetFlags;
-                    display.foveatedRenderingLevel = targetLevel;
-                    displayLevel = display.foveatedRenderingLevel;
-                    displayLevelFinite = math.isfinite(displayLevel);
-                    if (!displayLevelFinite)
-                        _displayLevelNonFinite = true;
-                }
-
-                if (!displayLevelFinite)
-                    displayLevel = 0f;
-
-                appliedLevel = math.max(appliedLevel, displayLevel);
-                if (display.TryGetAppGPUTimeLastFrame(out float gpuSeconds) && math.isfinite(gpuSeconds) && gpuSeconds >= 0f)
-                {
-                    float gpuMs = gpuSeconds * SecondsToMilliseconds;
-                    if (math.isfinite(gpuMs))
-                    {
-                        sampledGpuTimeMs = math.max(sampledGpuTimeMs, gpuMs);
-                        gpuTimeSampled = true;
-                    }
-                }
-
-                displayCount++;
-            }
-
-            _latestGpuTimeMs = gpuTimeSampled ? sampledGpuTimeMs : 0f;
+            appliedLevel = result.AppliedLevel01;
+            displayCount = result.DisplayCount;
+            _latestGpuTimeMs = result.GpuTimeSampled != 0 ? result.SampledGpuTimeMs : 0f;
+            _displayLevelNonFinite = result.NonFiniteLevelDetected != 0;
             _appliedLevel01 = displayCount > 0 ? appliedLevel : 0f;
             _appliedLevelCode = ResolveAppliedLevelCode(_appliedLevel01);
             _appliedFlags = targetFlags;
             _appliedMode = displayCount > 0 ? mode : FoveatedRenderMode.Disabled;
-            return displayCount > 0 && appliedLevel > ApplyEpsilon;
+            return applied;
         }
 
         private void ClearHardwareFoveation()
@@ -872,6 +842,17 @@ namespace Hecton8.Graphics.VR
             _lastFlags = (ushort)(_lastFlags & ~FlagUiSuppressed);
         }
 
+        private void RebindDataVaultForLifecycle(IDataVault currentVault, IDataVault releaseVaultOverride = null)
+        {
+            if (ReferenceEquals(_dataVault, currentVault))
+                return;
+
+            ReleaseVaultBuffer(_dataVault ?? releaseVaultOverride, ref _telemetryHandle);
+            _dataVault = currentVault;
+            _telemetryCursor = 0;
+            _telemetryVaultGeneration = 0u;
+        }
+
         private bool EnsureTelemetry()
         {
             if (!VerifyTelemetryLayout())
@@ -904,6 +885,7 @@ namespace Hecton8.Graphics.VR
             if (vault.TryGetGenerationHandle(
                     BufferID.FoveatedRenderBlackBox,
                     out VaultGenerationHandle<FoveatedRenderTelemetryEntry> existing) &&
+                IsOwnedVaultHandle(in existing) &&
                 vault.TryReadOnlyHandle(in existing, out NativeArray<FoveatedRenderTelemetryEntry>.ReadOnly existingTelemetry) &&
                 !vault.IsCompactionFenceActive &&
                 existingTelemetry.IsCreated &&
@@ -973,28 +955,27 @@ namespace Hecton8.Graphics.VR
 
             try
             {
-                telemetry[_telemetryCursor] = new FoveatedRenderTelemetryEntry
-                {
-                    Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                    Sequence = _sequence++,
-                    TargetLevel01 = _targetLevel01,
-                    AppliedLevel01 = math.max(0f, _appliedLevel01),
-                    SystemStress01 = _systemStress01,
-                    GpuUtil01 = _gpuUtil01,
-                    GpuTimeMs = _latestGpuTimeMs,
-                    EyeWidth = _lastEyeWidth,
-                    EyeHeight = _lastEyeHeight,
-                    Flags = writeFlags,
-                    Caps = unchecked((uint)_lastCaps),
-                    TargetLevelCode = _targetLevelCode,
-                    AppliedLevelCode = _appliedLevelCode,
-                    Mode = (byte)_appliedMode,
-                    PressureLevel = _pressureLevel,
-                    FoveatedPressureTier = _foveatedPressureTier,
-                    ThermalSeverity = _thermalSeverity,
-                    DisplayCount = (ushort)math.clamp(_lastDisplayCount, 0, ushort.MaxValue),
-                    VaultGeneration = _telemetryVaultGeneration
-                };
+                FoveatedRenderTelemetryEntry entry = default;
+                entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+                entry.Sequence = _sequence++;
+                entry.TargetLevel01 = _targetLevel01;
+                entry.AppliedLevel01 = math.max(0f, _appliedLevel01);
+                entry.SystemStress01 = _systemStress01;
+                entry.GpuUtil01 = _gpuUtil01;
+                entry.GpuTimeMs = _latestGpuTimeMs;
+                entry.EyeWidth = _lastEyeWidth;
+                entry.EyeHeight = _lastEyeHeight;
+                entry.Flags = writeFlags;
+                entry.Caps = unchecked((uint)_lastCaps);
+                entry.TargetLevelCode = _targetLevelCode;
+                entry.AppliedLevelCode = _appliedLevelCode;
+                entry.Mode = (byte)_appliedMode;
+                entry.PressureLevel = _pressureLevel;
+                entry.FoveatedPressureTier = _foveatedPressureTier;
+                entry.ThermalSeverity = _thermalSeverity;
+                entry.DisplayCount = (ushort)math.clamp(_lastDisplayCount, 0, ushort.MaxValue);
+                entry.VaultGeneration = _telemetryVaultGeneration;
+                telemetry[_telemetryCursor] = entry;
 
                 _telemetryCursor++;
                 if (_telemetryCursor >= TelemetryCapacity)
@@ -1287,9 +1268,16 @@ namespace Hecton8.Graphics.VR
             return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID == (uint)BufferID.FoveatedRenderBlackBox &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)SystemID.GraphicsScalability;
+        }
+
         private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (vault != null && IsVaultHandleCreated(in handle))
+            if (vault != null && IsOwnedVaultHandle(in handle))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
@@ -1376,10 +1364,7 @@ namespace Hecton8.Graphics.VR
 
         private static float ResolveQualityRelief01(float qualityWeight01, float policyPressure01, bool lockedHighFoveation)
         {
-            float quality = Sanitize01(qualityWeight01);
-            float pressure = Smooth01(policyPressure01);
-            float relief = math.smoothstep(QualityReliefStart, QualityReliefEnd, quality);
-            return math.select(math.saturate(relief * (1f - pressure)), 0f, lockedHighFoveation);
+            return QuestFoveationDriver.ResolveQualityRelief01(qualityWeight01, policyPressure01, lockedHighFoveation);
         }
 
         private static float Smooth01(float value)

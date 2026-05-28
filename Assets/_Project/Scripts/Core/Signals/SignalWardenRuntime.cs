@@ -804,9 +804,8 @@ namespace Hecton8.Core.Contracts.Signals
         private static int _dumpRequested;
 
         /// <summary>Initializes the vault-backed black-box ring.</summary>
-        public static void Initialize()
+        public static void Initialize(IDataVault vault)
         {
-            IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null)
                 return;
 

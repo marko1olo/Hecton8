@@ -376,7 +376,7 @@ namespace GPUInstancer
                                     GPUInstancerConstants.RuntimeModificationKernelProperties.BUFFER_PARAMETER_POSITION_OFFSET, offsetPosition);
 
                                 GPUInstancerConstants.computeRuntimeModification.Dispatch(GPUInstancerConstants.computeBufferTransformOffsetId,
-                                    Mathf.CeilToInt(detailBuffer.count / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);
+                                    GPUInstancerConstants.GetComputeThreadGroupCount(detailBuffer.count), 1, 1);
                             }
                         }
                     }
@@ -447,9 +447,10 @@ namespace GPUInstancer
                         px = position.x * detailHeightMapScale;
                         py = position.z * detailHeightMapScale;
                         heightIndex = Mathf.FloorToInt(px) + Mathf.FloorToInt(py) * heightMapSize;
+                        heightIndex = FixBounds(heightIndex, heightDataSize, 0);
                         leftBottomH = heightMapData[heightIndex];
                         leftTopH = heightMapData[FixBounds(heightIndex + heightMapSize, heightDataSize, heightIndex)];
-                        rightBottomH = heightMapData[heightIndex + 1];
+                        rightBottomH = heightMapData[FixBounds(heightIndex + 1, heightDataSize, heightIndex)];
                         rightTopH = heightMapData[FixBounds(heightIndex + heightMapSize + 1, heightDataSize, heightIndex)];
 
                         position.x *= sizeDetailXScale;
@@ -461,7 +462,7 @@ namespace GPUInstancer
                         //Vector3 terrainPointNormal = GPUInstancerUtility.ComputeTerrainNormal(leftBottomH, leftTopH, rightBottomH, normalScale);
                         P.y = leftBottomH * normalScale;
                         Q.y = leftTopH * normalScale;
-                        P.y = rightBottomH * normalScale;
+                        R.y = rightBottomH * normalScale;
                         terrainPointNormal = Vector3.Cross(Q - R, R - P).normalized;
 
                         rotation.SetFromToRotation(Vector3.up, terrainPointNormal);
@@ -579,12 +580,23 @@ namespace GPUInstancer
             grassComputeShader.SetFloat(GPUInstancerConstants.GrassKernelProperties.DETAIL_UNIQUE_VALUE, instanceID / 1000f);
             grassComputeShader.SetFloat(GPUInstancerConstants.GrassKernelProperties.DETAIL_DENSITY, detailDensity);
             grassComputeShader.SetFloat(GPUInstancerConstants.GrassKernelProperties.TERRAIN_NORMAL_EFFECT, terrainNormalEffect);
+            grassComputeShader.SetInt(GPUInstancerConstants.GrassKernelProperties.INSTANCE_CAPACITY, visibilityBuffer.count);
+
+            int detailPixelsX = Mathf.CeilToInt(detailAndHeightMapSize.x);
+            int detailPixelsY = Mathf.CeilToInt(detailAndHeightMapSize.y);
+            if (detailPixelsX < 1)
+                detailPixelsX = 1;
+            if (detailPixelsY < 1)
+                detailPixelsY = 1;
+
+            int dispatchGroupsX = GPUInstancerConstants.GetComputeThreadGroupCount2D(detailPixelsX);
+            int dispatchGroupsY = GPUInstancerConstants.GetComputeThreadGroupCount2D(detailPixelsY);
 
             // dispatch
             grassComputeShader.Dispatch(grassInstantiationComputeKernelId,
-                Mathf.CeilToInt(detailAndHeightMapSize.x / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT_2D),
+                dispatchGroupsX,
                 1,
-                Mathf.CeilToInt(detailAndHeightMapSize.y / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT_2D));
+                dispatchGroupsY);
         }
 
         private void StartCoroutineAlt(IEnumerator routine)

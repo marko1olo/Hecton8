@@ -1,0 +1,51 @@
+﻿[
+    {
+        "file":  "Assets/_Project/Scenes/02_HECTON_WORLD.unity",
+        "sourceMono":  0,
+        "backupMono":  0,
+        "monoMatch":  true,
+        "hasRootGameObject":  false
+    },
+    {
+        "file":  "Assets/_Project/Prefabs/Player.prefab",
+        "sourceMono":  44,
+        "backupMono":  44,
+        "monoMatch":  true,
+        "hasRootGameObject":  false
+    },
+    {
+        "file":  "Assets/_Project/Prefabs/Construction/Final/PFB_Module_Corridor.prefab",
+        "sourceMono":  5,
+        "backupMono":  5,
+        "monoMatch":  true,
+        "hasRootGameObject":  false
+    },
+    {
+        "file":  "Assets/_Project/Prefabs/Construction/Final/PFB_Module_CurrentTurbine.prefab",
+        "sourceMono":  1,
+        "backupMono":  1,
+        "monoMatch":  true,
+        "hasRootGameObject":  false
+    },
+    {
+        "file":  "Assets/_Project/Prefabs/Construction/Final/PFB_Module_Foundation.prefab",
+        "sourceMono":  7,
+        "backupMono":  7,
+        "monoMatch":  true,
+        "hasRootGameObject":  false
+    },
+    {
+        "file":  "Assets/_Project/Prefabs/Construction/Final/PFB_Module_Pylon.prefab",
+        "sourceMono":  1,
+        "backupMono":  1,
+        "monoMatch":  true,
+        "hasRootGameObject":  false
+    },
+    {
+        "file":  "Assets/_Project/Prefabs/Construction/Final/PFB_Module_ServicePump.prefab",
+        "sourceMono":  1,
+        "backupMono":  1,
+        "monoMatch":  true,
+        "hasRootGameObject":  false
+    }
+]

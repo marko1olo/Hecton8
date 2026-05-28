@@ -36,7 +36,7 @@ namespace Hecton8.Graphics.Scalability
         private static int s_x001ThermalDynamicResolutionAdapterSignalPushDropCount;
         private const int TelemetryCapacity = 300;
         private const int TelemetryHeaderBytes = 20;
-        private const int DrsTelemetryEntryBytes = 48;
+        private const int DrsTelemetryEntryBytes = 64;
         private const int ResolutionScaleStateBytes = 64;
         private const int DrsStateBytes = 16;
         private const int HardwareThermalSnapshotBytes = 24;
@@ -233,41 +233,73 @@ namespace Hecton8.Graphics.Scalability
             public float UltraMinScale;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 48)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
         private struct DrsTelemetryEntry
         {
-            [FieldOffset(0)]
+            [System.Runtime.InteropServices.FieldOffset(0)]
             public uint Frame;
-            [FieldOffset(4)]
+            [System.Runtime.InteropServices.FieldOffset(4)]
             public float CurrentScale01;
-            [FieldOffset(8)]
+            [System.Runtime.InteropServices.FieldOffset(8)]
             public float TargetScale01;
-            [FieldOffset(12)]
+            [System.Runtime.InteropServices.FieldOffset(12)]
             public float FrameTimeEwmaMs;
-            [FieldOffset(16)]
+            [System.Runtime.InteropServices.FieldOffset(16)]
             public float SystemStress01;
-            [FieldOffset(20)]
+            [System.Runtime.InteropServices.FieldOffset(20)]
             public float SystemStressEwma01;
-            [FieldOffset(24)]
+            [System.Runtime.InteropServices.FieldOffset(24)]
             public float SharpenIntensity01;
-            [FieldOffset(28)]
+            [System.Runtime.InteropServices.FieldOffset(28)]
             public uint Flags;
-            [FieldOffset(32)]
+            [System.Runtime.InteropServices.FieldOffset(32)]
             public uint Sequence;
-            [FieldOffset(36)]
-            public byte PressureLevel;
-            [FieldOffset(37)]
-            public byte ThermalSeverity;
-            [FieldOffset(38)]
-            public byte StpActive;
-            [FieldOffset(39)]
-            public byte AupLockFrames;
-            [FieldOffset(40)]
-            public ushort HysteresisCounters;
-            [FieldOffset(42)]
-            public ushort FramesBelowTarget;
-            [FieldOffset(44)]
+            [System.Runtime.InteropServices.FieldOffset(36)]
             public uint UpscalerComputeTimeMsBits;
+            [System.Runtime.InteropServices.FieldOffset(40)]
+            public ushort HysteresisCounters;
+            [System.Runtime.InteropServices.FieldOffset(42)]
+            public ushort FramesBelowTarget;
+            [System.Runtime.InteropServices.FieldOffset(44)]
+            public byte PressureLevel;
+            [System.Runtime.InteropServices.FieldOffset(45)]
+            public byte ThermalSeverity;
+            [System.Runtime.InteropServices.FieldOffset(46)]
+            public byte StpActive;
+            [System.Runtime.InteropServices.FieldOffset(47)]
+            public byte AupLockFrames;
+            [System.Runtime.InteropServices.FieldOffset(48)]
+            private byte _pad0;
+            [System.Runtime.InteropServices.FieldOffset(49)]
+            private byte _pad1;
+            [System.Runtime.InteropServices.FieldOffset(50)]
+            private byte _pad2;
+            [System.Runtime.InteropServices.FieldOffset(51)]
+            private byte _pad3;
+            [System.Runtime.InteropServices.FieldOffset(52)]
+            private byte _pad4;
+            [System.Runtime.InteropServices.FieldOffset(53)]
+            private byte _pad5;
+            [System.Runtime.InteropServices.FieldOffset(54)]
+            private byte _pad6;
+            [System.Runtime.InteropServices.FieldOffset(55)]
+            private byte _pad7;
+            [System.Runtime.InteropServices.FieldOffset(56)]
+            private byte _pad8;
+            [System.Runtime.InteropServices.FieldOffset(57)]
+            private byte _pad9;
+            [System.Runtime.InteropServices.FieldOffset(58)]
+            private byte _pad10;
+            [System.Runtime.InteropServices.FieldOffset(59)]
+            private byte _pad11;
+            [System.Runtime.InteropServices.FieldOffset(60)]
+            private byte _pad12;
+            [System.Runtime.InteropServices.FieldOffset(61)]
+            private byte _pad13;
+            [System.Runtime.InteropServices.FieldOffset(62)]
+            private byte _pad14;
+            [System.Runtime.InteropServices.FieldOffset(63)]
+            private byte _pad15;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -1994,13 +2026,13 @@ namespace Hecton8.Graphics.Scalability
             WriteFloatLittleEndian(destination.Slice(24, 4), entry.SharpenIntensity01);
             BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(28, 4), entry.Flags);
             BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(32, 4), entry.Sequence);
-            destination[36] = entry.PressureLevel;
-            destination[37] = entry.ThermalSeverity;
-            destination[38] = entry.StpActive;
-            destination[39] = entry.AupLockFrames;
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(36, 4), entry.UpscalerComputeTimeMsBits);
             BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(40, 2), entry.HysteresisCounters);
             BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(42, 2), entry.FramesBelowTarget);
-            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(44, 4), entry.UpscalerComputeTimeMsBits);
+            destination[44] = entry.PressureLevel;
+            destination[45] = entry.ThermalSeverity;
+            destination[46] = entry.StpActive;
+            destination[47] = entry.AupLockFrames;
         }
 
         private static void WriteFloatLittleEndian(Span<byte> destination, float value)

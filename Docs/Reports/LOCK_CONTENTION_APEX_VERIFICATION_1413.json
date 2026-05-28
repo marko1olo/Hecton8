@@ -1,0 +1,220 @@
+{
+  "agentId": "1413",
+  "compilationResourceThrottling": {
+    "dotnetBuildLaunchedByAgent1413": false,
+    "optimizationReportSample": {
+      "cpuLoadPercent": 100,
+      "cscCount": 0,
+      "dotnetBuild": "BLOCKED_BY_CONTENTION",
+      "dotnetCount": 1,
+      "sampleCommand": "Get-Counter \"\\Processor(_Total)\\% Processor Time\" plus Get-Process dotnet/csc",
+      "sampleUtc": "2026-05-28T01:41:52Z"
+    },
+    "sample": {
+      "cpuLoadPercent": 99.422646,
+      "cscCount": 0,
+      "dotnetBuild": "BLOCKED_BY_CONTENTION",
+      "dotnetCount": 1,
+      "sampleCommand": "Get-Counter '\\Processor(_Total)\\% Processor Time' plus Get-Process dotnet/csc"
+    },
+    "source": "agent1413_apex_verifier.py runtime sample; optimization report throttle copied separately",
+    "unityTestRunnerLaunchedByAgent1413": false
+  },
+  "dataSovereignty": {
+    "migratedFieldsToGlobalDataVault": [],
+    "securedBufferIds": [
+      {
+        "lockLine": 5044,
+        "name": "OrganicTemplateDescriptorsBufferId",
+        "value": 73018
+      },
+      {
+        "lockLine": 5054,
+        "name": "OrganicLootEntriesBufferId",
+        "value": 73019
+      }
+    ],
+    "tryFinallyProof": {
+      "descriptorLockLine": 5044,
+      "descriptorUnlockLine": 5096,
+      "finallyLine": 5090,
+      "lootLockLine": 5054,
+      "releaseInsideFinally": true,
+      "tryLineAfterDescriptorLock": 5052
+    },
+    "unmanagedStructOffsets": {
+      "DeferredVaultReleaseRequest": {
+        "abiGuard": "UnsafeUtility.SizeOf<DeferredVaultReleaseRequest>() == 32 in GlobalDataVault.ValidateAbiLayout",
+        "fields": {
+          "ActiveLockBit": 16,
+          "BufferKey": 4,
+          "Flags": 25,
+          "Kind": 24,
+          "LockOwnerSystemId": 20,
+          "OffsetBytes": 8,
+          "Reserved16": 26,
+          "Sequence": 28,
+          "State": 0
+        },
+        "sizeBytes": 32
+      }
+    }
+  },
+  "generatedUtc": "2026-05-28T01:42:02Z",
+  "knownResidualRisk": [
+    "GlobalDataVault release APIs now queue a fixed-size unmanaged deferred-release request if the block mutation gate is busy. Runtime drain is static-only verified; compiler and Unity runtime proof are still pending.",
+    "Project-wide scanner still reports loop-shaped and nested-lock candidates outside the edited window; they are report-ranked but not all fixed in this pass."
+  ],
+  "modifiedFileHashes": {
+    "destructibleOrganic": "3b5ece0ee93d4d29404396a104a9d784bc587e30b37f61b470151370ee3765ad",
+    "failClosedEditTest": "9c3d246955985c340790c69d307dac781e1174c5f39a0cf7c4fc619ab48981d1",
+    "globalDataVault": "1bf5afd57181118d831f9502afb2b76439c7b058bfb85db18b35d1acfd94f243"
+  },
+  "nestedLockAuditModifiedWindows": {
+    "destructibleLockedCopyWindowNestedTryLockCalls": 0,
+    "note": "two top-level acquisitions are sequential in one protected scope; no inner acquisition exists inside the mutation loop body"
+  },
+  "prompt": {
+    "bytesUtf8": 20612,
+    "sha256": "ea3c1b2810118d90e9b0fa1debccc5accae2ae9f322891eb613a8e6b4fa0d81c",
+    "taskCount": 20
+  },
+  "reportHashesBeforeApexWrite": {
+    "lockSpanLedgerSha256": "23ed043fe774fa28d8c6aed1dd4bf25a70495a5ec6d255ea6a0861b1b3e70220",
+    "optimizationReportSha256": "eed3a266d12f8cb231b7192aeab7776347f8db49c47f703276141e8e281c6165"
+  },
+  "role": "ATOMIC_LOCK_CONTENTION_AND_FAIL_CLOSED_COORDINATOR",
+  "zeroGcTextScan": {
+    "blocks": [
+      {
+        "endLine": 4704,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 11,
+        "linqHits": [],
+        "name": "private void RecordLockContentionFault(int key)",
+        "referenceNewTextHits": [],
+        "startLine": 4694,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 2654,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 23,
+        "linqHits": [],
+        "name": "private bool TryEnterBlockMutationGate()",
+        "referenceNewTextHits": [],
+        "startLine": 2632,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 2671,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 16,
+        "linqHits": [],
+        "name": "private bool TryEnterReleaseMutationGate()",
+        "referenceNewTextHits": [],
+        "startLine": 2656,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 2710,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 18,
+        "linqHits": [],
+        "name": "private void ClearActiveLockBitIfUnused(int bit)",
+        "referenceNewTextHits": [],
+        "startLine": 2693,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 1981,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 57,
+        "linqHits": [],
+        "name": "private bool QueueDeferredRelease(",
+        "referenceNewTextHits": [],
+        "startLine": 1925,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 2015,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 33,
+        "linqHits": [],
+        "name": "private void DrainDeferredReleaseRequestsLocked()",
+        "referenceNewTextHits": [],
+        "startLine": 1983,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 2033,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 17,
+        "linqHits": [],
+        "name": "private bool TryDrainDeferredReleaseRequests()",
+        "referenceNewTextHits": [],
+        "startLine": 2017,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 2081,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 47,
+        "linqHits": [],
+        "name": "private bool DrainDeferredWriterReleaseLocked(in DeferredVaultReleaseRequest request)",
+        "referenceNewTextHits": [],
+        "startLine": 2035,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 2139,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 57,
+        "linqHits": [],
+        "name": "private bool DrainDeferredBufferPinReleaseLocked(in DeferredVaultReleaseRequest request)",
+        "referenceNewTextHits": [],
+        "startLine": 2083,
+        "stringFormatHits": [],
+        "toStringHits": []
+      },
+      {
+        "endLine": 5096,
+        "forbiddenHitCount": 0,
+        "foreachHits": [],
+        "lineCount": 53,
+        "linqHits": [],
+        "name": "DestructibleOrganicManager.BuildTemplateCaches locked copy window",
+        "referenceNewTextHits": [],
+        "startLine": 5044,
+        "stringFormatHits": [],
+        "toStringHits": []
+      }
+    ],
+    "forbiddenPatterns": [
+      "referenceNewTextHits",
+      "stringFormatHits",
+      "toStringHits",
+      "linqHits",
+      "foreachHits"
+    ],
+    "scope": "modified fail-closed helpers and modified locked copy window only; cold pre-lock cache build allocations are excluded and marked COLD ALLOC in source",
+    "totalForbiddenHits": 0
+  }
+}

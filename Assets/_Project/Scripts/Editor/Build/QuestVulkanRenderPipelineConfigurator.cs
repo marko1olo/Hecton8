@@ -27,15 +27,19 @@ namespace Hecton8.Editor.Build
         private const string ConfigureMenuPath = "HECTON-8/Platform/Configure Quest Vulkan Render Pipeline";
         private const string WireQualityMenuPath = "HECTON-8/Platform/Wire Quest Android Quality Route";
 
-        public int callbackOrder => -4590;
+        public int callbackOrder => -4700;
 
         public void OnPreprocessBuild(BuildReport report)
         {
             if (report == null || report.summary.platform != BuildTarget.Android)
                 return;
 
-            EnsureQuestAssets(logSummary: true);
+            UniversalRenderPipelineAsset urpAsset = EnsureQuestAssets(logSummary: true);
+            int questIndex = EnsureQuestQualityRow(urpAsset);
+            IsolateAndroidQualityLevel(questIndex);
             ForceSinglePassInstanced();
+            PlayerSettings.SetUseDefaultGraphicsAPIs(BuildTarget.Android, false);
+            PlayerSettings.SetGraphicsAPIs(BuildTarget.Android, new[] { GraphicsDeviceType.Vulkan });
             WriteAuditReport();
         }
 
@@ -95,7 +99,7 @@ namespace Hecton8.Editor.Build
                 Debug.Log(
                     "[QUEST_VULKAN_RENDER_PIPELINE] Configured " +
                     QuestUrpAssetPath +
-                    " depth=0 opaque=0 msaa=4 hdr=0 renderer=" +
+                    " depth=1 opaque=0 msaa=2 renderScale=0.85 hdr=0 renderer=" +
                     QuestRendererAssetPath +
                     ".");
             }
@@ -122,18 +126,24 @@ namespace Hecton8.Editor.Build
         private static void ConfigureUrpAsset(UniversalRenderPipelineAsset urpAsset, UniversalRendererData rendererData)
         {
             SerializedObject serialized = new SerializedObject(urpAsset);
-            SetBool(serialized, "m_RequireDepthTexture", false);
+            SetBool(serialized, "m_RequireDepthTexture", true);
             SetBool(serialized, "m_RequireOpaqueTexture", false);
             SetBool(serialized, "m_SupportsHDR", false);
             SetBool(serialized, "m_SoftShadowsSupported", false);
             SetBool(serialized, "m_MixedLightingSupported", false);
             SetBool(serialized, "m_PrefilterXRKeywords", true);
             SetBool(serialized, "m_PrefilterNativeRenderPass", true);
-            SetInt(serialized, "m_MSAA", 4);
-            SetFloat(serialized, "m_RenderScale", 1f);
+            SetInt(serialized, "m_MSAA", 2);
+            SetFloat(serialized, "m_RenderScale", 0.85f);
             SetInt(serialized, "m_UpscalingFilter", 1);
             SetBool(serialized, "m_FsrOverrideSharpness", false);
             SetInt(serialized, "m_StoreActionsOptimization", 1);
+            SetInt(serialized, "m_AdditionalLightsPerObjectLimit", 1);
+            SetFloat(serialized, "m_ShadowDistance", 18f);
+            SetInt(serialized, "m_ShadowCascadeCount", 1);
+            SetInt(serialized, "m_SoftShadowQuality", 0);
+            SetInt(serialized, "m_AdditionalLightsCookieResolution", 512);
+            SetObject(serialized, "m_VolumeProfile", null);
             SetObjectInFirstArraySlot(serialized, "m_RendererDataList", rendererData);
             SetInt(serialized, "m_DefaultRendererIndex", 0);
             serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -155,7 +165,7 @@ namespace Hecton8.Editor.Build
                 if (feature == null)
                     continue;
 
-                bool shouldBeActive = !IsQuestDepthResolveFeature(feature);
+                bool shouldBeActive = !IsQuestMobileSurvivalStrippedFeature(feature);
                 if (feature.isActive != shouldBeActive)
                 {
                     feature.SetActive(shouldBeActive);
@@ -164,7 +174,7 @@ namespace Hecton8.Editor.Build
             }
         }
 
-        private static bool IsQuestDepthResolveFeature(ScriptableRendererFeature feature)
+        private static bool IsQuestMobileSurvivalStrippedFeature(ScriptableRendererFeature feature)
         {
             string name = feature.GetType().Name;
             return Contains(name, "DepthFog") ||
@@ -172,7 +182,10 @@ namespace Hecton8.Editor.Build
                    Contains(name, "SSGI") ||
                    Contains(name, "VoxelSsao") ||
                    Contains(name, "VolumetricShafts") ||
+                   Contains(name, "RetinaDistortion") ||
+                   Contains(name, "VisorFluidDistortion") ||
                    Contains(name, "HalfResParticles") ||
+                   Contains(name, "ShapesRenderFeature") ||
                    Contains(name, "StochasticSsr") ||
                    Contains(name, "FillrateDepthPrepass") ||
                    Contains(name, "SonarPointCloud") ||
@@ -594,6 +607,13 @@ namespace Hecton8.Editor.Build
             SerializedProperty property = serialized.FindProperty(propertyName);
             if (property != null)
                 property.floatValue = value;
+        }
+
+        private static void SetObject(SerializedObject serialized, string propertyName, UnityEngine.Object value)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            if (property != null)
+                property.objectReferenceValue = value;
         }
 
         private static void SetString(SerializedProperty root, string propertyName, string value)

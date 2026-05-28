@@ -40,7 +40,13 @@ Shader "Hecton8/UI/Diegetic Panel Depth Fade"
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
+            float4 _HectonVrComfortSignals;
+            float4 _HectonVrComfortMotion;
+            float4 _HectonVRSomaticComfortState;
+            float _HectonVRBrownoutIntensity;
+            float _HectonTunnelingIntensity;
 
+            float _H8GlobalQualityWeight;
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
                 float4 _BaseMap_ST;
@@ -57,6 +63,7 @@ Shader "Hecton8/UI/Diegetic Panel Depth Fade"
 
             struct Varyings
             {
+                UNITY_VERTEX_OUTPUT_STEREO
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
                 float4 screenPos : TEXCOORD1;
@@ -89,9 +96,46 @@ Shader "Hecton8/UI/Diegetic Panel Depth Fade"
                 return FoveatedRemapLinearToNonUniform(saturate(uv));
             }
 
+            float HectonComfortIgn(float2 pixel)
+            {
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
+            float2 ResolveHectonComfortEyeStableScreenUV(float2 positionCS)
+            {
+                float2 screenUV = saturate(positionCS * rcp(max(_ScreenParams.xy, float2(1.0, 1.0))));
+#if defined(UNITY_SINGLE_PASS_STEREO) || defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
+                float4 stereoScaleOffset = unity_StereoScaleOffset[unity_StereoEyeIndex];
+                screenUV = (screenUV - stereoScaleOffset.zw) * rcp(max(stereoScaleOffset.xy, float2(0.0001, 0.0001)));
+#endif
+                return saturate(screenUV);
+            }
+
+            float ResolveHectonComfortBlackAmount(float2 screenUV, float2 positionCS)
+            {
+                float vrComfortEnabled = saturate(_HectonVrComfortSignals.w);
+                float somaticTunnel = saturate(_HectonVRSomaticComfortState.x);
+                float vrComfortTunnel = saturate(max(max(_HectonVrComfortSignals.x, _HectonVrComfortMotion.z) * vrComfortEnabled, max(_HectonTunnelingIntensity, somaticTunnel)));
+                float vrComfortBlackout = saturate(max(_HectonVrComfortSignals.y * vrComfortEnabled, _HectonVRBrownoutIntensity));
+                float2 radial = screenUV * 2.0 - 1.0;
+                radial.x *= _ScreenParams.x * rcp(max(_ScreenParams.y, 1.0));
+                float radialMagnitudeSq = saturate(dot(radial, radial));
+                float tunnelInner = lerp(0.74, 0.34, vrComfortTunnel);
+                float tunnelInnerSq = tunnelInner * tunnelInner;
+                float tunnelMask = saturate((radialMagnitudeSq - tunnelInnerSq) * rcp(max(1.0 - tunnelInnerSq, 0.0009765625))) * vrComfortTunnel;
+                float ign = HectonComfortIgn(floor(positionCS));
+                float tunnelDither = step(ign, saturate(tunnelMask + vrComfortTunnel * 0.0625));
+                float comfortQualityWeight = saturate(_H8GlobalQualityWeight);
+                float ditherFloor = 0.56 - 0.06 * comfortQualityWeight;
+                float ditherCeiling = 0.90 + 0.06 * comfortQualityWeight;
+                float ditheredTunnel = tunnelMask * lerp(ditherFloor, ditherCeiling, tunnelDither);
+                return saturate(max(ditheredTunnel, vrComfortBlackout));
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
                 output.positionCS = positionInputs.positionCS;
                 output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
@@ -102,6 +146,7 @@ Shader "Hecton8/UI/Diegetic Panel Depth Fade"
 
             half4 Frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float2 screenUV = input.screenPos.xy / max(input.screenPos.w, 1e-5);
                 half4 baseColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor;
                 baseColor.a *= saturate(_PanelPowerLevel);
@@ -122,6 +167,11 @@ Shader "Hecton8/UI/Diegetic Panel Depth Fade"
                     clip(occlusionFactor - ditherThreshold);
                     baseColor.a *= occlusionFactor;
                 }
+
+                float2 comfortScreenUV = ResolveHectonComfortEyeStableScreenUV(input.positionCS.xy);
+                float comfortBlackAmount = ResolveHectonComfortBlackAmount(comfortScreenUV, input.positionCS.xy);
+                baseColor.rgb = lerp(baseColor.rgb, half3(0.0015h, 0.0023h, 0.0031h), (half)comfortBlackAmount);
+                baseColor.a = max(baseColor.a, (half)comfortBlackAmount);
 
                 clip(baseColor.a - max(ResolveBayerThreshold(screenUV), 0.001));
                 return half4(baseColor.rgb, 1.0h);

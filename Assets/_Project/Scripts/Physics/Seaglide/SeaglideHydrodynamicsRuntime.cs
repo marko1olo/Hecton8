@@ -306,7 +306,7 @@ namespace Hecton8.Physics
             }
 
             _thrustCadenceAccumulator = math.min(_thrustCadenceAccumulator + safeDelta, 0.2f);
-            float thrustCadenceSeconds = ResolveThrustCadenceSeconds(safeDelta, quality);
+            float thrustCadenceSeconds = ResolveThrustCadenceSeconds(safeDelta, in tuningDto, quality);
             if (_thrustCadenceAccumulator + 0.00001f < thrustCadenceSeconds)
             {
                 WriteTelemetryHeartbeat(
@@ -323,7 +323,7 @@ namespace Hecton8.Physics
             float solverDelta = _thrustCadenceAccumulator;
             _thrustCadenceAccumulator = 0f;
             tuningDto.SectorAUP = requests[0].CurrentAUP;
-            tuningDto.ResolvedQualityWeight = SeaglideSimdMath.AuthoritativeQualityWeight;
+            tuningDto.ResolvedQualityWeight = quality;
             tuningDto.GlobalQualityWeight = quality;
             tuningDto.SimulationTickDelta = solverDelta;
             tuningDto.ActiveRequestCount = activeCount;
@@ -343,76 +343,85 @@ namespace Hecton8.Physics
                 return;
             }
 
-            if (!PhysicsApplySystem.TryPrepareSeaglideForcePackets(forcePackets, counters))
+            bool scheduled = false;
+            try
             {
-                UnlockJobBuffers();
-                WriteTelemetryHeartbeat(
-                    telemetry,
-                    telemetryCursor,
-                    counters,
-                    activeCount,
-                    quality,
-                    SeaglideHydrodynamicsConstants.FlagTelemetryHeartbeat | SeaglideHydrodynamicsConstants.FlagBudgetExceeded);
-                _simulationFrame++;
-                return;
+                if (!PhysicsApplySystem.TryPrepareSeaglideForcePackets(forcePackets, counters))
+                {
+                    WriteTelemetryHeartbeat(
+                        telemetry,
+                        telemetryCursor,
+                        counters,
+                        activeCount,
+                        quality,
+                        SeaglideHydrodynamicsConstants.FlagTelemetryHeartbeat | SeaglideHydrodynamicsConstants.FlagBudgetExceeded);
+                    _simulationFrame++;
+                    return;
+                }
+
+                int metabolismEnabled = AdvanceMetabolismCadence(solverDelta, tuningDto);
+                _scheduleTimestamp = Stopwatch.GetTimestamp();
+                CalculateSeaglideThrustJob thrustJob = new CalculateSeaglideThrustJob
+                {
+                    States = states,
+                    Requests = requests,
+                    FlowSamples = flowSamples,
+                    Tuning = tuning,
+                    ForcePackets = forcePackets,
+                    VisualStates = visualStates,
+                    CavitationSignals = cavitationSignals,
+                    ActiveRequestCount = activeCount,
+                    SimulationFrame = _simulationFrame,
+                    SimulationTickDelta = solverDelta,
+                    GlobalQualityWeight = quality
+                };
+                JobHandle thrustHandle = thrustJob.Schedule(activeCount, 64);
+
+                ProcessSeaglideMetabolismJob metabolismJob = new ProcessSeaglideMetabolismJob
+                {
+                    States = states,
+                    ForcePackets = forcePackets,
+                    Tuning = tuning,
+                    ActiveRequestCount = activeCount,
+                    MetabolismEnabled = metabolismEnabled,
+                    SimulationTickDelta = solverDelta
+                };
+                JobHandle metabolismHandle = metabolismJob.Schedule(activeCount, 64, thrustHandle);
+
+                CalculateSeaglideAudioParametersJob audioJob = new CalculateSeaglideAudioParametersJob
+                {
+                    Requests = requests,
+                    ForcePackets = forcePackets,
+                    Tuning = tuning,
+                    AudioSignals = audioSignals,
+                    ActiveRequestCount = activeCount
+                };
+                JobHandle audioHandle = audioJob.Schedule(activeCount, 64, thrustHandle);
+                JobHandle reduceDependency = JobHandle.CombineDependencies(metabolismHandle, audioHandle);
+
+                ReduceSeaglideTelemetryJob reduceJob = new ReduceSeaglideTelemetryJob
+                {
+                    ForcePackets = forcePackets,
+                    States = states,
+                    Counters = counters,
+                    TelemetryRing = telemetry,
+                    TelemetryCursor = telemetryCursor,
+                    ActiveRequestCount = activeCount,
+                    SimulationFrame = _simulationFrame,
+                    GlobalQualityWeight = quality,
+                    ComputeMicros = 0f,
+                    MetabolismEnabled = metabolismEnabled
+                };
+                _pendingHandle = reduceJob.Schedule(reduceDependency);
+                _jobScheduled = true;
+                scheduled = true;
+                H8Memory.RegisterActiveJob(SystemID.VehiclesPhysics, _pendingHandle);
             }
-
-            int metabolismEnabled = AdvanceMetabolismCadence(solverDelta, tuningDto);
-            _scheduleTimestamp = Stopwatch.GetTimestamp();
-            CalculateSeaglideThrustJob thrustJob = new CalculateSeaglideThrustJob
+            finally
             {
-                States = states,
-                Requests = requests,
-                FlowSamples = flowSamples,
-                Tuning = tuning,
-                ForcePackets = forcePackets,
-                VisualStates = visualStates,
-                CavitationSignals = cavitationSignals,
-                ActiveRequestCount = activeCount,
-                SimulationFrame = _simulationFrame,
-                SimulationTickDelta = solverDelta,
-                GlobalQualityWeight = quality
-            };
-            JobHandle thrustHandle = thrustJob.Schedule(activeCount, 64);
-
-            ProcessSeaglideMetabolismJob metabolismJob = new ProcessSeaglideMetabolismJob
-            {
-                States = states,
-                ForcePackets = forcePackets,
-                Tuning = tuning,
-                ActiveRequestCount = activeCount,
-                MetabolismEnabled = metabolismEnabled,
-                SimulationTickDelta = solverDelta
-            };
-            JobHandle metabolismHandle = metabolismJob.Schedule(activeCount, 64, thrustHandle);
-
-            CalculateSeaglideAudioParametersJob audioJob = new CalculateSeaglideAudioParametersJob
-            {
-                Requests = requests,
-                ForcePackets = forcePackets,
-                Tuning = tuning,
-                AudioSignals = audioSignals,
-                ActiveRequestCount = activeCount
-            };
-            JobHandle audioHandle = audioJob.Schedule(activeCount, 64, thrustHandle);
-            JobHandle reduceDependency = JobHandle.CombineDependencies(metabolismHandle, audioHandle);
-
-            ReduceSeaglideTelemetryJob reduceJob = new ReduceSeaglideTelemetryJob
-            {
-                ForcePackets = forcePackets,
-                States = states,
-                Counters = counters,
-                TelemetryRing = telemetry,
-                TelemetryCursor = telemetryCursor,
-                ActiveRequestCount = activeCount,
-                SimulationFrame = _simulationFrame,
-                GlobalQualityWeight = quality,
-                ComputeMicros = 0f,
-                MetabolismEnabled = metabolismEnabled
-            };
-            _pendingHandle = reduceJob.Schedule(reduceDependency);
-            H8Memory.RegisterActiveJob(SystemID.VehiclesPhysics, _pendingHandle);
-            _jobScheduled = true;
+                if (!scheduled)
+                    UnlockJobBuffers();
+            }
         }
 
         public void PostFixedTick(float fixedDeltaTime)
@@ -848,8 +857,15 @@ namespace Hecton8.Physics
         private bool FinishPendingSolverCompletion()
         {
             _jobScheduled = false;
-            H8Memory.RegisterActiveJob(SystemID.VehiclesPhysics, default);
-            UnlockJobBuffers();
+            try
+            {
+                H8Memory.RegisterActiveJob(SystemID.VehiclesPhysics, default);
+            }
+            finally
+            {
+                UnlockJobBuffers();
+            }
+
             float micros = ResolveElapsedMicros(_scheduleTimestamp);
             WriteCompletedComputeMicros(micros);
             PublishCompletedPresentationSignals();
@@ -1192,7 +1208,6 @@ namespace Hecton8.Physics
             }
 
             value.GlobalQualityWeight = ApplyResolvedGlobalQualityWeight(ref value);
-            value.ResolvedQualityWeight = SeaglideSimdMath.AuthoritativeQualityWeight;
             tuning[0] = value;
         }
 
@@ -1240,7 +1255,6 @@ namespace Hecton8.Physics
                     return false;
 
                 value.GlobalQualityWeight = ApplyResolvedGlobalQualityWeight(ref value);
-                value.ResolvedQualityWeight = SeaglideSimdMath.AuthoritativeQualityWeight;
                 tuning[0] = value;
                 return true;
             }
@@ -1250,7 +1264,8 @@ namespace Hecton8.Physics
         {
             float minCadence = math.max(0.02f, tuning.MinimumCadenceSeconds);
             float maxCadence = math.max(minCadence, tuning.MaximumCadenceSeconds);
-            float cadence = math.lerp(maxCadence, minCadence, SeaglideSimdMath.AuthoritativeQualityWeight);
+            float quality = MathLodApproximation.SaturateFinite(tuning.GlobalQualityWeight, SeaglideSimdMath.AuthoritativeQualityWeight);
+            float cadence = math.lerp(maxCadence, minCadence, quality);
             _metabolismAccumulator += deltaTime;
             if (_metabolismAccumulator < cadence)
                 return 0;
@@ -1273,15 +1288,23 @@ namespace Hecton8.Physics
         }
 #endif
 
-        private static float ResolveThrustCadenceSeconds(float fixedDeltaTime, float quality)
+        private static float ResolveThrustCadenceSeconds(float fixedDeltaTime, in SeaglideTuningDTO tuning, float quality)
         {
             float safeFixedDelta = math.clamp(fixedDeltaTime, 0.0001f, 0.05f);
-            return safeFixedDelta;
+            float safeQuality = math.saturate(math.select(1f, quality, math.isfinite(quality)));
+            float authoredMinCadence = math.select(safeFixedDelta, tuning.MinimumCadenceSeconds, math.isfinite(tuning.MinimumCadenceSeconds));
+            float authoredMaxCadence = math.select(authoredMinCadence * 4f, tuning.MaximumCadenceSeconds, math.isfinite(tuning.MaximumCadenceSeconds));
+            float minCadence = math.max(safeFixedDelta, authoredMinCadence);
+            float compensatedMaxCadence = math.min(0.2f, safeFixedDelta * 4f);
+            float maxCadence = math.max(minCadence, math.min(compensatedMaxCadence, authoredMaxCadence));
+            float smoothQuality = safeQuality * safeQuality * (3f - (2f * safeQuality));
+            return math.lerp(maxCadence, minCadence, smoothQuality);
         }
 
         private static float ApplyResolvedGlobalQualityWeight(ref SeaglideTuningDTO tuning)
         {
-            float quality = SeaglideSimdMath.AuthoritativeQualityWeight;
+            float homeostasis = HomeostasisBrain.GlobalQualityWeight;
+            float quality = math.saturate(math.select(SeaglideSimdMath.AuthoritativeQualityWeight, homeostasis, math.isfinite(homeostasis)));
             if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
             {
                 quality = MathLodApproximation.SaturateFinite(
@@ -1290,7 +1313,7 @@ namespace Hecton8.Physics
             }
 
             tuning.GlobalQualityWeight = quality;
-            tuning.ResolvedQualityWeight = SeaglideSimdMath.AuthoritativeQualityWeight;
+            tuning.ResolvedQualityWeight = quality;
             return quality;
         }
 

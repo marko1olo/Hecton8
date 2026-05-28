@@ -1,0 +1,55 @@
+{
+  "agent": "UNKNOWN",
+  "date": "2026-05-28",
+  "status": "STATIC_SOURCE_PROOF_ONLY_RUNTIME_PROOF_ABSENT",
+  "domain": "Core and memory infrastructure / SignalBus / Babel localization",
+  "userConstraint": "Full project compile errors not fixed; another agent owns compile wall.",
+  "problems": [
+    "LocRegistry.TryResolveBabelVault read GlobalRegistry.DataVault from runtime lookup/telemetry helper paths.",
+    "SignalBus<T>.TryPush could lazily initialize a lane and resolve DataVault through GlobalRegistry on first publish.",
+    "SignalTelemetryRingBuffer.Initialize resolved DataVault internally even though the caller already had the cold boot Vault."
+  ],
+  "changes": [
+    "Added LocRegistry.BindBabelVaultCold and made TryResolveBabelVault read cached _babelVault only.",
+    "LocalizationManager now cold-binds Babel Vault and rebinds it on GlobalRegistryServiceSlot.DataVault hot-swap.",
+    "Added SignalBusRegistry.BindDataVaultCold and TryGetBoundDataVault for per-lane snapshot buffers.",
+    "GlobalRegistry.RegisterDataVault and UnregisterDataVault now bind/clear the SignalBus cached Vault route.",
+    "GlobalSignals.InitializeAllQueues binds the boot Vault before lane initialization and passes it to SignalTelemetryRingBuffer.Initialize(IDataVault)."
+  ],
+  "proof": {
+    "directDataVaultReads": {
+      "Assets/_Project/Scripts/LocRegistry.cs": 0,
+      "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs": 0,
+      "Assets/_Project/Scripts/Core/GlobalRegistry.cs": 0,
+      "Assets/_Project/Scripts/LocalizationManager.cs": "1 cold Awake bind",
+      "Assets/_Project/Scripts/Core/Signals/GlobalSignals.RuntimeLifecycle.cs": "1 cold InitializeAllQueues bind",
+      "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs": "1 editor CSV load; crash fallback remains TryGetLatestCreated"
+    },
+    "signalBusAudit": {
+      "path": "Docs/Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260528_GLOBAL_ROUTE_SIGNAL_BABEL_RECHECK.json",
+      "files": 2446,
+      "shaders": 71,
+      "errors": 0,
+      "confirmedErrors": 0,
+      "warnings": 110,
+      "infos": 1195,
+      "warningComposition": {
+        "SRP_BATCHER_HOT_PATH_MATERIAL_REVIEW": 69,
+        "RUNTIME_SYNC_FILE_IO_REVIEW": 40,
+        "LOCAL_NATIVE_TELEMETRY_RING_REGISTERED_NON_VAULT": 1
+      },
+      "touchedFileWarnings": 0
+    },
+    "gitDiffCheck": "exit=0; LF-to-CRLF working-copy warnings only",
+    "documentationGates": {
+      "VerifyDocStructure.py": "pass=true; activeDocCount=708; encodingWithoutUtf8Sig=0",
+      "OOP_Doc_Scanner.py": "finalPass=true; activeFileCount=708; sourceSyncPass=true; wordReductionPercent=30.358189496725423"
+    }
+  },
+  "runtimeMicrosecondsSavedClaimed": 0,
+  "residuals": [
+    "No full solution build, Unity import, Play Mode, profiler, GCMonitor, player build, or device proof.",
+    "Live full audit warnings include concurrent SRP material-review warnings outside this patch.",
+    "Remaining direct DataVault reads are cold/editor/crash boundaries."
+  ]
+}

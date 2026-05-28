@@ -25,7 +25,7 @@ The human-facing modding answer is documented in [SDK_Authoring_Interface_Plan.m
 
 ## Current Contract Snapshot
 
-- Schema revision: `79`
+- Schema revision: `86`
 - Source `ISignal` structs: `173`
 - Mod-projected `SignalBus<T>` lanes: `2`
 - Denied-by-default `ISignal` structs: `171`
@@ -35,18 +35,19 @@ The human-facing modding answer is documented in [SDK_Authoring_Interface_Plan.m
 - Public event methods: `7`
 - Native event kinds: `2`
 - SDK builder manifest parity: `ModBuilderWindow.ModManifestData` emits the same `9` manifest fields required by `ModLoader`, including `RequiredAPIVersion` and `ModPriority`; `Validate_Mod_API_Static.ps1` fails if this source parity drifts.
-- SDK entry point: Unity menu `Hecton/Modding/SDK Hub` opens the Mod Builder, creates the external starter kit, links the core modding docs, opens the local `Mods` folder, and runs `Validate_Mod_API_Static.ps1`.
+- SDK entry point: Unity menu `Hecton/Modding/SDK Hub` prioritizes `Create External Starter Kit`, opens `External Starter Kit Workbench`, links the core modding docs, opens the local `Mods` folder, runs `Validate_Mod_API_Static.ps1`, and gates the internal legacy Mod Builder behind an explicit warning.
+- External starter workbench: Unity menu `Hecton/Modding/External Starter Kit Workbench` is the current project-integrated authoring screen for starter-kit users. It reuses the SDK Hub starter generator to create/refresh missing files, shows required starter-file health before validation, edits package identity through `Tools/set_mod_identity.ps1`, runs starter tools asynchronously so Unity Editor repaint is not blocked by stdout/stderr reads, runs `Tools/prepare_mod.ps1`, runs `Tools/validate_structure.ps1` directly for fast structure checks, lists graph opcodes through `Tools/list_allowed_opcodes.ps1`, opens the key authoring files and core docs, shows `Reports/review_manifest.json` identity/file/byte summary, and warns when the review manifest is stale relative to starter source files while preserving the envelope-only runtime boundary.
 - External starter kit: `ModdingSDK/ExternalStarterKit/` is a versioned starter template and `Hecton/Modding/SDK Hub -> Create External Starter Kit` can refresh missing files non-destructively. It contains `mod.h8manifest.json`, `mod.json`, graph/table/locale/content/report folders, copied opcode/tuning references that are statically compared against `Docs/Modding/*.csv`, and a README stating that no Unity project is required for manifest/graph/table authoring while runtime remains envelope-only.
 - External local validation: starter kits include `Tools/validate_structure.ps1`, a no-Unity structure validator that checks required files, JSON parseability, canonical mod/dependency IDs, authoring/runtime manifest ID parity, envelope-only graph/manifest flags, empty `EntryAssembly`/`EntryType`, graph node ID uniqueness, graph opcode allowlist membership against `Reference/allowed_opcodes.csv`, and graph budget parity with `mod.h8manifest.json`.
-- External review manifest: starter kits include `Tools/build_review_manifest.ps1`, a no-Unity review handoff tool that runs the structure validator first and writes `Reports/review_manifest.json` with sorted file paths, byte counts, SHA-256 hashes, total bytes, and explicit count/byte limits while excluding `Generated/` and `Reports/` outputs.
+- External review manifest: starter kits include `Tools/build_review_manifest.ps1`, a no-Unity review handoff tool that runs the structure validator first and writes `Reports/review_manifest.json` with package identity, sorted file paths, byte counts, SHA-256 hashes, total bytes, and explicit count/byte limits while excluding `Generated/` and `Reports/` outputs.
 - External identity helper: starter kits include `Tools/set_mod_identity.ps1`, a no-Unity helper that writes the same canonical mod id, display name, author, and semantic version into both manifests and then runs structure validation.
 - External manifest identity parity: local validation requires matching authoring/runtime id, display name/name, author, and semantic version, so one package cannot carry split public identity.
-- External prepare helper: starter kits include `Tools/prepare_mod.ps1`, a one-command no-Unity helper that writes identity, validates structure, and builds `Reports/review_manifest.json` in the correct order.
-- External opcode helper: starter kits include `Tools/list_allowed_opcodes.ps1`, a no-Unity helper that prints allowed graph opcode aliases/hex tokens from `Reference/allowed_opcodes.csv` and can emit JSON for future Workbench/CLI reuse.
+- External prepare helper: starter kits include `Tools/prepare_mod.ps1`, a one-command no-Unity helper that writes identity when `-Id` is supplied, then validates structure and builds `Reports/review_manifest.json`; without identity arguments it validates existing manifests and rebuilds the review report for the normal edit-review loop.
+- External opcode helper: starter kits include `Tools/list_allowed_opcodes.ps1`, a no-Unity helper that prints allowed graph opcode aliases/hex tokens from `Reference/allowed_opcodes.csv` and can emit JSON for Workbench/CLI reuse.
 - External shell portability: public starter tools compose child paths through normalized `Join-Path` segments and do not rely on Windows backslash child paths, so the copied kit can use Windows PowerShell or `pwsh` on macOS/Linux.
 - External editor help: starter kits include `Schemas/*.schema.json` plus `.vscode/settings.json`; the local validator checks exact schema URL and fileMatch pairs so schema-aware editors can autocomplete and flag manifest/graph/table/locale mistakes before the PowerShell/pwsh validator runs.
-- SDK builder authoring caps: Mod Builder enumerates bundle build assets from the selected folder with bounded filesystem enumeration and a `512` bundle-eligible asset cap; selected managed assemblies are capped at the loader's `32` top-level DLL limit and duplicate DLL file names are rejected before copy.
-- SDK builder UI validation: Mod Builder uses shallow `OnGUI` validation for responsive editor repaint and performs deep bundle asset discovery plus DLL metadata identity reads only when `Build Mod` is invoked.
+- SDK builder authoring caps: internal legacy Mod Builder enumerates bundle build assets from the selected folder with bounded filesystem enumeration and a `512` bundle-eligible asset cap; selected managed assemblies are capped at the loader's `32` top-level DLL limit and duplicate DLL file names are rejected before copy.
+- SDK builder UI validation: internal legacy Mod Builder uses shallow `OnGUI` validation for responsive editor repaint and performs deep bundle asset discovery plus DLL metadata identity reads only when `Build Internal Legacy Package` is invoked.
 - Manifest byte cap: loader rejects missing, empty, or `>32768` byte `mod.json` files before `File.ReadAllText`.
 - Manifest discovery cap: loader enumerates `mod.json` lazily and caps discovery at `64` manifests before candidate allocation.
 - Canonical mod IDs: loader and SDK builder require lowercase letters/digits separated by single `.`, `_`, or `-`; IDs and dependency IDs cannot use leading/trailing/repeated separators, whitespace, or reserved filesystem device segments.
@@ -68,7 +69,8 @@ The human-facing modding answer is documented in [SDK_Authoring_Interface_Plan.m
 ## Primary Files
 
 - `Assets/_Project/Scripts/Editor/ModdingSDK/ModdingSdkHubWindow.cs` - Unity Editor SDK hub; menu path `Hecton/Modding/SDK Hub`.
-- `Assets/_Project/Scripts/Editor/ModdingSDK/ModBuilderWindow.cs` - current Unity Editor package builder; menu path `Hecton/Modding/Mod Builder`.
+- `Assets/_Project/Scripts/Editor/ModdingSDK/ExternalStarterKitWorkbenchWindow.cs` - Unity Editor starter-kit workbench; menu path `Hecton/Modding/External Starter Kit Workbench`.
+- `Assets/_Project/Scripts/Editor/ModdingSDK/ModBuilderWindow.cs` - internal legacy Unity Editor package builder; menu path `Hecton/Modding/Internal/Legacy Mod Builder`.
 - `Signal_Schema.json` - machine-readable source-backed contract.
 - `Mod_API_Specification.md` - human-facing API specification.
 - `Validate_Mod_API_Static.ps1` - required static drift gate.

@@ -1,0 +1,63 @@
+﻿{
+    "generatedAt":  "2026-05-28T05:20:09.4695849+04:00",
+    "agentId":  "1400",
+    "status":  "STRICT_WARNING_AUDIT_SWITCH_INSTALLED_STATIC_PROOF",
+    "directoryBuildTargetsXmlParse":  "OK",
+    "strictWarningAuditDefault":  "false",
+    "guardedCompilePassesStrictWarningAudit":  true,
+    "guardedCompileArgument":  "/p:HectonStrictWarningAudit=true",
+    "warningMaskLines":  [
+                             {
+                                 "line":  7,
+                                 "text":  "\u003cHectonStrictWarningAudit Condition=\"\u0027$(HectonStrictWarningAudit)\u0027 == \u0027\u0027\"\u003efalse\u003c/HectonStrictWarningAudit\u003e"
+                             },
+                             {
+                                 "line":  18,
+                                 "text":  "\u003cPropertyGroup Condition=\"\u0027$(HectonStrictWarningAudit)\u0027 != \u0027true\u0027 And $([System.String]::Copy(\u0027$(HectonVendorGeneratedWarningProjects)\u0027).Contains(\u0027|$(MSBuildProjectName)|\u0027))\"\u003e"
+                             },
+                             {
+                                 "line":  19,
+                                 "text":  "\u003cNoWarn\u003e$(NoWarn);0108;0169;0414;0436;0618;0619;0649;2008;UNT0006\u003c/NoWarn\u003e"
+                             },
+                             {
+                                 "line":  106,
+                                 "text":  "\u003cNoWarn Condition=\"\u0027$(HectonStrictWarningAudit)\u0027 != \u0027true\u0027\"\u003e$(NoWarn);0067;0169;0414;0436;0618;0649;2002\u003c/NoWarn\u003e"
+                             },
+                             {
+                                 "line":  111,
+                                 "text":  "\u003cPropertyGroup Condition=\"\u0027$(HectonStrictWarningAudit)\u0027 != \u0027true\u0027 And \u0027$(MSBuildProjectName)\u0027 == \u0027Hecton8.Editor\u0027\"\u003e"
+                             },
+                             {
+                                 "line":  112,
+                                 "text":  "\u003cNoWarn\u003e$(NoWarn);MSB3277\u003c/NoWarn\u003e"
+                             },
+                             {
+                                 "line":  113,
+                                 "text":  "\u003cMSBuildWarningsAsMessages\u003e$(MSBuildWarningsAsMessages);MSB3277\u003c/MSBuildWarningsAsMessages\u003e"
+                             }
+                         ],
+    "guardedCompileLines":  [
+                                {
+                                    "line":  160,
+                                    "text":  "\"/p:UseSharedCompilation=false\","
+                                },
+                                {
+                                    "line":  161,
+                                    "text":  "\"/p:HectonStrictWarningAudit=true\""
+                                }
+                            ],
+    "hectonCoreProjectReferenceCount":  0,
+    "hectonCoreProjectReferenceCountMethod":  "XmlDocument.SelectNodes(//ProjectReference)",
+    "scopedBroadProjectReferenceRemoveLines":  [
+                                                   {
+                                                       "line":  379,
+                                                       "text":  "\u003cProjectReference Remove=\"@(ProjectReference)\" /\u003e"
+                                                   },
+                                                   {
+                                                       "line":  661,
+                                                       "text":  "\u003cProjectReference Remove=\"@(ProjectReference)\" /\u003e"
+                                                   }
+                                               ],
+    "broadProjectReferenceRemoveCurrentEffect":  "NO_CURRENT_Hecton8.Core_ProjectReference_ITEMS_IN_GENERATED_CSPROJ",
+    "evidence":  "Static source/XML proof only. No dotnet build invoked by this audit."
+}

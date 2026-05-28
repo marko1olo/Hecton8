@@ -14,7 +14,7 @@ using UnityEngine.Rendering;
 namespace Hecton8.Rendering.OceanSinglePass
 {
     [DisallowMultipleComponent]
-    public sealed unsafe class OceanSinglePassRuntime : MonoBehaviour, IDispatcherSystem
+    public sealed unsafe class OceanSinglePassRuntime : MonoBehaviour, IDispatcherSystem, IGlobalRegistryHotSwapListener
     {
         private const SystemID OwnerSystemId = SystemID.HabitatAtmosphere;
         private const uint DispatcherSystemHash = 0x53323632u;
@@ -70,6 +70,7 @@ namespace Hecton8.Rendering.OceanSinglePass
         private float _lastWakeComputeMicroseconds;
         private float _lastCpuSubmitMicroseconds;
         private uint _lastRenderGraphFlags;
+        private bool _registeredHotSwapListener;
 
         public static bool TryGetActiveConstantBuffer(out GraphicsBuffer constantBuffer, out uint frame)
         {
@@ -149,13 +150,21 @@ namespace Hecton8.Rendering.OceanSinglePass
             cursor = 0;
             OceanSinglePassRuntime runtime = s_runtime;
             if (runtime == null ||
-                !runtime.TryResolveVaultBuffer(in runtime._telemetryHandle, OceanSinglePassConstants.TelemetryCapacity, out NativeArray<OceanRenderTelemetryEntry> mutableTelemetry))
+                !runtime.TryResolveVaultBuffer(
+                    in runtime._telemetryHandle,
+                    OceanSinglePassConstants.TelemetryRingBuffer,
+                    OceanSinglePassConstants.TelemetryCapacity,
+                    out NativeArray<OceanRenderTelemetryEntry> mutableTelemetry))
             {
                 return false;
             }
 
             telemetry = mutableTelemetry.AsReadOnly();
-            if (runtime.TryResolveVaultBuffer(in runtime._telemetryCursorHandle, 1, out NativeArray<int> cursorArray))
+            if (runtime.TryResolveVaultBuffer(
+                    in runtime._telemetryCursorHandle,
+                    OceanSinglePassConstants.TelemetryCursorBuffer,
+                    1,
+                    out NativeArray<int> cursorArray))
                 cursor = cursorArray[0];
             return true;
         }
@@ -197,6 +206,7 @@ namespace Hecton8.Rendering.OceanSinglePass
             OceanSinglePassRuntime runtime = s_runtime;
             if (runtime != null)
             {
+                runtime.CacheColdServices();
                 runtime.EnsureVaultState();
                 runtime.EnsureGpuBuffersCold();
                 if (runtime._vaultReady)
@@ -206,14 +216,14 @@ namespace Hecton8.Rendering.OceanSinglePass
                 }
             }
 
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = runtime != null ? runtime._vault : GlobalRegistry.DataVault;
             if (vault == null)
                 return PublishMockConstantBuffer() ||
                        (runtime != null && s_publishedConstantBuffer != null && s_publishedConstantBuffer.IsValid());
 
             VaultGenerationHandle<OceanMockRenderStateDTO> handle;
             if (!vault.TryGetGenerationHandle<OceanMockRenderStateDTO>(OceanSinglePassConstants.MockRenderStateBuffer, out handle) ||
-                !IsHandleValid(in handle))
+                !IsOwnedHandle(in handle, OceanSinglePassConstants.MockRenderStateBuffer))
             {
                 if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
                     return PublishMockConstantBuffer();
@@ -225,7 +235,7 @@ namespace Hecton8.Rendering.OceanSinglePass
                     NativeArrayOptions.UninitializedMemory);
             }
 
-            if (!IsHandleValid(in handle) ||
+            if (!IsOwnedHandle(in handle, OceanSinglePassConstants.MockRenderStateBuffer) ||
                 !vault.TryResolveHandle(in handle, out NativeArray<OceanMockRenderStateDTO> mockState) ||
                 !mockState.IsCreated ||
                 mockState.Length <= 0)
@@ -306,12 +316,14 @@ namespace Hecton8.Rendering.OceanSinglePass
             EnsureProjectRootPathCold();
             EnsureVaultState();
             EnsureGpuBuffersCold();
+            TryRegisterHotSwapListener();
             TryRegisterVisualSync();
         }
 
         private void OnDisable()
         {
             TryUnregisterVisualSync();
+            TryUnregisterHotSwapListener();
             if (ReferenceEquals(s_runtime, this))
                 s_runtime = null;
             ClearPublishedBuffersIfOwnedByThis();
@@ -380,8 +392,8 @@ namespace Hecton8.Rendering.OceanSinglePass
             s_publishedWakeResolutionScale = OceanSinglePassMath.ResolveWakeResolutionScale(quality);
             double waterSurfaceAupY = 0.0;
 
-            if (TryResolveVaultBuffer(in _tuningHandle, 1, out NativeArray<OceanGuillotineTuningDTO> tuningArray) &&
-                TryResolveVaultBuffer(in _visualOverridesHandle, 1, out NativeArray<OceanVisualOverridesDTO> visualArray))
+            if (TryResolveVaultBuffer(in _tuningHandle, OceanSinglePassConstants.TuningBuffer, 1, out NativeArray<OceanGuillotineTuningDTO> tuningArray) &&
+                TryResolveVaultBuffer(in _visualOverridesHandle, OceanSinglePassConstants.VisualOverridesBuffer, 1, out NativeArray<OceanVisualOverridesDTO> visualArray))
             {
                 void* visualPtr = NativeArrayUnsafeUtility.GetUnsafePtr(visualArray);
                 ref OceanVisualOverridesDTO visual = ref UnsafeUtility.AsRef<OceanVisualOverridesDTO>(visualPtr);
@@ -406,8 +418,17 @@ namespace Hecton8.Rendering.OceanSinglePass
 
         private void CacheColdServices()
         {
-            if (_vault == null)
-                _vault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault vault)
+        {
+            if (ReferenceEquals(_vault, vault))
+                return;
+
+            ShorelineFoamGraftRuntime.Shutdown(_vault);
+            ReleaseAllVaultHandles(_vault);
+            _vault = vault;
         }
 
         private void EnsureProjectRootPathCold()
@@ -491,7 +512,8 @@ namespace Hecton8.Rendering.OceanSinglePass
             if (!visual.IsCreated || visual.Length <= 0)
                 return;
 
-            if (!_tuningSeeded || !TryResolveVaultBuffer(in _tuningHandle, 1, out NativeArray<OceanGuillotineTuningDTO> tuningArray))
+            if (!_tuningSeeded ||
+                !TryResolveVaultBuffer(in _tuningHandle, OceanSinglePassConstants.TuningBuffer, 1, out NativeArray<OceanGuillotineTuningDTO> tuningArray))
                 return;
 
             void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(visual);
@@ -539,8 +561,8 @@ namespace Hecton8.Rendering.OceanSinglePass
                 return;
 
             EnsureCsvScratch();
-            if (!TryResolveVaultBuffer(in _csvScratchHandle, OceanSinglePassConstants.CsvScratchBytes, out NativeArray<byte> scratch) ||
-                !TryResolveVaultBuffer(in _profilesHandle, OceanSinglePassConstants.AestheticProfileCapacity, out NativeArray<OceanAestheticProfileDTO> profiles))
+            if (!TryResolveVaultBuffer(in _csvScratchHandle, OceanSinglePassConstants.CsvScratchBuffer, OceanSinglePassConstants.CsvScratchBytes, out NativeArray<byte> scratch) ||
+                !TryResolveVaultBuffer(in _profilesHandle, OceanSinglePassConstants.AestheticProfilesBuffer, OceanSinglePassConstants.AestheticProfileCapacity, out NativeArray<OceanAestheticProfileDTO> profiles))
             {
                 return;
             }
@@ -569,7 +591,7 @@ namespace Hecton8.Rendering.OceanSinglePass
 #if UNITY_EDITOR
         private void EnsureCsvScratch()
         {
-            if (TryResolveVaultBuffer(in _csvScratchHandle, OceanSinglePassConstants.CsvScratchBytes, out NativeArray<byte> _))
+            if (TryResolveVaultBuffer(in _csvScratchHandle, OceanSinglePassConstants.CsvScratchBuffer, OceanSinglePassConstants.CsvScratchBytes, out NativeArray<byte> _))
                 return;
 
             AcquireOrRefreshOwnedVaultBuffer(
@@ -687,7 +709,7 @@ namespace Hecton8.Rendering.OceanSinglePass
                 !_wakeEventBufferA.IsValid() ||
                 _wakeEventBufferB == null ||
                 !_wakeEventBufferB.IsValid() ||
-                !TryResolveVaultBuffer(in _propwashEventHandle, 1, out NativeArray<PropwashEventDTO> events))
+                !TryResolveExternalVaultBuffer(in _propwashEventHandle, BufferID.PropwashGpuEventRing, 1, out NativeArray<PropwashEventDTO> events))
             {
                 s_publishedWakeEventBuffer = null;
                 s_publishedWakeEventCount = 0;
@@ -695,7 +717,7 @@ namespace Hecton8.Rendering.OceanSinglePass
             }
 
             int count = math.min(events.Length, OceanSinglePassConstants.WakeEventGpuCapacity);
-            if (TryResolveVaultBuffer(in _propwashCursorHandle, 1, out NativeArray<PropwashRingCursorDTO> cursorArray))
+            if (TryResolveExternalVaultBuffer(in _propwashCursorHandle, BufferID.PropwashGpuRingCursor, 1, out NativeArray<PropwashRingCursorDTO> cursorArray))
                 count = math.clamp(cursorArray[0].EventCount, 0, math.min(events.Length, OceanSinglePassConstants.WakeEventGpuCapacity));
 
             if (count <= 0)
@@ -727,11 +749,11 @@ namespace Hecton8.Rendering.OceanSinglePass
 
         private void RecordTelemetry(float quality)
         {
-            if (!TryResolveVaultBuffer(in _telemetryHandle, OceanSinglePassConstants.TelemetryCapacity, out NativeArray<OceanRenderTelemetryEntry> telemetry))
+            if (!TryResolveVaultBuffer(in _telemetryHandle, OceanSinglePassConstants.TelemetryRingBuffer, OceanSinglePassConstants.TelemetryCapacity, out NativeArray<OceanRenderTelemetryEntry> telemetry))
                 return;
 
             int cursor = 0;
-            if (TryResolveVaultBuffer(in _telemetryCursorHandle, 1, out NativeArray<int> cursorArray))
+            if (TryResolveVaultBuffer(in _telemetryCursorHandle, OceanSinglePassConstants.TelemetryCursorBuffer, 1, out NativeArray<int> cursorArray))
             {
                 cursor = cursorArray[0];
                 cursorArray[0] = WrapIndex(cursor + 1, OceanSinglePassConstants.TelemetryCapacity);
@@ -767,7 +789,7 @@ namespace Hecton8.Rendering.OceanSinglePass
         private bool TrySetEditorTuningInternal(float jacobianFoamThreshold, float wakeLifespanSeconds, float shorelineDepthFadeMeters)
         {
             EnsureVaultState();
-            if (!TryResolveVaultBuffer(in _tuningHandle, 1, out NativeArray<OceanGuillotineTuningDTO> tuningArray))
+            if (!TryResolveVaultBuffer(in _tuningHandle, OceanSinglePassConstants.TuningBuffer, 1, out NativeArray<OceanGuillotineTuningDTO> tuningArray))
                 return false;
 
             void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(tuningArray);
@@ -796,14 +818,35 @@ namespace Hecton8.Rendering.OceanSinglePass
             return OceanSinglePassMath.SanitizeQualityWeight(quality);
         }
 
-        private bool TryResolveVaultBuffer<T>(in VaultGenerationHandle<T> handle, int requiredLength, out NativeArray<T> buffer)
+        private bool TryResolveVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
             where T : struct
         {
             buffer = default;
             IDataVault vault = _vault;
             return vault != null &&
                    requiredLength > 0 &&
-                   IsHandleValid(in handle) &&
+                   IsOwnedHandle(in handle, bufferId) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private bool TryResolveExternalVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _vault;
+            return vault != null &&
+                   requiredLength > 0 &&
+                   IsExternalHandleValid(in handle, bufferId) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
@@ -824,7 +867,7 @@ namespace Hecton8.Rendering.OceanSinglePass
                 return false;
             }
 
-            if (IsHandleValid(in handle) &&
+            if (IsOwnedHandle(in handle, bufferId) &&
                 vault.TryResolveHandle(in handle, out buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)
@@ -833,7 +876,7 @@ namespace Hecton8.Rendering.OceanSinglePass
             }
 
             if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existing) &&
-                IsHandleValid(in existing) &&
+                IsOwnedHandle(in existing, bufferId) &&
                 vault.TryResolveHandle(in existing, out buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)
@@ -845,11 +888,11 @@ namespace Hecton8.Rendering.OceanSinglePass
             if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
                 return false;
 
-            if (IsHandleValid(in handle))
-                ReleaseVaultHandle(vault, ref handle);
+            if (IsOwnedHandle(in handle, bufferId))
+                ReleaseVaultHandle(vault, ref handle, bufferId);
 
             handle = vault.EnsureGenerationHandle<T>(bufferId, requiredLength, OwnerSystemId, options);
-            return IsHandleValid(in handle) &&
+            return IsOwnedHandle(in handle, bufferId) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
@@ -867,7 +910,7 @@ namespace Hecton8.Rendering.OceanSinglePass
                 return false;
             }
 
-            if (IsHandleValid(in handle) &&
+            if (IsExternalHandleValid(in handle, bufferId) &&
                 vault.TryResolveHandle(in handle, out NativeArray<T> buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength)
@@ -877,7 +920,7 @@ namespace Hecton8.Rendering.OceanSinglePass
 
             handle = default;
             if (!vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existing) ||
-                !IsHandleValid(in existing))
+                !IsExternalHandleValid(in existing, bufferId))
             {
                 return false;
             }
@@ -905,9 +948,42 @@ namespace Hecton8.Rendering.OceanSinglePass
             _registeredVisualSync = false;
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            RebindDataVaultForLifecycle(currentService as IDataVault);
+            if (_vault == null || !isActiveAndEnabled)
+                return;
+
+            EnsureVaultState();
+        }
+
         private void ShutdownOwnedState()
         {
             TryUnregisterVisualSync();
+            TryUnregisterHotSwapListener();
             _constantBufferA?.Release();
             _constantBufferB?.Release();
             _wakeEventBufferA?.Release();
@@ -919,7 +995,7 @@ namespace Hecton8.Rendering.OceanSinglePass
             _activeConstantBuffer = null;
             _activeWakeEventBuffer = null;
             ClearPublishedBuffersIfOwnedByThis();
-            ShorelineFoamGraftRuntime.Shutdown();
+            ShorelineFoamGraftRuntime.Shutdown(_vault);
             ReleaseAllVaultHandles(_vault);
             if (ReferenceEquals(s_runtime, this))
                 s_runtime = null;
@@ -927,15 +1003,15 @@ namespace Hecton8.Rendering.OceanSinglePass
 
         private void ReleaseAllVaultHandles(IDataVault vault)
         {
-            ReleaseVaultHandle(vault, ref _visualOverridesHandle);
-            ReleaseVaultHandle(vault, ref _tuningHandle);
-            ReleaseVaultHandle(vault, ref _telemetryHandle);
-            ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
-            ReleaseVaultHandle(vault, ref _profilesHandle);
+            ReleaseVaultHandle(vault, ref _visualOverridesHandle, OceanSinglePassConstants.VisualOverridesBuffer);
+            ReleaseVaultHandle(vault, ref _tuningHandle, OceanSinglePassConstants.TuningBuffer);
+            ReleaseVaultHandle(vault, ref _telemetryHandle, OceanSinglePassConstants.TelemetryRingBuffer);
+            ReleaseVaultHandle(vault, ref _telemetryCursorHandle, OceanSinglePassConstants.TelemetryCursorBuffer);
+            ReleaseVaultHandle(vault, ref _profilesHandle, OceanSinglePassConstants.AestheticProfilesBuffer);
 #if UNITY_EDITOR
-            ReleaseVaultHandle(vault, ref _csvScratchHandle);
+            ReleaseVaultHandle(vault, ref _csvScratchHandle, OceanSinglePassConstants.CsvScratchBuffer);
 #endif
-            ReleaseVaultHandle(vault, ref _mockRenderStateHandle);
+            ReleaseVaultHandle(vault, ref _mockRenderStateHandle, OceanSinglePassConstants.MockRenderStateBuffer);
             _propwashEventHandle = default;
             _propwashCursorHandle = default;
             _vaultReady = false;
@@ -963,14 +1039,23 @@ namespace Hecton8.Rendering.OceanSinglePass
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool IsHandleValid<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsOwnedHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)OwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsExternalHandleValid<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
         {
-            if (vault != null && IsHandleValid(in handle))
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.Generation != 0u;
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            if (vault != null && IsOwnedHandle(in handle, bufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;

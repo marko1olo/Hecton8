@@ -1,0 +1,63 @@
+{
+  "agent": "1415",
+  "generatedUtc": "2026-05-28T00:34:01Z",
+  "claim": "Layout stride is invariant and must not branch by quality; no simulation or visual fake path was changed. GlobalQualityWeight remains payload/consumer policy data, not DTO-size authority.",
+  "summary": {
+    "binaryLowEndSwitch": 0,
+    "globalQualityWeight": 7,
+    "physicalSimulationKeywords": 0
+  },
+  "hits": [
+    {
+      "pattern": "globalQualityWeight",
+      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+      "block": "ScalabilityTelemetryEntry",
+      "line": 82,
+      "match": "GlobalQualityWeight"
+    },
+    {
+      "pattern": "globalQualityWeight",
+      "file": "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+      "block": "SwayTelemetryEntry",
+      "line": 72,
+      "match": "GlobalQualityWeight"
+    },
+    {
+      "pattern": "globalQualityWeight",
+      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+      "block": "SanitizeTelemetryEntryForDump",
+      "line": 2060,
+      "match": "GlobalQualityWeight"
+    },
+    {
+      "pattern": "globalQualityWeight",
+      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+      "block": "SanitizeTelemetryEntryForDump",
+      "line": 2062,
+      "match": "GlobalQualityWeight"
+    },
+    {
+      "pattern": "globalQualityWeight",
+      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+      "block": "SanitizeTelemetryEntryForDump",
+      "line": 2067,
+      "match": "GlobalQualityWeight"
+    },
+    {
+      "pattern": "globalQualityWeight",
+      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+      "block": "SanitizeTelemetryEntryForDump",
+      "line": 2067,
+      "match": "GlobalQualityWeight"
+    },
+    {
+      "pattern": "globalQualityWeight",
+      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+      "block": "WriteScalabilityTelemetryFile",
+      "line": 2031,
+      "match": "GlobalQualityWeight"
+    }
+  ],
+  "binaryQualitySwitchIntroduced": false,
+  "physicalSimulationIntroduced": false
+}

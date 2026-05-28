@@ -1,4 +1,6 @@
+#if CANDICE_LEGACY_MONO_SQLITE
 using Mono.Data.Sqlite;
+#endif
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -6,6 +8,7 @@ using UnityEngine;
 
 namespace CandiceAIforGames.Data
 {
+#if CANDICE_LEGACY_MONO_SQLITE
     public class CandiceSQLiteProvider : CandiceProviderBase
     {
         private string query = "";
@@ -516,5 +519,112 @@ namespace CandiceAIforGames.Data
             return obj;
         }
     }
+#else
+    public class CandiceSQLiteProvider : CandiceProviderBase
+    {
+        private const int ProviderUnavailable = -1;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private const string DisabledMessage = "Candice SQLite provider disabled: legacy Mono.Data.Sqlite is quarantined. Define CANDICE_LEGACY_MONO_SQLITE only when the platform supplies compatible SQLite binaries.";
+        private static bool s_loggedDisabled;
+#endif
+
+        // COLD ALLOC: List<object>[0] - disabled provider empty result cache - owner: CandiceSQLiteProvider
+        private static readonly List<object> EmptyObjects = new List<object>(0);
+
+        // COLD ALLOC: List<string>[0] - disabled provider empty table-name cache - owner: CandiceSQLiteProvider
+        private static readonly List<string> EmptyStrings = new List<string>(0);
+
+        // COLD ALLOC: List<CandiceColumnInfo>[0] - disabled provider empty column-info cache - owner: CandiceSQLiteProvider
+        private static readonly List<CandiceColumnInfo> EmptyColumnInfos = new List<CandiceColumnInfo>(0);
+
+        public CandiceSQLiteProvider(string conStr)
+        {
+        }
+
+        public override int Delete(string serialNr = "")
+        {
+            LogDisabledOnce();
+            return ProviderUnavailable;
+        }
+
+        public override int Insert(Dictionary<object, object> parameters)
+        {
+            LogDisabledOnce();
+            return ProviderUnavailable;
+        }
+
+        public override List<object> SelectAll()
+        {
+            LogDisabledOnce();
+            EmptyObjects.Clear();
+            return EmptyObjects;
+        }
+
+        public override int SelectObject(ref Dictionary<object, object> obj, string serialNr = "")
+        {
+            LogDisabledOnce();
+            return ProviderUnavailable;
+        }
+
+        public override int Update(Dictionary<object, object> parameters)
+        {
+            LogDisabledOnce();
+            return ProviderUnavailable;
+        }
+
+        public void SetQuery(string query)
+        {
+        }
+
+        public int CreateTable(string tableName, string columnParameters)
+        {
+            LogDisabledOnce();
+            return ProviderUnavailable;
+        }
+
+        public int DeleteTable(string tableName)
+        {
+            LogDisabledOnce();
+            return ProviderUnavailable;
+        }
+
+        public int AddColumn(string tableName, string columnParameters)
+        {
+            LogDisabledOnce();
+            return ProviderUnavailable;
+        }
+
+        public List<string> GetTableNames()
+        {
+            LogDisabledOnce();
+            EmptyStrings.Clear();
+            return EmptyStrings;
+        }
+
+        public List<CandiceColumnInfo> GetColumnInfo(string tableName)
+        {
+            LogDisabledOnce();
+            EmptyColumnInfos.Clear();
+            return EmptyColumnInfos;
+        }
+
+        public void ChangeConnectionString(string conStr)
+        {
+        }
+
+        private static void LogDisabledOnce()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (s_loggedDisabled)
+            {
+                return;
+            }
+
+            s_loggedDisabled = true;
+            Debug.LogWarning(DisabledMessage);
+#endif
+        }
+    }
+#endif
 }
 

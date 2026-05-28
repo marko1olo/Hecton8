@@ -18,7 +18,7 @@ namespace Hecton8.Visor
     {
         private static int s_x001InternalFloodWaterlineRuntimeSignalPushDropCount;
         private const int TelemetryCapacity = 300;
-        private const int TelemetryEntrySizeBytes = 40;
+        private const int TelemetryEntrySizeBytes = 64;
         private const SystemID VaultOwnerSystemId = SystemID.UI;
         private const BufferID TelemetryBufferId = BufferID.InternalFloodWaterlineTelemetryRing;
         private const uint DumpMagic = 0x4946574Cu; // IFWL
@@ -40,33 +40,81 @@ namespace Hecton8.Visor
         private static readonly int InternalWaterlineRuntimeId = Shader.PropertyToID("_InternalWaterlineRuntime");
         private static readonly int InternalWaterlineDistortionId = Shader.PropertyToID("_InternalWaterlineDistortion");
 
-        [StructLayout(LayoutKind.Explicit, Size = TelemetryEntrySizeBytes)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
         private struct WaterlineTelemetryEntry
         {
-            [FieldOffset(0)]
+            [System.Runtime.InteropServices.FieldOffset(0)]
             public uint Frame;
-            [FieldOffset(4)]
+            [System.Runtime.InteropServices.FieldOffset(4)]
             public uint Sequence;
-            [FieldOffset(8)]
+            [System.Runtime.InteropServices.FieldOffset(8)]
             public int RoomId;
-            [FieldOffset(12)]
+            [System.Runtime.InteropServices.FieldOffset(12)]
             public float Fill01;
-            [FieldOffset(16)]
+            [System.Runtime.InteropServices.FieldOffset(16)]
             public float CurrentWaterlineY;
-            [FieldOffset(20)]
+            [System.Runtime.InteropServices.FieldOffset(20)]
             public float TargetWaterlineY;
-            [FieldOffset(24)]
+            [System.Runtime.InteropServices.FieldOffset(24)]
             public float CameraY;
-            [FieldOffset(28)]
+            [System.Runtime.InteropServices.FieldOffset(28)]
             public float Droplets01;
-            [FieldOffset(32)]
-            public byte Flags;
-            [FieldOffset(33)]
-            public byte Reserved0;
-            [FieldOffset(34)]
-            public ushort Reserved1;
-            [FieldOffset(36)]
+            [System.Runtime.InteropServices.FieldOffset(32)]
             public uint StateHash;
+            [System.Runtime.InteropServices.FieldOffset(36)]
+            public ushort Reserved1;
+            [System.Runtime.InteropServices.FieldOffset(38)]
+            public byte Flags;
+            [System.Runtime.InteropServices.FieldOffset(39)]
+            public byte Reserved0;
+            [System.Runtime.InteropServices.FieldOffset(40)]
+            private byte _pad0;
+            [System.Runtime.InteropServices.FieldOffset(41)]
+            private byte _pad1;
+            [System.Runtime.InteropServices.FieldOffset(42)]
+            private byte _pad2;
+            [System.Runtime.InteropServices.FieldOffset(43)]
+            private byte _pad3;
+            [System.Runtime.InteropServices.FieldOffset(44)]
+            private byte _pad4;
+            [System.Runtime.InteropServices.FieldOffset(45)]
+            private byte _pad5;
+            [System.Runtime.InteropServices.FieldOffset(46)]
+            private byte _pad6;
+            [System.Runtime.InteropServices.FieldOffset(47)]
+            private byte _pad7;
+            [System.Runtime.InteropServices.FieldOffset(48)]
+            private byte _pad8;
+            [System.Runtime.InteropServices.FieldOffset(49)]
+            private byte _pad9;
+            [System.Runtime.InteropServices.FieldOffset(50)]
+            private byte _pad10;
+            [System.Runtime.InteropServices.FieldOffset(51)]
+            private byte _pad11;
+            [System.Runtime.InteropServices.FieldOffset(52)]
+            private byte _pad12;
+            [System.Runtime.InteropServices.FieldOffset(53)]
+            private byte _pad13;
+            [System.Runtime.InteropServices.FieldOffset(54)]
+            private byte _pad14;
+            [System.Runtime.InteropServices.FieldOffset(55)]
+            private byte _pad15;
+            [System.Runtime.InteropServices.FieldOffset(56)]
+            private byte _pad16;
+            [System.Runtime.InteropServices.FieldOffset(57)]
+            private byte _pad17;
+            [System.Runtime.InteropServices.FieldOffset(58)]
+            private byte _pad18;
+            [System.Runtime.InteropServices.FieldOffset(59)]
+            private byte _pad19;
+            [System.Runtime.InteropServices.FieldOffset(60)]
+            private byte _pad20;
+            [System.Runtime.InteropServices.FieldOffset(61)]
+            private byte _pad21;
+            [System.Runtime.InteropServices.FieldOffset(62)]
+            private byte _pad22;
+            [System.Runtime.InteropServices.FieldOffset(63)]
+            private byte _pad23;
         }
 
         internal static InternalFloodWaterlineRuntime ActiveRuntimeInstance { get; private set; }
@@ -108,7 +156,7 @@ namespace Hecton8.Visor
         private bool _lastCameraAupValid;
         private int _tickCount;
 
-        public bool IsInitialized => _isInitialized && IsVaultHandleCreated(in _telemetryHandle);
+        public bool IsInitialized => _isInitialized && IsTelemetryHandleOwned(in _telemetryHandle);
         public ServiceHeartbeatState HeartbeatState => IsInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
         public bool IsServiceReady => IsInitialized;
         int IServiceHeartbeat.TickCount => _tickCount;
@@ -307,10 +355,9 @@ namespace Hecton8.Visor
             _isInitialized = false;
             _playerRuntimeContext = null;
             _habitatGraph = null;
-            IDataVault vault = _dataVault;
-            if (vault != null && IsVaultHandleCreated(in _telemetryHandle))
-                vault.ReleaseBuffer(in _telemetryHandle);
-            _telemetryHandle = default;
+            ReleaseTelemetryHandle(_dataVault);
+            _dataVault = null;
+            ResetVaultEpochState();
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
             PublishInactiveGlobals();
@@ -322,7 +369,7 @@ namespace Hecton8.Visor
             if (vault == null)
                 return;
 
-            if (IsVaultHandleCreated(in _telemetryHandle) &&
+            if (IsTelemetryHandleOwned(in _telemetryHandle) &&
                 vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<WaterlineTelemetryEntry>.ReadOnly telemetry) &&
                 telemetry.IsCreated &&
                 telemetry.Length >= TelemetryCapacity)
@@ -330,8 +377,8 @@ namespace Hecton8.Visor
                 return;
             }
 
-            if (IsVaultHandleCreated(in _telemetryHandle))
-                vault.ReleaseBuffer(in _telemetryHandle);
+            if (IsTelemetryHandleOwned(in _telemetryHandle))
+                ReleaseTelemetryHandle(vault);
 
             _telemetryHandle = vault.EnsureGenerationHandle<WaterlineTelemetryEntry>(
                 TelemetryBufferId,
@@ -343,14 +390,40 @@ namespace Hecton8.Visor
         private IDataVault CacheDataVaultCold()
         {
             if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
+                BindDataVaultForLifecycle(GlobalRegistry.DataVault);
 
             return _dataVault;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
+        private static bool IsTelemetryHandleOwned<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            return handle.BufferID == unchecked((uint)(int)TelemetryBufferId) &&
+                   handle.SystemID == (uint)VaultOwnerSystemId &&
+                   handle.Generation != 0u;
+        }
+
+        private void BindDataVaultForLifecycle(IDataVault nextVault)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            ReleaseTelemetryHandle(_dataVault);
+            _dataVault = nextVault;
+            ResetVaultEpochState();
+        }
+
+        private void ReleaseTelemetryHandle(IDataVault vault)
+        {
+            if (vault != null && IsTelemetryHandleOwned(in _telemetryHandle))
+                vault.ReleaseBuffer(in _telemetryHandle);
+
+            _telemetryHandle = default;
+        }
+
+        private void ResetVaultEpochState()
+        {
+            _telemetryCursor = 0;
+            _blackBoxDumped = false;
         }
 
         private bool TryResolveRuntimeContext(
@@ -477,12 +550,7 @@ namespace Hecton8.Visor
             if (ReferenceEquals(_dataVault, nextVault))
                 return;
 
-            IDataVault currentVault = _dataVault;
-            if (currentVault != null && IsVaultHandleCreated(in _telemetryHandle))
-                currentVault.ReleaseBuffer(in _telemetryHandle);
-
-            _telemetryHandle = default;
-            _dataVault = nextVault;
+            BindDataVaultForLifecycle(nextVault);
             if (_isInitialized)
                 EnsureNativeTelemetry();
         }
@@ -651,7 +719,7 @@ namespace Hecton8.Visor
             IDataVault vault = _dataVault;
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
-                !IsVaultHandleCreated(in _telemetryHandle))
+                !IsTelemetryHandleOwned(in _telemetryHandle))
             {
                 return;
             }
@@ -663,21 +731,19 @@ namespace Hecton8.Visor
             if (_cachedQualityPressure01 > 0.5f)
                 telemetryFlags |= 8;
             byte qualityByte = EncodeQualityWeightByte(_cachedGlobalQualityWeight01);
-            WaterlineTelemetryEntry entry = new WaterlineTelemetryEntry
-            {
-                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                Sequence = snapshot.Sequence,
-                RoomId = snapshot.RoomId,
-                Fill01 = snapshot.Fill01,
-                CurrentWaterlineY = _currentWaterlineY,
-                TargetWaterlineY = _targetWaterlineY,
-                CameraY = cameraY,
-                Droplets01 = droplets01,
-                Flags = telemetryFlags,
-                Reserved0 = qualityByte,
-                Reserved1 = 0,
-                StateHash = ResolveTelemetryHash(snapshot.RoomId, snapshot.Fill01, _currentWaterlineY, cameraY, droplets01, qualityByte)
-            };
+            WaterlineTelemetryEntry entry = default;
+            entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+            entry.Sequence = snapshot.Sequence;
+            entry.RoomId = snapshot.RoomId;
+            entry.Fill01 = snapshot.Fill01;
+            entry.CurrentWaterlineY = _currentWaterlineY;
+            entry.TargetWaterlineY = _targetWaterlineY;
+            entry.CameraY = cameraY;
+            entry.Droplets01 = droplets01;
+            entry.Flags = telemetryFlags;
+            entry.Reserved0 = qualityByte;
+            entry.Reserved1 = 0;
+            entry.StateHash = ResolveTelemetryHash(snapshot.RoomId, snapshot.Fill01, _currentWaterlineY, cameraY, droplets01, qualityByte);
 
             if (!vault.TryAcquireWriteLock(in _telemetryHandle, VaultOwnerSystemId, out NativeArray<WaterlineTelemetryEntry> telemetry))
                 return;
@@ -708,7 +774,7 @@ namespace Hecton8.Visor
             IDataVault vault = _dataVault;
             if (_blackBoxDumped ||
                 vault == null ||
-                !IsVaultHandleCreated(in _telemetryHandle))
+                !IsTelemetryHandleOwned(in _telemetryHandle))
             {
                 return;
             }
@@ -779,7 +845,7 @@ namespace Hecton8.Visor
                 vault.IsCompactionFenceActive ||
                 index < 0 ||
                 index >= TelemetryCapacity ||
-                !IsVaultHandleCreated(in _telemetryHandle) ||
+                !IsTelemetryHandleOwned(in _telemetryHandle) ||
                 !vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<WaterlineTelemetryEntry>.ReadOnly telemetry) ||
                 vault.IsCompactionFenceActive ||
                 !telemetry.IsCreated ||
@@ -804,6 +870,7 @@ namespace Hecton8.Visor
 
         private static void WriteTelemetryEntry(Span<byte> destination, in WaterlineTelemetryEntry entry)
         {
+            destination.Clear();
             BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), entry.Frame);
             BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(4, 4), entry.Sequence);
             BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(8, 4), unchecked((uint)entry.RoomId));
@@ -812,10 +879,10 @@ namespace Hecton8.Visor
             WriteFloatLittleEndian(destination.Slice(20, 4), entry.TargetWaterlineY);
             WriteFloatLittleEndian(destination.Slice(24, 4), entry.CameraY);
             WriteFloatLittleEndian(destination.Slice(28, 4), entry.Droplets01);
-            destination[32] = entry.Flags;
-            destination[33] = entry.Reserved0;
-            BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(34, 2), entry.Reserved1);
-            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(36, 4), entry.StateHash);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(32, 4), entry.StateHash);
+            BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(36, 2), entry.Reserved1);
+            destination[38] = entry.Flags;
+            destination[39] = entry.Reserved0;
         }
 
         private static void WriteFloatLittleEndian(Span<byte> destination, float value)

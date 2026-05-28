@@ -589,6 +589,19 @@ namespace Hecton.Localization
         }
 
         /// <summary>
+        /// Cold dependency injection route for Babel-owned Vault buffers.
+        /// Runtime lookup helpers must not poll GlobalRegistry.
+        /// </summary>
+        public static void BindBabelVaultCold(IDataVault vault)
+        {
+            if (ReferenceEquals(_babelVault, vault))
+                return;
+
+            ResetBabelVaultBackedStateForVaultSwap();
+            _babelVault = vault;
+        }
+
+        /// <summary>
         /// Reload the runtime hash registry from binary/static UTF-8 authority only.
         /// </summary>
         public static void ReloadBinaryOrMock(GameLanguage activeLanguage)
@@ -1158,12 +1171,20 @@ namespace Hecton.Localization
             if (destination.Length <= 0)
             {
                 RecordTelemetry(keyHash, -1, utf8Bytes.Length, BabelTelemetryFlags.Truncated);
+                Hecton8.UI.BabelSubtitleSyncRuntime.RecordUIOptimizationFailure(
+                    keyHash,
+                    Hecton8.UI.UIOptimizationFailureCode.TextBufferOverflow,
+                    utf8Bytes.Length,
+                    0,
+                    0,
+                    BabelTelemetryFlags.Truncated);
                 return found;
             }
 
             bool truncated = false;
             bool malformed = false;
             bool injectedVariable = false;
+            bool formatterOverflow = false;
             int byteCursor = 0;
             int charCursor = 0;
             int maxGlyphs = math.min(destination.Length, MaxDecodedGlyphs);
@@ -1185,11 +1206,13 @@ namespace Hecton.Localization
 
                 if (current == (byte)'^' &&
                     byteCursor + 1 < utf8Bytes.Length &&
-                    TryWriteFormatPlaceholder(utf8Bytes[byteCursor + 1], in formatArgs, destination.Slice(0, maxGlyphs), ref charCursor))
+                    IsAvailableFormatArgument(utf8Bytes[byteCursor + 1], in formatArgs))
                 {
                     injectedVariable = true;
-                    if (charCursor > maxGlyphs)
+                    if (!TryWriteFormatPlaceholder(utf8Bytes[byteCursor + 1], in formatArgs, destination.Slice(0, maxGlyphs), ref charCursor) ||
+                        charCursor > maxGlyphs)
                     {
+                        formatterOverflow = true;
                         truncated = true;
                         charCursor = maxGlyphs;
                         break;
@@ -1199,18 +1222,36 @@ namespace Hecton.Localization
                     continue;
                 }
 
-                if (current == (byte)'{' &&
-                    TryWriteBraceFormatPlaceholder(utf8Bytes, ref byteCursor, in formatArgs, destination.Slice(0, maxGlyphs), ref charCursor))
+                if (current == (byte)'{')
                 {
-                    injectedVariable = true;
-                    if (charCursor > maxGlyphs)
+                    bool wroteBracePlaceholder = TryWriteBraceFormatPlaceholder(
+                        utf8Bytes,
+                        ref byteCursor,
+                        in formatArgs,
+                        destination.Slice(0, maxGlyphs),
+                        ref charCursor,
+                        out bool braceWriteOverflow);
+                    if (wroteBracePlaceholder)
                     {
+                        injectedVariable = true;
+                        if (charCursor > maxGlyphs)
+                        {
+                            truncated = true;
+                            charCursor = maxGlyphs;
+                            break;
+                        }
+
+                        continue;
+                    }
+
+                    if (braceWriteOverflow)
+                    {
+                        injectedVariable = true;
+                        formatterOverflow = true;
                         truncated = true;
                         charCursor = maxGlyphs;
                         break;
                     }
-
-                    continue;
                 }
 
                 if (!TryReadUtf8Scalar(utf8Bytes, byteCursor, out int scalar, out int consumed))
@@ -1260,10 +1301,37 @@ namespace Hecton.Localization
 
             float spanConversionTimeMs = math.max(0f, (float)((Stopwatch.GetTimestamp() - decodeStartTicks) * 1000.0 / Stopwatch.Frequency));
             RecordTelemetry(keyHash, found ? 0 : -1, length, flags, spanConversionTimeMs);
+            if (!found)
+            {
+                Hecton8.UI.BabelSubtitleSyncRuntime.RecordUIOptimizationFailure(
+                    keyHash,
+                    Hecton8.UI.UIOptimizationFailureCode.MissingLocalizationHash,
+                    utf8Bytes.Length,
+                    length,
+                    maxGlyphs,
+                    flags);
+            }
+            else if (truncated)
+            {
+                Hecton8.UI.BabelSubtitleSyncRuntime.RecordUIOptimizationFailure(
+                    keyHash,
+                    formatterOverflow ? Hecton8.UI.UIOptimizationFailureCode.FormatterOverflow : Hecton8.UI.UIOptimizationFailureCode.TextBufferOverflow,
+                    utf8Bytes.Length,
+                    length,
+                    maxGlyphs,
+                    flags);
+            }
+
             if (spanConversionTimeMs > SlowDecodeDumpThresholdMs)
                 DumpTelemetryForSlowDecode(keyHash, length, spanConversionTimeMs);
 
             return found;
+        }
+
+        private static bool IsAvailableFormatArgument(byte token, in BabelFormatArgs formatArgs)
+        {
+            int tokenIndex = token - (byte)'0';
+            return (uint)tokenIndex < 4u && formatArgs.TryGet(tokenIndex, out _);
         }
 
         private static bool TryWriteFormatPlaceholder(
@@ -1284,8 +1352,10 @@ namespace Hecton.Localization
             ref int byteCursor,
             in BabelFormatArgs formatArgs,
             Span<char> destination,
-            ref int charCursor)
+            ref int charCursor,
+            out bool writeOverflow)
         {
+            writeOverflow = false;
             int start = byteCursor;
             if ((uint)start >= (uint)utf8Bytes.Length ||
                 utf8Bytes[start] != (byte)'{' ||
@@ -1302,7 +1372,10 @@ namespace Hecton.Localization
             if (cursor < utf8Bytes.Length && utf8Bytes[cursor] == (byte)'}')
             {
                 if (!ZeroGCFormatter.FastIntToChars(value, destination, ref charCursor))
+                {
+                    writeOverflow = true;
                     return false;
+                }
 
                 byteCursor = cursor + 1;
                 return true;
@@ -1328,7 +1401,10 @@ namespace Hecton.Localization
                 format[i] = (char)utf8Bytes[formatStart + i];
 
             if (!ZeroGCFormatter.FastIntToChars(value, destination, format.Slice(0, formatLength), ref charCursor))
+            {
+                writeOverflow = true;
                 return false;
+            }
 
             byteCursor = formatEnd + 1;
             return true;
@@ -1909,14 +1985,8 @@ namespace Hecton.Localization
 
         private static bool TryResolveBabelVault(out IDataVault vault)
         {
-            vault = GlobalRegistry.DataVault;
-            if (vault == null)
-                return false;
-
-            if (_babelVault != null && !ReferenceEquals(_babelVault, vault))
-                ResetBabelVaultBackedStateForVaultSwap();
-
-            return true;
+            vault = _babelVault;
+            return vault != null && !vault.IsCompactionFenceActive;
         }
 
         private static void ResetBabelVaultBackedStateForVaultSwap()

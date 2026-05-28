@@ -184,6 +184,10 @@ namespace Hecton8.UI.Rendering
             if (settings == null || _pass == null || _material == null)
                 return;
 
+            CameraType cameraType = renderingData.cameraData.cameraType;
+            if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)
+                return;
+
             _pass.Setup(settings, _material);
             renderer.EnqueuePass(_pass);
         }

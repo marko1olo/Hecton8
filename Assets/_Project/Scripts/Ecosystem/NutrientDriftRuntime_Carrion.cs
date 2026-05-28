@@ -790,16 +790,16 @@ namespace Hecton8.Ecosystem
                 return;
             }
 
-            ReleaseVaultHandle(vault, ref _carrionStateHandle);
-            ReleaseVaultHandle(vault, ref _carrionDeathIngressHandle);
-            ReleaseVaultHandle(vault, ref _carrionCountersHandle);
-            ReleaseVaultHandle(vault, ref _carrionTuningHandle);
-            ReleaseVaultHandle(vault, ref _carrionTelemetryHandle);
-            ReleaseVaultHandle(vault, ref _carrionAttractionHandle);
-            ReleaseVaultHandle(vault, ref _carrionProfileHandle);
-            ReleaseVaultHandle(vault, ref _carrionCsvScratchHandle);
-            ReleaseVaultHandle(vault, ref _carrionFaunaStateHandle);
-            ReleaseVaultHandle(vault, ref _carrionFaultFlagHandle);
+            ReleaseVaultHandle(vault, ref _carrionStateHandle, BufferID.ShinobuCarrionStates);
+            ReleaseVaultHandle(vault, ref _carrionDeathIngressHandle, BufferID.ShinobuCarrionDeathIngress);
+            ReleaseVaultHandle(vault, ref _carrionCountersHandle, BufferID.ShinobuCarrionRuntimeCounters);
+            ReleaseVaultHandle(vault, ref _carrionTuningHandle, BufferID.ShinobuCarrionTuning);
+            ReleaseVaultHandle(vault, ref _carrionTelemetryHandle, BufferID.ShinobuCarrionTelemetryRing);
+            ReleaseVaultHandle(vault, ref _carrionAttractionHandle, BufferID.ShinobuCarrionAttractionRecords);
+            ReleaseVaultHandle(vault, ref _carrionProfileHandle, BufferID.ShinobuCarrionProfiles);
+            ReleaseVaultHandle(vault, ref _carrionCsvScratchHandle, BufferID.ShinobuCarrionCsvScratch);
+            ReleaseVaultHandle(vault, ref _carrionFaunaStateHandle, BufferID.ShinobuCarrionFaunaStates);
+            ReleaseVaultHandle(vault, ref _carrionFaultFlagHandle, BufferID.ShinobuCarrionFaultFlags);
             _carrionInitialized = false;
             _carrionProfilesLoadedCold = false;
             _carrionProfilesLoadAttemptedCold = false;

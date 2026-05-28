@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.AI;
@@ -53,34 +53,150 @@ namespace Hecton8.World
         [FieldOffset(12)] public int Occupied;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
     internal struct MacroSwarmTelemetryEntry
     {
-        [FieldOffset(0)] public uint FrameIndex;
-        [FieldOffset(4)] public uint StateHash;
-        [FieldOffset(8)] public int ActiveMacroSwarms;
-        [FieldOffset(12)] public int ArrivalCount;
-        [FieldOffset(16)] public float BiomassSum;
-        [FieldOffset(20)] public int Flags;
-        [FieldOffset(24)] public uint Reserved0;
-        [FieldOffset(28)] public uint Reserved1;
+        [System.Runtime.InteropServices.FieldOffset(0)]
+        public uint FrameIndex;
+        [System.Runtime.InteropServices.FieldOffset(4)]
+        public uint StateHash;
+        [System.Runtime.InteropServices.FieldOffset(8)]
+        public int ActiveMacroSwarms;
+        [System.Runtime.InteropServices.FieldOffset(12)]
+        public int ArrivalCount;
+        [System.Runtime.InteropServices.FieldOffset(16)]
+        public float BiomassSum;
+        [System.Runtime.InteropServices.FieldOffset(20)]
+        public int Flags;
+        [System.Runtime.InteropServices.FieldOffset(24)]
+        public uint Reserved0;
+        [System.Runtime.InteropServices.FieldOffset(28)]
+        public uint Reserved1;
+        [System.Runtime.InteropServices.FieldOffset(32)]
+        private byte _pad0;
+        [System.Runtime.InteropServices.FieldOffset(33)]
+        private byte _pad1;
+        [System.Runtime.InteropServices.FieldOffset(34)]
+        private byte _pad2;
+        [System.Runtime.InteropServices.FieldOffset(35)]
+        private byte _pad3;
+        [System.Runtime.InteropServices.FieldOffset(36)]
+        private byte _pad4;
+        [System.Runtime.InteropServices.FieldOffset(37)]
+        private byte _pad5;
+        [System.Runtime.InteropServices.FieldOffset(38)]
+        private byte _pad6;
+        [System.Runtime.InteropServices.FieldOffset(39)]
+        private byte _pad7;
+        [System.Runtime.InteropServices.FieldOffset(40)]
+        private byte _pad8;
+        [System.Runtime.InteropServices.FieldOffset(41)]
+        private byte _pad9;
+        [System.Runtime.InteropServices.FieldOffset(42)]
+        private byte _pad10;
+        [System.Runtime.InteropServices.FieldOffset(43)]
+        private byte _pad11;
+        [System.Runtime.InteropServices.FieldOffset(44)]
+        private byte _pad12;
+        [System.Runtime.InteropServices.FieldOffset(45)]
+        private byte _pad13;
+        [System.Runtime.InteropServices.FieldOffset(46)]
+        private byte _pad14;
+        [System.Runtime.InteropServices.FieldOffset(47)]
+        private byte _pad15;
+        [System.Runtime.InteropServices.FieldOffset(48)]
+        private byte _pad16;
+        [System.Runtime.InteropServices.FieldOffset(49)]
+        private byte _pad17;
+        [System.Runtime.InteropServices.FieldOffset(50)]
+        private byte _pad18;
+        [System.Runtime.InteropServices.FieldOffset(51)]
+        private byte _pad19;
+        [System.Runtime.InteropServices.FieldOffset(52)]
+        private byte _pad20;
+        [System.Runtime.InteropServices.FieldOffset(53)]
+        private byte _pad21;
+        [System.Runtime.InteropServices.FieldOffset(54)]
+        private byte _pad22;
+        [System.Runtime.InteropServices.FieldOffset(55)]
+        private byte _pad23;
+        [System.Runtime.InteropServices.FieldOffset(56)]
+        private byte _pad24;
+        [System.Runtime.InteropServices.FieldOffset(57)]
+        private byte _pad25;
+        [System.Runtime.InteropServices.FieldOffset(58)]
+        private byte _pad26;
+        [System.Runtime.InteropServices.FieldOffset(59)]
+        private byte _pad27;
+        [System.Runtime.InteropServices.FieldOffset(60)]
+        private byte _pad28;
+        [System.Runtime.InteropServices.FieldOffset(61)]
+        private byte _pad29;
+        [System.Runtime.InteropServices.FieldOffset(62)]
+        private byte _pad30;
+        [System.Runtime.InteropServices.FieldOffset(63)]
+        private byte _pad31;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
     internal struct FaunaMutationTelemetryEntry
     {
-        [FieldOffset(0)] public uint FrameIndex;
-        [FieldOffset(4)] public uint StateHash;
-        [FieldOffset(8)] public int TotalMutatedEntities;
-        [FieldOffset(12)] public int HeadlessMutatedCount;
-        [FieldOffset(16)] public int MacroSwarmMutatedCount;
-        [FieldOffset(20)] public uint LastMutationFlags;
-        [FieldOffset(24)] public float LastRadiationRads;
-        [FieldOffset(28)] public float LastToxicity01;
-        [FieldOffset(32)] public float LastBrineDepth01;
-        [FieldOffset(36)] public uint Reserved0;
-        [FieldOffset(40)] public uint Reserved1;
-        [FieldOffset(44)] public uint Reserved2;
+        [System.Runtime.InteropServices.FieldOffset(0)]
+        public uint FrameIndex;
+        [System.Runtime.InteropServices.FieldOffset(4)]
+        public uint StateHash;
+        [System.Runtime.InteropServices.FieldOffset(8)]
+        public int TotalMutatedEntities;
+        [System.Runtime.InteropServices.FieldOffset(12)]
+        public int HeadlessMutatedCount;
+        [System.Runtime.InteropServices.FieldOffset(16)]
+        public int MacroSwarmMutatedCount;
+        [System.Runtime.InteropServices.FieldOffset(20)]
+        public uint LastMutationFlags;
+        [System.Runtime.InteropServices.FieldOffset(24)]
+        public float LastRadiationRads;
+        [System.Runtime.InteropServices.FieldOffset(28)]
+        public float LastToxicity01;
+        [System.Runtime.InteropServices.FieldOffset(32)]
+        public float LastBrineDepth01;
+        [System.Runtime.InteropServices.FieldOffset(36)]
+        public uint Reserved0;
+        [System.Runtime.InteropServices.FieldOffset(40)]
+        public uint Reserved1;
+        [System.Runtime.InteropServices.FieldOffset(44)]
+        public uint Reserved2;
+        [System.Runtime.InteropServices.FieldOffset(48)]
+        private byte _pad0;
+        [System.Runtime.InteropServices.FieldOffset(49)]
+        private byte _pad1;
+        [System.Runtime.InteropServices.FieldOffset(50)]
+        private byte _pad2;
+        [System.Runtime.InteropServices.FieldOffset(51)]
+        private byte _pad3;
+        [System.Runtime.InteropServices.FieldOffset(52)]
+        private byte _pad4;
+        [System.Runtime.InteropServices.FieldOffset(53)]
+        private byte _pad5;
+        [System.Runtime.InteropServices.FieldOffset(54)]
+        private byte _pad6;
+        [System.Runtime.InteropServices.FieldOffset(55)]
+        private byte _pad7;
+        [System.Runtime.InteropServices.FieldOffset(56)]
+        private byte _pad8;
+        [System.Runtime.InteropServices.FieldOffset(57)]
+        private byte _pad9;
+        [System.Runtime.InteropServices.FieldOffset(58)]
+        private byte _pad10;
+        [System.Runtime.InteropServices.FieldOffset(59)]
+        private byte _pad11;
+        [System.Runtime.InteropServices.FieldOffset(60)]
+        private byte _pad12;
+        [System.Runtime.InteropServices.FieldOffset(61)]
+        private byte _pad13;
+        [System.Runtime.InteropServices.FieldOffset(62)]
+        private byte _pad14;
+        [System.Runtime.InteropServices.FieldOffset(63)]
+        private byte _pad15;
     }
 
     /// <summary>
@@ -317,6 +433,41 @@ namespace Hecton8.World
                 return TryResolve(out NativeArray<T> array) ? array : default;
             }
 
+            public bool TryResolveReadOnly(out NativeArray<T>.ReadOnly array)
+            {
+                if (_vault != null &&
+                    _handle.BufferID != 0u &&
+                    _vault.TryReadOnlyHandle(in _handle, out array) &&
+                    array.IsCreated)
+                {
+                    return true;
+                }
+
+                array = default;
+                return false;
+            }
+
+            public bool TryAcquireWriteLock(SystemID systemID, out NativeArray<T> array)
+            {
+                if (_vault != null &&
+                    _handle.BufferID != 0u &&
+                    _vault.TryAcquireWriteLock(in _handle, systemID, out array) &&
+                    array.IsCreated)
+                {
+                    return true;
+                }
+
+                array = default;
+                return false;
+            }
+
+            public bool ReleaseWriteLock(SystemID systemID)
+            {
+                return _vault != null &&
+                       _handle.BufferID != 0u &&
+                       _vault.ReleaseWriteLock(in _handle, systemID);
+            }
+
             private bool TryResolve(out NativeArray<T> array)
             {
                 if (_vault != null &&
@@ -415,6 +566,37 @@ namespace Hecton8.World
             return false;
         }
 
+        private static bool TryFindIndexEntry(
+            NativeArray<EcosystemIndexEntry>.ReadOnly entries,
+            long key,
+            out int slot)
+        {
+            slot = -1;
+            if (!entries.IsCreated || entries.Length <= 0)
+                return false;
+
+            int capacity = entries.Length;
+            int start = ResolveIndexProbeStart(key, capacity);
+            for (int probe = 0; probe < capacity; probe++)
+            {
+                int index = start + probe;
+                if (index >= capacity)
+                    index -= capacity;
+
+                EcosystemIndexEntry entry = entries[index];
+                if (entry.Occupied == 0)
+                    return false;
+
+                if (entry.Key == key)
+                {
+                    slot = entry.Slot;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private static bool TryUpsertIndexEntry(
             NativeArray<EcosystemIndexEntry> entries,
             long key,
@@ -468,17 +650,89 @@ namespace Hecton8.World
             [FieldOffset(14)] public ushort Padding1;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 32)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
         private struct BiomassTelemetryEntry
         {
-            [FieldOffset(0)] public uint FrameIndex;
-            [FieldOffset(4)] public uint StateHash;
-            [FieldOffset(8)] public int ActiveCellCount;
-            [FieldOffset(12)] public int Flags;
-            [FieldOffset(16)] public float GlobalBiomassSum;
-            [FieldOffset(20)] public float PreyBiomassSum;
-            [FieldOffset(24)] public float PredatorBiomassSum;
-            [FieldOffset(28)] public float FloraOvergrowth01;
+            [System.Runtime.InteropServices.FieldOffset(0)]
+            public uint FrameIndex;
+            [System.Runtime.InteropServices.FieldOffset(4)]
+            public uint StateHash;
+            [System.Runtime.InteropServices.FieldOffset(8)]
+            public int ActiveCellCount;
+            [System.Runtime.InteropServices.FieldOffset(12)]
+            public int Flags;
+            [System.Runtime.InteropServices.FieldOffset(16)]
+            public float GlobalBiomassSum;
+            [System.Runtime.InteropServices.FieldOffset(20)]
+            public float PreyBiomassSum;
+            [System.Runtime.InteropServices.FieldOffset(24)]
+            public float PredatorBiomassSum;
+            [System.Runtime.InteropServices.FieldOffset(28)]
+            public float FloraOvergrowth01;
+            [System.Runtime.InteropServices.FieldOffset(32)]
+            private byte _pad0;
+            [System.Runtime.InteropServices.FieldOffset(33)]
+            private byte _pad1;
+            [System.Runtime.InteropServices.FieldOffset(34)]
+            private byte _pad2;
+            [System.Runtime.InteropServices.FieldOffset(35)]
+            private byte _pad3;
+            [System.Runtime.InteropServices.FieldOffset(36)]
+            private byte _pad4;
+            [System.Runtime.InteropServices.FieldOffset(37)]
+            private byte _pad5;
+            [System.Runtime.InteropServices.FieldOffset(38)]
+            private byte _pad6;
+            [System.Runtime.InteropServices.FieldOffset(39)]
+            private byte _pad7;
+            [System.Runtime.InteropServices.FieldOffset(40)]
+            private byte _pad8;
+            [System.Runtime.InteropServices.FieldOffset(41)]
+            private byte _pad9;
+            [System.Runtime.InteropServices.FieldOffset(42)]
+            private byte _pad10;
+            [System.Runtime.InteropServices.FieldOffset(43)]
+            private byte _pad11;
+            [System.Runtime.InteropServices.FieldOffset(44)]
+            private byte _pad12;
+            [System.Runtime.InteropServices.FieldOffset(45)]
+            private byte _pad13;
+            [System.Runtime.InteropServices.FieldOffset(46)]
+            private byte _pad14;
+            [System.Runtime.InteropServices.FieldOffset(47)]
+            private byte _pad15;
+            [System.Runtime.InteropServices.FieldOffset(48)]
+            private byte _pad16;
+            [System.Runtime.InteropServices.FieldOffset(49)]
+            private byte _pad17;
+            [System.Runtime.InteropServices.FieldOffset(50)]
+            private byte _pad18;
+            [System.Runtime.InteropServices.FieldOffset(51)]
+            private byte _pad19;
+            [System.Runtime.InteropServices.FieldOffset(52)]
+            private byte _pad20;
+            [System.Runtime.InteropServices.FieldOffset(53)]
+            private byte _pad21;
+            [System.Runtime.InteropServices.FieldOffset(54)]
+            private byte _pad22;
+            [System.Runtime.InteropServices.FieldOffset(55)]
+            private byte _pad23;
+            [System.Runtime.InteropServices.FieldOffset(56)]
+            private byte _pad24;
+            [System.Runtime.InteropServices.FieldOffset(57)]
+            private byte _pad25;
+            [System.Runtime.InteropServices.FieldOffset(58)]
+            private byte _pad26;
+            [System.Runtime.InteropServices.FieldOffset(59)]
+            private byte _pad27;
+            [System.Runtime.InteropServices.FieldOffset(60)]
+            private byte _pad28;
+            [System.Runtime.InteropServices.FieldOffset(61)]
+            private byte _pad29;
+            [System.Runtime.InteropServices.FieldOffset(62)]
+            private byte _pad30;
+            [System.Runtime.InteropServices.FieldOffset(63)]
+            private byte _pad31;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -2224,7 +2478,13 @@ namespace Hecton8.World
             if (!TryResolveSectorSlotReadOnly(sectorCoord, out int slotIndex))
                 return false;
 
-            SectorPopulationState state = _sectorFrontStates[slotIndex];
+            if (!_sectorFrontStates.TryResolveReadOnly(out NativeArray<SectorPopulationState>.ReadOnly sectorFrontStates) ||
+                (uint)slotIndex >= (uint)sectorFrontStates.Length)
+            {
+                return false;
+            }
+
+            SectorPopulationState state = sectorFrontStates[slotIndex];
             sample.SectorX = state.SectorCoord.x;
             sample.SectorZ = state.SectorCoord.y;
             sample.PreyPopulation = state.PreyPopulationRounded;
@@ -2263,9 +2523,19 @@ namespace Hecton8.World
             if (!TryResolveBiomassCellSlotReadOnly(macroCellCoord, out int slotIndex))
                 return false;
 
-            float capacity = math.max(0.0001f, _biomassCarryingCapacity[slotIndex]);
-            preyBiomass01 = math.saturate(_preyBiomassFront[slotIndex] * math.rcp(capacity));
-            predatorBiomass01 = math.saturate(_predatorBiomassFront[slotIndex] * math.rcp(capacity));
+            if (!_preyBiomassFront.TryResolveReadOnly(out NativeArray<float>.ReadOnly preyFront) ||
+                !_predatorBiomassFront.TryResolveReadOnly(out NativeArray<float>.ReadOnly predatorFront) ||
+                !_biomassCarryingCapacity.TryResolveReadOnly(out NativeArray<float>.ReadOnly carryingCapacity) ||
+                (uint)slotIndex >= (uint)preyFront.Length ||
+                (uint)slotIndex >= (uint)predatorFront.Length ||
+                (uint)slotIndex >= (uint)carryingCapacity.Length)
+            {
+                return false;
+            }
+
+            float capacity = math.max(0.0001f, carryingCapacity[slotIndex]);
+            preyBiomass01 = math.saturate(preyFront[slotIndex] * math.rcp(capacity));
+            predatorBiomass01 = math.saturate(predatorFront[slotIndex] * math.rcp(capacity));
             carryingCapacity01 = math.saturate(capacity);
             return true;
         }
@@ -2778,10 +3048,16 @@ namespace Hecton8.World
         public bool TryGetGlobalBiomassAudit(out EcosystemBiomassAuditSample sample)
         {
             sample = default;
-            if (!IsInitialized || HasPendingSimulationJob() || !_preyBiomassFront.IsCreated || !_predatorBiomassFront.IsCreated)
+            if (!IsInitialized ||
+                HasPendingSimulationJob() ||
+                !_preyBiomassFront.TryResolveReadOnly(out NativeArray<float>.ReadOnly preyFront) ||
+                !_predatorBiomassFront.TryResolveReadOnly(out NativeArray<float>.ReadOnly predatorFront))
+            {
                 return false;
+            }
 
-            int count = math.min(_activeBiomassCellCount, math.min(_preyBiomassFront.Length, _predatorBiomassFront.Length));
+            bool hasCapacity = _biomassCarryingCapacity.TryResolveReadOnly(out NativeArray<float>.ReadOnly carryingCapacity);
+            int count = math.min(_activeBiomassCellCount, math.min(preyFront.Length, predatorFront.Length));
             if (count <= 0)
                 return false;
 
@@ -2791,10 +3067,10 @@ namespace Hecton8.World
             uint flags = 0u;
             for (int i = 0; i < count; i++)
             {
-                float prey = _preyBiomassFront[i];
-                float predator = _predatorBiomassFront[i];
-                float capacity = _biomassCarryingCapacity.IsCreated && i < _biomassCarryingCapacity.Length
-                    ? _biomassCarryingCapacity[i]
+                float prey = preyFront[i];
+                float predator = predatorFront[i];
+                float capacity = hasCapacity && i < carryingCapacity.Length
+                    ? carryingCapacity[i]
                     : 0f;
                 bool finite = math.isfinite(prey) && math.isfinite(predator) && math.isfinite(capacity);
                 if (!finite || prey < 0f || predator < 0f || capacity < 0f)
@@ -2824,12 +3100,17 @@ namespace Hecton8.World
         public bool TryCopyMacroSwarms(NativeArray<MacroSwarm> destination, out int copiedCount)
         {
             copiedCount = 0;
-            if (!destination.IsCreated || !_macroSwarms.IsCreated || _activeMacroSwarmCount <= 0 || _macroSwarmTravelScheduled)
+            if (!destination.IsCreated ||
+                !_macroSwarms.TryResolveReadOnly(out NativeArray<MacroSwarm>.ReadOnly macroSwarms) ||
+                _activeMacroSwarmCount <= 0 ||
+                _macroSwarmTravelScheduled)
+            {
                 return false;
+            }
 
-            copiedCount = math.min(destination.Length, _activeMacroSwarmCount);
+            copiedCount = math.min(destination.Length, math.min(_activeMacroSwarmCount, macroSwarms.Length));
             for (int i = 0; i < copiedCount; i++)
-                destination[i] = _macroSwarms[i];
+                destination[i] = macroSwarms[i];
             return copiedCount > 0;
         }
 
@@ -2837,14 +3118,20 @@ namespace Hecton8.World
         public bool TryCopyMacroSwarmRadarPings(NativeArray<float4> destination, float3 probeOrigin, float radiusMeters, out int copiedCount)
         {
             copiedCount = 0;
-            if (!destination.IsCreated || !_macroSwarms.IsCreated || _activeMacroSwarmCount <= 0 || _macroSwarmTravelScheduled)
+            if (!destination.IsCreated ||
+                !_macroSwarms.TryResolveReadOnly(out NativeArray<MacroSwarm>.ReadOnly macroSwarms) ||
+                _activeMacroSwarmCount <= 0 ||
+                _macroSwarmTravelScheduled)
+            {
                 return false;
+            }
 
             float safeRadius = math.select(0f, math.max(0f, radiusMeters), math.isfinite(radiusMeters));
             float radiusSq = safeRadius * safeRadius;
-            for (int i = 0; i < _activeMacroSwarmCount && copiedCount < destination.Length; i++)
+            int swarmCount = math.min(_activeMacroSwarmCount, macroSwarms.Length);
+            for (int i = 0; i < swarmCount && copiedCount < destination.Length; i++)
             {
-                MacroSwarm swarm = _macroSwarms[i];
+                MacroSwarm swarm = macroSwarms[i];
                 if (swarm.BiomassValue <= 0.0001f || !math.isfinite(swarm.BiomassValue))
                     continue;
 
@@ -3089,10 +3376,17 @@ namespace Hecton8.World
             if (!TryQuantizeSector(worldPosition, out int2 sectorCoord))
                 return false;
 
-            if (!TryFindIndexEntry(_sectorIndexEntries, PackSectorKey(sectorCoord), out int slotIndex) || slotIndex < 0 || slotIndex >= _activeSectorCount)
+            if (!_sectorIndexEntries.TryResolveReadOnly(out NativeArray<EcosystemIndexEntry>.ReadOnly sectorIndexEntries) ||
+                !_sectorFrontStates.TryResolveReadOnly(out NativeArray<SectorPopulationState>.ReadOnly sectorFrontStates) ||
+                !TryFindIndexEntry(sectorIndexEntries, PackSectorKey(sectorCoord), out int slotIndex) ||
+                slotIndex < 0 ||
+                slotIndex >= _activeSectorCount ||
+                (uint)slotIndex >= (uint)sectorFrontStates.Length)
+            {
                 return false;
+            }
 
-            SectorPopulationState state = _sectorFrontStates[slotIndex];
+            SectorPopulationState state = sectorFrontStates[slotIndex];
             return IsApexInSectorState(in state);
         }
 
@@ -5567,7 +5861,7 @@ namespace Hecton8.World
 
         private void PublishFloraPredatorAupBufferImmediate(Vector3 queryOrigin)
         {
-            if (!_floraPredatorAupUpload.IsCreated || _activeFloraPredatorAupBuffer == null)
+            if (_activeFloraPredatorAupBuffer == null)
                 return;
 
             int hitCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
@@ -5576,34 +5870,53 @@ namespace Hecton8.World
                 SpatialTargetKind.Bioform,
                 _floraPredatorAupHits);
             int uploadCount = 0;
-            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+            bool uploadLocked = false;
+            NativeArray<float4> upload = default;
+            try
             {
-                SpatialQueryHit hit = _floraPredatorAupHits[hitIndex];
-                IFaunaSpatialContact faunaContact = hit.Owner as IFaunaSpatialContact;
-                if (faunaContact == null || faunaContact.IsDead || !faunaContact.IsApexPredatorContact)
-                    continue;
-
-                if (uploadCount < FloraPredatorAupBufferCapacity)
+                uploadLocked = _floraPredatorAupUpload.TryAcquireWriteLock(SystemID.AIEcology, out upload);
+                if (!uploadLocked || !upload.IsCreated)
                 {
-                    _floraPredatorAupUpload[uploadCount] = new float4(
-                        hit.Position.x,
-                        hit.Position.y,
-                        hit.Position.z,
-                        FloraPredatorStealthRadiusMeters);
-                    uploadCount++;
+                    PublishFloraPredatorAupGlobalsImmediate(0);
+                    PublishApexPresenceFakeImmediate(IsApexInSector(queryOrigin));
+                    return;
+                }
+
+                int uploadCapacity = math.min(FloraPredatorAupBufferCapacity, upload.Length);
+                for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+                {
+                    SpatialQueryHit hit = _floraPredatorAupHits[hitIndex];
+                    IFaunaSpatialContact faunaContact = hit.Owner as IFaunaSpatialContact;
+                    if (faunaContact == null || faunaContact.IsDead || !faunaContact.IsApexPredatorContact)
+                        continue;
+
+                    if (uploadCount < uploadCapacity)
+                    {
+                        upload[uploadCount] = new float4(
+                            hit.Position.x,
+                            hit.Position.y,
+                            hit.Position.z,
+                            FloraPredatorStealthRadiusMeters);
+                        uploadCount++;
+                    }
+                }
+
+                if (uploadCount > 0)
+                {
+                    GraphicsBuffer writeBuffer = ResolveFloraPredatorAupWriteBuffer();
+                    if (writeBuffer == null)
+                        return;
+
+                    GraphicsBufferUploadUtility.UploadNativeArray<float4>(writeBuffer, upload, uploadCount);
+                    _activeFloraPredatorAupBuffer = writeBuffer;
+                    _floraPredatorAupUploadIndex ^= 1;
+                    _floraPredatorAupGlobalsDirty = true;
                 }
             }
-
-            if (uploadCount > 0)
+            finally
             {
-                GraphicsBuffer writeBuffer = ResolveFloraPredatorAupWriteBuffer();
-                if (writeBuffer == null)
-                    return;
-
-                GraphicsBufferUploadUtility.UploadNativeArray<float4>(writeBuffer, _floraPredatorAupUpload.Resolve(), uploadCount);
-                _activeFloraPredatorAupBuffer = writeBuffer;
-                _floraPredatorAupUploadIndex ^= 1;
-                _floraPredatorAupGlobalsDirty = true;
+                if (uploadLocked)
+                    _floraPredatorAupUpload.ReleaseWriteLock(SystemID.AIEcology);
             }
 
             bool saturated = hitCount >= FloraPredatorAupHitCapacity || uploadCount >= FloraPredatorAupBufferCapacity;
@@ -5926,34 +6239,37 @@ namespace Hecton8.World
         private bool TryResolveSectorSlotReadOnly(int2 sectorCoord, out int slotIndex)
         {
             slotIndex = -1;
-            if (!_sectorIndexEntries.IsCreated || !_sectorFrontStates.IsCreated)
+            if (!_sectorIndexEntries.TryResolveReadOnly(out NativeArray<EcosystemIndexEntry>.ReadOnly sectorIndexEntries) ||
+                !_sectorFrontStates.TryResolveReadOnly(out NativeArray<SectorPopulationState>.ReadOnly sectorFrontStates))
+            {
                 return false;
+            }
 
-            if (!TryFindIndexEntry(_sectorIndexEntries, PackSectorKey(sectorCoord), out slotIndex))
+            if (!TryFindIndexEntry(sectorIndexEntries, PackSectorKey(sectorCoord), out slotIndex))
                 return false;
 
             return (uint)slotIndex < (uint)_activeSectorCount &&
-                   (uint)slotIndex < (uint)_sectorFrontStates.Length;
+                   (uint)slotIndex < (uint)sectorFrontStates.Length;
         }
 
         private bool TryResolveBiomassCellSlotReadOnly(int2 macroCellCoord, out int slotIndex)
         {
             slotIndex = -1;
-            if (!_biomassIndexEntries.IsCreated ||
-                !_preyBiomassFront.IsCreated ||
-                !_predatorBiomassFront.IsCreated ||
-                !_biomassCarryingCapacity.IsCreated)
+            if (!_biomassIndexEntries.TryResolveReadOnly(out NativeArray<EcosystemIndexEntry>.ReadOnly biomassIndexEntries) ||
+                !_preyBiomassFront.TryResolveReadOnly(out NativeArray<float>.ReadOnly preyFront) ||
+                !_predatorBiomassFront.TryResolveReadOnly(out NativeArray<float>.ReadOnly predatorFront) ||
+                !_biomassCarryingCapacity.TryResolveReadOnly(out NativeArray<float>.ReadOnly carryingCapacity))
             {
                 return false;
             }
 
-            if (!TryFindIndexEntry(_biomassIndexEntries, PackBiomassCellKey(macroCellCoord), out slotIndex))
+            if (!TryFindIndexEntry(biomassIndexEntries, PackBiomassCellKey(macroCellCoord), out slotIndex))
                 return false;
 
             return (uint)slotIndex < (uint)_activeBiomassCellCount &&
-                   (uint)slotIndex < (uint)_preyBiomassFront.Length &&
-                   (uint)slotIndex < (uint)_predatorBiomassFront.Length &&
-                   (uint)slotIndex < (uint)_biomassCarryingCapacity.Length;
+                   (uint)slotIndex < (uint)preyFront.Length &&
+                   (uint)slotIndex < (uint)predatorFront.Length &&
+                   (uint)slotIndex < (uint)carryingCapacity.Length;
         }
 
         private float ResolveBiomassCarryingCapacity01(int2 macroCellCoord)

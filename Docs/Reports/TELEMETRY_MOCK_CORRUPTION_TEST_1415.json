@@ -1,0 +1,13 @@
+{
+  "agent": "1415",
+  "generatedUtc": "2026-05-28T00:32:46Z",
+  "test": "in_memory_offset_corruption_no_source_mutation",
+  "targetStruct": "ScalabilityTelemetryEntry",
+  "mutation": "RawFrameMs offset 8 -> 9",
+  "detected": true,
+  "detectedFailures": [
+    "unaligned:RawFrameMs:9%4",
+    "overlap:SmoothedFrameMs@12:with:RawFrameMs",
+    "holes:8"
+  ]
+}

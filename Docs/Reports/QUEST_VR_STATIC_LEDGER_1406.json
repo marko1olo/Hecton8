@@ -1,0 +1,63 @@
+{
+  "agentId": "1406",
+  "domain": "Echelon 8 Rendering/XR URP Quest VR",
+  "status": "PENDING_VERIFICATION",
+  "evidenceType": "static_yml_and_source_scan",
+  "preEditFindings": {
+    "androidDefaultQualityIndex": 3,
+    "androidQualityName": "Quest (VR)",
+    "androidQualityPipelineGuid": "d9c4cd6a763fec04a913c6a149663003",
+    "questUrpAsset": "Assets/_Project/Data/URP_Quest_VR.asset",
+    "questRendererAsset": "Assets/_Project/Data/Quest_VR_Renderer.asset",
+    "questUrpPreEditBloat": {
+      "msaa": 4,
+      "renderScale": 1.0,
+      "additionalLightsPerObject": 4,
+      "shadowDistanceMeters": 30,
+      "shadowCascadeCount": 2,
+      "softShadowQuality": 2,
+      "inheritedGlobalVolumeProfileGuid": "10fc4df2da32a41aaa32d77bc913491c"
+    },
+    "openXrPreEditGaps": {
+      "androidRenderMode": 1,
+      "androidFoveatedRenderingApi": 1,
+      "foveatedRenderingFeatureEnabled": false,
+      "subsampledLayoutEnabled": false,
+      "metaQuestFeatureEnabled": false,
+      "androidOptimizeBufferDiscards": false,
+      "androidOptimizeMultiviewRenderRegions": false
+    },
+    "apiAvailability": {
+      "unityXrOculusPackagePresent": false,
+      "ovrManagerReferences": 0,
+      "openXrPackagePresent": true,
+      "metaOpenXrPackagePresent": true,
+      "runtimeApiRoute": "UnityEngine.XR.XRDisplaySubsystem.foveatedRenderingLevel",
+      "capabilityProbe": "UnityEngine.Rendering.SystemInfo.foveatedRenderingCaps"
+    }
+  },
+  "postEditTargets": {
+    "questUrp": {
+      "msaa": 2,
+      "renderScale": 0.85,
+      "additionalLightsPerObject": 1,
+      "shadowDistanceMeters": 18,
+      "shadowCascadeCount": 1,
+      "softShadowQuality": 0,
+      "globalVolumeProfile": null
+    },
+    "openXrAndroid": {
+      "renderMode": 1,
+      "foveatedRenderingFeatureEnabled": true,
+      "subsampledLayoutEnabled": true,
+      "metaQuestFeatureEnabled": true,
+      "optimizeBufferDiscards": true,
+      "optimizeMultiviewRenderRegions": true
+    }
+  },
+  "proofLimits": [
+    "No Unity import was run.",
+    "No device profiler or headset runtime proof exists.",
+    "GPU microseconds are estimates until Quest profiler evidence exists."
+  ]
+}

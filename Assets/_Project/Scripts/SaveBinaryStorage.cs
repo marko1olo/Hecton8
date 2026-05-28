@@ -38,6 +38,21 @@ namespace Hecton8.SaveSystem
         private const int OsAllocationGranularityBytes = 64 * 1024;
         private const int FileWriteScratchBytes = 64 * 1024;
         private const int FileReadScratchBytes = 64 * 1024;
+        private const int NativeReadChunkBytes = 1024 * 1024;
+        private const string NativeMemoryOwner = nameof(AsyncWriteManager);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+        private const uint NativeGenericRead = 0x80000000u;
+        private const uint NativeFileShareRead = 0x00000001u;
+        private const uint NativeFileShareReadWriteDelete = 0x00000001u | 0x00000002u | 0x00000004u;
+        private const uint NativeOpenExisting = 3u;
+        private const uint NativeFileAttributeNormal = 0x00000080u;
+        private static readonly IntPtr NativeInvalidHandleValue = new IntPtr(-1);
+#elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
+        private const int NativeUnixPathCapacity = 4096;
+        private const int NativeUnixOpenReadOnly = 0;
+        private const int NativeUnixSeekEnd = 2;
+#endif
 
         private static readonly object s_flushLock = new object();
         private static readonly AutoResetEvent s_flushSignal = new AutoResetEvent(false);
@@ -63,6 +78,10 @@ namespace Hecton8.SaveSystem
         private static int s_fileWriteAsyncScratchBusy;
         private static readonly object s_fileReadScratchLock = new object();
         private static readonly byte[] s_fileReadScratch = new byte[FileReadScratchBytes];
+#if UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
+        private static readonly object s_nativeUnixPathLock = new object();
+        private static readonly byte[] s_nativeUnixPathUtf8 = new byte[NativeUnixPathCapacity];
+#endif
 
         private struct DiskFlushRequest
         {
@@ -1051,17 +1070,158 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            try
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+            return TryGetFileLengthWindows(absolutePath, out fileLength, out error);
+#elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
+            return TryGetFileLengthUnix(absolutePath, out fileLength, out error);
+#else
+            error = "Native file length query unsupported on this platform.";
+            return false;
+#endif
+        }
+
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+        private static bool TryGetFileLengthWindows(string absolutePath, out long fileLength, out string error)
+        {
+            fileLength = 0L;
+            error = string.Empty;
+            fixed (char* path = absolutePath)
             {
-                fileLength = new FileInfo(absolutePath).Length;
-                return true;
-            }
-            catch (Exception ex)
-            {
-                error = $"Failed to read file length for '{absolutePath}': {ex.Message}";
-                return false;
+                IntPtr handle = CreateFileWNative(
+                    path,
+                    NativeGenericRead,
+                    NativeFileShareReadWriteDelete,
+                    IntPtr.Zero,
+                    NativeOpenExisting,
+                    NativeFileAttributeNormal,
+                    IntPtr.Zero);
+
+                if (handle == IntPtr.Zero || handle == NativeInvalidHandleValue)
+                {
+                    error = "Native file length open failed.";
+                    return false;
+                }
+
+                try
+                {
+                    if (!GetFileSizeExNative(handle, out fileLength) || fileLength < 0L)
+                    {
+                        error = "Native file length query failed.";
+                        fileLength = 0L;
+                        return false;
+                    }
+
+                    return true;
+                }
+                finally
+                {
+                    CloseHandleNative(handle);
+                }
             }
         }
+#elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
+        private static bool TryGetFileLengthUnix(string absolutePath, out long fileLength, out string error)
+        {
+            fileLength = 0L;
+            error = string.Empty;
+            lock (s_nativeUnixPathLock)
+            {
+                if (!TryEncodePathUtf8(absolutePath, s_nativeUnixPathUtf8, out _))
+                {
+                    error = "Native file length path encoding failed.";
+                    return false;
+                }
+
+                fixed (byte* path = s_nativeUnixPathUtf8)
+                {
+                    int fd = OpenUnix(path, NativeUnixOpenReadOnly);
+                    if (fd < 0)
+                    {
+                        error = "Native file length open failed.";
+                        return false;
+                    }
+
+                    try
+                    {
+                        long length = LSeekUnix(fd, 0L, NativeUnixSeekEnd);
+                        if (length < 0L)
+                        {
+                            error = "Native file length query failed.";
+                            return false;
+                        }
+
+                        fileLength = length;
+                        return true;
+                    }
+                    finally
+                    {
+                        CloseUnix(fd);
+                    }
+                }
+            }
+        }
+
+        private static bool TryEncodePathUtf8(string source, byte[] destination, out int byteCount)
+        {
+            byteCount = 0;
+            if (string.IsNullOrEmpty(source) || destination == null)
+                return false;
+
+            for (int i = 0; i < source.Length; i++)
+            {
+                int code = source[i];
+                if (char.IsHighSurrogate(source[i]))
+                {
+                    if (i + 1 >= source.Length || !char.IsLowSurrogate(source[i + 1]))
+                        return false;
+
+                    code = char.ConvertToUtf32(source[i], source[++i]);
+                }
+                else if (char.IsLowSurrogate(source[i]))
+                {
+                    return false;
+                }
+
+                if (code <= 0x7F)
+                {
+                    if (byteCount + 1 >= destination.Length)
+                        return false;
+
+                    destination[byteCount++] = (byte)code;
+                }
+                else if (code <= 0x7FF)
+                {
+                    if (byteCount + 2 >= destination.Length)
+                        return false;
+
+                    destination[byteCount++] = (byte)(0xC0 | (code >> 6));
+                    destination[byteCount++] = (byte)(0x80 | (code & 0x3F));
+                }
+                else if (code <= 0xFFFF)
+                {
+                    if (byteCount + 3 >= destination.Length)
+                        return false;
+
+                    destination[byteCount++] = (byte)(0xE0 | (code >> 12));
+                    destination[byteCount++] = (byte)(0x80 | ((code >> 6) & 0x3F));
+                    destination[byteCount++] = (byte)(0x80 | (code & 0x3F));
+                }
+                else
+                {
+                    if (byteCount + 4 >= destination.Length)
+                        return false;
+
+                    destination[byteCount++] = (byte)(0xF0 | (code >> 18));
+                    destination[byteCount++] = (byte)(0x80 | ((code >> 12) & 0x3F));
+                    destination[byteCount++] = (byte)(0x80 | ((code >> 6) & 0x3F));
+                    destination[byteCount++] = (byte)(0x80 | (code & 0x3F));
+                }
+            }
+
+            destination[byteCount] = 0;
+            return true;
+        }
+#endif
 
         internal static bool TryOpenReadOnlyMapping(string absolutePath, out ReadOnlyMapping mapping, out string error)
         {
@@ -1073,29 +1233,29 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            FileStream fileStream = null;
             NativeArray<byte> fileBytes = default;
             try
             {
-                fileStream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                long fileLength = fileStream.Length;
+                if (!TryGetFileLength(absolutePath, out long fileLength, out error))
+                    return false;
 
                 if (fileLength <= 0L)
                 {
-                    error = $"Portable read requested an empty file for '{absolutePath}'.";
+                    error = "Native read requested an empty file.";
                     return false;
                 }
 
                 if (fileLength > int.MaxValue)
                 {
-                    error = $"Portable read exceeds the supported native buffer range for '{absolutePath}'.";
+                    error = "Native read exceeds the supported native buffer range.";
                     return false;
                 }
 
-                // COLD ALLOC: NativeArray<byte>[fileLength] - portable read-only save snapshot - owner: AsyncWriteManager
+                // COLD ALLOC: NativeArray<byte>[fileLength] - native read-only save snapshot - owner: AsyncWriteManager
                 fileBytes = new NativeArray<byte>((int)fileLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                NativeMemorySentinel.RegisterNativeArray(fileBytes, NativeMemoryOwner, nameof(ReadOnlyMapping), NativeMemoryLifetime);
                 byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(fileBytes);
-                if (!TryReadFileRangeToNativeBuffer(fileStream, 0L, filePtr, (int)fileLength, out error))
+                if (!TryReadAbsoluteFileToNativeBuffer(absolutePath, filePtr, (int)fileLength, out error))
                     return false;
 
                 mapping = new ReadOnlyMapping
@@ -1108,27 +1268,240 @@ namespace Hecton8.SaveSystem
                 fileBytes = default;
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                error = $"Portable read-only open failed for '{absolutePath}': {ex.Message}";
+                error = "Native read-only open failed.";
                 return false;
             }
             finally
             {
                 if (fileBytes.IsCreated)
-                    fileBytes.Dispose();
-
-                fileStream?.Dispose();
+                    DisposeReadOnlyMappingBytes(ref fileBytes);
             }
         }
 
+        private static bool TryReadAbsoluteFileToNativeBuffer(
+            string absolutePath,
+            byte* destination,
+            int byteCount,
+            out string error)
+        {
+            error = string.Empty;
+            if (byteCount < 0 || destination == null)
+            {
+                error = "Native read buffer is invalid.";
+                return false;
+            }
+
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+            fixed (char* path = absolutePath)
+            {
+                IntPtr handle = CreateFileWNative(
+                    path,
+                    NativeGenericRead,
+                    NativeFileShareRead,
+                    IntPtr.Zero,
+                    NativeOpenExisting,
+                    NativeFileAttributeNormal,
+                    IntPtr.Zero);
+
+                if (handle == NativeInvalidHandleValue)
+                {
+                    error = "Native read open failed.";
+                    return false;
+                }
+
+                try
+                {
+                    return TryReadWindowsHandleToNativeBuffer(handle, destination, byteCount, out error);
+                }
+                finally
+                {
+                    CloseHandleNative(handle);
+                }
+            }
+#elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
+            lock (s_nativeUnixPathLock)
+            {
+                if (!TryEncodePathUtf8(absolutePath, s_nativeUnixPathUtf8, out _))
+                {
+                    error = "Native read path encoding failed.";
+                    return false;
+                }
+
+                fixed (byte* path = s_nativeUnixPathUtf8)
+                {
+                    int fd = OpenUnix(path, NativeUnixOpenReadOnly);
+                    if (fd < 0)
+                    {
+                        error = "Native read open failed.";
+                        return false;
+                    }
+
+                    try
+                    {
+                        return TryReadUnixFdToNativeBuffer(fd, destination, byteCount, out error);
+                    }
+                    finally
+                    {
+                        CloseUnix(fd);
+                    }
+                }
+            }
+#else
+            error = "Native read is unsupported on this platform.";
+            return false;
+#endif
+        }
+
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+        private static bool TryReadWindowsHandleToNativeBuffer(
+            IntPtr handle,
+            byte* destination,
+            int byteCount,
+            out string error)
+        {
+            error = string.Empty;
+            int offset = 0;
+            while (offset < byteCount)
+            {
+                int chunkBytes = math.min(NativeReadChunkBytes, byteCount - offset);
+                if (!ReadFileNative(handle, destination + offset, (uint)chunkBytes, out uint bytesRead, IntPtr.Zero))
+                {
+                    error = "Native read failed.";
+                    return false;
+                }
+
+                if (bytesRead == 0u)
+                {
+                    error = "Native read ended before expected length.";
+                    return false;
+                }
+
+                offset += (int)bytesRead;
+            }
+
+            return true;
+        }
+#endif
+
+#if UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
+        private static bool TryReadUnixFdToNativeBuffer(
+            int fd,
+            byte* destination,
+            int byteCount,
+            out string error)
+        {
+            error = string.Empty;
+            int offset = 0;
+            while (offset < byteCount)
+            {
+                int chunkBytes = math.min(NativeReadChunkBytes, byteCount - offset);
+                long bytesRead = ReadUnix(fd, destination + offset, (UIntPtr)chunkBytes).ToInt64();
+                if (bytesRead < 0L)
+                {
+                    error = "Native read failed.";
+                    return false;
+                }
+
+                if (bytesRead == 0L)
+                {
+                    error = "Native read ended before expected length.";
+                    return false;
+                }
+
+                offset += (int)bytesRead;
+            }
+
+            return true;
+        }
+#endif
+
         internal static void CloseReadOnlyMapping(ref ReadOnlyMapping mapping)
         {
-            if (mapping.Bytes.IsCreated)
-                mapping.Bytes.Dispose();
+            NativeArray<byte> bytes = mapping.Bytes;
+            if (bytes.IsCreated)
+            {
+                DisposeReadOnlyMappingBytes(ref bytes);
+                mapping.Bytes = bytes;
+            }
 
             mapping = default;
         }
+
+        private static void DisposeReadOnlyMappingBytes(ref NativeArray<byte> bytes)
+        {
+            if (!bytes.IsCreated)
+                return;
+
+            bool sentinelUnregistered = false;
+            try
+            {
+                NativeMemorySentinel.UnregisterNativeArray(bytes);
+                sentinelUnregistered = true;
+                bytes.Dispose();
+                bytes = default;
+            }
+            catch
+            {
+                TryRestoreReadOnlyMappingSentinel(bytes, sentinelUnregistered);
+                throw;
+            }
+        }
+
+        private static void TryRestoreReadOnlyMappingSentinel(NativeArray<byte> bytes, bool sentinelUnregistered)
+        {
+            if (!sentinelUnregistered || !bytes.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.RegisterNativeArray(bytes, NativeMemoryOwner, nameof(ReadOnlyMapping), NativeMemoryLifetime);
+            }
+            catch
+            {
+            }
+        }
+
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+        [DllImport("kernel32.dll", EntryPoint = "CreateFileW", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern IntPtr CreateFileWNative(
+            char* lpFileName,
+            uint dwDesiredAccess,
+            uint dwShareMode,
+            IntPtr lpSecurityAttributes,
+            uint dwCreationDisposition,
+            uint dwFlagsAndAttributes,
+            IntPtr hTemplateFile);
+
+        [DllImport("kernel32.dll", EntryPoint = "GetFileSizeEx", SetLastError = true)]
+        private static extern bool GetFileSizeExNative(IntPtr hFile, out long lpFileSize);
+
+        [DllImport("kernel32.dll", EntryPoint = "ReadFile", SetLastError = true)]
+        private static extern bool ReadFileNative(
+            IntPtr hFile,
+            void* lpBuffer,
+            uint nNumberOfBytesToRead,
+            out uint lpNumberOfBytesRead,
+            IntPtr lpOverlapped);
+
+        [DllImport("kernel32.dll", EntryPoint = "CloseHandle", SetLastError = true)]
+        private static extern bool CloseHandleNative(IntPtr hObject);
+#endif
+
+#if UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_ANDROID
+        [DllImport("libc", SetLastError = true, EntryPoint = "open")]
+        private static extern int OpenUnix(byte* pathname, int flags);
+
+        [DllImport("libc", SetLastError = true, EntryPoint = "lseek")]
+        private static extern long LSeekUnix(int fd, long offset, int whence);
+
+        [DllImport("libc", SetLastError = true, EntryPoint = "read")]
+        private static extern IntPtr ReadUnix(int fd, void* buf, UIntPtr count);
+
+        [DllImport("libc", SetLastError = true, EntryPoint = "close")]
+        private static extern int CloseUnix(int fd);
+#endif
     }
     internal static unsafe class SaveBinaryStorage
     {

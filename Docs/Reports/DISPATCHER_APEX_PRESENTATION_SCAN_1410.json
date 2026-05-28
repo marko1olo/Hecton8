@@ -1,0 +1,21 @@
+{
+  "agent": "1410",
+  "generatedAtUtc": "2026-05-28T01:23:14.535818+00:00",
+  "source": "DISPATCHER_PHASE_DEPENDENCY_SCAN_1410.json",
+  "scope": "Assets/_Project/Scripts/**/*.cs",
+  "rootMethods": [
+    "Execute",
+    "FixedTick",
+    "PreSimulationTick",
+    "SimulationTick",
+    "Tick"
+  ],
+  "filesScanned": 2455,
+  "rootMethodCount": 1751,
+  "directRootPresentationOrReadbackCandidates": 0,
+  "presentationFindings": 0,
+  "confirmedReadbackFindings": 0,
+  "runtimeMagicMethods": 0,
+  "status": "STATIC_PASS_BUILD_BLOCKED",
+  "manualReadbackClassificationUtc": "2026-05-28T01:25:00.681787+00:00"
+}

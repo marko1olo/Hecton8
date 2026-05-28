@@ -18,12 +18,14 @@ uniform uint bufferSize;
 [numthreads(GPUI_THREADS, 1, 1)]
 void CSInstancedBufferToTextureKernel(uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= argsBuffer[argsBufferIndex])
+    if (id.x >= argsBuffer[argsBufferIndex] || id.x >= bufferSize || maxTextureSize == 0)
         return;
     uint indexX = id.x % maxTextureSize;
-    uint indexY = floor(id.x / float(maxTextureSize));
+    uint indexY = id.x / maxTextureSize;
 
     uint instanceId = gpuiTransformationMatrix.Consume();
+    if (instanceId >= bufferSize)
+        return;
     
     float4x4 transformData = gpuiInstanceData[instanceId];
     gpuiTransformationMatrixTexture[uint2(indexX, 0 + indexY * 4)] = transformData._11_12_13_14; // row0
@@ -35,8 +37,8 @@ void CSInstancedBufferToTextureKernel(uint3 id : SV_DispatchThreadID)
 [numthreads(GPUI_THREADS, 1, 1)]
 void CSBufferToTextureCrossFadeKernel(uint3 id : SV_DispatchThreadID)
 {
-    if (id.x >= bufferSize)
+    if (id.x >= bufferSize || maxTextureSize == 0)
         return;
     
-    gpuiInstanceLODDataTexture[uint2(id.x % maxTextureSize, floor(id.x / float(maxTextureSize)))] = gpuiInstanceLODData[id.x];
+    gpuiInstanceLODDataTexture[uint2(id.x % maxTextureSize, id.x / maxTextureSize)] = gpuiInstanceLODData[id.x];
 }

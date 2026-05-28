@@ -1,19 +1,21 @@
-﻿//#if UNITY_EDITOR
 /*! \cond PRIVATE */
 using UnityEngine;
+#if UNITY_EDITOR
 using UnityEditor;
 using System.Collections.Generic;
 using System.IO;
+#endif
 
 namespace DarkTonic.MasterAudio
 {
     public abstract class SingletonScriptable<InstanceType> : ScriptableObject where InstanceType : ScriptableObject
     {
+#if UNITY_EDITOR
         protected static string AssetNameToLoad;
         protected static string ResourceNameToLoad;
-        protected static List<string> FoldersToCreate = new List<string>();
+        // COLD ALLOC: List<string>[0] - editor-only singleton asset folder staging - owner: MasterAudio.SingletonScriptable
+        protected static List<string> FoldersToCreate = new List<string>(0);
 
-#if UNITY_EDITOR
         static InstanceType _Instance;
         public static InstanceType Instance {
             get {

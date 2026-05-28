@@ -14,11 +14,23 @@
 #include "../../Helpers/BIRP/Core.hlsl"
 
 RW_TEXTURE2D_X(float, _CrestOceanMaskTexture);
+uniform uint _CrestOceanMaskWidth;
+uniform uint _CrestOceanMaskHeight;
 
 [numthreads(8, 8, 1)]
 void FillMaskArtefacts(const uint3 id : SV_DispatchThreadID)
 {
     UNITY_XR_ASSIGN_VIEW_INDEX(id.z);
+
+    if (id.x >= _CrestOceanMaskWidth || id.y >= _CrestOceanMaskHeight)
+    {
+        return;
+    }
+
+    if (id.x == 0 || id.y == 0 || id.x + 1 >= _CrestOceanMaskWidth || id.y + 1 >= _CrestOceanMaskHeight)
+    {
+        return;
+    }
 
     const uint3 offset = uint3(1, -1, 0);
 

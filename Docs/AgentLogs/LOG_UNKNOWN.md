@@ -1657,3 +1657,304 @@ Addendum:
   - `26c570b` smart imports update.
   - `68b35ff` follow-up updates.
   - `3d1981d` migration plan update.
+
+## Global Stability Sync IO Pass - 2026-05-28
+
+What was wrong:
+- `GlobalProfileManager.SlowTick()` could flush `profile.json` through main-thread directory creation, JSON serialization, file write, delete, and move.
+- Babel dictionary file readers were already background-threaded, but their names did not prove that to the static audit.
+- Input remap, QA endurance, and LUT boot file IO helpers were cold or harness routes with generic names.
+
+What was done:
+- Removed profile disk flush from `SlowTick()`.
+- Kept profile IO in cold lifecycle routes: disable, destroy, quit, pause, and focus-lost.
+- Renamed profile IO helpers to `FlushIfDirtyCold()`, `TryWriteProfileCold()`, and `LoadProfileFromDiskCold()`.
+- Renamed Babel background readers with `BackgroundCold`.
+- Renamed ControlRemapper, QA endurance, and LUT boot IO helpers with `Cold`.
+
+Cinematic cheats used:
+- None. This was runtime phase and persistence hygiene.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+- Expected benefit: lower main-thread hitch risk from removing recurring profile file write from dispatcher slow tick.
+
+Proof:
+- Initial live audit: `SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260528_SYNC_IO_CANDIDATE_RECHECK.json`, `warnings=57`.
+- Final audit: `SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260528_GLOBAL_STABILITY_IO_FINAL.json`, `errors=0`, `confirmedErrors=0`, `warnings=40`, `infos=1041`, `files=2443`, `shaders=71`.
+- `git diff --check` on touched source files exited `0`; line-ending warnings only.
+- Documentation gates: `VerifyDocStructure.py pass=true activeDocCount=706 encodingWithoutUtf8Sig=0`; `OOP_Doc_Scanner.py finalPass=true activeFileCount=706 sourceSyncPass=true wordReductionPercent=31.157806912765135`.
+
+Residuals:
+- `40` cross-domain sync-IO review warnings remain.
+- Full solution build was not run by this agent because the user assigned compile errors to another agent.
+- No Unity Editor import, Play Mode, profiler, GCMonitor, player build, or device proof.
+
+## Global Route Signal/Babel Pass - 2026-05-28
+
+What was wrong:
+- `LocRegistry.TryResolveBabelVault()` read `GlobalRegistry.DataVault` from runtime lookup/telemetry helper paths.
+- `SignalBus<T>.TryPush()` could lazily initialize a lane and resolve the Vault through `GlobalRegistry.DataVault` on first publish.
+- `SignalTelemetryRingBuffer.Initialize()` resolved the Vault internally even though `GlobalSignals.InitializeAllQueues()` already owned the cold boot reference.
+
+What was done:
+- Added `LocRegistry.BindBabelVaultCold(IDataVault)` and removed the registry read from `TryResolveBabelVault()`.
+- Made `LocalizationManager` cold-bind Babel Vault and rebind on `GlobalRegistryServiceSlot.DataVault`.
+- Added `SignalBusRegistry.BindDataVaultCold()` and `TryGetBoundDataVault()`.
+- Bound the SignalBus Vault from `GlobalRegistry.RegisterDataVault()`, `UnregisterDataVault()`, and `GlobalSignals.InitializeAllQueues()`.
+- Changed `SignalTelemetryRingBuffer.Initialize()` to accept the boot Vault directly.
+
+Cinematic cheats used:
+- None. This was global route and ownership cleanup.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+- Expected benefit: lower first-publish hitch risk for late SignalBus lanes and no registry polling in Babel lookup helpers.
+
+Proof:
+- Direct `GlobalRegistry.DataVault` reads after patch: `LocRegistry=0`, `SignalBusRuntime=0`, `GlobalRegistry=0`.
+- Remaining direct reads in touched surface are cold/editor/crash boundaries: `LocalizationManager.Awake`, `GlobalSignals.InitializeAllQueues`, `SignalWardenRuntime` editor CSV load and crash fallback.
+- SignalBus audit: `SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260528_GLOBAL_ROUTE_SIGNAL_BABEL_RECHECK.json`, `files=2446`, `shaders=71`, `errors=0`, `confirmedErrors=0`, `warnings=110`, `infos=1195`.
+- Touched-file SignalBus warnings: `0`.
+- `git diff --check` on touched source exited `0`; line-ending warnings only.
+- Documentation gates: `VerifyDocStructure.py pass=true activeDocCount=708 encodingWithoutUtf8Sig=0`; `OOP_Doc_Scanner.py finalPass=true activeFileCount=708 sourceSyncPass=true wordReductionPercent=30.358189496725423`.
+
+Residuals:
+- Full audit warnings are `69` SRP material review, `40` sync-IO review, and `1` local native telemetry ring review.
+- The SRP material warnings came from concurrent source state outside this patch and were not edited here.
+- Full solution build was not run by this agent because the user assigned compile errors to another agent.
+
+## Hardware Thermal Blackbox ABI Pass - 2026-05-28
+
+What was wrong:
+- `HardwareThermalTelemetryEntry` was a 64-byte explicit-layout native telemetry record, but `DumpBlackBoxCold()` still reported and wrote a 24-byte record stride.
+- The thermal severity and blackbox helpers named `TryResolve*` could allocate/acquire mutable DataVault views, which violates the read/resolve purity rule.
+- DataVault replacement could leave handles closed until the next thermal tick, making a runtime tick the implicit allocation route.
+
+What was done:
+- Added `HardwareThermalTelemetryEntryBytes=64` and used it for the struct size, dump header stride, and dump entry buffer.
+- Replaced the hard-coded `24` dump stride and `stackalloc byte[24]` writer with the 64-byte constant.
+- Changed blackbox dump reading to `TryReadThermalBlackBox()` with a read-only DataVault view.
+- Renamed mutable helpers to `OpenOrAcquireThermalSeverityWriteView()` and `OpenOrAcquireThermalBlackBoxWriteView()`.
+- Wrapped severity and blackbox writes in DataVault write locks with release in `finally`.
+- Reopened native thermal state after active DataVault hot-swap instead of deferring it to the next tick.
+
+Cinematic cheats used:
+- None. This was native postmortem ABI and DataVault route correctness.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+- Expected benefit: crash/postmortem thermal dumps now match the actual native record stride; write routes are explicit and fenced.
+
+Proof:
+- Source: `Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs`.
+- `git diff --check -- Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs` exited `0`; line-ending warning only.
+- Static scan after patch: `TryResolveThermalSeverity=0`, `TryResolveThermalBlackBox=0`, `WriteInt32LittleEndian(header.Slice(12, 4), 24)=0`, `stackalloc byte[24]=0`, `_pad0=0`, `Size = 64=0`, `ReservedPadding=5`, `TryAcquireWriteLock=4`, `ReleaseWriteLock=6`.
+- `IDataVault` contract proof: `TryReadOnlyHandle<T>()`, `TryAcquireWriteLock<T>()`, and `ReleaseWriteLock<T>()` are declared in `Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs`.
+
+Residuals:
+- Full solution build was not run by this agent: live guard showed active `dotnet.exe` build `PID 40436` and CPU `100%`, and the user assigned current compile errors to another agent.
+- No Unity Editor import, Play Mode, profiler, GCMonitor, player build, device run, or crash-dump parser run was performed.
+
+## Global Telemetry Blackbox Accessor Pass - 2026-05-28
+
+What was wrong:
+- `GlobalTelemetryBus.TryGetBlackboxRingBuffer()` exposed a raw blackbox DTO but could call `EnsureBlackboxInitialized()` on the main thread.
+- That made a read-like `TryGet*` API capable of opening DataVault-backed blackbox storage.
+
+What was done:
+- Removed `TryGetBlackboxRingBuffer()` from active source.
+- Added `TryResolveBlackboxRingBufferView()` for already-open, no-initialization access.
+- Added `OpenOrInitializeBlackboxRingBufferView()` for the explicit owner-thread initialization route.
+- Shared DTO field assignment through `PopulateBlackboxRingBufferDto()` to keep pointer, stride, counters, and fatal-hash behavior identical.
+
+Cinematic cheats used:
+- None. This was global telemetry route correctness.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+- Expected benefit: lower risk of hidden first-use allocation or DataVault mutation through a read-named global telemetry accessor.
+
+Proof:
+- Source: `Assets/_Project/Scripts/Core/GlobalTelemetryBus.Blackbox.cs`.
+- Active source call sites for old `TryGetBlackboxRingBuffer()`: `0`.
+- Post-patch counts: `TryGetBlackboxRingBuffer=0`, `TryResolveBlackboxRingBufferView=1`, `OpenOrInitializeBlackboxRingBufferView=1`.
+- `TryResolveBlackboxRingBufferView()` lines `474-481` do not call `EnsureBlackboxInitialized()`.
+- `OpenOrInitializeBlackboxRingBufferView()` lines `487-503` contains the explicit owner-thread initialization path.
+- Scoped `git diff --check` exited `0`; line-ending warning only.
+- Touched source brace delta is `0`.
+
+Residuals:
+- Full solution build was not run: CPU guard reported `100%`, and the user assigned current compile errors to another agent.
+- No Unity Editor import, Play Mode, profiler, GCMonitor, player build, device run, or blackbox dump parser run was performed.
+
+## Hardware Tier Read Accessor Pass - 2026-05-28
+
+What was wrong:
+- `HardwareTierDetector` public read properties called `EnsureInitialized()`.
+- `QuestVulkanRuntimePolicy` public read properties also called `EnsureInitialized()`.
+- A first property read could therefore probe Unity platform/XR state and mutate cached global policy.
+
+What was done:
+- Converted `HardwareTierDetector` read properties to pure snapshot fields.
+- Initialized `_recommendedVramBudgetMegabytes` to `1600` so pre-boot reads are conservative, not zero.
+- Converted Quest Vulkan policy properties to pure snapshot fields.
+- Made `IsQuestVulkanCandidate` false until Quest policy initialization has run.
+- Kept `BeforeSceneLoad` and explicit `EnsureInitialized()` as the only initialization routes.
+
+Cinematic cheats used:
+- None. This was platform-policy route correctness.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+- Expected benefit: no hidden hardware/XR probing from read properties, and fail-closed defaults before boot.
+
+Proof:
+- Source: `Assets/_Project/Scripts/Core/HardwareTierDetector.cs`.
+- Source: `Assets/_Project/Scripts/Core/OculusFfrEnforcer.cs`.
+- Post-patch `EnsureInitialized()` references in touched files are only BeforeSceneLoad calls and method declarations.
+- Touched source brace delta is `0`.
+- Scoped `git diff --check` exited `0`; line-ending warnings only.
+
+Residuals:
+- Full solution build was not run: CPU guard reported `100%`.
+- No Unity Editor import, Play Mode, profiler, GCMonitor, player build, Quest/SteamDeck device run, or graphics backend matrix test was performed.
+
+## Global Telemetry DataVault Binding Pass - 2026-05-28
+
+What was wrong:
+- `GlobalTelemetryBus.TryBindBlackboxVaultBuffersNoLock()` still read `GlobalRegistry.DataVault`.
+- That kept a hidden global registry lookup in the SHINOBU blackbox storage bind path even after the read-accessor API had been split.
+
+What was done:
+- Added `_blackboxBoundVault` and `BindBlackboxDataVaultCold(IDataVault)`.
+- Bound the blackbox Vault from `GlobalRegistry.RegisterDataVault()` next to the SignalBus cold bind.
+- Cleared the blackbox Vault from `GlobalRegistry.UnregisterDataVault()` when the authoritative Vault is removed.
+- Changed `TryBindBlackboxVaultBuffersNoLock()` to use `_blackboxBoundVault`.
+- Cleared `_blackboxBoundVault` during full blackbox state disposal.
+
+Cinematic cheats used:
+- None. This was global telemetry owner-route correctness.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+- Expected benefit: no first blackbox bind route polls the registry from inside telemetry storage setup.
+
+Proof:
+- Source: `Assets/_Project/Scripts/Core/GlobalTelemetryBus.Blackbox.cs`.
+- Source: `Assets/_Project/Scripts/Core/GlobalRegistry.cs`.
+- Direct `GlobalRegistry.DataVault` reads in `GlobalTelemetryBus.cs` and `GlobalTelemetryBus.Blackbox.cs`: `0`.
+- `BindBlackboxDataVaultCold` references: method plus register/unregister call sites.
+- Touched source brace delta is `0`.
+- Scoped `git diff --check` exited `0`; line-ending warnings only.
+
+Residuals:
+- Full solution build was not run: CPU guard reported `100%` and an active `dotnet.exe` process, latest observed PID `55080`; current compile-wall repair is owned by another agent.
+- Full documentation scanners were not run under load.
+- No Unity Editor import, Play Mode, profiler, GCMonitor, player build, device run, or blackbox dump parser run was performed.
+
+## Memory Sentinel Vault Lifecycle Pass - 2026-05-28
+
+What was wrong:
+- `MemorySentinelRuntime` cached `_dataVault` but did not subscribe to `GlobalRegistry` hot-swap.
+- If the sentinel enabled before Vault registration, or after a Vault replacement, it could keep null/stale Vault state.
+- `VisualSyncTick()` and `PublishHashDelta()` called `EnsureVaultBuffers()`, which can open DataVault buffers from a frame path.
+
+What was done:
+- `MemorySentinelRuntime` now implements `IGlobalRegistryHotSwapListener`.
+- It registers the hot-swap listener in `OnEnable()` and unregisters in `OnDisable()`.
+- `RebindVaultDependencyCold()` now owns DataVault replacement, pending job completion, unlock, release, new Vault assignment, and cold buffer open.
+- `VisualSyncTick()` now uses `TryResolveVaultBuffers()` only.
+- `PublishHashDelta()` now uses `TryResolveVaultBuffers()` only.
+- Non-forced validation completion now resolves existing buffers only; forced cold completion can still ensure buffers.
+
+Cinematic cheats used:
+- None. This was Core memory lifecycle and frame-phase ownership.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+- Expected benefit: removes hidden VisualSync first-open/stale-Vault risk from integrity validation.
+
+Proof:
+- Source: `Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs`.
+- `MemorySentinelRuntime` implements `IGlobalRegistryHotSwapListener`.
+- `TryResolveVaultBuffers` active references: `4`.
+- `VisualSyncTick()` and `PublishHashDelta()` call `TryResolveVaultBuffers()`, not `EnsureVaultBuffers()`.
+- Touched source brace delta is `0`.
+- Scoped `git diff --check` exited `0`; line-ending warning only.
+
+Residuals:
+- Full solution build was not run because CPU guard reported `100%` with an active compiler/dotnet process and compile-wall repair belongs to another agent.
+- Full documentation scanners were not run under load.
+- No Unity Editor import, Play Mode, profiler, GCMonitor, player build, device run, or DataVault hot-swap runtime test was performed.
+
+## MathGuard DataVault Binding Pass - 2026-05-28
+
+What was wrong:
+- `MathGuard.Initialize()` called `CacheDataVaultCold()`.
+- `CacheDataVaultCold()` read `GlobalRegistry.DataVault` inside MathGuard.
+- MathGuard owns invalid-number Vault handles used by physics/runtime finite-value guards, but it had no explicit bind/unbind route on authoritative DataVault registration.
+
+What was done:
+- Added `MathGuard.BindDataVaultCold(IDataVault)`.
+- Removed `CacheDataVaultCold()` and `_dataVaultColdCacheAttempted`.
+- `MathGuard.Initialize()` now consumes only the bound Vault.
+- `GlobalRegistry.RegisterDataVault()` binds MathGuard cold.
+- `GlobalRegistry.UnregisterDataVault()` clears MathGuard when the authoritative Vault is removed.
+
+Cinematic cheats used:
+- None. This was Core DataVault lifetime and telemetry route correctness.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+- Expected benefit: no hidden registry lookup or stale-handle ambiguity in MathGuard invalid-number telemetry.
+
+Proof:
+- Source: `Assets/_Project/Scripts/Core/MathGuard.cs`.
+- Source: `Assets/_Project/Scripts/Core/GlobalRegistry.cs`.
+- `MathGuard.cs` direct `GlobalRegistry.DataVault` reads: `0`.
+- `CacheDataVaultCold` active references: `0`.
+- `GlobalRegistry.RegisterDataVault()` calls `MathGuard.BindDataVaultCold(instance)`.
+- `GlobalRegistry.UnregisterDataVault()` calls `MathGuard.BindDataVaultCold(null)` for the authoritative Vault.
+- Touched source brace delta is `0`.
+- Scoped `git diff --check` exited `0`; line-ending warnings only.
+
+Residuals:
+- Full solution build was not run because latest guard showed CPU `100%`, active `csc.exe` PID `8756`, and active `dotnet.exe` PID `55080`; compile-wall repair belongs to another agent.
+- No Unity Editor import, Play Mode, profiler, GCMonitor, player build, device run, or DataVault hot-swap runtime test was performed.
+
+## Homeostasis DataVault Rebind Pass - 2026-05-28
+
+What was wrong:
+- `HomeostasisBrain` released Homeostasis and ScalabilityDictator DataVault handles on DataVault service replacement.
+- It assigned the new `_dataVault` but did not reopen replacement buffers before frame code resumed.
+- The next `PreSimulationTick()` used `TryResolveRuntimeBuffers()`, which could call `EnsureGenerationHandle<T>()` through `TryResolveOrAcquire()`.
+- That made a pre-simulation frame a hidden DataVault open/allocation fallback.
+
+What was done:
+- Added `ReopenRuntimeBuffersAfterDataVaultRebindCold()` after DataVault rebind.
+- Renamed the mutating runtime-buffer path to `OpenOrAcquireRuntimeBuffers()`.
+- `InitializeRuntime()` and DataVault hot-swap use `OpenOrAcquireRuntimeBuffers()`.
+- `PreSimulationTick()` uses a pure `TryResolveRuntimeBuffers()` route.
+- Removed unused mutating `TryResolveHardwareMetrics()`.
+- Did not edit dirty `HomeostasisBrain.ScalabilityDictator.cs`; its current `TryResolveRuntimeBuffers()` call sites now consume the pure resolver.
+
+Cinematic cheats used:
+- None. This was Core DataVault lifecycle and frame-phase ownership.
+
+Exact microseconds saved:
+- Runtime: `0 us` claimed. No profiler/player proof.
+- Expected benefit: no hidden DataVault buffer open from the first pre-simulation frame after Vault replacement.
+
+Proof:
+- Source: `Assets/_Project/Scripts/Core/HomeostasisBrain.cs`.
+- Read-only dirty neighbor: `Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs`.
+- `OpenOrAcquireRuntimeBuffers` references: `3`.
+- `TryResolveRuntimeBuffers` references: `4`.
+- `TryResolveHardwareMetrics` references: `0`.
+- Touched source brace delta is `0`.
+- Scoped `git diff --check` exited `0`; line-ending warning only.
+
+Residuals:
+- Full solution build was not run because CPU guard reported `100%` and active `dotnet.exe` PID `41344`; compile-wall repair belongs to another agent.
+- No Unity Editor import, Play Mode, profiler, GCMonitor, player build, device run, or DataVault hot-swap runtime test was performed.

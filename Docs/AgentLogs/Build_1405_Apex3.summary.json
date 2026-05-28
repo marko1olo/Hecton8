@@ -1,0 +1,7 @@
+﻿{
+    "launched":  false,
+    "reason":  "BLOCKED_BY_CONTENTION",
+    "cpuLoadPercent":  100,
+    "compilerProcessCount":  1,
+    "preflightPath":  "Docs/AgentLogs/Build_1405_Apex3_Preflight.json"
+}

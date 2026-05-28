@@ -1,4 +1,5 @@
 using System;
+using Hecton.Localization;
 using TMPro;
 using Unity.Mathematics;
 
@@ -54,6 +55,41 @@ namespace Hecton8.UI
             }
 
             target.SetCharArray(Empty, 0, 0);
+        }
+
+        public static bool SetLocalized(TMP_Text target, uint textHash, bool stripRichText = false)
+        {
+            BabelFormatArgs args = BabelFormatArgs.None();
+            return SetLocalized(target, textHash, in args, stripRichText);
+        }
+
+        public static bool SetLocalized(TMP_Text target, uint textHash, in BabelFormatArgs formatArgs, bool stripRichText = false)
+        {
+            if (target == null)
+                return false;
+
+            if (!CharBufferPool.TryAcquireBabel(out CharBufferPool.BabelLease lease))
+            {
+                target.SetCharArray(Empty, 0, 0);
+                return false;
+            }
+
+            try
+            {
+                bool found = LocRegistry.TryWriteVisualSpanFromUtf8(
+                    textHash,
+                    lease.Span,
+                    out int length,
+                    formatArgs,
+                    stripRichText);
+                int safeLength = lease.CopyToTmpBuffer(length);
+                target.SetCharArray(lease.TmpBuffer, 0, safeLength);
+                return found;
+            }
+            finally
+            {
+                CharBufferPool.Release(in lease);
+            }
         }
 
         private static int Copy(ReadOnlySpan<char> source, char[] destination)

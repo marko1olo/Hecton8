@@ -1,0 +1,26 @@
+﻿{
+    "generatedAt":  "2026-05-28T05:23:48.7195464+04:00",
+    "ownedFiles":  [
+                       "Directory.Build.props",
+                       "Directory.Build.targets",
+                       "Tools/Run_Guarded_Compile_1400.ps1",
+                       "Tools/Test_Msbuild_Graph_Fuzzer_1400.ps1",
+                       "Tools/Test_Static_Msbuild_Interception_1400.ps1",
+                       "Tools/Test_BuildGraph_StaticHealth_1400.ps1"
+                   ],
+    "agentOwnedRuntimeCSharpFiles":  [
+
+                                     ],
+    "hotPathCSharpFilesTouched":  0,
+    "forbiddenHotPathTokenCounts":  {
+                                        "newReferenceTypes":  0,
+                                        "stringFormat":  0,
+                                        "toString":  0,
+                                        "linq":  0,
+                                        "foreachLoops":  0
+                                    },
+    "exactTextScanningResult":  "No agent-owned .cs files exist in this patch. Token counts are zero by empty runtime C# hot-path surface, not by assumption. PowerShell foreach/New-Object counts are tooling-only and listed in ToolingZeroGcAudit_1400.json.",
+    "toolingAudit":  "Docs/AgentLogs/ToolingZeroGcAudit_1400.json",
+    "strictWarningAudit":  "Docs/AgentLogs/StrictWarningAudit_1400.json",
+    "excludedWorkspaceCSharpChanges":  "Other agents have modified C# files in working tree; excluded from agent 1400 proof by ownership."
+}

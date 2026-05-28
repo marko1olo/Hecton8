@@ -1681,3 +1681,549 @@ Combined current-pass verification:
 - `git diff --check` over `BulkheadContainmentRuntime.cs`, `EcosystemPopulationBalancer.cs`, `AcousticEchoLocationRuntime.cs`, `ProceduralBoneBlenderRuntime.cs`, and audit docs reports only LF/CRLF warnings.
 - Direct `_dataVault/_vault = GlobalRegistry.DataVault/currentService` grep on the four source files returns no hits.
 - Build/import/profiler/GC proof remains blocked by external `dotnet` PID `43436`, CPU sampled `99.42%`.
+
+## 2026-05-28 - Stress-Driven Spawn Native Lifecycle Pass
+
+What was wrong:
+- `StressDrivenSpawnDirector` owned AIEcology Vault buffers but its dispose/DataVault replacement path could clear descriptors without releasing the owned generations.
+- The same clear method also carries borrowed cognition/weather/scalability/macro descriptors, so a naive release-all patch would be a cross-owner deletion bug.
+
+What was done:
+- Added `ReleaseOwnedVaultHandles` and `ReleaseOwnedVaultHandle`.
+- Released only descriptor-local owned AIEcology handles for rules, links, candidates, selection, input, tuning, telemetry, counters, CSV scratch, frustum planes, owned slots, inventory tickets, and spawn debug.
+- Left borrowed handles clear-only and left spawn jobs, lock order, SignalBus routes, and simulation math unchanged.
+
+Cinematic cheats used:
+- None. This is lifecycle ownership repair only.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed service-churn leak/stale-native-state risk only.
+
+Verification:
+- Scoped grep confirms lifecycle rebind, owner-aware reuse, `ReleaseOwnedVaultHandle`, and no direct `_vault = GlobalRegistry.DataVault/currentService` in `StressDrivenSpawnDirector.cs`.
+- Scoped `git diff --check` over current source/docs reports only LF/CRLF warnings.
+- Build/import/profiler/GC proof blocked by external `dotnet` PID `43436`, CPU sampled `95.35%`.
+
+## 2026-05-28 - Base Atmosphere Native Lifecycle Pass
+
+What was wrong:
+- `BaseAtmosphereEngine` directly cached/replaced `_dataVault` from `GlobalRegistry.DataVault` and `currentService`.
+- Its release helper called `ReleaseBuffer` for any created descriptor, without `SystemID.HabitatAtmosphere` ownership proof.
+- The first lifecycle route version marked initial cold bind as pending rebind, which could reopen freshly allocated startup buffers on the first fixed tick.
+
+What was done:
+- Routed cold cache and DataVault hot-swap through `RebindDataVaultForLifecycle`.
+- Added `IsOwnedVaultHandle` and released only descriptor-local HabitatAtmosphere handles.
+- Added `HasNativeStateHandle` so pending rebind is scheduled only when an old native state actually existed.
+
+Cinematic cheats used:
+- None. Atmosphere solve math, seeding, solve budget, quality cadence, flags, and black-box format are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed lifecycle leak/stale-state risk and avoided redundant first-tick cold churn.
+
+Verification:
+- Scoped `git diff --check -- BaseAtmosphereEngine.cs` reports only existing LF/CRLF warning.
+- Direct `_dataVault = GlobalRegistry.DataVault/currentService` grep returns no hits.
+- Grep confirms `RebindDataVaultForLifecycle`, `HasNativeStateHandle`, `IsOwnedVaultHandle`, and owner-filtered `ReleaseBuffer(in handle)`.
+
+## 2026-05-28 - Base Atmosphere Logistics Native Lifecycle Pass
+
+What was wrong:
+- `BaseAtmosphereLogisticsRuntime` directly cached `_vault = GlobalRegistry.DataVault` on startup.
+- Shutdown and service replacement cleared/nullified Vault state without releasing owned HabitatAtmosphere logistics buffers.
+- Release needed descriptor-local owner proof because HabitatAtmosphere is shared by multiple atmosphere systems.
+
+What was done:
+- Routed startup through `ApplyVaultRebind`.
+- Added `ReleaseVaultHandles`, `ReleaseVaultHandle`, `IsOwnedVaultHandle`, and `ClearVaultHandles`.
+- Released cells, nodes, CSR edges, consumers, toxic sources, vents, counters, tuning, telemetry, delta lanes, remainders, shader payload, and editor CSV/profile handles only with `SystemID.HabitatAtmosphere` proof.
+
+Cinematic cheats used:
+- None. Logistics solve, topology, jobs, lock order, telemetry, shader payload, CSV/profile paths, and quality behavior are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed shutdown/service-churn native leak risk only.
+
+Verification:
+- Scoped `git diff --check -- BaseAtmosphereLogisticsRuntime.cs` reports only existing LF/CRLF warning.
+- Direct `_vault = GlobalRegistry.DataVault/currentService` grep returns no hits.
+- Grep confirms `ApplyVaultRebind`, `IsOwnedVaultHandle`, `OwnerSystemId`, and owner-filtered `ReleaseBuffer(in handle)`.
+
+Combined current verification:
+- `git diff --check` over the two atmosphere files and AUDIT_NATIVE_STATE docs reports only LF/CRLF warnings.
+- Direct DataVault assignment grep on the two atmosphere files returns no hits.
+- Build/import/profiler/GC proof blocked by external `dotnet` PID `19756`, `csc` PID `50412`, CPU sampled `100%`.
+
+## 2026-05-28 - Foveated Render Commander Native Lifecycle Pass
+
+What was wrong:
+- `FoveatedRenderCommander` assigned `_dataVault` directly from `GlobalRegistry.DataVault` and `currentService`.
+- Telemetry black-box reuse accepted `TryGetGenerationHandle` output without checking `SystemID.GraphicsScalability`.
+- Telemetry release used created-descriptor proof only.
+
+What was done:
+- Added `RebindDataVaultForLifecycle` and routed enable/DataVault replacement through it.
+- Required `BufferID.FoveatedRenderBlackBox` plus `SystemID.GraphicsScalability` before caching an existing telemetry handle.
+- Released telemetry only with the same owner proof and cleared local descriptor/generation state.
+
+Cinematic cheats used:
+- None. XR foveation policy, Quest lock, gaze fallback, UI camera fail-closed behavior, SignalBus reads, and telemetry DTO layout are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed lifecycle leak/cross-owner release risk only.
+
+Verification:
+- Scoped `git diff --check -- FoveatedRenderCommander.cs` reports only existing LF/CRLF warning.
+- Direct `_dataVault = GlobalRegistry.DataVault/currentService` grep returns no hits.
+- Grep confirms lifecycle rebind, owner-aware existing-handle reuse, and owner-filtered `ReleaseBuffer(in handle)`.
+- Build/import/profiler/XR proof blocked by external `dotnet` PID `63132`, `VBCSCompiler` PID `21776`, CPU sampled `100%`.
+
+Combined current-pass verification:
+- `git diff --check` over `BaseAtmosphereEngine.cs`, `BaseAtmosphereLogisticsRuntime.cs`, `FoveatedRenderCommander.cs`, and AUDIT_NATIVE_STATE docs reports only LF/CRLF warnings.
+- Direct `_dataVault/_vault = GlobalRegistry.DataVault/currentService` grep on the three source files returns no hits.
+- Build/import/profiler/GC proof remains blocked by external `dotnet` PID `56508`, `VBCSCompiler` PID `21776`, CPU sampled `100%`.
+
+## 2026-05-28 - Visual Pressure Aging Native Lifecycle Pass
+
+What was wrong:
+- `VisualPressureAgingRuntime` startup assigned `_vault` directly from `GlobalRegistry.DataVault`.
+- DataVault replacement had a separate release/bind sequence instead of one lifecycle route.
+
+What was done:
+- Added `RebindDataVaultForLifecycle`.
+- Routed startup and DataVault replacement through the same release/bind route.
+- Kept existing `SystemID.GraphicsMaterials` owner-filtered release/reuse checks.
+
+Cinematic cheats used:
+- None. Visual aging/degradation jobs, GPU buffers, structural/thermal borrowed inputs, dump streams, shader payloads, and quality scaling are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed stale Vault route risk only.
+
+Verification:
+- Scoped `git diff --check -- VisualPressureAgingRuntime.cs` reports only existing LF/CRLF warning.
+- Direct `_vault = GlobalRegistry.DataVault/currentService` grep returns no hits.
+- Grep confirms lifecycle rebind and owner-filtered `ReleaseBuffer(in handle)`.
+
+## 2026-05-28 - Instance Culling Telemetry Native Lifecycle Pass
+
+What was wrong:
+- `InstanceCullingService` cached `_dataVault` only on null and did not react to DataVault service replacement.
+- Telemetry ring validation/release used BufferID+Generation without `SystemID.GraphicsScalability` proof.
+
+What was done:
+- Implemented `IGlobalRegistryHotSwapListener`.
+- Added hot-swap registration/unregistration and `RebindDataVaultForLifecycle`.
+- Required `SystemID.GraphicsScalability` for telemetry handle reuse and release.
+
+Cinematic cheats used:
+- None. Compute culling, HLOD dispatch, GPU buffers, async readback, shader IDs, AUP shift job, and black-box file layout are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed stale telemetry Vault/cross-owner release risk only.
+
+Verification:
+- Scoped `git diff --check -- InstanceCullingService.cs` reports only existing LF/CRLF warning.
+- Direct `_dataVault = GlobalRegistry.DataVault` grep returns no hits.
+- Grep confirms listener route, lifecycle rebind, and owner-filtered `ReleaseBuffer(in handle)`.
+
+Combined graphics telemetry verification:
+- `git diff --check` over `VisualPressureAgingRuntime.cs`, `InstanceCullingService.cs`, and AUDIT docs reports only LF/CRLF warnings.
+- Direct DataVault assignment grep on both graphics files returns no hits.
+- Build/import/profiler/GPU proof blocked by external `dotnet` PID `37628`, `csc` PID `45708`, `VBCSCompiler` PID `21776`, CPU sampled `100%`.
+
+## 2026-05-28 - Light Shaft VFX Vault Owner Predicate Pass
+
+What was wrong:
+- `ScreenSpaceLightShaftRuntime` could accept existing light-shaft Vault handles without explicit `SystemID.Vfx` proof.
+- Owned release checked generation but did not explicitly require the VFX owner on both local and current descriptors.
+
+What was done:
+- Required `SystemID.Vfx` for local handle reuse.
+- Required `SystemID.Vfx` for existing handle adoption from `TryGetGenerationHandle`.
+- Required `SystemID.Vfx` before release of owned top/history/telemetry handles.
+
+Cinematic cheats used:
+- None. The screen-space shaft fake, brownout/load-shed behavior, camera route, SignalCorridor path, shader globals, and telemetry layout are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed ownership ambiguity only.
+
+Verification:
+- Scoped `git diff --check -- ScreenSpaceLightShaftRuntime.cs` reports only existing LF/CRLF warning.
+- Grep confirms `SystemID.Vfx` owner predicates before reuse/release and owner-filtered `ReleaseBuffer(in handle)`.
+
+## 2026-05-28 - UberNoir Shader Telemetry Native Lifecycle Pass
+
+What was wrong:
+- `HectonUberNoirRuntimeBridge` assigned `_dataVault` directly during DataVault replacement.
+- Shader telemetry ring handles were accepted and released by BufferID+Generation without `SystemID.GraphicsScalability` proof.
+
+What was done:
+- Added `RebindDataVaultForLifecycle` for cold refresh and DataVault replacement.
+- Required `SystemID.GraphicsScalability` for telemetry handle reuse/read/write/release.
+- Reset telemetry cursor when the Vault native epoch changes.
+
+Cinematic cheats used:
+- None. Feature-mask math, stress shedding, visual-overkill scalar, shader globals, dump header, and DTO layout are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed shader telemetry lifecycle risk only.
+
+Verification:
+- Scoped `git diff --check -- HectonUberNoirRuntimeBridge.cs` reports only existing LF/CRLF warning.
+- Direct `_dataVault = currentService/GlobalRegistry.DataVault` grep returns no hits.
+- Grep confirms lifecycle rebind and owner-filtered `ReleaseBuffer(in handle)`.
+
+Combined light/render verification:
+- `git diff --check` over `ScreenSpaceLightShaftRuntime.cs`, `HectonUberNoirRuntimeBridge.cs`, and AUDIT docs reports only LF/CRLF warnings.
+- Build/import/profiler/render proof remains blocked by external `dotnet` PID `33312`, CPU sampled `71%`.
+
+Combined current continuation verification:
+- `git diff --check` over 7 source files and AUDIT docs reports only LF/CRLF warnings.
+- Direct `_vault/_dataVault = GlobalRegistry.DataVault/currentService` grep on the 7 source files returns no hits.
+- Build/import/profiler/GC proof blocked by external `dotnet` PID `33312`, CPU sampled `71%`.
+
+## 2026-05-28 - Interior GI Probe Native Lifecycle Pass
+
+What was wrong:
+- `InteriorGIProbeVolumeRuntime` assigned `_vault` directly from `GlobalRegistry.DataVault` and directly during DataVault service replacement.
+- The GI release helper used only nonzero `BufferID`/generation before `ReleaseBuffer`, without passing the expected descriptor id or proving `SystemID.GraphicsScalability`.
+
+What was done:
+- Added `RebindDataVaultForLifecycle` and routed cold cache plus hot DataVault replacement through it.
+- Kept teardown on the old Vault before binding the replacement Vault.
+- Changed each GI probe release call to pass its expected `BufferID`, and release only when `IsInteriorGIHandle` proves expected buffer id, `SystemID.GraphicsScalability`, and nonzero generation.
+
+Cinematic cheats used:
+- None. Existing interior GI remains the same bounded probe/grid visual fake. Propagation, mock seeding, telemetry, CSV/profile overrides, GPU upload, and shader payload are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed lifecycle leak/cross-owner release risk only.
+
+Verification:
+- Scoped `git diff --check -- InteriorGIProbeVolumeRuntime.cs` reports only existing LF/CRLF warning.
+- Direct `_vault = GlobalRegistry.DataVault/currentService` grep returns no hits.
+- Grep confirms lifecycle rebind and owner-filtered `ReleaseBuffer(in handle)`.
+
+## 2026-05-28 - Global Shader Dispatcher DataVault Epoch Pass
+
+What was wrong:
+- `GlobalShaderDispatcher` assigned `_vault` directly from `GlobalRegistry.DataVault` and directly on DataVault replacement.
+- Service replacement invalidated the slot handle cache but preserved `_binaryProbeCompleted` and `_generatedEmergencyGlobals`, so a replacement `ShaderGlobalState` buffer could skip the emergency/global bootstrap path.
+
+What was done:
+- Added `RebindDataVaultForLifecycle` for cold cache, disable, and service replacement.
+- Rebind invalidates cached shader slot handles and resets telemetry cursor/frame plus binary-probe/emergency-seed flags.
+- Active DataVault replacement now ensures shader slots and reruns `RunBinaryGraveyardProbeCold` against the replacement Vault.
+
+Cinematic cheats used:
+- None. The existing shader-global route remains a bounded visual fake lane. Slot layout, thermal anomaly upload, feature masks, physiology shader fakes, and command-buffer dispatch are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed stale native epoch bootstrap risk only.
+
+Verification:
+- Scoped `git diff --check -- GlobalShaderDispatcher.cs` reports only existing LF/CRLF warning.
+- Direct `_vault = GlobalRegistry.DataVault/currentService` grep returns no hits.
+- Grep confirms lifecycle rebind and binary probe rerun on DataVault replacement.
+
+Combined interior/render verification:
+- `git diff --check` over `InteriorGIProbeVolumeRuntime.cs`, `GlobalShaderDispatcher.cs`, and AUDIT docs reports only LF/CRLF warnings.
+- Direct `_vault/_dataVault = GlobalRegistry.DataVault/currentService` grep on both source files returns no hits.
+- Remaining `ReleaseBuffer(in handle)` in the scoped grep is the Interior GI release path behind `IsInteriorGIHandle`.
+- Build/import/profiler/native-ledger proof is blocked by external `dotnet` PID `40436`, CPU sampled `100%`.
+
+## 2026-05-28 - Nutrient Drift Native Lifecycle Pass
+
+What was wrong:
+- `NutrientDriftRuntime` assigned `_vault` directly during activation and DataVault service replacement.
+- Main and carrion Vault release helpers could release descriptors without proving `SystemID.AIEcology` at the final release predicate.
+- Release sites did not pass the expected `BufferID`, so descriptor corruption/reuse would be harder to catch locally.
+
+What was done:
+- Added `RebindDataVaultForLifecycle` and routed `Activate`, `Dispose`, and DataVault replacement through it.
+- Lifecycle rebind now fences scheduled drift work before releasing old Vault descriptors against the old service.
+- `ReleaseVaultHandle` now requires an expected `BufferID`, and `IsMatchingVaultHandle` requires expected `BufferID`, nonzero generation, and `SystemID.AIEcology`.
+- Updated carrion release sites to pass explicit carrion buffer ids.
+
+Cinematic cheats used:
+- None. Nutrient/carrion drift math, source profiles, attraction records, telemetry, and quality-weight behavior are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed lifecycle leak/cross-owner release risk only.
+
+Verification:
+- Scoped `git diff --check -- NutrientDriftRuntime.cs NutrientDriftRuntime_Carrion.cs` reports only existing LF/CRLF warnings.
+- Direct `_vault = GlobalRegistry.DataVault/currentService` grep returns no hits.
+- Grep confirms lifecycle rebind, AIEcology owner check, and expected-`BufferID` release calls.
+- Build/import/profiler/GC proof is still pending behind the project compiler/CPU guard.
+
+Combined current patch verification:
+- `git diff --check` over `InteriorGIProbeVolumeRuntime.cs`, `GlobalShaderDispatcher.cs`, `NutrientDriftRuntime.cs`, `NutrientDriftRuntime_Carrion.cs`, and AUDIT docs reports only LF/CRLF warnings.
+- Direct `_vault/_dataVault = GlobalRegistry.DataVault/currentService` grep on the four source files returns no hits.
+- `Get-Process dotnet,csc,VBCSCompiler` listed no compiler process, but CPU sampled `100%`.
+- No build, native ledger, Unity import, Play Mode, profiler, or GC proof was launched under the CPU guard.
+
+## 2026-05-28 - Storm Propagation Native Lifecycle Pass
+
+What was wrong:
+- `ShinobuStormPropagationRuntime` replaced `_vault` directly on DataVault service replacement.
+- Old owned HabitatAtmosphere storm descriptors were cleared without `ReleaseBuffer`.
+- `Dispose()` completed jobs but did not release owned Vault descriptors.
+
+What was done:
+- Added `RebindDataVaultForLifecycle` for DataVault service replacement.
+- Added owner-filtered release for every descriptor-local storm buffer using expected `BufferID`, nonzero generation, and `SystemID.HabitatAtmosphere`.
+- Borrowed ocean weather state is cleared only, not released.
+- Added `OnDestroy -> Dispose` and release-on-dispose for the owned storm buffers.
+- Reset managed native-epoch counters when binding a replacement Vault.
+
+Cinematic cheats used:
+- None. Existing storm propagation remains the same deterministic visual/audio scalar fake. Propagation jobs, scalar rows, telemetry dump, and quality cadence are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed lifecycle leak/cross-owner release risk only.
+
+Verification:
+- `git diff --check -- ShinobuStormPropagationRuntime.cs` reports only existing LF/CRLF warning.
+- Direct `_vault = GlobalRegistry.DataVault/currentService` grep returns no hits.
+- Source diff confirms lifecycle rebind and owner-filtered `ReleaseBuffer(in handle)`.
+- No compiler process was listed, but CPU sampled `100%`; build/import/profiler/native-ledger proof was not launched.
+
+## 2026-05-28 - Surface Weather Native Output Lifecycle Pass
+
+What was wrong:
+- `HectonSurfaceWeatherDirector` cached `GlobalRegistry.DataVault` directly and ignored DataVault service replacement.
+- `SurfaceWeatherJobOutput` release used only nonzero descriptor proof, not `SystemID.HabitatAtmosphere`.
+- `OnDisable` released the output buffer while `_runtimeStateInitialized` stayed true, so re-enable on the same Vault could skip output recreation.
+
+What was done:
+- Added `RebindDataVaultForLifecycle` for cold cache and DataVault replacement.
+- Added same-Vault cold rehydrate so disable/enable recreates and seeds the output buffer when runtime state already exists.
+- Added `IsWeatherJobOutputHandle` owner predicate for resolve and release.
+
+Cinematic cheats used:
+- None. Weather profile selection, screen-space rain, thunder/lightning, ocean binding, shader/VFX writes, and quality behavior are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed lifecycle output loss/stale Vault risk only.
+
+Verification:
+- `git diff --check -- HectonSurfaceWeatherDirector.cs` reports only existing LF/CRLF warning.
+- Scoped grep confirms lifecycle rebind, same-Vault output rehydrate, owner-filtered release, and no direct `_dataVault = GlobalRegistry.DataVault/currentService` route.
+- Build/import/profiler proof blocked by external `dotnet` PID `29512`, `csc` PID `31964`, CPU `100%`.
+
+## 2026-05-28 - Gas Dynamics Native Owner Predicate Pass
+
+What was wrong:
+- `GasDynamicsSolver` cached `GlobalRegistry.DataVault` directly and service replacement manually assigned `_dataVault`.
+- Gas lane release accepted any nonzero descriptor.
+- Telemetry release checked only `GasDynamicsTelemetryRing` BufferID.
+- Gas and telemetry resolve/lock paths did not reject non-`SystemID.HabitatAtmosphere` descriptors.
+
+What was done:
+- Added `RebindDataVaultForLifecycle` for cold cache and DataVault replacement.
+- Added `SystemID.HabitatAtmosphere` checks to ensure/read/read-only/write-lock and telemetry routes.
+- Changed gas release to require an expected `BufferID` and `SystemID.HabitatAtmosphere`.
+- Passed expected buffer ids for all room/base/bulkhead gas lanes.
+- Telemetry ring release now uses the same owner predicate.
+
+Cinematic cheats used:
+- None. Gas diffusion, base transition handling, toxicity signals, telemetry DTOs, and quality behavior are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed stale/foreign Vault descriptor risk only.
+
+Verification:
+- `git diff --check -- GasDynamicsSolver.cs` reports only existing LF/CRLF warning.
+- Direct `_dataVault = GlobalRegistry.DataVault/currentService` grep returns no hits.
+- Scoped grep confirms `RebindDataVaultForLifecycle`, owner checks, and expected-`BufferID` release calls.
+- Build/import/profiler proof blocked by external `dotnet` PID `16780`, CPU `100%`.
+
+Combined current continuation verification:
+- `git diff --check` over `InteriorGIProbeVolumeRuntime.cs`, `GlobalShaderDispatcher.cs`, `NutrientDriftRuntime.cs`, `NutrientDriftRuntime_Carrion.cs`, `ShinobuStormPropagationRuntime.cs`, `HectonSurfaceWeatherDirector.cs`, `GasDynamicsSolver.cs`, and AUDIT docs reports only LF/CRLF warnings.
+- Direct `_vault/_dataVault = GlobalRegistry.DataVault/currentService` grep across the 7 source files returns no hits.
+- `Get-Process dotnet,csc,VBCSCompiler` listed external `dotnet` PID `16464`; CPU sampled `100%`.
+- No build, native ledger, Unity import, Play Mode, profiler, or GC proof was launched under the compiler/CPU guard.
+
+## 2026-05-28 - Dynamic Point Light Culling Native Lifecycle Pass
+
+What was wrong:
+- `DynamicPointLightCullingDirector` cached `GlobalRegistry.DataVault` directly.
+- DataVault service replacement manually assigned `_vault`.
+- Descriptor-local releases used nonzero generation only; they did not require expected `BufferID` and `SystemID.GraphicsScalability`.
+- `ShutdownRuntime` released `_profileRules` but kept `_profileRuleCount`, so same-Vault disable/enable could use a stale count against fresh/uninitialized profile storage.
+
+What was done:
+- Added `RebindDataVaultForLifecycle` for cold cache and DataVault replacement.
+- The rebind route completes pending culling work, unlocks owned write windows, releases old Vault descriptors through the old Vault, and resets native-epoch counters.
+- `ReleaseDynamicPointLightVaultHandle` now requires expected `DynamicPointLightCullingVaultIds.*` plus `SystemID.GraphicsScalability` before calling `ReleaseBuffer`.
+- `ShutdownRuntime` now resets profile count, telemetry cursor, timeout state, pending handle, and native-ready flags after releasing Vault descriptors.
+
+Cinematic cheats used:
+- None. Dynamic light culling math, mock SDF fake, probe-bounce stream, continuous quality cadence, and GPU payload layout are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed lifecycle leak/cross-owner release/stale profile-read risk only.
+
+Verification:
+- Direct `_vault = GlobalRegistry.DataVault/currentService` grep on `DynamicPointLightCullingDirector.cs` returns no hits.
+- `ReleaseDynamicPointLightVaultHandle` calls all pass expected `DynamicPointLightCullingVaultIds.*`.
+- `git diff --check -- DynamicPointLightCullingDirector.cs` reports only existing LF/CRLF warning.
+- Build/import/profiler/native-ledger proof blocked by external `dotnet` PID `55080`, CPU `100%`.
+
+## 2026-05-28 - Ocean Single Pass / Shoreline Foam Native Lifecycle Pass
+
+What was wrong:
+- `OceanSinglePassRuntime` cached `_vault` directly from `GlobalRegistry.DataVault`.
+- Ocean did not listen for DataVault replacement.
+- Ocean-owned handles resolved/released with generation-only validation.
+- `ShorelineFoamGraftRuntime.Shutdown()` released GPU state but left static Vault handles alive.
+- Shoreline acquire/resolve could reuse or release stale descriptors across a DataVault epoch.
+
+What was done:
+- Added `IGlobalRegistryHotSwapListener` to `OceanSinglePassRuntime`.
+- Added `RebindDataVaultForLifecycle` for cold cache and DataVault replacement.
+- Ocean-owned handles now require expected `BufferID`, `SystemID.HabitatAtmosphere`, and generation before resolve/release.
+- Propwash handles remain borrowed; they validate expected `BufferID` plus generation and are never released by Ocean.
+- Changed `ShorelineFoamGraftRuntime.Shutdown(IDataVault)` to release static owned Vault handles through the old Vault.
+- Shoreline acquire/resolve/release now requires expected `ShorelineFoamConstants.*` buffer id and `SystemID.HabitatAtmosphere`.
+
+Cinematic cheats used:
+- None. Wake resolution scaling, guillotine foam visual fake, shoreline foam shader cap, profile CSV, and telemetry layout are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed stale Vault/foreign release/native leak risk only.
+
+Verification:
+- Scoped grep finds no direct `_vault = GlobalRegistry.DataVault/currentService`.
+- Scoped grep finds no old `IsHandleValid`, no no-arg `ShorelineFoamGraftRuntime.Shutdown()`, and no ownerless `ReleaseVaultHandle(vault, ref _)`.
+- `git diff --check -- OceanSinglePassRuntime.cs ShorelineFoamGraftContracts.cs` reports only existing LF/CRLF warnings.
+- Build/import/profiler/native-ledger proof blocked by external `dotnet` PID `55080`, CPU `100%`.
+
+## 2026-05-28 - Plasma Beam Native Lifecycle Pass
+
+What was wrong:
+- `ShinobuPlasmaBeamRuntime` initialized `_vault` directly from `GlobalRegistry.DataVault`.
+- DataVault replacement completed scheduled work and reset flags, but did not release owned Vault handles.
+- `Shutdown()` also reset managed state without releasing nine `SystemID.Vfx` buffers.
+- `TryResolveVaultBuffer` checked BufferID only, not owner or generation.
+
+What was done:
+- Added `RebindDataVaultForLifecycle` and routed initialization/DataVault replacement through it.
+- Rebind completes scheduled simulation, unlocks owned write windows, releases old Vault descriptors through the old Vault, then resets native-epoch counters.
+- Shutdown now releases all owned Vault handles before clearing `_vault`.
+- Resolve/release now require expected `BufferID`, `SystemID.Vfx`, and nonzero generation.
+
+Cinematic cheats used:
+- None. Procedural beam mesh math, acoustic taps, SignalBus lane, indirect draw path, CSV tuning, and Math LOD are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed native leak/stale descriptor risk only.
+
+Verification:
+- Scoped grep confirms no direct `_vault = GlobalRegistry.DataVault/currentService`.
+- Release helper is owner-filtered by `IsOwnedHandle`.
+- `git diff --check -- ShinobuPlasmaBeamRuntime.cs` reports only existing LF/CRLF warning.
+- Build/import/profiler/native-ledger proof blocked by external `dotnet` PID `55080`, CPU `100%`.
+
+## 2026-05-28 - Parasite Swarm Native Lifecycle Pass
+
+What was wrong:
+- `ParasiteSwarmGpuRuntime` cached `_vault` directly from `GlobalRegistry.DataVault`.
+- DataVault replacement completed target work and cleared descriptors, but did not release owned parasite Vault buffers from the old Vault.
+- Read/resolve helpers accepted handle BufferID without proving `SystemID.Vfx` and generation.
+- Write-lock routes could attempt locks on stale/foreign descriptors before failing on buffer shape.
+
+What was done:
+- Routed cold startup and DataVault service replacement through `RebindDataVaultForLifecycle`.
+- Rebind now completes target extraction, releases held target write locks, releases ten parasite `SystemID.Vfx` Vault lanes through the old Vault with expected `BufferID`/owner/generation proof, then clears and rebinds descriptors.
+- Startup no longer performs direct `_vault = GlobalRegistry.DataVault`.
+- Descriptor bind, CSV scratch lock, tuning seed lock, target/telemetry write locks, and read/resolve helpers now fail closed unless the handle proves expected `BufferID`, `SystemID.Vfx`, and nonzero generation.
+
+Cinematic cheats used:
+- None. GPU swarm compute, target extraction, thermal/curl/noise fake, particle budget scaling, CSV profile parsing, and black-box dump format are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed old-Vault leak, stale descriptor, and foreign handle risk only.
+
+Verification:
+- Direct `_vault = GlobalRegistry.DataVault/currentService` grep on `ParasiteSwarmGpuRuntime.cs` returns no hits.
+- Scoped grep confirms owner-filtered release/read/resolve/write-lock paths.
+- `git diff --check -- ParasiteSwarmGpuRuntime.cs` reports only existing LF/CRLF warning.
+- Build/import/profiler/native-ledger proof blocked by external `dotnet` PID `55080` running `dotnet build Hecton8.slnx --no-restore -v:minimal /m:1 /p:UseSharedCompilation=false`, CPU `100%`.
+
+## 2026-05-28 - Jacobian Foam Native Lifecycle Pass
+
+What was wrong:
+- `JacobianFoamGpuRuntime` cached `_vault` directly from `GlobalRegistry.DataVault`.
+- DataVault replacement assigned `_vault = currentService as IDataVault`, cleared descriptors, and did not release old foam Vault buffers.
+- Resolve/read-pin/write-lock helpers accepted BufferID+generation without proving `SystemID.Vfx`.
+- Deferred telemetry dump could be lost if the old Vault was cleared before flush.
+
+What was done:
+- Routed `ColdBindDataVault`, cold cache, and DataVault service replacement through `RebindDataVaultForLifecycle`.
+- Rebind flushes deferred telemetry through the old Vault, releases six owned foam `SystemID.Vfx` lanes with expected `BufferID`/owner/generation proof, clears descriptors, then binds the replacement Vault.
+- Descriptor binding, read pins, resolves, write locks, and releases now require `IsOwnedHandle`.
+- Existing GPU buffers, RTHandles, RenderGraph payload, resolution logic, and foam shader dispatch path are unchanged.
+
+Cinematic cheats used:
+- None. Existing Jacobian foam fake, wake-count curve, resolution scaling, RenderGraph history ping-pong, and texture format fallback were preserved.
+
+Exact microseconds saved:
+- Measured: 0 us. Expected steady-frame delta: 0 us. Removed old-Vault leak/stale descriptor/foreign handle risk only.
+
+Verification:
+- Direct `_vault = GlobalRegistry.DataVault/currentService` grep on `JacobianFoamGpuRuntime.cs` returns no hits.
+- Scoped grep confirms `IsOwnedHandle` is used by release, bind, resolve, read-pin, and write-lock paths.
+- `git diff --check -- JacobianFoamGpuRuntime.cs` reports only existing LF/CRLF warning.
+- Build/import/profiler/native-ledger proof blocked because no compiler process was listed but CPU sampled `63%`, above the 50% build guard.
+
+## 2026-05-28 - Combined VFX Native Lifecycle Verification
+
+What was wrong:
+- No new source defect found in the combined verification step; this was a proof gate after the ParasiteSwarm and JacobianFoam edits.
+
+What was done:
+- Ran combined whitespace/static checks over both VFX source files and AUDIT docs.
+- Re-ran direct DataVault assignment grep over `ParasiteSwarmGpuRuntime.cs` and `JacobianFoamGpuRuntime.cs`.
+- Sampled compiler/CPU state before any build.
+
+Cinematic cheats used:
+- None. Verification only.
+
+Exact microseconds saved:
+- Measured: 0 us.
+
+Verification:
+- Combined `git diff --check` reports only existing LF/CRLF warnings.
+- Direct `_vault = GlobalRegistry.DataVault/currentService` grep over both VFX source files returns no hits.
+- Build/import/profiler/native-ledger proof blocked: external `dotnet` PID `29008` appeared during guard sampling and CPU sampled `100%`.
+
+## 2026-05-28 - Internal Flood Waterline Native Lifecycle Pass
+
+What was wrong:
+- `InternalFloodWaterlineRuntime` directly cached `GlobalRegistry.DataVault`.
+- Telemetry release could run without proving expected `BufferID.InternalFloodWaterlineTelemetryRing`, `SystemID.UI`, and generation.
+- DataVault epoch replacement did not use one reset path for telemetry cursor and black-box dump state.
+
+What was done:
+- Cold cache and service replacement now route through `BindDataVaultForLifecycle`.
+- `ReleaseTelemetryHandle` is the only telemetry release path and checks expected buffer, owner system, and generation.
+- Telemetry write/read/dump validity now uses the same owner predicate.
+
+Cinematic cheats used:
+- None. Existing waterline/droplet shader fake and presentation cadence are unchanged.
+
+Exact microseconds saved:
+- Measured: 0 us.
+- Expected steady-frame delta: 0 us; change is cold lifecycle plus scalar descriptor guards.
+
+Verification:
+- Direct `_dataVault = GlobalRegistry.DataVault/currentService` and old `IsVaultHandleCreated` grep returns no hits.
+- The remaining `ReleaseBuffer(in _telemetryHandle)` is inside `ReleaseTelemetryHandle` behind `IsTelemetryHandleOwned`.
+- `git diff --check -- InternalFloodWaterlineRuntime.cs` reports only existing LF/CRLF warning.
+- Combined source/doc `git diff --check` reports only existing LF/CRLF warnings.
+- Build/import/profiler/native-ledger proof blocked by external `dotnet` PID `32028` and CPU `97%`.

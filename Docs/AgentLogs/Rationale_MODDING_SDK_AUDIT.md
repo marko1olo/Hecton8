@@ -794,3 +794,99 @@ Rejected Alternatives: Hardcoding opcode aliases into Markdown was rejected beca
 Scalability potential: Low tier authors get a cheap text command before editing graph nodes. Middle tier can use the same helper in copied starter folders. High tier Workbench can consume the JSON output without inventing a second opcode route. Ultra tier can add graph previews and simulation after the same allowlist proof. Runtime authority remains envelope-only.
 
 Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is offline authoring only. It prevents review churn and invalid graph submissions before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, or Burst/job paths are touched.
+
+## Decision 67 - Starter manifests need one public identity and semantic versions
+
+Problem: The public starter kit had two identity-bearing manifests. `Id` parity was enforced, but `DisplayName`/`Name`, `Author`, and `Version` could drift. `Version` only required non-empty text, so `bad version` could enter authoring/runtime manifests and reach review tooling as if it were a real package version.
+
+Solution: Enforce semantic version syntax in the identity helper, structure validator, JSON Schemas, SDK Hub generated scripts, schema revision 79, and static validation. Require `mod.h8manifest.json` `DisplayName`, `Author`, and `Version` to match `mod.json` `Name`, `Author`, and `Version`. Keep the starter defaults generic and run identity mutation probes only on temp copies.
+
+Rejected Alternatives: Leaving version shape to documentation was rejected because random external authors need fail-fast local validation. Auto-normalizing invalid versions was rejected because package identity/version must be explicit and reviewable. Checking only `Id` parity was rejected because a review artifact with mismatched names/authors/versions is not a single package identity.
+
+Scalability potential: Low tier authors get a copied folder with one command and deterministic local errors before review. Middle tier SDK Hub refresh emits the same checks. High tier Workbench can call the same validator and show field-level errors. Ultra tier can add package diff, migration preview, and visual diagnostics over the same identity contract. Runtime authority remains envelope-only.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is offline authoring and review-proof hygiene. It prevents invalid package metadata before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, or Burst/job paths are touched.
+
+## Decision 68 - Review manifest must carry validated package identity
+
+Problem: `Reports/review_manifest.json` proved file hashes and root id, but not the public package identity a reviewer or future Workbench/CLI screen needs: display name, author, semantic version, required API version, and mod priority. Those facts were already validated across `mod.h8manifest.json` and `mod.json`, but the report did not carry them.
+
+Solution: Add an `Identity` object to the no-Unity review manifest after `Tools/validate_structure.ps1` passes. The object records `Id`, `DisplayName`, `Author`, `Version`, `RequiredAPIVersion`, and `ModPriority`. Extend SDK Hub generated scripts, starter docs, schema revision 80, static validation, and runtime playbook proof to assert the identity summary exists and matches the validated runtime/authoring manifests.
+
+Rejected Alternatives: Requiring reviewers to inspect both manifests was rejected because review handoff should be one deterministic report. Adding a package format or runtime loader change was rejected because runtime package ingestion remains envelope-only and separately pending verification. Duplicating unvalidated identity values was rejected; the report is written only after the structure validator succeeds.
+
+Scalability potential: Low tier authors still run one PowerShell command and get a readable report. Middle tier SDK Hub emits the same report. High tier Workbench can display identity without rescanning files. Ultra tier package diff and migration preview can key off the same report object. Runtime authority remains envelope-only.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is offline report metadata only. It prevents review and tooling churn before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, or Burst/job paths are touched.
+
+## Decision 69 - Public SDK entry must not lead with legacy runtime packaging
+
+Problem: The SDK Hub's first authoring action opened `ModBuilderWindow`, and the builder had a direct top-level `Hecton/Modding/Mod Builder` menu. That teaches random public authors to start from a Unity-only DLL/AssetBundle-oriented legacy builder even though current public UGC runtime is envelope-only and the no-Unity External Starter Kit is the intended public path.
+
+Solution: Make External Starter Kit the first SDK Hub action. Move builder access to an `Internal Legacy` section, require a confirmation dialog, and move the direct menu to `Hecton/Modding/Internal/Legacy Mod Builder`. Update schema revision 81, static validator, runtime playbook, and docs so this UX boundary is source-checked.
+
+Rejected Alternatives: Removing `ModBuilderWindow` was rejected because its manifest parity and bounded DLL/bundle checks are still useful internal loader proof while runtime package smoke is pending. Keeping the old first button was rejected because warning prose is not enough if the first click sends authors into the wrong tool. Reopening managed runtime modding was rejected because envelope-only quarantine remains the active runtime contract.
+
+Scalability potential: Low tier authors see the no-Unity starter path first and can work from text files plus PowerShell/pwsh. Middle tier Unity users still get the Hub and static validator without entering legacy packaging. High tier Workbench can replace the same public starter route without changing runtime authority. Ultra tier can add package diff/simulation over the starter/review manifest while keeping legacy packaging isolated.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is editor UX and static contract hygiene only. Runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, and Burst/job paths are unchanged.
+
+## Decision 70 - Prepare must support the normal edit-review loop
+
+Problem: `Tools/prepare_mod.ps1` was framed as the one-command public starter path, but it hard-failed without `-Id`. After a modder already set identity, the common loop is edit JSON/graph/table/locale, validate, and rebuild `Reports/review_manifest.json`. Requiring identity arguments every time is noisy and invites accidental identity churn.
+
+Solution: Make prepare two-mode. With `-Id`, it calls `Tools/set_mod_identity.ps1` and then builds the review manifest. Without identity arguments, it skips identity mutation, validates existing manifests through `Tools/build_review_manifest.ps1`, parses the generated review manifest, and reports the package id from that proof artifact. Static validation now runs both modes on a temp copy and schema revision 82 records `externalStarterKitPrepareToolSupportsExistingManifest`.
+
+Rejected Alternatives: Keeping separate `validate_structure.ps1` plus `build_review_manifest.ps1` as the edit loop was rejected because the public SDK already promises a one-command path. Silently accepting `DisplayName`, `Author`, or `Version` without `-Id` was rejected because partial identity edits would be ambiguous. Reopening Unity/legacy builder as the normal loop was rejected because current public runtime remains envelope-only.
+
+Scalability potential: Low tier authors get one cheap PowerShell/pwsh command after every edit. Middle tier SDK Hub refresh emits the same behavior. High tier Workbench/CLI can call the same prepare route for deterministic review reports. Ultra tier can add simulation, package diff, and visual diagnostics after the same report without changing runtime authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is offline authoring only. It reduces authoring churn before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, or Burst/job paths are touched.
+
+## Decision 71 - Unity users need one starter-kit cockpit, not scattered buttons
+
+Problem: The public no-Unity starter kit had the right files and tools, and the SDK Hub pointed authors to it, but a Unity-side author still had to jump between Hub buttons, file explorer, PowerShell scripts, raw JSON files, and docs to answer basic questions: what is my mod identity, how do I validate, what opcodes are legal, and what did the review report contain. That is a real usability defect for random external authors and it makes the SDK feel less integrated than the actual contracts are.
+
+Solution: Add `ExternalStarterKitWorkbenchWindow` as an Editor-only facade over the existing External Starter Kit. It reuses `ModdingSdkHubWindow.CreateExternalStarterKit()` for create/refresh, calls `Tools/set_mod_identity.ps1`, `Tools/prepare_mod.ps1`, and `Tools/list_allowed_opcodes.ps1`, opens the authoring/runtime manifests, graph, settings, locale, and review report, and displays `Reports/review_manifest.json` identity/file/byte summary. Schema revision 83 and `Validate_Mod_API_Static.ps1` now prove the Hub opens the Workbench and the Workbench preserves the same generator/tool/report/envelope-only route.
+
+Rejected Alternatives: A second Unity generator was rejected because it would create drift against the no-Unity starter contract. Opening the legacy `ModBuilderWindow` as the "full interface" was rejected because managed DLL and loose AssetBundle runtime ingress are disabled. A docs-only explanation was rejected because the user-facing flaw was workflow fragmentation, not missing prose.
+
+Scalability potential: Low tier authors can still use copied files and PowerShell/pwsh with no Unity project. Middle tier authors get a single Unity screen for starter creation, identity, validation, opcode discovery, and review summary. High tier can add graph/table/asset panels over the same files. Ultra tier can add simulation, package diff, preview, and visual-overkill diagnostics after the same review manifest without changing runtime authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is editor/offline tooling only. It removes authoring friction before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, Burst/job paths, or device quality scaling are touched.
+
+## Decision 72 - Workbench needs visible starter health before tool failure
+
+Problem: The first Workbench gave Unity-side authors a single cockpit, but it still made them discover a broken copied starter folder only after launching a script. Random external modders need immediate health state, direct structure validation, and local contract links from the same screen.
+
+Solution: Add a required-file health panel to `ExternalStarterKitWorkbenchWindow`, backed by the same starter file list used by the public contract. The Workbench now counts present/missing starter files, bytes, and newest write time, warns on missing files, runs `Tools/validate_structure.ps1` directly for fast checks, keeps `Tools/prepare_mod.ps1` for review handoff, and opens the file contract, API spec, authoring plan, and runtime playbook. Schema revision 84 and static validation now prove these routes.
+
+Rejected Alternatives: Reimplementing validation in C# was rejected because `Tools/validate_structure.ps1` is the copied no-Unity authority and a second validator would drift. Adding only more README text was rejected because the defect is in the interactive authoring loop. Enabling legacy builder or managed runtime mod ingress was rejected because current public runtime remains envelope-only.
+
+Scalability potential: Low tier authors still use copied files plus PowerShell/pwsh without Unity. Middle tier Unity users see starter health and run direct validation before review. High tier can layer graph/table/asset panels over the same health/report route. Ultra tier can add simulation, package diff, preview, and visual diagnostics after the same review manifest without changing runtime authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is Editor/offline tooling only. It prevents broken starter folders from reaching runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, Burst/job paths, or device quality scaling.
+
+## Decision 73 - Workbench tool execution must not freeze the Unity Editor
+
+Problem: `ExternalStarterKitWorkbenchWindow` launched PowerShell tools synchronously from the EditorWindow path and read stdout/stderr with blocking `ReadToEnd` plus `WaitForExit`. For random public authors this means the project-integrated SDK screen can freeze during validation, and large stderr/stdout output can deadlock the process pipe.
+
+Solution: Replace blocking tool execution with an async Editor-only runner. The Workbench now starts the process, reads stdout/stderr through `BeginOutputReadLine`/`BeginErrorReadLine`, disables tool/action buttons while a tool is active, records process completion through the `Exited` callback, and finalizes tool summary/reload from `EditorApplication.update` on the Unity main thread. Schema revision 85 and static validation prove the async route and reject `ReadToEnd`/`WaitForExit` regression.
+
+Rejected Alternatives: Keeping blocking waits was rejected because public SDK UX must remain responsive. Reimplementing validation in C# was rejected because the no-Unity PowerShell tools are the copied starter authority. Moving tool execution into runtime code was rejected because this is authoring-only and the public runtime remains envelope-only.
+
+Scalability potential: Low tier authors still run scripts directly outside Unity. Middle tier Unity users get a responsive Workbench while validation/review tools run. High tier can add graph/table preview panels without blocking editor repaint. Ultra tier can add simulation/package diff/preview over the same async tool lane without changing runtime authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is Editor/offline tooling only. It removes an editor responsiveness/deadlock risk before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, Burst/job paths, or device quality scaling.
+
+## Decision 74 - Review reports must expose freshness, not just existence
+
+Problem: The Workbench showed `Reports/review_manifest.json` identity/file summary, but did not tell a modder whether that report was older than edited starter sources. A random public author could change graph/table/locale files and submit a stale review report while the Workbench still looked healthy.
+
+Solution: Add a bounded review freshness check to `ExternalStarterKitWorkbenchWindow`. It compares the report write time against the newest starter source file, excludes `Generated/` and `Reports/` so outputs do not stale themselves, caps the scan at `512` source files, and warns when the report is stale or the scan is capped. Schema revision 86 and static validation now prove this route.
+
+Rejected Alternatives: Hashing every source file on every Workbench reload was rejected because the review builder already owns hashing and Workbench reload must stay cheap. Trusting report existence was rejected because existence is not freshness. Including `Generated/` and `Reports/` was rejected because output files would create false stale states.
+
+Scalability potential: Low tier authors still rely on the CLI prepare loop. Middle tier Unity users see stale report warnings before handoff. High tier can add package diff and graph/table previews over the same source/report freshness rule. Ultra tier can add simulation and visual diagnostics after the same review manifest without changing runtime authority.
+
+Hardware Impact: Estimated runtime gain on i3/MX350 is 0 us/frame measured/claimed. This is Editor/offline tooling only. It prevents stale review handoff before runtime loader, FutureCommandEnvelope validation, SignalBus, NativeQueue, GlobalDataVault, save, physics, rendering, Burst/job paths, or device quality scaling.

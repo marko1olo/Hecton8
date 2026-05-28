@@ -131,7 +131,9 @@ namespace DarkTonic.MasterAudio {
         private string _resFileName = string.Empty;
         private bool _hasStartedEndLinkedGroups;
         private Coroutine _loadResourceFileCoroutine;
+#if ADDRESSABLES_ENABLED
         private Coroutine _loadAddressableCoroutine;
+#endif
         private bool _isUnloadAddressableCoroutineRunning = false;
 
         public class PlaySoundParams {

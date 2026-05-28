@@ -1,0 +1,198 @@
+{
+  "agentId": "1416",
+  "role": "MODULAR_EQUIPMENT_AND_TOOL_RUNTIME_PURGER",
+  "domain": "ECHELON 4 Equipment Runtime (Tools)",
+  "status": "PATCHED_STATIC_REAUDITED_IMPLICIT_ALIAS_REMOVED_BUILD_BLOCKED_BY_CONTENTION",
+  "evidenceClass": "STATIC_SOURCE",
+  "timestampLocal": "2026-05-28",
+  "buildGate": {
+    "cpuLoadPercent": 100,
+    "activeCompilerOrDotnet": [
+      {
+        "processName": "dotnet",
+        "pid": 55080
+      },
+      {
+        "processName": "csc",
+        "pid": 36360
+      }
+    ],
+    "dotnetBuildInvoked": false,
+    "reason": "Compilation Resource Throttling forbids build when CPU > 50 or compiler/dotnet is active."
+  },
+  "modifiedFiles": [
+    {
+      "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+      "sha256": "6A6168DFC94D6E684A67D6E502F331F88902E86933336ABF80E19C184B9004AF"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Tools/EquipmentVaultView.cs",
+      "sha256": "D1F6AFDB70A3AA1136044745EA3E301E17DDEA345C74DD19C60336EDA6EB9428"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Tools/EquipmentVaultView.cs.meta",
+      "sha256": "AEED54C73C0F399A8F4EFD88410C9673E7CF8A3224B82CDECA663B2DD816011A"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/ModularEquipmentEngine1416EditTests.cs",
+      "sha256": "E37C5C36819A94573CD343276CF8D2EB30FD3E021B617E5C8BB9374D8693C766"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/ModularEquipmentEngine1416EditTests.cs.meta",
+      "sha256": "70998A52BB11702D03D6C9600B667A63A9CEFFF69C1B6289C229C38463C5411C"
+    }
+  ],
+  "aliasPurge": {
+    "forbiddenNativeCollectionFieldsDeletedFromEquipmentVaultViews": 28,
+    "vaultGenerationHandleFields": 28,
+    "nativeListFieldsAfter": 0,
+    "nativeQueueFieldsAfter": 0,
+    "nativeHashMapFieldsAfter": 0,
+    "managerPersistentNativeArrayFieldsAfter": 0,
+    "burstJobNativeArrayFieldsAfter": 2,
+    "burstJobNativeArrayFields": [
+      "EquipmentStateIntegrationJob.OverheatWriterBudget @ ModularEquipmentEngine.cs:3759",
+      "EquipmentStateIntegrationJob.DepletedWriterBudget @ ModularEquipmentEngine.cs:3767"
+    ],
+    "burstJobNativeArrayFieldsClassification": "physical SignalBus budget views passed to jobs, not persistent MonoBehaviour memory owners"
+  },
+  "lockingDiscipline": {
+    "ownerSystemId": "SystemID.GameplayTools",
+    "writeLockBufferCount": 28,
+    "acquireHelper": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1253-1342",
+    "releaseHelper": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1409-1492",
+    "pendingReleaseMask": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:163-164,1439-1456",
+    "completionHelper": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:2543-2598",
+    "contentionTelemetry": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1496-1537",
+    "directAcquireCallCount": 16,
+    "directAcquireCallLines": "243,324,420,471,637,685,724,880,906,969,1003,1117,1894,2203,2902,3325",
+    "directFinallyReleaseCallCount": 16,
+    "directFinallyReleaseLines": "258,347,460,494,647,708,744,898,952,995,1024,1129,1935,2220,2921,3340",
+    "scheduledJobLockCapture": "Tick captures locks at ModularEquipmentEngine.cs:340; CompleteActiveEquipmentJob releases captured locks in finally at 2591-2595",
+    "releaseFailurePolicy": "ReleaseWriteLock bool return values are checked through a 28-bit mask; failed bits are retained in _equipmentPendingReleaseMask and retried before future acquisition.",
+    "failureCodes": {
+      "contention": "EquipmentFaultWriteLockContention = 1u << 5",
+      "releaseFailure": "EquipmentFaultWriteLockReleaseFailure = 1u << 6"
+    },
+    "faultDumpPath": "Docs/AgentLogs/Dump_1416_ModularEquipment.bin"
+  },
+  "readAccessorPurity": {
+    "readOnlyHandleHelper": "Assets/_Project/Scripts/ModularEquipmentEngine.cs:1563-1575",
+    "tryReadOnlyHandleCalls": "centralized in TryReadEquipmentBuffer",
+    "publicMutableTelemetryResolverRemoved": true,
+    "editorGizmoUsesReadOnlyPublishedState": true,
+    "lateFramePresentationUsesReadOnlyActiveStateAndCounters": true
+  },
+  "dtoLayoutProof": {
+    "sourceFile": "Assets/_Project/Scripts/Tools/EquipmentThermalBatteryContracts.cs",
+    "activeEquipmentDto": {
+      "layout": "StructLayout Explicit Size 32",
+      "offsets": "ToolHashID=0, CurrentBattery=4, ThermalLoad=8, StateFlags=12, PowerDrawRate=16, HeatGenerationRate=20, _pad0=24, _pad1=28",
+      "sourceLines": "18-29",
+      "validatorLines": "4098-4107"
+    },
+    "equipmentTelemetryEntry": {
+      "layout": "StructLayout Explicit Size 64",
+      "offsets": "Frame=0, TickIndex=4, BatteryDrainWattSeconds=8, GridDrawWattSeconds=12, PeakThermal01=16, ActiveToolMask=20, SignalCount=24, FaultFlags=28, LastFaultToolHashID=32, CpuMicroseconds=36, GlobalQualityWeight=40, TickIntervalSeconds=44, ThermalGridVersion=48, ThermalGridCellCount=52, SnapshotHash=56, WearDrainNormalized=60",
+      "sourceLines": "58-77",
+      "validatorLine": "4111"
+    },
+    "flashlightTelemetryEntry": {
+      "layout": "StructLayout Explicit Size 64",
+      "offsets": "Frame=0, ToolHashID=4, Battery01=8, Thermal01=12, DepthMeters=16, AmbientCelsius=20, BatteryDrainWattSeconds=24, PeakThermal01=28, CpuMicroseconds=32, GlobalQualityWeight=36, TickIntervalSeconds=40, StateFlags=44, FaultFlags=48, SnapshotHash=52, SignalCount=56, WearDrainNormalized=60",
+      "sourceLines": "79-98",
+      "validatorLines": "4112-4129"
+    },
+    "coldValidationCall": "EquipmentLayoutVerifier.Validate() @ ModularEquipmentEngine.cs:1115"
+  },
+  "zeroGcHotPathScan": [
+    {
+      "name": "Tick",
+      "lines": "302-349",
+      "newReferenceCandidates": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "foreach": 0,
+      "linqWhereSelectAnyFirstOrDefault": 0
+    },
+    {
+      "name": "LateFrameTick",
+      "lines": "375-392",
+      "newReferenceCandidates": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "foreach": 0,
+      "linqWhereSelectAnyFirstOrDefault": 0
+    },
+    {
+      "name": "CompleteActiveEquipmentJob",
+      "lines": "2543-2598",
+      "newReferenceCandidates": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "foreach": 0,
+      "linqWhereSelectAnyFirstOrDefault": 0
+    },
+    {
+      "name": "TryAcquireEquipmentViewsWriteLock",
+      "lines": "1253-1345",
+      "newReferenceCandidates": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "foreach": 0,
+      "linqWhereSelectAnyFirstOrDefault": 0
+    },
+    {
+      "name": "ReleaseEquipmentWriteLocks",
+      "lines": "1409-1492",
+      "newReferenceCandidates": 0,
+      "stringFormat": 0,
+      "toString": 0,
+      "foreach": 0,
+      "linqWhereSelectAnyFirstOrDefault": 0
+    }
+  ],
+  "scalabilityAndCinematicCheat": {
+    "qualityScalar": "HomeostasisBrain.GlobalQualityWeight @ ModularEquipmentEngine.cs:2280",
+    "tickCadence": "ResolveEquipmentTickInterval uses continuous saturate/lerp @ ModularEquipmentEngine.cs:2284-2290.",
+    "upgradeJobs": "UpgradeMatrixScheduler receives GlobalQualityWeight through explicit job schedule calls @ ModularEquipmentEngine.cs:2399,2407.",
+    "visualTruthSeparation": "Tool visuals consume published/read-only state and shader globals; gameplay truth remains in DataVault buffers.",
+    "binaryQualitySwitchesIntroduced": 0,
+    "physicalSimulationEscalation": "No new physical simulation added; existing thermal/battery math preserved."
+  },
+  "staticChecks": {
+    "nativeManagerFieldScan": "0 matches for manager native collection field regex",
+    "hotPathScan": "0 reference-new candidates, 0 string.Format, 0 .ToString(), 0 foreach, 0 LINQ over audited ranges",
+    "braceBalance": "ModularEquipmentEngine.cs open=364 close=364; EquipmentVaultView.cs open=10 close=10; ModularEquipmentEngine1416EditTests.cs open=13 close=13",
+    "gitDiffCheck": "no whitespace errors; CRLF warning only",
+    "dotnetBuild": "blocked by CPU/process gate",
+    "editorHarness": "Assets/_Project/Tests/Editor/ModularEquipmentEngine1416EditTests.cs lines 12,19,38,57; not compiled or executed",
+    "implicitNativeArrayConversion": "removed from EquipmentVaultView.cs; only explicit AsNativeArray unwrap remains in editor CSV parser and upgrade job scheduling"
+  },
+  "testHarness": {
+    "path": "Assets/_Project/Tests/Editor/ModularEquipmentEngine1416EditTests.cs",
+    "metaPath": "Assets/_Project/Tests/Editor/ModularEquipmentEngine1416EditTests.cs.meta",
+    "staticContractTests": [
+      "StaticPurge_NoPersistentNativeCollectionFieldsRemain @ line 19",
+      "StaticLockDiscipline_UsesCapturedJobLocksAndReleaseMask @ line 38"
+    ],
+    "explicitStressHarness": "MockEquipmentStressHarness_MockGenerationSurvivesRepeatedLockCycles @ line 57",
+    "iterations": 1024,
+    "executionStatus": "NOT_RUN_BUILD_AND_EDITOR_TEST_GATE_BLOCKED_BY_CPU_100_AND_DOTNET_PID_55080"
+  },
+  "subagentFindingsAddressed": [
+    "LateFrameTick no longer force-completes the equipment integration job every frame.",
+    "ReleaseWriteLock return values for the 28-buffer release path are checked and failed bits are retained for retry.",
+    "Completion readback now uses TryResolveCapturedEquipmentIntegrationViews instead of reacquiring locks.",
+    "Upgrade matrix job NativeArray escapes are explicit via .AsNativeArray().",
+    "EquipmentVaultView.cs.meta added.",
+    "EquipmentVaultView<T> implicit NativeArray conversion removed after the editor CSV parser call was made explicit."
+  ],
+  "knownResidualRisk": [
+    "CLI compile verification is not complete because CPU gate blocked build.",
+    "Task 16 editor stress harness exists but is Explicit, uncompiled, and unexecuted because CPU/process gate blocked verification.",
+    "The prompt requested a new contiguous BufferID range, but this patch deliberately reuses existing project Equipment/Upgrade ranges to avoid route duplication.",
+    "TryAcquireEquipmentViewsWriteLock still acquires all 28 equipment/upgrade buffers for narrow writes; this is safe and fixed-order, but over-broad and should be split into buffer groups after compile gate clears.",
+    "Static source scans are not Unity Editor, PlayMode, profiler, GCMonitor, or player-build proof."
+  ]
+}

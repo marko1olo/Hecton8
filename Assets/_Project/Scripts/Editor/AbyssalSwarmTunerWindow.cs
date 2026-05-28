@@ -408,18 +408,18 @@ namespace Hecton8.Editor
 
         private static void DrawTelemetry(IDataVault vault)
         {
-            if (!TryReadExistingVaultView(vault, BufferID.ShinobuEcosystemTelemetryRing, out NativeArray<ShinobuTelemetryEntry> ring) ||
+            if (!TryReadExistingVaultView(vault, BufferID.ShinobuEcosystemTelemetryRing, out NativeArray<EcosystemTelemetryEntry> ring) ||
                 ring.Length <= 0)
             {
                 return;
             }
 
-            ShinobuTelemetryEntry latest = default;
+            EcosystemTelemetryEntry latest = default;
             float maxMs = 0.001f;
             int sampleCount = math.min(ring.Length, 300);
             for (int i = 0; i < sampleCount; i++)
             {
-                ShinobuTelemetryEntry entry = ring[i];
+                EcosystemTelemetryEntry entry = ring[i];
                 if (entry.Frame >= latest.Frame)
                     latest = entry;
                 maxMs = math.max(maxMs, entry.FlockingSolveTimeMs);
@@ -434,7 +434,7 @@ namespace Hecton8.Editor
             float width = math.max(1f, rect.width);
             for (int i = 0; i < sampleCount; i++)
             {
-                ShinobuTelemetryEntry entry = ring[i];
+                EcosystemTelemetryEntry entry = ring[i];
                 float x = rect.x + (i / (float)sampleCount) * width;
                 float h = math.saturate(entry.FlockingSolveTimeMs / maxMs) * rect.height;
                 Rect bar = new Rect(x, rect.yMax - h, math.max(1f, width / sampleCount), h);

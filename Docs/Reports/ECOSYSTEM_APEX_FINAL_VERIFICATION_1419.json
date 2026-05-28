@@ -1,0 +1,266 @@
+{
+  "agent": "1419",
+  "role": "ECOSYSTEM_SPATIAL_GRID_AND_SWARM_AUDITOR",
+  "domain": "Echelon 3 / Ecosystem spatial hash + GPU swarm data exchange",
+  "taskCount": 20,
+  "generatedLocal": "2026-05-28T05:36:35.6552124+04:00",
+  "status": "APEX_STATIC_PASS_BUILD_BLOCKED_BY_CPU_LOAD",
+  "authority": {
+    "agentsFile": "C:/hades/Hecton8/AGENTS.md",
+    "domainFile": "C:/hades/Hecton8/Docs/Actual Domains of Project.txt",
+    "batchPrompt": "C:/hades/Hecton8/Docs/Tasks/CURRENT_BATCH.md::<AGENT_PROMPT id=\"1419\">",
+    "domainBoundary": "Echelon 3 owns Ecosystem Director, Fauna Spatial Hash Grid, and Swarm Compute Director routes."
+  },
+  "apexResidualAudit": {
+    "realDefectFound": true,
+    "defect": "EcosystemDirector.PublishFloraPredatorAupBufferImmediate wrote flora/predator AUP staging data through VaultBufferView indexer without an explicit writer lock.",
+    "fix": "VaultBufferView<T> now exposes TryAcquireWriteLock and ReleaseWriteLock; PublishFloraPredatorAupBufferImmediate acquires the write view once, writes the upload lane, uploads through GraphicsBufferUploadUtility, and releases in finally.",
+    "fixedLines": [
+      "Assets/_Project/Scripts/World/EcosystemDirector.cs:450 VaultBufferView<T>.TryAcquireWriteLock",
+      "Assets/_Project/Scripts/World/EcosystemDirector.cs:464 VaultBufferView<T>.ReleaseWriteLock",
+      "Assets/_Project/Scripts/World/EcosystemDirector.cs:5862 PublishFloraPredatorAupBufferImmediate",
+      "Assets/_Project/Scripts/World/EcosystemDirector.cs:5877 _floraPredatorAupUpload.TryAcquireWriteLock(SystemID.AIEcology, out upload)",
+      "Assets/_Project/Scripts/World/EcosystemDirector.cs:5916 finally",
+      "Assets/_Project/Scripts/World/EcosystemDirector.cs:5919 _floraPredatorAupUpload.ReleaseWriteLock(SystemID.AIEcology)"
+    ],
+    "postFixNegativeScan": "rg found no _floraPredatorAupUpload.Resolve(), _floraPredatorAupUpload.IsCreated, or _floraPredatorAupUpload[indexer] usage in PublishFloraPredatorAupBufferImmediate.",
+    "additionalResidualRemoved": "SargassumMicroFaunaBoids previously retained an unused cold managed BoidData[1] staging field at old line 1673 with a stale SetData-staging comment; rg showed no reads/writes, so the field was removed. Post-removal rg found no _singleBoidUpload, SetData staging, UploadNativeArraySetData, or .SetData sites in SargassumMicroFaunaBoids.cs."
+  },
+  "zeroGcHotPathScan": {
+    "scanType": "PowerShell brace-bounded method scan with case-sensitive forbidden-pattern matching",
+    "targetMethodCount": 19,
+    "totals": {
+      "referenceTypeNew": 0,
+      "valueTypeNew": 13,
+      "stringFormat": 0,
+      "toString": 0,
+      "linqQueries": 0,
+      "foreachLoops": 0,
+      "stringConcatOrInterpolation": 0
+    },
+    "scannedMethods": [
+      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:362-665 Tick",
+      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1801-1814 TryFinalizeFrameJobNoWait",
+      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1826-1849 FinishFrameJobCompletion",
+      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1850-1886 UploadCompletedFrameToGpu",
+      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:1990-2056 TryLockJobBuffers",
+      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:2068-2099 UnlockLockedJobBuffers",
+      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:2784-2798 DumpBlackBox",
+      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:3445-3546 TryQueueTelemetryDump",
+      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs:3909-3985 UploadFromVault",
+      "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:2837-2851 UploadSpawnDataToBoidBuffersVisualSync",
+      "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs:6101-6123 UploadSingleBoidToBuffer",
+      "Assets/_Project/Scripts/World/EcosystemDirector.cs:5861-5938 PublishFloraPredatorAupBufferImmediate",
+      "Assets/_Project/Scripts/World/EcosystemDirector.cs:2465-2503 TryGetSectorPopulation",
+      "Assets/_Project/Scripts/World/EcosystemDirector.cs:2504-2541 TryGetBiomassAvailability",
+      "Assets/_Project/Scripts/World/EcosystemDirector.cs:3047-3097 TryGetGlobalBiomassAudit",
+      "Assets/_Project/Scripts/World/EcosystemDirector.cs:3099-3115 TryCopyMacroSwarms",
+      "Assets/_Project/Scripts/World/EcosystemDirector.cs:3117-3149 TryCopyMacroSwarmRadarPings",
+      "Assets/_Project/Scripts/World/EcosystemDirector.cs:3370-3391 IsApexInSector",
+      "Assets/_Project/Scripts/World/EcosystemDirector.cs:3392-3432 TryGetApexPredatorThreat"
+    ],
+    "allowedValueTypeNewLines": [
+      "ShinobuEcosystemBalancer.cs:482 LocalShiftAndSpatialHashJob",
+      "ShinobuEcosystemBalancer.cs:504 QuantizeEntityCoordinatesJob",
+      "ShinobuEcosystemBalancer.cs:516 SortSpatialGridJob",
+      "ShinobuEcosystemBalancer.cs:524 BuildSpatialGridRangesJob",
+      "ShinobuEcosystemBalancer.cs:545 BuildSpatialGridDebugCellsJob",
+      "ShinobuEcosystemBalancer.cs:562 BoidFlockingJob",
+      "ShinobuEcosystemBalancer.cs:582 float3 fallback vector",
+      "ShinobuEcosystemBalancer.cs:599 BuildShinobuRenderPayloadJob",
+      "ShinobuEcosystemBalancer.cs:613 CountTelemetryCountersJob",
+      "EcosystemDirector.cs:5895 float4 upload element",
+      "EcosystemDirector.cs:3087 EcosystemBiomassAuditSample value DTO",
+      "EcosystemDirector.cs:3145 float4 radar ping",
+      "EcosystemDirector.cs:3399 float3 finite-check vector"
+    ],
+    "unmanagedProof": "The only new expressions in scanned hot methods construct job structs or unmanaged value DTOs; no class, managed array, List, Dictionary, string, LINQ, foreach, ToString, or string.Format sites were found."
+  },
+  "dataSovereignty": {
+    "globalDataVaultOwner": "SystemID.AIEcology",
+    "securedBufferIds": [
+      "H8Memory.cs:446 EcosystemFloraPredatorAupUpload = 320",
+      "H8Memory.cs:1138 ShinobuAmbientEntities = 70400",
+      "H8Memory.cs:1139 ShinobuAmbientAups = 70401",
+      "H8Memory.cs:1140 ShinobuAmbientEntitySnapshot = 70402",
+      "H8Memory.cs:1141 ShinobuAmbientAupSnapshot = 70403",
+      "H8Memory.cs:1142 ShinobuEcosystemSectors = 70404",
+      "H8Memory.cs:1143 ShinobuEcosystemTuning = 70405",
+      "H8Memory.cs:1144 ShinobuEcosystemCounters = 70406",
+      "H8Memory.cs:1145 ShinobuEcosystemTelemetryRing = 70407",
+      "H8Memory.cs:1146 ShinobuSpatialHashDebugCells = 70408",
+      "H8Memory.cs:1147 ShinobuRenderMatrices = 70409",
+      "H8Memory.cs:1148 ShinobuRenderCustomData = 70410",
+      "H8Memory.cs:1149 ShinobuSpatialHashBucketHeads = 70411",
+      "H8Memory.cs:1150 ShinobuSpatialHashNext = 70412",
+      "H8Memory.cs:1182 ShinobuSpatialGridEntries = 70448",
+      "H8Memory.cs:1183 ShinobuSpatialGridSortScratch = 70449",
+      "H8Memory.cs:1184 ShinobuSpatialGridBucketRanges = 70450",
+      "H8Memory.cs:1185 ShinobuSpatialGridTelemetryRing = 70451",
+      "H8Memory.cs:1186 ShinobuSpatialGridTelemetryCursor = 70452",
+      "H8Memory.cs:1187 ShinobuSpatialGridTuning = 70453",
+      "H8Memory.cs:1188 ShinobuSpatialGridProfiles = 70454",
+      "H8Memory.cs:1189 ShinobuSpatialGridCsvScratch = 70455",
+      "H8Memory.cs:1191 ShinobuFlockingThreats = 70457",
+      "H8Memory.cs:1192 ShinobuFlockingThreatCount = 70458",
+      "H8Memory.cs:1193 ShinobuFlockingTelemetryRing = 70459",
+      "H8Memory.cs:1194 ShinobuFlockingCounters64 = 70474",
+      "H8Memory.cs:1195 ShinobuSpatialGridDumpSnapshot = 70475",
+      "H8Memory.cs:1196 ShinobuEcosystemDumpSnapshot = 70476",
+      "H8Memory.cs:1211 ShinobuSwarmSpeciesProfiles = 70443",
+      "H8Memory.cs:1212 ShinobuBoidIndirectArgs = 70444",
+      "H8Memory.cs:1213 ShinobuBoidStates = 70445",
+      "H8Memory.cs:1214 ShinobuBoidStateSnapshot = 70446"
+    ],
+    "claimSites": [
+      "ShinobuEcosystemBalancer.cs:970-1130 ClaimVaultHandle/EnsureGenerationHandle for ecosystem, flocking, spatial grid, render, dump, and species profile lanes",
+      "EcosystemDirector.cs:3901 EnsureGenerationHandle<float4>(BufferID.EcosystemFloraPredatorAupUpload, ...)"
+    ],
+    "writerLockProof": [
+      "ShinobuEcosystemBalancer.cs:377 calls TryLockJobBuffers before phase-local view resolution",
+      "ShinobuEcosystemBalancer.cs:660 finally releases unscheduled job pins",
+      "ShinobuEcosystemBalancer.cs:1997-2051 locks 28 job buffer lanes fail-closed",
+      "ShinobuEcosystemBalancer.cs:2069-2099 unlocks the same 28 lanes in reverse order",
+      "ShinobuEcosystemBalancer.cs:3473 TryAcquireWriteLock for ecosystem dump snapshot",
+      "ShinobuEcosystemBalancer.cs:3518 finally and 3521 ReleaseWriteLock for ecosystem dump snapshot",
+      "ShinobuSpatialGridSolver.cs:658 and 662 TryAcquireWriteLock telemetry/cursor",
+      "ShinobuSpatialGridSolver.cs:694 finally and 697/699 ReleaseWriteLock telemetry/cursor",
+      "ShinobuSpatialGridSolver.cs:1570 TryAcquireWriteLock spatial dump snapshot",
+      "ShinobuSpatialGridSolver.cs:1620 finally and 1623 ReleaseWriteLock spatial dump snapshot",
+      "EcosystemDirector.cs:5877 TryAcquireWriteLock flora/predator AUP upload",
+      "EcosystemDirector.cs:5916 finally and 5919 ReleaseWriteLock flora/predator AUP upload",
+      "SargassumMicroFaunaBoids.cs:6114 LockBufferForWrite<BoidData>",
+      "SargassumMicroFaunaBoids.cs:6118 finally and 6121 UnlockBufferAfterWrite<BoidData>"
+    ],
+    "failClosedReadAccessors": [
+      "EcosystemDirector.cs:2465-2503 TryGetSectorPopulation",
+      "EcosystemDirector.cs:2504-2541 TryGetBiomassAvailability",
+      "EcosystemDirector.cs:3047-3097 TryGetGlobalBiomassAudit",
+      "EcosystemDirector.cs:3099-3115 TryCopyMacroSwarms",
+      "EcosystemDirector.cs:3117-3149 TryCopyMacroSwarmRadarPings",
+      "EcosystemDirector.cs:3370-3432 apex sector/threat readers"
+    ]
+  },
+  "gpuUploadAndPcieProof": {
+    "forbiddenScopedCalls": {
+      "ComputeBufferSetData": 0,
+      "GraphicsBufferSetData": 0,
+      "UploadNativeArraySetDataCallSitesInDomain": 0,
+      "note": "SystemDispatcher.cs still contains the legacy UploadNativeArraySetData utility definition at lines 7166-7184; no scoped ecosystem/swarm hot path calls it."
+    },
+    "mappedUploadSites": [
+      "SystemDispatcher.cs:7111-7132 GraphicsBufferUploadUtility.UploadNativeArray uses LockBufferForWrite and UnsafeMemoryCopyGuard.TryMemCpy with finally UnlockBufferAfterWrite",
+      "ShinobuEcosystemBalancer.cs:3939-3977 ShinobuBoidGpuUploadDispatcher.UploadFromVault maps matrix/custom/args buffers and unlocks each lane in finally",
+      "EcosystemDirector.cs:5910 uploads locked flora/predator AUP NativeArray<float4> through GraphicsBufferUploadUtility.UploadNativeArray",
+      "SargassumMicroFaunaBoids.cs:6114-6121 single boid live update uses LockBufferForWrite<BoidData> and finally unlocks"
+    ],
+    "staticMx350Estimate": {
+      "bulk5000BoidUploadSavedMicroseconds": "35-120",
+      "singleBoidUploadSavedMicroseconds": "2-8",
+      "normalTelemetryDumpPathMicroseconds": "0; crash-only background writer"
+    }
+  },
+  "arm64LayoutProof": {
+    "layoutManifest": [
+      "ShinobuEcosystemBalancer.cs:4277 AssertSize<BoidCustomDataDTO>(16)",
+      "ShinobuEcosystemBalancer.cs:4280 AssertSize<FlockingThreatDTO>(32)",
+      "ShinobuEcosystemBalancer.cs:4287 AssertSize<EcosystemTelemetryEntry>(64)",
+      "ShinobuEcosystemBalancer.cs:4293 AssertSize<SpatialGridEntryDTO>(16)",
+      "ShinobuEcosystemBalancer.cs:4294 AssertSize<SpatialGridBucketRangeDTO>(32)",
+      "ShinobuEcosystemBalancer.cs:4313-4318 FlockingThreatDTO offsets 0/12/16/20/24/28",
+      "ShinobuEcosystemBalancer.cs:4355-4358 BoidCustomDataDTO offsets 0/4/8/12",
+      "ShinobuEcosystemBalancer.cs:4405-4421 EcosystemTelemetryEntry offsets 0/4/8/12/16/20/24/28/32/36/40/44/48/52/56/60/62",
+      "ShinobuEcosystemBalancer.cs:4422-4434 SpatialGridEntryDTO and SpatialGridBucketRangeDTO offsets"
+    ],
+    "boidDataGpuGuard": [
+      "SargassumMicroFaunaBoids.cs:823-828 BoidData constants: position 0, velocity 12, panic 24, stateFlags 28, stride 32, align 4",
+      "SargassumMicroFaunaBoids.cs:8431-8436 validates BoidData SizeOf, AlignOf, and Marshal.OffsetOf against those constants"
+    ],
+    "editorHarness": [
+      "EcosystemSwarmVault1419EditTests.cs:41-59 asserts 64B EcosystemTelemetryEntry, 64B SpatialGridTelemetryEntry, 16B SpatialGridEntryDTO, 32B SpatialGridBucketRangeDTO"
+    ]
+  },
+  "continuousScalabilityAndCinematicCheat": {
+    "globalQualityWeightProof": [
+      "ShinobuEcosystemBalancer.cs:2404-2409 ResolveGlobalQualityWeight01 reads config override or HomeostasisBrain.GlobalQualityWeight and saturates it",
+      "ShinobuEcosystemBalancer.cs:473-478 maps quality to neighbor samples, query results, probe count, update stride, and simulation tick delta",
+      "ShinobuEcosystemBalancer.cs:2417-2441 resolves neighbor sample budget, cell probe budget, and update stride through continuous math.lerp/smooth curves",
+      "ShinobuEcosystemBalancer.cs:2489 resolves simulation tick delta continuously",
+      "ShinobuEcosystemBalancer.cs:5130-5334 scales visible cone, neighbor solve weight, emergency flow, panic decay, cell probe limit, adjacent cell radius, and Reynolds force by GlobalQualityWeight",
+      "EcosystemDirector.cs:5274-5298 maps HomeostasisBrain.GlobalQualityWeight into macro swarm diffusion and an encoded byte profile",
+      "SargassumMicroFaunaBoids.cs:6858-6861 encodes HomeostasisBrain.GlobalQualityWeight for signal payloads"
+    ],
+    "binarySwitchScan": {
+      "isLowEndLowEndTokens": 0,
+      "directGlobalQualityWeightIfBranches": 0,
+      "qualityTierEqualityBranches": 0,
+      "note": "QualityTier byte fields are encoded from continuous quality values and used as payload/profile data, not as if(isLowEnd) switches."
+    },
+    "cinematicCheat": "No new physical simulation was added. The flocking visual bias uses SampleEmergencyMockFlow and continuous scalar modulation instead of per-object fluid truth; saved CPU/GPU upload cost buys higher swarm density and visual overkill on high tiers."
+  },
+  "compilationResourceThrottling": {
+    "dotnetBuildExecuted": false,
+    "finalCpuSampleUtc": "2026-05-28T01:40:49.9660188Z",
+    "finalCpuLoadPercent": 100,
+    "finalCompilerOrDotnetProcesses": [
+      {
+        "processName": "csc",
+        "id": 67916,
+        "sampledCpuSeconds": 11.40625
+      },
+      {
+        "processName": "dotnet",
+        "id": 20440,
+        "sampledCpuSeconds": 98.265625
+      }
+    ],
+    "decision": "BLOCKED_BY_CONTENTION_CPU_GT_50",
+    "previousGateState": "Earlier status sample recorded active dotnet id 55080 at CPU 100; final APEX sample recorded csc id 67916 and dotnet id 20440 at CPU 100.",
+    "staticSubstitutes": [
+      "git diff --check exit code 0; CRLF normalization warnings only",
+      "ConvertFrom-Json accepted all 1419 JSON reports",
+      "rg negative scans for forbidden scoped SetData/upload calls, native persistent allocation patterns, stale ShinobuTelemetryEntry code symbols, and binary low-end switches"
+    ]
+  },
+  "blackBoxDumpStatus": {
+    "primaryDumpPath": "Docs/AgentLogs/Dump_1419_EcosystemSwarm.bin",
+    "secondaryDumpPath": "Docs/AgentLogs/Dump_1419_EcosystemSpatialGrid.bin",
+    "dumpFileExistedAtAudit": false,
+    "reason": "No runtime crash, NaN trigger, Unity Play Mode run, or test execution occurred during this static APEX pass; dump route is implemented but no fault artifact was emitted."
+  },
+  "currentModifiedFileHashes": [
+    {
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "sha256": "39fb26e987ecdf7c89c56166d7e9a520139a48a86db5a3f35296091e46420374"
+    },
+    {
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
+      "sha256": "41d217a5e24dec785c0c7e5da0f74eb198be6923eabd44ee3204ac82ceb40040"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "sha256": "e91a7a35b34f9fb101d301ced844f88754112e47c77d5ed0e99fe780facfdc12"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "sha256": "b6daa5731312a722eb8aca135f8513004f2f67e2291c69b35928ef3a96dd712d"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Editor/AbyssalSwarmTunerWindow.cs",
+      "sha256": "ceeac3630ad4aba660fe5b052d8f8713916c0ec25c6590e71a46be5ac5f70fb3"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "sha256": "5244a1a957fc131c908190f6734a54ad2a17a186901d62306faa44384d083657"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/EcosystemSwarmVault1419EditTests.cs",
+      "sha256": "19a465d6b9afca631f4601ae571d8f76d9667e86afaf0bb6ba9d16213edf4744"
+    }
+  ],
+  "unresolvedVerificationDebt": [
+    "No dotnet build was executed because the final CPU sample was 100 percent.",
+    "No Unity import, Unity Console, Play Mode, Profiler, GCMonitor, or player-device proof was produced in this pass.",
+    "Runtime GC result remains PENDING VERIFICATION until Unity tests run; static hot-path scan found no managed allocation constructs."
+  ]
+}

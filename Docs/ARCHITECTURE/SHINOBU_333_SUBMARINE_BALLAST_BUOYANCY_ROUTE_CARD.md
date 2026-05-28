@@ -61,12 +61,16 @@ The rejected draft range `71820..71827` collided with SHINOBU_264 async buoyancy
 
 Cold setup uses `Ensure*Cold`/Vault ensure paths while buffers can still be created.
 
-Hot ballast paths use `TryReadBallast*` helpers that only resolve cached generation handles. They fail closed on stale/missing handles.
+Hot ballast mutation paths use cached `VaultGenerationHandle<T>` descriptors and `TryAcquireWriteLock` with `finally` release. If a write lock, compaction fence, or handle view fails, the frame fails closed and records the fault in PID telemetry.
 
 They do not call `TryGetGenerationHandle`, allocate, or grow Vault buffers.
 
 - Read-looking APIs in the SHINOBU_333 hot path do not publish signals, search the scene, complete jobs, or mutate global state.
+- External readback `BallastFill01` and SHINOBU_332 suppression read the cached Vault route through `TryReadOnlyHandle`; unavailable or fenced memory returns default/inactive.
+- Owner-internal observation paths for ballast tanks, tank positions, fill rows, PID telemetry, and ballast telemetry now use read-only Vault views.
+- Mutable `TryResolveMutableVaultBuffer` is restricted to job output buffers and is reachable only through lock-held helpers for PID output, flood mass output, and ballast force packets.
 - Completion remains explicit in `CompleteBallastSolverJob`, not hidden behind a getter.
+- Ballast, PID-output, and dynamic-flood output jobs hold Vault write locks only across their scheduled mutation window, then release them in completion/dispose cleanup.
 - `GlobalQualityWeight` and runtime-origin AUP are refreshed in owner/cold callbacks (`Awake`, `OnEnable`, slow tick, scalability/origin events, and DataVault replacement).
 - The fixed ballast sample path reads the cached scalar/AUP only.
 - The hot PID suppression path no longer calls `SubmarineDynamicsRuntime`; it resolves a cached SHINOBU_332 Vault counter handle and fails inactive if the owner buffer is unavailable.
@@ -110,8 +114,9 @@ Solver writes different tank rows in parallel. No shared atomic counter is coloc
 ## Scalability
 
 - `GlobalQualityWeight` is consumed as a continuous `0..1` scalar.
-- The owner phase smooths the scalar, maps it through `smoothstep/lerp` to a `1..4` sample budget, and requires a 2.5 second hysteresis hold before the integer budget changes.
-- `CalculateBuoyancyForceJob` consumes `SubmarineBallastFluidSampleDTO.ActiveSampleBudget`: weak devices evaluate the center submerged-ratio only; middle devices hold bow/stern approximations without threshold flicker; high/ultra paths average up to four analytical sample points.
+- The owner phase maps the scalar to a maximum `1..4` analytical sample budget without platform booleans.
+- `CalculateBuoyancyForceJob` consumes `SubmarineBallastFluidSampleDTO.ActiveSampleBudget`: weak devices evaluate the center submerged-ratio only, middle devices add weighted bow/stern approximations, and high/ultra paths average up to four analytical sample points.
+- The next analytical sample is fractionally weighted from the continuous scalar, so force output does not jump just because a budget lane becomes available.
 - Quality changes sample count and presentation richness only.
 - It does not change BufferID identity, save identity, or force ownership.
 
@@ -130,6 +135,7 @@ CPU complexity before the lie would be `O(tanks * bubbles * audio voices)`. Curr
 - `SubmarineBallastTelemetryEntry[300]` records frame, flags, hash, net force, buoyant force, ballast gravity.
 - It also records water liters, compressed-air mass, ambient pressure, displaced volume, submerged ratio.
 - It also records timing-proxy microseconds, quality, active sample count, entity hash, ring cursor.
+- PID blackbox `SubmarinePidTelemetryEntry[300]` writes `LastVaultFaultCode`, `LastVaultFaultBufferId`, and `LastVaultFaultFrame`; dump path is `Docs/AgentLogs/Dump_1420_SubmarineNavigation.bin`.
 - Current `ComputeMicros` is schedule-to-completion owner timing and is explicitly flagged with `ForceFlagTimingProxy`; exact Burst wall-time promotion requires profiler instrumentation.
 - Non-finite force or >500 us timing proxy writes `Docs/AgentLogs/Dump_SHINOBU_333.bin`.
 

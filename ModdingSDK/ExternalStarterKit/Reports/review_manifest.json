@@ -2,8 +2,16 @@
     "Schema":  "hecton8.external_review_manifest.v1",
     "Runtime":  "envelope-only",
     "RootId":  "com.example.starter",
+    "Identity":  {
+                     "Id":  "com.example.starter",
+                     "DisplayName":  "Starter Mod",
+                     "Author":  "YourName",
+                     "Version":  "0.1.0",
+                     "RequiredAPIVersion":  2,
+                     "ModPriority":  0
+                 },
     "FileCount":  24,
-    "TotalBytes":  37049,
+    "TotalBytes":  41885,
     "Limits":  {
                    "MaxFiles":  256,
                    "MaxFileBytes":  4194304,
@@ -37,18 +45,18 @@
                   },
                   {
                       "Path":  "mod.h8manifest.json",
-                      "Bytes":  860,
-                      "Sha256":  "cc711f17a49aec7e70bf0a7fe1a04f701ed2a40c12f6b040ca00acfec2108c75"
+                      "Bytes":  858,
+                      "Sha256":  "27beb037ec5ec8886312e127de9d4f2608c1fde9e45235e6c133a7d5b109f51f"
                   },
                   {
                       "Path":  "mod.json",
-                      "Bytes":  360,
-                      "Sha256":  "0f76464271fc4f3e1f14739ff0561597ddd30d980ffbe9db14f744b75232db04"
+                      "Bytes":  358,
+                      "Sha256":  "f256f1577499cb0c217cc661fd4c1f089a75eaecac72d62b487a0d1ce7ed870d"
                   },
                   {
                       "Path":  "README.md",
-                      "Bytes":  3274,
-                      "Sha256":  "9594d0f7a33d9f290a1b9d3e3b45e45ef4f1238a6f526602b45d0a6690d8ba94"
+                      "Bytes":  3794,
+                      "Sha256":  "c0566b45ee82399fde534e32697c5d5c15338076c05468b9dd829081c436cad2"
                   },
                   {
                       "Path":  "Reference/allowed_opcodes.csv",
@@ -77,8 +85,8 @@
                   },
                   {
                       "Path":  "Schemas/h8mod.authoring.schema.json",
-                      "Bytes":  1774,
-                      "Sha256":  "80c60970c12ae4d3f167c954998e8d87844cc22185da8fce42a0a8f38eeaf29c"
+                      "Bytes":  1898,
+                      "Sha256":  "551c086da88fa7afce2d90a71703d4830b9647a0fd5f3b761393c7f56524d3fe"
                   },
                   {
                       "Path":  "Schemas/locale.schema.json",
@@ -87,8 +95,8 @@
                   },
                   {
                       "Path":  "Schemas/runtime.mod.schema.json",
-                      "Bytes":  987,
-                      "Sha256":  "3647603930580a17e85d9e1c70a879cb54923a4748c41ac9bdfd227d9066e7a9"
+                      "Bytes":  1111,
+                      "Sha256":  "0809386b4a32edf81969d99aec39f3014ad5df26353b26d374fd7a415f3d13b3"
                   },
                   {
                       "Path":  "Schemas/settings_table.schema.json",
@@ -102,8 +110,8 @@
                   },
                   {
                       "Path":  "Tools/build_review_manifest.ps1",
-                      "Bytes":  3808,
-                      "Sha256":  "49016d6393f5352c1bbc75e7e483553ab777f5e4a82c12a19c757d0bdc0597b9"
+                      "Bytes":  4250,
+                      "Sha256":  "9722d761cf437589a1ec64cb2ccef378060e41d1c59cd87aa2cb05ff46d3ad23"
                   },
                   {
                       "Path":  "Tools/list_allowed_opcodes.ps1",
@@ -112,23 +120,23 @@
                   },
                   {
                       "Path":  "Tools/prepare_mod.ps1",
-                      "Bytes":  1535,
-                      "Sha256":  "bea4c048a91bdb1b5c3edeef3f7f2be0d689b1ee5a3bac0e36a1d4954eadb719"
+                      "Bytes":  2344,
+                      "Sha256":  "c6f18ad3bf3591c88c2dcabd1bdfecfc8164e44d8833497882891c3097a02e9d"
                   },
                   {
                       "Path":  "Tools/README.md",
-                      "Bytes":  2416,
-                      "Sha256":  "d5e0548bce10ae7d63001b6661a0ebe14ef07f1060cbc11b05d7633c994ea4be"
+                      "Bytes":  2707,
+                      "Sha256":  "6424b9d0f4dc0d607280b69249f7baf56310d3a6b67e4c8ff0bb9bd59df71ddf"
                   },
                   {
                       "Path":  "Tools/set_mod_identity.ps1",
-                      "Bytes":  3537,
-                      "Sha256":  "d170ce8046c353317e815f365e2697827a1e0b09fcaef8e773d7c1d215239495"
+                      "Bytes":  4468,
+                      "Sha256":  "471d12c1de505c466d9e5255365125652785cd47f97d14d71b2e221f79c92957"
                   },
                   {
                       "Path":  "Tools/validate_structure.ps1",
-                      "Bytes":  9860,
-                      "Sha256":  "8c7c8382030790c277a3ebc6c25883a934173517c1ca86241f67a286daa60790"
+                      "Bytes":  11459,
+                      "Sha256":  "da8ed1aea3c34e026196014a3c3646be8a91a1f29f1eec40ab7aa6951b91953e"
                   }
               ]
 }

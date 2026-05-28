@@ -36,6 +36,8 @@ Shader "Hidden/Hecton8/VRBrownout"
                 float4 _HectonVrComfortMotion;
             CBUFFER_END
 
+            float _H8GlobalQualityWeight;
+
             #define _HectonVRBrownoutIntensity _HectonVRBrownoutParams0.x
             #define _HectonWorldFocusBlur _HectonVRBrownoutParams0.y
             #define _HectonVRNearCollisionIntensity _HectonVRBrownoutParams0.z
@@ -197,7 +199,10 @@ Shader "Hidden/Hecton8/VRBrownout"
                     float tunnelInnerSq = tunnelInner * tunnelInner;
                     float tunnelMask = saturate((radialMagnitudeSq - tunnelInnerSq) * rcp(max(1.0 - tunnelInnerSq, 0.0009765625))) * vrComfortTunnel;
                     float tunnelDither = step(ign, saturate(tunnelMask + vrComfortTunnel * 0.0625));
-                    float ditheredTunnel = tunnelMask * lerp(0.50, 0.96, tunnelDither);
+                    float comfortQualityWeight = saturate(_H8GlobalQualityWeight);
+                    float ditherFloor = 0.56 - 0.06 * comfortQualityWeight;
+                    float ditherCeiling = 0.90 + 0.06 * comfortQualityWeight;
+                    float ditheredTunnel = tunnelMask * lerp(ditherFloor, ditherCeiling, tunnelDither);
                     half blackAmount = (half)saturate(max(ditheredTunnel, vrComfortBlackout));
                     color.rgb = lerp(color.rgb, half3(0.0015h, 0.0023h, 0.0031h), blackAmount);
                 }

@@ -1,0 +1,260 @@
+﻿{
+    "generatedAt":  "2026-05-28T03:05:20.2773746+04:00",
+    "root":  "C:\\hades\\Hecton8",
+    "solution":  "Hecton8.slnx",
+    "projectEntries":  62,
+    "missingCount":  0,
+    "missing":  [
+
+                ],
+    "projects":  [
+                     {
+                         "path":  "Unity.ShaderGraph.Editor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Hecton8.Core.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "MoreMountains.Feedbacks.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Assembly-CSharp-Editor-firstpass.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "EasySave3.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Unity.RenderPipelines.Core.Editor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "ShapesRuntime.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Crest.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "MoreMountains.Tools.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "MoreMountains.Tools.Editor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "AmplifyImpostors.Editor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Hecton8.Editor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "VolumetricLightBeam.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "ShapesEditor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Assembly-CSharp.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "AstarPathfindingProject.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "MoreMountains.Feedbacks.PostProcessing.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "VolumetricLightBeam.Editor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "MoreMountains.Feedbacks.MMTools.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "MapMagic.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "MoreMountains.Feedbacks.Cinemachine.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "TechniePhysicsCreator.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Assembly-CSharp-Editor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "MeshBakerEditor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "MoreMountains.Feedbacks.TextMeshPro.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Assembly-CSharp-firstpass.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "BakeryEditorAssembly.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "PackageToolsEditor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "MoreMountains.Feedbacks.HDRP.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "MoreMountains.Feedbacks.URP.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Den.Tools.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "GPUInstancer.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "GPUInstancer.Editor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Lofelt.NiceVibrations.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "MapMagic.Editor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Tayx.Graphy.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "MoreMountains.Feedbacks.NiceVibrations.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "MoreMountains.Feedbacks.Authorizations.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "MeshBakerCore.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Lofelt.NiceVibrations.Demo.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "EasySave3Editor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "JBooth.MicroSplat.Core.Editor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Lofelt.NiceVibrations.Editor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "AstarPathfindingProjectEditor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "BakeryRuntimeAssembly.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "AmplifyImpostors.Runtime.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "MoreMountains.Feedbacks.Editor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Hecton8.World.Contracts.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Crest.Helpers.Editor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Den.Tools.Editor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Technie.PhysicsCreator.Updater.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Sirenix.OdinInspector.Modules.UnityMathematics.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "JBooth.MicroSplat.Core.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Hecton8.Bootstrap.Contracts.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "MapMagic.Settings.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "MapMagic.MicroSplat.Editor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Hecton8.World.Dots.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Hecton8.Input.Generated.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "Tayx.Graphy.Editor.csproj",
+                         "exists":  true
+                     },
+                     {
+                         "path":  "MapMagic.MicroSplat.csproj",
+                         "exists":  true
+                     }
+                 ]
+}

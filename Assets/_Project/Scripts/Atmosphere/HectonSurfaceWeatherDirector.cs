@@ -630,6 +630,10 @@ namespace Hecton8.Atmosphere
             {
                 celestialEngine = currentService as HectonCelestialEngine;
             }
+            else if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                RebindDataVaultForLifecycle(currentService as IDataVault);
+            }
 
             _ = previousService;
         }
@@ -800,7 +804,32 @@ namespace Hecton8.Atmosphere
 
         private void CacheDataVaultCold()
         {
-            _dataVault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault vault)
+        {
+            if (ReferenceEquals(_dataVault, vault))
+            {
+                EnsureWeatherMathOutputForCurrentVaultCold();
+                return;
+            }
+
+            bool wasRuntimeStateInitialized = _runtimeStateInitialized;
+            DisposeWeatherMathBuffers(forceCompletePendingJob: true);
+            _dataVault = vault;
+
+            if (wasRuntimeStateInitialized)
+                EnsureWeatherMathOutputForCurrentVaultCold();
+        }
+
+        private void EnsureWeatherMathOutputForCurrentVaultCold()
+        {
+            if (!_runtimeStateInitialized || TryOpenWeatherJobOutput(out _))
+                return;
+
+            EnsureWeatherMathBuffers();
+            RunWeatherMathJobCold();
         }
 
         private void InitializeRuntimeStateIfNeeded()
@@ -835,6 +864,8 @@ namespace Hecton8.Atmosphere
             if (vault == null || vault.IsAllocationLocked)
                 return false;
 
+            ReleaseWeatherJobOutputHandle(vault);
+            _weatherJobOutputHandle = default;
             _weatherJobOutputHandle = vault.EnsureGenerationHandle<SurfaceWeatherJobOutput>(
                 BufferID.SurfaceWeatherJobOutput,
                 1,
@@ -916,8 +947,7 @@ namespace Hecton8.Atmosphere
             IDataVault vault = _dataVault;
             weatherJobOutput = default;
             return vault != null &&
-                   _weatherJobOutputHandle.BufferID != 0u &&
-                   _weatherJobOutputHandle.Generation != 0u &&
+                   IsWeatherJobOutputHandle(in _weatherJobOutputHandle) &&
                    vault.TryResolveHandle(in _weatherJobOutputHandle, out weatherJobOutput) &&
                    weatherJobOutput.IsCreated &&
                    weatherJobOutput.Length > 0;
@@ -925,12 +955,17 @@ namespace Hecton8.Atmosphere
 
         private void ReleaseWeatherJobOutputHandle(IDataVault vault)
         {
-            if (vault != null &&
-                _weatherJobOutputHandle.BufferID != 0u &&
-                _weatherJobOutputHandle.Generation != 0u)
+            if (vault != null && IsWeatherJobOutputHandle(in _weatherJobOutputHandle))
             {
                 vault.ReleaseBuffer(in _weatherJobOutputHandle);
             }
+        }
+
+        private static bool IsWeatherJobOutputHandle(in VaultGenerationHandle<SurfaceWeatherJobOutput> handle)
+        {
+            return handle.BufferID == (uint)BufferID.SurfaceWeatherJobOutput &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)SystemID.HabitatAtmosphere;
         }
 
         private SurfaceWeatherJobInput BuildWeatherJobInput(float deltaTime)

@@ -10,7 +10,6 @@ namespace CandiceAIforGames.Data
         List<string> header;
         List<string> variables;
         List<string> footer;
-        string[] type;
         List<string> properties;
         List<string> constructor;
         string className;

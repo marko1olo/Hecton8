@@ -1,0 +1,245 @@
+﻿{
+    "agentId":  "1407",
+    "generatedAt":  "2026-05-28T05:42:34.6578590+04:00",
+    "scope":  "Modified comfort runtime hot paths in HectonVRBrownoutFeature.cs; Editor tests are excluded and counted separately.",
+    "hotPathAggregate":  {
+                             "referenceTypeNewCount":  0,
+                             "stringFormatCount":  0,
+                             "toStringCount":  0,
+                             "linqTokenCount":  0,
+                             "foreachCount":  0
+                         },
+    "methodScans":  [
+                        {
+                            "method":  "RecordRenderGraph",
+                            "startLine":  113,
+                            "endLine":  193,
+                            "rawNewCount":  1,
+                            "rawNewClassifications":  [
+                                                          {
+                                                              "type":  "TextureDesc",
+                                                              "classification":  "value-type-or-stack"
+                                                          }
+                                                      ],
+                            "referenceTypeNewCount":  0,
+                            "stringFormatCount":  0,
+                            "toStringCount":  0,
+                            "linqTokenCount":  0,
+                            "foreachCount":  0
+                        },
+                        {
+                            "method":  "AddRenderPasses",
+                            "startLine":  416,
+                            "endLine":  427,
+                            "rawNewCount":  0,
+                            "rawNewClassifications":  [
+
+                                                      ],
+                            "referenceTypeNewCount":  0,
+                            "stringFormatCount":  0,
+                            "toStringCount":  0,
+                            "linqTokenCount":  0,
+                            "foreachCount":  0
+                        },
+                        {
+                            "method":  "TryBuildRuntimeState",
+                            "startLine":  436,
+                            "endLine":  473,
+                            "rawNewCount":  1,
+                            "rawNewClassifications":  [
+                                                          {
+                                                              "type":  "RuntimeState",
+                                                              "classification":  "value-type-or-stack"
+                                                          }
+                                                      ],
+                            "referenceTypeNewCount":  0,
+                            "stringFormatCount":  0,
+                            "toStringCount":  0,
+                            "linqTokenCount":  0,
+                            "foreachCount":  0
+                        },
+                        {
+                            "method":  "IsComfortEligibleCamera",
+                            "startLine":  476,
+                            "endLine":  482,
+                            "rawNewCount":  0,
+                            "rawNewClassifications":  [
+
+                                                      ],
+                            "referenceTypeNewCount":  0,
+                            "stringFormatCount":  0,
+                            "toStringCount":  0,
+                            "linqTokenCount":  0,
+                            "foreachCount":  0
+                        },
+                        {
+                            "method":  "Sanitize01",
+                            "startLine":  485,
+                            "endLine":  488,
+                            "rawNewCount":  0,
+                            "rawNewClassifications":  [
+
+                                                      ],
+                            "referenceTypeNewCount":  0,
+                            "stringFormatCount":  0,
+                            "toStringCount":  0,
+                            "linqTokenCount":  0,
+                            "foreachCount":  0
+                        },
+                        {
+                            "method":  "SanitizeRange",
+                            "startLine":  491,
+                            "endLine":  494,
+                            "rawNewCount":  0,
+                            "rawNewClassifications":  [
+
+                                                      ],
+                            "referenceTypeNewCount":  0,
+                            "stringFormatCount":  0,
+                            "toStringCount":  0,
+                            "linqTokenCount":  0,
+                            "foreachCount":  0
+                        },
+                        {
+                            "method":  "SanitizeVrComfortSignals",
+                            "startLine":  497,
+                            "endLine":  504,
+                            "rawNewCount":  1,
+                            "rawNewClassifications":  [
+                                                          {
+                                                              "type":  "Vector4",
+                                                              "classification":  "value-type-or-stack"
+                                                          }
+                                                      ],
+                            "referenceTypeNewCount":  0,
+                            "stringFormatCount":  0,
+                            "toStringCount":  0,
+                            "linqTokenCount":  0,
+                            "foreachCount":  0
+                        },
+                        {
+                            "method":  "SanitizeVrComfortMotion",
+                            "startLine":  507,
+                            "endLine":  514,
+                            "rawNewCount":  1,
+                            "rawNewClassifications":  [
+                                                          {
+                                                              "type":  "Vector4",
+                                                              "classification":  "value-type-or-stack"
+                                                          }
+                                                      ],
+                            "referenceTypeNewCount":  0,
+                            "stringFormatCount":  0,
+                            "toStringCount":  0,
+                            "linqTokenCount":  0,
+                            "foreachCount":  0
+                        },
+                        {
+                            "method":  "SanitizeVrSomaticComfortState",
+                            "startLine":  517,
+                            "endLine":  524,
+                            "rawNewCount":  1,
+                            "rawNewClassifications":  [
+                                                          {
+                                                              "type":  "Vector4",
+                                                              "classification":  "value-type-or-stack"
+                                                          }
+                                                      ],
+                            "referenceTypeNewCount":  0,
+                            "stringFormatCount":  0,
+                            "toStringCount":  0,
+                            "linqTokenCount":  0,
+                            "foreachCount":  0
+                        },
+                        {
+                            "method":  "HasVrComfortWork",
+                            "startLine":  527,
+                            "endLine":  534,
+                            "rawNewCount":  0,
+                            "rawNewClassifications":  [
+
+                                                      ],
+                            "referenceTypeNewCount":  0,
+                            "stringFormatCount":  0,
+                            "toStringCount":  0,
+                            "linqTokenCount":  0,
+                            "foreachCount":  0
+                        },
+                        {
+                            "method":  "UpdateBrownoutGlobals",
+                            "startLine":  239,
+                            "endLine":  305,
+                            "rawNewCount":  3,
+                            "rawNewClassifications":  [
+                                                          {
+                                                              "type":  "BrownoutGlobalsDTO",
+                                                              "classification":  "value-type-or-stack"
+                                                          },
+                                                          {
+                                                              "type":  "Vector4",
+                                                              "classification":  "value-type-or-stack"
+                                                          },
+                                                          {
+                                                              "type":  "Vector4",
+                                                              "classification":  "value-type-or-stack"
+                                                          }
+                                                      ],
+                            "referenceTypeNewCount":  0,
+                            "stringFormatCount":  0,
+                            "toStringCount":  0,
+                            "linqTokenCount":  0,
+                            "foreachCount":  0
+                        },
+                        {
+                            "method":  "BrownoutGlobalsEqual",
+                            "startLine":  328,
+                            "endLine":  335,
+                            "rawNewCount":  0,
+                            "rawNewClassifications":  [
+
+                                                      ],
+                            "referenceTypeNewCount":  0,
+                            "stringFormatCount":  0,
+                            "toStringCount":  0,
+                            "linqTokenCount":  0,
+                            "foreachCount":  0
+                        }
+                    ],
+    "excludedRuntimeNewTokens":  [
+                                     {
+                                         "line":  75,
+                                         "type":  "ProfilingSampler",
+                                         "reason":  "outside scanned hot methods: cold setup/resource allocation or serialized settings construction"
+                                     },
+                                     {
+                                         "line":  224,
+                                         "type":  "GraphicsBuffer",
+                                         "reason":  "outside scanned hot methods: cold setup/resource allocation or serialized settings construction"
+                                     },
+                                     {
+                                         "line":  229,
+                                         "type":  "GraphicsBuffer",
+                                         "reason":  "outside scanned hot methods: cold setup/resource allocation or serialized settings construction"
+                                     },
+                                     {
+                                         "line":  389,
+                                         "type":  "FeatureSettings",
+                                         "reason":  "outside scanned hot methods: cold setup/resource allocation or serialized settings construction"
+                                     },
+                                     {
+                                         "line":  402,
+                                         "type":  "BrownoutPass",
+                                         "reason":  "outside scanned hot methods: cold setup/resource allocation or serialized settings construction"
+                                     }
+                                 ],
+    "editorTestExcluded":  {
+                               "path":  "Assets/_Project/Scripts/Editor/VRSomaticComfortEvaluatorEditTests.cs",
+                               "newTokens":  3,
+                               "stringFormat":  0,
+                               "toString":  1,
+                               "linqTokens":  0,
+                               "foreachTokens":  0,
+                               "reason":  "Editor NUnit/static test artifact; not runtime render/update hot path."
+                           },
+    "conclusion":  "Hot-path text scan reports zero reference-type new, zero string.Format, zero .ToString(), zero LINQ tokens, and zero foreach loops in the modified comfort runtime methods. Raw new tokens inside scanned hot methods are value-type constructions only."
+}

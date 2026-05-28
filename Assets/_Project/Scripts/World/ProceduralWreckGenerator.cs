@@ -1250,6 +1250,7 @@ namespace Hecton8.World
             public Vector3 Position;
             public Quaternion Rotation;
             public int Quantity;
+            public int DebrisRecordIndex;
         }
 
         private struct VaultArrayBuffer<T> where T : struct
@@ -1767,6 +1768,7 @@ namespace Hecton8.World
         {
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
+            RestoreRuntimeRegistrations();
         }
 
         private void OnDisable()
@@ -1827,10 +1829,11 @@ namespace Hecton8.World
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _dispatcher = currentService as ITickDispatcher;
                     _registeredLootTick = false;
+                    _registeredLootLateFrame = false;
                     _registeredWreckSlowTick = false;
                     if (currentService != null && isActiveAndEnabled)
                     {
-                        if (_pendingLootCount > 0)
+                        if (_pendingLootCount > 0 || _blackBoxDumpRequested)
                             TryRegisterLootTick();
                         if (_debrisRecordCount > 0 || _artifactRecordCount > 0)
                             TryRegisterWreckSlowTick();
@@ -1843,6 +1846,9 @@ namespace Hecton8.World
                     _voxelEngine = currentService as HectonVoxelEngine;
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
+                    ClearPendingLootQueue();
+                    TryUnregisterLootTick();
+                    TryUnregisterWreckSlowTick();
                     ReleaseWreckVaultBuffers();
                     _dataVault = currentService as IDataVault;
                     _initialized = false;
@@ -3440,7 +3446,8 @@ namespace Hecton8.World
             Hecton8.Items.ItemData itemData,
             int quantity,
             Vector3 position,
-            Quaternion rotation)
+            Quaternion rotation,
+            int debrisRecordIndex = -1)
         {
             if (prefab == null || itemData == null || _pendingLootCount >= MaxPendingLootSpawns)
                 return false;
@@ -3452,7 +3459,8 @@ namespace Hecton8.World
                 ItemData = itemData,
                 Position = position,
                 Rotation = rotation,
-                Quantity = math.max(1, quantity)
+                Quantity = math.max(1, quantity),
+                DebrisRecordIndex = debrisRecordIndex
             };
             _pendingLootCount++;
             TryRegisterLootTick();
@@ -3461,6 +3469,13 @@ namespace Hecton8.World
 
         private void ClearPendingLootQueue()
         {
+            int pendingCount = _pendingLootCount;
+            for (int offset = 0; offset < pendingCount; offset++)
+            {
+                int queueIndex = (_pendingLootReadIndex + offset) % MaxPendingLootSpawns;
+                RollbackPendingDebrisPickup(in _pendingLootSpawns[queueIndex], 63u);
+            }
+
             for (int i = 0; i < MaxPendingLootSpawns; i++)
                 _pendingLootSpawns[i] = default;
 
@@ -3485,10 +3500,14 @@ namespace Hecton8.World
 
         private void TryRegisterLootTick()
         {
-            if (_registeredLootTick || _pendingLootCount <= 0 || !Application.isPlaying || _dispatcher == null)
+            bool hasPendingLoot = _pendingLootCount > 0;
+            bool needsLateFrame = hasPendingLoot || _blackBoxDumpRequested;
+            if (!needsLateFrame || !Application.isPlaying || _dispatcher == null)
                 return;
 
-            _registeredLootTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            if (hasPendingLoot && !_registeredLootTick)
+                _registeredLootTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+
             if (!_registeredLootLateFrame)
                 _registeredLootLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
@@ -3508,19 +3527,80 @@ namespace Hecton8.World
             _pendingLootCount--;
 
             if (spawn.Prefab == null || spawn.ItemData == null)
+            {
+                RollbackPendingDebrisPickup(in spawn, 60u);
                 return;
+            }
 
             GameObject instance = pool.Spawn(spawn.Prefab, spawn.Position, spawn.Rotation, allowExpand: false);
             if (instance == null)
+            {
+                RollbackPendingDebrisPickup(in spawn, 61u);
                 return;
+            }
 
             if (instance.TryGetComponent(out PickupItem pickup))
             {
+                if (!CommitPendingDebrisPickupSpawned(in spawn, 64u))
+                {
+                    pool.Despawn(instance);
+                    RollbackPendingDebrisPickup(in spawn, 65u);
+                    return;
+                }
+
                 pickup.Configure(spawn.ItemData, math.max(1, spawn.Quantity));
                 return;
             }
 
             pool.Despawn(instance);
+            RollbackPendingDebrisPickup(in spawn, 62u);
+        }
+
+        private bool CommitPendingDebrisPickupSpawned(in PendingWreckLootSpawn spawn, uint failureCode)
+        {
+            int debrisIndex = spawn.DebrisRecordIndex;
+            if (debrisIndex < 0)
+                return true;
+
+            if (!_debrisRecords.TryGet(debrisIndex, out WreckDebrisRecord record))
+            {
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, spawn.Position, failureCode, debrisIndex, 0f);
+                return false;
+            }
+
+            if ((record.Flags & (byte)WreckDebrisFlags.Harvested) == 0)
+            {
+                record.Flags = (byte)((record.Flags | (byte)WreckDebrisFlags.Harvested) &
+                    ~(byte)(WreckDebrisFlags.Pickable | WreckDebrisFlags.ActivePickup | WreckDebrisFlags.DotOnly));
+            }
+
+            if (_debrisRecords.TrySet(debrisIndex, in record))
+                return true;
+
+            WriteBlackBoxTelemetry(WreckTelemetryFailureHash, ToVector3(record.Position), failureCode, debrisIndex, 1f);
+            return false;
+        }
+
+        private void RollbackPendingDebrisPickup(in PendingWreckLootSpawn spawn, uint failureCode)
+        {
+            int debrisIndex = spawn.DebrisRecordIndex;
+            if (debrisIndex < 0)
+                return;
+
+            if (!_debrisRecords.TryGet(debrisIndex, out WreckDebrisRecord record))
+            {
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, spawn.Position, failureCode, debrisIndex, 0f);
+                return;
+            }
+
+            if ((record.Flags & (byte)WreckDebrisFlags.Harvested) == 0)
+            {
+                record.Flags = (byte)((record.Flags | (byte)(WreckDebrisFlags.Pickable | WreckDebrisFlags.DotOnly)) &
+                    ~(byte)WreckDebrisFlags.ActivePickup);
+            }
+
+            if (!_debrisRecords.TrySet(debrisIndex, in record))
+                WriteBlackBoxTelemetry(WreckTelemetryFailureHash, ToVector3(record.Position), failureCode, debrisIndex, 1f);
         }
 
         private void RefreshLootRecords()
@@ -4357,10 +4437,11 @@ namespace Hecton8.World
                 return;
             }
 
-            if (QueueWreckLootSpawn(pickupPrefab, pickupItemData, pickupQuantity, pickupPosition, pickupRotation))
+            if (QueueWreckLootSpawn(pickupPrefab, pickupItemData, pickupQuantity, pickupPosition, pickupRotation, pickupDebrisIndex))
                 return;
 
-            pickupRecord.Flags = (byte)(pickupRecord.Flags & ~(byte)WreckDebrisFlags.ActivePickup);
+            pickupRecord.Flags = (byte)((pickupRecord.Flags | (byte)(WreckDebrisFlags.Pickable | WreckDebrisFlags.DotOnly)) &
+                ~(byte)WreckDebrisFlags.ActivePickup);
             if (!_debrisRecords.TrySet(pickupDebrisIndex, in pickupRecord))
                 WriteBlackBoxTelemetry(WreckTelemetryFailureHash, ToVector3(pickupRecord.Position), 55u, pickupDebrisIndex, 0f);
         }
@@ -4533,6 +4614,18 @@ namespace Hecton8.World
             _registeredWreckSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
+        private void RestoreRuntimeRegistrations()
+        {
+            if (!Application.isPlaying || _dispatcher == null)
+                return;
+
+            if (_pendingLootCount > 0 || _blackBoxDumpRequested)
+                TryRegisterLootTick();
+
+            if (_debrisRecordCount > 0 || _artifactRecordCount > 0)
+                TryRegisterWreckSlowTick();
+        }
+
         private void TryUnregisterWreckSlowTick()
         {
             if (!_registeredWreckSlowTick)
@@ -4594,9 +4687,9 @@ namespace Hecton8.World
             _blackBoxDumpRequested = true;
             if (Application.isPlaying && _dispatcher != null)
             {
-                if (!_registeredLootLateFrame)
-                    _registeredLootLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
-                return;
+                TryRegisterLootTick();
+                if (_registeredLootLateFrame)
+                    return;
             }
 
             FlushBlackBoxDumpIfRequested();

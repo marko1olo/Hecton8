@@ -191,7 +191,7 @@ namespace Hecton8.SaveSystem
             return right.CompareTo(left);
         }
 
-        private sealed class SaveManagerNativeBufferSet
+        private sealed class SaveManagerNativeBufferSet : IDisposable
         {
             public NativeArray<SaveLoadCandidate> LoadCandidateScratch;
             public NativeArray<byte> SavePayloadBuffer;
@@ -205,11 +205,318 @@ namespace Hecton8.SaveSystem
             public NativeArray<AsyncPersistenceTelemetryEntry> SaveTelemetryRing;
             public NativeArray<WfcOutpostTelemetryEntry> WfcOutpostTelemetryRing;
             public NativeArray<WfcOutpostTelemetryEntry> WfcOutpostEventTelemetryRing;
+
+            public void EnsureInitial()
+            {
+                EnsureSaveTelemetryRing();
+                EnsureWfcOutpostBlackBoxRing();
+                EnsureLoadCandidateScratch();
+            }
+
+            public void EnsureSaveWorkingBuffers()
+            {
+                EnsureSavePayloadBuffer();
+                EnsureCompressedSaveBuffer();
+                EnsureSaveStagingBuffer();
+                EnsureLoadCandidateScratch();
+                EnsureSaveTelemetryRing();
+            }
+
+            public void EnsureSavePayloadBuffer()
+            {
+                if (SavePayloadBuffer.IsCreated)
+                    return;
+
+                // COLD ALLOC: NativeArray<byte>[67108864] - raw binary save staging buffer for save payload assembly - owner: SaveManagerNativeBufferSet
+                SavePayloadBuffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                NativeMemorySentinel.RegisterNativeArray(SavePayloadBuffer, NativeMemoryOwner, nameof(SavePayloadBuffer), NativeMemoryLifetime);
+            }
+
+            public void EnsureCompressedSaveBuffer()
+            {
+                if (CompressedSaveBuffer.IsCreated)
+                    return;
+
+                // COLD ALLOC: NativeArray<byte>[71303168] - protected 16KB LZ4 block-compressed save payload buffer for 64MB raw save budget - owner: SaveManagerNativeBufferSet
+                CompressedSaveBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                NativeMemorySentinel.RegisterNativeArray(CompressedSaveBuffer, NativeMemoryOwner, nameof(CompressedSaveBuffer), NativeMemoryLifetime);
+            }
+
+            public void EnsureSaveStagingBuffer()
+            {
+                if (SaveStagingBuffer.IsCreated)
+                    return;
+
+                // COLD ALLOC: NativeArray<byte>[10485760] - 10MB async persistence snapshot staging arena - owner: SaveManagerNativeBufferSet
+                SaveStagingBuffer = new NativeArray<byte>(SaveStagingBufferBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                NativeMemorySentinel.RegisterNativeArray(SaveStagingBuffer, NativeMemoryOwner, nameof(SaveStagingBuffer), NativeMemoryLifetime);
+            }
+
+            public void EnsureWfcOutpostNativeBuffers()
+            {
+                if (!WfcOutpostPackedWords.IsCreated)
+                {
+                    // COLD ALLOC: NativeArray<ulong>[32] - WFC outpost mutable-bit payload pack scratch - owner: SaveManagerNativeBufferSet
+                    WfcOutpostPackedWords = new NativeArray<ulong>(WfcOutpostPersistenceConstants.PackedWordCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                    NativeMemorySentinel.RegisterNativeArray(WfcOutpostPackedWords, NativeMemoryOwner, nameof(WfcOutpostPackedWords), NativeMemoryLifetime);
+                }
+
+                if (!WfcOutpostRestoreWords.IsCreated)
+                {
+                    // COLD ALLOC: NativeArray<ulong>[32] - WFC outpost mutable-bit restore scratch - owner: SaveManagerNativeBufferSet
+                    WfcOutpostRestoreWords = new NativeArray<ulong>(WfcOutpostPersistenceConstants.PackedWordCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                    NativeMemorySentinel.RegisterNativeArray(WfcOutpostRestoreWords, NativeMemoryOwner, nameof(WfcOutpostRestoreWords), NativeMemoryLifetime);
+                }
+
+                if (!WfcOutpostPayloadBuffer.IsCreated)
+                {
+                    // COLD ALLOC: NativeArray<byte>[288] - WFC outpost RLE payload staging buffer - owner: SaveManagerNativeBufferSet
+                    WfcOutpostPayloadBuffer = new NativeArray<byte>(WfcOutpostPersistenceConstants.PayloadMaxBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                    NativeMemorySentinel.RegisterNativeArray(WfcOutpostPayloadBuffer, NativeMemoryOwner, nameof(WfcOutpostPayloadBuffer), NativeMemoryLifetime);
+                }
+
+                if (!WfcOutpostSnapshotCache.IsCreated)
+                {
+                    // COLD ALLOC: NativeArray<WfcOutpostSnapshotCacheEntry>[256] - WFC per-sector payload-hash dedupe cache - owner: SaveManagerNativeBufferSet
+                    WfcOutpostSnapshotCache = new NativeArray<WfcOutpostSnapshotCacheEntry>(WfcOutpostSnapshotCacheCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                    NativeMemorySentinel.RegisterNativeArray(WfcOutpostSnapshotCache, NativeMemoryOwner, nameof(WfcOutpostSnapshotCache), NativeMemoryLifetime);
+                }
+            }
+
+            public void EnsureSaveTelemetryRing()
+            {
+                if (SaveTelemetryRing.IsCreated)
+                    return;
+
+                // COLD ALLOC: NativeArray<AsyncPersistenceTelemetryEntry>[300] - save black box duration/size ring - owner: SaveManagerNativeBufferSet
+                SaveTelemetryRing = new NativeArray<AsyncPersistenceTelemetryEntry>(SaveTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(SaveTelemetryRing, NativeMemoryOwner, nameof(SaveTelemetryRing), NativeMemoryLifetime);
+            }
+
+            public void EnsureWfcOutpostBlackBoxRing()
+            {
+                if (!WfcOutpostTelemetryRing.IsCreated)
+                {
+                    // COLD ALLOC: NativeArray<WfcOutpostTelemetryEntry>[300] - WFC outpost frame black-box ring - owner: SaveManagerNativeBufferSet
+                    WfcOutpostTelemetryRing = new NativeArray<WfcOutpostTelemetryEntry>(WfcOutpostTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                    NativeMemorySentinel.RegisterNativeArray(WfcOutpostTelemetryRing, NativeMemoryOwner, nameof(WfcOutpostTelemetryRing), NativeMemoryLifetime);
+                }
+
+                if (!WfcOutpostEventTelemetryRing.IsCreated)
+                {
+                    // COLD ALLOC: NativeArray<WfcOutpostTelemetryEntry>[300] - WFC outpost event black-box ring - owner: SaveManagerNativeBufferSet
+                    WfcOutpostEventTelemetryRing = new NativeArray<WfcOutpostTelemetryEntry>(WfcOutpostEventTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                    NativeMemorySentinel.RegisterNativeArray(WfcOutpostEventTelemetryRing, NativeMemoryOwner, nameof(WfcOutpostEventTelemetryRing), NativeMemoryLifetime);
+                }
+            }
+
+            public void EnsureLoadCandidateScratch()
+            {
+                if (LoadCandidateScratch.IsCreated)
+                    return;
+
+                // COLD ALLOC: NativeArray<SaveLoadCandidate>[9] - unmanaged load fallback descriptors - owner: SaveManagerNativeBufferSet
+                LoadCandidateScratch = new NativeArray<SaveLoadCandidate>(MaxSaveLoadCandidateCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(LoadCandidateScratch, NativeMemoryOwner, nameof(LoadCandidateScratch), NativeMemoryLifetime);
+            }
+
+            public void Dispose()
+            {
+                Exception firstException = null;
+                DisposeNativeArrayBestEffort(ref SavePayloadBuffer, ref firstException, sentinelLabel: nameof(SavePayloadBuffer));
+                DisposeNativeArrayBestEffort(ref CompressedSaveBuffer, ref firstException, sentinelLabel: nameof(CompressedSaveBuffer));
+                DisposeNativeArrayBestEffort(ref SaveStagingBuffer, ref firstException, sentinelLabel: nameof(SaveStagingBuffer));
+                WfcOutpostGrid = default;
+                DisposeNativeArrayBestEffort(ref WfcOutpostPackedWords, ref firstException, sentinelLabel: nameof(WfcOutpostPackedWords));
+                DisposeNativeArrayBestEffort(ref WfcOutpostRestoreWords, ref firstException, sentinelLabel: nameof(WfcOutpostRestoreWords));
+                DisposeNativeArrayBestEffort(ref WfcOutpostPayloadBuffer, ref firstException, sentinelLabel: nameof(WfcOutpostPayloadBuffer));
+                DisposeNativeArrayBestEffort(ref WfcOutpostSnapshotCache, ref firstException, sentinelLabel: nameof(WfcOutpostSnapshotCache));
+                DisposeNativeArrayBestEffort(ref SaveTelemetryRing, ref firstException, sentinelLabel: nameof(SaveTelemetryRing));
+                DisposeNativeArrayBestEffort(ref WfcOutpostTelemetryRing, ref firstException, sentinelLabel: nameof(WfcOutpostTelemetryRing));
+                DisposeNativeArrayBestEffort(ref WfcOutpostEventTelemetryRing, ref firstException, sentinelLabel: nameof(WfcOutpostEventTelemetryRing));
+                DisposeNativeArrayBestEffort(ref LoadCandidateScratch, ref firstException, sentinelLabel: nameof(LoadCandidateScratch));
+                ThrowFirstDisposeException(firstException);
+            }
         }
 
         private static class StaticNativeBuffers
         {
+            private static readonly object Sync = new object();
             public static NativeArray<SaveLoadCandidate> SaveLoadCandidateScratch;
+            public static NativeArray<byte> RawWriteBuffer;
+            public static NativeArray<byte> CompressedWriteBuffer;
+            private static bool s_writeBuffersInUse;
+            private static bool s_disposeRequested;
+
+            public static void EnsureLoadCandidateScratch()
+            {
+                lock (Sync)
+                {
+                    if (SaveLoadCandidateScratch.IsCreated)
+                        return;
+
+                    // COLD ALLOC: NativeArray<SaveLoadCandidate>[9] - static repair/audit fallback descriptors - owner: SaveManager.StaticNativeBuffers
+                    SaveLoadCandidateScratch = new NativeArray<SaveLoadCandidate>(MaxSaveLoadCandidateCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                    NativeMemorySentinel.RegisterNativeArray(SaveLoadCandidateScratch, NativeMemoryOwner, nameof(SaveLoadCandidateScratch), NativeMemoryLifetime);
+                }
+            }
+
+            public static void AcquireWriteBuffers(
+                out NativeArray<byte> rawBuffer,
+                out bool ownsRawBuffer,
+                out NativeArray<byte> compressedBuffer,
+                out bool ownsCompressedBuffer)
+            {
+                rawBuffer = default;
+                compressedBuffer = default;
+                ownsRawBuffer = false;
+                ownsCompressedBuffer = false;
+
+                lock (Sync)
+                {
+                    if (!s_disposeRequested)
+                    {
+                        EnsureWriteBuffers();
+                        if (!s_writeBuffersInUse)
+                        {
+                            s_writeBuffersInUse = true;
+                            rawBuffer = RawWriteBuffer;
+                            compressedBuffer = CompressedWriteBuffer;
+                            ownsRawBuffer = false;
+                            ownsCompressedBuffer = false;
+                            return;
+                        }
+                    }
+                }
+
+                NativeArray<byte> fallbackRawBuffer = default;
+                NativeArray<byte> fallbackCompressedBuffer = default;
+                bool fallbackRawRegistered = false;
+                bool fallbackCompressedRegistered = false;
+                try
+                {
+                    // COLD ALLOC: NativeArray<byte>[67108864] - contested isolated static save raw write fallback - owner: SaveManager.StaticNativeBuffers
+                    fallbackRawBuffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                    NativeMemorySentinel.RegisterNativeArray(fallbackRawBuffer, NativeMemoryOwner, "contendedStaticRawWriteBuffer", NativeMemoryLifetime);
+                    fallbackRawRegistered = true;
+
+                    // COLD ALLOC: NativeArray<byte>[71303168] - contested isolated static save compressed write fallback - owner: SaveManager.StaticNativeBuffers
+                    fallbackCompressedBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                    NativeMemorySentinel.RegisterNativeArray(fallbackCompressedBuffer, NativeMemoryOwner, "contendedStaticCompressedWriteBuffer", NativeMemoryLifetime);
+                    fallbackCompressedRegistered = true;
+
+                    rawBuffer = fallbackRawBuffer;
+                    compressedBuffer = fallbackCompressedBuffer;
+                    ownsRawBuffer = true;
+                    ownsCompressedBuffer = true;
+                    fallbackRawBuffer = default;
+                    fallbackCompressedBuffer = default;
+                }
+                catch
+                {
+                    TryDisposeFallbackBufferAfterAcquireFailure(ref fallbackCompressedBuffer, fallbackCompressedRegistered);
+                    TryDisposeFallbackBufferAfterAcquireFailure(ref fallbackRawBuffer, fallbackRawRegistered);
+                    throw;
+                }
+            }
+
+            public static void ReleaseWriteBuffers(
+                NativeArray<byte> rawBuffer,
+                bool ownsRawBuffer,
+                NativeArray<byte> compressedBuffer,
+                bool ownsCompressedBuffer)
+            {
+                if (ownsRawBuffer)
+                    ReleaseOwnedBuffer(rawBuffer);
+
+                if (ownsCompressedBuffer)
+                    ReleaseOwnedBuffer(compressedBuffer);
+
+                if (ownsRawBuffer && ownsCompressedBuffer)
+                    return;
+
+                lock (Sync)
+                {
+                    s_writeBuffersInUse = false;
+                    DisposeIfRequestedAndIdle();
+                }
+            }
+
+            public static void Dispose()
+            {
+                lock (SaveLoadCandidateScratchSync)
+                {
+                    lock (Sync)
+                    {
+                        s_disposeRequested = true;
+                        DisposeIfRequestedAndIdle();
+                    }
+                }
+            }
+
+            private static void EnsureWriteBuffers()
+            {
+                if (!RawWriteBuffer.IsCreated)
+                {
+                    // COLD ALLOC: NativeArray<byte>[67108864] - isolated static save write buffer prevents live SaveManager payload aliasing - owner: SaveManager.StaticNativeBuffers
+                    RawWriteBuffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                    NativeMemorySentinel.RegisterNativeArray(RawWriteBuffer, NativeMemoryOwner, nameof(RawWriteBuffer), NativeMemoryLifetime);
+                }
+
+                if (!CompressedWriteBuffer.IsCreated)
+                {
+                    // COLD ALLOC: NativeArray<byte>[71303168] - isolated static compressed save buffer prevents live SaveManager payload aliasing - owner: SaveManager.StaticNativeBuffers
+                    CompressedWriteBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                    NativeMemorySentinel.RegisterNativeArray(CompressedWriteBuffer, NativeMemoryOwner, nameof(CompressedWriteBuffer), NativeMemoryLifetime);
+                }
+            }
+
+            private static void DisposeIfRequestedAndIdle()
+            {
+                if (!s_disposeRequested || s_writeBuffersInUse)
+                    return;
+
+                Exception firstException = null;
+                DisposeNativeArrayBestEffort(ref SaveLoadCandidateScratch, ref firstException, sentinelLabel: nameof(SaveLoadCandidateScratch));
+                DisposeNativeArrayBestEffort(ref RawWriteBuffer, ref firstException, sentinelLabel: nameof(RawWriteBuffer));
+                DisposeNativeArrayBestEffort(ref CompressedWriteBuffer, ref firstException, sentinelLabel: nameof(CompressedWriteBuffer));
+                s_disposeRequested = false;
+                ThrowFirstDisposeException(firstException);
+            }
+
+            private static void ReleaseOwnedBuffer(NativeArray<byte> buffer)
+            {
+                if (!buffer.IsCreated)
+                    return;
+
+                NativeMemorySentinel.UnregisterNativeArray(buffer);
+                buffer.Dispose();
+            }
+
+            private static void TryDisposeFallbackBufferAfterAcquireFailure(ref NativeArray<byte> buffer, bool registered)
+            {
+                if (!buffer.IsCreated)
+                    return;
+
+                try
+                {
+                    if (registered)
+                        NativeMemorySentinel.UnregisterNativeArray(buffer);
+                }
+                catch
+                {
+                }
+
+                try
+                {
+                    buffer.Dispose();
+                }
+                catch
+                {
+                }
+
+                buffer = default;
+            }
         }
 
         private ref NativeArray<byte> _savePayloadBuffer => ref _nativeBuffers.SavePayloadBuffer;
@@ -258,25 +565,89 @@ namespace Hecton8.SaveSystem
             public MemoryCorruptionException(string message) : base(message) { }
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 32)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
         private struct AsyncPersistenceTelemetryEntry
         {
-            [FieldOffset(0)]
+            [System.Runtime.InteropServices.FieldOffset(0)]
             public uint Frame;
-            [FieldOffset(4)]
+            [System.Runtime.InteropServices.FieldOffset(4)]
             public uint OperationId;
-            [FieldOffset(8)]
+            [System.Runtime.InteropServices.FieldOffset(8)]
             public uint SaveDurationMs;
-            [FieldOffset(12)]
+            [System.Runtime.InteropServices.FieldOffset(12)]
             public uint CompressedSizeBytes;
-            [FieldOffset(16)]
+            [System.Runtime.InteropServices.FieldOffset(16)]
             public uint RawPayloadBytes;
-            [FieldOffset(20)]
+            [System.Runtime.InteropServices.FieldOffset(20)]
             public uint Flags;
-            [FieldOffset(24)]
+            [System.Runtime.InteropServices.FieldOffset(24)]
             public uint SlotHash;
-            [FieldOffset(28)]
+            [System.Runtime.InteropServices.FieldOffset(28)]
             public uint Reserved;
+            [System.Runtime.InteropServices.FieldOffset(32)]
+            private byte _pad0;
+            [System.Runtime.InteropServices.FieldOffset(33)]
+            private byte _pad1;
+            [System.Runtime.InteropServices.FieldOffset(34)]
+            private byte _pad2;
+            [System.Runtime.InteropServices.FieldOffset(35)]
+            private byte _pad3;
+            [System.Runtime.InteropServices.FieldOffset(36)]
+            private byte _pad4;
+            [System.Runtime.InteropServices.FieldOffset(37)]
+            private byte _pad5;
+            [System.Runtime.InteropServices.FieldOffset(38)]
+            private byte _pad6;
+            [System.Runtime.InteropServices.FieldOffset(39)]
+            private byte _pad7;
+            [System.Runtime.InteropServices.FieldOffset(40)]
+            private byte _pad8;
+            [System.Runtime.InteropServices.FieldOffset(41)]
+            private byte _pad9;
+            [System.Runtime.InteropServices.FieldOffset(42)]
+            private byte _pad10;
+            [System.Runtime.InteropServices.FieldOffset(43)]
+            private byte _pad11;
+            [System.Runtime.InteropServices.FieldOffset(44)]
+            private byte _pad12;
+            [System.Runtime.InteropServices.FieldOffset(45)]
+            private byte _pad13;
+            [System.Runtime.InteropServices.FieldOffset(46)]
+            private byte _pad14;
+            [System.Runtime.InteropServices.FieldOffset(47)]
+            private byte _pad15;
+            [System.Runtime.InteropServices.FieldOffset(48)]
+            private byte _pad16;
+            [System.Runtime.InteropServices.FieldOffset(49)]
+            private byte _pad17;
+            [System.Runtime.InteropServices.FieldOffset(50)]
+            private byte _pad18;
+            [System.Runtime.InteropServices.FieldOffset(51)]
+            private byte _pad19;
+            [System.Runtime.InteropServices.FieldOffset(52)]
+            private byte _pad20;
+            [System.Runtime.InteropServices.FieldOffset(53)]
+            private byte _pad21;
+            [System.Runtime.InteropServices.FieldOffset(54)]
+            private byte _pad22;
+            [System.Runtime.InteropServices.FieldOffset(55)]
+            private byte _pad23;
+            [System.Runtime.InteropServices.FieldOffset(56)]
+            private byte _pad24;
+            [System.Runtime.InteropServices.FieldOffset(57)]
+            private byte _pad25;
+            [System.Runtime.InteropServices.FieldOffset(58)]
+            private byte _pad26;
+            [System.Runtime.InteropServices.FieldOffset(59)]
+            private byte _pad27;
+            [System.Runtime.InteropServices.FieldOffset(60)]
+            private byte _pad28;
+            [System.Runtime.InteropServices.FieldOffset(61)]
+            private byte _pad29;
+            [System.Runtime.InteropServices.FieldOffset(62)]
+            private byte _pad30;
+            [System.Runtime.InteropServices.FieldOffset(63)]
+            private byte _pad31;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 24)]
@@ -604,25 +975,44 @@ namespace Hecton8.SaveSystem
             _registryDirty = false;
             _worldPagerSavingNotificationArmed = false;
 
+            Exception firstDisposeException = null;
             if (_worldPager != null)
             {
-                _worldPager.Dispose();
-                _worldPager = null;
+                try
+                {
+                    _worldPager.Dispose();
+                }
+                catch (Exception exception)
+                {
+                    if (firstDisposeException == null)
+                        firstDisposeException = exception;
+                }
+                finally
+                {
+                    _worldPager = null;
+                }
             }
 
-            DisposeNativeArray(ref _nativeBuffers.SavePayloadBuffer);
-            DisposeNativeArray(ref _nativeBuffers.CompressedSaveBuffer);
-            DisposeNativeArray(ref _nativeBuffers.SaveStagingBuffer);
-            DisposeNativeArray(ref _nativeBuffers.WfcOutpostPackedWords);
-            DisposeNativeArray(ref _nativeBuffers.WfcOutpostRestoreWords);
-            DisposeNativeArray(ref _nativeBuffers.WfcOutpostPayloadBuffer);
-            DisposeNativeArray(ref _nativeBuffers.WfcOutpostSnapshotCache);
-            DisposeNativeArray(ref _nativeBuffers.SaveTelemetryRing);
-            DisposeNativeArray(ref _nativeBuffers.WfcOutpostTelemetryRing);
-            DisposeNativeArray(ref _nativeBuffers.WfcOutpostEventTelemetryRing);
-            DisposeNativeArray(ref _nativeBuffers.LoadCandidateScratch);
-            DisposeStaticLoadCandidateScratch();
-            _wfcOutpostGrid = default;
+            try
+            {
+                _nativeBuffers.Dispose();
+            }
+            catch (Exception exception)
+            {
+                if (firstDisposeException == null)
+                    firstDisposeException = exception;
+            }
+
+            try
+            {
+                StaticNativeBuffers.Dispose();
+            }
+            catch (Exception exception)
+            {
+                if (firstDisposeException == null)
+                    firstDisposeException = exception;
+            }
+
             _macroDatabaseService = null;
             _dataVault = null;
             _lastWfcOutpostSectorHash = 0UL;
@@ -638,6 +1028,7 @@ namespace Hecton8.SaveSystem
             _wfcOutpostBlackBoxDumped = false;
 
             DisposeIntegrityResources();
+            ThrowFirstDisposeException(firstDisposeException);
         }
 
         public void InitializeService()
@@ -1010,48 +1401,27 @@ namespace Hecton8.SaveSystem
 
         private void InitializeNativeBuffers()
         {
-            EnsureSaveTelemetryRing();
-            EnsureWfcOutpostBlackBoxRing();
-            EnsureLoadCandidateScratch();
+            _nativeBuffers.EnsureInitial();
         }
 
         private void EnsureSaveWorkingBuffers()
         {
-            EnsureSavePayloadBuffer();
-            EnsureCompressedSaveBuffer();
-            EnsureSaveStagingBuffer();
-            EnsureLoadCandidateScratch();
-            EnsureSaveTelemetryRing();
+            _nativeBuffers.EnsureSaveWorkingBuffers();
         }
 
         private void EnsureSavePayloadBuffer()
         {
-            if (!_savePayloadBuffer.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<byte>[67108864] — raw binary save staging buffer for save payload assembly — owner: SaveManager
-                _savePayloadBuffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(_savePayloadBuffer, NativeMemoryOwner, nameof(_savePayloadBuffer), NativeMemoryLifetime);
-            }
+            _nativeBuffers.EnsureSavePayloadBuffer();
         }
 
         private void EnsureCompressedSaveBuffer()
         {
-            if (!_compressedSaveBuffer.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<byte>[71303168] — protected 16KB LZ4 block-compressed save payload buffer for 64MB raw save budget — owner: SaveManager
-                _compressedSaveBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(_compressedSaveBuffer, NativeMemoryOwner, nameof(_compressedSaveBuffer), NativeMemoryLifetime);
-            }
+            _nativeBuffers.EnsureCompressedSaveBuffer();
         }
 
         private void EnsureSaveStagingBuffer()
         {
-            if (!_saveStagingBuffer.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<byte>[10485760] - 10MB async persistence snapshot staging arena - owner: SaveManager
-                _saveStagingBuffer = new NativeArray<byte>(SaveStagingBufferBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(_saveStagingBuffer, NativeMemoryOwner, nameof(_saveStagingBuffer), NativeMemoryLifetime);
-            }
+            _nativeBuffers.EnsureSaveStagingBuffer();
         }
 
         private void RefreshWfcOutpostDependencies()
@@ -1119,70 +1489,22 @@ namespace Hecton8.SaveSystem
 
         private void EnsureWfcOutpostNativeBuffers()
         {
-            if (!_wfcOutpostPackedWords.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<ulong>[32] - WFC outpost mutable-bit payload pack scratch - owner: SaveManager
-                _wfcOutpostPackedWords = new NativeArray<ulong>(WfcOutpostPersistenceConstants.PackedWordCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_wfcOutpostPackedWords, NativeMemoryOwner, nameof(_wfcOutpostPackedWords), NativeMemoryLifetime);
-            }
-
-            if (!_wfcOutpostRestoreWords.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<ulong>[32] - WFC outpost mutable-bit restore scratch - owner: SaveManager
-                _wfcOutpostRestoreWords = new NativeArray<ulong>(WfcOutpostPersistenceConstants.PackedWordCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_wfcOutpostRestoreWords, NativeMemoryOwner, nameof(_wfcOutpostRestoreWords), NativeMemoryLifetime);
-            }
-
-            if (!_wfcOutpostPayloadBuffer.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<byte>[288] - WFC outpost RLE payload staging buffer - owner: SaveManager
-                _wfcOutpostPayloadBuffer = new NativeArray<byte>(WfcOutpostPersistenceConstants.PayloadMaxBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(_wfcOutpostPayloadBuffer, NativeMemoryOwner, nameof(_wfcOutpostPayloadBuffer), NativeMemoryLifetime);
-            }
-
-            if (!_wfcOutpostSnapshotCache.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<WfcOutpostSnapshotCacheEntry>[256] - WFC per-sector payload-hash dedupe cache - owner: SaveManager
-                _wfcOutpostSnapshotCache = new NativeArray<WfcOutpostSnapshotCacheEntry>(WfcOutpostSnapshotCacheCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_wfcOutpostSnapshotCache, NativeMemoryOwner, nameof(_wfcOutpostSnapshotCache), NativeMemoryLifetime);
-            }
+            _nativeBuffers.EnsureWfcOutpostNativeBuffers();
         }
 
         private void EnsureSaveTelemetryRing()
         {
-            if (!_saveTelemetryRing.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<AsyncPersistenceTelemetryEntry>[300] - save black box duration/size ring - owner: SaveManager
-                _saveTelemetryRing = new NativeArray<AsyncPersistenceTelemetryEntry>(SaveTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_saveTelemetryRing, NativeMemoryOwner, nameof(_saveTelemetryRing), NativeMemoryLifetime);
-            }
+            _nativeBuffers.EnsureSaveTelemetryRing();
         }
 
         private void EnsureWfcOutpostBlackBoxRing()
         {
-            if (!_wfcOutpostTelemetryRing.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<WfcOutpostTelemetryEntry>[300] - WFC outpost frame black-box ring - owner: SaveManager
-                _wfcOutpostTelemetryRing = new NativeArray<WfcOutpostTelemetryEntry>(WfcOutpostTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_wfcOutpostTelemetryRing, NativeMemoryOwner, nameof(_wfcOutpostTelemetryRing), NativeMemoryLifetime);
-            }
-
-            if (!_wfcOutpostEventTelemetryRing.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<WfcOutpostTelemetryEntry>[300] - WFC outpost event black-box ring - owner: SaveManager
-                _wfcOutpostEventTelemetryRing = new NativeArray<WfcOutpostTelemetryEntry>(WfcOutpostEventTelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_wfcOutpostEventTelemetryRing, NativeMemoryOwner, nameof(_wfcOutpostEventTelemetryRing), NativeMemoryLifetime);
-            }
+            _nativeBuffers.EnsureWfcOutpostBlackBoxRing();
         }
 
         private void EnsureLoadCandidateScratch()
         {
-            if (!_loadCandidateScratch.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<SaveLoadCandidate>[9] - unmanaged load fallback descriptors - owner: SaveManager
-                _loadCandidateScratch = new NativeArray<SaveLoadCandidate>(MaxSaveLoadCandidateCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_loadCandidateScratch, NativeMemoryOwner, nameof(_loadCandidateScratch), NativeMemoryLifetime);
-            }
+            _nativeBuffers.EnsureLoadCandidateScratch();
         }
 
         private void EnsureWorldPagerInitialized()
@@ -1196,25 +1518,12 @@ namespace Hecton8.SaveSystem
 
         private static void EnsureStaticLoadCandidateScratch()
         {
-            if (SaveLoadCandidateScratch.IsCreated)
-                return;
-
-            // COLD ALLOC: NativeArray<SaveLoadCandidate>[9] - static repair/audit fallback descriptors - owner: SaveManager
-            SaveLoadCandidateScratch = new NativeArray<SaveLoadCandidate>(MaxSaveLoadCandidateCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(SaveLoadCandidateScratch, NativeMemoryOwner, nameof(SaveLoadCandidateScratch), NativeMemoryLifetime);
+            StaticNativeBuffers.EnsureLoadCandidateScratch();
         }
 
         private static void DisposeStaticLoadCandidateScratch()
         {
-            lock (SaveLoadCandidateScratchSync)
-            {
-                if (!StaticNativeBuffers.SaveLoadCandidateScratch.IsCreated)
-                    return;
-
-                NativeMemorySentinel.UnregisterNativeArray(StaticNativeBuffers.SaveLoadCandidateScratch);
-                StaticNativeBuffers.SaveLoadCandidateScratch.Dispose();
-                StaticNativeBuffers.SaveLoadCandidateScratch = default;
-            }
+            StaticNativeBuffers.Dispose();
         }
 
         public void Tick(float deltaTime)
@@ -2606,14 +2915,7 @@ namespace Hecton8.SaveSystem
                     {
                         int index = (_saveTelemetryWriteIndex + i) % SaveTelemetryCapacity;
                         AsyncPersistenceTelemetryEntry entry = _saveTelemetryRing[index];
-                        writer.Write(entry.Frame);
-                        writer.Write(entry.OperationId);
-                        writer.Write(entry.SaveDurationMs);
-                        writer.Write(entry.CompressedSizeBytes);
-                        writer.Write(entry.RawPayloadBytes);
-                        writer.Write(entry.Flags);
-                        writer.Write(entry.SlotHash);
-                        writer.Write(entry.Reserved);
+                        WriteAsyncPersistenceTelemetryEntry(writer, in entry);
                     }
                 }
             }
@@ -2621,6 +2923,26 @@ namespace Hecton8.SaveSystem
             {
                 LogWarning($"[SaveManager] Save black box dump failed: {exception.Message}");
             }
+        }
+
+        private static void WriteAsyncPersistenceTelemetryEntry(BinaryWriter writer, in AsyncPersistenceTelemetryEntry entry)
+        {
+            writer.Write(entry.Frame);
+            writer.Write(entry.OperationId);
+            writer.Write(entry.SaveDurationMs);
+            writer.Write(entry.CompressedSizeBytes);
+            writer.Write(entry.RawPayloadBytes);
+            writer.Write(entry.Flags);
+            writer.Write(entry.SlotHash);
+            writer.Write(entry.Reserved);
+            writer.Write(0u);
+            writer.Write(0u);
+            writer.Write(0u);
+            writer.Write(0u);
+            writer.Write(0u);
+            writer.Write(0u);
+            writer.Write(0u);
+            writer.Write(0u);
         }
 
         private static void PublishSaveRecoveredNotification(string slotName)
@@ -2681,23 +3003,78 @@ namespace Hecton8.SaveSystem
             NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeTransientMemoryLifetime);
         }
 
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency = default, bool deferDisposal = false) where T : struct
+        private static void DisposeNativeArray<T>(
+            ref NativeArray<T> array,
+            JobHandle dependency = default,
+            bool deferDisposal = false,
+            string sentinelLabel = null) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            if (deferDisposal)
+            bool sentinelUnregistered = false;
+            try
             {
-                JobHandle disposeHandle = array.Dispose(dependency);
-                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
-            }
-            else
-            {
-                array.Dispose();
-            }
+                NativeMemorySentinel.UnregisterNativeArray(array);
+                sentinelUnregistered = true;
+                if (deferDisposal)
+                {
+                    JobHandle disposeHandle = array.Dispose(dependency);
+                    DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+                }
+                else
+                {
+                    array.Dispose();
+                }
 
-            array = default;
+                array = default;
+            }
+            catch
+            {
+                TryRestoreNativeSentinelRecord(array, sentinelUnregistered, sentinelLabel);
+                throw;
+            }
+        }
+
+        private static void TryRestoreNativeSentinelRecord<T>(
+            NativeArray<T> array,
+            bool sentinelUnregistered,
+            string sentinelLabel) where T : struct
+        {
+            if (!sentinelUnregistered || !array.IsCreated)
+                return;
+
+            try
+            {
+                NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel ?? nameof(DisposeNativeArray), NativeMemoryLifetime);
+            }
+            catch
+            {
+            }
+        }
+
+        private static void DisposeNativeArrayBestEffort<T>(
+            ref NativeArray<T> array,
+            ref Exception firstException,
+            JobHandle dependency = default,
+            bool deferDisposal = false,
+            string sentinelLabel = null) where T : struct
+        {
+            try
+            {
+                DisposeNativeArray(ref array, dependency, deferDisposal, sentinelLabel);
+            }
+            catch (Exception exception)
+            {
+                if (firstException == null)
+                    firstException = exception;
+            }
+        }
+
+        private static void ThrowFirstDisposeException(Exception firstException)
+        {
+            if (firstException != null)
+                throw firstException;
         }
 
         public void Register(ISaveable saveable)
@@ -4329,8 +4706,8 @@ namespace Hecton8.SaveSystem
                 File.Move(GetPersistentAbsolutePath(tempPath), GetPersistentAbsolutePath(finalPath));
 
                 string absoluteFinalPath = GetPersistentAbsolutePath(finalPath);
-                if (new FileInfo(absoluteFinalPath) is FileInfo promotedInfo && promotedInfo.Exists)
-                    AsyncWriteManager.QueueThrottledFlush(absoluteFinalPath, promotedInfo.Length, out _);
+                if (TryGetAbsoluteFileLength(absoluteFinalPath, out long promotedBytes))
+                    AsyncWriteManager.QueueThrottledFlush(absoluteFinalPath, promotedBytes, out _);
             }
             catch (Exception ex)
             {
@@ -4414,7 +4791,7 @@ namespace Hecton8.SaveSystem
             if (!ModSaveStateStore.TryCommitMmfPayloads(absoluteTempPath, out string modPayloadCommitError))
                 ReportModPayloadCommitFailure(slotName, modPayloadCommitError);
 
-            compressedSizeBytes = File.Exists(absoluteTempPath) ? new FileInfo(absoluteTempPath).Length : 0L;
+            compressedSizeBytes = TryGetAbsoluteFileLength(absoluteTempPath, out long tempBytes) ? tempBytes : 0L;
             return TryCommitTempSaveToPrimary(slotName, tempPath, finalPath, backupRetentionCount, out error);
         }
 
@@ -5142,8 +5519,7 @@ namespace Hecton8.SaveSystem
             {
                 if (loadedVoxelDeltaSnapshot.IsCreated)
                     DisposeNativeArray(ref loadedVoxelDeltaSnapshot);
-                ReleaseBuffer(readBuffer, ownsReadBuffer);
-                ReleaseBuffer(compressedReadBuffer, ownsCompressedReadBuffer);
+                ReleaseWriteBuffers(readBuffer, ownsReadBuffer, compressedReadBuffer, ownsCompressedReadBuffer);
             }
         }
 
@@ -5175,8 +5551,7 @@ namespace Hecton8.SaveSystem
                 }
                 finally
                 {
-                    ReleaseBuffer(readBuffer, ownsReadBuffer);
-                    ReleaseBuffer(compressedReadBuffer, ownsCompressedReadBuffer);
+                    ReleaseWriteBuffers(readBuffer, ownsReadBuffer, compressedReadBuffer, ownsCompressedReadBuffer);
                 }
             }
 
@@ -5275,8 +5650,7 @@ namespace Hecton8.SaveSystem
                     if (packedQuestStateBuffer.IsCreated)
                         DisposeNativeArray(ref packedQuestStateBuffer);
 
-                    ReleaseBuffer(rawBuffer, ownsRawBuffer);
-                    ReleaseBuffer(compressedBuffer, ownsCompressedBuffer);
+                    ReleaseWriteBuffers(rawBuffer, ownsRawBuffer, compressedBuffer, ownsCompressedBuffer);
                 }
 
                 changedAnything = true;
@@ -5310,14 +5684,6 @@ namespace Hecton8.SaveSystem
             };
         }
 
-        private static void AcquireReadBuffer(out NativeArray<byte> buffer, out bool ownsBuffer)
-        {
-            // COLD ALLOC: NativeArray<byte>[67108864] — isolated static save read buffer prevents live SaveManager payload aliasing — owner: SaveManager
-            buffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, "fallbackReadBuffer", NativeMemoryLifetime);
-            ownsBuffer = true;
-        }
-
         private double ResolveCurrentPlayTimeSeconds()
         {
             return _totalPlayTime + (Time.realtimeSinceStartupAsDouble - _sessionStartTime);
@@ -5329,23 +5695,16 @@ namespace Hecton8.SaveSystem
             out NativeArray<byte> compressedBuffer,
             out bool ownsCompressedBuffer)
         {
-            // COLD ALLOC: NativeArray<byte>[67108864] — isolated static save write buffer prevents live SaveManager payload aliasing — owner: SaveManager
-            rawBuffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            // COLD ALLOC: NativeArray<byte>[67378176] — isolated static compressed save buffer prevents live SaveManager payload aliasing — owner: SaveManager
-            compressedBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            NativeMemorySentinel.RegisterNativeArray(rawBuffer, NativeMemoryOwner, "fallbackRawWriteBuffer", NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(compressedBuffer, NativeMemoryOwner, "fallbackCompressedWriteBuffer", NativeMemoryLifetime);
-            ownsRawBuffer = true;
-            ownsCompressedBuffer = true;
+            StaticNativeBuffers.AcquireWriteBuffers(out rawBuffer, out ownsRawBuffer, out compressedBuffer, out ownsCompressedBuffer);
         }
 
-        private static void ReleaseBuffer(NativeArray<byte> buffer, bool ownsBuffer)
+        private static void ReleaseWriteBuffers(
+            NativeArray<byte> rawBuffer,
+            bool ownsRawBuffer,
+            NativeArray<byte> compressedBuffer,
+            bool ownsCompressedBuffer)
         {
-            if (ownsBuffer && buffer.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(buffer);
-                buffer.Dispose();
-            }
+            StaticNativeBuffers.ReleaseWriteBuffers(rawBuffer, ownsRawBuffer, compressedBuffer, ownsCompressedBuffer);
         }
 
         private static SaveSlotMaintenanceRecord GetOrCreateMaintenanceRecord(string slotName)
@@ -5620,10 +5979,16 @@ namespace Hecton8.SaveSystem
                 return 0L;
 
             string fullPath = GetPersistentAbsolutePath(relativeFileName);
-            if (!File.Exists(fullPath))
-                return 0L;
+            return TryGetAbsoluteFileLength(fullPath, out long fileBytes) ? fileBytes : 0L;
+        }
 
-            return new FileInfo(fullPath).Length;
+        private static bool TryGetAbsoluteFileLength(string absolutePath, out long fileLength)
+        {
+            fileLength = 0L;
+            if (string.IsNullOrEmpty(absolutePath))
+                return false;
+
+            return AsyncWriteManager.TryGetFileLength(absolutePath, out fileLength, out _);
         }
 
         private static void UpdateLastWrite(string relativeFileName, ref long lastWriteTicksUtc)

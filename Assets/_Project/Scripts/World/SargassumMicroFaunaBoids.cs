@@ -1670,7 +1670,6 @@ namespace Hecton8.World
         private GraphicsBuffer _predatorAupFallbackBuffer;
         private GraphicsBuffer _boidSensoryThreatBufferA;
         private GraphicsBuffer _boidSensoryThreatBufferB;
-        private readonly BoidData[] _singleBoidUpload = new BoidData[1]; // COLD ALLOC: BoidData[1] - SetData staging for GPU-write-capable boid buffers - owner: SargassumMicroFaunaBoids
         private uint _boidSensoryThreatUploadHashA;
         private uint _boidSensoryThreatUploadHashB;
         private bool _boidSensoryThreatUploadValidA;
@@ -2843,8 +2842,8 @@ namespace Hecton8.World
             if (safeUploadCount <= 0)
                 return;
 
-            GraphicsBufferUploadUtility.UploadNativeArraySetData(_boidsBufferA, boidState, safeUploadCount);
-            GraphicsBufferUploadUtility.UploadNativeArraySetData(_boidsBufferB, boidState, safeUploadCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_boidsBufferA, boidState, safeUploadCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(_boidsBufferB, boidState, safeUploadCount);
             _debugConsumedBoidCount = 0;
             _feedingFrenzyWindowStartTime = -1f;
             _feedingFrenzyKillCount = 0;
@@ -6108,8 +6107,18 @@ namespace Hecton8.World
                 return;
             }
 
-            _singleBoidUpload[0] = source;
-            buffer.SetData(_singleBoidUpload, 0, boidId, 1);
+            bool locked = false;
+            try
+            {
+                NativeArray<BoidData> mapped = buffer.LockBufferForWrite<BoidData>(boidId, 1);
+                locked = true;
+                mapped[0] = source;
+            }
+            finally
+            {
+                if (locked)
+                    buffer.UnlockBufferAfterWrite<BoidData>(1);
+            }
         }
 
         private void RecordFoodChainTelemetry(uint flags, Vector3 eventPositionWS, uint sourceHash, uint anomalyHash)

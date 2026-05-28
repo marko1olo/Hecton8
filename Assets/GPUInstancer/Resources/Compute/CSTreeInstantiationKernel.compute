@@ -12,6 +12,9 @@ RWStructuredBuffer<float4> treeScales;
 RWStructuredBuffer<uint> counterBuffer;
 
 uniform uint bufferSize;
+uniform uint treeDataLength;
+uniform uint treeScalesLength;
+uniform uint instanceCapacity;
 //uniform float3 terrainSize;
 //uniform float3 terrainPosition;
 uniform uint prototypeIndex;
@@ -28,10 +31,15 @@ void CSTreeInstantiationKernel(uint3 id : SV_DispatchThreadID)
         return;
 
     uint index = id.x * 2;
+    if (index + 1 >= treeDataLength)
+        return;
+
     float4 treeData1 = treeData[index];
     uint instancePI = uint(treeData1.x);
 
     if (instancePI != prototypeIndex)
+        return;
+    if (prototypeIndex >= treeScalesLength)
         return;
     
     index++;
@@ -44,6 +52,9 @@ void CSTreeInstantiationKernel(uint3 id : SV_DispatchThreadID)
 
     uint instanceIndex;
     InterlockedAdd(counterBuffer[0], 1, instanceIndex);
+    if (instanceIndex >= instanceCapacity)
+        return;
+
     // Add tree 
     gpuiInstanceData[instanceIndex] = TRS(position, rotation, scale);
 }

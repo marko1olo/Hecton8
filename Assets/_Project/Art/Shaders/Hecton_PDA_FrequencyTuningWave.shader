@@ -36,11 +36,53 @@ Shader "Hecton8/PDA/FrequencyTuningWave"
             float4 _HectonFrequencyTuningTimeErrorStage;
             float4 _HectonFrequencyTuningWaveScalars;
             float4 _HectonFrequencyTuningWaveLayout;
+            float4 _HectonVrComfortSignals;
+            float4 _HectonVrComfortMotion;
+            float4 _HectonVRSomaticComfortState;
+            float _HectonVRBrownoutIntensity;
+            float _HectonTunnelingIntensity;
+            float _H8GlobalQualityWeight;
 
             float TriangleWaveSigned(float phase)
             {
                 float lane = frac(phase + 0.25);
                 return 1.0 - abs(lane * 2.0 - 1.0) * 2.0;
+            }
+
+            float HectonComfortIgn(float2 pixel)
+            {
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
+            float2 ResolveHectonComfortEyeStableScreenUV(float2 positionCS)
+            {
+                float2 screenUV = saturate(positionCS * rcp(max(_ScreenParams.xy, float2(1.0, 1.0))));
+#if defined(UNITY_SINGLE_PASS_STEREO) || defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
+                float4 stereoScaleOffset = unity_StereoScaleOffset[unity_StereoEyeIndex];
+                screenUV = (screenUV - stereoScaleOffset.zw) * rcp(max(stereoScaleOffset.xy, float2(0.0001, 0.0001)));
+#endif
+                return saturate(screenUV);
+            }
+
+            float ResolveHectonComfortBlackAmount(float2 screenUV, float2 positionCS)
+            {
+                float vrComfortEnabled = saturate(_HectonVrComfortSignals.w);
+                float somaticTunnel = saturate(_HectonVRSomaticComfortState.x);
+                float vrComfortTunnel = saturate(max(max(_HectonVrComfortSignals.x, _HectonVrComfortMotion.z) * vrComfortEnabled, max(_HectonTunnelingIntensity, somaticTunnel)));
+                float vrComfortBlackout = saturate(max(_HectonVrComfortSignals.y * vrComfortEnabled, _HectonVRBrownoutIntensity));
+                float2 radial = screenUV * 2.0 - 1.0;
+                radial.x *= _ScreenParams.x * rcp(max(_ScreenParams.y, 1.0));
+                float radialMagnitudeSq = saturate(dot(radial, radial));
+                float tunnelInner = lerp(0.74, 0.34, vrComfortTunnel);
+                float tunnelInnerSq = tunnelInner * tunnelInner;
+                float tunnelMask = saturate((radialMagnitudeSq - tunnelInnerSq) * rcp(max(1.0 - tunnelInnerSq, 0.0009765625))) * vrComfortTunnel;
+                float ign = HectonComfortIgn(floor(positionCS));
+                float tunnelDither = step(ign, saturate(tunnelMask + vrComfortTunnel * 0.0625));
+                float comfortQualityWeight = saturate(_H8GlobalQualityWeight);
+                float ditherFloor = 0.56 - 0.06 * comfortQualityWeight;
+                float ditherCeiling = 0.90 + 0.06 * comfortQualityWeight;
+                float ditheredTunnel = tunnelMask * lerp(ditherFloor, ditherCeiling, tunnelDither);
+                return saturate(max(ditheredTunnel, vrComfortBlackout));
             }
 
             struct Attributes
@@ -52,6 +94,7 @@ Shader "Hecton8/PDA/FrequencyTuningWave"
 
             struct Varyings
             {
+                UNITY_VERTEX_OUTPUT_STEREO
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
                 half4 color : COLOR0;
@@ -60,6 +103,7 @@ Shader "Hecton8/PDA/FrequencyTuningWave"
             Varyings Vert(Attributes input)
             {
                 Varyings output;
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 uint segmentCount = max(1u, (uint)(_HectonFrequencyTuningWaveLayout.x + 0.5));
                 bool playerWave = input.instanceID >= segmentCount;
                 uint segmentIndex = playerWave ? input.instanceID - segmentCount : input.instanceID;
@@ -100,11 +144,16 @@ Shader "Hecton8/PDA/FrequencyTuningWave"
 
             half4 Frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float2 centered = input.uv * 2.0 - 1.0;
                 half sideMask = (half)saturate((1.0 - abs(centered.y)) * 3.5714286);
                 half mask = sideMask;
                 half alpha = input.color.a * mask;
-                return half4(input.color.rgb * (0.72h + mask * 0.55h), alpha);
+                half3 color = input.color.rgb * (0.72h + mask * 0.55h);
+                float2 comfortScreenUV = ResolveHectonComfortEyeStableScreenUV(input.positionCS.xy);
+                float comfortBlackAmount = ResolveHectonComfortBlackAmount(comfortScreenUV, input.positionCS.xy);
+                color = lerp(color, half3(0.0015h, 0.0023h, 0.0031h), (half)comfortBlackAmount);
+                return half4(color, alpha);
             }
             ENDHLSL
         }

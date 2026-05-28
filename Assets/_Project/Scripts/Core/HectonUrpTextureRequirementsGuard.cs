@@ -11,9 +11,28 @@ namespace Hecton8.Core
     /// </summary>
     internal static class HectonUrpTextureRequirementsGuard
     {
+        private enum TextureRequirementPolicy : byte
+        {
+            FullOceanCompatibility = 0,
+            QuestVrMobileSurvival = 1
+        }
+
+        private const string QuestVrUrpAssetName = "URP_Quest_VR";
+        private const int CameraDataCacheCapacity = 32;
+
+        private static TextureRequirementPolicy s_textureRequirementPolicy;
+        private static readonly int[] s_cameraInstanceIdCache = new int[CameraDataCacheCapacity];
+        private static readonly UniversalAdditionalCameraData[] s_cameraDataCache = new UniversalAdditionalCameraData[CameraDataCacheCapacity];
+        private static int s_cameraDataCacheCount;
+        private static int s_cameraDataCacheCursor;
+
+        internal static bool UsesQuestVrMobileSurvivalPolicy =>
+            s_textureRequirementPolicy == TextureRequirementPolicy.QuestVrMobileSurvival;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void EnsureRuntimeRequirements()
         {
+            ResetCameraDataCache();
             ValidateActiveUrpRequirements();
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             SceneManager.sceneLoaded += HandleSceneLoaded;
@@ -23,6 +42,7 @@ namespace Hecton8.Core
 
         private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
+            ResetCameraDataCache();
             ValidateActiveUrpRequirements();
         }
 
@@ -35,15 +55,21 @@ namespace Hecton8.Core
         {
             UniversalRenderPipelineAsset urpAsset = ResolveActiveUrpAsset();
             if (urpAsset == null)
+            {
+                s_textureRequirementPolicy = TextureRequirementPolicy.FullOceanCompatibility;
                 return;
+            }
+
+            s_textureRequirementPolicy = ResolveTextureRequirementPolicy(urpAsset);
+            bool questVrMobileSurvival = UsesQuestVrMobileSurvivalPolicy;
 
             if (!urpAsset.supportsCameraDepthTexture)
                 ReportRuntimeRequirementViolation("Active URP asset has Camera Depth Texture disabled.");
 
-            if (!urpAsset.supportsCameraOpaqueTexture)
+            if (!questVrMobileSurvival && !urpAsset.supportsCameraOpaqueTexture)
                 ReportRuntimeRequirementViolation("Active URP asset has Camera Opaque Texture disabled.");
 
-            if (urpAsset.msaaSampleCount != 1)
+            if (!questVrMobileSurvival && urpAsset.msaaSampleCount != 1)
                 ReportRuntimeRequirementViolation($"Active URP asset uses MSAA {urpAsset.msaaSampleCount}. Ocean parity path expects MSAA disabled.");
 
             ReadOnlySpan<ScriptableRendererData> rendererDataList = urpAsset.rendererDataList;
@@ -63,7 +89,7 @@ namespace Hecton8.Core
             if (camera == null)
                 return;
 
-            if (!camera.TryGetComponent(out UniversalAdditionalCameraData cameraData) ||
+            if (!TryResolveCameraData(camera, out UniversalAdditionalCameraData cameraData) ||
                 cameraData.renderType != CameraRenderType.Base)
             {
                 return;
@@ -72,17 +98,71 @@ namespace Hecton8.Core
             if (cameraData.requiresDepthOption != CameraOverrideOption.On)
                 cameraData.requiresDepthOption = CameraOverrideOption.On;
 
-            if (cameraData.requiresColorOption != CameraOverrideOption.On)
-                cameraData.requiresColorOption = CameraOverrideOption.On;
-
             if (!cameraData.requiresDepthTexture)
                 cameraData.requiresDepthTexture = true;
+
+            if (UsesQuestVrMobileSurvivalPolicy)
+                return;
+
+            if (cameraData.requiresColorOption != CameraOverrideOption.On)
+                cameraData.requiresColorOption = CameraOverrideOption.On;
 
             if (!cameraData.requiresColorTexture)
                 cameraData.requiresColorTexture = true;
 
             if (!cameraData.renderPostProcessing)
                 cameraData.renderPostProcessing = true;
+        }
+
+        private static bool TryResolveCameraData(Camera camera, out UniversalAdditionalCameraData cameraData)
+        {
+            int instanceId = camera.GetInstanceID();
+            for (int index = 0; index < s_cameraDataCacheCount; index++)
+            {
+                if (s_cameraInstanceIdCache[index] != instanceId)
+                    continue;
+
+                cameraData = s_cameraDataCache[index];
+                return cameraData != null;
+            }
+
+            if (!camera.TryGetComponent(out cameraData) || cameraData == null)
+            {
+                StoreCameraDataCacheEntry(instanceId, null);
+                return false;
+            }
+
+            StoreCameraDataCacheEntry(instanceId, cameraData);
+            return true;
+        }
+
+        private static void StoreCameraDataCacheEntry(int instanceId, UniversalAdditionalCameraData cameraData)
+        {
+            if (s_cameraDataCacheCount < CameraDataCacheCapacity)
+            {
+                s_cameraInstanceIdCache[s_cameraDataCacheCount] = instanceId;
+                s_cameraDataCache[s_cameraDataCacheCount] = cameraData;
+                s_cameraDataCacheCount++;
+                return;
+            }
+
+            s_cameraInstanceIdCache[s_cameraDataCacheCursor] = instanceId;
+            s_cameraDataCache[s_cameraDataCacheCursor] = cameraData;
+            s_cameraDataCacheCursor++;
+            if (s_cameraDataCacheCursor >= CameraDataCacheCapacity)
+                s_cameraDataCacheCursor = 0;
+        }
+
+        private static void ResetCameraDataCache()
+        {
+            for (int index = 0; index < s_cameraDataCacheCount; index++)
+            {
+                s_cameraInstanceIdCache[index] = 0;
+                s_cameraDataCache[index] = null;
+            }
+
+            s_cameraDataCacheCount = 0;
+            s_cameraDataCacheCursor = 0;
         }
 
         private static UniversalRenderPipelineAsset ResolveActiveUrpAsset()
@@ -94,6 +174,18 @@ namespace Hecton8.Core
                 return defaultUrpAsset;
 
             return UniversalRenderPipeline.asset;
+        }
+
+        private static TextureRequirementPolicy ResolveTextureRequirementPolicy(UniversalRenderPipelineAsset urpAsset)
+        {
+            if (urpAsset == null)
+                return TextureRequirementPolicy.FullOceanCompatibility;
+
+            string assetName = urpAsset.name;
+            return !string.IsNullOrEmpty(assetName) &&
+                   assetName.IndexOf(QuestVrUrpAssetName, StringComparison.OrdinalIgnoreCase) >= 0
+                ? TextureRequirementPolicy.QuestVrMobileSurvival
+                : TextureRequirementPolicy.FullOceanCompatibility;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

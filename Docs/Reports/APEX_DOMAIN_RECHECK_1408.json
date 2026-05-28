@@ -1,0 +1,209 @@
+{
+  "agentId": "1408",
+  "role": "MAIN_THREAD_SYNCHRONOUS_JOB_BLOCKER_PURGER",
+  "generatedLocalDate": "2026-05-28",
+  "status": "STATIC_PASS_WORLD_RUNTIME_SYNC_CLEAN_THREAT_FLOW_SNAPSHOT_REPAIRED_BUILD_BLOCKED_BY_CONTENTION",
+  "prompt": {
+    "source": "Docs/Tasks/CURRENT_BATCH.md",
+    "agentPromptId": "1408",
+    "extractedBlockLengthBytes": 20153,
+    "taskCount": 20
+  },
+  "domain": {
+    "primary": "Assets/_Project/Scripts/World vegetation residency, vegetation flow-field, abyssal path, and same-owner World runtime async execution",
+    "explicitOutOfDomainRuntimeSyncDebt": {
+      "scan": "rg -n \"\\.Run\\s*\\(|\\.Complete\\s*\\(\" Assets/_Project/Scripts -g \"*.cs\" -g \"!**/Editor/**\" -g \"!**/Tests/**\"",
+      "matches": 69,
+      "files": 27,
+      "firstMatches": [
+        "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs:546: job.Run()",
+        "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:5701: job.Run()",
+        "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs:1906: job.Run()"
+      ]
+    }
+  },
+  "runtimeWorldSyncScan": {
+    "scan": "rg -n \"\\.Run\\s*\\(|\\.Complete\\s*\\(\" Assets/_Project/Scripts/World -g \"*.cs\" -g \"!**/Editor/**\"",
+    "matches": 0
+  },
+  "hiddenCompletionScan": {
+    "readAccessorSyncMatches": 0,
+    "readAccessorScan": "PowerShell declaration/body scanner over TryGet/Get/Resolve/Read methods in assigned runtime files for TryComplete, DispatcherJobSwap/Fence, .Complete, .Run, and .Schedule tokens.",
+    "TryGetVisibleHLODPayload": {
+      "syncTokens": 0,
+      "tokensSearched": ["CompleteHLODCullJob", "TryComplete", ".Complete("]
+    },
+    "RebuildHLODRegistrySnapshot": {
+      "syncTokens": 0,
+      "tokensSearched": ["CompleteHLODCullJob", "TryComplete", ".Complete("]
+    },
+    "dispatcherGate": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs:2847 CompleteHLODCullJob(forceComplete: false)"
+  },
+  "changes": [
+    {
+      "file": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "lines": [79, 257, 269, 273, 429, 457, 491, 560, 570, 579, 605, 1903, 1935, 2287],
+      "summary": "Removed illegal non-forced completion from TryScheduleAbyssalPath, deferred StringPullPathJob readback to CompleteAbyssalPathJob, copied live A* threat grid/voxel plus smoothing voxel/passability inputs into TempJob snapshots, degraded optional smoothing overlays instead of force-completing an in-flight pathSourceHandle, and added continuous quality-scaled smoothing budgets."
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "lines": [675, 722, 727, 788, 1002, 1019, 1033, 1073],
+      "summary": "Copied live VegetationEcosystemThreatGrid DataVault views into TempJob snapshots before scheduling ThreatPropagationJob and BuildAbyssalFlowFieldJob; pending release now owns PreviousThreat and ThreatGridSnapshot."
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "lines": [1865, 1882],
+      "summary": "Extended threat and flow pending structs with NativeArray<float> snapshot ownership fields for cross-frame DataVault-safe job inputs."
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "lines": [1158, 1178],
+      "summary": "Removed hidden non-forced HLOD completion from TryGetVisibleHLODPayload and RebuildHLODRegistrySnapshot; read accessor and SlowTick rebuild path no longer complete jobs outside the dispatcher gate."
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "lines": [1901, 2260],
+      "summary": "Added AbyssalPathPendingJob payload storage and _abyssalPathJob field so async path jobs retain native outputs and copied inputs until the dispatcher completion window."
+    },
+    {
+      "file": "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs",
+      "lines": [16, 54, 63, 67, 78, 128, 138, 139, 148, 164],
+      "summary": "Extended static source-contract tests to cover VegetationNavGridSynchronizer, abyssal path deferred completion, A* threat snapshot ownership, threat/flow current threat grid snapshots, absence of ForceCompleteAbyssalPathDependency, and continuous GlobalQualityWeight budget use."
+    }
+  ],
+  "zeroGcHotPathAudit": {
+    "scanMethod": "PowerShell method-body regex extraction over ScheduleThreatPropagationJob, ScheduleFlowFieldJob, TryScheduleAbyssalPath species overload, completion/release methods, ResolveAbyssalPathQualityBudget, and TryCreateReadOnlyAbyssalPathJobSnapshot.",
+    "results": [
+      {
+        "method": "ScheduleThreatPropagationJob",
+        "newTokens": ["float3", "ThreatPropagationJob", "ThreatPropagationPendingJob", "ThreatVoxelizationJob", "Vector3"],
+        "referenceTypeNewCount": 0,
+        "valueTypeNewCount": 5,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      },
+      {
+        "method": "ScheduleFlowFieldJob",
+        "newTokens": ["BuildAbyssalFlowFieldJob", "float2", "float3", "FlowFieldPendingJob"],
+        "referenceTypeNewCount": 0,
+        "valueTypeNewCount": 4,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      },
+      {
+        "method": "TryScheduleAbyssalPathSpecies",
+        "newTokens": ["AbyssalPathPendingJob", "float3", "int3", "NativeAStarJob", "NativeList<Vector3>", "StringPullPathJob"],
+        "referenceTypeNewCount": 0,
+        "valueTypeNewCount": 6,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      },
+      {
+        "method": "CompleteAbyssalPathJob",
+        "referenceTypeNewCount": 0,
+        "valueTypeNewCount": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      },
+      {
+        "method": "ReleaseAbyssalPathPendingJob",
+        "referenceTypeNewCount": 0,
+        "valueTypeNewCount": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      },
+      {
+        "method": "ResolveAbyssalPathQualityBudget",
+        "referenceTypeNewCount": 0,
+        "valueTypeNewCount": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      },
+      {
+        "method": "TryCreateReadOnlyAbyssalPathJobSnapshot",
+        "referenceTypeNewCount": 0,
+        "valueTypeNewCount": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      }
+    ]
+  },
+  "dataSovereignty": {
+    "migratedNewGlobalDataVaultFields": false,
+    "securedBufferIds": [
+      "BufferID.VegetationAbyssalPathSnapshot",
+      "BufferID.VegetationEcosystemThreatGrid",
+      "BufferID.VegetationEcosystemThreatVoxel",
+      "BufferID.AbyssalPathTelemetryRing"
+    ],
+    "writeLockChecks": [
+      "Assets/_Project/Scripts/World/VegetationMemorySovereigntyRuntime.cs:302 TryAcquireWriteLock in TryAcquireVegetationMemoryBuffer",
+      "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:1967 TryAcquireVegetationMemoryBuffer for BufferID.VegetationAbyssalPathSnapshot",
+      "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:2110 TryAcquireWriteLock for AbyssalPathTelemetryRing"
+    ],
+    "finallyReleases": [
+      "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:2000-2003 pathVault.ReleaseWriteLock in finally",
+      "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:2144-2146 telemetry vault ReleaseWriteLock in finally",
+      "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:1930-1933 ReleaseAbyssalPathPendingJob in CompleteAbyssalPathJob finally"
+    ],
+    "jobLifetimeProtection": "Threat propagation now reads a copied TempJob PreviousThreat snapshot. Flow-field solving now reads a copied TempJob ThreatGridSnapshot. Abyssal A* now reads copied TempJob snapshots for ecosystem threat grid and threat voxels. Abyssal smoothing reads copied TempJob snapshots for nav passability and ecosystem threat voxels. Optional smoothing overlay snapshot failures degrade to default inputs instead of force-completing the in-flight pathSourceHandle."
+  },
+  "structLayoutProof": {
+    "addedStructLayoutOrFieldOffsetTokens": 0,
+    "modifiedExplicitLayoutDtoCount": 0,
+    "newPendingStruct": "AbyssalPathPendingJob is a private pending-state carrier, not a GlobalDataVault DTO, not a NativeArray element, and not a Burst job payload. No ARM64 explicit layout contract was changed."
+  },
+  "scalabilityAndCinematicCheat": {
+    "globalQualityWeightLine": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:576 HomeostasisBrain.GlobalQualityWeight",
+    "continuousBudgetLines": [
+      "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:553-561 portal look-ahead budget",
+      "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:563-572 DDA sample budget",
+      "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs:580-592 lerp/smoothstep quality budget"
+    ],
+    "binaryLowHighSwitchMatches": 0,
+    "cheatProtocol": "Abyssal path smoothing stays a bounded StringPull/DDA visual-navigation approximation. It does not add physical fluid simulation or gameplay truth ownership."
+  },
+  "compilationResourceThrottling": {
+    "dotnetBuildInvocationsThisRecheck": 0,
+    "finalPreflightCpuCounterPercent": 100,
+    "finalPreflightCpuCimPercent": 100,
+    "activeCompilerOrDotnetProcesses": [
+      {
+        "processName": "csc",
+        "pid": 8756,
+        "cpuSeconds": 5.640625
+      },
+      {
+        "processName": "dotnet",
+        "pid": 55080,
+        "cpuSeconds": 524.09375
+      }
+    ],
+    "buildStatus": "NOT_LAUNCHED_BLOCKED_BY_CONTENTION"
+  },
+  "hashes": {
+    "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs": "BBFB5B4533AD8FC489B5F020F35C7C8F5DACAED4D46ED383B8D4F7B34C1BD6C2",
+    "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs": "46BC451FBA753FFEC07213CFE75116C94F112731CD85D97372EE8FCA5A6E00F2",
+    "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs": "C4A21741B3B96160DD17340B5DDE9676DD566556655D21E7DD208B423139DFE1",
+    "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs": "5C7D56DA9222C8E68B4832D0C97783A7237B2680DBF9E43912F9C2683811C758"
+  },
+  "residualRisk": {
+    "compileVerified": false,
+    "unityEditModeTestsExecuted": false,
+    "reason": "Compilation/test execution was blocked by CPU=100% and active dotnet process. Static source-contract tests were added but not executed."
+  }
+}

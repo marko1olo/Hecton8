@@ -60,6 +60,7 @@ Shader "Hecton8/UI/HUDDiegeticProjectionUnlit"
 
             struct Varyings
             {
+                UNITY_VERTEX_OUTPUT_STEREO
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
             };
@@ -81,10 +82,17 @@ Shader "Hecton8/UI/HUDDiegeticProjectionUnlit"
             SAMPLER(sampler_BaseMap);
             TEXTURE2D(_MainTex);
             SAMPLER(sampler_MainTex);
+            float4 _HectonVrComfortSignals;
+            float4 _HectonVrComfortMotion;
+            float4 _HectonVRSomaticComfortState;
+            float _HectonVRBrownoutIntensity;
+            float _HectonTunnelingIntensity;
+            float _H8GlobalQualityWeight;
 
             Varyings Vert(Attributes input)
             {
                 Varyings output;
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
                 output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
                 return output;
@@ -130,8 +138,45 @@ Shader "Hecton8/UI/HUDDiegeticProjectionUnlit"
                 clip(saturate(coverage + _DitherCoverageBias) - threshold);
             }
 
+            float HectonComfortIgn(float2 pixel)
+            {
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
+            float2 ResolveHectonComfortEyeStableScreenUV(float2 positionCS)
+            {
+                float2 screenUV = saturate(positionCS * rcp(max(_ScreenParams.xy, float2(1.0, 1.0))));
+#if defined(UNITY_SINGLE_PASS_STEREO) || defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
+                float4 stereoScaleOffset = unity_StereoScaleOffset[unity_StereoEyeIndex];
+                screenUV = (screenUV - stereoScaleOffset.zw) * rcp(max(stereoScaleOffset.xy, float2(0.0001, 0.0001)));
+#endif
+                return saturate(screenUV);
+            }
+
+            float ResolveHectonComfortBlackAmount(float2 screenUV, float2 positionCS)
+            {
+                float vrComfortEnabled = saturate(_HectonVrComfortSignals.w);
+                float somaticTunnel = saturate(_HectonVRSomaticComfortState.x);
+                float vrComfortTunnel = saturate(max(max(_HectonVrComfortSignals.x, _HectonVrComfortMotion.z) * vrComfortEnabled, max(_HectonTunnelingIntensity, somaticTunnel)));
+                float vrComfortBlackout = saturate(max(_HectonVrComfortSignals.y * vrComfortEnabled, _HectonVRBrownoutIntensity));
+                float2 radial = screenUV * 2.0 - 1.0;
+                radial.x *= _ScreenParams.x * rcp(max(_ScreenParams.y, 1.0));
+                float radialMagnitudeSq = saturate(dot(radial, radial));
+                float tunnelInner = lerp(0.74, 0.34, vrComfortTunnel);
+                float tunnelInnerSq = tunnelInner * tunnelInner;
+                float tunnelMask = saturate((radialMagnitudeSq - tunnelInnerSq) * rcp(max(1.0 - tunnelInnerSq, 0.0009765625))) * vrComfortTunnel;
+                float ign = HectonComfortIgn(floor(positionCS));
+                float tunnelDither = step(ign, saturate(tunnelMask + vrComfortTunnel * 0.0625));
+                float comfortQualityWeight = saturate(_H8GlobalQualityWeight);
+                float ditherFloor = 0.56 - 0.06 * comfortQualityWeight;
+                float ditherCeiling = 0.90 + 0.06 * comfortQualityWeight;
+                float ditheredTunnel = tunnelMask * lerp(ditherFloor, ditherCeiling, tunnelDither);
+                return saturate(max(ditheredTunnel, vrComfortBlackout));
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float2 centerUv = abs(input.uv - 0.5) * 2.0;
                 float edge = max(centerUv.x, centerUv.y);
                 float edgeFade = 1.0 - saturate((edge - (1.0 - _EdgeFade)) * rcp(max(_EdgeFade, 0.0001)));
@@ -143,7 +188,10 @@ Shader "Hecton8/UI/HUDDiegeticProjectionUnlit"
                     float phosphorBit = step(dither, 0.375);
                     float ditherAlpha = saturate((phosphorBit * 0.58 + frameMask * 0.42) * edgeFade * _Color.a);
                     ClipDitheredCoverage(ditherAlpha, input.positionCS.xy);
-                    return half4(0.02h, 0.92h, 0.24h, 1.0h);
+                    float2 fallbackComfortUV = ResolveHectonComfortEyeStableScreenUV(input.positionCS.xy);
+                    float fallbackComfortBlack = ResolveHectonComfortBlackAmount(fallbackComfortUV, input.positionCS.xy);
+                    half3 fallbackColor = lerp(half3(0.02h, 0.92h, 0.24h), half3(0.0015h, 0.0023h, 0.0031h), (half)fallbackComfortBlack);
+                    return half4(fallbackColor, 1.0h);
                 }
 
                 half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
@@ -158,6 +206,9 @@ Shader "Hecton8/UI/HUDDiegeticProjectionUnlit"
                 alpha = max(alpha, frameMask * _FrameAlpha);
 
                 ClipDitheredCoverage(alpha, input.positionCS.xy);
+                float2 comfortScreenUV = ResolveHectonComfortEyeStableScreenUV(input.positionCS.xy);
+                float comfortBlackAmount = ResolveHectonComfortBlackAmount(comfortScreenUV, input.positionCS.xy);
+                color = lerp(color, float3(0.0015, 0.0023, 0.0031), comfortBlackAmount);
                 return half4(color, 1.0h);
             }
             ENDHLSL

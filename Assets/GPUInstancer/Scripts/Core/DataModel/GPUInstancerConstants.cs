@@ -33,8 +33,45 @@ namespace GPUInstancer
 
         #region Platform Dependent
 
-        public static float COMPUTE_SHADER_THREAD_COUNT = 512;
+        public const int COMPUTE_SHADER_THREAD_COUNT_MAX = 256;
+        public const int COMPUTE_SHADER_THREAD_COUNT_2D_MAX = 16;
+
+        public static float COMPUTE_SHADER_THREAD_COUNT = 256;
         public static float COMPUTE_SHADER_THREAD_COUNT_2D = 16;
+
+        public static int GetComputeThreadGroupCount(int elementCount)
+        {
+            return GetThreadGroupCount(elementCount, GetSafeComputeThreadCount(COMPUTE_SHADER_THREAD_COUNT, COMPUTE_SHADER_THREAD_COUNT_MAX));
+        }
+
+        public static int GetComputeThreadGroupCount2D(int elementCount)
+        {
+            return GetThreadGroupCount(elementCount, GetSafeComputeThreadCount(COMPUTE_SHADER_THREAD_COUNT_2D, COMPUTE_SHADER_THREAD_COUNT_2D_MAX));
+        }
+
+        public static int GetComputeThreadGroupCount2D(int elementCount, int frameCount)
+        {
+            int safeFrameCount = frameCount < 1 ? 1 : frameCount;
+            long threadCount = (long)GetSafeComputeThreadCount(COMPUTE_SHADER_THREAD_COUNT_2D, COMPUTE_SHADER_THREAD_COUNT_2D_MAX) * safeFrameCount;
+            return GetThreadGroupCount(elementCount, threadCount);
+        }
+
+        private static int GetSafeComputeThreadCount(float configuredThreadCount, int maxThreadCount)
+        {
+            int threadCount = Mathf.RoundToInt(configuredThreadCount);
+            if (threadCount < 1)
+                return 1;
+            return threadCount > maxThreadCount ? maxThreadCount : threadCount;
+        }
+
+        private static int GetThreadGroupCount(int elementCount, long threadCount)
+        {
+            if (elementCount <= 0 || threadCount <= 0)
+                return 0;
+
+            long groupCount = ((long)elementCount + threadCount - 1) / threadCount;
+            return groupCount > int.MaxValue ? int.MaxValue : (int)groupCount;
+        }
 
         public static int COMPUTE_MAX_LOD_BUFFER = 3;
         public static int TEXTURE_MAX_SIZE = 16384;
@@ -138,6 +175,8 @@ namespace GPUInstancer
         {
             public static readonly int BUFFER_PARAMETER_MANAGED_BUFFER_DATA = Shader.PropertyToID("gpuiManagedData");
             public static readonly int BUFFER_PARAMETER_COMPUTE_BUFFER_START_INDEX = Shader.PropertyToID("computeBufferStartIndex");
+            public static readonly int BUFFER_PARAMETER_COMPUTE_BUFFER_CAPACITY = Shader.PropertyToID("computeBufferCapacity");
+            public static readonly int BUFFER_PARAMETER_MANAGED_BUFFER_CAPACITY = Shader.PropertyToID("managedBufferCapacity");
             public static readonly int BUFFER_PARAMETER_COUNT = Shader.PropertyToID("count");
             public static readonly int BUFFER_PARAMETER_DATA_TO_SET = Shader.PropertyToID("dataToSet");
         }
@@ -222,6 +261,7 @@ namespace GPUInstancer
             public static readonly int DETAIL_UNIQUE_VALUE = Shader.PropertyToID("detailUniqueValue");
             public static readonly int DETAIL_DENSITY = Shader.PropertyToID("detailDensity");
             public static readonly int TERRAIN_NORMAL_EFFECT = Shader.PropertyToID("terrainNormalEffect");
+            public static readonly int INSTANCE_CAPACITY = Shader.PropertyToID("instanceCapacity");
         }
         #endregion CS Grass Instantiation
 
@@ -234,6 +274,9 @@ namespace GPUInstancer
         {
             public static readonly int TREE_DATA = Shader.PropertyToID("treeData");
             public static readonly int TREE_SCALES = Shader.PropertyToID("treeScales");
+            public static readonly int TREE_DATA_LENGTH = Shader.PropertyToID("treeDataLength");
+            public static readonly int TREE_SCALES_LENGTH = Shader.PropertyToID("treeScalesLength");
+            public static readonly int INSTANCE_CAPACITY = Shader.PropertyToID("instanceCapacity");
             public static readonly int TERRAIN_POSITION = Shader.PropertyToID("terrainPosition");
             public static readonly int IS_APPLY_ROTATION = Shader.PropertyToID("isApplyRotation");
             public static readonly int IS_APPLY_TERRAIN_HEIGHT = Shader.PropertyToID("isApplyTerrainHeight");

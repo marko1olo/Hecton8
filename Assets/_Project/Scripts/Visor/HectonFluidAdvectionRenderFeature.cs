@@ -122,11 +122,15 @@ namespace Hecton8.Visor
             if (_pass == null)
                 return;
 
+            IFluidAdvectionRenderGraphDispatchSource engine = _cachedFluidEngine;
+            if (engine == null)
+                return;
+
             CameraType cameraType = renderingData.cameraData.cameraType;
             if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)
                 return;
 
-            _pass.Setup(_cachedFluidEngine);
+            _pass.Setup(engine);
             renderer.EnqueuePass(_pass);
         }
 

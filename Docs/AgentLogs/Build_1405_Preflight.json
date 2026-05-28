@@ -1,0 +1,13 @@
+﻿{
+    "timestamp":  "2026-05-28T03:20:09.2176497+04:00",
+    "cpuLoadPercent":  58,
+    "compilerProcessCount":  1,
+    "compilerProcesses":  [
+                              {
+                                  "ProcessName":  "dotnet",
+                                  "Id":  66860,
+                                  "CPU":  25.96875,
+                                  "StartTime":  "\/Date(1779923985266)\/"
+                              }
+                          ]
+}

@@ -132,7 +132,7 @@ namespace Hecton8.Core
             }
 
             NativeArray<byte> rawBytes = texture.GetRawTextureData<byte>();
-            if (!TryStreamFileIntoRawTexture(matrixPath, rawBytes, MatrixByteCount))
+            if (!TryStreamFileIntoRawTextureCold(matrixPath, rawBytes, MatrixByteCount))
             {
                 UnityEngine.Object.Destroy(texture);
                 return null;
@@ -161,7 +161,7 @@ namespace Hecton8.Core
                 return null;
             }
 
-            if (!TryStreamFileIntoArgb32Fallback(matrixPath, pixels))
+            if (!TryStreamFileIntoArgb32FallbackCold(matrixPath, pixels))
             {
                 UnityEngine.Object.Destroy(texture);
                 return null;
@@ -228,7 +228,7 @@ namespace Hecton8.Core
                     return true;
                 }
 
-                TryDeleteFile(tempPath);
+                TryDeleteFileCold(tempPath);
                 using UnityWebRequest request = new UnityWebRequest(streamingUri, UnityWebRequest.kHttpVerbGET);
                 request.downloadHandler = new DownloadHandlerFile(tempPath)
                 {
@@ -244,7 +244,7 @@ namespace Hecton8.Core
                 if (request.result != UnityWebRequest.Result.Success)
                 {
                     LogStreamingUriFailure(request.error);
-                    TryDeleteFile(tempPath);
+                    TryDeleteFileCold(tempPath);
                     return false;
                 }
 
@@ -252,11 +252,11 @@ namespace Hecton8.Core
                     stagedByteCount != MatrixByteCount)
                 {
                     LogInvalidByteCount(stagedByteCount);
-                    TryDeleteFile(tempPath);
+                    TryDeleteFileCold(tempPath);
                     return false;
                 }
 
-                TryDeleteFile(cachePath);
+                TryDeleteFileCold(cachePath);
                 File.Move(tempPath, cachePath);
                 cachedPath = cachePath;
                 return true;
@@ -264,7 +264,7 @@ namespace Hecton8.Core
             catch (Exception exception)
             {
                 LogLoadException(exception);
-                TryDeleteFile(tempPath);
+                TryDeleteFileCold(tempPath);
                 return false;
             }
         }
@@ -284,7 +284,7 @@ namespace Hecton8.Core
             }
         }
 
-        private static bool TryStreamFileIntoRawTexture(string matrixPath, NativeArray<byte> destination, int byteCount)
+        private static bool TryStreamFileIntoRawTextureCold(string matrixPath, NativeArray<byte> destination, int byteCount)
         {
             if (!destination.IsCreated || destination.Length < byteCount)
             {
@@ -332,7 +332,7 @@ namespace Hecton8.Core
             }
         }
 
-        private static bool TryStreamFileIntoArgb32Fallback(string matrixPath, NativeArray<Color32> pixels)
+        private static bool TryStreamFileIntoArgb32FallbackCold(string matrixPath, NativeArray<Color32> pixels)
         {
             if (!pixels.IsCreated || pixels.Length < MatrixTexelCount)
             {
@@ -429,7 +429,7 @@ namespace Hecton8.Core
 #endif
         }
 
-        private static void TryDeleteFile(string path)
+        private static void TryDeleteFileCold(string path)
         {
             if (string.IsNullOrEmpty(path))
                 return;

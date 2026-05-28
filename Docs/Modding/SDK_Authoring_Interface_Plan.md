@@ -27,11 +27,12 @@ For product-level screens, CLI behavior, package format, graph compiler UX, Work
 
 ## Current Unity Editor Entry Point
 
-The current implemented local entry point is `Hecton/Modding/SDK Hub`.
+The current implemented local entry points are `Hecton/Modding/SDK Hub` and `Hecton/Modding/External Starter Kit Workbench`.
 
-The hub opens:
+The hub prioritizes public authoring:
 
-- `ModBuilderWindow` for current local package output;
+- `ModdingSDK/ExternalStarterKit/` creation/opening for random external authors;
+- one-click access to the External Starter Kit Workbench;
 - `Docs/Modding/README.md`;
 - `Docs/Modding/Mod_API_Specification.md`;
 - `Docs/Modding/SDK_Authoring_Interface_Plan.md`;
@@ -41,15 +42,18 @@ The hub opens:
 - `Docs/Modding/Runtime_Verification_Playbook.md`;
 - local `Mods/` output folder.
 
+The hub still opens `ModBuilderWindow`, but only as an explicitly warned internal legacy package builder. Public authors should not start there.
+
 The repository also contains `ModdingSDK/ExternalStarterKit/` as a versioned public-facing template. The hub can create or refresh missing files in that same folder. This is the current starting point for a random external author who should not copy the whole game Unity project.
-The template reference CSVs are copied from `Docs/Modding/allowed_opcodes.csv` and `Docs/Modding/kernel_tuning_profiles.csv`; the static validator fails if those copies drift. The template also ships JSON Schemas plus `.vscode/settings.json` so schema-aware editors can autocomplete and flag common manifest/graph/table/locale mistakes. `Tools/prepare_mod.ps1` is the one-command no-Unity happy path for copied kits: it sets identity, validates, and builds the review manifest. `Tools/set_mod_identity.ps1` safely writes a canonical mod id, display name, author, and version into both manifests before validation. `Tools/list_allowed_opcodes.ps1` prints the allowed graph opcode aliases and hex tokens from `Reference/allowed_opcodes.csv`, and its `-Json` output is the low-friction route future Workbench/CLI screens can reuse. `Tools/validate_structure.ps1` also checks graph node IDs, required graph opcodes, graph opcode allowlist membership against `Reference/allowed_opcodes.csv`, and graph budget parity with `mod.h8manifest.json`. `Tools/build_review_manifest.ps1` validates the starter folder first and writes `Reports/review_manifest.json` with sorted authoring/tool/schema file paths, byte counts, total bytes, explicit source limits, and SHA-256 hashes for review handoff. It rejects more than `256` source files, any source file over `4194304` bytes, or more than `33554432` total source bytes before hashing.
+`ExternalStarterKitWorkbenchWindow` is the current Unity-integrated facade over that same folder: it reuses the Hub starter generator to create/refresh missing files, shows required starter-file health, edits identity by calling `Tools/set_mod_identity.ps1`, runs starter tools asynchronously, validates/rebuilds review output by calling `Tools/prepare_mod.ps1`, runs `Tools/validate_structure.ps1` directly for fast structure checks, lists graph opcodes through `Tools/list_allowed_opcodes.ps1`, opens the starter manifests/graph/settings/locale/report files, opens the core file/API contracts, shows review manifest freshness, and shows the `Reports/review_manifest.json` identity/file/byte summary. It does not create a second package format or runtime ingress route.
+The template reference CSVs are copied from `Docs/Modding/allowed_opcodes.csv` and `Docs/Modding/kernel_tuning_profiles.csv`; the static validator fails if those copies drift. The template also ships JSON Schemas plus `.vscode/settings.json` so schema-aware editors can autocomplete and flag common manifest/graph/table/locale mistakes. `Tools/prepare_mod.ps1` is the one-command no-Unity happy path for copied kits: with `-Id` it sets identity, validates, and builds the review manifest; without identity arguments it validates the existing manifests and rebuilds the review manifest for the normal edit-review loop. `Tools/set_mod_identity.ps1` safely writes a canonical mod id, display name, author, and semantic version into both manifests before validation. `Tools/list_allowed_opcodes.ps1` prints the allowed graph opcode aliases and hex tokens from `Reference/allowed_opcodes.csv`, and its `-Json` output is the low-friction route Workbench/CLI screens can reuse. `Tools/validate_structure.ps1` also checks graph node IDs, required graph opcodes, graph opcode allowlist membership against `Reference/allowed_opcodes.csv`, graph budget parity with `mod.h8manifest.json`, semantic package versions, and `DisplayName`/`Name`, `Author`, and `Version` parity between the authoring and runtime manifests. `Tools/build_review_manifest.ps1` validates the starter folder first and writes `Reports/review_manifest.json` with package identity, sorted authoring/tool/schema file paths, byte counts, total bytes, explicit source limits, and SHA-256 hashes for review handoff. It rejects more than `256` source files, any source file over `4194304` bytes, or more than `33554432` total source bytes before hashing.
 
 The hub also runs `Docs/Modding/Validate_Mod_API_Static.ps1`. This is source/doc proof only; it is not Unity runtime verification.
 
-Current `ModBuilderWindow` UX constraints:
+Current internal legacy `ModBuilderWindow` UX constraints:
 
 - `OnGUI` validation is shallow so editor repaint does not recursively scan bundle folders or read DLL metadata every frame;
-- `Build Mod` performs the deep bundle asset discovery and managed DLL identity scan;
+- `Build Internal Legacy Package` performs the deep bundle asset discovery and managed DLL identity scan;
 - selected managed DLLs are capped at `32`, matching the loader top-level package DLL cap;
 - duplicate selected DLL file names are rejected before copy;
 - stale output DLL cleanup is bounded and fails with an explicit package-directory cleanup error if the directory is polluted beyond the scan cap.
@@ -103,17 +107,17 @@ ModdingSDK/ExternalStarterKit/
 Public authoring answer:
 
 - no full Unity project is required for manifest, graph, table, locale, and validation authoring;
-- Unity is useful only for advanced asset preview until a standalone Workbench or CLI exists;
-- `mod.h8manifest.json` is the authoring contract for future Workbench/CLI-style tooling;
+- Unity is useful for integrated starter-kit authoring through `Hecton/Modding/External Starter Kit Workbench` and for advanced asset preview;
+- `mod.h8manifest.json` is the authoring contract for Workbench/CLI-style tooling;
 - `mod.json` is the current loader compatibility manifest and keeps `EntryAssembly` and `EntryType` empty under envelope-only runtime;
 - `Reference/allowed_opcodes.csv` is the current envelope opcode allowlist snapshot;
 - `Reference/kernel_tuning_profiles.csv` is editor/simulator reference data only and does not authorize reserved opcodes.
-- `Tools/list_allowed_opcodes.ps1` is a no-Unity graph helper that prints allowed opcode aliases/hex tokens and can emit JSON for future Workbench/CLI reuse.
-- `Tools/validate_structure.ps1` is a no-Unity local validator for required files, JSON parseability, canonical mod/dependency IDs, matching authoring/runtime manifest IDs, envelope-only flags, empty managed entry fields, API version floor, graph opcode allowlist membership, graph budget parity, and reference CSV presence.
-- `Tools/build_review_manifest.ps1` is a no-Unity review manifest builder. It runs the structure validator first and writes `Reports/review_manifest.json` with total bytes and explicit source limits; `Generated/` and `Reports/` are excluded from the hash list so build outputs do not become part of their own proof. It fails before hashing if a copied kit exceeds `256` source files, `4194304` bytes per source file, or `33554432` total source bytes.
-- `Tools/set_mod_identity.ps1` is a no-Unity identity helper. It validates canonical IDs, writes matching identity values to `mod.h8manifest.json` and `mod.json`, then runs the structure validator.
-- `Tools/prepare_mod.ps1` is a one-command no-Unity starter bootstrap. It runs identity setup, structure validation, and review manifest generation in order; it chains local scripts in-process and composes child paths through normalized `Join-Path` segments so authors can use Windows PowerShell or `pwsh` on macOS/Linux.
-- `Schemas/*.schema.json` plus `.vscode/settings.json` are editor assistance only. They do not grant runtime authority, but they make the folder usable in schema-aware editors before any Unity/Workbench step exists. The local validator checks the exact schema URL/fileMatch pairs, not only that the `json.schemas` property exists.
+- `Tools/list_allowed_opcodes.ps1` is a no-Unity graph helper that prints allowed opcode aliases/hex tokens and can emit JSON for Workbench/CLI reuse.
+- `Tools/validate_structure.ps1` is a no-Unity local validator for required files, JSON parseability, canonical mod/dependency IDs, matching authoring/runtime manifest IDs, matching display/name/author/version fields, semantic package versions, envelope-only flags, empty managed entry fields, API version floor, graph opcode allowlist membership, graph budget parity, and reference CSV presence.
+- `Tools/build_review_manifest.ps1` is a no-Unity review manifest builder. It runs the structure validator first and writes `Reports/review_manifest.json` with package identity, total bytes, and explicit source limits; `Generated/` and `Reports/` are excluded from the hash list so build outputs do not become part of their own proof. It fails before hashing if a copied kit exceeds `256` source files, `4194304` bytes per source file, or `33554432` total source bytes.
+- `Tools/set_mod_identity.ps1` is a no-Unity identity helper. It validates canonical IDs, required display/author text, and semantic versions; writes matching identity values to `mod.h8manifest.json` and `mod.json`; then runs the structure validator.
+- `Tools/prepare_mod.ps1` is a one-command no-Unity starter bootstrap and edit-review loop. It runs identity setup only when `-Id` is provided, then validates and builds the review manifest; without identity arguments it validates existing manifests and rebuilds `Reports/review_manifest.json`. It chains local scripts in-process and composes child paths through normalized `Join-Path` segments so authors can use Windows PowerShell or `pwsh` on macOS/Linux.
+- `Schemas/*.schema.json` plus `.vscode/settings.json` are editor assistance only. They do not grant runtime authority, but they keep the folder usable in schema-aware editors even without the Unity Workbench. The local validator checks the exact schema URL/fileMatch pairs, not only that the `json.schemas` property exists.
 
 ## Plain Answer For Modder Interfaces
 
@@ -181,7 +185,7 @@ Rejected packets do not throw. They are counted, written to telemetry, or routed
 
 ### 1. Create Project
 
-The current starter kit and the future Workbench create:
+The current starter kit and the full Workbench target create:
 
 ```text
 MyMod/
@@ -339,7 +343,22 @@ The runtime loader may reject unsigned community packages depending on distribut
 
 Purpose: primary human interface for non-programmer and technical modders.
 
-Required panels:
+Implemented starter-kit workbench panels now:
+
+- package identity fields;
+- required starter-file health;
+- starter kit create/refresh action backed by the Hub generator;
+- starter folder/file open actions;
+- identity apply and validation through the public PowerShell tools;
+- asynchronous starter tool execution so Unity Editor repaint is not blocked by stdout/stderr reads;
+- direct structure validation through `Tools/validate_structure.ps1`;
+- graph opcode discovery;
+- core file/API contract links;
+- review manifest freshness against starter source files;
+- review manifest identity/file/byte summary;
+- explicit envelope-only runtime boundary warning.
+
+Full Workbench target panels:
 
 - project manifest;
 - capabilities;

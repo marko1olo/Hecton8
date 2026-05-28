@@ -13,6 +13,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Data;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Input;
 using Hecton8.UI;
@@ -51,7 +52,7 @@ namespace Hecton.Localization
     /// Runtime owner for Babel localization compatibility and language switching.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class LocalizationManager : MonoBehaviour, IBabelLocalization, ILocalizationTextReadModel, ILocalizationTextExpansionReadModel, ILocalizationLanguageControl, ILocalizationStressPresentationReadModel, ILocalizationMadnessPresentationReadModel, ILocalizationStressHudRefreshSink, IPdaCorrosionPresentationSink, ILocalizationTransientOverrideSink, IDispatcherSystem
+    public sealed class LocalizationManager : MonoBehaviour, IBabelLocalization, ILocalizationTextReadModel, ILocalizationTextExpansionReadModel, ILocalizationLanguageControl, ILocalizationStressPresentationReadModel, ILocalizationMadnessPresentationReadModel, ILocalizationStressHudRefreshSink, IPdaCorrosionPresentationSink, ILocalizationTransientOverrideSink, IGlobalRegistryHotSwapListener, IDispatcherSystem
     {
         private const string AnalyzerTechKeyPrefix = "TECH_";
         private const string AnalyzerPrefabToken = "EnvAnalyzer";
@@ -144,6 +145,7 @@ namespace Hecton.Localization
         private int _pendingBabelSwapState;
         private int _pendingBabelReadFault;
         private bool _registeredBabelDispatcher;
+        private bool _registeredHotSwapListener;
 #if UNITY_EDITOR
         private string _overrideCsvPath;
         private long _overrideCsvLastWriteTicks;
@@ -194,6 +196,8 @@ namespace Hecton.Localization
             if (!TryGetComponent<FontStreamingManager>(out _))
                 gameObject.AddComponent<FontStreamingManager>(); // COLD ALLOC: FontStreamingManager[1] — runtime staged localized font swap owner — owner: LocalizationManager
 
+            LocRegistry.BindBabelVaultCold(GlobalRegistry.DataVault);
+            TryRegisterHotSwapListener();
             LoadLegacyCompatibilityTables();
             RestoreSavedLanguage();
             RefreshRuntimeRegistry();
@@ -202,8 +206,11 @@ namespace Hecton.Localization
 
         private void OnDestroy()
         {
+            bool ownsLocRegistry = ReferenceEquals(ActiveRuntimeInstance, this);
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
+
+            TryUnregisterHotSwapListener();
 
             if (_registeredBabelLocalizationRuntime)
             {
@@ -226,6 +233,8 @@ namespace Hecton.Localization
             LocRegistry.AbortBabelDictionaryStage(in _pendingBabelStage);
             _pendingBabelStage = default;
             Volatile.Write(ref _pendingBabelSwapState, BabelLocaleSwapIdle);
+            if (ownsLocRegistry)
+                LocRegistry.BindBabelVaultCold(null);
         }
 
         /// <summary>
@@ -275,6 +284,12 @@ namespace Hecton.Localization
         public bool TryGetLocalizedBuffer(uint hash, out char[] buffer, out int length)
         {
             return LocRegistry.TryGetVisualBufferFromUtf8(unchecked((int)hash), out buffer, out length);
+        }
+
+        /// <inheritdoc />
+        public bool TryWriteLocalized(uint hash, Span<char> destination, out int length, bool stripRichText = false)
+        {
+            return LocRegistry.TryWriteVisualSpanFromUtf8(hash, destination, out length, stripRichText);
         }
 
         /// <inheritdoc />
@@ -751,6 +766,35 @@ namespace Hecton.Localization
         {
         }
 
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            LocRegistry.BindBabelVaultCold(currentService as IDataVault);
+            RefreshRuntimeRegistry();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
 #if UNITY_EDITOR
         private void PollBabelOverrideCsv(float frameDelta)
         {
@@ -849,7 +893,7 @@ namespace Hecton.Localization
                 await Awaitable.BackgroundThreadAsync();
                 fault = cancellationToken.IsCancellationRequested
                     ? BabelLocaleReadFaultMissing
-                    : ReadBabelDictionaryIntoStage(path, in stage);
+                    : ReadBabelDictionaryIntoStageBackgroundCold(path, in stage);
             }
             catch (Exception)
             {
@@ -988,7 +1032,7 @@ namespace Hecton.Localization
             }
         }
 
-        private static unsafe int ReadBabelDictionaryIntoStage(
+        private static unsafe int ReadBabelDictionaryIntoStageBackgroundCold(
             string path,
             in BabelDictionaryStage stage)
         {
@@ -1002,15 +1046,15 @@ namespace Hecton.Localization
             }
 
 #if HECTON8_BABEL_MMF_AVAILABLE
-            int mmfFault = ReadBabelDictionaryWithMmf(path, in stage);
+            int mmfFault = ReadBabelDictionaryWithMmfBackgroundCold(path, in stage);
             if (mmfFault == BabelLocaleReadFaultNone)
                 return BabelLocaleReadFaultNone;
 #endif
-            return ReadBabelDictionaryWithStream(path, in stage);
+            return ReadBabelDictionaryWithStreamBackgroundCold(path, in stage);
         }
 
 #if HECTON8_BABEL_MMF_AVAILABLE
-        private static unsafe int ReadBabelDictionaryWithMmf(
+        private static unsafe int ReadBabelDictionaryWithMmfBackgroundCold(
             string path,
             in BabelDictionaryStage stage)
         {
@@ -1066,7 +1110,7 @@ namespace Hecton.Localization
         }
 #endif
 
-        private static unsafe int ReadBabelDictionaryWithStream(
+        private static unsafe int ReadBabelDictionaryWithStreamBackgroundCold(
             string path,
             in BabelDictionaryStage stage)
         {

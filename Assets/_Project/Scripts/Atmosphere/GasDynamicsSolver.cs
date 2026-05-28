@@ -1054,11 +1054,7 @@ namespace Hecton8.Atmosphere
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
                     IDataVault nextVault = currentService as IDataVault;
-                    if (!ReferenceEquals(_dataVault, nextVault))
-                    {
-                        DisposeNativeStateDeferred();
-                        _dataVault = nextVault;
-                    }
+                    RebindDataVaultForLifecycle(nextVault);
 
                     if (nextVault != null && isActiveAndEnabled)
                     {
@@ -1155,7 +1151,16 @@ namespace Hecton8.Atmosphere
         {
             _tickDispatcher = GlobalRegistry.TickDispatcher;
             _playerMovementContracts = GlobalRegistry.PlayerMovementContracts;
-            _dataVault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault vault)
+        {
+            if (ReferenceEquals(_dataVault, vault))
+                return;
+
+            DisposeNativeStateDeferred();
+            _dataVault = vault;
         }
 
         private static void ConfigureColdSignalLanes()
@@ -1239,6 +1244,7 @@ namespace Hecton8.Atmosphere
             }
 
             return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.SystemID == (uint)OwnerSystemId &&
                    vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly buffer) &&
                    !vault.IsCompactionFenceActive &&
                    buffer.IsCreated &&
@@ -1252,6 +1258,7 @@ namespace Hecton8.Atmosphere
                 vault.IsCompactionFenceActive ||
                 _stateWriteLockMask == 0u ||
                 handle.BufferID == 0u ||
+                handle.SystemID != (uint)OwnerSystemId ||
                 !vault.TryReadHandle(in handle, out NativeArray<T> buffer) ||
                 vault.IsCompactionFenceActive ||
                 !buffer.IsCreated)
@@ -1273,6 +1280,7 @@ namespace Hecton8.Atmosphere
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
                 handle.BufferID == 0u ||
+                handle.SystemID != (uint)OwnerSystemId ||
                 !vault.TryReadOnlyHandle(in handle, out buffer) ||
                 vault.IsCompactionFenceActive ||
                 !buffer.IsCreated ||
@@ -1368,6 +1376,7 @@ namespace Hecton8.Atmosphere
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
                 handle.BufferID == 0u ||
+                handle.SystemID != (uint)OwnerSystemId ||
                 !vault.TryAcquireWriteLock(in handle, OwnerSystemId, out NativeArray<T> buffer))
             {
                 return false;
@@ -1478,6 +1487,7 @@ namespace Hecton8.Atmosphere
             }
 
             if (handle.BufferID != unchecked((uint)(int)BufferID.GasDynamicsTelemetryRing) ||
+                handle.SystemID != (uint)OwnerSystemId ||
                 !vault.TryReadOnlyHandle(in handle, out NativeArray<GasDynamicsTelemetryEntry>.ReadOnly telemetryRing) ||
                 vault.IsCompactionFenceActive ||
                 !telemetryRing.IsCreated ||
@@ -1497,6 +1507,7 @@ namespace Hecton8.Atmosphere
             return vault != null &&
                    !vault.IsCompactionFenceActive &&
                    _telemetryRingHandle.BufferID == unchecked((uint)(int)BufferID.GasDynamicsTelemetryRing) &&
+                   _telemetryRingHandle.SystemID == (uint)OwnerSystemId &&
                    vault.TryReadOnlyHandle(in _telemetryRingHandle, out NativeArray<GasDynamicsTelemetryEntry>.ReadOnly telemetryRing) &&
                    !vault.IsCompactionFenceActive &&
                    telemetryRing.IsCreated &&
@@ -1510,6 +1521,7 @@ namespace Hecton8.Atmosphere
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
                 _telemetryRingHandle.BufferID != unchecked((uint)(int)BufferID.GasDynamicsTelemetryRing) ||
+                _telemetryRingHandle.SystemID != (uint)OwnerSystemId ||
                 !vault.TryReadOnlyHandle(in _telemetryRingHandle, out telemetryRing) ||
                 vault.IsCompactionFenceActive ||
                 !telemetryRing.IsCreated)
@@ -1531,6 +1543,7 @@ namespace Hecton8.Atmosphere
             if (vault == null ||
                 vault.IsCompactionFenceActive ||
                 _telemetryRingHandle.BufferID != unchecked((uint)(int)BufferID.GasDynamicsTelemetryRing) ||
+                _telemetryRingHandle.SystemID != (uint)OwnerSystemId ||
                 !vault.TryAcquireWriteLock(in _telemetryRingHandle, SystemID.HabitatAtmosphere, out telemetryRing))
             {
                 return false;
@@ -2768,37 +2781,37 @@ namespace Hecton8.Atmosphere
             IDataVault vault = _dataVault;
             if (vault != null)
             {
-                ReleaseGasLane(vault, in _roomO2Handle);
-                ReleaseGasLane(vault, in _roomCO2Handle);
-                ReleaseGasLane(vault, in _roomPressureHandle);
-                ReleaseGasLane(vault, in _roomO2BackHandle);
-                ReleaseGasLane(vault, in _roomCO2BackHandle);
-                ReleaseGasLane(vault, in _roomNitrogenHandle);
-                ReleaseGasLane(vault, in _roomNitrogenBackHandle);
-                ReleaseGasLane(vault, in _roomPressureBackHandle);
-                ReleaseGasLane(vault, in _roomAmbientPressureHandle);
-                ReleaseGasLane(vault, in _roomSubmerged01Handle);
-                ReleaseGasLane(vault, in _roomPlayerStress01Handle);
-                ReleaseGasLane(vault, in _roomPlayerHeartRateBpmHandle);
-                ReleaseGasLane(vault, in _roomTemperatureCelsiusHandle);
-                ReleaseGasLane(vault, in _roomPlayerPresentHandle);
-                ReleaseGasLane(vault, in _roomScrubberPoweredHandle);
-                ReleaseGasLane(vault, in _roomFlagsHandle);
-                ReleaseGasLane(vault, in _roomBaseIndexHandle);
-                ReleaseGasLane(vault, in _baseAwakeStateHandle);
-                ReleaseGasLane(vault, in _basePlayerInsideHandle);
-                ReleaseGasLane(vault, in _basePlayerInsideCountHandle);
-                ReleaseGasLane(vault, in _baseRoomStartHandle);
-                ReleaseGasLane(vault, in _baseRoomCountHandle);
-                ReleaseGasLane(vault, in _baseCenterAupHandle);
-                ReleaseGasLane(vault, in _baseHibernatedUnscaledTimeHandle);
-                ReleaseGasLane(vault, in _baseBatteryWattSecondsHandle);
-                ReleaseGasLane(vault, in _baseIdleDrawWattsHandle);
-                ReleaseGasLane(vault, in _baseLeakRatePerSecondHandle);
-                ReleaseGasLane(vault, in _baseAmbientOxygenKPaHandle);
-                ReleaseGasLane(vault, in _bulkheadRoomAHandle);
-                ReleaseGasLane(vault, in _bulkheadRoomBHandle);
-                ReleaseGasLane(vault, in _bulkheadSealedHandle);
+                ReleaseGasLane(vault, in _roomO2Handle, RoomO2BufferId);
+                ReleaseGasLane(vault, in _roomCO2Handle, RoomCO2BufferId);
+                ReleaseGasLane(vault, in _roomPressureHandle, RoomPressureBufferId);
+                ReleaseGasLane(vault, in _roomO2BackHandle, RoomO2BackBufferId);
+                ReleaseGasLane(vault, in _roomCO2BackHandle, RoomCO2BackBufferId);
+                ReleaseGasLane(vault, in _roomNitrogenHandle, RoomNitrogenBufferId);
+                ReleaseGasLane(vault, in _roomNitrogenBackHandle, RoomNitrogenBackBufferId);
+                ReleaseGasLane(vault, in _roomPressureBackHandle, RoomPressureBackBufferId);
+                ReleaseGasLane(vault, in _roomAmbientPressureHandle, RoomAmbientPressureBufferId);
+                ReleaseGasLane(vault, in _roomSubmerged01Handle, RoomSubmerged01BufferId);
+                ReleaseGasLane(vault, in _roomPlayerStress01Handle, RoomPlayerStress01BufferId);
+                ReleaseGasLane(vault, in _roomPlayerHeartRateBpmHandle, RoomPlayerHeartRateBpmBufferId);
+                ReleaseGasLane(vault, in _roomTemperatureCelsiusHandle, RoomTemperatureCelsiusBufferId);
+                ReleaseGasLane(vault, in _roomPlayerPresentHandle, RoomPlayerPresentBufferId);
+                ReleaseGasLane(vault, in _roomScrubberPoweredHandle, RoomScrubberPoweredBufferId);
+                ReleaseGasLane(vault, in _roomFlagsHandle, RoomFlagsBufferId);
+                ReleaseGasLane(vault, in _roomBaseIndexHandle, RoomBaseIndexBufferId);
+                ReleaseGasLane(vault, in _baseAwakeStateHandle, BufferID.HabitatBaseAwakeState);
+                ReleaseGasLane(vault, in _basePlayerInsideHandle, BasePlayerInsideBufferId);
+                ReleaseGasLane(vault, in _basePlayerInsideCountHandle, BasePlayerInsideCountBufferId);
+                ReleaseGasLane(vault, in _baseRoomStartHandle, BaseRoomStartBufferId);
+                ReleaseGasLane(vault, in _baseRoomCountHandle, BaseRoomCountBufferId);
+                ReleaseGasLane(vault, in _baseCenterAupHandle, BaseCenterAupBufferId);
+                ReleaseGasLane(vault, in _baseHibernatedUnscaledTimeHandle, BaseHibernatedUnscaledTimeBufferId);
+                ReleaseGasLane(vault, in _baseBatteryWattSecondsHandle, BaseBatteryWattSecondsBufferId);
+                ReleaseGasLane(vault, in _baseIdleDrawWattsHandle, BaseIdleDrawWattsBufferId);
+                ReleaseGasLane(vault, in _baseLeakRatePerSecondHandle, BaseLeakRatePerSecondBufferId);
+                ReleaseGasLane(vault, in _baseAmbientOxygenKPaHandle, BaseAmbientOxygenKPaBufferId);
+                ReleaseGasLane(vault, in _bulkheadRoomAHandle, BulkheadRoomABufferId);
+                ReleaseGasLane(vault, in _bulkheadRoomBHandle, BulkheadRoomBBufferId);
+                ReleaseGasLane(vault, in _bulkheadSealedHandle, BulkheadSealedBufferId);
             }
 
             _roomO2Handle = default;
@@ -2834,10 +2847,22 @@ namespace Hecton8.Atmosphere
             _bulkheadSealedHandle = default;
         }
 
-        private static void ReleaseGasLane<T>(IDataVault vault, in VaultGenerationHandle<T> handle) where T : struct
+        private static void ReleaseGasLane<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
         {
-            if (handle.BufferID != 0u)
+            if (IsOwnedGasLane(in handle, bufferId))
                 vault.ReleaseBuffer(in handle);
+        }
+
+        private static bool IsOwnedGasLane<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)OwnerSystemId;
         }
 
         private void ReleaseTelemetryRingBuffer()
@@ -2845,7 +2870,7 @@ namespace Hecton8.Atmosphere
             ReleaseTelemetryRingStepLock();
             IDataVault vault = _dataVault;
             if (vault != null &&
-                _telemetryRingHandle.BufferID == unchecked((uint)(int)BufferID.GasDynamicsTelemetryRing))
+                IsOwnedGasLane(in _telemetryRingHandle, BufferID.GasDynamicsTelemetryRing))
             {
                 vault.ReleaseBuffer(in _telemetryRingHandle);
             }

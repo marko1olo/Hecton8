@@ -1674,3 +1674,239 @@ Verification:
 - PASS: `Docs/Modding/Validate_Mod_API_Static.ps1` schema revision `78`.
 - PASS: `git diff --check`, touched-file whitespace scan, editor C# ASCII scan.
 - DEFERRED: dotnet/Unity compile by resource gate: CPU `97`, active `dotnet.exe` PID `43436`, no Unity lock.
+
+## Pass 55 - Schema 79 Starter Manifest Identity Version Contract
+
+What was wrong:
+- Public starter manifests had one enforced identity route for `Id`, but `DisplayName`/`Name`, `Author`, and `Version` could drift between `mod.h8manifest.json` and `mod.json`.
+- Starter `Version` accepted arbitrary non-empty text, which is not a stable package version contract for public review, future Workbench, or package diff tooling.
+
+What was done:
+- Enforced semantic package versions and identity text parity in the copied starter local tools and SDK Hub generated toolchain.
+- Updated public docs and runtime proof records so external authors see the real no-Unity contract: `Tools/set_mod_identity.ps1`, `Tools/validate_structure.ps1`, semantic versions, and authoring/runtime manifest parity.
+- Regenerated `Reports/review_manifest.json` after restoring generic starter template identity defaults.
+
+Cinematic cheats used:
+- None. This is cold authoring/tooling and documentation. Runtime simulation, rendering, physics, FutureCommandEnvelope layout, and SignalBus lanes are unchanged.
+
+Exact microseconds saved:
+- Runtime: `0 us/frame`.
+- Offline: prevents review/build churn before runtime by rejecting bad versions and manifest drift locally.
+
+Verification:
+- `ModdingSDK/ExternalStarterKit/Tools/validate_structure.ps1` PASS.
+- `ModdingSDK/ExternalStarterKit/Tools/build_review_manifest.ps1` PASS.
+- Temp valid identity probe PASS with parity across both manifests.
+- Temp invalid version probe rejected `bad version`.
+- `Docs/Modding/Validate_Mod_API_Static.ps1` PASS, schema revision `79`, semver/parity/invalid-version flags true.
+- `Signal_Schema.json` parsed schema revision `79`.
+- `Reports/review_manifest.json`: schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, root id `com.example.starter`, `24` files, `39823` total bytes.
+- Stale schema-78 scan: no current-text hits in `Docs/Modding`.
+- `git diff --check`: PASS with line-ending warnings only.
+- Trailing whitespace scan: PASS.
+- Editor C# ASCII scan: PASS.
+- Resource gate before compile: CPU `31`, no active `dotnet/csc/VBCSCompiler/MSBuild`, Unity lockfile absent.
+- `dotnet build Assembly-CSharp.csproj -v:minimal`: PASS, `0 Error(s)`, `19 Warning(s)`. Warnings are pre-existing third-party/demo unused-field and type-conflict warnings under `Assets/Feel/MMTools/Demos/` and `Assets/Candice AI for Games/`.
+- Unity batchmode compile was not run after the successful C# project build.
+
+## Pass 56 - Schema 80 Review Manifest Identity Summary
+
+What was wrong:
+- `Reports/review_manifest.json` proved source hashes but was not self-describing enough for review handoff. It had `RootId`, but not display name, author, semantic version, required API version, or mod priority.
+- Future Workbench/CLI/reviewer flow would need to open both manifests again for basic identity, despite the validator already proving parity.
+
+What was done:
+- Added an `Identity` object to `Tools/build_review_manifest.ps1` output.
+- Updated the SDK Hub generated review-manifest script and starter documentation to describe identity/file/hash reports.
+- Bumped `Signal_Schema.json` to schema revision `80` and extended `Validate_Mod_API_Static.ps1` to prove review manifest identity exists and matches the validated manifests.
+- Regenerated `ModdingSDK/ExternalStarterKit/Reports/review_manifest.json`.
+
+Cinematic cheats used:
+- None. This is cold authoring/report metadata. Runtime simulation, rendering, physics, FutureCommandEnvelope layout, SignalBus lanes, and loader authority are unchanged.
+
+Exact microseconds saved:
+- Runtime: `0 us/frame`.
+- Offline: removes duplicate manifest inspection from review/Workbench/CLI paths; no runtime timing claimed.
+
+Verification:
+- Starter review manifest builder PASS.
+- Starter structure validator PASS.
+- Static validator PASS, schema revision `80`, review identity flags true.
+- Review manifest parsed: `Identity.Id=com.example.starter`, `DisplayName=Starter Mod`, `Author=YourName`, `Version=0.1.0`, `RequiredAPIVersion=2`, `ModPriority=0`, `FileCount=24`, `TotalBytes=40301`.
+- `Signal_Schema.json` parsed schema revision `80`.
+- Stale schema-79 scan: no current-text hits in `Docs/Modding`.
+- `git diff --check`: PASS with line-ending warnings only.
+- Trailing whitespace scan: PASS.
+- Editor C# ASCII scan: PASS.
+- Compile deferred: CPU `96-99`, active `dotnet.exe` PID `33312`; Unity lockfile absent.
+
+## Pass 57 - Schema 81 Public Starter Priority And Legacy Builder Gate
+
+What was wrong:
+- The SDK Hub led with `Open Mod Builder`, while the actual public authoring route is the no-Unity External Starter Kit.
+- `ModBuilderWindow` still exposed a direct top-level `Hecton/Modding/Mod Builder` menu even though DLL/AssetBundle package building is legacy/internal under envelope-only runtime policy.
+
+What was done:
+- Reordered SDK Hub authoring so `Create External Starter Kit` and `Open External Starter Kit` are first.
+- Moved builder access under `Internal Legacy`, added an explicit warning, and required `EditorUtility.DisplayDialog` confirmation before opening it.
+- Moved builder menu to `Hecton/Modding/Internal/Legacy Mod Builder`.
+- Renamed builder title/action/help/log text to internal legacy wording.
+- Updated schema revision 81, static validator, runtime playbook, README, API spec, SDK authoring plan, product blueprint, and loader/save audit.
+
+Cinematic cheats used:
+- UX route fake instead of runtime system expansion: no managed runtime modding reopened, no AssetBundle/localization/PNG ingress enabled, no new package loader behavior.
+
+Exact microseconds saved:
+- Runtime: `0 us/frame`.
+- Offline: prevents public authors from entering legacy runtime packaging as their first SDK action; no runtime timing claimed.
+
+Verification:
+- PASS: `Docs/Modding/Validate_Mod_API_Static.ps1` returned `Status=PASS`, `SchemaRevision=81`, `ModdingSdkHubPrioritizesExternalStarterKit=True`, `ModdingSdkHubGatesLegacyBuilder=True`, `ModBuilderMenuIsInternalLegacy=True`.
+- PASS: scoped `git diff --check` for touched source/docs; line-ending warnings only.
+- PASS: touched-file trailing whitespace scan.
+- PASS: editor C# ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` because CPU was `99` at the compile gate.
+
+## Pass 58 - Schema 82 Prepare Existing Manifest Loop
+
+What was wrong:
+- `Tools/prepare_mod.ps1` was the advertised one-command public path, but it required identity arguments every run.
+- After first setup, random external authors need a plain edit-review command: validate existing manifests and rebuild `Reports/review_manifest.json` without risking identity churn.
+
+What was done:
+- Made `prepare_mod.ps1` two-mode. With `-Id`, it runs identity setup and review generation. Without identity arguments, it validates existing manifests through the review builder and reports package id from the generated review manifest.
+- Rejected partial identity edits without `-Id` so command intent stays explicit.
+- Updated the SDK Hub starter generator, checked-in starter README/tools docs, public modding docs, runtime playbook, `Signal_Schema.json` schema revision 82, and static validator proof.
+- Static validator now proves both prepare modes on a temp copy and records `ExternalStarterKitPrepareToolSupportsExistingManifest=True`.
+
+Cinematic cheats used:
+- UX/tooling shortcut instead of runtime expansion: no managed DLL execution, Harmony/BepInEx path, loose AssetBundle/PNG/localization ingress, or package loader behavior was enabled.
+
+Exact microseconds saved:
+- Runtime: `0 us/frame`.
+- Offline: removes repeated manual identity arguments and separate validate/review commands from the normal edit-review loop; no runtime timing claimed.
+
+Verification:
+- PASS: real starter `prepare_mod.ps1` without `-Id` validated structure, rebuilt `Reports/review_manifest.json`, and reported `com.example.starter`.
+- PASS: `Docs/Modding/Validate_Mod_API_Static.ps1` returned `Status=PASS`, `SchemaRevision=82`, `ExternalStarterKitPrepareToolSupportsExistingManifest=True`.
+- PASS: scoped `git diff --check` for touched source/docs; line-ending warnings only.
+- PASS: touched-file trailing whitespace scan.
+- PASS: editor C# ASCII scan.
+- PASS: stale schema-81 current-text scan found no current revision drift.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` because the latest resource gate still showed CPU `73` and active `dotnet.exe` PID `34196`; the earlier sample showed CPU `100` with active `csc.exe` PID `59224` and active `dotnet.exe` PID `13688`.
+
+## Pass 59 - Schema 83 External Starter Kit Workbench
+
+What was wrong:
+- The public starter kit and no-Unity tools existed, but Unity-side modders had no single cockpit for starter creation/refresh, identity, validation, opcode discovery, file access, and review summary.
+- A direct Workbench menu without create/refresh would still leave first-time users dependent on the SDK Hub generator.
+
+What was done:
+- Added `ExternalStarterKitWorkbenchWindow` at `Hecton/Modding/External Starter Kit Workbench`.
+- Integrated SDK Hub public authoring with an `Open Starter Kit Workbench` action.
+- Reused `ModdingSdkHubWindow.CreateExternalStarterKit()` from the Workbench, so starter generation has one source of truth.
+- Routed Workbench identity edits through `Tools/set_mod_identity.ps1`, validation/review through `Tools/prepare_mod.ps1`, opcode discovery through `Tools/list_allowed_opcodes.ps1`, and review display through `Reports/review_manifest.json`.
+- Updated schema revision 83, static validator, runtime playbook, README, API spec, authoring plan, product blueprint, starter file contract, starter README, and review manifest.
+
+Cinematic cheats used:
+- Editor UX/workflow consolidation instead of runtime expansion. No managed DLL execution, Harmony/BepInEx patching, loose AssetBundle/PNG/localization runtime ingress, loader bypass, or hot-path event route was enabled.
+
+Exact microseconds saved:
+- Runtime: `0 us/frame`.
+- Offline: removes file explorer/script/docs jumping for Unity-side authors; no runtime timing claimed.
+
+Verification:
+- PASS: `ModdingSDK/ExternalStarterKit/Tools/prepare_mod.ps1` validated structure, rebuilt `Reports/review_manifest.json`, and reported `com.example.starter`.
+- PASS: `Reports/review_manifest.json` parsed with schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, root id `com.example.starter`, `24` files, `41781` total bytes.
+- PASS: `Docs/Modding/Validate_Mod_API_Static.ps1` returned `Status=PASS`, `SchemaRevision=83`, `ModdingSdkHubOpensStarterWorkbench=True`, `ExternalStarterKitWorkbenchPresent=True`, `ExternalStarterKitWorkbenchCanRefreshStarterKit=True`, `ExternalStarterKitWorkbenchUsesIdentityTool=True`, `ExternalStarterKitWorkbenchUsesPrepareTool=True`, `ExternalStarterKitWorkbenchListsOpcodes=True`, `ExternalStarterKitWorkbenchShowsReviewSummary=True`, and `ExternalStarterKitWorkbenchShowsEnvelopeBoundary=True`.
+- PASS: `Signal_Schema.json` parsed at schema revision 83 with matching Workbench flags.
+- PASS: scoped `git diff --check`; line-ending warnings only.
+- PASS: touched-file trailing whitespace scan and editor C# ASCII scan.
+- PASS: stale schema-82/future-Workbench text scan found no blocked stale text.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` because the latest resource gate showed CPU `100` and active `dotnet.exe` PID `16780`; an earlier sample showed active `dotnet.exe` PID `53704`.
+
+## Pass 60 - Schema 84 Workbench Starter Health
+
+What was wrong:
+- The new Workbench could run prepare/review tools, but it did not show whether the copied starter kit was structurally complete before a user ran a script.
+- The fastest validation route, `Tools/validate_structure.ps1`, was not exposed directly from the Workbench.
+- Core contract discovery still depended on the SDK Hub or docs navigation instead of the active starter-kit screen.
+
+What was done:
+- Added a required starter-file health panel to `ExternalStarterKitWorkbenchWindow`.
+- Health now counts required files, missing files, total bytes, newest starter write time, and lists `OK`/`MISSING` per required file.
+- Added a `Validate Structure Only` action that calls `Tools/validate_structure.ps1`.
+- Added Workbench buttons for the external starter file contract, API spec, authoring plan, and runtime playbook.
+- Updated schema revision 84, static validator, runtime playbook, README, API spec, SDK authoring plan, product blueprint, starter file contract, starter README, and regenerated `Reports/review_manifest.json`.
+
+Cinematic cheats used:
+- Editor-facing health summary and direct script reuse instead of a second validator or runtime feature expansion. No managed DLL execution, Harmony/BepInEx patching, loose AssetBundle/PNG/localization runtime ingress, loader bypass, or hot-path event route was enabled.
+
+Exact microseconds saved:
+- Runtime: `0 us/frame`.
+- Offline: catches missing starter files and structure errors before review handoff; no runtime timing claimed.
+
+Verification:
+- PASS: `ModdingSDK/ExternalStarterKit/Tools/prepare_mod.ps1` validated structure, rebuilt `Reports/review_manifest.json`, and reported `com.example.starter`.
+- PASS: `Reports/review_manifest.json` parsed with schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, root id `com.example.starter`, `24` files, `41843` total bytes.
+- PASS: `Docs/Modding/Validate_Mod_API_Static.ps1` returned `Status=PASS`, `SchemaRevision=84`, `ExternalStarterKitWorkbenchShowsStarterHealth=True`, `ExternalStarterKitWorkbenchRunsStructureValidator=True`, and `ExternalStarterKitWorkbenchLinksCoreDocs=True`.
+- PASS: `Signal_Schema.json` parsed at schema revision 84.
+- PASS: scoped `git diff --check`; line-ending warnings only.
+- PASS: touched-file trailing whitespace scan and editor C# ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` because the resource gate showed CPU `100` and active `dotnet.exe` PID `55080`; no `Temp/UnityLockfile` was present.
+
+## Pass 61 - Schema 85 Workbench Async Tool Runner
+
+What was wrong:
+- `ExternalStarterKitWorkbenchWindow` launched public starter tools synchronously from the EditorWindow path.
+- It read stdout and stderr with blocking `ReadToEnd` and then called `WaitForExit`, so the Unity Editor could freeze during validation and the process could deadlock if output pipes filled.
+
+What was done:
+- Replaced blocking process waits with an async Editor-only runner.
+- The Workbench now starts PowerShell/pwsh tools, reads stdout/stderr via `BeginOutputReadLine` and `BeginErrorReadLine`, disables Workbench action buttons while a tool is active, and finalizes summary/reload through `EditorApplication.update`.
+- Static validator now rejects regressions to `StandardOutput.ReadToEnd` or `WaitForExit`.
+- Updated schema revision 85, runtime playbook, README, API spec, SDK authoring plan, product blueprint, starter file contract, starter README, and regenerated `Reports/review_manifest.json`.
+
+Cinematic cheats used:
+- Editor responsiveness fix through async process IO instead of a runtime feature. No managed DLL execution, Harmony/BepInEx patching, loose AssetBundle/PNG/localization runtime ingress, loader bypass, or hot-path event route was enabled.
+
+Exact microseconds saved:
+- Runtime: `0 us/frame`.
+- Editor/offline: removes blocking process waits from the Workbench path; no runtime timing claimed.
+
+Verification:
+- PASS: `ModdingSDK/ExternalStarterKit/Tools/prepare_mod.ps1` validated structure, rebuilt `Reports/review_manifest.json`, and reported `com.example.starter`.
+- PASS: `Reports/review_manifest.json` parsed with schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, root id `com.example.starter`, `24` files, `41858` total bytes.
+- PASS: `Docs/Modding/Validate_Mod_API_Static.ps1` returned `Status=PASS`, `SchemaRevision=85`, and `ExternalStarterKitWorkbenchRunsToolsAsync=True`.
+- PASS: `Signal_Schema.json` parsed at schema revision 85.
+- PASS: source scan found `BeginOutputReadLine`, `BeginErrorReadLine`, and `EditorApplication.update` in `ExternalStarterKitWorkbenchWindow.cs`, with no remaining `ReadToEnd` or `WaitForExit`.
+- PASS: scoped `git diff --check`; line-ending warnings only.
+- PASS: touched-file trailing whitespace scan and editor C# ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` because the resource gate showed CPU `100`, active `dotnet.exe` PID `55080`, and active `csc.exe` PID `8756`; no `Temp/UnityLockfile` was present.
+
+## Pass 62 - Schema 86 Workbench Review Freshness
+
+What was wrong:
+- The Workbench showed `Reports/review_manifest.json`, but did not say whether the report was stale after graph/table/locale/source edits.
+- A modder could submit an old review report while the Workbench still displayed a valid-looking summary.
+
+What was done:
+- Added `Review Freshness` to `ExternalStarterKitWorkbenchWindow`.
+- The Workbench compares report write time against the newest starter source file, excludes `Generated/` and `Reports/`, caps the scan at `512` source files, and warns on stale or capped freshness checks.
+- Updated schema revision 86, static validator, runtime playbook, README, API spec, SDK authoring plan, product blueprint, starter file contract, starter README, and regenerated `Reports/review_manifest.json`.
+
+Cinematic cheats used:
+- Timestamp-based editor freshness check instead of eager per-reload hashing. The review builder remains the hash authority; runtime remains envelope-only.
+
+Exact microseconds saved:
+- Runtime: `0 us/frame`.
+- Editor/offline: avoids stale review handoff without hashing every starter source file on every repaint; no runtime timing claimed.
+
+Verification:
+- PASS: `ModdingSDK/ExternalStarterKit/Tools/prepare_mod.ps1` validated structure, rebuilt `Reports/review_manifest.json`, and reported `com.example.starter`.
+- PASS: `Reports/review_manifest.json` parsed with schema `hecton8.external_review_manifest.v1`, runtime `envelope-only`, root id `com.example.starter`, `24` files, `41885` total bytes.
+- PASS: `Docs/Modding/Validate_Mod_API_Static.ps1` returned `Status=PASS`, `SchemaRevision=86`, and `ExternalStarterKitWorkbenchShowsReviewFreshness=True`.
+- PASS: `Signal_Schema.json` parsed at schema revision 86.
+- PASS: scoped `git diff --check`; line-ending warnings only.
+- PASS: touched-file trailing whitespace scan and editor C# ASCII scan.
+- DEFERRED: `dotnet build Assembly-CSharp.csproj -v:minimal` because the resource gate showed CPU `100` and active `dotnet.exe` PID `29008`; no `Temp/UnityLockfile` was present.

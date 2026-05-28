@@ -140,3 +140,11 @@ Solution: Add generated velocity fields under `previous_snapshot_delta.velocity`
 Rejected Alternatives: Reporting velocity only in chat was rejected because it would be unreproducible after the next JSONL write. Dividing by all-time LOC was rejected for velocity because it hides the current window's code-growth burn-rate.
 Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected; future audits can compare production cadence windows without rebuilding spreadsheet logic.
 Hardware Impact: 0 us runtime gain.
+
+## Decision 26 - 2026-05-28 fast refresh and dashboard surfaces
+
+Problem: Full all-time token replay exceeded 20 minutes after the overnight agent/file surge, while the operator requested fresh stats, charts, and commit/push in the same pass.
+Solution: Kill only the orphaned token-audit process, add `CodexTokenUsageFastRefresh_20260528.py`, and produce the 2026-05-28 token report from the last full snapshot plus post-cutoff positive JSONL deltas. Add `ProjectMetricsDashboard_20260528.py` to generate 29 chart PNGs and a Markdown/JSON dashboard from token, git, and filesystem metrics.
+Rejected Alternatives: Starting a second full replay was rejected because it would double disk/CPU pressure. Reporting stale 2026-05-27 totals was rejected because new JSONL deltas were available. Token-only charts were rejected because the request explicitly asked for broader project metrics.
+Scalability potential: Low/Middle/High/Ultra runtime tiers are unaffected. The audit path now scales under heavy parallel-agent churn while still preserving the slower full snapshot path for later exact rebaseline.
+Hardware Impact: 0 us runtime gain. Audit wall time reduced from >20 minutes stalled to about 3 minutes for token fast refresh and about 5.5 minutes for chart generation.

@@ -1,0 +1,18 @@
+﻿Agent 1415 initializer/size-reference audit generated 2026-05-28T00:42:37Z
+Materialized structs: 38
+SizeOf references to materialized structs: 12
+Assets\_Project\Scripts\SaveManager.cs:2862: writer.Write(UnsafeUtility.SizeOf<AsyncPersistenceTelemetryEntry>());
+Assets\_Project\Scripts\Construction\FluidPipeGraphTypes.cs:216: UnsafeUtility.SizeOf<FluidPipeTelemetryEntry>() != 64)
+Assets\_Project\Scripts\Core\HomeostasisBrain.ScalabilityDictator.cs:1461: ((long)ScalabilityTelemetryCapacity * UnsafeUtility.SizeOf<ScalabilityTelemetryEntry>()) +
+Assets\_Project\Scripts\Core\HomeostasisBrain.ScalabilityDictator.cs:1965: UnsafeUtility.SizeOf<ScalabilityTelemetryEntry>() == 64 &&
+Assets\_Project\Scripts\World\EcosystemDirector.cs:5325: int entrySize = UnsafeUtility.SizeOf<MacroSwarmTelemetryEntry>();
+Assets\_Project\Scripts\World\EcosystemDirector.cs:5562: int entrySize = UnsafeUtility.SizeOf<FaunaMutationTelemetryEntry>();
+Assets\_Project\Scripts\World\EcosystemDirector.cs:6458: int entrySize = UnsafeUtility.SizeOf<BiomassTelemetryEntry>();
+Assets\_Project\Scripts\World\FloraAmbientSway\FloraAmbientSwayRuntime.cs:695: telemetrySize = UnsafeUtility.SizeOf<SwayTelemetryEntry>();
+Assets\_Project\Scripts\World\Resources\WorldRegrowthSimulation.cs:630: int entryBytes = UnsafeUtility.SizeOf<WorldRegrowthTelemetryEntry>();
+Assets\_Project\Scripts\VFX\Bioluminescence\BiolumPulseSyncRuntime.cs:1277: if (UnsafeUtility.SizeOf<BiolumPulseTelemetryEntry>() != 64)
+Assets\_Project\Scripts\Graphics\Scalability\ThermalDynamicResolutionAdapter.cs:2045: return UnsafeUtility.SizeOf<DrsTelemetryEntry>() == DrsTelemetryEntryBytes &&
+Assets\_Project\Scripts\AI\Pathfinding\PathFunnelNavmeshRuntime.cs:1036: int byteCount = UnsafeUtility.SizeOf<PathFunnelTelemetryEntry>() * ResolveTelemetryRingLength(telemetry);
+
+Stale non-64 size comparisons against materialized structs: 0
+Stale known dump constants: 0

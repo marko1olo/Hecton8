@@ -1,0 +1,127 @@
+{
+  "agent": "1410",
+  "generatedAtUtc": "2026-05-28T01:23:14.531095+00:00",
+  "scanner": "anchored method declaration parser + same-file root call-token traversal; comments/strings masked",
+  "scope": "Assets/_Project/Scripts/**/*.cs",
+  "filesScanned": 2455,
+  "methodCount": 74942,
+  "rootMethodCount": 1751,
+  "elapsedMicroseconds": 247460347,
+  "runtimeMagicMethodCount": 0,
+  "editorMagicMethodCount": 16,
+  "runtimeMagicMethods": [],
+  "editorMagicMethods": [
+    {
+      "file": "Assets/_Project/Scripts/AI/Cognition/Editor/AIAnxietyTunerWindow.cs",
+      "method": "Update",
+      "line": 112
+    },
+    {
+      "file": "Assets/_Project/Scripts/AI/Cognition/Editor/CognitionUtilityTunerWindow.cs",
+      "method": "Update",
+      "line": 185
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/FloraDearLieXRayWindow.cs",
+      "method": "Update",
+      "line": 65
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/SubmarineDynoTunerWindow.cs",
+      "method": "Update",
+      "line": 81
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/SumpPumpPipeGridTunerWindow.cs",
+      "method": "Update",
+      "line": 73
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/VerletTowTunerWindow.cs",
+      "method": "Update",
+      "line": 86
+    },
+    {
+      "file": "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalWaveTunerWindow.Editor.cs",
+      "method": "Update",
+      "line": 117
+    },
+    {
+      "file": "Assets/_Project/Scripts/Physics/Buoyancy/Editor/PhysicsSleepStateXRayWindow.cs",
+      "method": "Update",
+      "line": 65
+    },
+    {
+      "file": "Assets/_Project/Scripts/Physics/KCC/Editor/HydrodynamicKccTunerWindow.cs",
+      "method": "Update",
+      "line": 83
+    },
+    {
+      "file": "Assets/_Project/Scripts/Physics/Seaglide/Editor/SeaglideHydrodynamicsEditorTools.cs",
+      "method": "Update",
+      "line": 109
+    },
+    {
+      "file": "Assets/_Project/Scripts/Physiology/Editor/HaldaneanDecompressionTunerWindow.cs",
+      "method": "Update",
+      "line": 43
+    },
+    {
+      "file": "Assets/_Project/Scripts/Rendering/WaterOptics/Editor/AbyssalOpticsTunerWindow.cs",
+      "method": "Update",
+      "line": 139
+    },
+    {
+      "file": "Assets/_Project/Scripts/SaveSystem/Editor/EntitySaveTunerWindow.cs",
+      "method": "Update",
+      "line": 108
+    },
+    {
+      "file": "Assets/_Project/Scripts/SaveSystem/Editor/VoxelSaveTunerWindow.cs",
+      "method": "Update",
+      "line": 81
+    },
+    {
+      "file": "Assets/_Project/Scripts/SaveSystem/Editor/WalSaveFuzzerWindow_SHINOBU357.cs",
+      "method": "Update",
+      "line": 109
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/OfflineHadalTrenchBaker/Editor/HadalTrenchBakePipeline.cs",
+      "method": "Update",
+      "line": 352
+    }
+  ],
+  "presentationFindingCount": 0,
+  "presentationFindings": [],
+  "readbackCandidateCount": 2,
+  "confirmedReadbackFindingCount": 0,
+  "readbackFindings": [
+    {
+      "root": "Execute",
+      "rootLine": 804,
+      "file": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "method": "IsVisibleInDarkness",
+      "line": 4577,
+      "token": "Shader.GetGlobal",
+      "classification": "FALSE_POSITIVE_OVERLOAD_CHAIN_TOKEN_TRAVERSAL",
+      "manualEvidence": "Execute line 804 calls IsVisibleInDarkness(float3) line 867; outer IsVisibleInDarkness(Vector3) line 4577 and ResolveBiolumIntensityScalar line 3221 are not called by that Burst job body."
+    },
+    {
+      "root": "Execute",
+      "rootLine": 804,
+      "file": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "method": "ResolveBiolumIntensityScalar",
+      "line": 3221,
+      "token": "Shader.GetGlobal",
+      "classification": "FALSE_POSITIVE_OVERLOAD_CHAIN_TOKEN_TRAVERSAL",
+      "manualEvidence": "Execute line 804 calls IsVisibleInDarkness(float3) line 867; outer IsVisibleInDarkness(Vector3) line 4577 and ResolveBiolumIntensityScalar line 3221 are not called by that Burst job body."
+    }
+  ],
+  "apexDirectRootCandidateCount": 0,
+  "apexDirectRootCandidates": [],
+  "knownLimitations": [
+    "Same-file token traversal cannot infer overload argument types; HectonIndirectVegetationRenderer.IsVisibleInDarkness(float3) vs Vector3 is manually classified."
+  ],
+  "manualReadbackClassificationUtc": "2026-05-28T01:25:00.681787+00:00"
+}

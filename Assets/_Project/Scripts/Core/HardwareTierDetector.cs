@@ -25,121 +25,44 @@ namespace Hecton8.Core
         private static bool _isSharedMemoryArchitecture;
         private static bool _allowComputeCulling;
         private static bool _allowHighResourceComputeShaders;
-        private static int _recommendedVramBudgetMegabytes;
+        private static int _recommendedVramBudgetMegabytes = DefaultVramBudgetMegabytes;
         private static GraphicsDeviceType _graphicsDeviceType;
 
         /// <summary>True when the active backend is Direct3D11 and must not use compute-first culling.</summary>
-        public static bool IsLegacyDirect3D11
-        {
-            get
-            {
-                EnsureInitialized();
-                return _isLegacyDirect3D11;
-            }
-        }
+        public static bool IsLegacyDirect3D11 => _isLegacyDirect3D11;
 
         /// <summary>True when the active backend is Direct3D12.</summary>
-        public static bool IsDirect3D12
-        {
-            get
-            {
-                EnsureInitialized();
-                return _isDirect3D12;
-            }
-        }
+        public static bool IsDirect3D12 => _isDirect3D12;
 
         /// <summary>True when the active backend is Vulkan.</summary>
-        public static bool IsVulkan
-        {
-            get
-            {
-                EnsureInitialized();
-                return _isVulkan;
-            }
-        }
+        public static bool IsVulkan => _isVulkan;
 
         /// <summary>True when the active backend is Metal.</summary>
-        public static bool IsMetal
-        {
-            get
-            {
-                EnsureInitialized();
-                return _isMetal;
-            }
-        }
+        public static bool IsMetal => _isMetal;
 
         /// <summary>True for Steam Deck or a Linux handheld signature close enough to use Deck limits.</summary>
-        public static bool IsSteamDeckLike
-        {
-            get
-            {
-                EnsureInitialized();
-                return _isSteamDeckLike;
-            }
-        }
+        public static bool IsSteamDeckLike => _isSteamDeckLike;
 
         /// <summary>True for Meta Quest 3 signatures that should use the generated Quest 3 profile.</summary>
-        public static bool IsQuest3Like
-        {
-            get
-            {
-                EnsureInitialized();
-                return _isQuest3Like;
-            }
-        }
+        public static bool IsQuest3Like => _isQuest3Like;
 
         /// <summary>True when RAM and VRAM must be treated as a shared pressure pool.</summary>
-        public static bool SharedMemoryModeActive
-        {
-            get
-            {
-                EnsureInitialized();
-                return _isSharedMemoryArchitecture;
-            }
-        }
+        public static bool SharedMemoryModeActive => _isSharedMemoryArchitecture;
 
         /// <summary>True when compute culling is allowed by backend and platform policy.</summary>
-        public static bool AllowComputeCulling
-        {
-            get
-            {
-                EnsureInitialized();
-                return _allowComputeCulling;
-            }
-        }
+        public static bool AllowComputeCulling => _allowComputeCulling;
 
         /// <summary>True when compute is supported on a desktop/proven backend above mobile resource-risk lanes.</summary>
-        public static bool AllowHighResourceComputeShaders
-        {
-            get
-            {
-                EnsureInitialized();
-                return _allowHighResourceComputeShaders;
-            }
-        }
+        public static bool AllowHighResourceComputeShaders => _allowHighResourceComputeShaders;
 
         /// <summary>Recommended runtime VRAM budget after shared-memory clamps.</summary>
-        public static int RecommendedVramBudgetMegabytes
-        {
-            get
-            {
-                EnsureInitialized();
-                return _recommendedVramBudgetMegabytes;
-            }
-        }
+        public static int RecommendedVramBudgetMegabytes => _recommendedVramBudgetMegabytes;
 
         /// <summary>Recommended runtime VRAM budget in bytes after shared-memory clamps.</summary>
-        public static long RecommendedVramBudgetBytes => (long)RecommendedVramBudgetMegabytes << 20;
+        public static long RecommendedVramBudgetBytes => (long)_recommendedVramBudgetMegabytes << 20;
 
         /// <summary>Active graphics backend captured from Unity.</summary>
-        public static GraphicsDeviceType ActiveGraphicsDeviceType
-        {
-            get
-            {
-                EnsureInitialized();
-                return _graphicsDeviceType;
-            }
-        }
+        public static GraphicsDeviceType ActiveGraphicsDeviceType => _graphicsDeviceType;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()

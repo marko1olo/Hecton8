@@ -21,6 +21,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 using BrineLayerSample = Hecton8.Core.Contracts.BrineLayerSample;
 using SignalAudioEvent = Hecton8.Core.Contracts.Signals.AudioEvent;
 
@@ -393,7 +394,8 @@ namespace Hecton8.Physics
 
         [Header("-- Payload Buoyancy --")]
         [Tooltip("When true, consumes typed inventory change signals and mirrors the latest cargo mass scalar into submarine buoyancy.")]
-        [SerializeField] private bool syncCargoMassFromInventorySignals = true;
+        [SerializeField, FormerlySerializedAs("syncCargoMassFromInventoryEvents")]
+        private bool syncCargoMassFromInventorySignals = true;
 
         [Tooltip("Maximum cargo mass that can affect buoyancy and draft.")]
         [SerializeField, Min(0f)] private float maxCargoMassKilograms = DefaultMaxCargoMassKilograms;

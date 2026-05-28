@@ -1,4 +1,5 @@
 using System.Collections;
+#pragma warning disable CS0649
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -98,3 +99,4 @@ public class UIFade : MonoBehaviour
     }
 
 }
+#pragma warning restore CS0649

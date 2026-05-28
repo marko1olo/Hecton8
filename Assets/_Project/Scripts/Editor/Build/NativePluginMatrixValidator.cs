@@ -20,6 +20,12 @@ namespace Hecton8.Editor.Build
         private const string AudioKernelNativeSourcePath = "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp";
         private const string AudioKernelNativeBuildScriptPath = "NativeAudio/HectonSensoryKernel/BuildHectonSensoryKernel.bat";
         private const string AudioKernelNativeAndroidBuildScriptPath = "NativeAudio/HectonSensoryKernel/BuildHectonSensoryKernelAndroid.bat";
+        private const string DataMonolithArenaPath = "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs";
+        private const string DataMonolithAndroidNativeSourcePath = "Assets/Plugins/Android/Native/HectonAndroidAssetBridge.cpp";
+        private const string DataMonolithAndroidCmakePath = "Assets/Plugins/Android/Native/CMakeLists.txt";
+        private const string AndroidMainGradleTemplatePath = "Assets/Plugins/Android/mainTemplate.gradle";
+        private const string AndroidManifestPath = "Assets/Plugins/Android/AndroidManifest.xml";
+        private const string ProjectSettingsPath = "ProjectSettings/ProjectSettings.asset";
 
         public int callbackOrder => -4640;
 
@@ -124,6 +130,7 @@ namespace Hecton8.Editor.Build
                         target,
                         blockers,
                         ref blockerCount);
+                    RequireAndroidDataMonolithBridgeSourceRoute(blockers, ref blockerCount);
                     break;
                 }
             }
@@ -330,6 +337,139 @@ namespace Hecton8.Editor.Build
                 .Append(referenceTimestamp.ToString("O"))
                 .Append(". Rebuild native plugin before player build.")
                 .Append('\n');
+        }
+
+        private static void RequireAndroidDataMonolithBridgeSourceRoute(StringBuilder blockers, ref int blockerCount)
+        {
+            if (!AssetFileExists(DataMonolithAndroidNativeSourcePath))
+            {
+                AppendMissingSourceRouteBlocker(blockers, ref blockerCount, "Data Monolith Android AAsset native source", DataMonolithAndroidNativeSourcePath);
+                return;
+            }
+
+            if (!AssetFileExists(DataMonolithArenaPath))
+            {
+                AppendMissingSourceRouteBlocker(blockers, ref blockerCount, "Data Monolith C# arena binding", DataMonolithArenaPath);
+                return;
+            }
+
+            if (!AssetFileExists(DataMonolithAndroidCmakePath))
+            {
+                AppendMissingSourceRouteBlocker(blockers, ref blockerCount, "Data Monolith Android CMake build script", DataMonolithAndroidCmakePath);
+                return;
+            }
+
+            if (!AssetFileExists(AndroidMainGradleTemplatePath))
+            {
+                AppendMissingSourceRouteBlocker(blockers, ref blockerCount, "Android main Gradle template", AndroidMainGradleTemplatePath);
+                return;
+            }
+
+            if (!AssetFileExists(AndroidManifestPath))
+            {
+                AppendMissingSourceRouteBlocker(blockers, ref blockerCount, "Android main manifest", AndroidManifestPath);
+                return;
+            }
+
+            if (!AssetFileExists(ProjectSettingsPath))
+            {
+                AppendMissingSourceRouteBlocker(blockers, ref blockerCount, "ProjectSettings Android scripting backend", ProjectSettingsPath);
+                return;
+            }
+
+            string nativeSource = ReadProjectText(DataMonolithAndroidNativeSourcePath);
+            string arenaSource = ReadProjectText(DataMonolithArenaPath);
+            string cmake = ReadProjectText(DataMonolithAndroidCmakePath);
+            string gradle = ReadProjectText(AndroidMainGradleTemplatePath);
+            string manifest = ReadProjectText(AndroidManifestPath);
+            string projectSettings = ReadProjectText(ProjectSettingsPath);
+
+            bool nativeBridgeValid =
+                nativeSource.IndexOf("AAssetManager_fromJava", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("AAssetManager_open", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("AAsset_getLength64", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("AAsset_read", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("AAsset_close", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("assetLength < 0 || assetLength != bufferSize", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("H8_WriteTelemetryDump", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("open(dumpPath", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("write(fd", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("close(fd)", StringComparison.Ordinal) >= 0 &&
+                nativeSource.IndexOf("extern \"C\" JNIEXPORT", StringComparison.Ordinal) >= 0;
+            bool csharpBindingValid =
+                arenaSource.IndexOf("DllImport(\"__Internal\"", StringComparison.Ordinal) >= 0 &&
+                arenaSource.IndexOf("EntryPoint = \"H8_GetAssetSize\"", StringComparison.Ordinal) >= 0 &&
+                arenaSource.IndexOf("EntryPoint = \"H8_LoadAssetToPointer\"", StringComparison.Ordinal) >= 0 &&
+                arenaSource.IndexOf("EntryPoint = \"H8_WriteTelemetryDump\"", StringComparison.Ordinal) >= 0 &&
+                arenaSource.IndexOf("DllImport(\"HectonAndroidBridge\"", StringComparison.Ordinal) < 0;
+            bool csharpJniExceptionFenceValid =
+                arenaSource.IndexOf("TryConsumePendingAndroidJniException()", StringComparison.Ordinal) >= 0 &&
+                arenaSource.IndexOf("AndroidJNI.ExceptionOccurred()", StringComparison.Ordinal) >= 0 &&
+                arenaSource.IndexOf("AndroidJNI.ExceptionClear()", StringComparison.Ordinal) >= 0 &&
+                arenaSource.IndexOf("AndroidJNI.DeleteLocalRef(exception)", StringComparison.Ordinal) >= 0;
+            bool dumpRouteValid =
+                arenaSource.IndexOf("Dump_1404.bin", StringComparison.Ordinal) >= 0 &&
+                arenaSource.IndexOf("Application.persistentDataPath", StringComparison.Ordinal) >= 0 &&
+                arenaSource.IndexOf("WriteTelemetryDumpAndroid", StringComparison.Ordinal) >= 0 &&
+                arenaSource.IndexOf("H8_WriteTelemetryDump(", StringComparison.Ordinal) >= 0 &&
+                arenaSource.IndexOf("System.IO.Path.Combine(Application.persistentDataPath", StringComparison.Ordinal) < 0 &&
+                arenaSource.IndexOf("Dump_SHINOBU_103.bin", StringComparison.Ordinal) < 0 &&
+                arenaSource.IndexOf("Dump_X_002.bin", StringComparison.Ordinal) < 0 &&
+                arenaSource.IndexOf("Dump_1313.bin", StringComparison.Ordinal) < 0 &&
+                arenaSource.IndexOf("Dump_1330.bin", StringComparison.Ordinal) < 0 &&
+                arenaSource.IndexOf("Dump_DATA_MONOLITH.bin", StringComparison.Ordinal) < 0;
+            bool cmakeValid =
+                cmake.IndexOf("add_library(HectonAndroidBridge SHARED", StringComparison.Ordinal) >= 0 &&
+                cmake.IndexOf("HectonAndroidAssetBridge.cpp", StringComparison.Ordinal) >= 0 &&
+                cmake.IndexOf("target_link_libraries(HectonAndroidBridge", StringComparison.Ordinal) >= 0 &&
+                cmake.IndexOf("android", StringComparison.Ordinal) >= 0 &&
+                cmake.IndexOf("log", StringComparison.Ordinal) >= 0;
+            bool gradleValid =
+                gradle.IndexOf("apply plugin: 'com.android.library'", StringComparison.Ordinal) >= 0 &&
+                gradle.IndexOf("apply from: '../shared/common.gradle'", StringComparison.Ordinal) >= 0 &&
+                gradle.IndexOf("minSdk **MINSDK**", StringComparison.Ordinal) >= 0 &&
+                gradle.IndexOf("targetSdk **TARGETSDK**", StringComparison.Ordinal) >= 0 &&
+                gradle.IndexOf("noCompress = **BUILTIN_NOCOMPRESS** + unityStreamingAssets.tokenize(', ') + ['h8bin']", StringComparison.Ordinal) >= 0 &&
+                gradle.IndexOf("**IL_CPP_BUILD_SETUP**", StringComparison.Ordinal) >= 0 &&
+                gradle.IndexOf("**SOURCE_BUILD_SETUP**", StringComparison.Ordinal) >= 0 &&
+                gradle.IndexOf("**EXTERNAL_SOURCES**", StringComparison.Ordinal) >= 0 &&
+                gradle.IndexOf("com.android.application", StringComparison.Ordinal) < 0 &&
+                gradle.IndexOf("MINSDKVERSION", StringComparison.Ordinal) < 0 &&
+                gradle.IndexOf("TARGETSDKVERSION", StringComparison.Ordinal) < 0 &&
+                gradle.IndexOf("PACKAGING_OPTIONS", StringComparison.Ordinal) < 0 &&
+                gradle.IndexOf("externalNativeBuild", StringComparison.Ordinal) < 0;
+            bool androidIl2CppBackend =
+                projectSettings.IndexOf("scriptingBackend:\n    Android: 1", StringComparison.Ordinal) >= 0 ||
+                projectSettings.IndexOf("scriptingBackend:\r\n    Android: 1", StringComparison.Ordinal) >= 0;
+            bool androidGameActivityManifestValid =
+                projectSettings.IndexOf("androidApplicationEntry: 2", StringComparison.Ordinal) >= 0 &&
+                manifest.IndexOf("com.unity3d.player.UnityPlayerGameActivity", StringComparison.Ordinal) >= 0 &&
+                manifest.IndexOf("@style/BaseUnityGameActivityTheme", StringComparison.Ordinal) >= 0 &&
+                manifest.IndexOf("android:name=\"android.app.lib_name\" android:value=\"game\"", StringComparison.Ordinal) >= 0 &&
+                manifest.IndexOf("com.unity3d.player.UnityPlayerActivity", StringComparison.Ordinal) < 0;
+
+            if (nativeBridgeValid && csharpBindingValid && csharpJniExceptionFenceValid && dumpRouteValid && cmakeValid && gradleValid && androidIl2CppBackend && androidGameActivityManifestValid)
+                return;
+
+            blockerCount++;
+            blockers.Append("- Invalid Data Monolith Android source-built native bridge route.")
+                .Append(" Required: AAsset native source, exact-size read guard, C# DllImport(\"__Internal\"), raw JNI exception fence, owner-local native Dump_1404 route under persistentDataPath, Android IL2CPP backend, Unity GameActivity manifest, Unity 6000 library Gradle template, IL2CPP source-build placeholders, standalone CMake reference, and h8bin noCompress.")
+                .Append('\n');
+        }
+
+        private static void AppendMissingSourceRouteBlocker(StringBuilder blockers, ref int blockerCount, string label, string assetPath)
+        {
+            blockerCount++;
+            blockers.Append("- Missing ")
+                .Append(label)
+                .Append(": ")
+                .Append(assetPath)
+                .Append('\n');
+        }
+
+        private static string ReadProjectText(string assetPath)
+        {
+            return File.ReadAllText(ToProjectAbsolutePath(assetPath), Encoding.UTF8);
         }
 
         private static bool AssetFileExists(string assetPath)

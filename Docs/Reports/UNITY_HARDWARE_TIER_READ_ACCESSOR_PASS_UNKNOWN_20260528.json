@@ -1,0 +1,49 @@
+{
+  "agent": "UNKNOWN",
+  "date": "2026-05-28",
+  "domain": "Core hardware tier and Quest Vulkan runtime policy",
+  "evidenceClass": "STATIC_SOURCE_ONLY",
+  "sourceFilesChanged": [
+    "Assets/_Project/Scripts/Core/HardwareTierDetector.cs",
+    "Assets/_Project/Scripts/Core/OculusFfrEnforcer.cs"
+  ],
+  "documentationFilesChanged": [
+    "Docs/Tasks/Status_UNKNOWN.md",
+    "Docs/AgentLogs/Rationale_UNKNOWN.md",
+    "Docs/AgentLogs/LOG_UNKNOWN.md",
+    "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
+    "Docs/Reports/UNITY_HARDWARE_TIER_READ_ACCESSOR_PASS_UNKNOWN_20260528.md",
+    "Docs/Reports/UNITY_HARDWARE_TIER_READ_ACCESSOR_PASS_UNKNOWN_20260528.json"
+  ],
+  "problem": "Hardware and Quest runtime policy read properties called EnsureInitialized and could mutate cached platform policy from getters.",
+  "fixes": [
+    "Converted HardwareTierDetector read properties to pure snapshot reads.",
+    "Initialized the recommended VRAM budget field to the conservative 1600 MB default.",
+    "Converted Quest Vulkan policy read properties to pure snapshot reads.",
+    "Made IsQuestVulkanCandidate false until policy initialization has run."
+  ],
+  "proof": {
+    "hardwareTierGetterEnsureCallsAfterPatch": 0,
+    "questPolicyGetterEnsureCallsAfterPatch": 0,
+    "remainingEnsureInitializedReferences": "BeforeSceneLoad calls and method declarations only",
+    "hardwareTierBraceDelta": 0,
+    "questPolicyBraceDelta": 0,
+    "gitDiffCheckExitCode": 0,
+    "gitDiffCheckNotes": "LF/CRLF working-copy warnings only",
+    "cpuLoadPercent": 100,
+    "compilerProcessesListed": 0
+  },
+  "build": {
+    "run": false,
+    "reason": "CPU guard reported 100 percent and user assigned current compile errors to another agent."
+  },
+  "runtimeMicrosecondsSavedClaimed": 0,
+  "runtimeProof": false,
+  "unityEditorProof": false,
+  "deviceMatrixProof": false,
+  "residuals": [
+    "No full solution build was run.",
+    "No Unity Editor import, Play Mode, profiler, GCMonitor, player build, or device matrix was performed.",
+    "Cross-domain call sites still rely on BeforeSceneLoad prewarm or explicit EnsureInitialized calls."
+  ]
+}

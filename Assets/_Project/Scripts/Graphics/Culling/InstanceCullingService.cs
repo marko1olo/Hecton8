@@ -19,7 +19,7 @@ namespace Hecton8.Graphics.Culling
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-88)]
-    public sealed class InstanceCullingService : MonoBehaviour, IInstanceCullingService
+    public sealed class InstanceCullingService : MonoBehaviour, IInstanceCullingService, IGlobalRegistryHotSwapListener
     {
         private const int DefaultCapacity = 100000;
         private const int TelemetryCapacity = 300;
@@ -110,6 +110,7 @@ namespace Hecton8.Graphics.Culling
         private uint _lastFlags;
         private bool _voxelSdfEnabled;
         private bool _dumpedInvalidState;
+        private bool _registeredHotSwap;
 
         /// <inheritdoc />
         public bool IsAvailable =>
@@ -146,17 +147,21 @@ namespace Hecton8.Graphics.Culling
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
+            CacheDataVaultCold();
             if (_visibleInstancesBuffer == null && _activeComputeShader != null)
                 Configure(_activeComputeShader, _capacity);
         }
 
         private void OnDisable()
         {
+            TryUnregisterHotSwapListener();
             ReleaseResources();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             ReleaseResources();
         }
 
@@ -371,7 +376,21 @@ namespace Hecton8.Graphics.Culling
         /// <inheritdoc />
         public void Dispose()
         {
+            TryUnregisterHotSwapListener();
             ReleaseResources();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
+            if (_activeComputeShader != null)
+                EnsureResources();
         }
 
         private bool ValidateDispatch(in InstanceCullingDispatchDescriptor descriptor)
@@ -651,8 +670,37 @@ namespace Hecton8.Graphics.Culling
         private IDataVault CacheDataVaultCold()
         {
             if (_dataVault == null)
-                _dataVault = GlobalRegistry.DataVault;
+                RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
             return _dataVault;
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault nextVault, IDataVault releaseVaultOverride = null)
+        {
+            if (ReferenceEquals(_dataVault, nextVault))
+                return;
+
+            ReleaseVaultHandle(_dataVault ?? releaseVaultOverride, ref _telemetryRingHandle);
+            _dataVault = nextVault;
+            _telemetryWriteIndex = 0;
+            _telemetryReadIndex = 0;
+            _telemetryQueuedCount = 0;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwap || !Application.isPlaying)
+                return;
+
+            _registeredHotSwap = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwap)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwap = false;
         }
 
         private bool TryReadTelemetryRing(out NativeArray<InstanceCullingTelemetryEntry>.ReadOnly telemetryRing)
@@ -677,7 +725,9 @@ namespace Hecton8.Graphics.Culling
 
         private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
         {
-            return handle.BufferID == unchecked((uint)(int)expectedBufferId) && handle.Generation != 0u;
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)VaultOwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private static int ResolveDispatchGroups(int count, int threadGroupSize)
@@ -691,7 +741,7 @@ namespace Hecton8.Graphics.Culling
 
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+            if (vault != null && IsExactVaultHandle(in handle, TelemetryRingBufferId))
                 vault.ReleaseBuffer(in handle);
             handle = default;
         }

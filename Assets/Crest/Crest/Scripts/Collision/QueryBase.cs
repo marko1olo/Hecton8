@@ -40,6 +40,7 @@ namespace Crest
         public static bool s_useComputeCollQueries = true;
 
         readonly int sp_queryPositions_minGridSizes = Shader.PropertyToID("_QueryPositions_MinGridSizes");
+        readonly int sp_queryCount = Shader.PropertyToID("_QueryCount");
 
         const float s_finiteDiffDx = 0.1f;
 
@@ -250,18 +251,17 @@ namespace Crest
         /// </summary>
         protected bool UpdateQueryPoints(int i_ownerHash, float i_minSpatialLength, Vector3[] queryPoints, Vector3[] queryNormals)
         {
-            if (queryPoints.Length + _segmentRegistrarRingBuffer.Current._numQueries > _maxQueryCount)
+            var countPts = queryPoints != null ? queryPoints.Length : 0;
+            var countNorms = queryNormals != null ? queryNormals.Length : 0;
+            var countTotal = countPts + countNorms * 3;
+
+            if (countTotal + _segmentRegistrarRingBuffer.Current._numQueries > _maxQueryCount)
             {
                 Debug.LogError($"Crest: Max query count ({_maxQueryCount}) exceeded, increase the max query count in the Animated Waves Settings to support a higher number of queries.");
                 return false;
             }
 
             var segmentRetrieved = false;
-
-            // We'll send in 3 points to get normals
-            var countPts = (queryPoints != null ? queryPoints.Length : 0);
-            var countNorms = (queryNormals != null ? queryNormals.Length : 0);
-            var countTotal = countPts + countNorms * 3;
 
             if (_segmentRegistrarRingBuffer.Current._segments.TryGetValue(i_ownerHash, out var segment))
             {
@@ -310,7 +310,7 @@ namespace Crest
             float samplesPerWave = 2f;
             float minGridSize = minWavelength / samplesPerWave;
 
-            if (countPts + segment.x > _queryPosXZ_minGridSize.Length)
+            if (countTotal + segment.x > _queryPosXZ_minGridSize.Length)
             {
                 Debug.LogError("Crest: Too many wave height queries. Increase Max Query Count in the Animated Waves Settings.");
                 return false;
@@ -489,6 +489,7 @@ namespace Crest
         {
             _computeBufQueries.SetData(_queryPosXZ_minGridSize, 0, 0, _segmentRegistrarRingBuffer.Current._numQueries);
             _shaderProcessQueries.SetBuffer(_kernelHandle, sp_queryPositions_minGridSizes, _computeBufQueries);
+            _shaderProcessQueries.SetInt(sp_queryCount, _segmentRegistrarRingBuffer.Current._numQueries);
             BindInputsAndOutputs(_wrapper, _computeBufResults);
 
             var numGroups = (_segmentRegistrarRingBuffer.Current._numQueries + s_computeGroupSize - 1) / s_computeGroupSize;

@@ -131,6 +131,42 @@ namespace Hecton8.UI
         [FieldOffset(63)] private byte _pad7;
     }
 
+    public enum UIOptimizationFailureCode : uint
+    {
+        None = 0u,
+        MissingLocalizationHash = 1u,
+        TextBufferOverflow = 2u,
+        FormatterOverflow = 3u,
+        InvalidTextState = 4u
+    }
+
+    /// <summary>
+    /// Fixed-size UI text failure telemetry frame. Size: 64 bytes.
+    /// </summary>
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct UIOptimizationTelemetryEntry
+    {
+        [FieldOffset(0)] public uint Frame;
+        [FieldOffset(4)] public uint AudioFrameClock;
+        [FieldOffset(8)] public uint TokenHash;
+        [FieldOffset(12)] public UIOptimizationFailureCode FailureCode;
+        [FieldOffset(16)] public int RequestedCharacters;
+        [FieldOffset(20)] public int RenderedCharacters;
+        [FieldOffset(24)] public int BufferCapacity;
+        [FieldOffset(28)] public uint CueSignalCount;
+        [FieldOffset(32)] public float GlobalQualityWeight;
+        [FieldOffset(36)] public uint Flags;
+        [FieldOffset(40)] public uint BufferIdTelemetry;
+        [FieldOffset(44)] public uint WriteSequence;
+        [FieldOffset(48)] public uint LastTokenHash;
+        [FieldOffset(52)] public uint MissingTokenHashCount;
+        [FieldOffset(56)] public uint DroppedCueCount;
+        [FieldOffset(60)] private byte _pad0;
+        [FieldOffset(61)] private byte _pad1;
+        [FieldOffset(62)] private byte _pad2;
+        [FieldOffset(63)] private byte _pad3;
+    }
+
     public static unsafe class BabelSubtitleSyncRuntime
     {
 
@@ -155,13 +191,17 @@ namespace Hecton8.UI
         private const float SlowDecodeDumpThresholdMs = 0.5f;
         private const BufferID SubtitleCueStateBufferId = (BufferID)15070550;
         private const BufferID SubtitleCueTelemetryBufferId = (BufferID)15070551;
+        private const BufferID UIOptimizationTelemetryBufferId = (BufferID)15070552;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_1335_BabelSubtitleSync.bin";
+        private const string UIOptimizationDumpRelativePath = "Docs/AgentLogs/Dump_1423.bin";
 
         private static readonly DispatcherBridge s_dispatcherBridge = new DispatcherBridge();
         private static IDataVault s_vault;
         private static VaultGenerationHandle<SubtitleCueDTO> s_cueHandle;
         private static VaultGenerationHandle<LocalizationTelemetryEntry> s_telemetryHandle;
+        private static VaultGenerationHandle<UIOptimizationTelemetryEntry> s_uiOptimizationTelemetryHandle;
         private static int s_telemetryCursor;
+        private static int s_uiOptimizationTelemetryCursor;
         private static int s_nextCueSlot;
         private static int s_activeCueCount;
         private static int s_cueSignalCountThisFrame;
@@ -173,6 +213,7 @@ namespace Hecton8.UI
         private static int s_sampleRate = DefaultSampleRate;
         private static uint s_lastPreparedFrame;
         private static uint s_fallbackPresentationFrame;
+        private static uint s_uiOptimizationWriteSequence;
         private static int s_editorAudioFrameOffset;
         private static bool s_initialized;
         private static bool s_dispatcherRegistered;
@@ -193,7 +234,9 @@ namespace Hecton8.UI
             s_vault = null;
             s_cueHandle = default;
             s_telemetryHandle = default;
+            s_uiOptimizationTelemetryHandle = default;
             s_telemetryCursor = 0;
+            s_uiOptimizationTelemetryCursor = 0;
             s_nextCueSlot = 0;
             s_activeCueCount = 0;
             s_cueSignalCountThisFrame = 0;
@@ -205,6 +248,7 @@ namespace Hecton8.UI
             s_sampleRate = DefaultSampleRate;
             s_lastPreparedFrame = 0u;
             s_fallbackPresentationFrame = 0u;
+            s_uiOptimizationWriteSequence = 0u;
             s_editorAudioFrameOffset = 0;
             s_initialized = false;
             s_dispatcherRegistered = false;
@@ -233,7 +277,8 @@ namespace Hecton8.UI
             if (s_initialized &&
                 ReferenceEquals(s_vault, vault) &&
                 TryReadOnlyCueBuffer(out _) &&
-                TryReadOnlyTelemetryBuffer(out _))
+                TryReadOnlyTelemetryBuffer(out _) &&
+                TryReadOnlyUIOptimizationTelemetryBuffer(out _))
             {
                 TryRegisterDispatcher();
                 return true;
@@ -250,9 +295,15 @@ namespace Hecton8.UI
                 TelemetryFrameCapacity,
                 SystemID.UI,
                 NativeArrayOptions.ClearMemory);
+            s_uiOptimizationTelemetryHandle = vault.EnsureGenerationHandle<UIOptimizationTelemetryEntry>(
+                UIOptimizationTelemetryBufferId,
+                TelemetryFrameCapacity,
+                SystemID.UI,
+                NativeArrayOptions.ClearMemory);
 
             if (!TryReadOnlyCueBuffer(out _) ||
-                !TryReadOnlyTelemetryBuffer(out _))
+                !TryReadOnlyTelemetryBuffer(out _) ||
+                !TryReadOnlyUIOptimizationTelemetryBuffer(out _))
             {
                 s_initialized = false;
                 return false;
@@ -399,6 +450,111 @@ namespace Hecton8.UI
             return true;
         }
 
+        public static bool TryGetLatestUIOptimizationTelemetry(out UIOptimizationTelemetryEntry entry)
+        {
+            entry = default;
+            if (!EnsureInitialized() || !TryReadOnlyUIOptimizationTelemetryBuffer(out NativeArray<UIOptimizationTelemetryEntry>.ReadOnly telemetry))
+                return false;
+
+            int index = s_uiOptimizationTelemetryCursor - 1;
+            if (index < 0)
+                index = TelemetryFrameCapacity - 1;
+
+            if ((uint)index >= (uint)telemetry.Length)
+                return false;
+
+            entry = telemetry[index];
+            return true;
+        }
+
+        public static void RecordUIOptimizationFailure(
+            uint tokenHash,
+            UIOptimizationFailureCode failureCode,
+            int requestedCharacters,
+            int renderedCharacters,
+            int bufferCapacity,
+            uint flags = 0u)
+        {
+            if (failureCode == UIOptimizationFailureCode.None || !EnsureInitialized())
+                return;
+
+            if (!TryAcquireUIOptimizationTelemetryWriteBuffer(out NativeArray<UIOptimizationTelemetryEntry> telemetry))
+                return;
+
+            try
+            {
+                int slot = s_uiOptimizationTelemetryCursor;
+                s_uiOptimizationTelemetryCursor++;
+                if (s_uiOptimizationTelemetryCursor >= TelemetryFrameCapacity)
+                    s_uiOptimizationTelemetryCursor = 0;
+
+                UIOptimizationTelemetryEntry entry = default;
+                entry.Frame = s_lastPreparedFrame != 0u ? s_lastPreparedFrame : ResolvePresentationFrameId();
+                entry.AudioFrameClock = s_audioFrameClock;
+                entry.TokenHash = tokenHash;
+                entry.FailureCode = failureCode;
+                entry.RequestedCharacters = math.max(0, requestedCharacters);
+                entry.RenderedCharacters = math.max(0, renderedCharacters);
+                entry.BufferCapacity = math.max(0, bufferCapacity);
+                entry.CueSignalCount = (uint)math.max(0, s_cueSignalCountThisFrame);
+                entry.GlobalQualityWeight = ResolveGlobalQualityWeight();
+                entry.Flags = flags;
+                entry.BufferIdTelemetry = (uint)UIOptimizationTelemetryBufferId;
+                entry.WriteSequence = ++s_uiOptimizationWriteSequence;
+                entry.LastTokenHash = s_lastTokenHash;
+                entry.MissingTokenHashCount = (uint)math.max(0, s_missingTokenHashesThisFrame);
+                entry.DroppedCueCount = (uint)math.max(0, s_droppedCueCount);
+                telemetry[slot] = entry;
+            }
+            finally
+            {
+                s_vault.ReleaseWriteLock(in s_uiOptimizationTelemetryHandle, SystemID.UI);
+            }
+
+            if (failureCode == UIOptimizationFailureCode.InvalidTextState)
+                DumpUIOptimizationTelemetry();
+        }
+
+        public static void DumpUIOptimizationTelemetry()
+        {
+            if (!TryReadOnlyUIOptimizationTelemetryBuffer(out NativeArray<UIOptimizationTelemetryEntry>.ReadOnly telemetry))
+                return;
+
+            int entryCount = telemetry.Length;
+            int entrySize = UnsafeUtility.SizeOf<UIOptimizationTelemetryEntry>();
+            telemetry = default;
+            try
+            {
+                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+                string dumpPath = Path.Combine(projectRoot, UIOptimizationDumpRelativePath);
+                WriteUIOptimizationDump(dumpPath, entryCount, entrySize);
+            }
+            catch (IOException)
+            {
+                // Crash-path telemetry must not cascade into another failure.
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Crash-path telemetry must not cascade into another failure.
+            }
+            catch (ObjectDisposedException)
+            {
+                // Crash-path telemetry must not cascade into another failure.
+            }
+            catch (InvalidOperationException)
+            {
+                // Crash-path telemetry must not cascade into another failure.
+            }
+            catch (ArgumentException)
+            {
+                // Crash-path telemetry must not cascade into another failure.
+            }
+            catch (NotSupportedException)
+            {
+                // Crash-path telemetry must not cascade into another failure.
+            }
+        }
+
         public static bool TryGetCue(int index, out SubtitleCueDTO cue)
         {
             cue = default;
@@ -452,6 +608,25 @@ namespace Hecton8.UI
             return true;
         }
 
+        private static bool TryReadOnlyUIOptimizationTelemetryBuffer(out NativeArray<UIOptimizationTelemetryEntry>.ReadOnly telemetry)
+        {
+            telemetry = default;
+            if (s_vault == null ||
+                s_vault.IsCompactionFenceActive ||
+                !IsSubtitleVaultHandle(in s_uiOptimizationTelemetryHandle, UIOptimizationTelemetryBufferId))
+                return false;
+
+            if (!s_vault.TryReadOnlyHandle(in s_uiOptimizationTelemetryHandle, out telemetry) ||
+                s_vault.IsCompactionFenceActive ||
+                telemetry.Length < TelemetryFrameCapacity)
+            {
+                telemetry = default;
+                return false;
+            }
+
+            return true;
+        }
+
         private static bool TryAcquireCueWriteBuffer(out NativeArray<SubtitleCueDTO> cues)
         {
             return TryAcquireSubtitleWriteBuffer(
@@ -466,6 +641,15 @@ namespace Hecton8.UI
             return TryAcquireSubtitleWriteBuffer(
                 in s_telemetryHandle,
                 SubtitleCueTelemetryBufferId,
+                TelemetryFrameCapacity,
+                out telemetry);
+        }
+
+        private static bool TryAcquireUIOptimizationTelemetryWriteBuffer(out NativeArray<UIOptimizationTelemetryEntry> telemetry)
+        {
+            return TryAcquireSubtitleWriteBuffer(
+                in s_uiOptimizationTelemetryHandle,
+                UIOptimizationTelemetryBufferId,
                 TelemetryFrameCapacity,
                 out telemetry);
         }
@@ -511,6 +695,7 @@ namespace Hecton8.UI
         {
             ReleaseVaultBuffer(vault, ref s_cueHandle);
             ReleaseVaultBuffer(vault, ref s_telemetryHandle);
+            ReleaseVaultBuffer(vault, ref s_uiOptimizationTelemetryHandle);
         }
 
         private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
@@ -654,7 +839,25 @@ namespace Hecton8.UI
                    OffsetOf<LocalizationTelemetryEntry>(nameof(LocalizationTelemetryEntry.BufferIdCueState)) == 48 &&
                    OffsetOf<LocalizationTelemetryEntry>(nameof(LocalizationTelemetryEntry.BufferIdTelemetry)) == 52 &&
                    OffsetOf<LocalizationTelemetryEntry>("_pad0") == 56 &&
-                   OffsetOf<LocalizationTelemetryEntry>("_pad7") == 63;
+                   OffsetOf<LocalizationTelemetryEntry>("_pad7") == 63 &&
+                   UnsafeUtility.SizeOf<UIOptimizationTelemetryEntry>() == 64 &&
+                   OffsetOf<UIOptimizationTelemetryEntry>(nameof(UIOptimizationTelemetryEntry.Frame)) == 0 &&
+                   OffsetOf<UIOptimizationTelemetryEntry>(nameof(UIOptimizationTelemetryEntry.AudioFrameClock)) == 4 &&
+                   OffsetOf<UIOptimizationTelemetryEntry>(nameof(UIOptimizationTelemetryEntry.TokenHash)) == 8 &&
+                   OffsetOf<UIOptimizationTelemetryEntry>(nameof(UIOptimizationTelemetryEntry.FailureCode)) == 12 &&
+                   OffsetOf<UIOptimizationTelemetryEntry>(nameof(UIOptimizationTelemetryEntry.RequestedCharacters)) == 16 &&
+                   OffsetOf<UIOptimizationTelemetryEntry>(nameof(UIOptimizationTelemetryEntry.RenderedCharacters)) == 20 &&
+                   OffsetOf<UIOptimizationTelemetryEntry>(nameof(UIOptimizationTelemetryEntry.BufferCapacity)) == 24 &&
+                   OffsetOf<UIOptimizationTelemetryEntry>(nameof(UIOptimizationTelemetryEntry.CueSignalCount)) == 28 &&
+                   OffsetOf<UIOptimizationTelemetryEntry>(nameof(UIOptimizationTelemetryEntry.GlobalQualityWeight)) == 32 &&
+                   OffsetOf<UIOptimizationTelemetryEntry>(nameof(UIOptimizationTelemetryEntry.Flags)) == 36 &&
+                   OffsetOf<UIOptimizationTelemetryEntry>(nameof(UIOptimizationTelemetryEntry.BufferIdTelemetry)) == 40 &&
+                   OffsetOf<UIOptimizationTelemetryEntry>(nameof(UIOptimizationTelemetryEntry.WriteSequence)) == 44 &&
+                   OffsetOf<UIOptimizationTelemetryEntry>(nameof(UIOptimizationTelemetryEntry.LastTokenHash)) == 48 &&
+                   OffsetOf<UIOptimizationTelemetryEntry>(nameof(UIOptimizationTelemetryEntry.MissingTokenHashCount)) == 52 &&
+                   OffsetOf<UIOptimizationTelemetryEntry>(nameof(UIOptimizationTelemetryEntry.DroppedCueCount)) == 56 &&
+                   OffsetOf<UIOptimizationTelemetryEntry>("_pad0") == 60 &&
+                   OffsetOf<UIOptimizationTelemetryEntry>("_pad3") == 63;
         }
 
         private static bool RegisterCue(uint tokenHash, uint startAudioFrame, float durationSeconds, uint flags)
@@ -975,6 +1178,37 @@ namespace Hecton8.UI
             row = default;
             if ((uint)index >= TelemetryFrameCapacity ||
                 !TryReadOnlyTelemetryBuffer(out NativeArray<LocalizationTelemetryEntry>.ReadOnly telemetry) ||
+                (uint)index >= (uint)telemetry.Length)
+            {
+                return false;
+            }
+
+            row = telemetry[index];
+            return true;
+        }
+
+        private static void WriteUIOptimizationDump(string path, int entryCount, int entrySize)
+        {
+            string directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
+            int count = math.min(entryCount, TelemetryFrameCapacity);
+            for (int i = 0; i < count; i++)
+            {
+                if (!TryReadUIOptimizationTelemetryRow(i, out UIOptimizationTelemetryEntry row))
+                    return;
+
+                stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(&row), entrySize));
+            }
+        }
+
+        private static bool TryReadUIOptimizationTelemetryRow(int index, out UIOptimizationTelemetryEntry row)
+        {
+            row = default;
+            if ((uint)index >= TelemetryFrameCapacity ||
+                !TryReadOnlyUIOptimizationTelemetryBuffer(out NativeArray<UIOptimizationTelemetryEntry>.ReadOnly telemetry) ||
                 (uint)index >= (uint)telemetry.Length)
             {
                 return false;

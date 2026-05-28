@@ -189,5 +189,6 @@ ignore.conf
 # Gradle (Android builds)
 # ============================================================================
 *.gradle
+!Assets/Plugins/Android/mainTemplate.gradle
 .gradle/
 local.properties

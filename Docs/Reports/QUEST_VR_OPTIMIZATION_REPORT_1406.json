@@ -1,0 +1,250 @@
+{
+  "agentId": "1406",
+  "role": "QUEST_URP_QUALITY_CONFIGURATOR_AND_VR_FOVEATION_DRIVER",
+  "status": "PENDING_VERIFICATION",
+  "generatedAt": "2026-05-28",
+  "evidenceType": "static_analysis_only_no_unity_import_no_playmode_no_quest_device_profiler",
+  "promptExtraction": {
+    "path": "Docs/Tasks/CURRENT_BATCH.md",
+    "currentRecheck": "FAILED_PROMPT_NOT_FOUND",
+    "currentFileFirstPrompt": "1400",
+    "savedTaskCountFromStatus": 19,
+    "evidence": "rg -n \"<AGENT_PROMPT id=\\\"1406\\\"|QUEST_URP|1406\" Docs/Tasks/CURRENT_BATCH.md returned exit code 1; current file first line is <AGENT_PROMPT id=\"1400\"."
+  },
+  "questUrpProfile": {
+    "path": "Assets/_Project/Data/URP_Quest_VR.asset",
+    "lineEvidence": {
+      "name": 13,
+      "depthTexture": 22,
+      "opaqueTexture": 23,
+      "msaa": 28,
+      "renderScale": 29,
+      "additionalLightsPerObject": 48,
+      "shadowDistance": 57,
+      "shadowCascadeCount": 58,
+      "volumeProfileCleared": 95
+    },
+    "values": {
+      "depthTexture": 1,
+      "opaqueTexture": 0,
+      "msaa": 2,
+      "renderScale": 0.85,
+      "additionalLightsPerObject": 1,
+      "shadowDistanceMeters": 18,
+      "shadowCascadeCount": 1,
+      "globalVolumeProfile": null
+    }
+  },
+  "openXrQuest": {
+    "path": "Assets/XR/Settings/OpenXR Package Settings.asset",
+    "lineEvidence": {
+      "foveatedRenderingFeatureAndroidName": 880,
+      "foveatedRenderingFeatureEnabled": 882,
+      "subsampledLayoutEnabled": 894,
+      "androidSettingsName": 1108,
+      "androidRenderModeSinglePassInstanced": 1147,
+      "androidSymmetricProjection": 1155,
+      "androidMultiviewRenderRegionsFinalPass": 1157,
+      "androidSrpFoveationApi": 1159,
+      "metaQuestFeatureAndroidName": 1193,
+      "metaQuestFeatureEnabled": 1195,
+      "metaQuestSymmetricProjection": 1222,
+      "metaQuestMultiviewRenderRegionsFinalPass": 1229
+    }
+  },
+  "foveationDriver": {
+    "path": "Assets/_Project/Scripts/Visor/QuestFoveationDriver.cs",
+    "route": "UnityEngine.XR.XRDisplaySubsystem.foveatedRenderingLevel",
+    "capsProbe": "UnityEngine.Rendering.SystemInfo.foveatedRenderingCaps",
+    "oculusPackageDependency": false,
+    "continuousScaling": {
+      "qualityInput": "HomeostasisBrain.GlobalQualityWeight read in FoveatedRenderCommander.cs:1344",
+      "questFloor": 0.35,
+      "questCeiling": 0.85,
+      "driverMapping": "QuestFoveationDriver.ResolveTargetLevel01 lines 90-109; ResolveSurvivalPressure01 lines 188-192",
+      "commanderApplyLines": "FoveatedRenderCommander.cs:668"
+    }
+  },
+  "defectsFoundAndFixedInReaudit": [
+    {
+      "problem": "Android prebuild configurator ran after graphics/XR validators and did not itself guarantee Quest quality row or Vulkan route.",
+      "fix": "QuestVulkanRenderPipelineConfigurator callbackOrder is -4700; OnPreprocessBuild enforces Quest quality row, Android quality index, SPI, and Vulkan."
+    },
+    {
+      "problem": "Runtime camera guards could force opaque color texture and postprocess on Quest despite URP_Quest_VR m_RequireOpaqueTexture: 0.",
+      "fix": "HectonUrpTextureRequirementsGuard.cs:104 returns before color force; HectonUnderwaterVisuals.cs:1267 returns before color/postprocess force."
+    },
+    {
+      "problem": "Per-camera URP guard performed TryGetComponent from beginCameraRendering on every camera.",
+      "fix": "HectonUrpTextureRequirementsGuard uses a fixed 32-slot camera data cache. Cache-hit path lines 117-127 has no TryGetComponent."
+    },
+    {
+      "problem": "Underwater biome fog blend scheduled a one-sample job using transient DataVault views without write-lock ownership.",
+      "fix": "HectonUnderwaterVisuals now applies a local struct-only visual fake in SlowTick: ApplyBiomeFogBlend lines 3623-3667 and ResolveBiomeFogAupBlend lines 3668-3694. BufferID.UnderwaterBiomeFog* references are absent from HectonUnderwaterVisuals."
+    },
+    {
+      "problem": "Runtime ResolveMainCamera fallback searched transform.root for string child Main Camera.",
+      "fix": "The runtime root.Find fallback was removed; runtime route now relies on cached player/camera owner paths and nearest parent camera fallback."
+    },
+    {
+      "problem": "Foveated telemetry hot path still used a struct object-initializer with the token new.",
+      "fix": "FoveatedRenderCommander.WriteTelemetry now builds FoveatedRenderTelemetryEntry with default plus field assignments at lines 957-980."
+    },
+    {
+      "problem": "Quest renderer kept third-party ShapesRenderFeature active even though first-party runtime code has no active Shapes immediate-mode owner. Vendor AddRenderPasses checks DrawCommand.cBuffersRendering and enqueues ObjectPool<ShapesRenderPass> passes per camera.",
+      "fix": "Quest_VR_Renderer.asset sets ShapesRenderFeature m_Active: 0 at line 293; QuestVulkanRenderPipelineConfigurator strips Contains(name, \"ShapesRenderFeature\") at line 188; QuestVrOptimizationValidator1406 asserts the inactive block at line 104."
+    },
+    {
+      "problem": "Quest renderer YAML had unnecessary renderer feature list/map order drift in the working tree, and FluidAdvectionRenderFeature still enqueued a pass when the cached fluid rendergraph owner was null.",
+      "fix": "Quest_VR_Renderer.asset feature list and m_RendererFeatureMap were normalized to baseline order with 13/13 list-map matches; HectonFluidAdvectionRenderFeature.cs:125-127 now returns before enqueue when _cachedFluidEngine is null."
+    },
+    {
+      "problem": "WristPdaScreenProjectorFeature.AddRenderPasses enqueued the PDA projector pass for Preview, Reflection, and SceneView cameras even though RecordRenderGraph later rejected those camera types.",
+      "fix": "WristPdaScreenProjectorFeature.cs:187-189 now returns before _pass.Setup and renderer.EnqueuePass for Preview, Reflection, and SceneView cameras; QuestVrOptimizationValidator1406.cs:179-185 asserts the guard order."
+    }
+  ],
+  "questRendererFeatureAudit": {
+    "path": "Assets/_Project/Data/Quest_VR_Renderer.asset",
+    "rendererFeatureMapIntegrity": {
+      "featureCount": 13,
+      "mapCount": 13,
+      "listMapMatches": true,
+      "behavioralDiff": "Only ShapesRenderFeature m_Active changed from 1 to 0 after map normalization."
+    },
+    "activeFeaturesAfterReaudit": [
+      "HectonVRBrownoutFeature",
+      "HectonFluidAdvectionRenderFeature",
+      "HectonDeferredCausticsFeature",
+      "WristPdaScreenProjectorFeature",
+      "HectonVisorUberPostFeature",
+      "HectonAtmosphereSootFeature"
+    ],
+    "inactiveMobileSurvivalFeatures": [
+      "HectonRetinaDistortionFeature",
+      "HectonVisorFluidDistortionFeature",
+      "HectonScooterVolumetricShaftsFeature",
+      "HectonHalfResParticlesFeature",
+      "HectonAbyssalSsdoFeature",
+      "ShapesRenderFeature",
+      "HectonNoirDepthFogFeature"
+    ],
+    "shapesVendorEvidence": {
+      "source": "Assets/Shapes/Scripts/Runtime/Immediate Mode/ShapesRenderFeature.cs:27-29",
+      "riskTokens": ["DrawCommand.cBuffersRendering", "foreach DrawCommand", "ObjectPool<ShapesRenderPass>.Alloc", "renderer.EnqueuePass"],
+      "firstPartyRuntimeShapesApiUse": "No first-party runtime `using Shapes`, `DrawCommand.cBuffersRendering`, or `ObjectPool<ShapesRenderPass>` hit was found under Assets/_Project/Scripts; only editor/offline baker false-positive field names contained `Shapes`."
+    }
+  },
+  "zeroGcStaticScan": {
+    "tool": "PowerShell regex over explicit line ranges",
+    "patterns": ["new", "string.Format", ".ToString(", "LINQ query tokens", "foreach", "StartCoroutine", "GetComponent(", "TryGetComponent(", "FindObjectOfType/GameObject.Find/Camera.main"],
+    "results": [
+      {"slice": "QuestFoveationDriver.ResolveAndApply", "path": "Assets/_Project/Scripts/Visor/QuestFoveationDriver.cs", "lines": "40-180", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
+      {"slice": "FoveatedRenderCommander.WriteTelemetry", "path": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs", "lines": "936-990", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
+      {"slice": "FoveatedRenderCommander.ApplyDisplayState", "path": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs", "lines": "656-688", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
+      {"slice": "FoveatedRenderCommander.TelemetryWriteLock", "path": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs", "lines": "1196-1227", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
+      {"slice": "FoveatedRenderCommander.GlobalQualityWeight", "path": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs", "lines": "1343-1348", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
+      {"slice": "UrpTextureGuard.CameraRequirements", "path": "Assets/_Project/Scripts/Core/HectonUrpTextureRequirementsGuard.cs", "lines": "87-115", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
+      {"slice": "UrpTextureGuard.CameraDataCacheHitPath", "path": "Assets/_Project/Scripts/Core/HectonUrpTextureRequirementsGuard.cs", "lines": "117-127", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
+      {"slice": "UrpTextureGuard.CameraDataCacheMissPath", "path": "Assets/_Project/Scripts/Core/HectonUrpTextureRequirementsGuard.cs", "lines": "129-153", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 1, "sceneSearch": 0},
+      {"slice": "UnderwaterVisuals.CameraTextureRequirements", "path": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs", "lines": "1256-1288", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
+      {"slice": "UnderwaterVisuals.BiomeFogVisualFake", "path": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs", "lines": "3623-3719", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
+      {"slice": "FluidAdvectionRenderFeature.AddRenderPassesGuard", "path": "Assets/_Project/Scripts/Visor/HectonFluidAdvectionRenderFeature.cs", "lines": "120-135", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0},
+      {"slice": "WristPdaScreenProjectorFeature.AddRenderPassesGuard", "path": "Assets/_Project/Scripts/UI/WristPdaScreenProjectorFeature.cs", "lines": "182-192", "new": 0, "stringFormat": 0, "toString": 0, "linq": 0, "foreach": 0, "coroutine": 0, "getComponent": 0, "tryGetComponent": 0, "sceneSearch": 0}
+    ]
+  },
+  "dataSovereignty": {
+    "migratedFieldsBy1406": "none",
+    "removedUnsafeBiomeFogVaultRoute": true,
+    "removedBufferIdsFromHectonUnderwaterVisuals": [
+      "BufferID.UnderwaterBiomeFogSamples",
+      "BufferID.UnderwaterBiomeFogSources",
+      "BufferID.UnderwaterBiomeFogFromAup",
+      "BufferID.UnderwaterBiomeFogToAup",
+      "BufferID.UnderwaterBiomeFogPlayerAup",
+      "BufferID.UnderwaterBiomeFogResults"
+    ],
+    "existingSecuredBufferId": "BufferID.FoveatedRenderBlackBox",
+    "existingSecuredSystemId": "SystemID.GraphicsScalability",
+    "tryAcquireWriteLock": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:1205",
+    "releaseInFinally": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:986-988",
+    "failedValidationRelease": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:1217",
+    "dumpPath": "Docs/AgentLogs/Dump_1406.bin"
+  },
+  "unmanagedStructLayoutProof": {
+    "FoveatedRenderTelemetryEntry": {
+      "path": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs:146",
+      "sizeBytes": 64,
+      "offsets": {
+        "Frame": 0,
+        "Sequence": 4,
+        "TargetLevel01": 8,
+        "AppliedLevel01": 12,
+        "SystemStress01": 16,
+        "GpuUtil01": 20,
+        "GpuTimeMs": 24,
+        "EyeWidth": 28,
+        "EyeHeight": 32,
+        "Flags": 36,
+        "Caps": 40,
+        "TargetLevelCode": 44,
+        "AppliedLevelCode": 45,
+        "Mode": 46,
+        "PressureLevel": 47,
+        "FoveatedPressureTier": 48,
+        "ThermalSeverity": 49,
+        "DisplayCount": 50,
+        "VaultGeneration": 52,
+        "Pad0": 56,
+        "Pad7": 63
+      }
+    },
+    "BiomeTransitionSample": {"path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs:81", "sizeBytes": 8},
+    "BiomeTransitionFogSource": {"path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs:91", "sizeBytes": 32},
+    "BiomeTransitionFogResult": {"path": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs:101", "sizeBytes": 64},
+    "AbsoluteUniversePositionBlit128": {"path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs:572", "sizeBytes": 48}
+  },
+  "validation": {
+    "promptExtraction": "FAIL_CURRENT_BATCH_1406_NOT_FOUND",
+    "currentBatchPrompt1406": "NOT_FOUND_EXIT1",
+    "braceBalance": "PASS",
+    "gitDiffCheck": "PASS_crlf_warnings_only",
+    "yamlStatic": "PASS",
+    "questRendererFeatureMap": "PASS_13_OF_13_LIST_MAP_MATCH",
+    "pdaProjectorAddRenderPassGuard": "PASS_CAMERA_TYPE_SKIP_BEFORE_SETUP_AND_ENQUEUE",
+    "editorValidatorScript": "created_not_executed",
+    "unityImport": "NOT_RUN",
+    "playMode": "NOT_RUN",
+    "questDeviceProfiler": "NOT_RUN",
+    "dotnetBuild": "NOT_RUN_BLOCKED_BY_CPU",
+    "cpuTotalPercent": 100,
+    "cscCount": 0,
+    "dotnetCount": 1,
+    "vbcsCompilerCount": 0
+  },
+  "estimatedGpuSavingsMicroseconds": {
+    "msaa4xTo2x": "800-1500",
+    "renderScale1To085": "1800-3500",
+    "shadowCascade2To1": "300-900",
+    "foveationSubsampledAndMvpvv": "1000-3000",
+    "questShapesImmediateModeStrip": "unknown_no_profile_removes_third_party_per_camera_enqueue_path",
+    "wristPdaNonGameCameraEnqueueGuard": "unknown_no_profile_avoids_noop_pass_enqueue_for_preview_reflection_sceneview_cameras",
+    "globalBloomVolumeRemoved": "600-1600",
+    "note": "estimates_only_no_profiler_or_headset_capture"
+  },
+  "sha256": [
+    {"path": "Assets/_Project/Data/URP_Quest_VR.asset", "sha256": "de1e4dd91cfe90b91bc68d0e8e2e525c71dcc3da3b0d295a7410ea85cb6e1d02"},
+    {"path": "Assets/XR/Settings/OpenXR Package Settings.asset", "sha256": "9696e2e51307626aec23bf10d77e25e30c7595b72bc9b43f734467a907e7c69f"},
+    {"path": "ProjectSettings/QualitySettings.asset", "sha256": "a2f72e12cbdfd318a53647b47543f2b0c160557600555a59a46c93abce523292"},
+    {"path": "Assets/_Project/Data/Quest_VR_Renderer.asset", "sha256": "8d5745d87f0fb5297ed27fe6e4c09b1555439ea3c17be0586108b995e1f47d9e"},
+    {"path": "Assets/_Project/Scripts/Visor/QuestFoveationDriver.cs", "sha256": "2f87c283edbf06732734512f2c8972803e682b7a73b8bcc12ec1acfd02b20994"},
+    {"path": "Assets/_Project/Scripts/Graphics/VR/FoveatedRenderCommander.cs", "sha256": "f94cdaaff40e5554d5e625c0be7d865f7a97216ee0fa63975e770e1a3d1dd265"},
+    {"path": "Assets/_Project/Scripts/Editor/QuestVrOptimizationValidator1406.cs", "sha256": "f33499c3528a709c9706209c7106463d797a2e0d0c59a06b935f34407a268232"},
+    {"path": "Assets/_Project/Scripts/Editor/Build/QuestVulkanRenderPipelineConfigurator.cs", "sha256": "26960e9b841997c8d1919e5d3189a675695fe0a2e136e9dbba8a811a9bec24ba"},
+    {"path": "Assets/_Project/Scripts/Editor/Build/XrPlatformReadinessValidator.cs", "sha256": "bf08a6de99d7790e69a2aaf3a25130b7b0d374d3ba141beebbde6638ef812e3c"},
+    {"path": "Assets/_Project/Scripts/Core/HectonUrpTextureRequirementsGuard.cs", "sha256": "7ff3823d64621cca7491e411d8202660dd33b4bd4ae400ea5b80c9b4759eea73"},
+    {"path": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs", "sha256": "3ea0fd9b6f2ae2c6f5b49664596283b7a1d23f8836ef1deda451033849dba532"},
+    {"path": "Assets/_Project/Scripts/Visor/HectonFluidAdvectionRenderFeature.cs", "sha256": "b8307a5602fac796d48662cdd055b107162729aa6dea3f647de2d73aa00b2fb1"},
+    {"path": "Assets/_Project/Scripts/UI/WristPdaScreenProjectorFeature.cs", "sha256": "30316080fdc2652be4241c04525d257c3aba7ab6b63f76789c01d5227f487b73"},
+    {"path": "Assets/Shapes/Scripts/Runtime/Immediate Mode/ShapesRenderFeature.cs", "sha256": "d08c4b50428ecd450617c433832b37485ea350d35d60742e5d102b6e9e0a3c35"}
+  ]
+}

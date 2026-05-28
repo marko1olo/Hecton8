@@ -1,0 +1,131 @@
+﻿{
+    "agentId":  "1404",
+    "domain":  "Platform Abstraction Layer / Data Monolith Static DB",
+    "role":  "ANDROID_NDK_AND_AASSETMANAGER_PORTABILITY_ARCHITECT",
+    "status":  "PENDING_ANDROID_PLAYER_BUILD_COMPILE_GATE_BLOCKED",
+    "evidenceClass":  "STATIC_SOURCE_AND_TEXT_SCAN",
+    "generatedAtLocal":  "2026-05-28T05:41:51+04:00",
+    "taskCount":  20,
+    "promptExtraction":  {
+                             "source":  "Docs/Tasks/CURRENT_BATCH.md",
+                             "startLine":  365,
+                             "endLine":  451,
+                             "taskCount":  20,
+                             "roleTag":  "ANDROID_NDK_AND_AASSETMANAGER_PORTABILITY_ARCHITECT"
+                         },
+    "files":  {
+                  "csharpArena":  "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+                  "csharpTypes":  "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+                  "nativeBridge":  "Assets/Plugins/Android/Native/HectonAndroidAssetBridge.cpp",
+                  "cmake":  "Assets/Plugins/Android/Native/CMakeLists.txt",
+                  "gradle":  "Assets/Plugins/Android/mainTemplate.gradle",
+                  "androidManifest":  "Assets/Plugins/Android/AndroidManifest.xml",
+                  "matrixValidator":  "Assets/_Project/Scripts/Editor/Build/NativePluginMatrixValidator.cs",
+                  "editorAudit":  "Assets/_Project/Scripts/Editor/DataMonolith/H8AndroidAssetBridgeStaticAudit.cs",
+                  "staticDataBlob":  "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin"
+              },
+    "sourceHashes":  {
+                         "csharpArenaSha256":  "8c789d7f61edf28f158bb3fb82b90d7b1834fca750a274943f015b36ff699dc7",
+                         "csharpTypesSha256":  "cce3e07d563cc7039e993c5c7b03357b017cb7b72fdb9c6c21e5096411b71374",
+                         "memorySha256":  "5244a1a957fc131c908190f6734a54ad2a17a186901d62306faa44384d083657",
+                         "nativeBridgeSha256":  "60f917f33b2be30a90c84404db36ea9b55c0161a2fbad5b455aa7357d00bef7e",
+                         "cmakeSha256":  "b6765a5c93a0fedb3a145018468133ad0c54eaf8220884155575df790e9cea52",
+                         "gradleSha256":  "420452337697779ae188c43e7958c43e50d8245fe451b14dc43b50a86d61c996",
+                         "androidManifestSha256":  "84d571e87a87eeaf9686c6fe48783cbee043fb0de9ca0286ca5fa43e2401ef8e",
+                         "matrixValidatorSha256":  "2e74aa936501e94c1e84d4f44da56459606e5588f369664db3773ca5a062da52",
+                         "editorAuditSha256":  "51e40d34247858909182f00d5ae0f7869976c5a39735daac427036a37f3d6ba2",
+                         "staticDataBlobSha256":  "d38ec4234ddac7ff43b8861ad3464bd82f1cb67a96032388c79460de39a4c53f"
+                     },
+    "staticDataBlob":  {
+                           "exists":  true,
+                           "lengthBytes":  1064384,
+                           "lastWriteTime":  "2026-05-25T21:51:14+04:00"
+                       },
+    "zeroGcTextScan":  {
+                           "androidGuardedBranchNewTokenCount":  0,
+                           "androidGuardedBranchReferenceTypeNewCount":  0,
+                           "androidGuardedBranchStringFormatCount":  0,
+                           "androidGuardedBranchToStringCount":  0,
+                           "androidGuardedBranchLinqTokenCount":  0,
+                           "androidGuardedBranchForeachCount":  0,
+                           "androidGuardedBranchAndroidJavaClassCount":  0,
+                           "androidGuardedBranchNewJvalueCount":  0,
+                           "androidGuardedBranchPersistentPathCombineCount":  0,
+                           "androidGuardedBranchFileStreamOrBinaryWriterCount":  0,
+                           "nativeNewTokenCount":  0,
+                           "nativeStdVectorCount":  0,
+                           "nativeStdStringCount":  0,
+                           "nativeMallocCount":  0,
+                           "nativeFreeCount":  0,
+                           "nativeDeleteCount":  0
+                       },
+    "dataSovereignty":  {
+                            "bufferIds":  [
+                                              "BufferID.DataMonolithPayload=71103",
+                                              "BufferID.DataMonolithTelemetryRing=71104",
+                                              "BufferID.DataMonolithTelemetryCursor=71105"
+                                          ],
+                            "payloadAcquireCount":  4,
+                            "payloadReleaseCount":  4,
+                            "payloadReleaseFinallyCount":  4,
+                            "releaseRetryHelperCount":  8,
+                            "releaseVaultHandlePreservesFailedRelease":  true,
+                            "tryResolveHandleReferenceCount":  0,
+                            "telemetryAcquireCount":  2,
+                            "telemetryReleaseRetryCount":  4,
+                            "telemetryReleaseFinallyCount":  1
+                        },
+    "nativeBridge":  {
+                         "aAssetManagerFromJava":  true,
+                         "aAssetOpen":  true,
+                         "aAssetRead":  true,
+                         "aAssetCloseCount":  4,
+                         "exactLengthGuard":  true,
+                         "explicitJavaVmParameter":  true,
+                         "noJniOnLoadDependency":  true,
+                         "nativeTelemetryDump":  true
+                     },
+    "androidPackaging":  {
+                             "dllImportInternal":  true,
+                             "cmakeReferenceOnly":  true,
+                             "gradleUnityLibraryTemplate":  true,
+                             "gradleSourceBuildPlaceholders":  true,
+                             "noExternalNativeBuildCollision":  true,
+                             "h8binNoCompress":  true,
+                             "projectGameActivityEntry":  true,
+                             "manifestGameActivity":  true
+                         },
+    "layoutProof":  {
+                        "headerBytes":  64,
+                        "directoryBytes":  64,
+                        "sectionEntryBytes":  16,
+                        "telemetryEntryBytes":  64,
+                        "telemetryOffsets":  "Checksum64@0 u64; LoadTicks@8 i64; IoTicks@16 i64; FrameIndex@24 u32; BlobBytes@28 u32; SectionCount@32 u32; LoadStatus@36 u32; PathFlags@40 u32; StateHash@44 u32; Reserved0@48 u32; Reserved1@52 u32; Reserved2@56 u32; Reserved3@60 u32"
+                    },
+    "qualityDoctrine":  {
+                            "globalQualityWeightUsedInDataTruth":  false,
+                            "reason":  "Data Monolith bytes, DTO layout, BufferID identity, and authority route are gameplay truth and must not scale by HomeostasisBrain.GlobalQualityWeight.",
+                            "binaryLowEndSwitchIntroduced":  false,
+                            "cinematicCheatScope":  "No physical simulation added; bridge is cold boot I/O and diagnostic dump only."
+                        },
+    "buildThrottle":  {
+                          "cpuLoadPercentBeforeFinalBuildGate":  64,
+                          "activeCompilerProcessCount":  1,
+                          "activeCompilerProcesses":  [
+                                                          {
+                                                              "id":  32028,
+                                                              "name":  "dotnet",
+                                                              "cpu":  21.109375,
+                                                              "startTime":  "2026-05-28T05:41:37+04:00"
+                                                          }
+                                                      ],
+                          "dotnetBuildInvokedInThisApexPass":  false,
+                          "reason":  "Build forbidden: CPU \u003e 50 or active dotnet/csc/VBCSCompiler process present."
+                      },
+    "residualRisks":  [
+                          "No Android IL2CPP export/build/player launch proof; __Internal symbol linkage still requires generated binary inspection with nm/readelf.",
+                          "No runtime Dump_1404.bin exists yet; source route exists and Docs/AgentLogs/Dump_1404.bin is false until dump execution.",
+                          "Global Android native matrix still reports missing non-domain arm64 LZ4/audio binaries; can block global Android build before Data Monolith runtime proof.",
+                          "Android native dump still depends on Application.persistentDataPath returning a non-empty Unity string; managed Path/FileStream/BinaryWriter removed from Android release dump path."
+                      ]
+}

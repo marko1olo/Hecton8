@@ -433,7 +433,10 @@ namespace Hecton8.Physics.Vehicles
             sample.FluidDensityKgPerM3 = 1065f + (triangle * 6f);
             sample.AmbientPressureATM = SubmarineBallastConstants.AtmosphericPressureAtm +
                                         ((float)depth * SubmarineBallastConstants.SeaWaterAtmPerMeter);
-            sample.GlobalQualityWeight = SubmarineBallastConstants.AuthoritativeQualityWeight;
+            sample.GlobalQualityWeight = math.saturate(math.select(
+                SubmarineBallastConstants.AuthoritativeQualityWeight,
+                sample.GlobalQualityWeight,
+                math.isfinite(sample.GlobalQualityWeight)));
             sample.Flags |= SubmarineBallastConstants.SampleFlagMockFluid;
             FluidSamples[index] = sample;
         }
@@ -584,18 +587,41 @@ namespace Hecton8.Physics.Vehicles
             float density = math.max(SubmarineBallastConstants.Epsilon, SafeFinite(sample.FluidDensityKgPerM3, SubmarineBallastConstants.DefaultWaterDensityKgPerM3));
             float ambientPressure = math.max(SubmarineBallastConstants.AtmosphericPressureAtm, SafeFinite(sample.AmbientPressureATM, SubmarineBallastConstants.AtmosphericPressureAtm));
             float quality = math.saturate(SafeFinite(sample.GlobalQualityWeight, 1f));
-            int requestedSamples = math.clamp(sample.ActiveSampleBudget, 0, 4);
-            int activeSamples = math.select(4, requestedSamples, requestedSamples > 0);
+            float surfaceSwell = SafeFinite(sample.SurfaceSwellMeters, 0f);
+            int activeSamples = math.clamp(sample.ActiveSampleBudget, 1, 4);
             float halfHeight = hullHeight * 0.5f;
             float center = math.saturate((depthMeters + halfHeight) * math.rcp(hullHeight));
-            float bow = math.saturate((depthMeters + sample.SurfaceSwellMeters * 0.35f + halfHeight) * math.rcp(hullHeight));
-            float stern = math.saturate((depthMeters - sample.SurfaceSwellMeters * 0.35f + halfHeight) * math.rcp(hullHeight));
-            float beam = math.saturate((depthMeters + sample.SurfaceSwellMeters * 0.125f + halfHeight) * math.rcp(hullHeight));
-            float submerged = center;
-            submerged += math.select(0f, bow, activeSamples >= 2);
-            submerged += math.select(0f, stern, activeSamples >= 3);
-            submerged += math.select(0f, beam, activeSamples >= 4);
-            submerged *= math.rcp((float)activeSamples);
+            float secondarySpan = quality * (activeSamples - 1);
+            float fullSecondarySamples = math.floor(secondarySpan);
+            float fractionalSecondarySample = secondarySpan - fullSecondarySamples;
+            float submergedSum = center;
+            float submergedWeight = 1f;
+
+            if (activeSamples > 1 && secondarySpan > 0f)
+            {
+                float weight = math.select(fractionalSecondarySample, 1f, fullSecondarySamples >= 1f);
+                float bow = math.saturate((depthMeters + surfaceSwell * 0.35f + halfHeight) * math.rcp(hullHeight));
+                submergedSum += bow * weight;
+                submergedWeight += weight;
+            }
+
+            if (activeSamples > 2 && secondarySpan > 1f)
+            {
+                float weight = math.select(fractionalSecondarySample, 1f, fullSecondarySamples >= 2f);
+                float stern = math.saturate((depthMeters - surfaceSwell * 0.35f + halfHeight) * math.rcp(hullHeight));
+                submergedSum += stern * weight;
+                submergedWeight += weight;
+            }
+
+            if (activeSamples > 3 && secondarySpan > 2f)
+            {
+                float weight = math.select(fractionalSecondarySample, 1f, fullSecondarySamples >= 3f);
+                float beam = math.saturate((depthMeters + surfaceSwell * 0.125f + halfHeight) * math.rcp(hullHeight));
+                submergedSum += beam * weight;
+                submergedWeight += weight;
+            }
+
+            float submerged = submergedSum * math.rcp(submergedWeight);
 
             float totalWaterLiters = 0f;
             float totalAirMassKg = 0f;

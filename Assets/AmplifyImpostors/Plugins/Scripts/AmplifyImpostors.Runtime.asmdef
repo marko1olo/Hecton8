@@ -1,3 +1,14 @@
 {
-	"name": "AmplifyImpostors.Runtime"
+    "name": "AmplifyImpostors.Runtime",
+    "rootNamespace": "AmplifyImpostors",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

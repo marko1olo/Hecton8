@@ -536,7 +536,8 @@ namespace Hecton8.Physics
                 Counters = counters,
                 OriginAUP = originAup,
                 FrameIndex = ++_frameIndex,
-                SectorHash = sectorHash != 0u ? sectorHash : 0x5348494Eu
+                SectorHash = sectorHash != 0u ? sectorHash : 0x5348494Eu,
+                GlobalQualityWeight = ResolveGlobalQualityWeight()
             };
             JobHandle handle = job.Schedule(32, 8);
             H8Memory.RegisterActiveJob(OwnerSystem, handle);
@@ -1223,7 +1224,7 @@ namespace Hecton8.Physics
 
         private static float Smooth01(float value)
         {
-            float x = math.saturate(value);
+            float x = math.saturate(math.isfinite(value) ? value : 1f);
             return x * x * (3f - 2f * x);
         }
     }
@@ -1545,10 +1546,14 @@ namespace Hecton8.Physics
         public double3 OriginAUP;
         public uint FrameIndex;
         public uint SectorHash;
+        public float GlobalQualityWeight;
 
         public void Execute(int index)
         {
-            float q = Smooth01(AbyssalCavitationConstants.AuthoritativeQualityWeight);
+            float q = Smooth01(math.saturate(math.select(
+                AbyssalCavitationConstants.AuthoritativeQualityWeight,
+                GlobalQualityWeight,
+                math.isfinite(GlobalQualityWeight))));
             if (index == 0 && Counters.IsCreated && Counters.Length >= AbyssalCavitationConstants.CounterBlockCount)
             {
                 SetCounter(AbyssalCavitationCounterIndex.ActiveShockwaves, math.min(10, Shockwaves.Length));
@@ -1809,7 +1814,7 @@ namespace Hecton8.Physics
                 return;
             }
 
-            float q = Smooth01(AbyssalCavitationConstants.AuthoritativeQualityWeight);
+            float q = Smooth01(Tuning.GlobalQualityWeight);
             bool critical = (entity.Flags & AbyssalCavitationEntityFlags.Critical) != 0u;
             float acceptance = math.lerp(0.08f, 1.0f, q);
             if (!critical && Hash01(entity.EntityHash ^ FrameIndex * 747796405u) > acceptance)
@@ -1935,30 +1940,30 @@ namespace Hecton8.Physics
             double3 p50 = epicenterAup + ray * 0.5;
             double3 p75 = epicenterAup + ray * 0.75;
 
-            float midDamp = ResolveSdfDampening(SampleSdfDistance(p50), softnessMeters, hardDampening);
+            float midDamp = ResolveSdfDampening(SampleSdfDistance(p50, quality), softnessMeters, hardDampening);
             float multiTapWeight = SmoothRange(0.35f, 0.85f, quality);
             if (multiTapWeight <= 0f)
                 return midDamp;
 
             float rayDamp = math.min(
-                ResolveSdfDampening(SampleSdfDistance(p25), softnessMeters, hardDampening),
-                ResolveSdfDampening(SampleSdfDistance(p75), softnessMeters, hardDampening));
+                ResolveSdfDampening(SampleSdfDistance(p25, quality), softnessMeters, hardDampening),
+                ResolveSdfDampening(SampleSdfDistance(p75, quality), softnessMeters, hardDampening));
             rayDamp = math.min(rayDamp, midDamp);
 
             return math.lerp(midDamp, rayDamp, multiTapWeight);
         }
 
-        private float SampleSdfDistance(double3 midpointAup)
+        private float SampleSdfDistance(double3 midpointAup, float quality)
         {
             if ((SdfVolume.Flags & AbyssalCavitationSdfFlags.Active) != 0u &&
                 SdfVoxels.IsCreated)
-                return SampleSdfVolume(midpointAup);
+                return SampleSdfVolume(midpointAup, quality);
 
             float3 local = LocalDeltaToFloat3NoFlags(midpointAup - SdfReferenceAUP);
             return MockSdf.SampleDistance(local);
         }
 
-        private float SampleSdfVolume(double3 midpointAup)
+        private float SampleSdfVolume(double3 midpointAup, float quality)
         {
             int3 dimensions = SdfVolume.Dimensions;
             if (!math.all(dimensions > 0))
@@ -1978,7 +1983,7 @@ namespace Hecton8.Physics
             int3 nearestCoord = (int3)math.floor(grid + 0.5f);
             nearestCoord = math.clamp(nearestCoord, int3.zero, dimensions - 1);
             float nearest = DecodeSdfByte(SdfVoxels[FlatIndex(nearestCoord, dimensions)]);
-            float interpolationWeight = Smooth01(math.saturate((Smooth01(AbyssalCavitationConstants.AuthoritativeQualityWeight) - 0.18f) * math.rcp(0.52f)));
+            float interpolationWeight = Smooth01(math.saturate((Smooth01(quality) - 0.18f) * math.rcp(0.52f)));
             if (interpolationWeight <= 0f)
                 return nearest;
 
@@ -2293,7 +2298,7 @@ namespace Hecton8.Physics
                 CurrentRadius = radius,
                 PeakPressure = peakPressure,
                 PeakForce = peakForce,
-                GlobalQualityWeight = math.saturate(Tuning.GlobalQualityWeight),
+                GlobalQualityWeight = math.saturate(math.select(1f, Tuning.GlobalQualityWeight, math.isfinite(Tuning.GlobalQualityWeight))),
                 FrameIndex = FrameIndex,
                 StateHash = hash,
                 ActiveShockwaves = active,

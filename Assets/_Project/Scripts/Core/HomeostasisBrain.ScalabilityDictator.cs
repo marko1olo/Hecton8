@@ -66,18 +66,90 @@ namespace Hecton8.Core
     }
 
     /// <summary>
-    /// 32-byte dictator-local telemetry row. One half cache-line, explicit alignment, no managed fields.
+    /// 64-byte dictator-local telemetry row. One cache line, explicit alignment, no managed fields.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
     public struct ScalabilityTelemetryEntry
     {
-        [FieldOffset(0)] public ulong Timestamp;
-        [FieldOffset(8)] public float RawFrameMs;
-        [FieldOffset(12)] public float SmoothedFrameMs;
-        [FieldOffset(16)] public float GlobalQualityWeight;
-        [FieldOffset(20)] public float VramPressure;
-        [FieldOffset(24)] public uint Flags;
-        [FieldOffset(28)] public uint _pad0;
+        [System.Runtime.InteropServices.FieldOffset(0)]
+        public ulong Timestamp;
+        [System.Runtime.InteropServices.FieldOffset(8)]
+        public float RawFrameMs;
+        [System.Runtime.InteropServices.FieldOffset(12)]
+        public float SmoothedFrameMs;
+        [System.Runtime.InteropServices.FieldOffset(16)]
+        public float GlobalQualityWeight;
+        [System.Runtime.InteropServices.FieldOffset(20)]
+        public float VramPressure;
+        [System.Runtime.InteropServices.FieldOffset(24)]
+        public uint Flags;
+        [System.Runtime.InteropServices.FieldOffset(28)]
+        public uint _pad0;
+        [System.Runtime.InteropServices.FieldOffset(32)]
+        private byte _pad1;
+        [System.Runtime.InteropServices.FieldOffset(33)]
+        private byte _pad2;
+        [System.Runtime.InteropServices.FieldOffset(34)]
+        private byte _pad3;
+        [System.Runtime.InteropServices.FieldOffset(35)]
+        private byte _pad4;
+        [System.Runtime.InteropServices.FieldOffset(36)]
+        private byte _pad5;
+        [System.Runtime.InteropServices.FieldOffset(37)]
+        private byte _pad6;
+        [System.Runtime.InteropServices.FieldOffset(38)]
+        private byte _pad7;
+        [System.Runtime.InteropServices.FieldOffset(39)]
+        private byte _pad8;
+        [System.Runtime.InteropServices.FieldOffset(40)]
+        private byte _pad9;
+        [System.Runtime.InteropServices.FieldOffset(41)]
+        private byte _pad10;
+        [System.Runtime.InteropServices.FieldOffset(42)]
+        private byte _pad11;
+        [System.Runtime.InteropServices.FieldOffset(43)]
+        private byte _pad12;
+        [System.Runtime.InteropServices.FieldOffset(44)]
+        private byte _pad13;
+        [System.Runtime.InteropServices.FieldOffset(45)]
+        private byte _pad14;
+        [System.Runtime.InteropServices.FieldOffset(46)]
+        private byte _pad15;
+        [System.Runtime.InteropServices.FieldOffset(47)]
+        private byte _pad16;
+        [System.Runtime.InteropServices.FieldOffset(48)]
+        private byte _pad17;
+        [System.Runtime.InteropServices.FieldOffset(49)]
+        private byte _pad18;
+        [System.Runtime.InteropServices.FieldOffset(50)]
+        private byte _pad19;
+        [System.Runtime.InteropServices.FieldOffset(51)]
+        private byte _pad20;
+        [System.Runtime.InteropServices.FieldOffset(52)]
+        private byte _pad21;
+        [System.Runtime.InteropServices.FieldOffset(53)]
+        private byte _pad22;
+        [System.Runtime.InteropServices.FieldOffset(54)]
+        private byte _pad23;
+        [System.Runtime.InteropServices.FieldOffset(55)]
+        private byte _pad24;
+        [System.Runtime.InteropServices.FieldOffset(56)]
+        private byte _pad25;
+        [System.Runtime.InteropServices.FieldOffset(57)]
+        private byte _pad26;
+        [System.Runtime.InteropServices.FieldOffset(58)]
+        private byte _pad27;
+        [System.Runtime.InteropServices.FieldOffset(59)]
+        private byte _pad28;
+        [System.Runtime.InteropServices.FieldOffset(60)]
+        private byte _pad29;
+        [System.Runtime.InteropServices.FieldOffset(61)]
+        private byte _pad30;
+        [System.Runtime.InteropServices.FieldOffset(62)]
+        private byte _pad31;
+        [System.Runtime.InteropServices.FieldOffset(63)]
+        private byte _pad32;
     }
 
     /// <summary>
@@ -131,6 +203,9 @@ namespace Hecton8.Core
         private const float MaxGcFreezePulseSeconds = 5f;
         private const uint DictatorReasonHash = 0x53484933u; // SHI3
         private const uint ScalabilityTelemetryFlagSanitized = 1u << 31;
+        private const uint ScalabilityShaderDirtyMathLodLow = 1u << 0;
+        private const uint ScalabilityShaderDirtyCullingMultiplier = 1u << 1;
+        private const uint ScalabilityShaderDirtyQualityWeight = 1u << 2;
         private const string ScalabilityDumpFileName = "Dump_SCALABILITY_DICTATOR.bin";
         private const string ScalabilityH8DumpFileName = "Dump_SCALABILITY_DICTATOR.h8dump";
         private const string ScalabilityCsvFileName = "scalability_curves.csv";
@@ -192,6 +267,10 @@ namespace Hecton8.Core
         private static float _fractionalTimeSlice = 1f;
         private static float _targetRenderScale01 = 1f;
         private static float _lastPublishedGlobalQualityWeight = ForcedQualityWeightDisabled;
+        private static uint _pendingScalabilityShaderDirtyFlags;
+        private static float _pendingMathLodLowScalar;
+        private static float _pendingCullingMultiplier = 1f;
+        private static float _pendingGlobalQualityWeight = 1f;
         private static float _lastAppliedRenderScale01 = ForcedQualityWeightDisabled;
         private static byte _lastAppliedRenderPressureLevel;
         private static byte _lastAppliedRenderFlags;
@@ -277,6 +356,10 @@ namespace Hecton8.Core
             _fractionalTimeSlice = ResolveFractionalTimeSliceFromWeight(_globalQualityWeight);
             _targetRenderScale01 = ResolveRenderScaleFromWeight(_globalQualityWeight);
             _lastPublishedGlobalQualityWeight = ForcedQualityWeightDisabled;
+            _pendingScalabilityShaderDirtyFlags = 0u;
+            _pendingMathLodLowScalar = 0f;
+            _pendingCullingMultiplier = 1f;
+            _pendingGlobalQualityWeight = _globalQualityWeight;
             _lastAppliedRenderScale01 = ForcedQualityWeightDisabled;
             _lastAppliedRenderPressureLevel = 0;
             _lastAppliedRenderFlags = 0;
@@ -323,8 +406,9 @@ namespace Hecton8.Core
                 MemClearIfCreated(telemetry);
             GenerateEmergencyMockProfiles();
             Shader.SetGlobalFloat(_cullingMultiplierId, 1f);
-            PublishQualityShaderGlobals(true);
+            PublishQualityShaderGlobalsImmediate(true);
             SetMathLodLowLease(ResolveHardwareConstraintPressure01() >= HardwareConstraintFlagThreshold01);
+            FlushVisualSyncShaderState();
         }
 
         private static void ShutdownScalabilityDictator()
@@ -354,6 +438,10 @@ namespace Hecton8.Core
             Shader.SetGlobalFloat(_mathLodLowScalarId, 0f);
             _lastMathLodLowScalar = 0f;
             _mathLodLowScalarWritten = true;
+            _pendingScalabilityShaderDirtyFlags = 0u;
+            _pendingMathLodLowScalar = 0f;
+            _pendingCullingMultiplier = 1f;
+            _pendingGlobalQualityWeight = 1f;
             ReleaseScalabilityDictatorVaultHandles(_dataVault);
             _systemHealthDtoHandle = default;
             _scalabilityStateHandle = default;
@@ -877,9 +965,8 @@ namespace Hecton8.Core
             if (_mathLodLowScalarWritten && math.abs(_lastMathLodLowScalar - lowWeight) < QualityShaderEpsilon)
                 return;
 
-            Shader.SetGlobalFloat(_mathLodLowScalarId, lowWeight);
-            _lastMathLodLowScalar = lowWeight;
-            _mathLodLowScalarWritten = true;
+            _pendingMathLodLowScalar = lowWeight;
+            _pendingScalabilityShaderDirtyFlags |= ScalabilityShaderDirtyMathLodLow;
         }
 
         private static void UpdateCullingMultiplier(float multiplier)
@@ -889,7 +976,8 @@ namespace Hecton8.Core
                 return;
 
             _cullingMultiplier = safeMultiplier;
-            Shader.SetGlobalFloat(_cullingMultiplierId, safeMultiplier);
+            _pendingCullingMultiplier = safeMultiplier;
+            _pendingScalabilityShaderDirtyFlags |= ScalabilityShaderDirtyCullingMultiplier;
         }
 
         private static void UpdateGlobalQualityState(float frameMs, float vramPressure01, float thermalIndex)
@@ -972,9 +1060,45 @@ namespace Hecton8.Core
             if (!force && math.abs(_lastPublishedGlobalQualityWeight - qualityWeight) < QualityShaderEpsilon)
                 return;
 
+            _pendingGlobalQualityWeight = qualityWeight;
+            _pendingScalabilityShaderDirtyFlags |= ScalabilityShaderDirtyQualityWeight;
+        }
+
+        private static void PublishQualityShaderGlobalsImmediate(bool force)
+        {
+            float qualityWeight = GlobalQualityWeight;
+            if (!force && math.abs(_lastPublishedGlobalQualityWeight - qualityWeight) < QualityShaderEpsilon)
+                return;
+
             Shader.SetGlobalFloat(_globalQualityWeightId, qualityWeight);
             Shader.SetGlobalFloat(_h8GlobalQualityWeightId, qualityWeight);
             _lastPublishedGlobalQualityWeight = qualityWeight;
+        }
+
+        internal static void FlushVisualSyncShaderState()
+        {
+            uint flags = _pendingScalabilityShaderDirtyFlags;
+            if (flags == 0u)
+                return;
+
+            if ((flags & ScalabilityShaderDirtyMathLodLow) != 0u)
+            {
+                Shader.SetGlobalFloat(_mathLodLowScalarId, _pendingMathLodLowScalar);
+                _lastMathLodLowScalar = _pendingMathLodLowScalar;
+                _mathLodLowScalarWritten = true;
+            }
+
+            if ((flags & ScalabilityShaderDirtyCullingMultiplier) != 0u)
+                Shader.SetGlobalFloat(_cullingMultiplierId, _pendingCullingMultiplier);
+
+            if ((flags & ScalabilityShaderDirtyQualityWeight) != 0u)
+            {
+                Shader.SetGlobalFloat(_globalQualityWeightId, _pendingGlobalQualityWeight);
+                Shader.SetGlobalFloat(_h8GlobalQualityWeightId, _pendingGlobalQualityWeight);
+                _lastPublishedGlobalQualityWeight = _pendingGlobalQualityWeight;
+            }
+
+            _pendingScalabilityShaderDirtyFlags = 0u;
         }
 
         private static void UpdateRegistryKillMask(ulong targetMask)
@@ -1890,7 +2014,7 @@ namespace Hecton8.Core
                 UnsafeUtility.SizeOf<ScalabilityStateDTO>() == 16 &&
                 UnsafeUtility.SizeOf<MockHeavyLoadSignal>() == 16 &&
                 UnsafeUtility.SizeOf<MockTerrainSamplerStatus>() == 16 &&
-                UnsafeUtility.SizeOf<ScalabilityTelemetryEntry>() == 32 &&
+                UnsafeUtility.SizeOf<ScalabilityTelemetryEntry>() == 64 &&
                 UnsafeUtility.SizeOf<ScalabilityTuningDTO>() == 16)
             {
                 return;
@@ -1940,10 +2064,10 @@ namespace Hecton8.Core
                 BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), 2);
                 BinaryPrimitives.WriteInt32LittleEndian(header.Slice(8, 4), ScalabilityTelemetryCapacity);
                 BinaryPrimitives.WriteInt32LittleEndian(header.Slice(12, 4), _scalabilityTelemetryCursor);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(16, 4), 32);
+                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(16, 4), 64);
                 stream.Write(header);
 
-                Span<byte> entryBytes = stackalloc byte[32];
+                Span<byte> entryBytes = stackalloc byte[64];
                 float fallbackFrameMs = ResolveTargetFrameMs(ResolveTargetFrameRate());
                 for (int i = 0; i < ScalabilityTelemetryCapacity; i++)
                 {

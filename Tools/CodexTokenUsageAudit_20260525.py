@@ -669,6 +669,7 @@ def build_report():
             add_usage(total, record["final_usage"])
 
     daily = defaultdict(zero_usage)
+    hourly = defaultdict(zero_usage)
     weekly = defaultdict(zero_usage)
     monthly = defaultdict(zero_usage)
     daily_model_delta_usage = defaultdict(lambda: defaultdict(zero_usage))
@@ -684,7 +685,9 @@ def build_report():
         increment_parse_errors += errors
         for ts, delta, model, effort in increments:
             local = ts.astimezone(SAMARA)
+            hour_key = local.strftime("%Y-%m-%d %H:00")
             add_usage(daily[local.date().isoformat()], delta)
+            add_usage(hourly[hour_key], delta)
             add_usage(weekly[week_key(local)], delta)
             month_key = f"{local.year}-{local.month:02d}"
             day_key = local.date().isoformat()
@@ -861,6 +864,7 @@ def build_report():
             "observed_model_high_bound_usd_per_1k_characters": observed_high_cost / chars * 1000,
         }
     daily_primary_costs = usage_map_costs(daily, pricing[PRIMARY_PRICE_KEY])
+    hourly_primary_costs = usage_map_costs(hourly, pricing[PRIMARY_PRICE_KEY])
     weekly_primary_costs = usage_map_costs(weekly, pricing[PRIMARY_PRICE_KEY])
     monthly_primary_costs = usage_map_costs(monthly, pricing[PRIMARY_PRICE_KEY])
     daily_codex_costs = usage_map_costs(daily, pricing[CODEX_STANDARD_PRICE_KEY])
@@ -1008,6 +1012,7 @@ def build_report():
         "primary_price_key": PRIMARY_PRICE_KEY,
         "primary_price_label": PRIMARY_PRICE_LABEL,
         "daily_gpt_5_5_standard_costs_usd": daily_primary_costs,
+        "hourly_gpt_5_5_standard_costs_usd": hourly_primary_costs,
         "weekly_gpt_5_5_standard_costs_usd": weekly_primary_costs,
         "monthly_gpt_5_5_standard_costs_usd": monthly_primary_costs,
         "daily_gpt_5_3_codex_standard_costs_usd": daily_codex_costs,
@@ -1049,6 +1054,7 @@ def build_report():
         "top_plan_usage": top_usage_rows(plan_usage),
         "top_cli_usage": top_usage_rows(cli_usage),
         "daily": {key: value for key, value in sorted(daily.items())},
+        "hourly": {key: value for key, value in sorted(hourly.items())},
         "weekly": {key: value for key, value in sorted(weekly.items())},
         "monthly": {key: value for key, value in sorted(monthly.items())},
         "top_days": [{"date": key, **value} for key, value in top_days],

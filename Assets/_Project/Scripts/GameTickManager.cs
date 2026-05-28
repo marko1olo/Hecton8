@@ -40,6 +40,7 @@ using System.Diagnostics;
 using Hecton.Localization;
 using Hecton8.Dev;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Hecton8.Core
 {
@@ -124,6 +125,8 @@ namespace Hecton8.Core
         [SerializeField] private bool enableSlowTickProfiling = true;
         [SerializeField] private float slowTickSpikeThresholdMs = 8f;
         [SerializeField] private float slowTickReportCooldownSeconds = 1.5f;
+        [SerializeField, FormerlySerializedAs("slowTickTopEntries")]
+        private int slowTickProfilerTopEntries = SlowTickProfilerCapacity;
         [SerializeField] private float _debugLastSlowTickDurationMs;
         [SerializeField] private float _debugTopSlowTickDurationMs;
         [SerializeField] private string _debugTopSlowTickOwner = "None";
@@ -591,9 +594,20 @@ namespace Hecton8.Core
         }
 
         #endif
+        private int ResolveSlowTickProfilerEntryCount()
+        {
+            if (slowTickProfilerTopEntries < 1)
+                return 1;
+
+            return slowTickProfilerTopEntries > SlowTickProfilerCapacity
+                ? SlowTickProfilerCapacity
+                : slowTickProfilerTopEntries;
+        }
+
         private void ResetSlowTickProfilerFrame()
         {
-            for (int i = 0; i < SlowTickProfilerCapacity; i++)
+            int entryCount = ResolveSlowTickProfilerEntryCount();
+            for (int i = 0; i < entryCount; i++)
             {
                 _slowTickTopOwners[i] = null;
                 _slowTickTopDurationsMs[i] = 0d;
@@ -603,12 +617,13 @@ namespace Hecton8.Core
         private void RecordSlowTickSample(object owner, long elapsedTicks)
         {
             double elapsedMs = elapsedTicks * 1000.0d / Stopwatch.Frequency;
-            for (int i = 0; i < SlowTickProfilerCapacity; i++)
+            int entryCount = ResolveSlowTickProfilerEntryCount();
+            for (int i = 0; i < entryCount; i++)
             {
                 if (elapsedMs <= _slowTickTopDurationsMs[i])
                     continue;
 
-                for (int shift = SlowTickProfilerCapacity - 1; shift > i; shift--)
+                for (int shift = entryCount - 1; shift > i; shift--)
                 {
                     _slowTickTopOwners[shift] = _slowTickTopOwners[shift - 1];
                     _slowTickTopDurationsMs[shift] = _slowTickTopDurationsMs[shift - 1];

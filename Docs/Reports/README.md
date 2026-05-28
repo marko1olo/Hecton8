@@ -43,6 +43,7 @@ Evidence class: STATIC_DOC
 - mod registry cache and DataVault binding reports
 - DataVault rebind/release lifecycle reports
 - SignalBus hot-path audits
+- project metrics dashboards and chart bundles
 - documentation structure scans
 
 ## Archived Reports

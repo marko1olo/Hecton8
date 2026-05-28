@@ -1,0 +1,55 @@
+{
+  "status": "PENDING_VERIFICATION",
+  "agent": "UNKNOWN",
+  "date": "2026-05-28",
+  "domain": "Core & Memory Infrastructure",
+  "pass": "Unity MathGuard DataVault Binding Pass",
+  "filesChanged": [
+    "Assets/_Project/Scripts/Core/MathGuard.cs",
+    "Assets/_Project/Scripts/Core/GlobalRegistry.cs"
+  ],
+  "problem": [
+    "MathGuard.Initialize used CacheDataVaultCold",
+    "CacheDataVaultCold read GlobalRegistry.DataVault inside MathGuard",
+    "MathGuard held invalid-number DataVault handles without explicit owner bind/unbind on DataVault replacement"
+  ],
+  "changes": [
+    "Added MathGuard.BindDataVaultCold(IDataVault)",
+    "GlobalRegistry.RegisterDataVault binds MathGuard alongside SignalBus and GlobalTelemetry blackbox",
+    "GlobalRegistry.UnregisterDataVault clears MathGuard when the authoritative DataVault is removed",
+    "Removed MathGuard CacheDataVaultCold and _dataVaultColdCacheAttempted fallback",
+    "MathGuard.Initialize now consumes only the bound Vault"
+  ],
+  "proof": {
+    "mathGuardDirectGlobalRegistryDataVaultReads": 0,
+    "mathGuardCacheDataVaultColdReferences": 0,
+    "mathGuardBindDataVaultColdReferences": 3,
+    "mathGuardBraceDelta": 0,
+    "globalRegistryBraceDelta": 0,
+    "gitDiffCheck": "exit 0; line-ending warnings only"
+  },
+  "runtimeProof": {
+    "cpuLoadPercent": 100,
+    "activeCompilerProcesses": [
+      {
+        "processName": "csc",
+        "pid": 8756
+      },
+      {
+        "processName": "dotnet",
+        "pid": 55080
+      }
+    ],
+    "dotnetBuild": "not run; compile-wall repair assigned to another agent and load guard blocks competing builds",
+    "unityImport": "not run",
+    "playMode": "not run",
+    "profiler": "not run",
+    "gcMonitor": "not run",
+    "deviceRun": "not run"
+  },
+  "microsecondsSavedClaimed": 0,
+  "residualRisk": [
+    "No runtime hot-swap test has verified the MathGuard invalid-number ring after DataVault replacement",
+    "Other Core GlobalRegistry.DataVault reads remain and require separate route classification before editing"
+  ]
+}

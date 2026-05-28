@@ -133,29 +133,61 @@ namespace Hecton8.Systems.AI
         public ushort AgeColdTicks;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 48)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
     internal struct EncounterDirectorBlackBoxEntry
     {
-        [FieldOffset(0)]
+        [System.Runtime.InteropServices.FieldOffset(0)]
         public uint FrameIndex;
-        [FieldOffset(4)]
+        [System.Runtime.InteropServices.FieldOffset(4)]
         public uint DirectorStateHash;
-        [FieldOffset(8)]
+        [System.Runtime.InteropServices.FieldOffset(8)]
         public uint ActiveThreatCount;
-        [FieldOffset(12)]
+        [System.Runtime.InteropServices.FieldOffset(12)]
         public uint Flags;
-        [FieldOffset(16)]
+        [System.Runtime.InteropServices.FieldOffset(16)]
         public float Stress01;
-        [FieldOffset(20)]
+        [System.Runtime.InteropServices.FieldOffset(20)]
         public float Intensity01;
-        [FieldOffset(24)]
+        [System.Runtime.InteropServices.FieldOffset(24)]
         public float SpawnCredits;
-        [FieldOffset(28)]
+        [System.Runtime.InteropServices.FieldOffset(28)]
         public float PlayerSpeed;
-        [FieldOffset(32)]
+        [System.Runtime.InteropServices.FieldOffset(32)]
         public float3 PlayerPosition;
-        [FieldOffset(44)]
+        [System.Runtime.InteropServices.FieldOffset(44)]
         public uint Padding0;
+        [System.Runtime.InteropServices.FieldOffset(48)]
+        private byte _pad0;
+        [System.Runtime.InteropServices.FieldOffset(49)]
+        private byte _pad1;
+        [System.Runtime.InteropServices.FieldOffset(50)]
+        private byte _pad2;
+        [System.Runtime.InteropServices.FieldOffset(51)]
+        private byte _pad3;
+        [System.Runtime.InteropServices.FieldOffset(52)]
+        private byte _pad4;
+        [System.Runtime.InteropServices.FieldOffset(53)]
+        private byte _pad5;
+        [System.Runtime.InteropServices.FieldOffset(54)]
+        private byte _pad6;
+        [System.Runtime.InteropServices.FieldOffset(55)]
+        private byte _pad7;
+        [System.Runtime.InteropServices.FieldOffset(56)]
+        private byte _pad8;
+        [System.Runtime.InteropServices.FieldOffset(57)]
+        private byte _pad9;
+        [System.Runtime.InteropServices.FieldOffset(58)]
+        private byte _pad10;
+        [System.Runtime.InteropServices.FieldOffset(59)]
+        private byte _pad11;
+        [System.Runtime.InteropServices.FieldOffset(60)]
+        private byte _pad12;
+        [System.Runtime.InteropServices.FieldOffset(61)]
+        private byte _pad13;
+        [System.Runtime.InteropServices.FieldOffset(62)]
+        private byte _pad14;
+        [System.Runtime.InteropServices.FieldOffset(63)]
+        private byte _pad15;
     }
 
     internal struct EncounterFrameContext

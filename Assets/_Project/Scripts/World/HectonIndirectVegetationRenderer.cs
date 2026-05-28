@@ -61,8 +61,15 @@ namespace Hecton8.World
         private const BufferID FloraAgeBufferId = (BufferID)74600;
         private const BufferID CpuCullingMatricesBufferId = (BufferID)74601;
         private const BufferID CpuCullingDataBufferId = (BufferID)74602;
+        private const BufferID NativeUploadMatrixDirtyPagesAId = (BufferID)74603;
+        private const BufferID NativeUploadMatrixDirtyPagesBId = (BufferID)74604;
+        private const BufferID NativeUploadDataDirtyPagesAId = (BufferID)74605;
+        private const BufferID NativeUploadDataDirtyPagesBId = (BufferID)74606;
         private const BufferID FloraGrowthTelemetryBufferId = BufferID.IndirectVegetationFloraGrowthTelemetryRing;
         private const BufferID ScatterCullTelemetryBufferId = BufferID.IndirectVegetationScatterCullTelemetryRing;
+        private const int NativeUploadDirtyPageSize = 256;
+        private const int NativeUploadMinimumBudgetBytes = 32 * 1024;
+        private const int NativeUploadMaximumBudgetBytes = 2 * 1024 * 1024;
         private const int MockScatterDefaultAxisCount = 100;
         private const float MockScatterDefaultSpacing = 2f;
         private const uint MockScatterDefaultSeed = 0x53484939u;
@@ -352,6 +359,24 @@ namespace Hecton8.World
         private GraphicsBuffer _legacyInstanceDataBuffer;
         private GraphicsBuffer _uploadedInstanceMatrixBuffer;
         private GraphicsBuffer _uploadedInstanceDataBuffer;
+        private GraphicsBuffer _uploadedInstanceMatrixBufferA;
+        private GraphicsBuffer _uploadedInstanceMatrixBufferB;
+        private GraphicsBuffer _uploadedInstanceDataBufferA;
+        private GraphicsBuffer _uploadedInstanceDataBufferB;
+        private VaultGenerationHandle<byte> _uploadedMatrixDirtyPagesAHandle;
+        private VaultGenerationHandle<byte> _uploadedMatrixDirtyPagesBHandle;
+        private VaultGenerationHandle<byte> _uploadedDataDirtyPagesAHandle;
+        private VaultGenerationHandle<byte> _uploadedDataDirtyPagesBHandle;
+        private int _uploadedDirtyPageCapacity;
+        private int _uploadedInstanceWriteBufferIndex;
+        private int _lastNativeUploadBufferIndex = int.MinValue;
+        private int _lastNativeUploadInstanceCount = -1;
+        private int _lastNativeUploadContentRevision = int.MinValue;
+        private int _lastNativeDirtySourceBufferIndex = int.MinValue;
+        private int _lastNativeDirtySourceInstanceCount = -1;
+        private int _lastNativeDirtySourceContentRevision = int.MinValue;
+        private long _lastNativeUploadBytes;
+        private long _lastNativeUploadAvoidedBytes;
         private IHectonIndirectVegetationBufferSource _bufferSource;
         private Bounds _explicitBounds;
         private bool _hasBoundsOverride;
@@ -582,29 +607,77 @@ namespace Hecton8.World
             public byte IsValidFlag;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 40)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
         private struct FloraGrowthTelemetryEntry
         {
-            [FieldOffset(0)]
+            [System.Runtime.InteropServices.FieldOffset(0)]
             public int FrameIndex;
-            [FieldOffset(4)]
+            [System.Runtime.InteropServices.FieldOffset(4)]
             public int InstanceCount;
-            [FieldOffset(8)]
+            [System.Runtime.InteropServices.FieldOffset(8)]
             public int SampleCount;
-            [FieldOffset(12)]
+            [System.Runtime.InteropServices.FieldOffset(12)]
             public int NegativeAgeCount;
-            [FieldOffset(16)]
+            [System.Runtime.InteropServices.FieldOffset(16)]
             public int NanAgeCount;
-            [FieldOffset(20)]
+            [System.Runtime.InteropServices.FieldOffset(20)]
             public int DirtyUpload;
-            [FieldOffset(24)]
+            [System.Runtime.InteropServices.FieldOffset(24)]
             public float MinAge01;
-            [FieldOffset(28)]
+            [System.Runtime.InteropServices.FieldOffset(28)]
             public float MaxAge01;
-            [FieldOffset(32)]
+            [System.Runtime.InteropServices.FieldOffset(32)]
             public uint AgeHash;
-            [FieldOffset(36)]
+            [System.Runtime.InteropServices.FieldOffset(36)]
             public int Reserved0;
+            [System.Runtime.InteropServices.FieldOffset(40)]
+            private byte _pad0;
+            [System.Runtime.InteropServices.FieldOffset(41)]
+            private byte _pad1;
+            [System.Runtime.InteropServices.FieldOffset(42)]
+            private byte _pad2;
+            [System.Runtime.InteropServices.FieldOffset(43)]
+            private byte _pad3;
+            [System.Runtime.InteropServices.FieldOffset(44)]
+            private byte _pad4;
+            [System.Runtime.InteropServices.FieldOffset(45)]
+            private byte _pad5;
+            [System.Runtime.InteropServices.FieldOffset(46)]
+            private byte _pad6;
+            [System.Runtime.InteropServices.FieldOffset(47)]
+            private byte _pad7;
+            [System.Runtime.InteropServices.FieldOffset(48)]
+            private byte _pad8;
+            [System.Runtime.InteropServices.FieldOffset(49)]
+            private byte _pad9;
+            [System.Runtime.InteropServices.FieldOffset(50)]
+            private byte _pad10;
+            [System.Runtime.InteropServices.FieldOffset(51)]
+            private byte _pad11;
+            [System.Runtime.InteropServices.FieldOffset(52)]
+            private byte _pad12;
+            [System.Runtime.InteropServices.FieldOffset(53)]
+            private byte _pad13;
+            [System.Runtime.InteropServices.FieldOffset(54)]
+            private byte _pad14;
+            [System.Runtime.InteropServices.FieldOffset(55)]
+            private byte _pad15;
+            [System.Runtime.InteropServices.FieldOffset(56)]
+            private byte _pad16;
+            [System.Runtime.InteropServices.FieldOffset(57)]
+            private byte _pad17;
+            [System.Runtime.InteropServices.FieldOffset(58)]
+            private byte _pad18;
+            [System.Runtime.InteropServices.FieldOffset(59)]
+            private byte _pad19;
+            [System.Runtime.InteropServices.FieldOffset(60)]
+            private byte _pad20;
+            [System.Runtime.InteropServices.FieldOffset(61)]
+            private byte _pad21;
+            [System.Runtime.InteropServices.FieldOffset(62)]
+            private byte _pad22;
+            [System.Runtime.InteropServices.FieldOffset(63)]
+            private byte _pad23;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 40)]
@@ -632,29 +705,77 @@ namespace Hecton8.World
             public int Reserved0;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 40)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
         private struct ScatterCullTelemetryEntry
         {
-            [FieldOffset(0)]
+            [System.Runtime.InteropServices.FieldOffset(0)]
             public int FrameIndex;
-            [FieldOffset(4)]
+            [System.Runtime.InteropServices.FieldOffset(4)]
             public int TotalInstances;
-            [FieldOffset(8)]
+            [System.Runtime.InteropServices.FieldOffset(8)]
             public int FrustumCulledCount;
-            [FieldOffset(12)]
+            [System.Runtime.InteropServices.FieldOffset(12)]
             public int OcclusionCulledCount;
-            [FieldOffset(16)]
+            [System.Runtime.InteropServices.FieldOffset(16)]
             public int VisibleCount;
-            [FieldOffset(20)]
+            [System.Runtime.InteropServices.FieldOffset(20)]
             public int DensityDecimationStep;
-            [FieldOffset(24)]
+            [System.Runtime.InteropServices.FieldOffset(24)]
             public int OverdrawWarning;
-            [FieldOffset(28)]
+            [System.Runtime.InteropServices.FieldOffset(28)]
             public float SystemStress01;
-            [FieldOffset(32)]
+            [System.Runtime.InteropServices.FieldOffset(32)]
             public float MaxDensity01;
-            [FieldOffset(36)]
+            [System.Runtime.InteropServices.FieldOffset(36)]
             public int Reserved0;
+            [System.Runtime.InteropServices.FieldOffset(40)]
+            private byte _pad0;
+            [System.Runtime.InteropServices.FieldOffset(41)]
+            private byte _pad1;
+            [System.Runtime.InteropServices.FieldOffset(42)]
+            private byte _pad2;
+            [System.Runtime.InteropServices.FieldOffset(43)]
+            private byte _pad3;
+            [System.Runtime.InteropServices.FieldOffset(44)]
+            private byte _pad4;
+            [System.Runtime.InteropServices.FieldOffset(45)]
+            private byte _pad5;
+            [System.Runtime.InteropServices.FieldOffset(46)]
+            private byte _pad6;
+            [System.Runtime.InteropServices.FieldOffset(47)]
+            private byte _pad7;
+            [System.Runtime.InteropServices.FieldOffset(48)]
+            private byte _pad8;
+            [System.Runtime.InteropServices.FieldOffset(49)]
+            private byte _pad9;
+            [System.Runtime.InteropServices.FieldOffset(50)]
+            private byte _pad10;
+            [System.Runtime.InteropServices.FieldOffset(51)]
+            private byte _pad11;
+            [System.Runtime.InteropServices.FieldOffset(52)]
+            private byte _pad12;
+            [System.Runtime.InteropServices.FieldOffset(53)]
+            private byte _pad13;
+            [System.Runtime.InteropServices.FieldOffset(54)]
+            private byte _pad14;
+            [System.Runtime.InteropServices.FieldOffset(55)]
+            private byte _pad15;
+            [System.Runtime.InteropServices.FieldOffset(56)]
+            private byte _pad16;
+            [System.Runtime.InteropServices.FieldOffset(57)]
+            private byte _pad17;
+            [System.Runtime.InteropServices.FieldOffset(58)]
+            private byte _pad18;
+            [System.Runtime.InteropServices.FieldOffset(59)]
+            private byte _pad19;
+            [System.Runtime.InteropServices.FieldOffset(60)]
+            private byte _pad20;
+            [System.Runtime.InteropServices.FieldOffset(61)]
+            private byte _pad21;
+            [System.Runtime.InteropServices.FieldOffset(62)]
+            private byte _pad22;
+            [System.Runtime.InteropServices.FieldOffset(63)]
+            private byte _pad23;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -1288,15 +1409,17 @@ namespace Hecton8.World
         public bool UsesImpostorPass => _farLodDistance > _nearLodDistance;
 
         /// <summary>True when this renderer is currently consuming caller-provided array uploads staged into owned GPU buffers.</summary>
-        public bool UsesOwnedUploadBuffers => _instanceMatrixBuffer == _uploadedInstanceMatrixBuffer;
+        public bool UsesOwnedUploadBuffers => IsUploadedMatrixBuffer(_instanceMatrixBuffer);
 
         /// <summary>Approximate VRAM footprint in bytes for the renderer-owned graphics buffers.</summary>
         public long GetVRAMEstimation()
         {
             long totalBytes = 0L;
             totalBytes += EstimateGraphicsBufferBytes(_legacyInstanceDataBuffer);
-            totalBytes += EstimateGraphicsBufferBytes(_uploadedInstanceMatrixBuffer);
-            totalBytes += EstimateGraphicsBufferBytes(_uploadedInstanceDataBuffer);
+            totalBytes += EstimateGraphicsBufferBytes(_uploadedInstanceMatrixBufferA);
+            totalBytes += EstimateGraphicsBufferBytes(_uploadedInstanceMatrixBufferB);
+            totalBytes += EstimateGraphicsBufferBytes(_uploadedInstanceDataBufferA);
+            totalBytes += EstimateGraphicsBufferBytes(_uploadedInstanceDataBufferB);
             totalBytes += EstimateGraphicsBufferBytes(_batchHandleBuffer);
             totalBytes += EstimateGraphicsBufferBytes(_floraAgeBuffer);
             totalBytes += EstimateGraphicsBufferBytes(_floraSnapFlagBuffer);
@@ -1682,6 +1805,9 @@ namespace Hecton8.World
         /// <param name="bufferSource">External source that owns the GPU buffers.</param>
         public void BindSource(IHectonIndirectVegetationBufferSource bufferSource)
         {
+            if (!ReferenceEquals(_bufferSource, bufferSource))
+                InvalidateNativeUploadCache();
+
             _bufferSource = bufferSource;
             SyncSourceBinding();
         }
@@ -1715,6 +1841,7 @@ namespace Hecton8.World
             _instanceMatrixBuffer = instanceMatrixBuffer;
             _legacyDataDirty = true;
             _hasCpuCullingData = false;
+            InvalidateNativeUploadCache();
             SetInstanceCount(instanceCount);
         }
 
@@ -1734,6 +1861,7 @@ namespace Hecton8.World
 
             InvalidateRenderStateForBufferIdentityChange(_instanceMatrixBuffer, instanceDataBuffer, _floraPhaseSeedBuffer);
             _instanceDataBuffer = instanceDataBuffer;
+            InvalidateNativeUploadCache();
         }
 
         /// <summary>
@@ -1769,35 +1897,52 @@ namespace Hecton8.World
             }
 
             EnsureUploadedInstanceBufferCapacity(instanceCount, instanceData != null);
-            if (_uploadedInstanceMatrixBuffer == null)
+            GraphicsBuffer matrixWriteBuffer = ResolveUploadedMatrixWriteBuffer();
+            GraphicsBuffer matrixMirrorBuffer = ResolveUploadedMatrixMirrorBuffer();
+            if (matrixWriteBuffer == null || matrixMirrorBuffer == null)
             {
                 ClearInstanceBuffer();
                 return;
             }
 
-            GraphicsBufferUploadUtility.UploadArray(_uploadedInstanceMatrixBuffer, instanceMatrices, instanceCount);
-            _instanceMatrixBuffer = _uploadedInstanceMatrixBuffer;
+            GraphicsBufferUploadUtility.UploadArray(matrixWriteBuffer, instanceMatrices, instanceCount);
+            if (matrixMirrorBuffer != matrixWriteBuffer)
+                GraphicsBufferUploadUtility.UploadArray(matrixMirrorBuffer, instanceMatrices, instanceCount);
             CopyCpuCullingPayload(instanceMatrices, instanceData, instanceCount);
 
             if (instanceData != null)
             {
-                if (instanceData.Length < instanceCount || _uploadedInstanceDataBuffer == null)
+                GraphicsBuffer dataWriteBuffer = ResolveUploadedDataWriteBuffer();
+                GraphicsBuffer dataMirrorBuffer = ResolveUploadedDataMirrorBuffer();
+                if (instanceData.Length < instanceCount || dataWriteBuffer == null || dataMirrorBuffer == null)
                 {
                     ClearInstanceBuffer();
                     return;
                 }
 
-                GraphicsBufferUploadUtility.UploadArray(_uploadedInstanceDataBuffer, instanceData, instanceCount);
-                _instanceDataBuffer = _uploadedInstanceDataBuffer;
+                GraphicsBufferUploadUtility.UploadArray(dataWriteBuffer, instanceData, instanceCount);
+                if (dataMirrorBuffer != dataWriteBuffer)
+                    GraphicsBufferUploadUtility.UploadArray(dataMirrorBuffer, instanceData, instanceCount);
+                _uploadedInstanceDataBuffer = dataWriteBuffer;
+                InvalidateRenderStateForBufferIdentityChange(matrixWriteBuffer, dataWriteBuffer, _floraPhaseSeedBuffer);
+                _uploadedInstanceMatrixBuffer = matrixWriteBuffer;
+                _instanceMatrixBuffer = matrixWriteBuffer;
+                _instanceDataBuffer = dataWriteBuffer;
                 _legacyDataDirty = false;
             }
             else
             {
+                InvalidateRenderStateForBufferIdentityChange(matrixWriteBuffer, null, _floraPhaseSeedBuffer);
+                _uploadedInstanceMatrixBuffer = matrixWriteBuffer;
+                _instanceMatrixBuffer = matrixWriteBuffer;
                 _instanceDataBuffer = null;
                 _legacyDataDirty = true;
             }
 
             SetInstanceCount(instanceCount);
+            ClearUploadedDirtyPages(instanceCount);
+            AdvanceUploadedWriteBuffer();
+            InvalidateNativeUploadCache();
         }
 
         /// <summary>
@@ -1822,18 +1967,238 @@ namespace Hecton8.World
                 return false;
 
             EnsureUploadedInstanceBufferCapacity(instanceCount, true);
-            if (_uploadedInstanceMatrixBuffer == null || _uploadedInstanceDataBuffer == null)
+            GraphicsBuffer matrixWriteBuffer = ResolveUploadedMatrixWriteBuffer();
+            GraphicsBuffer matrixMirrorBuffer = ResolveUploadedMatrixMirrorBuffer();
+            GraphicsBuffer dataWriteBuffer = ResolveUploadedDataWriteBuffer();
+            GraphicsBuffer dataMirrorBuffer = ResolveUploadedDataMirrorBuffer();
+            if (matrixWriteBuffer == null || matrixMirrorBuffer == null || dataWriteBuffer == null || dataMirrorBuffer == null)
                 return false;
 
-            InvalidateRenderStateForBufferIdentityChange(_uploadedInstanceMatrixBuffer, _uploadedInstanceDataBuffer, _floraPhaseSeedBuffer);
-            GraphicsBufferUploadUtility.UploadNativeArray(_uploadedInstanceMatrixBuffer, instanceMatrices, instanceCount);
-            GraphicsBufferUploadUtility.UploadNativeArray(_uploadedInstanceDataBuffer, instanceData, instanceCount);
-            _instanceMatrixBuffer = _uploadedInstanceMatrixBuffer;
-            _instanceDataBuffer = _uploadedInstanceDataBuffer;
+            InvalidateRenderStateForBufferIdentityChange(matrixWriteBuffer, dataWriteBuffer, _floraPhaseSeedBuffer);
+            GraphicsBufferUploadUtility.UploadNativeArray(matrixWriteBuffer, instanceMatrices, instanceCount);
+            if (matrixMirrorBuffer != matrixWriteBuffer)
+                GraphicsBufferUploadUtility.UploadNativeArray(matrixMirrorBuffer, instanceMatrices, instanceCount);
+            GraphicsBufferUploadUtility.UploadNativeArray(dataWriteBuffer, instanceData, instanceCount);
+            if (dataMirrorBuffer != dataWriteBuffer)
+                GraphicsBufferUploadUtility.UploadNativeArray(dataMirrorBuffer, instanceData, instanceCount);
+            _uploadedInstanceMatrixBuffer = matrixWriteBuffer;
+            _uploadedInstanceDataBuffer = dataWriteBuffer;
+            _instanceMatrixBuffer = matrixWriteBuffer;
+            _instanceDataBuffer = dataWriteBuffer;
             _legacyDataDirty = false;
             CopyCpuCullingPayload(instanceMatrices, instanceData, instanceCount);
             SetInstanceCount(instanceCount);
+            ClearUploadedDirtyPages(instanceCount);
+            AdvanceUploadedWriteBuffer();
             return true;
+        }
+
+        private bool BindInstanceNativeReadBuffer(in HectonIndirectVegetationNativeReadBuffer readBuffer)
+        {
+            bool hasDirtyPageContract = HectonIndirectVegetationNativeReadBuffer.HasDirtyPages(in readBuffer);
+            if (!hasDirtyPageContract || !CanUseDirtyPageUpload(in readBuffer))
+            {
+                bool fullUploadSucceeded = BindInstanceNativeArrays(
+                    readBuffer.InstanceMatrices,
+                    readBuffer.InstanceData,
+                    readBuffer.InstanceCount);
+                if (fullUploadSucceeded)
+                    RecordNativeUpload(in readBuffer, EstimateNativeUploadBytes(readBuffer.InstanceCount) * 2L);
+                return fullUploadSucceeded;
+            }
+
+            return BindInstanceNativeDirtyPages(in readBuffer);
+        }
+
+        private bool BindInstanceNativeDirtyPages(in HectonIndirectVegetationNativeReadBuffer readBuffer)
+        {
+            int instanceCount = readBuffer.InstanceCount;
+            EnsureUploadedInstanceBufferCapacity(instanceCount, true);
+            if (!EnsureUploadedDirtyPageCapacity(instanceCount))
+                return false;
+
+            GraphicsBuffer matrixWriteBuffer = ResolveUploadedMatrixWriteBuffer();
+            GraphicsBuffer dataWriteBuffer = ResolveUploadedDataWriteBuffer();
+            if (matrixWriteBuffer == null || dataWriteBuffer == null)
+                return false;
+
+            bool sourceMatrixDirty = GraphicsBufferUploadUtility.HasAnyDirtyPage(readBuffer.MatrixDirtyPages, instanceCount, readBuffer.DirtyPageSize);
+            bool sourceDataDirty = GraphicsBufferUploadUtility.HasAnyDirtyPage(readBuffer.InstanceDataDirtyPages, instanceCount, readBuffer.DirtyPageSize);
+            if (!sourceMatrixDirty &&
+                !sourceDataDirty &&
+                readBuffer.ContentRevision != _lastNativeUploadContentRevision &&
+                !HasUploadedWriteDirtyPageBacklog(instanceCount))
+            {
+                bool fullUploadSucceeded = BindInstanceNativeArrays(readBuffer.InstanceMatrices, readBuffer.InstanceData, instanceCount);
+                if (fullUploadSucceeded)
+                    RecordNativeUpload(in readBuffer, EstimateNativeUploadBytes(instanceCount) * 2L);
+                return fullUploadSucceeded;
+            }
+
+            if (!TryAcquireUploadedDirtyPagesForWrite(
+                    out IDataVault dirtyVault,
+                    out NativeArray<byte> matrixDirtyPagesA,
+                    out NativeArray<byte> matrixDirtyPagesB,
+                    out NativeArray<byte> dataDirtyPagesA,
+                    out NativeArray<byte> dataDirtyPagesB))
+            {
+                return false;
+            }
+
+            try
+            {
+                if ((sourceMatrixDirty || sourceDataDirty) &&
+                    !HasAbsorbedNativeSourceDirtyPages(in readBuffer))
+                {
+                    MarkUploadedBufferDirtyPages(readBuffer.MatrixDirtyPages, matrixDirtyPagesA, matrixDirtyPagesB, instanceCount);
+                    MarkUploadedBufferDirtyPages(readBuffer.InstanceDataDirtyPages, dataDirtyPagesA, dataDirtyPagesB, instanceCount);
+                    RecordNativeSourceDirtyPagesAbsorbed(in readBuffer);
+                }
+
+                NativeArray<byte> matrixWriteDirtyPages = _uploadedInstanceWriteBufferIndex == 0 ? matrixDirtyPagesA : matrixDirtyPagesB;
+                NativeArray<byte> dataWriteDirtyPages = _uploadedInstanceWriteBufferIndex == 0 ? dataDirtyPagesA : dataDirtyPagesB;
+                bool matrixDirty = GraphicsBufferUploadUtility.HasAnyDirtyPage(matrixWriteDirtyPages, instanceCount, NativeUploadDirtyPageSize);
+                bool dataDirty = GraphicsBufferUploadUtility.HasAnyDirtyPage(dataWriteDirtyPages, instanceCount, NativeUploadDirtyPageSize);
+
+                if (!matrixDirty && !dataDirty)
+                {
+                    RecordNativeUpload(in readBuffer, 0L);
+                    return true;
+                }
+
+                int uploadBudgetBytes = ResolveNativeUploadBudgetBytes();
+                GraphicsBufferUploadUtility.PageUploadStats matrixStats = matrixDirty
+                    ? GraphicsBufferUploadUtility.UploadNativeArrayDirtyPages(
+                        matrixWriteBuffer,
+                        readBuffer.InstanceMatrices,
+                        matrixWriteDirtyPages,
+                        instanceCount,
+                        NativeUploadDirtyPageSize,
+                        uploadBudgetBytes,
+                        clearUploadedPages: true)
+                    : default;
+                long consumedMatrixBudget = matrixStats.UploadedBytes > uploadBudgetBytes ? uploadBudgetBytes : matrixStats.UploadedBytes;
+                long remainingBudgetBytes = (long)uploadBudgetBytes - consumedMatrixBudget;
+                int dataFirstDirtyPageBytes = dataDirty
+                    ? GraphicsBufferUploadUtility.ResolveFirstDirtyPageBytes<HectonVegetationInstanceData>(
+                        dataWriteDirtyPages,
+                        instanceCount,
+                        NativeUploadDirtyPageSize)
+                    : 0;
+                bool canUploadDataThisFrame =
+                    dataDirty &&
+                    dataFirstDirtyPageBytes > 0 &&
+                    (remainingBudgetBytes >= dataFirstDirtyPageBytes || matrixStats.UploadedBytes <= 0L);
+                long dataBudgetLong = remainingBudgetBytes > 1L ? remainingBudgetBytes : 1L;
+                int dataBudgetBytes = dataBudgetLong > int.MaxValue ? int.MaxValue : (int)dataBudgetLong;
+                GraphicsBufferUploadUtility.PageUploadStats dataStats = canUploadDataThisFrame
+                    ? GraphicsBufferUploadUtility.UploadNativeArrayDirtyPages(
+                        dataWriteBuffer,
+                        readBuffer.InstanceData,
+                        dataWriteDirtyPages,
+                        instanceCount,
+                        NativeUploadDirtyPageSize,
+                        dataBudgetBytes,
+                        clearUploadedPages: true)
+                    : default;
+                bool dataDeferredByBudget = dataDirty && !canUploadDataThisFrame;
+
+                long uploadedBytes = matrixStats.UploadedBytes + dataStats.UploadedBytes;
+                _lastNativeUploadBytes = uploadedBytes;
+                long avoidedBytes = EstimateNativeUploadBytes(instanceCount) - uploadedBytes;
+                _lastNativeUploadAvoidedBytes = avoidedBytes > 0L ? avoidedBytes : 0L;
+                if (matrixStats.DeferredPages > 0 || dataStats.DeferredPages > 0 || dataDeferredByBudget)
+                    return true;
+
+                InvalidateRenderStateForBufferIdentityChange(matrixWriteBuffer, dataWriteBuffer, _floraPhaseSeedBuffer);
+                _uploadedInstanceMatrixBuffer = matrixWriteBuffer;
+                _uploadedInstanceDataBuffer = dataWriteBuffer;
+                _instanceMatrixBuffer = matrixWriteBuffer;
+                _instanceDataBuffer = dataWriteBuffer;
+                _legacyDataDirty = false;
+                CopyCpuCullingPayload(readBuffer.InstanceMatrices, readBuffer.InstanceData, instanceCount);
+                SetInstanceCount(instanceCount);
+                AdvanceUploadedWriteBuffer();
+                RecordNativeUpload(in readBuffer, uploadedBytes);
+                return true;
+            }
+            finally
+            {
+                ReleaseUploadedDirtyPageWriteLocks(dirtyVault);
+            }
+        }
+
+        private bool CanUseDirtyPageUpload(in HectonIndirectVegetationNativeReadBuffer readBuffer)
+        {
+            int requiredPages = GraphicsBufferUploadUtility.ResolveDirtyPageCount(readBuffer.InstanceCount, NativeUploadDirtyPageSize);
+            return readBuffer.InstanceCount > 0 &&
+                   readBuffer.DirtyPageSize == NativeUploadDirtyPageSize &&
+                   _lastNativeUploadInstanceCount == readBuffer.InstanceCount &&
+                   IsUploadedMatrixBuffer(_instanceMatrixBuffer) &&
+                   IsUploadedDataBuffer(_instanceDataBuffer) &&
+                   HasUploadedDirtyPageStorage(requiredPages);
+        }
+
+        private bool CanReuseNativeUpload(in HectonIndirectVegetationNativeReadBuffer readBuffer)
+        {
+            if (HectonIndirectVegetationNativeReadBuffer.HasDirtyPages(in readBuffer) &&
+                (GraphicsBufferUploadUtility.HasAnyDirtyPage(readBuffer.MatrixDirtyPages, readBuffer.InstanceCount, readBuffer.DirtyPageSize) ||
+                 GraphicsBufferUploadUtility.HasAnyDirtyPage(readBuffer.InstanceDataDirtyPages, readBuffer.InstanceCount, readBuffer.DirtyPageSize)))
+            {
+                if (!HasAbsorbedNativeSourceDirtyPages(in readBuffer) ||
+                    HasUploadedWriteDirtyPageBacklog(readBuffer.InstanceCount))
+                {
+                    return false;
+                }
+            }
+
+            return IsUploadedMatrixBuffer(_instanceMatrixBuffer) &&
+                   IsUploadedDataBuffer(_instanceDataBuffer) &&
+                   _lastNativeUploadBufferIndex == readBuffer.BufferIndex &&
+                   _lastNativeUploadInstanceCount == readBuffer.InstanceCount &&
+                   _lastNativeUploadContentRevision == readBuffer.ContentRevision;
+        }
+
+        private void RecordNativeUpload(in HectonIndirectVegetationNativeReadBuffer readBuffer, long uploadedBytes)
+        {
+            _lastNativeUploadBufferIndex = readBuffer.BufferIndex;
+            _lastNativeUploadInstanceCount = readBuffer.InstanceCount;
+            _lastNativeUploadContentRevision = readBuffer.ContentRevision;
+            RecordNativeSourceDirtyPagesAbsorbed(in readBuffer);
+            _lastNativeUploadBytes = uploadedBytes > 0L ? uploadedBytes : 0L;
+            long avoidedBytes = EstimateNativeUploadBytes(readBuffer.InstanceCount) - _lastNativeUploadBytes;
+            _lastNativeUploadAvoidedBytes = avoidedBytes > 0L ? avoidedBytes : 0L;
+        }
+
+        private bool HasAbsorbedNativeSourceDirtyPages(in HectonIndirectVegetationNativeReadBuffer readBuffer)
+        {
+            return _lastNativeDirtySourceBufferIndex == readBuffer.BufferIndex &&
+                   _lastNativeDirtySourceInstanceCount == readBuffer.InstanceCount &&
+                   _lastNativeDirtySourceContentRevision == readBuffer.ContentRevision;
+        }
+
+        private void RecordNativeSourceDirtyPagesAbsorbed(in HectonIndirectVegetationNativeReadBuffer readBuffer)
+        {
+            _lastNativeDirtySourceBufferIndex = readBuffer.BufferIndex;
+            _lastNativeDirtySourceInstanceCount = readBuffer.InstanceCount;
+            _lastNativeDirtySourceContentRevision = readBuffer.ContentRevision;
+        }
+
+        private void InvalidateNativeUploadCache()
+        {
+            _lastNativeUploadBufferIndex = int.MinValue;
+            _lastNativeUploadInstanceCount = -1;
+            _lastNativeUploadContentRevision = int.MinValue;
+            _lastNativeDirtySourceBufferIndex = int.MinValue;
+            _lastNativeDirtySourceInstanceCount = -1;
+            _lastNativeDirtySourceContentRevision = int.MinValue;
+            _lastNativeUploadBytes = 0L;
+            _lastNativeUploadAvoidedBytes = 0L;
+        }
+
+        private static long EstimateNativeUploadBytes(int instanceCount)
+        {
+            return (long)math.max(0, instanceCount) * (InstanceMatrixStride + InstanceDataStride);
         }
 
         /// <summary>
@@ -1857,6 +2222,7 @@ namespace Hecton8.World
             _floraAgesAuthoredExternally = false;
             _floraAgeBufferDirty = true;
             _floraSnapFlagBufferRequiresClear = true;
+            InvalidateNativeUploadCache();
         }
 
         /// <summary>
@@ -4817,10 +5183,17 @@ namespace Hecton8.World
                     return;
                 }
 
-                bool uploadSucceeded = BindInstanceNativeArrays(
-                    readBuffer.InstanceMatrices,
-                    readBuffer.InstanceData,
-                    readBuffer.InstanceCount);
+                bool uploadSucceeded = true;
+                if (CanReuseNativeUpload(in readBuffer))
+                {
+                    SetInstanceCount(readBuffer.InstanceCount);
+                    _lastNativeUploadAvoidedBytes = EstimateNativeUploadBytes(readBuffer.InstanceCount);
+                    _lastNativeUploadBytes = 0L;
+                }
+                else
+                {
+                    uploadSucceeded = BindInstanceNativeReadBuffer(in readBuffer);
+                }
 
                 nativeBufferSource.ReleaseNativeReadBuffer(readBuffer, default);
 
@@ -4891,6 +5264,7 @@ namespace Hecton8.World
             _floraAgeBufferDirty = true;
             _floraAgesAuthoredExternally = false;
             _hasCpuCullingData = false;
+            InvalidateNativeUploadCache();
         }
 
         private void InvalidateRenderStateForBufferIdentityChange(
@@ -5023,40 +5397,87 @@ namespace Hecton8.World
             if (instanceCount <= 0)
                 return;
 
-            if (_uploadedInstanceMatrixBuffer == null || _uploadedInstanceMatrixBuffer.count < instanceCount)
+            if (_uploadedInstanceMatrixBufferA == null ||
+                _uploadedInstanceMatrixBufferB == null ||
+                _uploadedInstanceMatrixBufferA.count < instanceCount ||
+                _uploadedInstanceMatrixBufferB.count < instanceCount)
             {
-                if (_uploadedInstanceMatrixBuffer != null && _instanceMatrixBuffer == _uploadedInstanceMatrixBuffer)
-                    InvalidateRenderStateForBufferIdentityChange(null, _instanceDataBuffer == _uploadedInstanceDataBuffer ? null : _instanceDataBuffer, _floraPhaseSeedBuffer);
-
-                if (_uploadedInstanceMatrixBuffer != null)
+                if (IsUploadedMatrixBuffer(_instanceMatrixBuffer))
                 {
-                    _uploadedInstanceMatrixBuffer.Release();
-                    _uploadedInstanceMatrixBuffer = null;
+                    InvalidateRenderStateForBufferIdentityChange(null, _instanceDataBuffer == _uploadedInstanceDataBuffer ? null : _instanceDataBuffer, _floraPhaseSeedBuffer);
+                    _instanceMatrixBuffer = null;
                 }
 
+                ReleaseBuffer(ref _uploadedInstanceMatrixBufferA);
+                ReleaseBuffer(ref _uploadedInstanceMatrixBufferB);
+
                 int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(16, instanceCount));
-                // COLD ALLOC: GraphicsBuffer[nextCapacity] - owned matrix upload staging buffer - owner: HectonIndirectVegetationRenderer
-                _uploadedInstanceMatrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(nextCapacity);
+                // COLD ALLOC: GraphicsBuffer[nextCapacity] A - owned matrix upload staging front/back buffer - owner: HectonIndirectVegetationRenderer
+                _uploadedInstanceMatrixBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(nextCapacity);
+                // COLD ALLOC: GraphicsBuffer[nextCapacity] B - owned matrix upload staging front/back buffer - owner: HectonIndirectVegetationRenderer
+                _uploadedInstanceMatrixBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(nextCapacity);
+                _uploadedInstanceMatrixBuffer = null;
+                _uploadedInstanceWriteBufferIndex = 0;
+                InvalidateNativeUploadCache();
             }
 
             if (!requiresInstanceDataBuffer)
-                return;
-
-            if (_uploadedInstanceDataBuffer == null || _uploadedInstanceDataBuffer.count < instanceCount)
             {
-                if (_uploadedInstanceDataBuffer != null && _instanceDataBuffer == _uploadedInstanceDataBuffer)
-                    InvalidateRenderStateForBufferIdentityChange(_instanceMatrixBuffer == _uploadedInstanceMatrixBuffer ? null : _instanceMatrixBuffer, null, _floraPhaseSeedBuffer);
+                EnsureUploadedDirtyPageCapacity(instanceCount);
+                return;
+            }
 
-                if (_uploadedInstanceDataBuffer != null)
+            if (_uploadedInstanceDataBufferA == null ||
+                _uploadedInstanceDataBufferB == null ||
+                _uploadedInstanceDataBufferA.count < instanceCount ||
+                _uploadedInstanceDataBufferB.count < instanceCount)
+            {
+                if (IsUploadedDataBuffer(_instanceDataBuffer))
                 {
-                    _uploadedInstanceDataBuffer.Release();
-                    _uploadedInstanceDataBuffer = null;
+                    InvalidateRenderStateForBufferIdentityChange(IsUploadedMatrixBuffer(_instanceMatrixBuffer) ? null : _instanceMatrixBuffer, null, _floraPhaseSeedBuffer);
+                    _instanceDataBuffer = null;
                 }
 
+                ReleaseBuffer(ref _uploadedInstanceDataBufferA);
+                ReleaseBuffer(ref _uploadedInstanceDataBufferB);
+
                 int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(16, instanceCount));
-                // COLD ALLOC: GraphicsBuffer[nextCapacity] - owned metadata upload staging buffer - owner: HectonIndirectVegetationRenderer
-                _uploadedInstanceDataBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<HectonVegetationInstanceData>(nextCapacity);
+                // COLD ALLOC: GraphicsBuffer[nextCapacity] A - owned metadata upload staging front/back buffer - owner: HectonIndirectVegetationRenderer
+                _uploadedInstanceDataBufferA = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<HectonVegetationInstanceData>(nextCapacity);
+                // COLD ALLOC: GraphicsBuffer[nextCapacity] B - owned metadata upload staging front/back buffer - owner: HectonIndirectVegetationRenderer
+                _uploadedInstanceDataBufferB = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<HectonVegetationInstanceData>(nextCapacity);
+                _uploadedInstanceDataBuffer = null;
+                _uploadedInstanceWriteBufferIndex = 0;
+                InvalidateNativeUploadCache();
             }
+
+            EnsureUploadedDirtyPageCapacity(instanceCount);
+        }
+
+        private bool EnsureUploadedDirtyPageCapacity(int instanceCount)
+        {
+            int requiredPages = GraphicsBufferUploadUtility.ResolveDirtyPageCount(instanceCount, NativeUploadDirtyPageSize);
+            if (requiredPages <= 0)
+                return false;
+
+            if (HasUploadedDirtyPageStorage(requiredPages))
+                return true;
+
+            ReleaseUploadedDirtyPages();
+            int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(1, requiredPages));
+            bool ready =
+                EnsureVaultStorage(ref _uploadedMatrixDirtyPagesAHandle, NativeUploadMatrixDirtyPagesAId, nextCapacity, NativeArrayOptions.ClearMemory) &&
+                EnsureVaultStorage(ref _uploadedMatrixDirtyPagesBHandle, NativeUploadMatrixDirtyPagesBId, nextCapacity, NativeArrayOptions.ClearMemory) &&
+                EnsureVaultStorage(ref _uploadedDataDirtyPagesAHandle, NativeUploadDataDirtyPagesAId, nextCapacity, NativeArrayOptions.ClearMemory) &&
+                EnsureVaultStorage(ref _uploadedDataDirtyPagesBHandle, NativeUploadDataDirtyPagesBId, nextCapacity, NativeArrayOptions.ClearMemory);
+            if (!ready)
+            {
+                ReleaseUploadedDirtyPages();
+                return false;
+            }
+
+            _uploadedDirtyPageCapacity = nextCapacity;
+            return true;
         }
 
         private void FillLegacyInstanceData(int instanceCount)
@@ -5092,17 +5513,271 @@ namespace Hecton8.World
 
         private void ReleaseUploadedInstanceBuffers()
         {
-            if (_uploadedInstanceMatrixBuffer != null)
+            ReleaseBuffer(ref _uploadedInstanceMatrixBufferA);
+            ReleaseBuffer(ref _uploadedInstanceMatrixBufferB);
+
+            ReleaseBuffer(ref _uploadedInstanceDataBufferA);
+            ReleaseBuffer(ref _uploadedInstanceDataBufferB);
+            ReleaseUploadedDirtyPages();
+            _uploadedInstanceMatrixBuffer = null;
+            _uploadedInstanceDataBuffer = null;
+            _uploadedInstanceWriteBufferIndex = 0;
+            InvalidateNativeUploadCache();
+        }
+
+        private void ReleaseUploadedDirtyPages()
+        {
+            IDataVault vault = _dataVault;
+            ReleaseVaultHandle(vault, ref _uploadedMatrixDirtyPagesAHandle);
+            ReleaseVaultHandle(vault, ref _uploadedMatrixDirtyPagesBHandle);
+            ReleaseVaultHandle(vault, ref _uploadedDataDirtyPagesAHandle);
+            ReleaseVaultHandle(vault, ref _uploadedDataDirtyPagesBHandle);
+            _uploadedDirtyPageCapacity = 0;
+        }
+
+        private GraphicsBuffer ResolveUploadedMatrixWriteBuffer()
+        {
+            return _uploadedInstanceWriteBufferIndex == 0 ? _uploadedInstanceMatrixBufferA : _uploadedInstanceMatrixBufferB;
+        }
+
+        private GraphicsBuffer ResolveUploadedMatrixMirrorBuffer()
+        {
+            return _uploadedInstanceWriteBufferIndex == 0 ? _uploadedInstanceMatrixBufferB : _uploadedInstanceMatrixBufferA;
+        }
+
+        private GraphicsBuffer ResolveUploadedDataWriteBuffer()
+        {
+            return _uploadedInstanceWriteBufferIndex == 0 ? _uploadedInstanceDataBufferA : _uploadedInstanceDataBufferB;
+        }
+
+        private GraphicsBuffer ResolveUploadedDataMirrorBuffer()
+        {
+            return _uploadedInstanceWriteBufferIndex == 0 ? _uploadedInstanceDataBufferB : _uploadedInstanceDataBufferA;
+        }
+
+        private bool IsUploadedMatrixBuffer(GraphicsBuffer buffer)
+        {
+            return buffer != null && (buffer == _uploadedInstanceMatrixBufferA || buffer == _uploadedInstanceMatrixBufferB);
+        }
+
+        private bool IsUploadedDataBuffer(GraphicsBuffer buffer)
+        {
+            return buffer != null && (buffer == _uploadedInstanceDataBufferA || buffer == _uploadedInstanceDataBufferB);
+        }
+
+        private void AdvanceUploadedWriteBuffer()
+        {
+            _uploadedInstanceWriteBufferIndex ^= 1;
+        }
+
+        private void ClearUploadedDirtyPages(int instanceCount)
+        {
+            int requiredPages = GraphicsBufferUploadUtility.ResolveDirtyPageCount(instanceCount, NativeUploadDirtyPageSize);
+            if (!HasUploadedDirtyPageStorage(requiredPages) ||
+                !TryAcquireUploadedDirtyPagesForWrite(
+                    out IDataVault dirtyVault,
+                    out NativeArray<byte> matrixDirtyPagesA,
+                    out NativeArray<byte> matrixDirtyPagesB,
+                    out NativeArray<byte> dataDirtyPagesA,
+                    out NativeArray<byte> dataDirtyPagesB))
             {
-                _uploadedInstanceMatrixBuffer.Release();
-                _uploadedInstanceMatrixBuffer = null;
+                return;
             }
 
-            if (_uploadedInstanceDataBuffer != null)
+            try
             {
-                _uploadedInstanceDataBuffer.Release();
-                _uploadedInstanceDataBuffer = null;
+                GraphicsBufferUploadUtility.ClearDirtyPages(matrixDirtyPagesA, instanceCount, NativeUploadDirtyPageSize);
+                GraphicsBufferUploadUtility.ClearDirtyPages(matrixDirtyPagesB, instanceCount, NativeUploadDirtyPageSize);
+                GraphicsBufferUploadUtility.ClearDirtyPages(dataDirtyPagesA, instanceCount, NativeUploadDirtyPageSize);
+                GraphicsBufferUploadUtility.ClearDirtyPages(dataDirtyPagesB, instanceCount, NativeUploadDirtyPageSize);
             }
+            finally
+            {
+                ReleaseUploadedDirtyPageWriteLocks(dirtyVault);
+            }
+        }
+
+        private bool HasUploadedDirtyPageStorage(int requiredPages)
+        {
+            return requiredPages > 0 &&
+                   _uploadedDirtyPageCapacity >= requiredPages &&
+                   IsExactVaultHandle(in _uploadedMatrixDirtyPagesAHandle, NativeUploadMatrixDirtyPagesAId) &&
+                   IsExactVaultHandle(in _uploadedMatrixDirtyPagesBHandle, NativeUploadMatrixDirtyPagesBId) &&
+                   IsExactVaultHandle(in _uploadedDataDirtyPagesAHandle, NativeUploadDataDirtyPagesAId) &&
+                   IsExactVaultHandle(in _uploadedDataDirtyPagesBHandle, NativeUploadDataDirtyPagesBId);
+        }
+
+        private bool HasUploadedWriteDirtyPageBacklog(int instanceCount)
+        {
+            int requiredPages = GraphicsBufferUploadUtility.ResolveDirtyPageCount(instanceCount, NativeUploadDirtyPageSize);
+            if (!HasUploadedDirtyPageStorage(requiredPages))
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null || vault.IsCompactionFenceActive)
+                return false;
+
+            VaultGenerationHandle<byte> matrixHandle = _uploadedInstanceWriteBufferIndex == 0
+                ? _uploadedMatrixDirtyPagesAHandle
+                : _uploadedMatrixDirtyPagesBHandle;
+            VaultGenerationHandle<byte> dataHandle = _uploadedInstanceWriteBufferIndex == 0
+                ? _uploadedDataDirtyPagesAHandle
+                : _uploadedDataDirtyPagesBHandle;
+
+            return HasDirtyPageBacklog(vault, in matrixHandle, requiredPages) ||
+                   HasDirtyPageBacklog(vault, in dataHandle, requiredPages);
+        }
+
+        private static bool HasDirtyPageBacklog(IDataVault vault, in VaultGenerationHandle<byte> handle, int requiredPages)
+        {
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !vault.TryReadOnlyHandle(in handle, out NativeArray<byte>.ReadOnly dirtyPages) ||
+                dirtyPages.Length < requiredPages)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < requiredPages; i++)
+            {
+                if (dirtyPages[i] != 0)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool TryAcquireUploadedDirtyPagesForWrite(
+            out IDataVault vault,
+            out NativeArray<byte> matrixDirtyPagesA,
+            out NativeArray<byte> matrixDirtyPagesB,
+            out NativeArray<byte> dataDirtyPagesA,
+            out NativeArray<byte> dataDirtyPagesB)
+        {
+            vault = _dataVault;
+            matrixDirtyPagesA = default;
+            matrixDirtyPagesB = default;
+            dataDirtyPagesA = default;
+            dataDirtyPagesB = default;
+            if (vault == null ||
+                vault.IsCompactionFenceActive ||
+                !HasUploadedDirtyPageStorage(_uploadedDirtyPageCapacity))
+            {
+                vault = null;
+                return false;
+            }
+
+            bool matrixALocked = false;
+            bool matrixBLocked = false;
+            bool dataALocked = false;
+            bool dataBLocked = false;
+            bool success = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _uploadedMatrixDirtyPagesAHandle, VaultOwnerSystemId, out matrixDirtyPagesA))
+                    return false;
+                matrixALocked = true;
+                if (!vault.TryAcquireWriteLock(in _uploadedMatrixDirtyPagesBHandle, VaultOwnerSystemId, out matrixDirtyPagesB))
+                    return false;
+                matrixBLocked = true;
+                if (!vault.TryAcquireWriteLock(in _uploadedDataDirtyPagesAHandle, VaultOwnerSystemId, out dataDirtyPagesA))
+                    return false;
+                dataALocked = true;
+                if (!vault.TryAcquireWriteLock(in _uploadedDataDirtyPagesBHandle, VaultOwnerSystemId, out dataDirtyPagesB))
+                    return false;
+                dataBLocked = true;
+
+                success =
+                    !vault.IsCompactionFenceActive &&
+                    matrixDirtyPagesA.IsCreated &&
+                    matrixDirtyPagesB.IsCreated &&
+                    dataDirtyPagesA.IsCreated &&
+                    dataDirtyPagesB.IsCreated &&
+                    matrixDirtyPagesA.Length >= _uploadedDirtyPageCapacity &&
+                    matrixDirtyPagesB.Length >= _uploadedDirtyPageCapacity &&
+                    dataDirtyPagesA.Length >= _uploadedDirtyPageCapacity &&
+                    dataDirtyPagesB.Length >= _uploadedDirtyPageCapacity;
+                return success;
+            }
+            finally
+            {
+                if (!success)
+                {
+                    ReleaseUploadedDirtyPageWriteLocks(
+                        vault,
+                        matrixALocked,
+                        matrixBLocked,
+                        dataALocked,
+                        dataBLocked);
+                }
+            }
+        }
+
+        private void ReleaseUploadedDirtyPageWriteLocks(IDataVault vault)
+        {
+            ReleaseUploadedDirtyPageWriteLocks(vault, true, true, true, true);
+        }
+
+        private void ReleaseUploadedDirtyPageWriteLocks(
+            IDataVault vault,
+            bool matrixALocked,
+            bool matrixBLocked,
+            bool dataALocked,
+            bool dataBLocked)
+        {
+            if (vault == null)
+                return;
+
+            if (dataBLocked)
+                vault.ReleaseWriteLock(in _uploadedDataDirtyPagesBHandle, VaultOwnerSystemId);
+            if (dataALocked)
+                vault.ReleaseWriteLock(in _uploadedDataDirtyPagesAHandle, VaultOwnerSystemId);
+            if (matrixBLocked)
+                vault.ReleaseWriteLock(in _uploadedMatrixDirtyPagesBHandle, VaultOwnerSystemId);
+            if (matrixALocked)
+                vault.ReleaseWriteLock(in _uploadedMatrixDirtyPagesAHandle, VaultOwnerSystemId);
+        }
+
+        private static void MarkUploadedBufferDirtyPages(
+            NativeArray<byte> sourceDirtyPages,
+            NativeArray<byte> targetDirtyPagesA,
+            NativeArray<byte> targetDirtyPagesB,
+            int instanceCount)
+        {
+            if (!sourceDirtyPages.IsCreated || !targetDirtyPagesA.IsCreated || !targetDirtyPagesB.IsCreated || instanceCount <= 0)
+                return;
+
+            int pageCount = math.min(
+                sourceDirtyPages.Length,
+                math.min(
+                    targetDirtyPagesA.Length,
+                    math.min(
+                        targetDirtyPagesB.Length,
+                        GraphicsBufferUploadUtility.ResolveDirtyPageCount(instanceCount, NativeUploadDirtyPageSize))));
+            for (int i = 0; i < pageCount; i++)
+            {
+                if (sourceDirtyPages[i] == 0)
+                    continue;
+
+                targetDirtyPagesA[i] = 1;
+                targetDirtyPagesB[i] = 1;
+            }
+        }
+
+        private int ResolveNativeUploadBudgetBytes()
+        {
+            float quality01 = math.saturate(math.select(1f, _cachedQualityWeight01, math.isfinite(_cachedQualityWeight01)));
+            float smoothQuality01 = Smooth01(quality01);
+            return Mathf.RoundToInt(math.lerp(NativeUploadMinimumBudgetBytes, NativeUploadMaximumBudgetBytes, smoothQuality01));
+        }
+
+        private static void ReleaseBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Release();
+            buffer = null;
         }
 
         private Camera ResolveCullCamera()

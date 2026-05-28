@@ -1304,6 +1304,14 @@ namespace Hecton8.Bootstrap
             shaderWarmupShaders = shaders;
         }
 
+        internal void SetBootstrapRuntimeShaderReferenceCatalog(RuntimeShaderReferenceCatalog catalog)
+        {
+            if (catalog == null || _bootstrapRunInProgress || _isBootstrapComplete)
+                return;
+
+            runtimeShaderReferenceCatalog = catalog;
+        }
+
         internal void SetBootstrapShaderGraphicsStateCollectionPaths(string[] paths)
         {
             if (paths == null || paths.Length == 0 || _bootstrapRunInProgress || _isBootstrapComplete)

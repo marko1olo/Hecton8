@@ -1568,7 +1568,7 @@ namespace Hecton8.Visor
         private const uint AupDiscoveryDiscoveredBit = 1u;
         private const int ActiveSonarGeoPingCapacity = 4;
         private const int ActiveSonarGeoTelemetryCapacity = 300;
-        private const int ActiveSonarGeoTelemetryEntrySizeBytes = 32;
+        private const int ActiveSonarGeoTelemetryEntrySizeBytes = 64;
         private const SystemID SpectrumVaultOwner = SystemID.UI;
         private const float ActiveSonarGeoSpeedMetersPerSecond = HectonPhysicsContract.SoundSpeedWaterMetersPerSecondConst;
         private const float ActiveSonarGeoMaxRangeMeters = 400f;
@@ -2790,27 +2790,91 @@ namespace Hecton8.Visor
             return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 32)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
         private struct ActiveSonarGeoTelemetryEntry
         {
-            [FieldOffset(0)]
+            [System.Runtime.InteropServices.FieldOffset(0)]
             public uint Frame;
-            [FieldOffset(4)]
+            [System.Runtime.InteropServices.FieldOffset(4)]
             public int ActiveRingCount;
-            [FieldOffset(8)]
+            [System.Runtime.InteropServices.FieldOffset(8)]
             public float PrimaryRadius;
-            [FieldOffset(12)]
+            [System.Runtime.InteropServices.FieldOffset(12)]
             public float3 PrimaryCenter;
-            [FieldOffset(24)]
+            [System.Runtime.InteropServices.FieldOffset(24)]
             public uint Flags;
-            [FieldOffset(28)]
+            [System.Runtime.InteropServices.FieldOffset(28)]
             private byte _pad0;
-            [FieldOffset(29)]
+            [System.Runtime.InteropServices.FieldOffset(29)]
             private byte _pad1;
-            [FieldOffset(30)]
+            [System.Runtime.InteropServices.FieldOffset(30)]
             private byte _pad2;
-            [FieldOffset(31)]
+            [System.Runtime.InteropServices.FieldOffset(31)]
             private byte _pad3;
+            [System.Runtime.InteropServices.FieldOffset(32)]
+            private byte _pad4;
+            [System.Runtime.InteropServices.FieldOffset(33)]
+            private byte _pad5;
+            [System.Runtime.InteropServices.FieldOffset(34)]
+            private byte _pad6;
+            [System.Runtime.InteropServices.FieldOffset(35)]
+            private byte _pad7;
+            [System.Runtime.InteropServices.FieldOffset(36)]
+            private byte _pad8;
+            [System.Runtime.InteropServices.FieldOffset(37)]
+            private byte _pad9;
+            [System.Runtime.InteropServices.FieldOffset(38)]
+            private byte _pad10;
+            [System.Runtime.InteropServices.FieldOffset(39)]
+            private byte _pad11;
+            [System.Runtime.InteropServices.FieldOffset(40)]
+            private byte _pad12;
+            [System.Runtime.InteropServices.FieldOffset(41)]
+            private byte _pad13;
+            [System.Runtime.InteropServices.FieldOffset(42)]
+            private byte _pad14;
+            [System.Runtime.InteropServices.FieldOffset(43)]
+            private byte _pad15;
+            [System.Runtime.InteropServices.FieldOffset(44)]
+            private byte _pad16;
+            [System.Runtime.InteropServices.FieldOffset(45)]
+            private byte _pad17;
+            [System.Runtime.InteropServices.FieldOffset(46)]
+            private byte _pad18;
+            [System.Runtime.InteropServices.FieldOffset(47)]
+            private byte _pad19;
+            [System.Runtime.InteropServices.FieldOffset(48)]
+            private byte _pad20;
+            [System.Runtime.InteropServices.FieldOffset(49)]
+            private byte _pad21;
+            [System.Runtime.InteropServices.FieldOffset(50)]
+            private byte _pad22;
+            [System.Runtime.InteropServices.FieldOffset(51)]
+            private byte _pad23;
+            [System.Runtime.InteropServices.FieldOffset(52)]
+            private byte _pad24;
+            [System.Runtime.InteropServices.FieldOffset(53)]
+            private byte _pad25;
+            [System.Runtime.InteropServices.FieldOffset(54)]
+            private byte _pad26;
+            [System.Runtime.InteropServices.FieldOffset(55)]
+            private byte _pad27;
+            [System.Runtime.InteropServices.FieldOffset(56)]
+            private byte _pad28;
+            [System.Runtime.InteropServices.FieldOffset(57)]
+            private byte _pad29;
+            [System.Runtime.InteropServices.FieldOffset(58)]
+            private byte _pad30;
+            [System.Runtime.InteropServices.FieldOffset(59)]
+            private byte _pad31;
+            [System.Runtime.InteropServices.FieldOffset(60)]
+            private byte _pad32;
+            [System.Runtime.InteropServices.FieldOffset(61)]
+            private byte _pad33;
+            [System.Runtime.InteropServices.FieldOffset(62)]
+            private byte _pad34;
+            [System.Runtime.InteropServices.FieldOffset(63)]
+            private byte _pad35;
         }
 
         private static bool NearlyEqual(float a, float b, float epsilon)
@@ -3471,6 +3535,7 @@ namespace Hecton8.Visor
 
         private static void WriteActiveSonarGeoTelemetryEntry(Span<byte> destination, in ActiveSonarGeoTelemetryEntry entry)
         {
+            destination.Clear();
             BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), entry.Frame);
             BinaryPrimitives.WriteInt32LittleEndian(destination.Slice(4, 4), entry.ActiveRingCount);
             WriteFloatLittleEndian(destination.Slice(8, 4), entry.PrimaryRadius);

@@ -51,6 +51,7 @@ namespace Hecton8.Interaction
     using Hecton8.World;
     using Unity.Mathematics;
     using UnityEngine;
+    using UnityEngine.Serialization;
     using Hecton8.Audio;
 
     [DisallowMultipleComponent]
@@ -72,6 +73,7 @@ namespace Hecton8.Interaction
          Tooltip("Maximum interaction reach in meters.")]
         private float reachDistance = 3.5f;
 
+        [FormerlySerializedAs("raycastInterval")]
         [SerializeField,
          Tooltip("Seconds between registered spatial target probes. 0.05 = 20 checks/sec for smooth hover.")]
         private float targetProbeInterval = 0.05f;

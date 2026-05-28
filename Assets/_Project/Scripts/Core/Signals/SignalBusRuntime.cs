@@ -47,6 +47,7 @@ namespace Hecton8.Core.Contracts.Signals
         private static int _globalQualityMilli = StressScale;
         private static int _systemStressMilli;
         private static int _simulationHalted;
+        private static IDataVault _dataVault;
 
         /// <summary>Current active typed lane count.</summary>
         public static int LaneCount => Volatile.Read(ref _laneCount);
@@ -72,6 +73,18 @@ namespace Hecton8.Core.Contracts.Signals
 
         internal static int SystemStressMilli => Volatile.Read(ref _systemStressMilli);
         internal static int GlobalQualityMilli => Volatile.Read(ref _globalQualityMilli);
+
+        /// <summary>Binds the Vault used by per-lane snapshot buffers from cold registry ownership routes.</summary>
+        public static void BindDataVaultCold(IDataVault vault)
+        {
+            _dataVault = vault;
+        }
+
+        internal static bool TryGetBoundDataVault(out IDataVault vault)
+        {
+            vault = _dataVault;
+            return vault != null && !vault.IsCompactionFenceActive;
+        }
 
         internal static bool Register(
             delegate*<void> dispose,
@@ -180,6 +193,7 @@ namespace Hecton8.Core.Contracts.Signals
                 Volatile.Write(ref _globalQualityMilli, StressScale);
                 Volatile.Write(ref _systemStressMilli, 0);
                 Volatile.Write(ref _simulationHalted, 0);
+                _dataVault = null;
             }
             finally
             {
@@ -1494,8 +1508,7 @@ namespace Hecton8.Core.Contracts.Signals
 
         private static bool TryFindFrameSnapshotVaultForBootstrap(out IDataVault vault)
         {
-            vault = global::Hecton8.Core.GlobalRegistry.DataVault;
-            return vault != null;
+            return SignalBusRegistry.TryGetBoundDataVault(out vault);
         }
 
         private static BufferID ResolveSnapshotBufferId()

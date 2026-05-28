@@ -25,6 +25,8 @@ void CSCopyTexture(uint3 id : SV_DispatchThreadID)
         return;
 
     uint indexX = id.x + offsetX;
+    if (indexX >= destinationSizeX || id.y >= destinationSizeY)
+        return;
     
     float4 color = source[id.xy];
 
@@ -64,6 +66,8 @@ void CSCopyTextureArray(uint3 id : SV_DispatchThreadID)
         return;
 
     uint indexX = id.x + offsetX;
+    if (indexX >= destinationSizeX || id.y >= destinationSizeY)
+        return;
     
     float4 color = textureArray.SampleLevel(sampler_textureArray, float3(id.x / float(sourceSizeX), id.y / float(sourceSizeY), textureArrayIndex), 0);
 

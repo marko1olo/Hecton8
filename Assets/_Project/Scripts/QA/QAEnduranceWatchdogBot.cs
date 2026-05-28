@@ -291,12 +291,17 @@ namespace Hecton8.QA
 
         public void BeginRun()
         {
+            BeginRunCold();
+        }
+
+        private void BeginRunCold()
+        {
             if (_active)
                 return;
 
             Directory.CreateDirectory(Path.GetDirectoryName(_csvPath));
             _csvWriter = new QAEnduranceCsvWriter(_csvPath, CsvQueueCapacity, CsvLineCapacity, CsvByteCapacity); // COLD ALLOC: QAEnduranceCsvWriter[1] — decoupled CSV writer — owner: QAEnduranceWatchdogBot
-            _csvWriter.Start();
+            _csvWriter.StartCold();
             _memoryWindowStartBytes = Profiler.GetTotalAllocatedMemoryLong();
             _lastTotalMemoryBytes = _memoryWindowStartBytes;
             _lastManagedMemoryBytes = Profiler.GetMonoUsedSizeLong();
@@ -746,7 +751,7 @@ namespace Hecton8.QA
             _completed = true;
             WriteBlackBox(EventHashComplete);
             EnqueueCsvRecord(EventHashComplete);
-            WriteResultFile(0, EventHashComplete);
+            WriteResultFileCold(0, EventHashComplete);
             StopRun(true, EventHashComplete);
         }
 
@@ -760,7 +765,7 @@ namespace Hecton8.QA
             WriteBlackBox(eventHash);
             EnqueueCsvRecord(eventHash);
             DumpBlackBox();
-            WriteResultFile(1, eventHash);
+            WriteResultFileCold(1, eventHash);
             StopRun(true, eventHash);
         }
 
@@ -1028,7 +1033,7 @@ namespace Hecton8.QA
             }
         }
 
-        private void WriteResultFile(int exitCode, uint eventHash)
+        private void WriteResultFileCold(int exitCode, uint eventHash)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(_resultPath));
             using (StreamWriter writer = new StreamWriter(_resultPath, false)) // COLD ALLOC: StreamWriter[1] — terminal result JSON — owner: QAEnduranceWatchdogBot
@@ -1130,7 +1135,7 @@ namespace Hecton8.QA
             _lineBytes = new byte[math.max(256, byteCapacity)]; // COLD ALLOC: byte[byteCapacity] — CSV ASCII write buffer — owner: QAEnduranceCsvWriter
         }
 
-        public void Start()
+        public void StartCold()
         {
             Directory.CreateDirectory(Path.GetDirectoryName(_path));
             _stream = new FileStream(_path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.Asynchronous); // COLD ALLOC: FileStream[1] — async CSV file sink — owner: QAEnduranceCsvWriter

@@ -1,0 +1,186 @@
+{
+  "agent": "1417",
+  "role": "COMBAT_DAMAGE_AND_ARMOR_PENETRATION_ARRAY_PURGER",
+  "date": "2026-05-28",
+  "prompt": {
+    "taskCount": 20,
+    "sha256": "E1062F271581350CFA1CA17F0DD1D7870D168DCD057C3328D29D294B4024992C"
+  },
+  "status": "PENDING_VERIFICATION",
+  "completionClaim": false,
+  "reasonCompletionIsBlocked": [
+    "dotnet build was not launched: CPU samples immediately before the build gate were 97 and 68 percent, above the 50 percent limit.",
+    "Unity import, PlayMode, profiler, and GCMonitor evidence are absent.",
+    "Task 16 100000-packet editor stress harness source was added but not executed."
+  ],
+  "dirtyWorktreeWarning": "Repository contains extensive unrelated dirty files. H8Memory.cs also contains unrelated pre-existing hunks; agent 1417 only claims BufferID.Shinobu319StatusEffectRequests = 71269 in that file.",
+  "modifiedOrProofFiles": [
+    {
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+      "sha256": "5FF5E1B90E8CBB39156E5B0313FD5028F4AD7F98F3EF0509D05333F824ECE396"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs",
+      "sha256": "1C81804312A4CF789484C76A5F2378DA85EC2CE672ACCCEC10933EA634F21018"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
+      "sha256": "DB6097E05D682665FFBDD95C80DBB2E731E2322880444CAB3782D8BFF2BAFECA"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_VaultViews.cs",
+      "sha256": "4E205AC8CCAFE335C12728B6D3BA737D220D8DB451DEA1789607097E14CC0255"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "sha256": "5244A1A957FC131C908190F6734A54AD2A17A186901D62306FAA44384D083657"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Gameplay/Combat/StatusEffectsEditorFacade.cs",
+      "sha256": "65859CEA8A91E4B349FEAFFFB156C5EA3AE24F25ACAD8D52795B8FC097DAA141"
+    },
+    {
+      "path": "Docs/ARCHITECTURE/SHINOBU_319_STATUS_EFFECTS_ROUTE_CARD.md",
+      "sha256": "26FF7ACACA5FEC9208B672236684C80AB2F4AC14B09FC13A86D79D7271D6874E"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/CombatDamageRuntime1417StressHarnessEditTests.cs",
+      "sha256": "2AF622FB23B5E5A99CAFE9C049D3C098F1AD804D98D8C0825417E68BAA746707"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/CombatDamageRuntime1417StressHarnessEditTests.cs.meta",
+      "sha256": "64CC3F57BC5BA9D6175F88C5F9DA903DD652B15684B2E9EADBBF7E1C7DC22E32"
+    }
+  ],
+  "aliasPurge": {
+    "promptAliasTotal": 43,
+    "persistentIllegalAliasesDeletedFromCombatDamageRuntimeCs": 24,
+    "armorPenetrationAliasesClassifiedAsTransientVaultViews": 19,
+    "residualStatusEffectPersistentAliasesDeleted": 8,
+    "staticFieldScanCombatDirectoryMatches": 0,
+    "legacyContainerScanPrimaryAndStatusMatches": 0,
+    "scanCommands": [
+      "rg -n --pcre2 \"private\\s+static\\s+(?:readonly\\s+)?(?:NativeArray|NativeQueue|NativeList|NativeParallelHashMap|NativeHashMap)<[^>]+>\\s+[_A-Za-z0-9]+\\s*;\" Assets/_Project/Scripts/Gameplay/Combat",
+      "rg -n \"NativeQueue<|NativeParallelHashMap<|new\\s+Native(Array|Queue|List|ParallelHashMap|HashMap)<|PrewarmQueue|DataVaultExempt\" CombatDamageRuntime.cs CombatDamageRuntime_StatusEffects.cs CombatDamageRuntime_VaultViews.cs HectonCombatRuntime_ArmorPenetration.cs"
+    ]
+  },
+  "dataVaultRoutes": {
+    "owner": "SystemID.GameplayCombat",
+    "damageBufferIdRange": "1417000-1417024",
+    "damageBufferIds": {
+      "1417000": "CombatDamageSignalsBufferId",
+      "1417001": "CombatDamageSignalDetailsBufferId",
+      "1417002": "CombatDamageTargetLookupKeysBufferId",
+      "1417003": "CombatDamageTargetLookupSlotsBufferId",
+      "1417004": "CombatDamageInstanceIdsBufferId",
+      "1417005": "CombatDamageHealthBufferId",
+      "1417006": "CombatDamageMaxHealthBufferId",
+      "1417007": "CombatDamageInvMaxHealthBufferId",
+      "1417008": "CombatDamageArmorValuesBufferId",
+      "1417009": "CombatDamageShieldValuesBufferId",
+      "1417010": "CombatDamageMinorAccumulatorsBufferId",
+      "1417011": "CombatDamageTargetForwardBufferId",
+      "1417012": "CombatDamageTargetHeightsBufferId",
+      "1417013": "CombatDamageTargetFlagsBufferId",
+      "1417014": "CombatDamageStatusMasksBufferId",
+      "1417015": "CombatDamageStatusDurations0123BufferId",
+      "1417016": "CombatDamageLegacyStatusDurations4567BufferId",
+      "1417017": "CombatDamageBrittleDurationsBufferId",
+      "1417018": "CombatDamageArmorLutBufferId",
+      "1417019": "CombatDamageResultsBufferId",
+      "1417020": "CombatDamageStatusResultsBufferId",
+      "1417021": "CombatDamageStatusResultActiveBufferId",
+      "1417022": "CombatDamageCountersBufferId",
+      "1417023": "CombatDamageTelemetryRingBufferId",
+      "1417024": "CombatDamageTelemetryStateBufferId"
+    },
+    "statusEffectBufferIds": {
+      "71260": "Shinobu319StatusEffectStates",
+      "71261": "Shinobu319StatusEffectTelemetryRing",
+      "71262": "Shinobu319StatusEffectTelemetryCursor",
+      "71263": "Shinobu319StatusEffectTuning",
+      "71264": "Shinobu319StatusEffectCounters",
+      "71267": "Shinobu319StatusEffectVfxRequests",
+      "71268": "Shinobu319StatusEffectDamageSignals",
+      "71269": "Shinobu319StatusEffectRequests"
+    }
+  },
+  "lockProof": {
+    "damageTryAcquireWriteLocks": [
+      "CombatDamageRuntime.cs:758 _damageSignalsHandle",
+      "CombatDamageRuntime.cs:762 _signalDetailsHandle",
+      "CombatDamageRuntime.cs:769 _signalImpactAupsHandle",
+      "CombatDamageRuntime.cs:1318 _damageArmorLutHandle"
+    ],
+    "damageFinallyReleaseSites": [
+      "CombatDamageRuntime.cs:724-726 ReleaseDamageIngressWriteLocks",
+      "CombatDamageRuntime.cs:1328-1330 ReleaseWriteLock(_damageArmorLutHandle)"
+    ],
+    "statusTryAcquireWriteLocks": [
+      "CombatDamageRuntime_StatusEffects.cs:244 _statusEffectRequestsHandle",
+      "CombatDamageRuntime_StatusEffects.cs:643 _statusEffectTuningHandle",
+      "CombatDamageRuntime_StatusEffects.cs:1248 _statusEffectStatesHandle reset",
+      "CombatDamageRuntime_StatusEffects.cs:1269 _statusEffectStatesHandle copy",
+      "CombatDamageRuntime_StatusEffects.cs:1646 _statusEffectCountersHandle"
+    ],
+    "statusFinallyReleaseSites": [
+      "CombatDamageRuntime_StatusEffects.cs:258-260 request release",
+      "CombatDamageRuntime_StatusEffects.cs:656-658 tuning release",
+      "CombatDamageRuntime_StatusEffects.cs:1260-1262 state reset release",
+      "CombatDamageRuntime_StatusEffects.cs:1285-1287 state copy release",
+      "CombatDamageRuntime_StatusEffects.cs:1660-1662 counter release"
+    ],
+    "jobPinLockWindows": [
+      "CombatDamageRuntime_VaultViews.cs:319-409 25 damage buffers lock and reverse unlock",
+      "CombatDamageRuntime_StatusEffects.cs:1131-1242 status buffers lock and reverse unlock",
+      "HectonCombatRuntime_ArmorPenetration.cs:728-766 armor job buffers lock and unlock"
+    ]
+  },
+  "dtoLayoutProof": {
+    "damageValidator": "CombatDamageRuntime.cs:1131 ValidateCombatDamageLayout",
+    "armorValidator": "HectonCombatRuntime_ArmorPenetration.cs ValidateArmorLayout",
+    "damageSizes": {
+      "CombatDamageRequest": 32,
+      "CombatDamageSignalDetail": 32,
+      "CombatDamageResult": 128,
+      "CombatTelemetryEntry": 64
+    },
+    "damageOffsetSites": "CombatDamageRuntime.cs:1139-1200"
+  },
+  "overflowAndTelemetry": {
+    "failClosedQueueFull": "CombatDamageRuntime.cs:681-684",
+    "failClosedStorageReject": "CombatDamageRuntime.cs:687-719",
+    "statusRequestOverflowReject": "CombatDamageRuntime_StatusEffects.cs:213-216 and 236-246",
+    "blackBoxRings": [
+      "Docs/AgentLogs/Dump_1417_CombatDamage.bin",
+      "Docs/AgentLogs/Dump_1417_CombatStatusEffects.bin"
+    ]
+  },
+  "zeroGcStaticScan": {
+    "forbiddenTokenMatches": 0,
+    "command": "rg -n \"string\\.Format|\\.ToString\\(|\\.Select\\(|\\.Where\\(|\\.ToArray\\(|\\.ToList\\(|Enumerable\\.|foreach\\s*\\(\" CombatDamageRuntime.cs CombatDamageRuntime_StatusEffects.cs CombatDamageRuntime_VaultViews.cs HectonCombatRuntime_ArmorPenetration.cs",
+    "newReferenceTypeHotPathFinding": "No reference-type new detected in modified hot-path scans. Broad new-token hits are value-type constructors, static ProfilerMarker/init allocations, or anomaly dump FileStream/BinaryWriter paths."
+  },
+  "scalabilityAndCinematicCheat": {
+    "gameplayTruth": "Damage amount, armor LUT truth, target identity, DTO layout, and save/authority ownership do not branch on quality.",
+    "continuousQualityScalarEvidence": [
+      "CombatDamageRuntime.cs:2180 SignalBusRegistry.GlobalQualityWeight01 gates visual fidelity only.",
+      "CombatDamageRuntime_StatusEffects.cs:893-1016 stores GlobalQualityWeight01 and scales status cadence/batch size.",
+      "CombatDamageRuntime_StatusEffects.cs:1488-1497 ResolveStatusEffectCadenceSeconds/ResolveStatusEffectBatchSize are continuous float scalar consumers.",
+      "HectonCombatRuntime_ArmorPenetration.cs:898 reads HomeostasisBrain.GlobalQualityWeight."
+    ],
+    "binaryQualitySwitchScanMatches": 0,
+    "visualFakePolicy": "Armor/result truth stays deterministic. Expensive presentation is staged as VFX/damage signals and toxic-bubble cadence, not physical simulation."
+  },
+  "buildGate": {
+    "dotnetBuildLaunchedByAgent1417": false,
+    "cpuSamplesPercent": [97, 68],
+    "activeCompilerProcessesObserved": [],
+    "decision": "BLOCKED_BY_CONTENTION_CPU_GT_50"
+  },
+  "residualRisk": [
+    "Static source checks passed; compile/runtime proof absent.",
+    "Task 16 stress harness source exists but execution/profiler proof is absent.",
+    "H8Memory.cs includes unrelated dirty hunks from other agents; report hash covers full file content, not agent-only hunks."
+  ]
+}

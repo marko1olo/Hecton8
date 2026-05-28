@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using Hecton8.Core.Memory;
 using Hecton.Localization;
@@ -63,11 +64,22 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Fatal native memory leak detected during teardown or subsystem reload.
+    /// </summary>
+    public sealed class FatalMemoryLeakException : InvalidOperationException
+    {
+        public FatalMemoryLeakException(string message) : base(message)
+        {
+        }
+    }
+
+    /// <summary>
     /// Central cold-path registry for persistent native allocations.
     /// </summary>
     public static unsafe class NativeMemorySentinel
     {
         private const int MaxTrackedAllocations = 1024;
+        private const int MutationGateSpinWait = 4;
         private const int TempAllocationFrameThreshold = 1;
         private const int TempJobAllocationFrameThreshold = 4;
         private const int MaxPersistentReallocationRecords = 128;
@@ -130,6 +142,7 @@ namespace Hecton8.Core
         private static int _activeTempAllocationCount;
         private static int _activeTempJobAllocationCount;
         private static int _telemetryPublishInProgress;
+        private static int _mutationGate;
         private static int _mainThreadId = Thread.CurrentThread.ManagedThreadId;
         private static bool _sceneHooksRegistered;
 
@@ -198,22 +211,35 @@ namespace Hecton8.Core
         /// </summary>
         public static void ResetForSubsystemReload()
         {
-            for (int i = 0; i < _count; i++)
-                _records[i] = default;
-            for (int i = 0; i < _persistentReallocationRecordCount; i++)
-                _persistentReallocationRecords[i] = default;
+            int activeBeforeReset = Volatile.Read(ref _count);
+            if (activeBeforeReset > 0)
+                throw new FatalMemoryLeakException(BuildFatalLeakMessage("SubsystemRegistration", activeBeforeReset));
 
-            _count = 0;
-            _persistentReallocationRecordCount = 0;
-            _nextId = 1;
-            _trackedBytes = 0L;
-            _sceneLeakViolationCount = 0;
-            _activeTempAllocationCount = 0;
-            _activeTempJobAllocationCount = 0;
-            _telemetryPublishInProgress = 0;
-            _mainThreadId = Thread.CurrentThread.ManagedThreadId;
-            _sceneHooksRegistered = false;
-            SceneManager.sceneUnloaded -= HandleSceneUnloaded;
+            Interlocked.Exchange(ref _mutationGate, 0);
+            EnterMutationGate();
+            try
+            {
+                for (int i = 0; i < _count; i++)
+                    _records[i] = default;
+                for (int i = 0; i < _persistentReallocationRecordCount; i++)
+                    _persistentReallocationRecords[i] = default;
+
+                _count = 0;
+                _persistentReallocationRecordCount = 0;
+                _nextId = 1;
+                _trackedBytes = 0L;
+                _sceneLeakViolationCount = 0;
+                _activeTempAllocationCount = 0;
+                _activeTempJobAllocationCount = 0;
+                _telemetryPublishInProgress = 0;
+                _mainThreadId = Thread.CurrentThread.ManagedThreadId;
+                _sceneHooksRegistered = false;
+                SceneManager.sceneUnloaded -= HandleSceneUnloaded;
+            }
+            finally
+            {
+                ExitMutationGate();
+            }
         }
 
         /// <summary>
@@ -473,6 +499,9 @@ namespace Hecton8.Core
             if (bytes <= 0L)
                 return 0;
 
+            EnterMutationGate();
+            try
+            {
             IntPtr pointerValue = (IntPtr)pointer;
             uint ownerHash = ComputeStableHash(owner);
             uint labelHash = ComputeStableHash(label);
@@ -562,6 +591,11 @@ namespace Hecton8.Core
             _trackedBytes += bytes;
             AdjustTransientAllocationCount(lifetime, 1);
             return id;
+            }
+            finally
+            {
+                ExitMutationGate();
+            }
         }
 
         /// <summary>
@@ -633,13 +667,21 @@ namespace Hecton8.Core
             if (target == IntPtr.Zero)
                 return;
 
-            for (int i = 0; i < _count; i++)
+            EnterMutationGate();
+            try
             {
-                if (_records[i].Pointer != target)
-                    continue;
+                for (int i = 0; i < _count; i++)
+                {
+                    if (_records[i].Pointer != target)
+                        continue;
 
-                RemoveAt(i);
-                return;
+                    RemoveAt(i);
+                    return;
+                }
+            }
+            finally
+            {
+                ExitMutationGate();
             }
         }
 
@@ -651,13 +693,21 @@ namespace Hecton8.Core
             if (id <= 0)
                 return;
 
-            for (int i = _count - 1; i >= 0; i--)
+            EnterMutationGate();
+            try
             {
-                if (_records[i].Id != id)
-                    continue;
+                for (int i = _count - 1; i >= 0; i--)
+                {
+                    if (_records[i].Id != id)
+                        continue;
 
-                RemoveAt(i);
-                return;
+                    RemoveAt(i);
+                    return;
+                }
+            }
+            finally
+            {
+                ExitMutationGate();
             }
         }
 
@@ -666,16 +716,24 @@ namespace Hecton8.Core
         /// </summary>
         public static void Unregister(string owner, string label)
         {
-            for (int i = _count - 1; i >= 0; i--)
+            EnterMutationGate();
+            try
             {
-                if (!string.Equals(_records[i].Owner, owner, StringComparison.Ordinal) ||
-                    !string.Equals(_records[i].Label, label, StringComparison.Ordinal))
+                for (int i = _count - 1; i >= 0; i--)
                 {
-                    continue;
-                }
+                    if (!string.Equals(_records[i].Owner, owner, StringComparison.Ordinal) ||
+                        !string.Equals(_records[i].Label, label, StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
 
-                RemoveAt(i);
-                return;
+                    RemoveAt(i);
+                    return;
+                }
+            }
+            finally
+            {
+                ExitMutationGate();
             }
         }
 
@@ -684,59 +742,17 @@ namespace Hecton8.Core
         /// </summary>
         public static void ReportSceneLifetimeLeaks(string context)
         {
-            int reported = 0;
-            for (int i = 0; i < _count; i++)
+            EnterMutationGate();
+            try
             {
-                NativeAllocationRecord record = _records[i];
-                if (record.LeakReported || record.Lifetime != NativeAllocationLifetime.Scene)
-                    continue;
-
-                reported++;
-                Interlocked.Increment(ref _sceneLeakViolationCount);
-                PublishPerformanceWarningNoReentry(
-                    _criticalMemoryViolationHash,
-                    _nativeMemoryContextHash,
-                    record.Bytes <= 0L ? 0f : record.Bytes > float.MaxValue ? float.MaxValue : (float)record.Bytes);
-                record.LeakReported = true;
-                _records[i] = record;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
-#endif
-            }
-
-#if HECTON_FULL_NATIVE_LEAK_SCAN_ON_SCENE_UNLOAD
-            int unsafeLeakCount = UnsafeUtility.CheckForLeaks();
-            if (unsafeLeakCount > reported)
-            {
-                Interlocked.Increment(ref _sceneLeakViolationCount);
-                PublishPerformanceWarningNoReentry(
-                    _criticalMemoryViolationHash,
-                    _nativeMemoryContextHash,
-                    unsafeLeakCount);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationUnsafeLeakMessage);
-#endif
-            }
-#endif
-        }
-
-        /// <summary>
-        /// Reports and force-frees scene-lifetime native arrays that survived a scene unload.
-        /// </summary>
-        public static int ReapSceneLifetimeLeaks(string context)
-        {
-            int reaped = 0;
-            for (int i = _count - 1; i >= 0; i--)
-            {
-                NativeAllocationRecord record = _records[i];
-                if (record.Lifetime != NativeAllocationLifetime.Scene ||
-                    (record.LeakReported && record.Pointer == IntPtr.Zero))
+                int reported = 0;
+                for (int i = 0; i < _count; i++)
                 {
-                    continue;
-                }
+                    NativeAllocationRecord record = _records[i];
+                    if (record.LeakReported || record.Lifetime != NativeAllocationLifetime.Scene)
+                        continue;
 
-                if (record.Pointer == IntPtr.Zero)
-                {
+                    reported++;
                     Interlocked.Increment(ref _sceneLeakViolationCount);
                     PublishPerformanceWarningNoReentry(
                         _criticalMemoryViolationHash,
@@ -747,53 +763,111 @@ namespace Hecton8.Core
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
 #endif
-                    continue;
                 }
 
-                if (!record.LeakReported)
+#if HECTON_FULL_NATIVE_LEAK_SCAN_ON_SCENE_UNLOAD
+                int unsafeLeakCount = UnsafeUtility.CheckForLeaks();
+                if (unsafeLeakCount > reported)
                 {
                     Interlocked.Increment(ref _sceneLeakViolationCount);
                     PublishPerformanceWarningNoReentry(
                         _criticalMemoryViolationHash,
                         _nativeMemoryContextHash,
-                        record.Bytes <= 0L ? 0f : record.Bytes > float.MaxValue ? float.MaxValue : (float)record.Bytes);
+                        unsafeLeakCount);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationUnsafeLeakMessage);
+#endif
+                }
+#endif
+            }
+            finally
+            {
+                ExitMutationGate();
+            }
+        }
+
+        /// <summary>
+        /// Reports and force-frees scene-lifetime native arrays that survived a scene unload.
+        /// </summary>
+        public static int ReapSceneLifetimeLeaks(string context)
+        {
+            EnterMutationGate();
+            try
+            {
+                int reaped = 0;
+                for (int i = _count - 1; i >= 0; i--)
+                {
+                    NativeAllocationRecord record = _records[i];
+                    if (record.Lifetime != NativeAllocationLifetime.Scene ||
+                        (record.LeakReported && record.Pointer == IntPtr.Zero))
+                    {
+                        continue;
+                    }
+
+                    if (record.Pointer == IntPtr.Zero)
+                    {
+                        Interlocked.Increment(ref _sceneLeakViolationCount);
+                        PublishPerformanceWarningNoReentry(
+                            _criticalMemoryViolationHash,
+                            _nativeMemoryContextHash,
+                            record.Bytes <= 0L ? 0f : record.Bytes > float.MaxValue ? float.MaxValue : (float)record.Bytes);
+                        record.LeakReported = true;
+                        _records[i] = record;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
+#endif
+                        continue;
+                    }
+
+                    if (!record.LeakReported)
+                    {
+                        Interlocked.Increment(ref _sceneLeakViolationCount);
+                        PublishPerformanceWarningNoReentry(
+                            _criticalMemoryViolationHash,
+                            _nativeMemoryContextHash,
+                            record.Bytes <= 0L ? 0f : record.Bytes > float.MaxValue ? float.MaxValue : (float)record.Bytes);
+                    }
+
+                    Allocator allocator = (int)record.Allocator == 0
+                        ? Allocator.Persistent
+                        : record.Allocator;
+                    H8Memory.ReleaseSentinelReapedRaw(record.Pointer.ToPointer(), allocator);
+                    RuntimeWatchdog.ReportNativeLeakReaped(
+                        ComputeStableHash(record.Owner),
+                        ComputeStableHash(record.Label),
+                        record.Bytes);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Hecton8.Core.H8Debug.LogError(
+                        NativeLeakReapedMessage +
+                        " context=" + context +
+                        " owner=" + record.Owner +
+                        " label=" + record.Label +
+                        "\n" + record.StackTrace);
+#endif
+                    RemoveAt(i);
+                    reaped++;
                 }
 
-                Allocator allocator = (int)record.Allocator == 0
-                    ? Allocator.Persistent
-                    : record.Allocator;
-                H8Memory.ReleaseSentinelReapedRaw(record.Pointer.ToPointer(), allocator);
-                RuntimeWatchdog.ReportNativeLeakReaped(
-                    ComputeStableHash(record.Owner),
-                    ComputeStableHash(record.Label),
-                    record.Bytes);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError(
-                    NativeLeakReapedMessage +
-                    " context=" + context +
-                    " owner=" + record.Owner +
-                    " label=" + record.Label +
-                    "\n" + record.StackTrace);
-#endif
-                RemoveAt(i);
-                reaped++;
-            }
-
 #if HECTON_FULL_NATIVE_LEAK_SCAN_ON_SCENE_UNLOAD
-            int unsafeLeakCount = UnsafeUtility.CheckForLeaks();
-            if (unsafeLeakCount > reaped)
-            {
-                Interlocked.Increment(ref _sceneLeakViolationCount);
-                PublishPerformanceWarningNoReentry(
-                    _criticalMemoryViolationHash,
-                    _nativeMemoryContextHash,
-                    unsafeLeakCount);
+                int unsafeLeakCount = UnsafeUtility.CheckForLeaks();
+                if (unsafeLeakCount > reaped)
+                {
+                    Interlocked.Increment(ref _sceneLeakViolationCount);
+                    PublishPerformanceWarningNoReentry(
+                        _criticalMemoryViolationHash,
+                        _nativeMemoryContextHash,
+                        unsafeLeakCount);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationUnsafeLeakMessage);
+                    Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationUnsafeLeakMessage);
 #endif
+                }
+#endif
+                return reaped;
             }
-#endif
-            return reaped;
+            finally
+            {
+                ExitMutationGate();
+            }
         }
 
         /// <summary>
@@ -812,7 +886,7 @@ namespace Hecton8.Core
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationServiceShutdownLeakMessage);
 #endif
-            return false;
+            throw new FatalMemoryLeakException(BuildFatalLeakMessage(context, activeCount));
         }
 
         /// <summary>
@@ -829,50 +903,58 @@ namespace Hecton8.Core
                 return;
             }
 
-            for (int i = 0; i < _count; i++)
+            EnterMutationGate();
+            try
             {
-                NativeAllocationRecord record = _records[i];
-                if (record.LeakReported ||
-                    (record.Lifetime != NativeAllocationLifetime.Temp &&
-                     record.Lifetime != NativeAllocationLifetime.TempJob))
+                for (int i = 0; i < _count; i++)
                 {
-                    continue;
-                }
+                    NativeAllocationRecord record = _records[i];
+                    if (record.LeakReported ||
+                        (record.Lifetime != NativeAllocationLifetime.Temp &&
+                         record.Lifetime != NativeAllocationLifetime.TempJob))
+                    {
+                        continue;
+                    }
 
-                int allocationFrame = record.AllocationFrame;
-                int retentionFrames = currentFrame - allocationFrame;
-                int legalFrameWindow = record.Lifetime == NativeAllocationLifetime.TempJob
-                    ? TempJobAllocationFrameThreshold
-                    : TempAllocationFrameThreshold;
-                if (allocationFrame <= 0 || retentionFrames <= legalFrameWindow)
-                {
-                    continue;
-                }
+                    int allocationFrame = record.AllocationFrame;
+                    int retentionFrames = currentFrame - allocationFrame;
+                    int legalFrameWindow = record.Lifetime == NativeAllocationLifetime.TempJob
+                        ? TempJobAllocationFrameThreshold
+                        : TempAllocationFrameThreshold;
+                    if (allocationFrame <= 0 || retentionFrames <= legalFrameWindow)
+                    {
+                        continue;
+                    }
 
-                record.LeakReported = true;
-                _records[i] = record;
-                uint warningHash = record.Lifetime == NativeAllocationLifetime.TempJob
-                    ? _staleBufferCrimeHash
-                    : _memoryLeakDetectedHash;
-                PublishPerformanceWarningNoReentry(
-                    warningHash,
-                    _nativeMemoryContextHash,
-                    retentionFrames);
-                uint allocationHash = ComputeOwnerLabelHash(record.Owner, record.Label);
-                if (record.Lifetime == NativeAllocationLifetime.TempJob)
-                {
-                    CrashTelemetryBuffer.ReportStaleBufferCrime(allocationHash, retentionFrames, record.Bytes);
-                }
-                else
-                {
-                    CrashTelemetryBuffer.ReportNativeTransientLeak(allocationHash, retentionFrames, record.Bytes);
-                }
+                    record.LeakReported = true;
+                    _records[i] = record;
+                    uint warningHash = record.Lifetime == NativeAllocationLifetime.TempJob
+                        ? _staleBufferCrimeHash
+                        : _memoryLeakDetectedHash;
+                    PublishPerformanceWarningNoReentry(
+                        warningHash,
+                        _nativeMemoryContextHash,
+                        retentionFrames);
+                    uint allocationHash = ComputeOwnerLabelHash(record.Owner, record.Label);
+                    if (record.Lifetime == NativeAllocationLifetime.TempJob)
+                    {
+                        CrashTelemetryBuffer.ReportStaleBufferCrime(allocationHash, retentionFrames, record.Bytes);
+                    }
+                    else
+                    {
+                        CrashTelemetryBuffer.ReportNativeTransientLeak(allocationHash, retentionFrames, record.Bytes);
+                    }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Hecton8.Core.H8Debug.LogError(
-                    record.Lifetime == NativeAllocationLifetime.TempJob
-                        ? StaleBufferCrimeRetentionMessage
-                        : MemoryLeakDetectedRetentionMessage);
+                    Hecton8.Core.H8Debug.LogError(
+                        record.Lifetime == NativeAllocationLifetime.TempJob
+                            ? StaleBufferCrimeRetentionMessage
+                            : MemoryLeakDetectedRetentionMessage);
 #endif
+                }
+            }
+            finally
+            {
+                ExitMutationGate();
             }
         }
 
@@ -893,6 +975,49 @@ namespace Hecton8.Core
 #else
             RuntimeWatchdog.ReapNativeSceneLeaks(string.Empty);
 #endif
+        }
+
+        private static void EnterMutationGate()
+        {
+            while (Interlocked.CompareExchange(ref _mutationGate, 1, 0) != 0)
+                Thread.SpinWait(MutationGateSpinWait);
+
+            Thread.MemoryBarrier();
+        }
+
+        private static void ExitMutationGate()
+        {
+            Thread.MemoryBarrier();
+            Interlocked.Exchange(ref _mutationGate, 0);
+        }
+
+        private static string BuildFatalLeakMessage(string context, int activeCount)
+        {
+            StringBuilder builder = new StringBuilder(512);
+            builder.Append("FATAL_MEMORY_LEAK: context=");
+            builder.Append(context ?? string.Empty);
+            builder.Append(" active=");
+            builder.Append(activeCount);
+            builder.Append(" trackedBytes=");
+            builder.Append(Volatile.Read(ref _trackedBytes));
+
+            int count = Volatile.Read(ref _count);
+            for (int i = 0; i < count; i++)
+            {
+                NativeAllocationRecord record = _records[i];
+                builder.Append(" | id=");
+                builder.Append(record.Id);
+                builder.Append(" owner=");
+                builder.Append(record.Owner ?? string.Empty);
+                builder.Append(" label=");
+                builder.Append(record.Label ?? string.Empty);
+                builder.Append(" bytes=");
+                builder.Append(record.Bytes);
+                builder.Append(" lifetime=");
+                builder.Append((byte)record.Lifetime);
+            }
+
+            return builder.ToString();
         }
 
         private static void RemoveAt(int index)
@@ -934,25 +1059,33 @@ namespace Hecton8.Core
             if (bytes <= 0L)
                 return;
 
-            for (int i = _count - 1; i >= 0; i--)
+            EnterMutationGate();
+            try
             {
-                NativeAllocationRecord record = _records[i];
-                if (record.Pointer != IntPtr.Zero ||
-                    !string.Equals(record.Owner, owner, StringComparison.Ordinal) ||
-                    !string.Equals(record.Label, label, StringComparison.Ordinal))
+                for (int i = _count - 1; i >= 0; i--)
                 {
-                    continue;
-                }
+                    NativeAllocationRecord record = _records[i];
+                    if (record.Pointer != IntPtr.Zero ||
+                        !string.Equals(record.Owner, owner, StringComparison.Ordinal) ||
+                        !string.Equals(record.Label, label, StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
 
-                long delta = bytes - record.Bytes;
-                if (delta == 0L)
+                    long delta = bytes - record.Bytes;
+                    if (delta == 0L)
+                        return;
+
+                    TrackPersistentReallocation(owner, label, bytes, record.Lifetime);
+                    record.Bytes = bytes;
+                    _records[i] = record;
+                    _trackedBytes += delta;
                     return;
-
-                TrackPersistentReallocation(owner, label, bytes, record.Lifetime);
-                record.Bytes = bytes;
-                _records[i] = record;
-                _trackedBytes += delta;
-                return;
+                }
+            }
+            finally
+            {
+                ExitMutationGate();
             }
         }
 

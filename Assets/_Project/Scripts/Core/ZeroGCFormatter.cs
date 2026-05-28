@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using Hecton.Localization;
 
@@ -14,7 +15,7 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryFormatInt(int value, Span<char> destination, out int charsWritten)
         {
-            return value.TryFormat(destination, out charsWritten);
+            return value.TryFormat(destination, out charsWritten, default, CultureInfo.InvariantCulture);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -29,7 +30,7 @@ namespace Hecton8.Core
             if (cursor < 0 || cursor > destination.Length)
                 return false;
 
-            if (!value.TryFormat(destination.Slice(cursor), out int written))
+            if (!value.TryFormat(destination.Slice(cursor), out int written, default, CultureInfo.InvariantCulture))
                 return false;
 
             cursor += written;
@@ -48,8 +49,8 @@ namespace Hecton8.Core
 
             Span<char> remaining = destination.Slice(cursor);
             bool wrote = format.Length == 0
-                ? value.TryFormat(remaining, out int written)
-                : value.TryFormat(remaining, out written, format);
+                ? value.TryFormat(remaining, out int written, default, CultureInfo.InvariantCulture)
+                : value.TryFormat(remaining, out written, format, CultureInfo.InvariantCulture);
             if (!wrote)
                 return false;
 
@@ -65,14 +66,14 @@ namespace Hecton8.Core
             out int charsWritten)
         {
             return format.Length == 0
-                ? value.TryFormat(destination, out charsWritten)
-                : value.TryFormat(destination, out charsWritten, format);
+                ? value.TryFormat(destination, out charsWritten, default, CultureInfo.InvariantCulture)
+                : value.TryFormat(destination, out charsWritten, format, CultureInfo.InvariantCulture);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryFormatFloat(float value, Span<char> destination, out int charsWritten)
         {
-            return value.TryFormat(destination, out charsWritten);
+            return value.TryFormat(destination, out charsWritten, default, CultureInfo.InvariantCulture);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -119,19 +120,19 @@ namespace Hecton8.Core
             switch (safePrecision)
             {
                 case 0:
-                    return value.TryFormat(destination, out charsWritten, "F0".AsSpan());
+                    return value.TryFormat(destination, out charsWritten, "F0".AsSpan(), CultureInfo.InvariantCulture);
                 case 1:
-                    return value.TryFormat(destination, out charsWritten, "F1".AsSpan());
+                    return value.TryFormat(destination, out charsWritten, "F1".AsSpan(), CultureInfo.InvariantCulture);
                 case 2:
-                    return value.TryFormat(destination, out charsWritten, "F2".AsSpan());
+                    return value.TryFormat(destination, out charsWritten, "F2".AsSpan(), CultureInfo.InvariantCulture);
                 case 3:
-                    return value.TryFormat(destination, out charsWritten, "F3".AsSpan());
+                    return value.TryFormat(destination, out charsWritten, "F3".AsSpan(), CultureInfo.InvariantCulture);
                 case 4:
-                    return value.TryFormat(destination, out charsWritten, "F4".AsSpan());
+                    return value.TryFormat(destination, out charsWritten, "F4".AsSpan(), CultureInfo.InvariantCulture);
                 case 5:
-                    return value.TryFormat(destination, out charsWritten, "F5".AsSpan());
+                    return value.TryFormat(destination, out charsWritten, "F5".AsSpan(), CultureInfo.InvariantCulture);
                 default:
-                    return value.TryFormat(destination, out charsWritten, "F6".AsSpan());
+                    return value.TryFormat(destination, out charsWritten, "F6".AsSpan(), CultureInfo.InvariantCulture);
             }
         }
 
@@ -153,8 +154,8 @@ namespace Hecton8.Core
             out int charsWritten)
         {
             return format.Length == 0
-                ? value.TryFormat(destination, out charsWritten)
-                : value.TryFormat(destination, out charsWritten, format);
+                ? value.TryFormat(destination, out charsWritten, default, CultureInfo.InvariantCulture)
+                : value.TryFormat(destination, out charsWritten, format, CultureInfo.InvariantCulture);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -177,6 +178,75 @@ namespace Hecton8.Core
             destination[cursor] = value;
             cursor++;
             return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool AppendToSpanTruncated(
+            ReadOnlySpan<char> source,
+            Span<char> destination,
+            ref int cursor,
+            out bool truncated)
+        {
+            truncated = false;
+            if (cursor < 0)
+            {
+                cursor = 0;
+                truncated = true;
+                return false;
+            }
+
+            if (cursor > destination.Length)
+            {
+                cursor = destination.Length;
+                truncated = true;
+                return false;
+            }
+
+            int remaining = destination.Length - cursor;
+            if (source.Length <= remaining)
+            {
+                source.CopyTo(destination.Slice(cursor));
+                cursor += source.Length;
+                return true;
+            }
+
+            if (remaining > 0)
+                source.Slice(0, remaining).CopyTo(destination.Slice(cursor));
+
+            cursor = destination.Length;
+            truncated = true;
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void AppendAsciiEllipsis(Span<char> destination, ref int length)
+        {
+            if (destination.Length <= 0)
+            {
+                length = 0;
+                return;
+            }
+
+            int safeLength = length;
+            if (safeLength < 0)
+                safeLength = 0;
+            if (safeLength > destination.Length)
+                safeLength = destination.Length;
+
+            if (destination.Length < 3)
+            {
+                length = safeLength;
+                return;
+            }
+
+            safeLength = Math.Min(safeLength, destination.Length - 3);
+            if (safeLength > 0 && char.IsHighSurrogate(destination[safeLength - 1]))
+                safeLength--;
+
+            destination[safeLength++] = '.';
+            destination[safeLength++] = '.';
+            destination[safeLength++] = '.';
+            length = safeLength;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

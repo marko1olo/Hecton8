@@ -24,6 +24,7 @@ namespace Hecton8.VFX.Parasites
         private const float SimulationTickDeltaSeconds = 1f / 60f;
         private const float VisualPhaseStepRadians = 6.28318531f / 4096f;
         private const string ComputeSampleName = "H8 Parasite Swarm Compute";
+        private const SystemID OwnerSystemId = SystemID.Vfx;
         [Header("GPU")]
         [SerializeField] private ComputeShader parasiteCompute;
         [SerializeField] private Material parasiteMaterial;
@@ -114,19 +115,16 @@ namespace Hecton8.VFX.Parasites
                 return;
             }
 
-            _vault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
             if (_vault == null)
                 return;
 
             _dumpRootPath = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
             CachePlayerContext(GlobalRegistry.Player);
 
-            ParasiteSwarmContracts.EnsureVaultBuffers(_vault);
 #if UNITY_EDITOR
             TryLoadProfilesFromDisk(_vault);
 #endif
-            BindVaultDescriptors(_vault);
-            SeedTuningIfEmpty();
             _targetBufferParity = 0;
             _drawParamsBufferParity = 0;
             _frameParamsBufferParity = 0;
@@ -155,6 +153,10 @@ namespace Hecton8.VFX.Parasites
 
             CompleteTargetSelectionForLifecycle();
             ReleaseTargetWriteLocks();
+            ReleaseVaultHandles(_vault);
+            ClearVaultDescriptors();
+            _vault = null;
+            ResetVaultEpochState();
             _playerContext = null;
             if (_renderCameraRuntimeResolved)
                 renderCamera = null;
@@ -236,8 +238,8 @@ namespace Hecton8.VFX.Parasites
                 }
                 finally
                 {
-                    _vault.ReleaseWriteLock(in _telemetryCursorHandle, SystemID.Vfx);
-                    _vault.ReleaseWriteLock(in _telemetryHandle, SystemID.Vfx);
+                    _vault.ReleaseWriteLock(in _telemetryCursorHandle, OwnerSystemId);
+                    _vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
                 }
             }
 
@@ -246,12 +248,28 @@ namespace Hecton8.VFX.Parasites
 
         private void BindVaultDescriptors(IDataVault vault)
         {
-            vault.TryGetGenerationHandle(BufferID.ShinobuParasiteTargets, out _targetsHandle);
-            vault.TryGetGenerationHandle(BufferID.ShinobuParasiteTargetCandidates, out _candidatesHandle);
-            vault.TryGetGenerationHandle(BufferID.ShinobuParasiteTargetCount, out _targetCountHandle);
-            vault.TryGetGenerationHandle(BufferID.ShinobuParasiteTuning, out _tuningHandle);
-            vault.TryGetGenerationHandle(BufferID.ShinobuParasiteTelemetryRing, out _telemetryHandle);
-            vault.TryGetGenerationHandle(BufferID.ShinobuParasiteTelemetryCursor, out _telemetryCursorHandle);
+            BindVaultDescriptor(vault, BufferID.ShinobuParasiteTargets, out _targetsHandle);
+            BindVaultDescriptor(vault, BufferID.ShinobuParasiteTargetCandidates, out _candidatesHandle);
+            BindVaultDescriptor(vault, BufferID.ShinobuParasiteTargetCount, out _targetCountHandle);
+            BindVaultDescriptor(vault, BufferID.ShinobuParasiteTuning, out _tuningHandle);
+            BindVaultDescriptor(vault, BufferID.ShinobuParasiteTelemetryRing, out _telemetryHandle);
+            BindVaultDescriptor(vault, BufferID.ShinobuParasiteTelemetryCursor, out _telemetryCursorHandle);
+        }
+
+        private static void BindVaultDescriptor<T>(
+            IDataVault vault,
+            BufferID bufferId,
+            out VaultGenerationHandle<T> handle) where T : struct
+        {
+            handle = default;
+            if (vault == null)
+                return;
+
+            if (vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> candidate) &&
+                IsOwnedHandle(in candidate, bufferId))
+            {
+                handle = candidate;
+            }
         }
 
         private void ClearVaultDescriptors()
@@ -264,6 +282,43 @@ namespace Hecton8.VFX.Parasites
             _telemetryCursorHandle = default;
         }
 
+        private void ResetVaultEpochState()
+        {
+            _targetSelectionPending = false;
+            _targetWriteLocksHeld = false;
+            _lastResolvedTargetCount = 0;
+            _telemetryCursor = 0;
+            _lastCandidateOverflowCount = 0;
+            _blackBoxDumped = false;
+            _dumpSequence = 0u;
+        }
+
+        private static void ReleaseVaultHandles(IDataVault vault)
+        {
+            ReleaseVaultHandle<ParasiteTargetDTO>(vault, BufferID.ShinobuParasiteTargets);
+            ReleaseVaultHandle<ParasiteTargetCandidateDTO>(vault, BufferID.ShinobuParasiteTargetCandidates);
+            ReleaseVaultHandle<int>(vault, BufferID.ShinobuParasiteTargetCount);
+            ReleaseVaultHandle<ParasiteSwarmTuningDTO>(vault, BufferID.ShinobuParasiteTuning);
+            ReleaseVaultHandle<SwarmTelemetryEntry>(vault, BufferID.ShinobuParasiteTelemetryRing);
+            ReleaseVaultHandle<int>(vault, BufferID.ShinobuParasiteTelemetryCursor);
+            ReleaseVaultHandle<ParasiteBehaviorProfileDTO>(vault, BufferID.ShinobuParasiteProfiles);
+            ReleaseVaultHandle<byte>(vault, BufferID.ShinobuParasiteCsvScratch);
+            ReleaseVaultHandle<ParasiteScannerSummaryDTO>(vault, BufferID.ShinobuParasiteScannerSummary);
+            ReleaseVaultHandle<int>(vault, BufferID.ShinobuParasiteProfileCount);
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, BufferID bufferId) where T : struct
+        {
+            if (vault == null)
+                return;
+
+            if (vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> handle) &&
+                IsOwnedHandle(in handle, bufferId))
+            {
+                vault.ReleaseBuffer(in handle);
+            }
+        }
+
         private void RebindDataVaultForLifecycle(IDataVault vault)
         {
             if (ReferenceEquals(_vault, vault))
@@ -271,9 +326,10 @@ namespace Hecton8.VFX.Parasites
 
             CompleteTargetSelectionForLifecycle();
             ReleaseTargetWriteLocks();
+            ReleaseVaultHandles(_vault);
             ClearVaultDescriptors();
             _vault = vault;
-            _lastResolvedTargetCount = 0;
+            ResetVaultEpochState();
 
             if (_vault == null)
                 return;
@@ -309,7 +365,10 @@ namespace Hecton8.VFX.Parasites
             if (!vault.TryGetGenerationHandle(BufferID.ShinobuParasiteCsvScratch, out VaultGenerationHandle<byte> scratchHandle))
                 return;
 
-            if (!vault.TryAcquireWriteLock(in scratchHandle, SystemID.Vfx, out NativeArray<byte> scratch))
+            if (!IsOwnedHandle(in scratchHandle, BufferID.ShinobuParasiteCsvScratch))
+                return;
+
+            if (!vault.TryAcquireWriteLock(in scratchHandle, OwnerSystemId, out NativeArray<byte> scratch))
                 return;
 
             try
@@ -324,7 +383,7 @@ namespace Hecton8.VFX.Parasites
             }
             finally
             {
-                vault.ReleaseWriteLock(in scratchHandle, SystemID.Vfx);
+                vault.ReleaseWriteLock(in scratchHandle, OwnerSystemId);
             }
         }
 
@@ -357,7 +416,10 @@ namespace Hecton8.VFX.Parasites
 
         private void SeedTuningIfEmpty()
         {
-            if (!_vault.TryAcquireWriteLock(in _tuningHandle, SystemID.Vfx, out NativeArray<ParasiteSwarmTuningDTO> tuning))
+            if (_vault == null || !IsOwnedHandle(in _tuningHandle, BufferID.ShinobuParasiteTuning))
+                return;
+
+            if (!_vault.TryAcquireWriteLock(in _tuningHandle, OwnerSystemId, out NativeArray<ParasiteSwarmTuningDTO> tuning))
                 return;
 
             try
@@ -367,7 +429,7 @@ namespace Hecton8.VFX.Parasites
             }
             finally
             {
-                _vault.ReleaseWriteLock(in _tuningHandle, SystemID.Vfx);
+                _vault.ReleaseWriteLock(in _tuningHandle, OwnerSystemId);
             }
         }
 
@@ -525,9 +587,21 @@ namespace Hecton8.VFX.Parasites
             targets = default;
             targetCount = default;
             tuning = default;
-            return TryResolveHandle(in _targetsHandle, ParasiteSwarmContracts.MaxTargetCount, out targets) &&
-                   TryResolveHandle(in _targetCountHandle, 1, out targetCount) &&
-                   TryReadHandle(in _tuningHandle, 1, out tuning);
+            return TryResolveHandle(
+                       in _targetsHandle,
+                       BufferID.ShinobuParasiteTargets,
+                       ParasiteSwarmContracts.MaxTargetCount,
+                       out targets) &&
+                   TryResolveHandle(
+                       in _targetCountHandle,
+                       BufferID.ShinobuParasiteTargetCount,
+                       1,
+                       out targetCount) &&
+                   TryReadHandle(
+                       in _tuningHandle,
+                       BufferID.ShinobuParasiteTuning,
+                       1,
+                       out tuning);
         }
 
         private int ResolveCompletedTargetSelection(NativeArray<int> targetCount)
@@ -649,23 +723,26 @@ namespace Hecton8.VFX.Parasites
             candidates = default;
             targetCount = default;
 
-            if (_vault == null)
+            if (_vault == null ||
+                !IsOwnedHandle(in _targetsHandle, BufferID.ShinobuParasiteTargets) ||
+                !IsOwnedHandle(in _candidatesHandle, BufferID.ShinobuParasiteTargetCandidates) ||
+                !IsOwnedHandle(in _targetCountHandle, BufferID.ShinobuParasiteTargetCount))
                 return false;
 
-            if (!_vault.TryAcquireWriteLock(in _targetsHandle, SystemID.Vfx, out targets))
+            if (!_vault.TryAcquireWriteLock(in _targetsHandle, OwnerSystemId, out targets))
                 return false;
 
-            if (!_vault.TryAcquireWriteLock(in _candidatesHandle, SystemID.Vfx, out candidates))
+            if (!_vault.TryAcquireWriteLock(in _candidatesHandle, OwnerSystemId, out candidates))
             {
-                _vault.ReleaseWriteLock(in _targetsHandle, SystemID.Vfx);
+                _vault.ReleaseWriteLock(in _targetsHandle, OwnerSystemId);
                 targets = default;
                 return false;
             }
 
-            if (!_vault.TryAcquireWriteLock(in _targetCountHandle, SystemID.Vfx, out targetCount))
+            if (!_vault.TryAcquireWriteLock(in _targetCountHandle, OwnerSystemId, out targetCount))
             {
-                _vault.ReleaseWriteLock(in _candidatesHandle, SystemID.Vfx);
-                _vault.ReleaseWriteLock(in _targetsHandle, SystemID.Vfx);
+                _vault.ReleaseWriteLock(in _candidatesHandle, OwnerSystemId);
+                _vault.ReleaseWriteLock(in _targetsHandle, OwnerSystemId);
                 targets = default;
                 candidates = default;
                 return false;
@@ -678,9 +755,9 @@ namespace Hecton8.VFX.Parasites
                 candidates.Length < ParasiteSwarmContracts.CandidateCapacity ||
                 targetCount.Length <= 0)
             {
-                _vault.ReleaseWriteLock(in _targetCountHandle, SystemID.Vfx);
-                _vault.ReleaseWriteLock(in _candidatesHandle, SystemID.Vfx);
-                _vault.ReleaseWriteLock(in _targetsHandle, SystemID.Vfx);
+                _vault.ReleaseWriteLock(in _targetCountHandle, OwnerSystemId);
+                _vault.ReleaseWriteLock(in _candidatesHandle, OwnerSystemId);
+                _vault.ReleaseWriteLock(in _targetsHandle, OwnerSystemId);
                 targets = default;
                 candidates = default;
                 targetCount = default;
@@ -698,15 +775,17 @@ namespace Hecton8.VFX.Parasites
             telemetry = default;
             telemetryCursor = default;
 
-            if (_vault == null)
+            if (_vault == null ||
+                !IsOwnedHandle(in _telemetryHandle, BufferID.ShinobuParasiteTelemetryRing) ||
+                !IsOwnedHandle(in _telemetryCursorHandle, BufferID.ShinobuParasiteTelemetryCursor))
                 return false;
 
-            if (!_vault.TryAcquireWriteLock(in _telemetryHandle, SystemID.Vfx, out telemetry))
+            if (!_vault.TryAcquireWriteLock(in _telemetryHandle, OwnerSystemId, out telemetry))
                 return false;
 
-            if (!_vault.TryAcquireWriteLock(in _telemetryCursorHandle, SystemID.Vfx, out telemetryCursor))
+            if (!_vault.TryAcquireWriteLock(in _telemetryCursorHandle, OwnerSystemId, out telemetryCursor))
             {
-                _vault.ReleaseWriteLock(in _telemetryHandle, SystemID.Vfx);
+                _vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
                 telemetry = default;
                 return false;
             }
@@ -716,8 +795,8 @@ namespace Hecton8.VFX.Parasites
                 telemetry.Length < ParasiteSwarmContracts.TelemetryCapacity ||
                 telemetryCursor.Length <= 0)
             {
-                _vault.ReleaseWriteLock(in _telemetryCursorHandle, SystemID.Vfx);
-                _vault.ReleaseWriteLock(in _telemetryHandle, SystemID.Vfx);
+                _vault.ReleaseWriteLock(in _telemetryCursorHandle, OwnerSystemId);
+                _vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
                 telemetry = default;
                 telemetryCursor = default;
                 return false;
@@ -731,9 +810,9 @@ namespace Hecton8.VFX.Parasites
             if (!_targetWriteLocksHeld || _vault == null)
                 return;
 
-            _vault.ReleaseWriteLock(in _targetCountHandle, SystemID.Vfx);
-            _vault.ReleaseWriteLock(in _candidatesHandle, SystemID.Vfx);
-            _vault.ReleaseWriteLock(in _targetsHandle, SystemID.Vfx);
+            _vault.ReleaseWriteLock(in _targetCountHandle, OwnerSystemId);
+            _vault.ReleaseWriteLock(in _candidatesHandle, OwnerSystemId);
+            _vault.ReleaseWriteLock(in _targetsHandle, OwnerSystemId);
             _targetWriteLocksHeld = false;
         }
 
@@ -1226,26 +1305,42 @@ namespace Hecton8.VFX.Parasites
             return capacity > 0;
         }
 
-        private bool TryReadHandle<T>(in VaultGenerationHandle<T> handle, int requiredLength, out NativeArray<T> buffer)
+        private bool TryReadHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
             where T : unmanaged
         {
             buffer = default;
-            return handle.BufferID != 0u &&
-                   _vault != null &&
+            return _vault != null &&
+                   IsOwnedHandle(in handle, expectedBufferId) &&
                    _vault.TryReadHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
         }
 
-        private bool TryResolveHandle<T>(in VaultGenerationHandle<T> handle, int requiredLength, out NativeArray<T> buffer)
+        private bool TryResolveHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
             where T : unmanaged
         {
             buffer = default;
-            return handle.BufferID != 0u &&
-                   _vault != null &&
+            return _vault != null &&
+                   IsOwnedHandle(in handle, expectedBufferId) &&
                    _vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
+        }
+
+        private static bool IsOwnedHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)OwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private void DisposeGpuResources()

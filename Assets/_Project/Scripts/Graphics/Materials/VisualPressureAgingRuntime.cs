@@ -488,7 +488,7 @@ namespace Hecton8.Graphics.Materials
         private void Initialize()
         {
             _shutdown = false;
-            _vault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
             EnsureGraphicsBuffers();
             EnsureDumpStreams();
             if (_vault != null)
@@ -542,14 +542,22 @@ namespace Hecton8.Graphics.Materials
             CloseDegradationBufferSnapshotLease();
             CompleteSimulationForLifecycle();
             UnlockJobBuffers();
-            ReleaseVaultHandles(previousService as IDataVault ?? _vault);
-            _vault = nextVault;
-            _vaultInitialized = false;
+            RebindDataVaultForLifecycle(nextVault, previousService as IDataVault);
             if (_vault == null)
                 return;
 
             TryInitializeVaultState(_vault);
             RefreshExternalInputHandles(_vault);
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault nextVault, IDataVault releaseVaultOverride = null)
+        {
+            if (ReferenceEquals(_vault, nextVault))
+                return;
+
+            ReleaseVaultHandles(_vault ?? releaseVaultOverride);
+            _vault = nextVault;
+            _vaultInitialized = false;
         }
 
         private void RegisterDispatcherPhases()

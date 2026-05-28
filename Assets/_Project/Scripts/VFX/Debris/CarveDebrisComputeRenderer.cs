@@ -801,10 +801,7 @@ namespace Hecton8.VFX.Debris
         private static GraphicsBuffer CreateGpuWriteStructuredBuffer<T>(int count)
             where T : struct
         {
-            return new GraphicsBuffer(
-                GraphicsBuffer.Target.Structured,
-                math.max(1, count),
-                UnsafeUtility.SizeOf<T>()); // COLD ALLOC: GraphicsBuffer[count] - persistent carve debris GPU-write lane - owner: VFX_SDF_CARVE_DEBRIS
+            return GraphicsBufferUploadUtility.CreateStructuredLockBuffer<T>(math.max(1, count)); // COLD ALLOC: GraphicsBuffer[count] - persistent carve debris GPU-write lane - owner: VFX_SDF_CARVE_DEBRIS
         }
 
         private void CreateEmptyResources()
@@ -2219,7 +2216,24 @@ namespace Hecton8.VFX.Debris
             if (safeCount <= 0)
                 return;
 
-            destination.SetData(source, safeStart, safeStart, safeCount);
+            NativeArray<T> mapped = destination.LockBufferForWrite<T>(safeStart, safeCount);
+            try
+            {
+                unsafe
+                {
+                    int stride = UnsafeUtility.SizeOf<T>();
+                    void* sourcePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source) + ((long)safeStart * stride);
+                    void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                    long copyBytes = (long)stride * safeCount;
+                    long destinationBytes = (long)stride * mapped.Length;
+                    if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
+                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CarveDebrisComputeRenderer));
+                }
+            }
+            finally
+            {
+                destination.UnlockBufferAfterWrite<T>(safeCount);
+            }
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

@@ -2,6 +2,7 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Unity.Burst;
@@ -1449,10 +1450,24 @@ namespace Hecton8.Gameplay
             TryUnregisterHotSwapListener();
             TryUnregister();
             JobHandle dependency = _groundResponseScheduled ? _pendingGroundResponseHandle : default;
-            DisposeBuffers(dependency);
-            _cachedPlayerContext = null;
-            _cameraTransform = null;
-            GlobalRegistry.ClearContextualPhysicalIkRuntime(this);
+            Exception disposeException = null;
+            try
+            {
+                DisposeBuffers(dependency);
+            }
+            catch (Exception exception)
+            {
+                disposeException = exception;
+            }
+            finally
+            {
+                _cachedPlayerContext = null;
+                _cameraTransform = null;
+                GlobalRegistry.ClearContextualPhysicalIkRuntime(this);
+            }
+
+            if (disposeException != null)
+                throw disposeException;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1620,127 +1635,26 @@ namespace Hecton8.Gameplay
 
         private void EnsurePersistentBuffers()
         {
-            if (!_scheduledEntityStates.IsCreated)
-            {
-                _scheduledEntityStates = new NativeArray<ContextualPhysicalIkEntityState>(
-                    MaxEntities,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkEntityState>[128] - scheduled IK entity snapshots - owner: ContextualPhysicalIkRuntime
-                NativeMemorySentinel.RegisterNativeArray(_scheduledEntityStates, NativeMemoryOwner, nameof(_scheduledEntityStates), NativeMemoryLifetime);
-            }
-
-            if (!_scheduledHits.IsCreated)
-            {
-                _scheduledHits = new NativeArray<KinematicSurfaceHit>(
-                    MaxEntities * RaysPerEntity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<KinematicSurfaceHit>[768] - contextual IK surface results - owner: ContextualPhysicalIkRuntime
-                NativeMemorySentinel.RegisterNativeArray(_scheduledHits, NativeMemoryOwner, nameof(_scheduledHits), NativeMemoryLifetime);
-            }
-
-            if (!_frontTargetFrames.IsCreated)
-            {
-                _frontTargetFrames = new NativeArray<ContextualPhysicalIkTargetFrame>(
-                    MaxEntities,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkTargetFrame>[128] - read-side IK target frames - owner: ContextualPhysicalIkRuntime
-                NativeMemorySentinel.RegisterNativeArray(_frontTargetFrames, NativeMemoryOwner, nameof(_frontTargetFrames), NativeMemoryLifetime);
-            }
-
-            if (!_backTargetFrames.IsCreated)
-            {
-                _backTargetFrames = new NativeArray<ContextualPhysicalIkTargetFrame>(
-                    MaxEntities,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkTargetFrame>[128] - write-side IK target frames - owner: ContextualPhysicalIkRuntime
-                NativeMemorySentinel.RegisterNativeArray(_backTargetFrames, NativeMemoryOwner, nameof(_backTargetFrames), NativeMemoryLifetime);
-            }
-
-            if (!_ikTargets.IsCreated)
-            {
-                _ikTargets = new NativeArray<float3>(
-                    MaxEntities * HandsPerEntity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[256] - SOA hand IK target positions - owner: ContextualPhysicalIkRuntime
-                NativeMemorySentinel.RegisterNativeArray(_ikTargets, NativeMemoryOwner, nameof(_ikTargets), NativeMemoryLifetime);
-            }
-
-            if (!_ikWeights.IsCreated)
-            {
-                _ikWeights = new NativeArray<float>(
-                    MaxEntities * HandsPerEntity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[256] - SOA hand IK weights - owner: ContextualPhysicalIkRuntime
-                NativeMemorySentinel.RegisterNativeArray(_ikWeights, NativeMemoryOwner, nameof(_ikWeights), NativeMemoryLifetime);
-            }
-
-            if (!_footIkData.IsCreated)
-            {
-                _footIkData = new NativeArray<ContextualPhysicalIkFootData>(
-                    MaxEntities * ContextualPhysicalIkLowerBodyConstants.FeetPerEntity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkFootData>[256] - packed lower-body presence foot lanes - owner: ContextualPhysicalIkRuntime
-                NativeMemorySentinel.RegisterNativeArray(_footIkData, NativeMemoryOwner, nameof(_footIkData), NativeMemoryLifetime);
-            }
-
-            if (!_footTargets.IsCreated)
-            {
-                _footTargets = new NativeArray<float3>(
-                    MaxEntities * ContextualPhysicalIkLowerBodyConstants.FeetPerEntity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[256] - SOA desired foot IK positions - owner: ContextualPhysicalIkRuntime
-                NativeMemorySentinel.RegisterNativeArray(_footTargets, NativeMemoryOwner, nameof(_footTargets), NativeMemoryLifetime);
-            }
-
-            if (!_footCurrentPos.IsCreated)
-            {
-                _footCurrentPos = new NativeArray<float3>(
-                    MaxEntities * ContextualPhysicalIkLowerBodyConstants.FeetPerEntity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[256] - SOA current stepped foot IK positions - owner: ContextualPhysicalIkRuntime
-                NativeMemorySentinel.RegisterNativeArray(_footCurrentPos, NativeMemoryOwner, nameof(_footCurrentPos), NativeMemoryLifetime);
-            }
-
-            if (!_telemetryRing.IsCreated)
-            {
-                _telemetryRing = new NativeArray<ContextualPhysicalIkTelemetryEntry>(
-                    TelemetryCapacity,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkTelemetryEntry>[300] - PLAYER_TOOL_IK black-box ring - owner: ContextualPhysicalIkRuntime
-                NativeMemorySentinel.RegisterNativeArray(_telemetryRing, NativeMemoryOwner, nameof(_telemetryRing), NativeMemoryLifetime);
-            }
+            _nativeBuffers.EnsurePersistentBuffers();
         }
 
         private void DisposeBuffers(JobHandle dependency)
         {
             _disposeHandle = default;
-            DisposeNativeArray(ref _nativeBuffers.ScheduledEntityStates, dependency);
-            DisposeNativeArray(ref _nativeBuffers.ScheduledHits, dependency);
-            DisposeNativeArray(ref _nativeBuffers.FrontTargetFrames, dependency);
-            DisposeNativeArray(ref _nativeBuffers.BackTargetFrames, dependency);
-            DisposeNativeArray(ref _nativeBuffers.IkTargets, dependency);
-            DisposeNativeArray(ref _nativeBuffers.IkWeights, dependency);
-            DisposeNativeArray(ref _nativeBuffers.FootIkData, dependency);
-            DisposeNativeArray(ref _nativeBuffers.FootTargets, dependency);
-            DisposeNativeArray(ref _nativeBuffers.FootCurrentPos, dependency);
-            DisposeNativeArray(ref _nativeBuffers.TelemetryRing, dependency);
-            JobHandle.ScheduleBatchedJobs();
-            DispatcherJobFence.TryComplete(ref _disposeHandle, forceComplete: true);
-            _groundResponseScheduled = false;
-            _pendingGroundResponseHandle = default;
+            try
+            {
+                _nativeBuffers.Dispose(dependency, ref _disposeHandle);
+            }
+            finally
+            {
+                JobHandle.ScheduleBatchedJobs();
+                DispatcherJobFence.TryComplete(ref _disposeHandle, forceComplete: true);
+                _groundResponseScheduled = false;
+                _pendingGroundResponseHandle = default;
+            }
         }
 
-        private void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            _disposeHandle = JobHandle.CombineDependencies(_disposeHandle, array.Dispose(dependency));
-            array = default;
-        }
-
-        private sealed class RuntimeNativeBufferSet
+        private sealed class RuntimeNativeBufferSet : IDisposable
         {
             public NativeArray<ContextualPhysicalIkEntityState> ScheduledEntityStates;
             public NativeArray<KinematicSurfaceHit> ScheduledHits;
@@ -1752,6 +1666,203 @@ namespace Hecton8.Gameplay
             public NativeArray<float3> FootTargets;
             public NativeArray<float3> FootCurrentPos;
             public NativeArray<ContextualPhysicalIkTelemetryEntry> TelemetryRing;
+
+            public void EnsurePersistentBuffers()
+            {
+                try
+                {
+                    if (!ScheduledEntityStates.IsCreated)
+                    {
+                        ScheduledEntityStates = new NativeArray<ContextualPhysicalIkEntityState>(
+                            MaxEntities,
+                            Allocator.Persistent,
+                            NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkEntityState>[128] - scheduled IK entity snapshots - owner: RuntimeNativeBufferSet
+                        NativeMemorySentinel.RegisterNativeArray(ScheduledEntityStates, NativeMemoryOwner, nameof(ScheduledEntityStates), NativeMemoryLifetime);
+                    }
+
+                    if (!ScheduledHits.IsCreated)
+                    {
+                        ScheduledHits = new NativeArray<KinematicSurfaceHit>(
+                            MaxEntities * RaysPerEntity,
+                            Allocator.Persistent,
+                            NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<KinematicSurfaceHit>[768] - contextual IK surface results - owner: RuntimeNativeBufferSet
+                        NativeMemorySentinel.RegisterNativeArray(ScheduledHits, NativeMemoryOwner, nameof(ScheduledHits), NativeMemoryLifetime);
+                    }
+
+                if (!FrontTargetFrames.IsCreated)
+                {
+                    FrontTargetFrames = new NativeArray<ContextualPhysicalIkTargetFrame>(
+                        MaxEntities,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkTargetFrame>[128] - read-side IK target frames - owner: RuntimeNativeBufferSet
+                    NativeMemorySentinel.RegisterNativeArray(FrontTargetFrames, NativeMemoryOwner, nameof(FrontTargetFrames), NativeMemoryLifetime);
+                }
+
+                if (!BackTargetFrames.IsCreated)
+                {
+                    BackTargetFrames = new NativeArray<ContextualPhysicalIkTargetFrame>(
+                        MaxEntities,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkTargetFrame>[128] - write-side IK target frames - owner: RuntimeNativeBufferSet
+                    NativeMemorySentinel.RegisterNativeArray(BackTargetFrames, NativeMemoryOwner, nameof(BackTargetFrames), NativeMemoryLifetime);
+                }
+
+                if (!IkTargets.IsCreated)
+                {
+                    IkTargets = new NativeArray<float3>(
+                        MaxEntities * HandsPerEntity,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[256] - SOA hand IK target positions - owner: RuntimeNativeBufferSet
+                    NativeMemorySentinel.RegisterNativeArray(IkTargets, NativeMemoryOwner, nameof(IkTargets), NativeMemoryLifetime);
+                }
+
+                if (!IkWeights.IsCreated)
+                {
+                    IkWeights = new NativeArray<float>(
+                        MaxEntities * HandsPerEntity,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[256] - SOA hand IK weights - owner: RuntimeNativeBufferSet
+                    NativeMemorySentinel.RegisterNativeArray(IkWeights, NativeMemoryOwner, nameof(IkWeights), NativeMemoryLifetime);
+                }
+
+                if (!FootIkData.IsCreated)
+                {
+                    FootIkData = new NativeArray<ContextualPhysicalIkFootData>(
+                        MaxEntities * ContextualPhysicalIkLowerBodyConstants.FeetPerEntity,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkFootData>[256] - packed lower-body presence foot lanes - owner: RuntimeNativeBufferSet
+                    NativeMemorySentinel.RegisterNativeArray(FootIkData, NativeMemoryOwner, nameof(FootIkData), NativeMemoryLifetime);
+                }
+
+                if (!FootTargets.IsCreated)
+                {
+                    FootTargets = new NativeArray<float3>(
+                        MaxEntities * ContextualPhysicalIkLowerBodyConstants.FeetPerEntity,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[256] - SOA desired foot IK positions - owner: RuntimeNativeBufferSet
+                    NativeMemorySentinel.RegisterNativeArray(FootTargets, NativeMemoryOwner, nameof(FootTargets), NativeMemoryLifetime);
+                }
+
+                if (!FootCurrentPos.IsCreated)
+                {
+                    FootCurrentPos = new NativeArray<float3>(
+                        MaxEntities * ContextualPhysicalIkLowerBodyConstants.FeetPerEntity,
+                        Allocator.Persistent,
+                        NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[256] - SOA current stepped foot IK positions - owner: RuntimeNativeBufferSet
+                    NativeMemorySentinel.RegisterNativeArray(FootCurrentPos, NativeMemoryOwner, nameof(FootCurrentPos), NativeMemoryLifetime);
+                }
+
+                    if (!TelemetryRing.IsCreated)
+                    {
+                        TelemetryRing = new NativeArray<ContextualPhysicalIkTelemetryEntry>(
+                            TelemetryCapacity,
+                            Allocator.Persistent,
+                            NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ContextualPhysicalIkTelemetryEntry>[300] - PLAYER_TOOL_IK black-box ring - owner: RuntimeNativeBufferSet
+                        NativeMemorySentinel.RegisterNativeArray(TelemetryRing, NativeMemoryOwner, nameof(TelemetryRing), NativeMemoryLifetime);
+                    }
+                }
+                catch
+                {
+                    try
+                    {
+                        Dispose();
+                    }
+                    catch
+                    {
+                    }
+
+                    throw;
+                }
+            }
+
+            public void Dispose(JobHandle dependency, ref JobHandle disposeHandle)
+            {
+                Exception firstException = null;
+                DisposeNativeArrayBestEffort(ref ScheduledEntityStates, dependency, ref disposeHandle, ref firstException, nameof(ScheduledEntityStates));
+                DisposeNativeArrayBestEffort(ref ScheduledHits, dependency, ref disposeHandle, ref firstException, nameof(ScheduledHits));
+                DisposeNativeArrayBestEffort(ref FrontTargetFrames, dependency, ref disposeHandle, ref firstException, nameof(FrontTargetFrames));
+                DisposeNativeArrayBestEffort(ref BackTargetFrames, dependency, ref disposeHandle, ref firstException, nameof(BackTargetFrames));
+                DisposeNativeArrayBestEffort(ref IkTargets, dependency, ref disposeHandle, ref firstException, nameof(IkTargets));
+                DisposeNativeArrayBestEffort(ref IkWeights, dependency, ref disposeHandle, ref firstException, nameof(IkWeights));
+                DisposeNativeArrayBestEffort(ref FootIkData, dependency, ref disposeHandle, ref firstException, nameof(FootIkData));
+                DisposeNativeArrayBestEffort(ref FootTargets, dependency, ref disposeHandle, ref firstException, nameof(FootTargets));
+                DisposeNativeArrayBestEffort(ref FootCurrentPos, dependency, ref disposeHandle, ref firstException, nameof(FootCurrentPos));
+                DisposeNativeArrayBestEffort(ref TelemetryRing, dependency, ref disposeHandle, ref firstException, nameof(TelemetryRing));
+                ThrowFirstDisposeException(firstException);
+            }
+
+            public void Dispose()
+            {
+                JobHandle disposeHandle = default;
+                Dispose(default, ref disposeHandle);
+                JobHandle.ScheduleBatchedJobs();
+                DispatcherJobFence.TryComplete(ref disposeHandle, forceComplete: true);
+            }
+
+            private static void DisposeNativeArray<T>(
+                ref NativeArray<T> array,
+                JobHandle dependency,
+                ref JobHandle disposeHandle,
+                string sentinelLabel = null) where T : struct
+            {
+                if (!array.IsCreated)
+                    return;
+
+                bool sentinelUnregistered = false;
+                try
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(array);
+                    sentinelUnregistered = true;
+                    disposeHandle = JobHandle.CombineDependencies(disposeHandle, array.Dispose(dependency));
+                    array = default;
+                }
+                catch
+                {
+                    TryRestoreNativeSentinelRecord(array, sentinelUnregistered, sentinelLabel);
+                    throw;
+                }
+            }
+
+            private static void TryRestoreNativeSentinelRecord<T>(
+                NativeArray<T> array,
+                bool sentinelUnregistered,
+                string sentinelLabel) where T : struct
+            {
+                if (!sentinelUnregistered || !array.IsCreated)
+                    return;
+
+                try
+                {
+                    NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, sentinelLabel ?? nameof(DisposeNativeArray), NativeMemoryLifetime);
+                }
+                catch
+                {
+                }
+            }
+
+            private static void DisposeNativeArrayBestEffort<T>(
+                ref NativeArray<T> array,
+                JobHandle dependency,
+                ref JobHandle disposeHandle,
+                ref Exception firstException,
+                string sentinelLabel) where T : struct
+            {
+                try
+                {
+                    DisposeNativeArray(ref array, dependency, ref disposeHandle, sentinelLabel);
+                }
+                catch (Exception exception)
+                {
+                    if (firstException == null)
+                        firstException = exception;
+                }
+            }
+
+            private static void ThrowFirstDisposeException(Exception firstException)
+            {
+                if (firstException != null)
+                    throw firstException;
+            }
         }
 
         private void TryRegister()

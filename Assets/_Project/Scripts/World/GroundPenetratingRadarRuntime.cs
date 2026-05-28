@@ -33,6 +33,18 @@ namespace Hecton8.World
         private static readonly int GroundRadarPulseId = Shader.PropertyToID("_GroundRadarPulse");
         private static readonly int GroundRadarScaleId = Shader.PropertyToID("_GroundRadarScale");
 
+        private struct RadarPendingJob
+        {
+            public NativeArray<float3> Hits;
+            public NativeArray<float> SignalStrength;
+            public NativeArray<float> AgeSeconds;
+            public NativeArray<int> OreTypes;
+            public NativeArray<float4> PingGpu;
+            public NativeArray<int> Counters;
+            public NativeArray<float> MaxSignalStrength;
+            public JobHandle Handle;
+        }
+
         [Header("Dependencies")]
         [SerializeField] private MonoBehaviour worldResourceSpawner;
         [SerializeField] private Material radarPingMaterial;
@@ -73,6 +85,8 @@ namespace Hecton8.World
         private IEcosystemDirectorService _ecosystemDirector;
         private IWorldResourceSpawnerReadModel _worldResourceSpawnerReadModel;
         private IWorldResourceSpawnerReadDependencySink _worldResourceSpawnerReadDependencySink;
+        private RadarPendingJob _radarJob;
+        private JobHandle _radarJobHandle;
         private Bounds _drawBounds;
         private int _activeGprPings;
         private int _gprSequence;
@@ -84,8 +98,10 @@ namespace Hecton8.World
         private int _registeredRenderable;
         private int _hotSwapRegistered;
         private int _scanJobBufferLockCount;
+        private int _radarJobScheduled;
         private bool _gprReadSnapshotsValid;
         private bool _pendingDataVaultRebind;
+        private bool _radarSdfSnapshotLocked;
         private float _scanTimer;
         private float _pulsePhaseSeconds;
         private float _highestSignalStrength;
@@ -169,6 +185,8 @@ namespace Hecton8.World
             _ecosystemDirector = null;
             _playerContext = null;
             _submarineState = null;
+            CompleteRadarJob(forceComplete: true);
+            ReleaseRadarPendingJob(ref _radarJob);
             ReleaseScanJobBufferLocks();
             _voxelSdfReadModel = null;
             _voxelSdfReadLeaseModel = null;
@@ -237,7 +255,14 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
+            CompleteRadarJob(forceComplete: false);
+            if (_radarJobScheduled != 0)
+                return;
+
             AdvanceRadarFrameState(SystemDispatcher.CurrentFrameDeltaTime);
+            if (_radarJobScheduled != 0)
+                return;
+
             TryApplyPendingDataVaultRebind();
         }
 
@@ -574,21 +599,16 @@ namespace Hecton8.World
 
         private void ScheduleRadarJob(float3 probeOrigin, float deltaTime, bool scanDue, bool hasShift, float3 aupShift)
         {
-            if (!TryLockScanJobBuffers())
+            if (_radarJobScheduled != 0)
                 return;
 
             bool sdfSnapshotLocked = false;
+            bool scheduled = false;
+            RadarPendingJob pending = default;
             try
             {
-                if (!TryOpenGprStateForOwnerWrite(
-                    out NativeArray<float3> hits,
-                    out NativeArray<float> signalStrength,
-                    out NativeArray<float> ageSeconds,
-                    out NativeArray<int> gprOreTypes,
-                    out NativeArray<float4> pingGpu,
-                    out NativeArray<int> counters,
-                    out NativeArray<float> maxSignalStrength,
-                    out _))
+                if (!TryCreateRadarPendingJob(out pending) ||
+                    !TryCopyCurrentGprStateToPending(ref pending))
                 {
                     return;
                 }
@@ -604,24 +624,31 @@ namespace Hecton8.World
 
                 NativeArray<float3>.ReadOnly orePositions = default;
                 NativeArray<int>.ReadOnly oreTypes = default;
+                IWorldResourceSpawnerReadDependencySink oreDependencySink = null;
                 int oreCount = 0;
                 if (scanDue)
-                    TryResolveOreSource(out orePositions, out oreTypes, out oreCount, out _);
+                    TryResolveOreSource(out orePositions, out oreTypes, out oreCount, out oreDependencySink);
+                if (oreCount > 0 && oreDependencySink == null)
+                {
+                    orePositions = default;
+                    oreTypes = default;
+                    oreCount = 0;
+                }
 
                 float qualityWeight01 = ReadGlobalQualityWeight01();
-                maxSignalStrength[0] = 0f;
+                pending.MaxSignalStrength[0] = 0f;
                 GroundRadarRaymarchJob job = new GroundRadarRaymarchJob
                 {
                     EncodedSdf = encodedSdf,
                     OrePositions = oreCount > 0 ? orePositions : default,
                     OreTypes = oreCount > 0 ? oreTypes : default,
-                    GprHits = new NativeSlice<float3>(hits),
-                    GprSignalStrength = new NativeSlice<float>(signalStrength),
-                    GprAgeSeconds = new NativeSlice<float>(ageSeconds),
-                    GprOreTypes = new NativeSlice<int>(gprOreTypes),
-                    GprPingGpu = new NativeSlice<float4>(pingGpu),
-                    Counters = new NativeSlice<int>(counters),
-                    MaxSignalStrength = new NativeSlice<float>(maxSignalStrength),
+                    GprHits = new NativeSlice<float3>(pending.Hits),
+                    GprSignalStrength = new NativeSlice<float>(pending.SignalStrength),
+                    GprAgeSeconds = new NativeSlice<float>(pending.AgeSeconds),
+                    GprOreTypes = new NativeSlice<int>(pending.OreTypes),
+                    GprPingGpu = new NativeSlice<float4>(pending.PingGpu),
+                    Counters = new NativeSlice<int>(pending.Counters),
+                    MaxSignalStrength = new NativeSlice<float>(pending.MaxSignalStrength),
                     GridDimensions = gridDimensions,
                     VolumeOrigin = volumeOrigin,
                     CellSize = cellSize,
@@ -640,52 +667,85 @@ namespace Hecton8.World
                             (hasShift ? GroundRadarConstants.AupShiftFlag : 0u)
                 };
 
-                job.Run();
-                CommitCompletedScan();
+                JobHandle handle = job.Schedule();
+                pending.Handle = handle;
+                _radarJob = pending;
+                _radarJobHandle = handle;
+                _radarJobScheduled = 1;
+                _radarSdfSnapshotLocked = sdfSnapshotLocked;
+                sdfSnapshotLocked = false;
+                scheduled = true;
+                pending = default;
+
+                if (oreCount > 0 && oreDependencySink != null)
+                    oreDependencySink.RegisterOreReadDependency(handle);
             }
             finally
             {
-                UnlockSdfSnapshotBuffer(ref sdfSnapshotLocked);
-                ReleaseScanJobBufferLocks();
+                if (!scheduled)
+                {
+                    ReleaseRadarPendingJob(ref pending);
+                    UnlockSdfSnapshotBuffer(ref sdfSnapshotLocked);
+                }
             }
         }
 
-        private void CommitCompletedScan()
+        private bool CompleteRadarJob(bool forceComplete)
         {
-            if (!TryOpenGprStateForOwnerWrite(
-                out _,
-                out _,
-                out _,
-                out _,
-                out NativeArray<float4> pingGpu,
-                out NativeArray<int> counters,
-                out NativeArray<float> maxSignalStrength,
-                out _))
+            if (_radarJobScheduled == 0)
+                return false;
+
+            if (!forceComplete && !_radarJobHandle.IsCompleted)
+                return false;
+
+            if (!DispatcherJobFence.TryComplete(ref _radarJobHandle, forceComplete))
+                return false;
+
+            RadarPendingJob pending = _radarJob;
+            try
             {
-                return;
+                CommitCompletedScan(ref pending);
+                return true;
             }
+            finally
+            {
+                bool sdfSnapshotLocked = _radarSdfSnapshotLocked;
+                _radarSdfSnapshotLocked = false;
+                UnlockSdfSnapshotBuffer(ref sdfSnapshotLocked);
+                ReleaseRadarPendingJob(ref pending);
+                _radarJob = default;
+                _radarJobScheduled = 0;
+                _radarJobHandle = default;
+            }
+        }
+
+        private void CommitCompletedScan(ref RadarPendingJob pending)
+        {
+            if (!IsRadarPendingJobValid(in pending))
+                return;
 
             int previousCount = _activeGprPings;
-            _activeGprPings = counters.IsCreated && counters.Length > 0
-                ? math.clamp(counters[0], 0, GroundRadarConstants.MaxPings)
-                : 0;
-            int addedCount = counters.IsCreated && counters.Length > 1 ? math.max(0, counters[1]) : 0;
-            int rayCount = counters.IsCreated && counters.Length > 2 ? counters[2] : 0;
-            _highestSignalStrength = maxSignalStrength.IsCreated && maxSignalStrength.Length > 0
-                ? math.saturate(maxSignalStrength[0])
-                : 0f;
-            uint frameId = AdvanceRadarFrameId();
 
-            int macroSwarmAddedCount = AppendMacroSwarmRadarPings();
-            if (macroSwarmAddedCount > 0)
-            {
-                addedCount += macroSwarmAddedCount;
-                _highestSignalStrength = math.max(_highestSignalStrength, 0.85f);
-            }
+            AppendMacroSwarmRadarPings(ref pending);
+            int activeCount = pending.Counters.IsCreated && pending.Counters.Length > 0
+                ? math.clamp(pending.Counters[0], 0, GroundRadarConstants.MaxPings)
+                : 0;
+            int addedCount = pending.Counters.IsCreated && pending.Counters.Length > 1 ? math.max(0, pending.Counters[1]) : 0;
+            int rayCount = pending.Counters.IsCreated && pending.Counters.Length > 2 ? pending.Counters[2] : 0;
+            float highestSignalStrength = pending.MaxSignalStrength.IsCreated && pending.MaxSignalStrength.Length > 0
+                ? math.saturate(pending.MaxSignalStrength[0])
+                : 0f;
+
+            if (!TryPublishRadarPendingJob(ref pending))
+                return;
+
+            _activeGprPings = activeCount;
+            _highestSignalStrength = highestSignalStrength;
+            uint frameId = AdvanceRadarFrameId();
 
             if (_activeGprPings > 0 && TryResolveGprPingWriteBuffer(out GraphicsBuffer gprPingWriteBuffer))
             {
-                GraphicsBufferUploadUtility.UploadNativeArray(gprPingWriteBuffer, pingGpu, _activeGprPings);
+                GraphicsBufferUploadUtility.UploadNativeArray(gprPingWriteBuffer, pending.PingGpu, _activeGprPings);
                 _activeGprPingBuffer = gprPingWriteBuffer;
                 _drawBounds = new Bounds(
                     new Vector3(_lastProbeOrigin.x, _lastProbeOrigin.y - stepMeters * maxRaymarchSteps * 0.5f, _lastProbeOrigin.z),
@@ -698,54 +758,58 @@ namespace Hecton8.World
                 UpdateIndirectArgsBuffer((uint)_activeGprPings);
             }
 
-            WriteTelemetry(frameId, addedCount, rayCount, _highestSignalStrength, 0u);
-            if (!math.all(math.isfinite(_lastProbeOrigin)) || !math.isfinite(_highestSignalStrength))
+            WriteTelemetry(frameId, addedCount, rayCount, highestSignalStrength, 0u);
+            if (!math.all(math.isfinite(_lastProbeOrigin)) || !math.isfinite(highestSignalStrength))
             {
-                WriteTelemetry(frameId, addedCount, rayCount, _highestSignalStrength, TelemetryFaultFlag);
+                WriteTelemetry(frameId, addedCount, rayCount, highestSignalStrength, TelemetryFaultFlag);
                 DumpBlackBox();
             }
 
             if (addedCount > 0)
-                PublishGprSignals(frameId, _highestSignalStrength);
+                PublishGprSignals(frameId, highestSignalStrength);
         }
 
-        private int AppendMacroSwarmRadarPings()
+        private int AppendMacroSwarmRadarPings(ref RadarPendingJob pending)
         {
             IEcosystemDirectorService ecosystem = _ecosystemDirector;
             if (ecosystem == null ||
                 !ecosystem.IsInitialized ||
-                _activeGprPings >= GroundRadarConstants.MaxPings ||
-                !TryOpenGprStateForOwnerWrite(
-                    out NativeArray<float3> hits,
-                    out NativeArray<float> signalStrength,
-                    out NativeArray<float> ageSeconds,
-                    out NativeArray<int> gprOreTypes,
-                    out NativeArray<float4> pingGpu,
-                    out _,
-                    out _,
-                    out _))
+                !IsRadarPendingJobValid(in pending))
             {
                 return 0;
             }
 
-            int remaining = GroundRadarConstants.MaxPings - _activeGprPings;
-            NativeArray<float4> destination = pingGpu.GetSubArray(_activeGprPings, remaining);
+            int activeCount = pending.Counters.IsCreated && pending.Counters.Length > 0
+                ? math.clamp(pending.Counters[0], 0, GroundRadarConstants.MaxPings)
+                : 0;
+            if (activeCount >= GroundRadarConstants.MaxPings)
+                return 0;
+
+            int remaining = GroundRadarConstants.MaxPings - activeCount;
+            NativeArray<float4> destination = pending.PingGpu.GetSubArray(activeCount, remaining);
             if (!ecosystem.TryCopyMacroSwarmRadarPings(destination, _lastProbeOrigin, scanRadiusMeters * 4f, out int copiedCount))
                 return 0;
 
             copiedCount = math.clamp(copiedCount, 0, remaining);
-            int startIndex = _activeGprPings;
+            int startIndex = activeCount;
+            float highestMacroStrength = 0f;
             for (int i = 0; i < copiedCount; i++)
             {
                 int pingIndex = startIndex + i;
-                float4 ping = pingGpu[pingIndex];
-                hits[pingIndex] = ping.xyz;
-                signalStrength[pingIndex] = math.saturate(ping.w);
-                ageSeconds[pingIndex] = 0f;
-                gprOreTypes[pingIndex] = WorldOreTypeIds.None;
+                float4 ping = pending.PingGpu[pingIndex];
+                float signalStrength = math.saturate(ping.w);
+                pending.Hits[pingIndex] = ping.xyz;
+                pending.SignalStrength[pingIndex] = signalStrength;
+                pending.AgeSeconds[pingIndex] = 0f;
+                pending.OreTypes[pingIndex] = WorldOreTypeIds.None;
+                highestMacroStrength = math.max(highestMacroStrength, signalStrength);
             }
 
-            _activeGprPings += copiedCount;
+            pending.Counters[0] = activeCount + copiedCount;
+            if (pending.Counters.Length > 1)
+                pending.Counters[1] = math.max(0, pending.Counters[1]) + copiedCount;
+            if (pending.MaxSignalStrength.Length > 0)
+                pending.MaxSignalStrength[0] = math.max(math.saturate(pending.MaxSignalStrength[0]), highestMacroStrength);
             return copiedCount;
         }
 

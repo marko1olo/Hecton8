@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -16,6 +17,8 @@ namespace Hecton8.Bootstrap
         [SerializeField] private ShaderVariantCollection[] shaderVariantCollections;
         [Tooltip("Explicit shader manifest for ShaderWarmup.WarmupShaderFromCollection. Must match the configured collections.")]
         [SerializeField] private Shader[] shaderWarmupShaders;
+        [Tooltip("Legacy-authored shader catalog routed into the GameBootstrapper runtime owner before bootstrap.")]
+        [SerializeField] private RuntimeShaderReferenceCatalog runtimeShaderReferenceCatalog;
         [Tooltip("Optional Unity 6 PSO trace file paths. Use StreamingAssets-relative paths for players; Assets/ProjectSettings paths are editor-only.")]
         [SerializeField] private string[] shaderGraphicsStateCollectionPaths;
 
@@ -92,6 +95,7 @@ namespace Hecton8.Bootstrap
 
             bootstrapper.SetBootstrapShaderVariantCollections(shaderVariantCollections);
             bootstrapper.SetBootstrapShaderWarmupShaders(shaderWarmupShaders);
+            bootstrapper.SetBootstrapRuntimeShaderReferenceCatalog(runtimeShaderReferenceCatalog);
             bootstrapper.SetBootstrapShaderGraphicsStateCollectionPaths(shaderGraphicsStateCollectionPaths);
         }
     }

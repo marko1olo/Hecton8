@@ -271,31 +271,67 @@ namespace Hecton8.World
             {
                 if (!EnsureActiveAggregateBufferCapacity(
                         ref _surfaceAggregateBackBuffers,
-                        BufferID.VegetationSurfaceAggregateBackMatrices,
+                        ResolveSurfaceAggregateMatrixBufferId(_surfaceBackBufferIndex),
+                        ResolveSurfaceAggregateMatrixDirtyPageBufferId(_surfaceBackBufferIndex),
+                        ResolveSurfaceAggregateMetadataDirtyPageBufferId(_surfaceBackBufferIndex),
                         totalSurfaceCount))
                 {
                     return false;
                 }
 
-                int writeIndex = 0;
-                for (int i = 0; i < _selectedChunkCount; i++)
-                {
-                    if (!_chunkPayloads.TryGetValue(_selectedChunkKeys[i], out ChunkPayload payload) || !payload.HasSurface)
-                        continue;
-                    if (!_selectedChunkVisibility[i])
-                        continue;
-
-                    int copyCount = payload.SurfaceCount;
-                    if (!CopyChunkSliceToAggregate(
-                        ResolveChunkPool(isSurface: true, payload),
-                        payload.SurfaceOffset,
+                if (!TryAcquireActiveAggregateDirtyPagesForWrite(
                         ref _surfaceAggregateBackBuffers,
-                        writeIndex,
-                        copyCount))
+                        totalSurfaceCount,
+                        out IDataVault surfaceDirtyVault,
+                        out NativeArray<byte> surfaceMatrixDirtyPages,
+                        out NativeArray<byte> surfaceMetadataDirtyPages))
+                {
+                    return false;
+                }
+
+                int writeIndex = 0;
+                try
+                {
+                    GraphicsBufferUploadUtility.ClearDirtyPages(surfaceMatrixDirtyPages, totalSurfaceCount, ActiveAggregateDirtyPageSize);
+                    GraphicsBufferUploadUtility.ClearDirtyPages(surfaceMetadataDirtyPages, totalSurfaceCount, ActiveAggregateDirtyPageSize);
+                    for (int i = 0; i < _selectedChunkCount; i++)
                     {
-                        return false;
+                        if (!_chunkPayloads.TryGetValue(_selectedChunkKeys[i], out ChunkPayload payload) || !payload.HasSurface)
+                            continue;
+                        if (!_selectedChunkVisibility[i])
+                            continue;
+
+                        int copyCount = payload.SurfaceCount;
+                        if (!CopyChunkSliceToAggregate(
+                            ResolveChunkPool(isSurface: true, payload),
+                            payload.SurfaceOffset,
+                            ref _surfaceAggregateBackBuffers,
+                            writeIndex,
+                            copyCount))
+                        {
+                            return false;
+                        }
+
+                        GraphicsBufferUploadUtility.MarkDirtyPageRange(
+                            surfaceMatrixDirtyPages,
+                            writeIndex,
+                            copyCount,
+                            totalSurfaceCount,
+                            ActiveAggregateDirtyPageSize);
+                        GraphicsBufferUploadUtility.MarkDirtyPageRange(
+                            surfaceMetadataDirtyPages,
+                            writeIndex,
+                            copyCount,
+                            totalSurfaceCount,
+                            ActiveAggregateDirtyPageSize);
+                        writeIndex += copyCount;
                     }
-                    writeIndex += copyCount;
+                }
+                finally
+                {
+                    ReleaseActiveAggregateDirtyPageWriteLocks(
+                        in _surfaceAggregateBackBuffers,
+                        surfaceDirtyVault);
                 }
 
                 _surfaceBackCount = totalSurfaceCount;
@@ -326,31 +362,67 @@ namespace Hecton8.World
             {
                 if (!EnsureActiveAggregateBufferCapacity(
                         ref _underwaterAggregateBackBuffers,
-                        BufferID.VegetationUnderwaterAggregateBackMatrices,
+                        ResolveUnderwaterAggregateMatrixBufferId(_underwaterBackBufferIndex),
+                        ResolveUnderwaterAggregateMatrixDirtyPageBufferId(_underwaterBackBufferIndex),
+                        ResolveUnderwaterAggregateMetadataDirtyPageBufferId(_underwaterBackBufferIndex),
                         totalUnderwaterCount))
                 {
                     return false;
                 }
 
-                int writeIndex = 0;
-                for (int i = 0; i < _selectedChunkCount; i++)
-                {
-                    if (!_chunkPayloads.TryGetValue(_selectedChunkKeys[i], out ChunkPayload payload) || !payload.HasUnderwater)
-                        continue;
-                    if (!_selectedChunkVisibility[i])
-                        continue;
-
-                    int copyCount = payload.UnderwaterCount;
-                    if (!CopyChunkSliceToAggregate(
-                        ResolveChunkPool(isSurface: false, payload),
-                        payload.UnderwaterOffset,
+                if (!TryAcquireActiveAggregateDirtyPagesForWrite(
                         ref _underwaterAggregateBackBuffers,
-                        writeIndex,
-                        copyCount))
+                        totalUnderwaterCount,
+                        out IDataVault underwaterDirtyVault,
+                        out NativeArray<byte> underwaterMatrixDirtyPages,
+                        out NativeArray<byte> underwaterMetadataDirtyPages))
+                {
+                    return false;
+                }
+
+                int writeIndex = 0;
+                try
+                {
+                    GraphicsBufferUploadUtility.ClearDirtyPages(underwaterMatrixDirtyPages, totalUnderwaterCount, ActiveAggregateDirtyPageSize);
+                    GraphicsBufferUploadUtility.ClearDirtyPages(underwaterMetadataDirtyPages, totalUnderwaterCount, ActiveAggregateDirtyPageSize);
+                    for (int i = 0; i < _selectedChunkCount; i++)
                     {
-                        return false;
+                        if (!_chunkPayloads.TryGetValue(_selectedChunkKeys[i], out ChunkPayload payload) || !payload.HasUnderwater)
+                            continue;
+                        if (!_selectedChunkVisibility[i])
+                            continue;
+
+                        int copyCount = payload.UnderwaterCount;
+                        if (!CopyChunkSliceToAggregate(
+                            ResolveChunkPool(isSurface: false, payload),
+                            payload.UnderwaterOffset,
+                            ref _underwaterAggregateBackBuffers,
+                            writeIndex,
+                            copyCount))
+                        {
+                            return false;
+                        }
+
+                        GraphicsBufferUploadUtility.MarkDirtyPageRange(
+                            underwaterMatrixDirtyPages,
+                            writeIndex,
+                            copyCount,
+                            totalUnderwaterCount,
+                            ActiveAggregateDirtyPageSize);
+                        GraphicsBufferUploadUtility.MarkDirtyPageRange(
+                            underwaterMetadataDirtyPages,
+                            writeIndex,
+                            copyCount,
+                            totalUnderwaterCount,
+                            ActiveAggregateDirtyPageSize);
+                        writeIndex += copyCount;
                     }
-                    writeIndex += copyCount;
+                }
+                finally
+                {
+                    ReleaseActiveAggregateDirtyPageWriteLocks(
+                        in _underwaterAggregateBackBuffers,
+                        underwaterDirtyVault);
                 }
 
                 DistortAggregateFlowVectorsByThreat(ref _underwaterAggregateBackBuffers, totalUnderwaterCount);
@@ -766,7 +838,9 @@ namespace Hecton8.World
         private bool FinalizeChunkBuildJob(int slot)
         {
             ChunkBuildPendingJob pending = _chunkBuildJobs[slot];
-            pending.Handle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete: false))
+                return false;
+
             try
             {
                 if (!IsJobStateCurrent(pending.JobState))

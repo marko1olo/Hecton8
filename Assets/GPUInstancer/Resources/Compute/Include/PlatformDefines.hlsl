@@ -14,10 +14,10 @@
     #define GPUI_THREADS 256
     #define GPUI_THREADS_2D 16
 #elif SHADER_API_PS4
-    #define GPUI_THREADS 512
+    #define GPUI_THREADS 256
     #define GPUI_THREADS_2D 16
 #else
-    #define GPUI_THREADS 512
+    #define GPUI_THREADS 256
     #define GPUI_THREADS_2D 16
 #endif
 

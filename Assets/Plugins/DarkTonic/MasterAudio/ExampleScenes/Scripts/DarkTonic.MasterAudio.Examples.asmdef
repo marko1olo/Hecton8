@@ -1,0 +1,16 @@
+{
+    "name": "DarkTonic.MasterAudio.Examples",
+    "rootNamespace": "DarkTonic.MasterAudio.Examples",
+    "references": [
+        "DarkTonic.MasterAudio.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1193,6 +1193,7 @@ namespace Hecton8.Core.Memory
         ShinobuFlockingTelemetryRing = 70459,
         ShinobuFlockingCounters64 = 70474,
         ShinobuSpatialGridDumpSnapshot = 70475,
+        ShinobuEcosystemDumpSnapshot = 70476,
         ShinobuNutrientDriftCellFront = 70460,
         ShinobuNutrientDriftCellBack = 70461,
         ShinobuNutrientDriftFlowField = 70462,
@@ -1824,6 +1825,7 @@ namespace Hecton8.Core.Memory
         Shinobu319StatusEffectScannerReport = 71266,
         Shinobu319StatusEffectVfxRequests = 71267,
         Shinobu319StatusEffectDamageSignals = 71268,
+        Shinobu319StatusEffectRequests = 71269,
         ShinobuFluidCompartmentFront = 70780,
         ShinobuFluidCompartmentBack = 70781,
         ShinobuFluidIntegrityState = 70782,
@@ -2203,6 +2205,39 @@ namespace Hecton8.Core.Memory
         Shutdown = 1 << 6,
         Fault = 1 << 7,
         Heartbeat = 1 << 8
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
+    internal struct H8RawReallocationGuard
+    {
+        private const uint GuardSignature = 0x48384752u; // H8GR
+
+        [FieldOffset(0)] public int CompactionFenceHeld;
+        [FieldOffset(4)] public uint ActiveLockMask;
+        [FieldOffset(8)] public byte HasPinnedExternalViews;
+        [FieldOffset(9)] public byte Reserved0;
+        [FieldOffset(10)] public ushort Reserved1;
+        [FieldOffset(12)] public uint Signature;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static H8RawReallocationGuard Create(
+            bool compactionFenceHeld,
+            uint activeLockMask,
+            bool hasPinnedExternalViews)
+        {
+            H8RawReallocationGuard guard = default;
+            guard.CompactionFenceHeld = compactionFenceHeld ? 1 : 0;
+            guard.ActiveLockMask = activeLockMask;
+            guard.HasPinnedExternalViews = hasPinnedExternalViews ? (byte)1 : (byte)0;
+            guard.Signature = GuardSignature;
+            return guard;
+        }
+
+        public bool AllowsRelocation =>
+            Signature == GuardSignature &&
+            CompactionFenceHeld != 0 &&
+            ActiveLockMask == 0u &&
+            HasPinnedExternalViews == 0;
     }
 
     /// <summary>
@@ -2915,6 +2950,7 @@ namespace Hecton8.Core.Memory
             SystemID owner,
             Allocator allocator,
             bool clearExtendedBytes,
+            in H8RawReallocationGuard relocationGuard,
             H8AllocationFlags extraFlags = H8AllocationFlags.None)
         {
             if (!_initialized)
@@ -2925,6 +2961,12 @@ namespace Hecton8.Core.Memory
             if (newBytes <= 0L)
                 return null;
             if (owner == SystemID.Unknown)
+            {
+                RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
+                return null;
+            }
+
+            if (!relocationGuard.AllowsRelocation)
             {
                 RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
                 return null;

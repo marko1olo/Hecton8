@@ -49,7 +49,9 @@ float H8WaveFiniteOr(float value, float fallbackValue)
 
 float H8WaveContribution(int waveIndex)
 {
-    return 1.0;
+    float quality = saturate(H8WaveFiniteOr(_H8OceanGlobalQualityWeight, 1.0));
+    float activeWaveCount = lerp(2.0, 6.0, quality);
+    return saturate(activeWaveCount - (float)waveIndex);
 }
 
 float H8WaveWrapPhase(float phase)

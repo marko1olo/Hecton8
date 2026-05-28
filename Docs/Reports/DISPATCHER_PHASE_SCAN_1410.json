@@ -1,0 +1,134 @@
+{
+  "agent": "1410",
+  "generatedUtc": "2026-05-27T23:41:22Z",
+  "root": "C:\\hades\\Hecton8",
+  "scanner": "Python anchored regex parser; exact method declarations only; comments ignored",
+  "elapsedMicroseconds": 37973562,
+  "filesScanned": 2446,
+  "presentationViolationCount": 0,
+  "rogueMagicMethodCount": 0,
+  "editorMagicMethodCount": 15,
+  "presentationViolations": [],
+  "magicMethods": [
+    {
+      "file": "Assets/_Project/Scripts/AI/Cognition/Editor/AIAnxietyTunerWindow.cs",
+      "method": "Update",
+      "line": 112,
+      "editorPath": true,
+      "approvedException": true,
+      "reason": "Editor-only path"
+    },
+    {
+      "file": "Assets/_Project/Scripts/AI/Cognition/Editor/CognitionUtilityTunerWindow.cs",
+      "method": "Update",
+      "line": 185,
+      "editorPath": true,
+      "approvedException": true,
+      "reason": "Editor-only path"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/FloraDearLieXRayWindow.cs",
+      "method": "Update",
+      "line": 65,
+      "editorPath": true,
+      "approvedException": true,
+      "reason": "Editor-only path"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/SubmarineDynoTunerWindow.cs",
+      "method": "Update",
+      "line": 81,
+      "editorPath": true,
+      "approvedException": true,
+      "reason": "Editor-only path"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/SumpPumpPipeGridTunerWindow.cs",
+      "method": "Update",
+      "line": 73,
+      "editorPath": true,
+      "approvedException": true,
+      "reason": "Editor-only path"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/VerletTowTunerWindow.cs",
+      "method": "Update",
+      "line": 86,
+      "editorPath": true,
+      "approvedException": true,
+      "reason": "Editor-only path"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalWaveTunerWindow.Editor.cs",
+      "method": "Update",
+      "line": 117,
+      "editorPath": true,
+      "approvedException": true,
+      "reason": "Editor-only path"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Physics/Buoyancy/Editor/PhysicsSleepStateXRayWindow.cs",
+      "method": "Update",
+      "line": 65,
+      "editorPath": true,
+      "approvedException": true,
+      "reason": "Editor-only path"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Physics/KCC/Editor/HydrodynamicKccTunerWindow.cs",
+      "method": "Update",
+      "line": 83,
+      "editorPath": true,
+      "approvedException": true,
+      "reason": "Editor-only path"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Physics/Seaglide/Editor/SeaglideHydrodynamicsEditorTools.cs",
+      "method": "Update",
+      "line": 109,
+      "editorPath": true,
+      "approvedException": true,
+      "reason": "Editor-only path"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Physiology/Editor/HaldaneanDecompressionTunerWindow.cs",
+      "method": "Update",
+      "line": 43,
+      "editorPath": true,
+      "approvedException": true,
+      "reason": "Editor-only path"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Rendering/WaterOptics/Editor/AbyssalOpticsTunerWindow.cs",
+      "method": "Update",
+      "line": 139,
+      "editorPath": true,
+      "approvedException": true,
+      "reason": "Editor-only path"
+    },
+    {
+      "file": "Assets/_Project/Scripts/SaveSystem/Editor/EntitySaveTunerWindow.cs",
+      "method": "Update",
+      "line": 108,
+      "editorPath": true,
+      "approvedException": true,
+      "reason": "Editor-only path"
+    },
+    {
+      "file": "Assets/_Project/Scripts/SaveSystem/Editor/VoxelSaveTunerWindow.cs",
+      "method": "Update",
+      "line": 81,
+      "editorPath": true,
+      "approvedException": true,
+      "reason": "Editor-only path"
+    },
+    {
+      "file": "Assets/_Project/Scripts/SaveSystem/Editor/WalSaveFuzzerWindow_SHINOBU357.cs",
+      "method": "Update",
+      "line": 109,
+      "editorPath": true,
+      "approvedException": true,
+      "reason": "Editor-only path"
+    }
+  ]
+}

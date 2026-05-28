@@ -85,14 +85,12 @@ namespace Hecton8.World
         // COLD ALLOC: long[32] - deferred despawn queue.
         private readonly long[] _pendingDespawnKeys = new long[MaxRuntimeVolumeCapacity];
         private int _pendingDespawnKeyCount;
-        // COLD ALLOC: long/GameObject[32] - deferred chunk fade registration queue.
-        private readonly long[] _pendingChunkFadeKeys = new long[MaxPendingChunkFadeCapacity];
-        private readonly GameObject[] _pendingChunkFadeVolumes = new GameObject[MaxPendingChunkFadeCapacity];
-        private int _pendingChunkFadeCount;
+        private Unity.Collections.FixedList512Bytes<long> _pendingChunkFadeKeys;
         private static readonly int ChunkDissolveFadeId = Shader.PropertyToID("_ChunkDissolveFade");
         private const uint ChunkFadeRendererMissingWarningHash = 0xD0B2923Bu;
         private const uint ChunkFadeMaterialMissingWarningHash = 0xBBEEF2CDu;
         private const uint ChunkFadeMaterialPoolMissingWarningHash = 0x8D4A6E29u;
+        private const uint ChunkFadePendingQueueFullWarningHash = 0x6F9D2C41u;
         // COLD ALLOC: Material[32] - pooled voxel chunk fade material clones; owner: HectonVoxelStreamingBridge.
         private readonly Material[] _chunkFadeMaterialPool = new Material[MaxChunkFadeStateCapacity];
         // COLD ALLOC: bool[32] - pooled fade material occupancy flags; owner: HectonVoxelStreamingBridge.
@@ -458,22 +456,24 @@ namespace Hecton8.World
             if (volume == null || chunkFadeInDuration <= 0.0001f)
                 return;
 
-            if (_pendingChunkFadeCount >= _pendingChunkFadeKeys.Length)
+            if (_pendingChunkFadeKeys.Length >= MaxPendingChunkFadeCapacity)
             {
-                FlushPendingChunkFadeRegistrations();
-                if (_pendingChunkFadeCount >= _pendingChunkFadeKeys.Length)
-                    return;
+                PublishChunkFadeWarning(ChunkFadePendingQueueFullWarningHash, key, 1f);
+                return;
             }
 
-            _pendingChunkFadeKeys[_pendingChunkFadeCount] = key;
-            _pendingChunkFadeVolumes[_pendingChunkFadeCount] = volume;
-            _pendingChunkFadeCount++;
+            _pendingChunkFadeKeys.AddNoResize(key);
         }
 
         private void FlushPendingChunkFadeRegistrations()
         {
-            for (int i = 0; i < _pendingChunkFadeCount; i++)
-                RegisterChunkFadeImmediate(_pendingChunkFadeKeys[i], _pendingChunkFadeVolumes[i]);
+            int pendingCount = math.min(_pendingChunkFadeKeys.Length, MaxPendingChunkFadeCapacity);
+            for (int i = 0; i < pendingCount; i++)
+            {
+                long key = _pendingChunkFadeKeys[i];
+                if (TryGetActiveVolume(key, out GameObject volume))
+                    RegisterChunkFadeImmediate(key, volume);
+            }
 
             ClearPendingChunkFadeRegistrations();
         }
@@ -531,6 +531,7 @@ namespace Hecton8.World
 
             float safeDt = Mathf.Max(0f, dt);
             float duration = Mathf.Max(0.05f, chunkFadeInDuration);
+            float quality01 = ResolveChunkFadeQualityWeight01();
             ClearKeyScratch();
 
             for (int i = 0; i < _chunkFadeStateCount; i++)
@@ -545,7 +546,8 @@ namespace Hecton8.World
 
                 state.Elapsed += safeDt;
                 float fade01 = Mathf.Clamp01(state.Elapsed / duration);
-                state.RuntimeMaterial.SetFloat(ChunkDissolveFadeId, fade01);
+                float smoothFade01 = fade01 * fade01 * (3f - 2f * fade01);
+                state.RuntimeMaterial.SetFloat(ChunkDissolveFadeId, math.lerp(fade01, smoothFade01, quality01));
                 _chunkFadeStates[i] = state;
 
                 if (fade01 >= 0.999f)
@@ -661,6 +663,12 @@ namespace Hecton8.World
                 warningHash,
                 unchecked((uint)key),
                 Mathf.Max(0f, scalar));
+        }
+
+        private static float ResolveChunkFadeQualityWeight01()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, quality, math.isfinite(quality)));
         }
 
         private void ClearAllChunkFadeStates(bool clearRenderers)
@@ -1148,13 +1156,7 @@ namespace Hecton8.World
 
         private void ClearPendingChunkFadeRegistrations()
         {
-            if (_pendingChunkFadeCount > 0)
-            {
-                System.Array.Clear(_pendingChunkFadeKeys, 0, _pendingChunkFadeCount);
-                System.Array.Clear(_pendingChunkFadeVolumes, 0, _pendingChunkFadeCount);
-            }
-
-            _pendingChunkFadeCount = 0;
+            _pendingChunkFadeKeys.Clear();
         }
 
         private Bounds ResolveVolumeBounds(GameObject volume, Vector3 center, float radius)

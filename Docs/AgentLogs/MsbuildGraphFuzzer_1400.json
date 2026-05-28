@@ -1,0 +1,19 @@
+﻿{
+    "generatedAt":  "2026-05-28T05:17:52.6472006+04:00",
+    "status":  "BLOCKED_BY_CONTENTION",
+    "cpuLoadPercent":  100,
+    "compilerProcesses":  [
+                              {
+                                  "Id":  55080,
+                                  "ProcessName":  "dotnet",
+                                  "CPU":  477.40625,
+                                  "StartTime":  "2026-05-28T04:58:33.0068704+04:00"
+                              }
+                          ],
+    "exitCode":  -1,
+    "durationMilliseconds":  0,
+    "message":  "BLOCKED_BY_CONTENTION: cpu=100 compilerProcessCount=1",
+    "projectPath":  "",
+    "reportPath":  "",
+    "logPath":  "Docs/AgentLogs/MsbuildGraphFuzzer_1400.log"
+}

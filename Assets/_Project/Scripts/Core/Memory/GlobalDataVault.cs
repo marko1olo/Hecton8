@@ -373,6 +373,20 @@ namespace Hecton8.Core.Memory
         [FieldOffset(29)] public byte Reserved0;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    internal struct DeferredVaultReleaseRequest
+    {
+        [FieldOffset(0)] public int State;
+        [FieldOffset(4)] public int BufferKey;
+        [FieldOffset(8)] public long OffsetBytes;
+        [FieldOffset(16)] public int ActiveLockBit;
+        [FieldOffset(20)] public int LockOwnerSystemId;
+        [FieldOffset(24)] public byte Kind;
+        [FieldOffset(25)] public byte Flags;
+        [FieldOffset(26)] public ushort Reserved16;
+        [FieldOffset(28)] public uint Sequence;
+    }
+
     [StructLayout(LayoutKind.Explicit, Size = 128)]
     internal struct MemoryDefragTelemetryEntry
     {
@@ -429,10 +443,17 @@ namespace Hecton8.Core.Memory
         private const int MaxMacroDatabasePayloadBytes = 256 * 1024;
         private const int MaxRelocationRecordCount = 64;
         private const int MaxMemoryBudgetEntries = 128;
+        private const int DeferredReleaseRequestCapacity = 256;
+        private const int DeferredReleaseRequestMask = DeferredReleaseRequestCapacity - 1;
         internal const byte BlockStateFree = 0;
         internal const byte BlockStateOccupied = 1;
         private const byte BlockFlagExternalView = 1 << 0;
         private const byte BlockFlagLocked = 1 << 1;
+        private const byte DeferredReleaseKindWriter = 1;
+        private const byte DeferredReleaseKindBufferPin = 2;
+        private const int DeferredReleaseStateEmpty = 0;
+        private const int DeferredReleaseStateWriting = 1;
+        private const int DeferredReleaseStatePending = 2;
         private const uint VaultMetaFlagOrphanCandidate = 1u << 31;
         private const byte DefragFlagFragmented = 1 << 0;
         private const byte DefragFlagHeartbeat = 1 << 1;
@@ -453,6 +474,7 @@ namespace Hecton8.Core.Memory
         private const int MemoryDefragTelemetryEntrySizeBytes = 128;
         private const int VaultTelemetrySnapshotSizeBytes = 64;
         private const int VaultMemoryBudgetEntrySizeBytes = 32;
+        private const int DeferredVaultReleaseRequestSizeBytes = 32;
         private const int MacroDatabasePayloadHandleSizeBytes = 40;
         private const int MacroDatabasePayloadCacheEntrySizeBytes = 48;
         private const ulong DefragDumpMagic = 0x3147445648384848UL; // HH8HVDG1
@@ -479,6 +501,7 @@ namespace Hecton8.Core.Memory
         private NativeArray<MemoryDefragTelemetryEntry> _defragBlackBox;
         private NativeArray<VaultRelocationRecord> _lastRelocationRecords;
         private NativeArray<VaultMemoryBudgetEntry> _memoryBudgetEntries;
+        private NativeArray<DeferredVaultReleaseRequest> _deferredReleaseRequests;
         private NativeParallelHashMap<ulong, MacroDatabasePayloadCacheEntry> _macroDatabasePayloadCache;
         private NativeParallelHashMap<ulong, uint> _macroDatabasePayloadAccessTicks;
         private NativeList<ulong> _macroDatabasePayloadKeys;
@@ -503,6 +526,8 @@ namespace Hecton8.Core.Memory
         private int _defragBlackBoxRecordedCount;
         private int _lastRelocationRecordCount;
         private int _memoryBudgetCount;
+        private int _deferredReleaseWriteCursor;
+        private int _deferredReleasePendingCount;
         private int _generationHandleMissCount;
         private int _lastFaultBufferId;
         private uint _lastFaultHandleGeneration;
@@ -520,6 +545,7 @@ namespace Hecton8.Core.Memory
         private int _memorySentryDumpWorkerStop;
         private long _totalDefragMovedBytes;
         private long _deferredArenaGrowthBytes;
+        private int _arenaGrowthInProgress;
         private uint _defragTickSequence;
         private uint _vaultGenerationId;
         private SystemID _lastRelocatedSystemId;
@@ -603,6 +629,8 @@ namespace Hecton8.Core.Memory
 
         /// <inheritdoc />
         public int MemoryBlockSnapshotCount => _blocks.IsCreated ? _blocks.Length : 0;
+
+        public long DeferredArenaGrowthBytes => Volatile.Read(ref _deferredArenaGrowthBytes);
 
         /// <inheritdoc />
         public int LastRelocationRecordCount => _lastRelocationRecordCount;
@@ -702,6 +730,17 @@ namespace Hecton8.Core.Memory
             };
             for (int i = 0; i < _memoryBudgetEntries.Length; i++)
                 budgetJob.Execute(i);
+            _deferredReleaseRequests = H8Memory.Allocate<DeferredVaultReleaseRequest>(
+                DeferredReleaseRequestCapacity,
+                SystemID.CoreDataVault,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            if (!_deferredReleaseRequests.IsCreated)
+            {
+                AbortInitialize();
+                return;
+            }
+
             _macroDatabasePayloadCache = new NativeParallelHashMap<ulong, MacroDatabasePayloadCacheEntry>(safeCapacity, Allocator.Persistent);
             _macroDatabasePayloadAccessTicks = new NativeParallelHashMap<ulong, uint>(safeCapacity, Allocator.Persistent);
             _macroDatabasePayloadKeys = new NativeList<ulong>(safeCapacity, Allocator.Persistent);
@@ -743,6 +782,8 @@ namespace Hecton8.Core.Memory
             _defragBlackBoxRecordedCount = 0;
             _lastRelocationRecordCount = 0;
             _memoryBudgetCount = 0;
+            _deferredReleaseWriteCursor = 0;
+            _deferredReleasePendingCount = 0;
             _generationHandleMissCount = 0;
             _lastFaultBufferId = 0;
             _lastFaultHandleGeneration = 0u;
@@ -760,6 +801,7 @@ namespace Hecton8.Core.Memory
             _memorySentryDumpWorkerStop = 0;
             _totalDefragMovedBytes = 0L;
             _deferredArenaGrowthBytes = 0L;
+            _arenaGrowthInProgress = 0;
             _defragTickSequence = 0u;
             _vaultGenerationId = 1u;
             _lastRelocatedSystemId = SystemID.Unknown;
@@ -805,6 +847,7 @@ namespace Hecton8.Core.Memory
                 _defragBlackBox.IsCreated &&
                 _lastRelocationRecords.IsCreated &&
                 _memoryBudgetEntries.IsCreated &&
+                _deferredReleaseRequests.IsCreated &&
                 _macroDatabasePayloadCache.IsCreated &&
                 _macroDatabasePayloadAccessTicks.IsCreated &&
                 _macroDatabasePayloadKeys.IsCreated;
@@ -830,6 +873,7 @@ namespace Hecton8.Core.Memory
                 UnsafeUtility.SizeOf<MemoryDefragTelemetryEntry>() == MemoryDefragTelemetryEntrySizeBytes &&
                 UnsafeUtility.SizeOf<VaultTelemetrySnapshot>() == VaultTelemetrySnapshotSizeBytes &&
                 UnsafeUtility.SizeOf<VaultMemoryBudgetEntry>() == VaultMemoryBudgetEntrySizeBytes &&
+                UnsafeUtility.SizeOf<DeferredVaultReleaseRequest>() == DeferredVaultReleaseRequestSizeBytes &&
                 UnsafeUtility.SizeOf<MacroDatabasePayloadHandle>() == MacroDatabasePayloadHandleSizeBytes &&
                 UnsafeUtility.SizeOf<MacroDatabasePayloadCacheEntry>() == MacroDatabasePayloadCacheEntrySizeBytes &&
                 ValidateDescriptorAbiOffsets() &&
@@ -1055,9 +1099,6 @@ namespace Hecton8.Core.Memory
                 return false;
 
             EnsureInitialized();
-            if (Volatile.Read(ref _compactionFence) != 0)
-                return false;
-
             if (_arenaBase == null)
             {
                 DumpPhiVodBlackBox();
@@ -1077,6 +1118,12 @@ namespace Hecton8.Core.Memory
             long requiredBytes = AlignUp(requestedBytes, VaultBlockAlignment);
             if (requiredBytes <= 0L)
                 return false;
+            if (Volatile.Read(ref _compactionFence) != 0)
+            {
+                QueueDeferredArenaGrowth(requiredBytes);
+                return false;
+            }
+
             if (requiredBytes > _arenaBytes && !TryGrowArenaForBytes(requiredBytes))
                 return false;
 
@@ -1201,23 +1248,21 @@ namespace Hecton8.Core.Memory
             if (ShouldClear(options))
                 UnsafeUtility.MemClear(pointer.ToPointer(), requiredBytes);
 
-            VaultBufferMeta meta = new VaultBufferMeta
-            {
-                Length = requiredLength,
-                Stride = stride,
-                Alignment = alignment,
-                BlockIndex = blockIndex,
-                OffsetBytes = _blocks[blockIndex].OffsetBytes,
-                Bytes = requiredBytes,
-                Owner = requester,
-                Allocator = Allocator.Persistent,
-                Version = ResolveInitialGenerationForAllocation(key),
-                ActiveWriterSystemID = 0,
-                TypeHash = ComputeTypeHash<T>(),
-                RefCount = 1u,
-                Flags = 0u,
-                BufferKey = key
-            };
+            VaultBufferMeta meta = default;
+            meta.Length = requiredLength;
+            meta.Stride = stride;
+            meta.Alignment = alignment;
+            meta.BlockIndex = blockIndex;
+            meta.OffsetBytes = _blocks[blockIndex].OffsetBytes;
+            meta.Bytes = requiredBytes;
+            meta.Owner = requester;
+            meta.Allocator = Allocator.Persistent;
+            meta.Version = ResolveInitialGenerationForAllocation(key);
+            meta.ActiveWriterSystemID = 0;
+            meta.TypeHash = ComputeTypeHash<T>();
+            meta.RefCount = 1u;
+            meta.Flags = 0u;
+            meta.BufferKey = key;
 
             bool bufferAdded = _buffers.TryAdd(key, pointer);
             bool metadataAdded = bufferAdded && TryAddMetadata(key, in meta);
@@ -1616,11 +1661,11 @@ namespace Hecton8.Core.Memory
                 return false;
             Thread.MemoryBarrier();
 
-            if (systemID == SystemID.Unknown || !_metadataByBufferId.IsCreated)
+            if (systemID == SystemID.Unknown || !_metadata.IsCreated)
                 return false;
 
             int key = unchecked((int)handle.BufferID);
-            if (key == 0 || (uint)key >= (uint)_metadataByBufferId.Length)
+            if (key == 0)
                 return false;
 
             int activeLockBit = ResolveActiveLockBit((BufferID)key);
@@ -1646,7 +1691,8 @@ namespace Hecton8.Core.Memory
                 return false;
             }
 
-            if (meta.LastAliasRequester != SystemID.Unknown)
+            if (meta.ActiveWriterSystemID != 0 ||
+                meta.LastAliasRequester != SystemID.Unknown)
             {
                 return false;
             }
@@ -1674,13 +1720,11 @@ namespace Hecton8.Core.Memory
                 return false;
             }
 
-            VaultBufferMeta* metadata = (VaultBufferMeta*)NativeArrayUnsafeUtility.GetUnsafePtr(_metadataByBufferId);
-            ref int activeWriter = ref metadata[key].ActiveWriterSystemID;
-
             NativeArray<T> lockedBuffer = default;
             Thread.MemoryBarrier();
             if (!TryEnterBlockMutationGate())
             {
+                RecordLockContentionFault(key);
                 return false;
             }
 
@@ -1693,6 +1737,7 @@ namespace Hecton8.Core.Memory
 
                 if (handle.Generation != meta.Version ||
                     ((uint)meta.Owner != (uint)SystemID.Unknown && systemID != meta.Owner) ||
+                    meta.ActiveWriterSystemID != 0 ||
                     meta.LastAliasRequester != SystemID.Unknown ||
                     (handle.SystemID != 0u && handle.SystemID != (uint)meta.Owner))
                 {
@@ -1716,34 +1761,28 @@ namespace Hecton8.Core.Memory
 
                 SetActiveLockBit(activeLockBit);
                 Thread.MemoryBarrier();
-                if (Interlocked.CompareExchange(ref activeWriter, (int)systemID, 0) != 0)
-                {
-                    ClearActiveLockBitIfUnusedLocked(activeLockBit);
-                    return false;
-                }
+                meta.ActiveWriterSystemID = (int)systemID;
+                WriteMetadata(key, in meta);
 
                 block.Reserved0 |= BlockFlagLocked;
                 block.Reserved1++;
                 _blocks[blockIndex] = block;
                 Thread.MemoryBarrier();
 
-                VaultBufferMeta lockedMeta = metadata[key];
-                WriteMetadata(key, in lockedMeta);
+                VaultBufferMeta lockedMeta = meta;
                 if (_arenaBase == null ||
                     lockedMeta.OffsetBytes < 0L ||
                     lockedMeta.Bytes <= 0L ||
                     lockedMeta.OffsetBytes > _arenaBytes - lockedMeta.Bytes)
                 {
-                    RollbackWriterLockUnlocked(key, lockedMeta.OffsetBytes, activeLockBit, ref activeWriter, (int)systemID);
-                    WriteMetadata(key, in metadata[key]);
+                    RollbackWriterLockUnlocked(key, lockedMeta.OffsetBytes, activeLockBit, (int)systemID);
                     return false;
                 }
 
                 lockedBuffer = H8Memory.CreateNativeArrayView<T>((byte*)_arenaBase + lockedMeta.OffsetBytes, lockedMeta.Length);
                 if (!lockedBuffer.IsCreated)
                 {
-                    RollbackWriterLockUnlocked(key, lockedMeta.OffsetBytes, activeLockBit, ref activeWriter, (int)systemID);
-                    WriteMetadata(key, in metadata[key]);
+                    RollbackWriterLockUnlocked(key, lockedMeta.OffsetBytes, activeLockBit, (int)systemID);
                     return false;
                 }
             }
@@ -1760,11 +1799,11 @@ namespace Hecton8.Core.Memory
         /// <inheritdoc />
         public bool ReleaseWriteLock<T>(in VaultGenerationHandle<T> handle, SystemID systemID) where T : struct
         {
-            if (systemID == SystemID.Unknown || !_metadataByBufferId.IsCreated)
+            if (systemID == SystemID.Unknown || !_metadata.IsCreated)
                 return false;
 
             int key = unchecked((int)handle.BufferID);
-            if ((uint)key >= (uint)_metadataByBufferId.Length || !TryReadFlatMetadata(key, out VaultBufferMeta meta))
+            if (key == 0 || !TryReadFlatMetadata(key, out VaultBufferMeta meta))
                 return false;
 
             if (handle.Generation != meta.Version)
@@ -1780,27 +1819,29 @@ namespace Hecton8.Core.Memory
                 return false;
 
             int activeLockBit = ResolveActiveLockBit((BufferID)key);
-            VaultBufferMeta* metadata = (VaultBufferMeta*)NativeArrayUnsafeUtility.GetUnsafePtr(_metadataByBufferId);
-            ref int activeWriter = ref metadata[key].ActiveWriterSystemID;
-            if (Volatile.Read(ref activeWriter) != (int)systemID)
+            if (meta.ActiveWriterSystemID != (int)systemID)
                 return false;
 
-            if (!TryEnterBlockMutationGate())
-                return false;
+            if (!TryEnterReleaseMutationGate())
+            {
+                RecordLockContentionFault(key);
+                return QueueDeferredWriterRelease(key, meta.OffsetBytes, activeLockBit, (int)systemID);
+            }
 
             try
             {
-                if (!ReleaseWriterBlockLockUnlocked(key, meta.OffsetBytes))
-                    return false;
-
-                if (Interlocked.CompareExchange(ref activeWriter, 0, (int)systemID) != (int)systemID)
+                if (!TryReadFlatMetadata(key, out meta) ||
+                    meta.ActiveWriterSystemID != (int)systemID ||
+                    meta.OffsetBytes < 0L)
                 {
-                    ClearActiveLockBitIfUnusedLocked(activeLockBit);
-                    WriteMetadata(key, in metadata[key]);
                     return false;
                 }
 
-                WriteMetadata(key, in metadata[key]);
+                if (!ReleaseWriterBlockLockUnlocked(key, meta.OffsetBytes))
+                    return false;
+
+                meta.ActiveWriterSystemID = 0;
+                WriteMetadata(key, in meta);
                 Thread.MemoryBarrier();
                 ClearActiveLockBitIfUnusedLocked(activeLockBit);
                 return true;
@@ -1813,8 +1854,11 @@ namespace Hecton8.Core.Memory
 
         private bool ReleaseWriterBlockLock(int bufferKey, long offsetBytes)
         {
-            if (!TryEnterBlockMutationGate())
-                return false;
+            if (!TryEnterReleaseMutationGate())
+            {
+                RecordLockContentionFault(bufferKey);
+                return QueueDeferredWriterRelease(bufferKey, offsetBytes, ResolveActiveLockBit((BufferID)bufferKey), 0);
+            }
 
             try
             {
@@ -1826,10 +1870,17 @@ namespace Hecton8.Core.Memory
             }
         }
 
-        private bool RollbackWriterLockUnlocked(int bufferKey, long offsetBytes, int activeLockBit, ref int activeWriter, int systemID)
+        private bool RollbackWriterLockUnlocked(int bufferKey, long offsetBytes, int activeLockBit, int systemID)
         {
             bool released = ReleaseWriterBlockLockUnlocked(bufferKey, offsetBytes);
-            Interlocked.CompareExchange(ref activeWriter, 0, systemID);
+            if (TryReadFlatMetadata(bufferKey, out VaultBufferMeta meta) &&
+                meta.OffsetBytes == offsetBytes &&
+                meta.ActiveWriterSystemID == systemID)
+            {
+                meta.ActiveWriterSystemID = 0;
+                WriteMetadata(bufferKey, in meta);
+            }
+
             ClearActiveLockBitIfUnusedLocked(activeLockBit);
             return released;
         }
@@ -1848,6 +1899,242 @@ namespace Hecton8.Core.Memory
                 block.Reserved0 &= unchecked((byte)~BlockFlagLocked);
 
             _blocks[blockIndex] = block;
+            return true;
+        }
+
+        private bool QueueDeferredWriterRelease(int bufferKey, long offsetBytes, int activeLockBit, int lockOwnerSystemId)
+        {
+            return QueueDeferredRelease(
+                bufferKey,
+                offsetBytes,
+                activeLockBit,
+                lockOwnerSystemId,
+                DeferredReleaseKindWriter);
+        }
+
+        private bool QueueDeferredBufferPinRelease(int bufferKey, long offsetBytes, int activeLockBit, int lockOwnerSystemId)
+        {
+            return QueueDeferredRelease(
+                bufferKey,
+                offsetBytes,
+                activeLockBit,
+                lockOwnerSystemId,
+                DeferredReleaseKindBufferPin);
+        }
+
+        private bool QueueDeferredRelease(
+            int bufferKey,
+            long offsetBytes,
+            int activeLockBit,
+            int lockOwnerSystemId,
+            byte kind)
+        {
+            if (!_deferredReleaseRequests.IsCreated || bufferKey <= 0 || offsetBytes < 0L || kind == 0)
+                return false;
+            if (!TryReadFlatMetadata(bufferKey, out _))
+                return false;
+
+            DeferredVaultReleaseRequest* requests =
+                (DeferredVaultReleaseRequest*)NativeArrayUnsafeUtility.GetUnsafePtr(_deferredReleaseRequests);
+            if (kind == DeferredReleaseKindWriter)
+            {
+                for (int i = 0; i < DeferredReleaseRequestCapacity; i++)
+                {
+                    DeferredVaultReleaseRequest* pending = requests + i;
+                    if (Volatile.Read(ref pending->State) != DeferredReleaseStatePending)
+                        continue;
+                    if (pending->BufferKey == bufferKey &&
+                        pending->OffsetBytes == offsetBytes &&
+                        pending->ActiveLockBit == activeLockBit &&
+                        pending->LockOwnerSystemId == lockOwnerSystemId &&
+                        pending->Kind == kind)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            int cursor = Interlocked.Increment(ref _deferredReleaseWriteCursor);
+            for (int attempt = 0; attempt < DeferredReleaseRequestCapacity; attempt++)
+            {
+                int index = (cursor + attempt) & DeferredReleaseRequestMask;
+                DeferredVaultReleaseRequest* request = requests + index;
+                if (Interlocked.CompareExchange(ref request->State, DeferredReleaseStateWriting, DeferredReleaseStateEmpty) != DeferredReleaseStateEmpty)
+                    continue;
+
+                request->BufferKey = bufferKey;
+                request->OffsetBytes = offsetBytes;
+                request->ActiveLockBit = activeLockBit;
+                request->LockOwnerSystemId = lockOwnerSystemId;
+                request->Kind = kind;
+                request->Flags = 0;
+                request->Reserved16 = 0;
+                request->Sequence = unchecked((uint)cursor);
+                Thread.MemoryBarrier();
+                Volatile.Write(ref request->State, DeferredReleaseStatePending);
+                Interlocked.Increment(ref _deferredReleasePendingCount);
+                return true;
+            }
+
+            RecordLockContentionFault(bufferKey);
+            return false;
+        }
+
+        private void DrainDeferredReleaseRequestsLocked()
+        {
+            if (!_deferredReleaseRequests.IsCreated || Volatile.Read(ref _deferredReleasePendingCount) <= 0)
+                return;
+
+            DeferredVaultReleaseRequest* requests =
+                (DeferredVaultReleaseRequest*)NativeArrayUnsafeUtility.GetUnsafePtr(_deferredReleaseRequests);
+            for (int i = 0; i < _deferredReleaseRequests.Length; i++)
+            {
+                DeferredVaultReleaseRequest* request = requests + i;
+                if (Volatile.Read(ref request->State) != DeferredReleaseStatePending)
+                    continue;
+
+                DeferredVaultReleaseRequest local = *request;
+                bool drained = local.Kind == DeferredReleaseKindWriter
+                    ? DrainDeferredWriterReleaseLocked(in local)
+                    : DrainDeferredBufferPinReleaseLocked(in local);
+                if (!drained)
+                    continue;
+
+                request->BufferKey = 0;
+                request->OffsetBytes = 0L;
+                request->ActiveLockBit = 0;
+                request->LockOwnerSystemId = 0;
+                request->Kind = 0;
+                request->Flags = 0;
+                request->Reserved16 = 0;
+                request->Sequence = 0u;
+                Thread.MemoryBarrier();
+                Volatile.Write(ref request->State, DeferredReleaseStateEmpty);
+                Interlocked.Decrement(ref _deferredReleasePendingCount);
+            }
+        }
+
+        private bool TryDrainDeferredReleaseRequests()
+        {
+            if (!_deferredReleaseRequests.IsCreated || Volatile.Read(ref _deferredReleasePendingCount) <= 0)
+                return true;
+            if (!TryAcquireBlockMutationGate())
+                return false;
+
+            try
+            {
+                DrainDeferredReleaseRequestsLocked();
+                return Volatile.Read(ref _deferredReleasePendingCount) <= 0;
+            }
+            finally
+            {
+                ReleaseBlockMutationGate();
+            }
+        }
+
+        private bool DrainDeferredWriterReleaseLocked(in DeferredVaultReleaseRequest request)
+        {
+            if (request.BufferKey <= 0)
+                return true;
+
+            bool hasMetadata = TryReadFlatMetadata(request.BufferKey, out VaultBufferMeta meta);
+            if (!hasMetadata)
+            {
+                ClearActiveLockBitIfUnusedLocked(request.ActiveLockBit);
+                return true;
+            }
+
+            if (meta.OffsetBytes != request.OffsetBytes)
+            {
+                ClearActiveLockBitIfUnusedLocked(request.ActiveLockBit);
+                return true;
+            }
+
+            int owner = request.LockOwnerSystemId;
+            if (owner != 0 && meta.ActiveWriterSystemID != owner)
+            {
+                if (meta.ActiveWriterSystemID == 0)
+                {
+                    ClearActiveLockBitIfUnusedLocked(request.ActiveLockBit);
+                    return true;
+                }
+
+                return false;
+            }
+
+            bool released = ReleaseWriterBlockLockUnlocked(request.BufferKey, request.OffsetBytes);
+            if (!released && !TryFindOccupiedBlockIndex(request.BufferKey, request.OffsetBytes, out _))
+            {
+                ClearActiveLockBitIfUnusedLocked(request.ActiveLockBit);
+                return true;
+            }
+
+            if (!released)
+                return false;
+
+            if (owner != 0 && meta.ActiveWriterSystemID == owner)
+                meta.ActiveWriterSystemID = 0;
+            WriteMetadata(request.BufferKey, in meta);
+            Thread.MemoryBarrier();
+            ClearActiveLockBitIfUnusedLocked(request.ActiveLockBit);
+            return true;
+        }
+
+        private bool DrainDeferredBufferPinReleaseLocked(in DeferredVaultReleaseRequest request)
+        {
+            if (request.BufferKey <= 0)
+                return true;
+
+            if (!TryReadFlatMetadata(request.BufferKey, out VaultBufferMeta meta))
+            {
+                ClearActiveLockBitIfUnusedLocked(request.ActiveLockBit);
+                return true;
+            }
+
+            if (meta.OffsetBytes != request.OffsetBytes)
+            {
+                ClearActiveLockBitIfUnusedLocked(request.ActiveLockBit);
+                return true;
+            }
+
+            if (!TryFindOccupiedBlockIndex(request.BufferKey, request.OffsetBytes, out int blockIndex))
+            {
+                ClearActiveLockBitIfUnusedLocked(request.ActiveLockBit);
+                return true;
+            }
+
+            VaultArenaBlock block = _blocks[blockIndex];
+            if (block.BufferKey != request.BufferKey || block.OffsetBytes != request.OffsetBytes)
+            {
+                ClearActiveLockBitIfUnusedLocked(request.ActiveLockBit);
+                return true;
+            }
+
+            SystemID lockOwner = (SystemID)request.LockOwnerSystemId;
+            if (block.Reserved1 == 0)
+            {
+                ClearActiveLockBitIfUnusedLocked(request.ActiveLockBit);
+                return true;
+            }
+
+            if (meta.LastAliasRequester != lockOwner)
+            {
+                ClearActiveLockBitIfUnusedLocked(request.ActiveLockBit);
+                return true;
+            }
+
+            block.Reserved1--;
+            if (block.Reserved1 == 0)
+            {
+                block.Reserved0 &= unchecked((byte)~BlockFlagLocked);
+                if ((block.Reserved0 & BlockFlagExternalView) == 0)
+                    meta.LastAliasRequester = SystemID.Unknown;
+                WriteMetadata(request.BufferKey, in meta);
+            }
+
+            _blocks[blockIndex] = block;
+            Thread.MemoryBarrier();
+            ClearActiveLockBitIfUnusedLocked(request.ActiveLockBit);
             return true;
         }
 
@@ -1970,6 +2257,7 @@ namespace Hecton8.Core.Memory
             releasedBytes = 0L;
             _lastOrphanSweepCandidateCount = 0;
             _lastOrphanReclaimCount = 0;
+            TryDrainDeferredReleaseRequests();
             if (!_initialized ||
                 phase != MemoryDefragPhase.PreSimulation ||
                 HasActiveBurstLocks(activeBurstLockMask) ||
@@ -2134,6 +2422,7 @@ namespace Hecton8.Core.Memory
 
             if (!TryEnterBlockMutationGate())
             {
+                RecordLockContentionFault(key);
                 return false;
             }
 
@@ -2235,8 +2524,11 @@ namespace Hecton8.Core.Memory
             if (block.Reserved1 == 0 || meta.LastAliasRequester != lockOwner)
                 return false;
 
-            if (!TryEnterBlockMutationGate())
-                return false;
+            if (!TryEnterReleaseMutationGate())
+            {
+                RecordLockContentionFault(key);
+                return QueueDeferredBufferPinRelease(key, meta.OffsetBytes, ResolveActiveLockBit(bufferId), (int)lockOwner);
+            }
 
             try
             {
@@ -2344,10 +2636,38 @@ namespace Hecton8.Core.Memory
             if (!TryAcquireBlockMutationGate())
                 return false;
             if (Volatile.Read(ref _compactionFence) == 0)
-                return true;
+            {
+                try
+                {
+                    DrainDeferredReleaseRequestsLocked();
+                    return true;
+                }
+                catch
+                {
+                    ReleaseBlockMutationGate();
+                    throw;
+                }
+            }
 
             ReleaseBlockMutationGate();
             return false;
+        }
+
+        private bool TryEnterReleaseMutationGate()
+        {
+            if (!TryAcquireBlockMutationGate())
+                return false;
+
+            try
+            {
+                DrainDeferredReleaseRequestsLocked();
+                return true;
+            }
+            catch
+            {
+                ReleaseBlockMutationGate();
+                throw;
+            }
         }
 
         private void ReleaseBlockMutationGate()
@@ -2372,25 +2692,21 @@ namespace Hecton8.Core.Memory
 
         private void ClearActiveLockBitIfUnused(int bit)
         {
-            const int maxAttempts = 32;
-            for (int i = 0; i < maxAttempts; i++)
+            if (TryAcquireBlockMutationGate())
             {
-                if (TryAcquireBlockMutationGate())
+                try
                 {
-                    try
-                    {
-                        ClearActiveLockBitIfUnusedLocked(bit);
-                    }
-                    finally
-                    {
-                        ReleaseBlockMutationGate();
-                    }
-
-                    return;
+                    ClearActiveLockBitIfUnusedLocked(bit);
+                }
+                finally
+                {
+                    ReleaseBlockMutationGate();
                 }
 
-                Thread.SpinWait(4);
+                return;
             }
+
+            RecordLockContentionFault(0);
         }
 
         private void ClearActiveLockBitIfUnusedLocked(int bit)
@@ -2554,6 +2870,7 @@ namespace Hecton8.Core.Memory
 
         public bool GenerateMockVaultRelocationForValidation(uint seed, int maxMutations, MemoryDefragPhase phase, uint activeBurstLockMask)
         {
+            TryDrainDeferredReleaseRequests();
             if (!_initialized ||
                 phase != MemoryDefragPhase.PreSimulation ||
                 HasActiveBurstLocks(activeBurstLockMask) ||
@@ -2695,6 +3012,8 @@ namespace Hecton8.Core.Memory
             }
 
             bool burstLocked = HasActiveBurstLocks(activeBurstLockMask);
+            if (burstLocked && TryDrainDeferredReleaseRequests())
+                burstLocked = HasActiveBurstLocks(activeBurstLockMask);
             bool stressHalted = systemStress01 > StressDefragHaltThreshold;
             _memMoveBlockedByStress = stressHalted || burstLocked;
             if (stressHalted)
@@ -3081,6 +3400,10 @@ namespace Hecton8.Core.Memory
             {
                 H8Memory.Release(ref _memoryBudgetEntries, SystemID.CoreDataVault);
             }
+            if (_deferredReleaseRequests.IsCreated)
+            {
+                H8Memory.Release(ref _deferredReleaseRequests, SystemID.CoreDataVault);
+            }
             _allocatedBytes = 0L;
             _arenaBytes = 0L;
             _arenaCapacityLimitBytes = 0L;
@@ -3095,6 +3418,8 @@ namespace Hecton8.Core.Memory
             _defragBlackBoxRecordedCount = 0;
             _lastRelocationRecordCount = 0;
             _memoryBudgetCount = 0;
+            _deferredReleaseWriteCursor = 0;
+            _deferredReleasePendingCount = 0;
             _generationHandleMissCount = 0;
             _lastFaultBufferId = 0;
             _lastFaultHandleGeneration = 0u;
@@ -3110,6 +3435,7 @@ namespace Hecton8.Core.Memory
             _memorySentryDumpWorkerStop = 0;
             _totalDefragMovedBytes = 0L;
             _deferredArenaGrowthBytes = 0L;
+            _arenaGrowthInProgress = 0;
             _defragTickSequence = 0u;
             _lastPublishedPointerBits = 0L;
             _lastRelocatedSystemId = SystemID.Unknown;
@@ -3257,11 +3583,17 @@ namespace Hecton8.Core.Memory
         private bool TryReadFlatMetadata(int key, out VaultBufferMeta meta)
         {
             meta = default;
-            if (!_metadataByBufferId.IsCreated || (uint)key >= (uint)_metadataByBufferId.Length)
-                return false;
+            if (_metadataByBufferId.IsCreated && (uint)key < (uint)_metadataByBufferId.Length)
+            {
+                meta = _metadataByBufferId[key];
+                return meta.BufferKey == key && meta.Version != 0u && meta.Length > 0;
+            }
 
-            meta = _metadataByBufferId[key];
-            return meta.BufferKey == key && meta.Version != 0u && meta.Length > 0;
+            return _metadata.IsCreated &&
+                _metadata.TryGetValue(key, out meta) &&
+                meta.BufferKey == key &&
+                meta.Version != 0u &&
+                meta.Length > 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3715,6 +4047,7 @@ namespace Hecton8.Core.Memory
 
         private bool TryRunLiveCompactionSlice(uint activeBurstLockMask)
         {
+            TryDrainDeferredReleaseRequests();
             if (_memMoveBlockedByStress ||
                 _allocationLock != 0 ||
                 Volatile.Read(ref _compactionFence) != 0 ||
@@ -3735,6 +4068,7 @@ namespace Hecton8.Core.Memory
             try
             {
                 Thread.MemoryBarrier();
+                TryDrainDeferredReleaseRequests();
                 if (HasActiveBurstLocks(activeBurstLockMask))
                 {
                     _defragLockedSkipCount++;
@@ -4357,6 +4691,18 @@ namespace Hecton8.Core.Memory
             DumpShinobu202BlackBox();
         }
 
+        private void RecordLockContentionFault(int key)
+        {
+            if (key < 0)
+                key = 0;
+
+            Interlocked.Increment(ref _defragLockedSkipCount);
+            Volatile.Write(ref _lastFaultBufferId, key);
+            _lastFaultHandleGeneration = 0u;
+            _lastFaultMetaGeneration = 0u;
+            LastDefragFlags = (byte)(LastDefragFlags | DefragFlagAliasBlocked);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static uint ComputeTypeHash<T>() where T : struct
         {
@@ -4443,13 +4789,18 @@ namespace Hecton8.Core.Memory
             if (requiredContiguousBytes <= 0L ||
                 _arenaBase == null ||
                 !_blocks.IsCreated ||
-                _allocationLock != 0 ||
-                Volatile.Read(ref _compactionFence) != 0 ||
                 _arenaBytes >= _arenaCapacityLimitBytes)
             {
                 return false;
             }
 
+            if (_allocationLock != 0 || Volatile.Read(ref _compactionFence) != 0)
+            {
+                QueueDeferredArenaGrowth(requiredContiguousBytes);
+                return false;
+            }
+
+            TryDrainDeferredReleaseRequests();
             if (HasActiveBurstLocks(0u) || HasPinnedExternalViews())
             {
                 QueueDeferredArenaGrowth(requiredContiguousBytes);
@@ -4480,6 +4831,7 @@ namespace Hecton8.Core.Memory
             if (desiredBytes <= _arenaBytes)
                 return false;
 
+            TryDrainDeferredReleaseRequests();
             if (Volatile.Read(ref _compactionFence) != 0 || HasActiveBurstLocks(0u) || HasPinnedExternalViews())
             {
                 QueueDeferredArenaGrowth(requiredContiguousBytes);
@@ -4494,6 +4846,7 @@ namespace Hecton8.Core.Memory
             newArenaBytes = AlignUp(newArenaBytes, VaultBlockAlignment);
             if (newArenaBytes <= _arenaBytes || newArenaBytes > _arenaCapacityLimitBytes)
                 return false;
+            TryDrainDeferredReleaseRequests();
             if (Volatile.Read(ref _compactionFence) != 0 || HasActiveBurstLocks(0u) || HasPinnedExternalViews())
             {
                 QueueDeferredArenaGrowth(newArenaBytes - _arenaBytes);
@@ -4514,9 +4867,11 @@ namespace Hecton8.Core.Memory
             }
 
             fenceRaised = true;
+            Interlocked.Exchange(ref _arenaGrowthInProgress, 1);
             try
             {
                 Thread.MemoryBarrier();
+                TryDrainDeferredReleaseRequests();
                 if (HasActiveBurstLocks(0u) || HasPinnedExternalViews())
                 {
                     QueueDeferredArenaGrowth(newArenaBytes - _arenaBytes);
@@ -4530,6 +4885,7 @@ namespace Hecton8.Core.Memory
                 }
 
                 gateAcquired = true;
+                DrainDeferredReleaseRequestsLocked();
                 if (HasActiveBurstLocks(0u) || HasPinnedExternalViews())
                 {
                     QueueDeferredArenaGrowth(newArenaBytes - _arenaBytes);
@@ -4538,6 +4894,10 @@ namespace Hecton8.Core.Memory
 
                 void* oldBase = _arenaBase;
                 long oldArenaBytes = _arenaBytes;
+                H8RawReallocationGuard relocationGuard = H8RawReallocationGuard.Create(
+                    Volatile.Read(ref _compactionFence) != 0,
+                    ActiveBurstLockMask,
+                    HasPinnedExternalViews());
                 void* newBase = H8Memory.ReallocateRaw(
                     oldBase,
                     oldArenaBytes,
@@ -4545,7 +4905,8 @@ namespace Hecton8.Core.Memory
                     VaultBlockAlignment,
                     SystemID.CoreDataVault,
                     Allocator.Persistent,
-                    clearExtendedBytes: true,
+                    true,
+                    in relocationGuard,
                     H8AllocationFlags.Vault | H8AllocationFlags.SubAllocatorRoot);
                 if (newBase == null)
                     return false;
@@ -4565,7 +4926,7 @@ namespace Hecton8.Core.Memory
                 LastDefragMovedBytes = oldArenaBytes;
                 _totalDefragMovedBytes += oldArenaBytes;
                 LastDefragFlags = (byte)(LastDefragFlags | DefragFlagRelocated);
-                Volatile.Write(ref _deferredArenaGrowthBytes, 0L);
+                ClearDeferredArenaGrowthIfSatisfied();
                 BumpVaultGeneration();
                 return true;
             }
@@ -4573,9 +4934,43 @@ namespace Hecton8.Core.Memory
             {
                 if (gateAcquired)
                     ReleaseBlockMutationGate();
+                Interlocked.Exchange(ref _arenaGrowthInProgress, 0);
                 if (fenceRaised)
                     Interlocked.Exchange(ref _compactionFence, 0);
             }
+        }
+
+        public bool ProcessDeferredArenaGrowth()
+        {
+            long requiredBytes = Volatile.Read(ref _deferredArenaGrowthBytes);
+            if (requiredBytes <= 0L)
+                return false;
+            if (!_initialized || _arenaBase == null || !_blocks.IsCreated)
+                return false;
+
+            if (CanSatisfyContiguousFreeBlock(requiredBytes))
+            {
+                ClearDeferredArenaGrowthIfSatisfied();
+                return Volatile.Read(ref _deferredArenaGrowthBytes) <= 0L;
+            }
+
+            if (_allocationLock != 0 ||
+                Volatile.Read(ref _arenaGrowthInProgress) != 0 ||
+                Volatile.Read(ref _compactionFence) != 0)
+            {
+                RecordDefragBlackBox(++_defragTickSequence, DefragFlagAliasBlocked);
+                return false;
+            }
+
+            TryDrainDeferredReleaseRequests();
+            if (HasActiveBurstLocks(0u) ||
+                HasPinnedExternalViews())
+            {
+                RecordDefragBlackBox(++_defragTickSequence, DefragFlagAliasBlocked);
+                return false;
+            }
+
+            return TryGrowArenaForBytes(requiredBytes);
         }
 
         private void QueueDeferredArenaGrowth(long requiredBytes)
@@ -4595,6 +4990,35 @@ namespace Hecton8.Core.Memory
             LastDefragFlags = (byte)(LastDefragFlags | DefragFlagAliasBlocked);
             _memoryStarvationWarnings = (byte)(_memoryStarvationWarnings | 1);
             RecordDefragBlackBox(++_defragTickSequence, DefragFlagAliasBlocked);
+        }
+
+        private void ClearDeferredArenaGrowthIfSatisfied()
+        {
+            long observed;
+            do
+            {
+                observed = Volatile.Read(ref _deferredArenaGrowthBytes);
+                if (observed <= 0L)
+                    return;
+                if (!CanSatisfyContiguousFreeBlock(observed))
+                    return;
+            }
+            while (Interlocked.CompareExchange(ref _deferredArenaGrowthBytes, 0L, observed) != observed);
+        }
+
+        private bool CanSatisfyContiguousFreeBlock(long requiredBytes)
+        {
+            if (requiredBytes <= 0L || !_blocks.IsCreated)
+                return false;
+
+            for (int i = 0; i < _blocks.Length; i++)
+            {
+                VaultArenaBlock block = _blocks[i];
+                if (block.State == BlockStateFree && block.Bytes >= requiredBytes)
+                    return true;
+            }
+
+            return false;
         }
 
         private bool ExtendFreeTail(long growBytes)

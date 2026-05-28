@@ -12,7 +12,8 @@
         android:label="@string/app_name"
         android:extractNativeLibs="true">
         <activity
-            android:name="com.unity3d.player.UnityPlayerActivity"
+            android:name="com.unity3d.player.UnityPlayerGameActivity"
+            android:theme="@style/BaseUnityGameActivityTheme"
             android:exported="true"
             android:screenOrientation="landscape"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|orientation|screenLayout|uiMode|screenSize|smallestScreenSize|fontScale|layoutDirection|density"
@@ -22,6 +23,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
+            <meta-data android:name="android.app.lib_name" android:value="game" />
             <meta-data android:name="hecton8.mobile_vr_template" android:value="true" />
         </activity>
     </application>

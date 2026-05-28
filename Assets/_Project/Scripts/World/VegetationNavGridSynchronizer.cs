@@ -79,7 +79,6 @@ namespace Hecton8.World
         public bool TryScheduleAbyssalPath(Vector3 startPosition, Vector3 endPosition, int traversalSpeciesId, out JobHandle handle)
         {
             handle = default;
-            CompleteAbyssalPathJob(forceComplete: false);
             if (!IsFinite(startPosition) || !IsFinite(endPosition))
                 return false;
 
@@ -157,12 +156,14 @@ namespace Hecton8.World
                 return false;
             }
 
-            bool completed = false;
+            bool scheduled = false;
             NativeArray<VegetationDensityChunkRecord> densityChunksForJob = default;
             NativeArray<float3> densityGridForJob = default;
             NativeArray<float2> threatAttractorGridForJob = default;
             NativeArray<TerrainHoleRecord> terrainHolesForJob = default;
             NativeArray<ArtificialStructureRecord> artificialStructuresForJob = default;
+            NativeArray<byte> navPassabilityGridForJob = default;
+            NativeArray<byte> threatVoxelGridForSmoothing = default;
             try
             {
                 JobHandle pathSourceHandle = default;
@@ -253,16 +254,26 @@ namespace Hecton8.World
                         return false;
                     }
 
+                    NativeArray<float> threatGridForJob = default;
+                    NativeArray<byte> threatVoxelGridForJob = default;
                     if (!TryReadVegetationMemoryBuffer(
                             in _nativeMemory.EcosystemThreatGridHandle,
                             BufferID.VegetationEcosystemThreatGrid,
                             _ecosystemThreatGridCellCount,
-                            out NativeArray<float> threatGridForJob) ||
+                            out NativeArray<float> threatGridSource) ||
                         !TryReadVegetationMemoryBuffer(
                             in _nativeMemory.EcosystemThreatVoxelHandle,
                             BufferID.VegetationEcosystemThreatVoxel,
                             _ecosystemThreatVoxelCellCount,
-                            out NativeArray<byte> threatVoxelGridForJob))
+                            out NativeArray<byte> threatVoxelGridSource) ||
+                        !TryCreateReadOnlyAbyssalPathJobSnapshot(
+                            threatGridSource.AsReadOnly(),
+                            _ecosystemThreatGridCellCount,
+                            out threatGridForJob) ||
+                        !TryCreateReadOnlyAbyssalPathJobSnapshot(
+                            threatVoxelGridSource.AsReadOnly(),
+                            _ecosystemThreatVoxelCellCount,
+                            out threatVoxelGridForJob))
                     {
                         H8Memory.Release(ref predatorFearNodesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
                         H8Memory.Release(ref navNodesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
@@ -275,6 +286,8 @@ namespace Hecton8.World
                         H8Memory.Release(ref pathClosedFlagsForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
                         H8Memory.Release(ref pathHeapNodesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
                         H8Memory.Release(ref pathHeapPositionsForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                        H8Memory.Release(ref threatGridForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                        H8Memory.Release(ref threatVoxelGridForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
                         return false;
                     }
 
@@ -360,6 +373,14 @@ namespace Hecton8.World
                         ref pathHeapPositionsForJob,
                         pathSourceHandle,
                         VegetationMemorySovereigntyConstants.OwnerSystemId);
+                    pathSourceHandle = H8Memory.Release(
+                        ref threatGridForJob,
+                        pathSourceHandle,
+                        VegetationMemorySovereigntyConstants.OwnerSystemId);
+                    pathSourceHandle = H8Memory.Release(
+                        ref threatVoxelGridForJob,
+                        pathSourceHandle,
+                        VegetationMemorySovereigntyConstants.OwnerSystemId);
                     if (predatorFearNodesForJob.IsCreated)
                         pathSourceHandle = H8Memory.Release(
                             ref predatorFearNodesForJob,
@@ -405,46 +426,44 @@ namespace Hecton8.World
                         out navPassabilityCellSize);
                 }
 
+                TryCreateReadOnlyAbyssalPathJobSnapshot(
+                    navPassabilityGrid,
+                    navPassabilityGrid.Length,
+                    out navPassabilityGridForJob);
+
                 int smoothingPortalLookAhead = ResolveAbyssalPathPortalLookAhead();
                 int smoothingDdaSampleCap = ResolveAbyssalPathDdaSampleCap(abyssalPathSmoothingMaxSamples);
                 EnsureAbyssalPathTelemetry();
                 _lastAbyssalPathPortalLookAhead = smoothingPortalLookAhead;
                 _lastAbyssalPathMaxSamples = smoothingDdaSampleCap;
-                if (!TryPrepareDensityQueryJobSnapshot(
+                int densityChunkCountForJob = 0;
+                if (TryPrepareDensityQueryJobSnapshot(
                         true,
                         false,
                         out densityChunksForJob,
                         out densityGridForJob,
-                        out threatAttractorGridForJob))
+                        out threatAttractorGridForJob) &&
+                    densityChunksForJob.IsCreated &&
+                    densityGridForJob.IsCreated)
                 {
-                    ForceCompleteAbyssalPathDependency(ref pathSourceHandle);
-                    return false;
+                    densityChunkCountForJob = _densityQueryChunkCount;
                 }
 
-                int densityChunkCountForJob = densityChunksForJob.IsCreated && densityGridForJob.IsCreated
-                    ? _densityQueryChunkCount
-                    : 0;
-                if (!TryCreateTerrainHoleJobSnapshot(out terrainHolesForJob))
-                {
-                    ForceCompleteAbyssalPathDependency(ref pathSourceHandle);
-                    return false;
-                }
+                TryCreateTerrainHoleJobSnapshot(out terrainHolesForJob);
 
                 int terrainHoleCountForJob = terrainHolesForJob.IsCreated ? _terrainHoleCount : 0;
-                if (!TryPrepareArtificialStructureJobSnapshot(out artificialStructuresForJob))
-                {
-                    ForceCompleteAbyssalPathDependency(ref pathSourceHandle);
-                    return false;
-                }
+                TryPrepareArtificialStructureJobSnapshot(out artificialStructuresForJob);
 
-                if (!TryReadVegetationMemoryBuffer(
+                if (TryReadVegetationMemoryBuffer(
                         in _nativeMemory.EcosystemThreatVoxelHandle,
                         BufferID.VegetationEcosystemThreatVoxel,
                         _ecosystemThreatVoxelCellCount,
-                        out NativeArray<byte> threatVoxelGridForSmoothing))
+                        out NativeArray<byte> threatVoxelGridForSmoothingSource))
                 {
-                    ForceCompleteAbyssalPathDependency(ref pathSourceHandle);
-                    return false;
+                    TryCreateReadOnlyAbyssalPathJobSnapshot(
+                        threatVoxelGridForSmoothingSource.AsReadOnly(),
+                        _ecosystemThreatVoxelCellCount,
+                        out threatVoxelGridForSmoothing);
                 }
 
                 var smoothingJob = new StringPullPathJob
@@ -457,7 +476,7 @@ namespace Hecton8.World
                     TerrainHoleCount = terrainHoleCountForJob,
                     ArtificialStructures = artificialStructuresForJob,
                     ArtificialStructureHash = default,
-                    NavPassabilityGrid = navPassabilityGrid,
+                    NavPassabilityGrid = navPassabilityGridForJob.IsCreated ? navPassabilityGridForJob.AsReadOnly() : default,
                     ThreatVoxelGrid = threatVoxelGridForSmoothing,
                     ThreatGridCenter = new float3(_ecosystemThreatGridCenter.x, _ecosystemThreatGridCenter.y, _ecosystemThreatGridCenter.z),
                     ThreatGridCellSize = threatGridCellSize,
@@ -477,16 +496,41 @@ namespace Hecton8.World
                     OutputPath = resultPath
                 };
 
-                long completeStartTicks = Stopwatch.GetTimestamp();
+                long scheduleStartTicks = Stopwatch.GetTimestamp();
                 JobHandle smoothingHandle = smoothingJob.Schedule(pathSourceHandle);
-                ForceCompleteAbyssalPathDependency(ref smoothingHandle);
-                float funnelMs = ResolveAbyssalPathElapsedMs(Stopwatch.GetTimestamp() - completeStartTicks);
-                _lastAbyssalPathEndNode = canReuseLastAbyssalTarget && !scheduledMacroVoxelRoute ? endNode : -1;
-                _lastAbyssalPathTargetPosition = resolvedEndPosition;
-                _hasLastAbyssalPathTarget = canReuseLastAbyssalTarget && !scheduledMacroVoxelRoute;
-                completed = CommitAbyssalPathResult(rawPath, resultPath, funnelMs);
-                handle = default;
-                return completed;
+                _abyssalPathJob = new AbyssalPathPendingJob
+                {
+                    RawPath = rawPath,
+                    ResultPath = resultPath,
+                    DensityChunks = densityChunksForJob,
+                    DensityGrid = densityGridForJob,
+                    ThreatAttractorGrid = threatAttractorGridForJob,
+                    TerrainHoles = terrainHolesForJob,
+                    ArtificialStructures = artificialStructuresForJob,
+                    NavPassabilityGrid = navPassabilityGridForJob,
+                    ThreatVoxelGrid = threatVoxelGridForSmoothing,
+                    TargetPosition = resolvedEndPosition,
+                    EndNode = endNode,
+                    ScheduleTicks = scheduleStartTicks,
+                    CanReuseLastTarget = canReuseLastAbyssalTarget,
+                    ScheduledMacroVoxelRoute = scheduledMacroVoxelRoute,
+                    Handle = smoothingHandle
+                };
+                _abyssalPathHandle = smoothingHandle;
+                _abyssalPathScheduled = true;
+                handle = smoothingHandle;
+                scheduled = true;
+
+                rawPath = default;
+                resultPath = default;
+                densityChunksForJob = default;
+                densityGridForJob = default;
+                threatAttractorGridForJob = default;
+                terrainHolesForJob = default;
+                artificialStructuresForJob = default;
+                navPassabilityGridForJob = default;
+                threatVoxelGridForSmoothing = default;
+                return true;
             }
             finally
             {
@@ -495,31 +539,94 @@ namespace Hecton8.World
                 H8Memory.Release(ref threatAttractorGridForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
                 H8Memory.Release(ref terrainHolesForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
                 H8Memory.Release(ref artificialStructuresForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref navPassabilityGridForJob, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref threatVoxelGridForSmoothing, VegetationMemorySovereigntyConstants.OwnerSystemId);
                 if (rawPath.IsCreated)
                     rawPath.Dispose();
                 if (resultPath.IsCreated)
                     resultPath.Dispose();
-                if (!completed)
+                if (!scheduled)
+                {
                     _abyssalPathCount = 0;
-                _abyssalPathScheduled = false;
-                _abyssalPathHandle = default;
+                    _abyssalPathJob = default;
+                    _abyssalPathScheduled = false;
+                    _abyssalPathHandle = default;
+                }
             }
         }
 
         private static int ResolveAbyssalPathPortalLookAhead()
         {
-            return HighTierAbyssalPathPortalLookAhead;
+            float quality = ResolveAbyssalPathQualityWeight();
+            return ResolveAbyssalPathQualityBudget(
+                quality,
+                LowTierAbyssalPathPortalLookAhead,
+                MidTierAbyssalPathPortalLookAhead,
+                HighTierAbyssalPathPortalLookAhead);
         }
 
         private static int ResolveAbyssalPathDdaSampleCap(int configuredSampleCap)
         {
             int safeCap = math.clamp(configuredSampleCap, 1, MaxThreatDdaSteps);
-            return safeCap;
+            float quality = ResolveAbyssalPathQualityWeight();
+            return ResolveAbyssalPathQualityBudget(
+                quality,
+                math.min(LowTierAbyssalPathDdaSamples, safeCap),
+                math.min(MidTierAbyssalPathDdaSamples, safeCap),
+                safeCap);
         }
 
-        private static void ForceCompleteAbyssalPathDependency(ref JobHandle handle)
+        private static float ResolveAbyssalPathQualityWeight()
         {
-            DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            return math.saturate(math.select(1f, quality, math.isfinite(quality)));
+        }
+
+        private static int ResolveAbyssalPathQualityBudget(float quality, int lowBudget, int midBudget, int highBudget)
+        {
+            int safeLow = math.max(1, lowBudget);
+            int safeMid = math.max(safeLow, midBudget);
+            int safeHigh = math.max(safeMid, highBudget);
+            float q = math.saturate(quality);
+            float lowToMidWeight = SmoothAbyssalPathQuality(q * 2f);
+            float midToHighWeight = SmoothAbyssalPathQuality((q - 0.5f) * 2f);
+            float lowToMid = math.lerp(safeLow, safeMid, lowToMidWeight);
+            float midToHigh = math.lerp(safeMid, safeHigh, midToHighWeight);
+            float resolved = math.lerp(lowToMid, midToHigh, midToHighWeight);
+            return math.clamp((int)math.round(resolved), safeLow, safeHigh);
+        }
+
+        private static float SmoothAbyssalPathQuality(float value)
+        {
+            float q = math.saturate(value);
+            return q * q * (3f - 2f * q);
+        }
+
+        private static bool TryCreateReadOnlyAbyssalPathJobSnapshot<T>(
+            NativeArray<T>.ReadOnly source,
+            int requiredCount,
+            out NativeArray<T> snapshot)
+            where T : struct
+        {
+            snapshot = default;
+            if (requiredCount <= 0)
+                return true;
+
+            if (!source.IsCreated || source.Length < requiredCount)
+                return false;
+
+            snapshot = H8Memory.Allocate<T>(
+                requiredCount,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
+                Allocator.TempJob,
+                NativeArrayOptions.UninitializedMemory);
+            if (!snapshot.IsCreated)
+                return false;
+
+            for (int i = 0; i < requiredCount; i++)
+                snapshot[i] = source[i];
+
+            return true;
         }
 
         /// <summary>
@@ -1050,7 +1157,6 @@ namespace Hecton8.World
         /// </summary>
         public bool TryGetVisibleHLODPayload(out NativeArray<HLODData>.ReadOnly entries, out int count)
         {
-            CompleteHLODCullJob(forceComplete: false);
             count = _visibleHlodCount;
             if (count <= 0)
             {
@@ -1071,7 +1177,6 @@ namespace Hecton8.World
 
         private void RebuildHLODRegistrySnapshot()
         {
-            CompleteHLODCullJob(forceComplete: false);
             if (_hlodCullScheduled)
                 return;
 
@@ -1800,11 +1905,49 @@ namespace Hecton8.World
             if (!_abyssalPathScheduled)
                 return;
 
-            if (!DispatcherJobSwap.TryComplete(ref _abyssalPathHandle, forceComplete))
+            JobHandle handle = _abyssalPathHandle;
+            if (!DispatcherJobSwap.TryComplete(ref handle, forceComplete))
+            {
+                _abyssalPathHandle = handle;
+                _abyssalPathJob.Handle = handle;
                 return;
+            }
 
-            _abyssalPathScheduled = false;
-            _abyssalPathHandle = default;
+            AbyssalPathPendingJob pending = _abyssalPathJob;
+            pending.Handle = handle;
+            try
+            {
+                float funnelMs = ResolveAbyssalPathElapsedMs(Stopwatch.GetTimestamp() - pending.ScheduleTicks);
+                _lastAbyssalPathEndNode = pending.CanReuseLastTarget && !pending.ScheduledMacroVoxelRoute ? pending.EndNode : -1;
+                _lastAbyssalPathTargetPosition = pending.TargetPosition;
+                _hasLastAbyssalPathTarget = pending.CanReuseLastTarget && !pending.ScheduledMacroVoxelRoute;
+                CommitAbyssalPathResult(pending.RawPath, pending.ResultPath, funnelMs);
+            }
+            finally
+            {
+                ReleaseAbyssalPathPendingJob(ref pending);
+                _abyssalPathJob = default;
+                _abyssalPathScheduled = false;
+                _abyssalPathHandle = default;
+            }
+        }
+
+        private static void ReleaseAbyssalPathPendingJob(ref AbyssalPathPendingJob pending)
+        {
+            H8Memory.Release(ref pending.DensityChunks, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.DensityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.ThreatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.TerrainHoles, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.ArtificialStructures, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.NavPassabilityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.ThreatVoxelGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+
+            if (pending.RawPath.IsCreated)
+                pending.RawPath.Dispose();
+            if (pending.ResultPath.IsCreated)
+                pending.ResultPath.Dispose();
+
+            pending = default;
         }
 
         private bool CommitAbyssalPathResult(NativeList<Vector3> rawPath, NativeList<Vector3> resultPath, float funnelMs)
@@ -2140,6 +2283,9 @@ namespace Hecton8.World
 
         private void DisposeAbyssalPathState()
         {
+            if (_abyssalPathScheduled)
+                CompleteAbyssalPathJob(forceComplete: true);
+            ReleaseAbyssalPathPendingJob(ref _abyssalPathJob);
             ReleaseVegetationMemoryBuffer(ref _nativeMemory.AbyssalPathSnapshotHandle);
             ReleaseVegetationMemoryBuffer(ref _nativeMemory.PredatorFearNodesSnapshotHandle);
             IDataVault telemetryVault = _abyssalPathTelemetryVault;

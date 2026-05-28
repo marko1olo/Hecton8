@@ -2,10 +2,16 @@
 
 This folder is for public mod authors working outside the HECTON-8 Unity project.
 
-Fast path:
+First setup:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1 -Id com.yourname.mod -DisplayName "Your Mod" -Author "YourName" -Version 0.1.0
+```
+
+After edits:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1
 ```
 
 Use `pwsh` instead of `powershell` on macOS/Linux with PowerShell 7. The tools normalize child paths internally; do not rewrite the folder layout per platform.
@@ -13,7 +19,8 @@ Use `pwsh` instead of `powershell` on macOS/Linux with PowerShell 7. The tools n
 Do you need Unity?
 
 - No Unity project is required for manifest, graph, table, locale, and validation authoring.
-- Unity is only useful for advanced asset preview before a standalone Workbench or CLI exists.
+- If you do use the HECTON-8 Unity project, open `Hecton/Modding/External Starter Kit Workbench`; it can create/refresh missing starter files, shows required starter-file health, runs these same tools asynchronously, opens the core contracts, and shows review summary plus review manifest freshness without changing the file contract.
+- Unity is also useful for advanced asset preview.
 - Do not ship Harmony, BepInEx, or gameplay DLL patches. Current runtime UGC ingress is envelope-only.
 
 Current runtime boundary:
@@ -36,8 +43,8 @@ Files:
 - `Reference/`: copied opcode and tuning CSV references from the project docs.
 - `Schemas/`: JSON Schemas for editor autocomplete and schema-aware validation.
 - `.vscode/settings.json`: optional VS Code JSON schema mapping for the starter files. The local validator checks the expected schema URL/fileMatch pairs.
-- `Tools/prepare_mod.ps1`: one-command no-Unity setup that writes identity, validates, and builds the review manifest.
+- `Tools/prepare_mod.ps1`: one-command no-Unity setup/review loop. With `-Id` it writes identity, validates, and builds the review manifest; without `-Id` it validates existing manifests and rebuilds the review manifest.
 - `Tools/list_allowed_opcodes.ps1`: local no-Unity graph helper that prints the allowed opcode aliases and hex tokens accepted by `Graphs/main.h8graph.json`.
 - `Tools/validate_structure.ps1`: local no-Unity structure validator for required files, canonical IDs, manifest parity, graph opcode allowlist checks, graph budget parity, envelope-only flags, and managed-entry disablement.
-- `Tools/build_review_manifest.ps1`: local no-Unity review manifest builder that validates first, then writes `Reports/review_manifest.json` with sorted file paths, byte counts, total bytes, explicit source limits, and SHA-256 hashes for submission/review. It rejects more than `256` source files, any source file over `4194304` bytes, or more than `33554432` total source bytes before hashing.
+- `Tools/build_review_manifest.ps1`: local no-Unity review manifest builder that validates first, then writes `Reports/review_manifest.json` with package identity, sorted file paths, byte counts, total bytes, explicit source limits, and SHA-256 hashes for submission/review. It rejects more than `256` source files, any source file over `4194304` bytes, or more than `33554432` total source bytes before hashing.
 - `Tools/set_mod_identity.ps1`: local no-Unity identity helper that safely writes matching mod id/name/author/version values into both manifests, then validates the folder.

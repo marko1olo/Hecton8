@@ -141,21 +141,66 @@ namespace Hecton8.World
     /// <summary>
     /// Last-frame state sample for post-mortem regrowth diagnostics.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = WorldRegrowthSimulationLayout.WorldRegrowthTelemetryEntryStrideBytes)]
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
     public struct WorldRegrowthTelemetryEntry
     {
-        [FieldOffset(0)] public uint DayIndex;
-        [FieldOffset(4)] public uint StateHash;
-        [FieldOffset(8)] public int MatureCells;
-        [FieldOffset(12)] public int SeedCells;
-        [FieldOffset(16)] public int TombstoneCells;
-        [FieldOffset(20)] public int AverageNutrientQ;
-        [FieldOffset(24)] public int AverageApexRespawnDays;
-        [FieldOffset(28)] public int Flags;
-        [FieldOffset(32)] public uint Reserved0;
-        [FieldOffset(36)] public uint Reserved1;
-        [FieldOffset(40)] public uint Reserved2;
-        [FieldOffset(44)] public uint Reserved3;
+        [System.Runtime.InteropServices.FieldOffset(0)]
+        public uint DayIndex;
+        [System.Runtime.InteropServices.FieldOffset(4)]
+        public uint StateHash;
+        [System.Runtime.InteropServices.FieldOffset(8)]
+        public int MatureCells;
+        [System.Runtime.InteropServices.FieldOffset(12)]
+        public int SeedCells;
+        [System.Runtime.InteropServices.FieldOffset(16)]
+        public int TombstoneCells;
+        [System.Runtime.InteropServices.FieldOffset(20)]
+        public int AverageNutrientQ;
+        [System.Runtime.InteropServices.FieldOffset(24)]
+        public int AverageApexRespawnDays;
+        [System.Runtime.InteropServices.FieldOffset(28)]
+        public int Flags;
+        [System.Runtime.InteropServices.FieldOffset(32)]
+        public uint Reserved0;
+        [System.Runtime.InteropServices.FieldOffset(36)]
+        public uint Reserved1;
+        [System.Runtime.InteropServices.FieldOffset(40)]
+        public uint Reserved2;
+        [System.Runtime.InteropServices.FieldOffset(44)]
+        public uint Reserved3;
+        [System.Runtime.InteropServices.FieldOffset(48)]
+        private byte _pad0;
+        [System.Runtime.InteropServices.FieldOffset(49)]
+        private byte _pad1;
+        [System.Runtime.InteropServices.FieldOffset(50)]
+        private byte _pad2;
+        [System.Runtime.InteropServices.FieldOffset(51)]
+        private byte _pad3;
+        [System.Runtime.InteropServices.FieldOffset(52)]
+        private byte _pad4;
+        [System.Runtime.InteropServices.FieldOffset(53)]
+        private byte _pad5;
+        [System.Runtime.InteropServices.FieldOffset(54)]
+        private byte _pad6;
+        [System.Runtime.InteropServices.FieldOffset(55)]
+        private byte _pad7;
+        [System.Runtime.InteropServices.FieldOffset(56)]
+        private byte _pad8;
+        [System.Runtime.InteropServices.FieldOffset(57)]
+        private byte _pad9;
+        [System.Runtime.InteropServices.FieldOffset(58)]
+        private byte _pad10;
+        [System.Runtime.InteropServices.FieldOffset(59)]
+        private byte _pad11;
+        [System.Runtime.InteropServices.FieldOffset(60)]
+        private byte _pad12;
+        [System.Runtime.InteropServices.FieldOffset(61)]
+        private byte _pad13;
+        [System.Runtime.InteropServices.FieldOffset(62)]
+        private byte _pad14;
+        [System.Runtime.InteropServices.FieldOffset(63)]
+        private byte _pad15;
     }
 
     /// <summary>

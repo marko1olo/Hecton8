@@ -1,0 +1,15 @@
+﻿{
+    "agent":  "1410",
+    "generatedAtUtc":  "2026-05-28T01:16:17.3803034Z",
+    "cpuAveragePercent":  100,
+    "compilerProcesses":  {
+                              "Id":  55080,
+                              "ProcessName":  "dotnet",
+                              "CPU":  443.25,
+                              "StartTime":  "\/Date(1779929913006)\/"
+                          },
+    "buildAllowed":  false,
+    "dotnetBuildInvoked":  false,
+    "decision":  "BLOCKED_BY_CPU_CONTENTION",
+    "reason":  "CPU sample is \u003e= 50%; compilation resource throttling forbids dotnet build."
+}

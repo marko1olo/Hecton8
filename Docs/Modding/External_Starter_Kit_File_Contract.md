@@ -11,8 +11,8 @@ This file answers the practical public-modder question: what program and what fi
 The current answer is deliberately narrow:
 
 - ordinary mod authors do not need the full HECTON-8 Unity project;
-- Unity is optional and only useful for advanced asset preview until a standalone Workbench or CLI ships;
-- normal authoring starts from `Hecton/Modding/SDK Hub -> Create External Starter Kit`;
+- Unity is optional for external authors, but when they use the project the integrated entry point is `Hecton/Modding/External Starter Kit Workbench`;
+- normal authoring starts from `Hecton/Modding/SDK Hub -> Create External Starter Kit` or the Workbench over the same starter folder;
 - runtime gameplay authority is not managed DLL execution, Harmony, BepInEx, loose AssetBundle loading, loose PNG loading, or loose localization injection;
 - runtime gameplay authority is validated 64-byte `FutureCommandEnvelope` data after SDK bake/approval.
 - Runtime stays envelope-only.
@@ -25,7 +25,7 @@ The repository includes a versioned starter template at:
 ModdingSDK/ExternalStarterKit/
 ```
 
-The SDK Hub also creates or refreshes that same path non-destructively. Existing files are not overwritten. This gives external authors a normal folder that can be copied, zipped, or validated without opening Unity.
+The SDK Hub also creates or refreshes that same path non-destructively. Existing files are not overwritten. The External Starter Kit Workbench opens, creates/refreshes, shows required-file health, runs starter tools asynchronously, runs `Tools/validate_structure.ps1` directly for fast checks, opens the core file/API contracts, and validates this same path by reusing the Hub generator; it does not create a second format. The Workbench also shows review manifest freshness by comparing `Reports/review_manifest.json` with starter source files while excluding `Generated/` and `Reports/`. This gives external authors a normal folder that can be copied, zipped, validated without opening Unity, or inspected through the project-integrated Workbench.
 
 ## Required Files
 
@@ -93,7 +93,7 @@ ExternalStarterKit/
 
 The versioned starter template copies of these CSVs must match `Docs/Modding/allowed_opcodes.csv` and `Docs/Modding/kernel_tuning_profiles.csv`. `Validate_Mod_API_Static.ps1` fails if those copies drift.
 
-`Tools/list_allowed_opcodes.ps1` is the local no-Unity opcode discovery helper. It reads `Reference/allowed_opcodes.csv`, prints the aliases and hex tokens accepted by `Graphs/main.h8graph.json`, rejects malformed or duplicated rows, and supports `-Json` output for future Workbench/CLI screens. It does not authorize reserved opcodes; it only exposes the copied allowlist already validated against the docs source.
+`Tools/list_allowed_opcodes.ps1` is the local no-Unity opcode discovery helper. It reads `Reference/allowed_opcodes.csv`, prints the aliases and hex tokens accepted by `Graphs/main.h8graph.json`, rejects malformed or duplicated rows, and supports `-Json` output for Workbench/CLI screens. It does not authorize reserved opcodes; it only exposes the copied allowlist already validated against the docs source.
 
 Run it from the starter kit root:
 
@@ -106,15 +106,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File Tools/list_allowed_opcodes.p
 
 `.vscode/settings.json` maps starter files to those schemas for schema-aware editor autocomplete and early error highlighting. Other editors can use the same files manually. The local validator checks the exact schema URL/fileMatch pairs so a copied kit cannot silently lose editor assistance while still passing validation.
 
-`Tools/prepare_mod.ps1` is the one-command local no-Unity happy path. It runs identity setup, structure validation, and review manifest generation in the correct order. Public tools compose child paths through normalized `Join-Path` segments, not Windows backslash-only child paths. Use `powershell` on Windows or `pwsh` on macOS/Linux with PowerShell 7.
+`Tools/prepare_mod.ps1` is the one-command local no-Unity happy path. With `-Id`, it runs identity setup, structure validation, and review manifest generation in the correct order. Without identity arguments, it validates the existing manifests and rebuilds `Reports/review_manifest.json` for the normal edit-review loop. Public tools compose child paths through normalized `Join-Path` segments, not Windows backslash-only child paths. Use `powershell` on Windows or `pwsh` on macOS/Linux with PowerShell 7.
 
 Run it from the starter kit root:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1 -Id com.yourname.mod -DisplayName "Your Mod" -Author "YourName" -Version 0.1.0
+powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1
 ```
 
-`Tools/validate_structure.ps1` is a local no-Unity structure validator. It checks required files, JSON parseability, JSON Schema file parseability, exact `.vscode/settings.json` schema URL/fileMatch mapping, canonical `mod.h8manifest.json` and `mod.json` IDs, matching authoring/runtime IDs, canonical runtime dependency IDs, `Compatibility.Runtime = envelope-only`, graph runtime `envelope-only`, graph opcode allowlist membership against `Reference/allowed_opcodes.csv`, graph budget parity against `mod.h8manifest.json` `Budgets.MaxEnvelopesPerFrame`, empty `EntryAssembly`, empty `EntryType`, API version floor, and reference CSV presence.
+`Tools/validate_structure.ps1` is a local no-Unity structure validator. It checks required files, JSON parseability, JSON Schema file parseability, exact `.vscode/settings.json` schema URL/fileMatch mapping, canonical `mod.h8manifest.json` and `mod.json` IDs, matching authoring/runtime IDs, matching `DisplayName`/`Name`, `Author`, and `Version` values, semantic package versions, canonical runtime dependency IDs, `Compatibility.Runtime = envelope-only`, graph runtime `envelope-only`, graph opcode allowlist membership against `Reference/allowed_opcodes.csv`, graph budget parity against `mod.h8manifest.json` `Budgets.MaxEnvelopesPerFrame`, empty `EntryAssembly`, empty `EntryType`, API version floor, and reference CSV presence.
 
 `Tools/validate_structure.ps1` also validates `Graphs/main.h8graph.json` node `Id` uniqueness, required `Opcode`, opcode token/alias membership in `Reference/allowed_opcodes.csv`, and `MaxEnvelopesPerFrame <= mod.h8manifest.json` `Budgets.MaxEnvelopesPerFrame`.
 
@@ -126,7 +127,7 @@ Run it from the starter kit root:
 powershell -NoProfile -ExecutionPolicy Bypass -File Tools/validate_structure.ps1
 ```
 
-`Tools/set_mod_identity.ps1` is a local no-Unity identity helper. It validates the canonical mod id, writes matching id/name/author/version fields to both manifests, then runs `Tools/validate_structure.ps1` so identity edits fail before package review.
+`Tools/set_mod_identity.ps1` is a local no-Unity identity helper. It validates the canonical mod id, required display/author text, and semantic version string; writes matching id/name/author/version fields to both manifests; then runs `Tools/validate_structure.ps1` so identity edits fail before package review.
 
 Run it from the starter kit root:
 
@@ -134,7 +135,7 @@ Run it from the starter kit root:
 powershell -NoProfile -ExecutionPolicy Bypass -File Tools/set_mod_identity.ps1 -Id com.yourname.mod -DisplayName "Your Mod" -Author "YourName" -Version 0.1.0
 ```
 
-`Tools/build_review_manifest.ps1` is a local no-Unity review handoff tool. It runs `Tools/validate_structure.ps1` first, then writes `Reports/review_manifest.json` with sorted authoring/tool file paths, byte counts, total bytes, explicit source limits, and SHA-256 hashes. `Generated/` and `Reports/` are excluded so reports and package outputs do not hash themselves or masquerade as source inputs. It fails before hashing if a copied kit exceeds `256` source files, `4194304` bytes per source file, or `33554432` total source bytes.
+`Tools/build_review_manifest.ps1` is a local no-Unity review handoff tool. It runs `Tools/validate_structure.ps1` first, then writes `Reports/review_manifest.json` with package identity, sorted authoring/tool file paths, byte counts, total bytes, explicit source limits, and SHA-256 hashes. `Generated/` and `Reports/` are excluded so reports and package outputs do not hash themselves or masquerade as source inputs. It fails before hashing if a copied kit exceeds `256` source files, `4194304` bytes per source file, or `33554432` total source bytes.
 
 Run it from the starter kit root:
 
@@ -144,13 +145,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File Tools/build_review_manifest.
 
 ## Tooling Direction
 
-Low tier authoring: copy the starter folder, run `Tools/prepare_mod.ps1`, use `Tools/list_allowed_opcodes.ps1` while editing graph nodes, edit JSON/CSV in any text editor, then rerun `Tools/validate_structure.ps1` and `Tools/build_review_manifest.ps1` before review handoff. Emit no gameplay packets until validated.
+Low tier authoring: copy the starter folder, run `Tools/prepare_mod.ps1 -Id ...` once, use `Tools/list_allowed_opcodes.ps1` while editing graph nodes, edit JSON/CSV in any text editor, then rerun `Tools/prepare_mod.ps1` before review handoff. Emit no gameplay packets until validated.
 
-Middle tier authoring: use the Unity SDK Hub to create the starter kit, inspect docs, and run static validation.
+Middle tier authoring: use the Unity SDK Hub to create the starter kit, open the External Starter Kit Workbench, check required-file health and review manifest freshness, inspect docs, run `Tools/validate_structure.ps1`, and run review validation.
 
-High tier authoring: use future Workbench graph/table/asset screens over the same file contract.
+High tier authoring: use the current Workbench for identity/validation/review plus future graph/table/asset screens over the same file contract.
 
-Ultra tier authoring: use future Workbench simulation, preview, package diff, and visual-overkill diagnostics over the same runtime envelope boundary.
+Ultra tier authoring: use future advanced Workbench simulation, preview, package diff, and visual-overkill diagnostics over the same runtime envelope boundary.
 
 ## Rejection Rules
 
@@ -160,5 +161,5 @@ Reject a public guide or SDK change if it tells authors to:
 - build gameplay DLL patches as the normal runtime workflow;
 - rely on loose files being loaded by the runtime because they exist in a package folder;
 - treat editor tuning profiles as opcode authorization;
-- accept non-canonical package/dependency IDs or mismatched `mod.h8manifest.json` and `mod.json` IDs;
+- accept non-canonical package/dependency IDs, non-semantic package versions, or mismatched `mod.h8manifest.json` and `mod.json` identity fields;
 - mark runtime support verified without the runtime playbook evidence.

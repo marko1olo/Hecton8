@@ -1,0 +1,9 @@
+﻿{
+    "generatedAt":  "2026-05-28T05:23:49.0431723+04:00",
+    "root":  "C:\\hades\\Hecton8",
+    "cinematicCheatSurface":  "Not applicable: build graph / MSBuild / compiler tooling only. No water/light/deformation/physics simulation added.",
+    "globalQualityWeightUsage":  "Not applicable to compile tooling. No runtime algorithm, gameplay truth, DTO layout, save identity, or authority route was changed.",
+    "binaryQualitySwitchesIntroduced":  0,
+    "runtimeQualityTierLogicChanged":  0,
+    "evidence":  "STATIC_SOURCE/git diff only. Compile-domain changes do not add physical simulation or binary quality switches."
+}

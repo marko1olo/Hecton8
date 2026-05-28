@@ -160,6 +160,11 @@ namespace Hecton8.Atmosphere
             ReleaseRuntimeClaim();
         }
 
+        private void OnDestroy()
+        {
+            Dispose();
+        }
+
         public void Dispose()
         {
             if (_disposed)
@@ -167,6 +172,8 @@ namespace Hecton8.Atmosphere
 
             _disposed = true;
             CompleteScheduledJobsForShutdown();
+            ReleaseVaultStateForLifecycle(_vault);
+            _vault = null;
         }
 
         public void Tick(float deltaTime)
@@ -392,19 +399,25 @@ namespace Hecton8.Atmosphere
                     }
                     break;
                 case GlobalRegistryServiceSlot.DataVault:
-                    if (!ReferenceEquals(_vault, currentService))
-                    {
-                        CompleteScheduledJobsForShutdown();
-                        _vault = currentService as IDataVault;
-                        ClearVaultHandlesCold();
-                        EnsureVaultBuffersCold();
-                    }
+                    RebindDataVaultForLifecycle(currentService as IDataVault);
                     break;
                 case GlobalRegistryServiceSlot.FloatingOriginRuntime:
                     RefreshCachedOriginFallbackAupCold();
                     TryRegisterOriginShiftListener();
                     break;
             }
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault vault)
+        {
+            if (ReferenceEquals(_vault, vault))
+                return;
+
+            CompleteScheduledJobsForShutdown();
+            ReleaseVaultStateForLifecycle(_vault);
+            _vault = vault;
+            ResetRuntimeStateForVaultRebind();
+            EnsureVaultBuffersCold();
         }
 
         private bool EnsureVaultBuffersCold()
@@ -497,6 +510,64 @@ namespace Hecton8.Atmosphere
             _fogScalarHandle = default;
             _vaultReady = false;
             _impactProfilesLoaded = false;
+        }
+
+        private void ReleaseVaultStateForLifecycle(IDataVault vault)
+        {
+            _weatherHandle = default;
+            ReleaseOwnedVaultHandle(vault, ref _publishedStateHandle, BufferID.ShinobuStormPropagationState);
+            ReleaseOwnedVaultHandle(vault, ref _writeStateHandle, BufferID.ShinobuStormPropagationWriteState);
+            ReleaseOwnedVaultHandle(vault, ref _tuningHandle, BufferID.ShinobuStormPropagationTuning);
+            ReleaseOwnedVaultHandle(vault, ref _telemetryHandle, BufferID.ShinobuStormPropagationTelemetryRing);
+            ReleaseOwnedVaultHandle(vault, ref _telemetryCursorHandle, BufferID.ShinobuStormPropagationTelemetryCursor);
+            ReleaseOwnedVaultHandle(vault, ref _mockWeatherHandle, BufferID.ShinobuStormPropagationMockWeather);
+            ReleaseOwnedVaultHandle(vault, ref _profilesHandle, BufferID.ShinobuStormPropagationImpactProfiles);
+#if UNITY_EDITOR
+            ReleaseOwnedVaultHandle(vault, ref _csvScratchHandle, BufferID.ShinobuStormPropagationCsvScratch);
+#endif
+            ReleaseOwnedVaultHandle(vault, ref _dumpScratchHandle, BufferID.ShinobuStormPropagationDumpScratch);
+            ReleaseOwnedVaultHandle(vault, ref _flowScalarHandle, BufferID.ShinobuStormPropagationFlowScalar);
+            ReleaseOwnedVaultHandle(vault, ref _audioScalarHandle, BufferID.ShinobuStormPropagationAudioScalar);
+            ReleaseOwnedVaultHandle(vault, ref _biolumScalarHandle, BufferID.ShinobuStormPropagationBiolumScalar);
+            ReleaseOwnedVaultHandle(vault, ref _fogScalarHandle, BufferID.ShinobuStormPropagationFogScalar);
+            _vaultReady = false;
+            _impactProfilesLoaded = false;
+        }
+
+        private static void ReleaseOwnedVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId)
+            where T : unmanaged
+        {
+            if (vault != null && IsOwnedStormPropagationHandle(in handle, bufferId))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static bool IsOwnedStormPropagationHandle<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId)
+            where T : unmanaged
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)OwnerSystem;
+        }
+
+        private void ResetRuntimeStateForVaultRebind()
+        {
+            _scheduleAccumulatorSeconds = 0f;
+            _previousSurfaceIntensity01 = 0f;
+            _cachedPublicationCadenceHz = ShinobuStormPropagationConstants.DefaultPublicationCadenceHz;
+            _lastScheduleToPublishMicroseconds = 0f;
+            _lastTelemetryReasonFlags = 0u;
+            _lastTelemetryStateHash = 0u;
+            _publishedFaultDump = false;
+            _pendingFaultDumpReasonFlags = 0u;
+            _pendingFaultDumpStateHash = 0u;
+            _jobScheduleTimestamp = 0L;
         }
 
         private void MarkVaultHandlesStaleAfterResolveFailure()

@@ -1,0 +1,1124 @@
+﻿{
+    "agentId":  "1407",
+    "role":  "UNIVERSAL_OPENXR_COMFORT_AND_TUNNELING_SHADER_INTEGRATOR",
+    "domain":  "Echelon 8 Presentation and UX / VR Somatic Comfort / Diegetic Terminals",
+    "taskCount":  20,
+    "generatedAt":  "2026-05-28T05:42:34.6578590+04:00",
+    "promptExtraction":  {
+                             "path":  "Docs/AgentLogs/Prompt_1407_EXTRACTED.md",
+                             "chars":  20052,
+                             "taskLines":  20,
+                             "sha256":  "CCF6248154A8B07970E1BB514DFE7D60A5DD57B6CC31F7E8D0495572B34119A5"
+                         },
+    "freshAuditCorrections":  [
+                                  {
+                                      "severity":  "CRITICAL",
+                                      "path":  "Assets/_Project/Data/Quest_VR_Renderer.asset",
+                                      "fault":  "Fresh audit found HectonVRBrownoutFeature at index 7/13, before Quest late overlays.",
+                                      "fix":  "Moved existing fileID -5156602577924574680 to final m_RendererFeatures slot and regenerated little-endian m_RendererFeatureMap."
+                                  },
+                                  {
+                                      "severity":  "HIGH",
+                                      "path":  "Docs/Reports/APEX_FINAL_VERIFICATION_1407.json",
+                                      "fault":  "Prior report was stale for Quest renderer order after concurrent edits.",
+                                      "fix":  "Regenerated APEX and universal JSON reports after repair."
+                                  },
+                                  {
+                                      "severity":  "LOW",
+                                      "path":  "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs",
+                                      "fault":  "Unused UnityEngine.Experimental.Rendering using contradicted namespace hygiene claim.",
+                                      "fix":  "Removed unused using; runtime logic unchanged."
+                                  }
+                              ],
+    "scopeBoundary":  {
+                          "xrOnlyGuard":  "HectonVRBrownoutFeature.TryBuildRuntimeState exits when !HectonXRRuntimeState.IsXRActive; PC/non-XR remains no-op.",
+                          "xrOnlyGuardLine":  440,
+                          "noPcVrMixing":  true
+                      },
+    "zeroGc":  {
+                   "reportPath":  "Docs\\Reports\\APEX_ZERO_GC_SCAN_1407.json",
+                   "sha256":  "A6B714E4C8825C0EED7D26BF6D13EDD22C2BAF0B98DD79B4A95539AE6ADA31EB",
+                   "aggregate":  {
+                                     "referenceTypeNewCount":  0,
+                                     "stringFormatCount":  0,
+                                     "toStringCount":  0,
+                                     "linqTokenCount":  0,
+                                     "foreachCount":  0
+                                 }
+               },
+    "dataSovereignty":  {
+                            "migratedFieldsToGlobalDataVault":  false,
+                            "newBufferIdsSecured":  [
+
+                                                    ],
+                            "newTryAcquireWriteLockSites":  [
+
+                                                            ],
+                            "newFinallyReleaseSites":  [
+
+                                                       ],
+                            "gpuConstantBufferRoute":  {
+                                                           "dto":  "BrownoutGlobalsDTO",
+                                                           "explicitStructLayoutLine":  345,
+                                                           "strideBytes":  64,
+                                                           "fieldOffsets":  "Vector4 lanes at byte offsets 0, 16, 32, 48; total 64 bytes = multiple of 16 and 8.",
+                                                           "lockBufferForWriteLine":  226,
+                                                           "finallyLine":  274,
+                                                           "unlockBufferAfterWriteLine":  276
+                                                       },
+                            "existingSomaticDtoProjectFact":  {
+                                                                  "source":  "Assets/_Project/Scripts/Gameplay/VRSomaticProvider.Comfort.cs",
+                                                                  "factualSizeBytes":  32,
+                                                                  "note":  "Current project source/tests assert SomaticComfortStateDTO is 32 bytes. This patch did not alter that ABI."
+                                                              }
+                        },
+    "renderGraphProof":  {
+                             "featureAddRenderPassesLine":  416,
+                             "featureRecordRenderGraphLine":  114,
+                             "setGlobalConstantBufferLine":  183,
+                             "rendererProof":  [
+                                                   {
+                                                       "path":  "Assets/_Project/Data/Mobile_Renderer.asset",
+                                                       "sha256":  "77772AFEA02FCE5DF2B7DB44833B829393473A51A5E571D45AFCB364C62B7E2D",
+                                                       "featureCount":  13,
+                                                       "brownoutIndex1Based":  13,
+                                                       "brownoutListLine":  161,
+                                                       "brownoutObjectLine":  61,
+                                                       "brownoutIsLast":  true,
+                                                       "mapLength":  208,
+                                                       "expectedMapLength":  208,
+                                                       "rendererFeatureMapMatchesList":  true,
+                                                       "afterAllKnownLateOverlays":  true,
+                                                       "knownLateOverlayIndices":  [
+                                                                                       {
+                                                                                           "index1Based":  9,
+                                                                                           "fileId":  "415103832360233407",
+                                                                                           "name":  "HectonHalfResParticlesFeature",
+                                                                                           "listLine":  157,
+                                                                                           "objectLine":  201
+                                                                                       },
+                                                                                       {
+                                                                                           "index1Based":  10,
+                                                                                           "fileId":  "8595161897321640130",
+                                                                                           "name":  "HectonAtmosphereSootFeature",
+                                                                                           "listLine":  158,
+                                                                                           "objectLine":  362
+                                                                                       },
+                                                                                       {
+                                                                                           "index1Based":  11,
+                                                                                           "fileId":  "348348348000003",
+                                                                                           "name":  "WristPdaScreenProjectorFeature",
+                                                                                           "listLine":  159,
+                                                                                           "objectLine":  275
+                                                                                       },
+                                                                                       {
+                                                                                           "index1Based":  12,
+                                                                                           "fileId":  "7811646883630815038",
+                                                                                           "name":  "HectonVisorUberPostFeature",
+                                                                                           "listLine":  160,
+                                                                                           "objectLine":  328
+                                                                                       }
+                                                                                   ],
+                                                       "featureOrder":  [
+                                                                            {
+                                                                                "index1Based":  1,
+                                                                                "fileId":  "2190497963224564290",
+                                                                                "name":  "ShapesRenderFeature",
+                                                                                "listLine":  149,
+                                                                                "objectLine":  291
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  2,
+                                                                                "fileId":  "-2501237762034214547",
+                                                                                "name":  "HectonScooterVolumetricShaftsFeature",
+                                                                                "listLine":  150,
+                                                                                "objectLine":  80
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  3,
+                                                                                "fileId":  "1193483708777696574",
+                                                                                "name":  "HectonAbyssalSsdoFeature",
+                                                                                "listLine":  151,
+                                                                                "objectLine":  236
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  4,
+                                                                                "fileId":  "232232232000003",
+                                                                                "name":  "HectonDeferredCausticsFeature",
+                                                                                "listLine":  152,
+                                                                                "objectLine":  259
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  5,
+                                                                                "fileId":  "-6711189012746036237",
+                                                                                "name":  "HectonVisorFluidDistortionFeature",
+                                                                                "listLine":  153,
+                                                                                "objectLine":  35
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  6,
+                                                                                "fileId":  "-7876346766836879761",
+                                                                                "name":  "HectonRetinaDistortionFeature",
+                                                                                "listLine":  154,
+                                                                                "objectLine":  13
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  7,
+                                                                                "fileId":  "6465015203263784576",
+                                                                                "name":  "HectonNoirDepthFogFeature",
+                                                                                "listLine":  155,
+                                                                                "objectLine":  304
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  8,
+                                                                                "fileId":  "420815551001000003",
+                                                                                "name":  "HectonFluidAdvectionRenderFeature",
+                                                                                "listLine":  156,
+                                                                                "objectLine":  223
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  9,
+                                                                                "fileId":  "415103832360233407",
+                                                                                "name":  "HectonHalfResParticlesFeature",
+                                                                                "listLine":  157,
+                                                                                "objectLine":  201
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  10,
+                                                                                "fileId":  "8595161897321640130",
+                                                                                "name":  "HectonAtmosphereSootFeature",
+                                                                                "listLine":  158,
+                                                                                "objectLine":  362
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  11,
+                                                                                "fileId":  "348348348000003",
+                                                                                "name":  "WristPdaScreenProjectorFeature",
+                                                                                "listLine":  159,
+                                                                                "objectLine":  275
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  12,
+                                                                                "fileId":  "7811646883630815038",
+                                                                                "name":  "HectonVisorUberPostFeature",
+                                                                                "listLine":  160,
+                                                                                "objectLine":  328
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  13,
+                                                                                "fileId":  "-5156602577924574680",
+                                                                                "name":  "HectonVRBrownoutFeature",
+                                                                                "listLine":  161,
+                                                                                "objectLine":  61
+                                                                            }
+                                                                        ]
+                                                   },
+                                                   {
+                                                       "path":  "Assets/_Project/Data/Quest_VR_Renderer.asset",
+                                                       "sha256":  "CE8AAE6512EF1CBC3162872754B835406DDE43C5943FB8591141003AA8482668",
+                                                       "featureCount":  13,
+                                                       "brownoutIndex1Based":  13,
+                                                       "brownoutListLine":  161,
+                                                       "brownoutObjectLine":  61,
+                                                       "brownoutIsLast":  true,
+                                                       "mapLength":  208,
+                                                       "expectedMapLength":  208,
+                                                       "rendererFeatureMapMatchesList":  true,
+                                                       "afterAllKnownLateOverlays":  true,
+                                                       "knownLateOverlayIndices":  [
+                                                                                       {
+                                                                                           "index1Based":  9,
+                                                                                           "fileId":  "415103832360233407",
+                                                                                           "name":  "HectonHalfResParticlesFeature",
+                                                                                           "listLine":  157,
+                                                                                           "objectLine":  201
+                                                                                       },
+                                                                                       {
+                                                                                           "index1Based":  10,
+                                                                                           "fileId":  "8595161897321640130",
+                                                                                           "name":  "HectonAtmosphereSootFeature",
+                                                                                           "listLine":  158,
+                                                                                           "objectLine":  362
+                                                                                       },
+                                                                                       {
+                                                                                           "index1Based":  11,
+                                                                                           "fileId":  "348348348000004",
+                                                                                           "name":  "WristPdaScreenProjectorFeature",
+                                                                                           "listLine":  159,
+                                                                                           "objectLine":  275
+                                                                                       },
+                                                                                       {
+                                                                                           "index1Based":  12,
+                                                                                           "fileId":  "7811646883630815038",
+                                                                                           "name":  "HectonVisorUberPostFeature",
+                                                                                           "listLine":  160,
+                                                                                           "objectLine":  328
+                                                                                       }
+                                                                                   ],
+                                                       "featureOrder":  [
+                                                                            {
+                                                                                "index1Based":  1,
+                                                                                "fileId":  "2190497963224564290",
+                                                                                "name":  "ShapesRenderFeature",
+                                                                                "listLine":  149,
+                                                                                "objectLine":  291
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  2,
+                                                                                "fileId":  "-2501237762034214547",
+                                                                                "name":  "HectonScooterVolumetricShaftsFeature",
+                                                                                "listLine":  150,
+                                                                                "objectLine":  80
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  3,
+                                                                                "fileId":  "1193483708777696574",
+                                                                                "name":  "HectonAbyssalSsdoFeature",
+                                                                                "listLine":  151,
+                                                                                "objectLine":  236
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  4,
+                                                                                "fileId":  "232232232000003",
+                                                                                "name":  "HectonDeferredCausticsFeature",
+                                                                                "listLine":  152,
+                                                                                "objectLine":  259
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  5,
+                                                                                "fileId":  "-6711189012746036237",
+                                                                                "name":  "HectonVisorFluidDistortionFeature",
+                                                                                "listLine":  153,
+                                                                                "objectLine":  35
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  6,
+                                                                                "fileId":  "-7876346766836879761",
+                                                                                "name":  "HectonRetinaDistortionFeature",
+                                                                                "listLine":  154,
+                                                                                "objectLine":  13
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  7,
+                                                                                "fileId":  "6465015203263784576",
+                                                                                "name":  "HectonNoirDepthFogFeature",
+                                                                                "listLine":  155,
+                                                                                "objectLine":  304
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  8,
+                                                                                "fileId":  "420815551001000003",
+                                                                                "name":  "HectonFluidAdvectionRenderFeature",
+                                                                                "listLine":  156,
+                                                                                "objectLine":  223
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  9,
+                                                                                "fileId":  "415103832360233407",
+                                                                                "name":  "HectonHalfResParticlesFeature",
+                                                                                "listLine":  157,
+                                                                                "objectLine":  201
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  10,
+                                                                                "fileId":  "8595161897321640130",
+                                                                                "name":  "HectonAtmosphereSootFeature",
+                                                                                "listLine":  158,
+                                                                                "objectLine":  362
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  11,
+                                                                                "fileId":  "348348348000004",
+                                                                                "name":  "WristPdaScreenProjectorFeature",
+                                                                                "listLine":  159,
+                                                                                "objectLine":  275
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  12,
+                                                                                "fileId":  "7811646883630815038",
+                                                                                "name":  "HectonVisorUberPostFeature",
+                                                                                "listLine":  160,
+                                                                                "objectLine":  328
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  13,
+                                                                                "fileId":  "-5156602577924574680",
+                                                                                "name":  "HectonVRBrownoutFeature",
+                                                                                "listLine":  161,
+                                                                                "objectLine":  61
+                                                                            }
+                                                                        ]
+                                                   },
+                                                   {
+                                                       "path":  "Assets/_Project/Data/PC_Renderer.asset",
+                                                       "sha256":  "7D1A3389C38E183208D8B8F66257A4F1F0201ECC8B09A26C1685F2A019783F05",
+                                                       "featureCount":  17,
+                                                       "brownoutIndex1Based":  17,
+                                                       "brownoutListLine":  181,
+                                                       "brownoutObjectLine":  361,
+                                                       "brownoutIsLast":  true,
+                                                       "mapLength":  272,
+                                                       "expectedMapLength":  272,
+                                                       "rendererFeatureMapMatchesList":  true,
+                                                       "afterAllKnownLateOverlays":  true,
+                                                       "knownLateOverlayIndices":  [
+                                                                                       {
+                                                                                           "index1Based":  12,
+                                                                                           "fileId":  "2064814590936465776",
+                                                                                           "name":  "HectonHalfResParticlesFeature",
+                                                                                           "listLine":  176,
+                                                                                           "objectLine":  248
+                                                                                       },
+                                                                                       {
+                                                                                           "index1Based":  13,
+                                                                                           "fileId":  "7586088337229526198",
+                                                                                           "name":  "HectonAtmosphereSootFeature",
+                                                                                           "listLine":  177,
+                                                                                           "objectLine":  437
+                                                                                       },
+                                                                                       {
+                                                                                           "index1Based":  14,
+                                                                                           "fileId":  "348348348000001",
+                                                                                           "name":  "WristPdaScreenProjectorFeature",
+                                                                                           "listLine":  178,
+                                                                                           "objectLine":  52
+                                                                                       },
+                                                                                       {
+                                                                                           "index1Based":  15,
+                                                                                           "fileId":  "-2791795738792434917",
+                                                                                           "name":  "HectonVisorUberPostFeature",
+                                                                                           "listLine":  179,
+                                                                                           "objectLine":  94
+                                                                                       },
+                                                                                       {
+                                                                                           "index1Based":  16,
+                                                                                           "fileId":  "149000149002",
+                                                                                           "name":  "HectonVisorTraumaFeature",
+                                                                                           "listLine":  180,
+                                                                                           "objectLine":  416
+                                                                                       }
+                                                                                   ],
+                                                       "featureOrder":  [
+                                                                            {
+                                                                                "index1Based":  1,
+                                                                                "fileId":  "58536412019685547",
+                                                                                "name":  "ShapesRenderFeature",
+                                                                                "listLine":  165,
+                                                                                "objectLine":  221
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  2,
+                                                                                "fileId":  "7270194210237144737",
+                                                                                "name":  "DecalRendererFeature",
+                                                                                "listLine":  166,
+                                                                                "objectLine":  395
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  3,
+                                                                                "fileId":  "1886482717959882929",
+                                                                                "name":  "ScreenSpaceShadows",
+                                                                                "listLine":  167,
+                                                                                "objectLine":  234
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  4,
+                                                                                "fileId":  "3885649266627401901",
+                                                                                "name":  "HectonScooterVolumetricShaftsFeature",
+                                                                                "listLine":  168,
+                                                                                "objectLine":  307
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  5,
+                                                                                "fileId":  "-5141615736367322437",
+                                                                                "name":  "HectonAbyssalSsdoFeature",
+                                                                                "listLine":  169,
+                                                                                "objectLine":  13
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  6,
+                                                                                "fileId":  "232232232000001",
+                                                                                "name":  "HectonDeferredCausticsFeature",
+                                                                                "listLine":  170,
+                                                                                "objectLine":  36
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  7,
+                                                                                "fileId":  "-4638680478887311186",
+                                                                                "name":  "HectonVisorFluidDistortionFeature",
+                                                                                "listLine":  171,
+                                                                                "objectLine":  68
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  8,
+                                                                                "fileId":  "7019925337659302359",
+                                                                                "name":  "SaveThumbnailCaptureFeature",
+                                                                                "listLine":  172,
+                                                                                "objectLine":  380
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  9,
+                                                                                "fileId":  "-1708262950445174769",
+                                                                                "name":  "HectonRetinaDistortionFeature",
+                                                                                "listLine":  173,
+                                                                                "objectLine":  128
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  10,
+                                                                                "fileId":  "2385897834351203332",
+                                                                                "name":  "HectonNoirDepthFogFeature",
+                                                                                "listLine":  174,
+                                                                                "objectLine":  283
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  11,
+                                                                                "fileId":  "420815551001000001",
+                                                                                "name":  "HectonFluidAdvectionRenderFeature",
+                                                                                "listLine":  175,
+                                                                                "objectLine":  270
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  12,
+                                                                                "fileId":  "2064814590936465776",
+                                                                                "name":  "HectonHalfResParticlesFeature",
+                                                                                "listLine":  176,
+                                                                                "objectLine":  248
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  13,
+                                                                                "fileId":  "7586088337229526198",
+                                                                                "name":  "HectonAtmosphereSootFeature",
+                                                                                "listLine":  177,
+                                                                                "objectLine":  437
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  14,
+                                                                                "fileId":  "348348348000001",
+                                                                                "name":  "WristPdaScreenProjectorFeature",
+                                                                                "listLine":  178,
+                                                                                "objectLine":  52
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  15,
+                                                                                "fileId":  "-2791795738792434917",
+                                                                                "name":  "HectonVisorUberPostFeature",
+                                                                                "listLine":  179,
+                                                                                "objectLine":  94
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  16,
+                                                                                "fileId":  "149000149002",
+                                                                                "name":  "HectonVisorTraumaFeature",
+                                                                                "listLine":  180,
+                                                                                "objectLine":  416
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  17,
+                                                                                "fileId":  "5486087973636425633",
+                                                                                "name":  "HectonVRBrownoutFeature",
+                                                                                "listLine":  181,
+                                                                                "objectLine":  361
+                                                                            }
+                                                                        ]
+                                                   },
+                                                   {
+                                                       "path":  "Assets/_Project/Data/PC_High_Renderer.asset",
+                                                       "sha256":  "748A0C2EBE98E842A321D16AC6F9FC33E38C5DAF3AC92494614C7E5CF76E83BC",
+                                                       "featureCount":  16,
+                                                       "brownoutIndex1Based":  16,
+                                                       "brownoutListLine":  267,
+                                                       "brownoutObjectLine":  419,
+                                                       "brownoutIsLast":  true,
+                                                       "mapLength":  256,
+                                                       "expectedMapLength":  256,
+                                                       "rendererFeatureMapMatchesList":  true,
+                                                       "afterAllKnownLateOverlays":  true,
+                                                       "knownLateOverlayIndices":  [
+                                                                                       {
+                                                                                           "index1Based":  11,
+                                                                                           "fileId":  "-3471827618286992026",
+                                                                                           "name":  "HectonHalfResParticlesFeature",
+                                                                                           "listLine":  262,
+                                                                                           "objectLine":  178
+                                                                                       },
+                                                                                       {
+                                                                                           "index1Based":  12,
+                                                                                           "fileId":  "5943226787261363979",
+                                                                                           "name":  "HectonAtmosphereSootFeature",
+                                                                                           "listLine":  263,
+                                                                                           "objectLine":  360
+                                                                                       },
+                                                                                       {
+                                                                                           "index1Based":  13,
+                                                                                           "fileId":  "348348348000002",
+                                                                                           "name":  "WristPdaScreenProjectorFeature",
+                                                                                           "listLine":  264,
+                                                                                           "objectLine":  108
+                                                                                       },
+                                                                                       {
+                                                                                           "index1Based":  14,
+                                                                                           "fileId":  "-5081531551300358816",
+                                                                                           "name":  "HectonVisorUberPostFeature",
+                                                                                           "listLine":  265,
+                                                                                           "objectLine":  35
+                                                                                       },
+                                                                                       {
+                                                                                           "index1Based":  15,
+                                                                                           "fileId":  "149000149001",
+                                                                                           "name":  "HectonVisorTraumaFeature",
+                                                                                           "listLine":  266,
+                                                                                           "objectLine":  398
+                                                                                       }
+                                                                                   ],
+                                                       "featureOrder":  [
+                                                                            {
+                                                                                "index1Based":  1,
+                                                                                "fileId":  "58536412019685547",
+                                                                                "name":  "ShapesRenderFeature",
+                                                                                "listLine":  252,
+                                                                                "objectLine":  307
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  2,
+                                                                                "fileId":  "7270194210237144737",
+                                                                                "name":  "DecalRendererFeature",
+                                                                                "listLine":  253,
+                                                                                "objectLine":  377
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  3,
+                                                                                "fileId":  "1886482717959882929",
+                                                                                "name":  "ScreenSpaceShadows",
+                                                                                "listLine":  254,
+                                                                                "objectLine":  320
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  4,
+                                                                                "fileId":  "-4082171063289172997",
+                                                                                "name":  "HectonScooterVolumetricShaftsFeature",
+                                                                                "listLine":  255,
+                                                                                "objectLine":  124
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  5,
+                                                                                "fileId":  "-4438276556181502662",
+                                                                                "name":  "HectonAbyssalSsdoFeature",
+                                                                                "listLine":  256,
+                                                                                "objectLine":  69
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  6,
+                                                                                "fileId":  "232232232000002",
+                                                                                "name":  "HectonDeferredCausticsFeature",
+                                                                                "listLine":  257,
+                                                                                "objectLine":  92
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  7,
+                                                                                "fileId":  "5318849925799663161",
+                                                                                "name":  "HectonVisorFluidDistortionFeature",
+                                                                                "listLine":  258,
+                                                                                "objectLine":  334
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  8,
+                                                                                "fileId":  "-8819836769844018346",
+                                                                                "name":  "HectonRetinaDistortionFeature",
+                                                                                "listLine":  259,
+                                                                                "objectLine":  13
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  9,
+                                                                                "fileId":  "-2039857032782672258",
+                                                                                "name":  "HectonNoirDepthFogFeature",
+                                                                                "listLine":  260,
+                                                                                "objectLine":  213
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  10,
+                                                                                "fileId":  "420815551001000002",
+                                                                                "name":  "HectonFluidAdvectionRenderFeature",
+                                                                                "listLine":  261,
+                                                                                "objectLine":  200
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  11,
+                                                                                "fileId":  "-3471827618286992026",
+                                                                                "name":  "HectonHalfResParticlesFeature",
+                                                                                "listLine":  262,
+                                                                                "objectLine":  178
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  12,
+                                                                                "fileId":  "5943226787261363979",
+                                                                                "name":  "HectonAtmosphereSootFeature",
+                                                                                "listLine":  263,
+                                                                                "objectLine":  360
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  13,
+                                                                                "fileId":  "348348348000002",
+                                                                                "name":  "WristPdaScreenProjectorFeature",
+                                                                                "listLine":  264,
+                                                                                "objectLine":  108
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  14,
+                                                                                "fileId":  "-5081531551300358816",
+                                                                                "name":  "HectonVisorUberPostFeature",
+                                                                                "listLine":  265,
+                                                                                "objectLine":  35
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  15,
+                                                                                "fileId":  "149000149001",
+                                                                                "name":  "HectonVisorTraumaFeature",
+                                                                                "listLine":  266,
+                                                                                "objectLine":  398
+                                                                            },
+                                                                            {
+                                                                                "index1Based":  16,
+                                                                                "fileId":  "8465884984933540169",
+                                                                                "name":  "HectonVRBrownoutFeature",
+                                                                                "listLine":  267,
+                                                                                "objectLine":  419
+                                                                            }
+                                                                        ]
+                                                   }
+                                               ]
+                         },
+    "shaderCoverage":  {
+                           "fullscreenBrownout":  {
+                                                      "path":  "Assets/_Project/Art/Shaders/Hidden_Hecton_VRBrownout.shader",
+                                                      "sha256":  "90F12CD6E9D663B452643F64503FDDD66327920502D54DC401CDFAD2C42D9C26",
+                                                      "qualityWeight":  true,
+                                                      "qualityDitherFloor":  true,
+                                                      "qualityDitherCeiling":  true,
+                                                      "stereoVarying":  true,
+                                                      "stereoInit":  true,
+                                                      "stereoSetup":  true,
+                                                      "oldFixedDither":  false
+                                                  },
+                           "diegeticShaderCount":  17,
+                           "allDiegeticShadersHaveQualityWeight":  true,
+                           "allDiegeticShadersHaveStereoRoute":  true,
+                           "allDiegeticShadersHaveSomaticState":  true,
+                           "noOldFixedDither":  true,
+                           "shaders":  [
+                                           {
+                                               "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader",
+                                               "sha256":  "DB394EE83DCAE843B6A07F1B5F2D38083E9EF42B9CDD35119E6F2AF8D4CBB1CA",
+                                               "comfortSignals":  true,
+                                               "comfortMotion":  true,
+                                               "somaticState":  true,
+                                               "brownoutIntensity":  true,
+                                               "tunnelingAlias":  true,
+                                               "qualityWeight":  true,
+                                               "qualityDitherFloor":  true,
+                                               "qualityDitherCeiling":  true,
+                                               "stereoVarying":  true,
+                                               "stereoInit":  true,
+                                               "stereoSetup":  true,
+                                               "oldFixedDither":  false
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Shaders/UI/Hecton_DiegeticPanelDepthFade.shader",
+                                               "sha256":  "F5EB7C9CEFDFC053310252930FEC16B3DEDBBF568F83A2CF7A5671754002F4F6",
+                                               "comfortSignals":  true,
+                                               "comfortMotion":  true,
+                                               "somaticState":  true,
+                                               "brownoutIntensity":  true,
+                                               "tunnelingAlias":  true,
+                                               "qualityWeight":  true,
+                                               "qualityDitherFloor":  true,
+                                               "qualityDitherCeiling":  true,
+                                               "stereoVarying":  true,
+                                               "stereoInit":  true,
+                                               "stereoSetup":  true,
+                                               "oldFixedDither":  false
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticTerminal.shader",
+                                               "sha256":  "578EB164CA80F5F19FC5D948AC3DF2208F1820AE99AFF2E733382CD3629BB607",
+                                               "comfortSignals":  true,
+                                               "comfortMotion":  true,
+                                               "somaticState":  true,
+                                               "brownoutIntensity":  true,
+                                               "tunnelingAlias":  true,
+                                               "qualityWeight":  true,
+                                               "qualityDitherFloor":  true,
+                                               "qualityDitherCeiling":  true,
+                                               "stereoVarying":  true,
+                                               "stereoInit":  true,
+                                               "stereoSetup":  true,
+                                               "oldFixedDither":  false
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Shaders/UI/Hecton_DiegeticVisorCurvedHUD.shader",
+                                               "sha256":  "9489636C73E3BCB4A4296C5A295AD91BA3DCE6145B24ECDBAEEA459A95BBD888",
+                                               "comfortSignals":  true,
+                                               "comfortMotion":  true,
+                                               "somaticState":  true,
+                                               "brownoutIntensity":  true,
+                                               "tunnelingAlias":  true,
+                                               "qualityWeight":  true,
+                                               "qualityDitherFloor":  true,
+                                               "qualityDitherCeiling":  true,
+                                               "stereoVarying":  true,
+                                               "stereoInit":  true,
+                                               "stereoSetup":  true,
+                                               "oldFixedDither":  false
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader",
+                                               "sha256":  "DF531E60A2F4FD450C467FE8C92BADA671D57EC11C789B697EF4A68C289301D4",
+                                               "comfortSignals":  true,
+                                               "comfortMotion":  true,
+                                               "somaticState":  true,
+                                               "brownoutIntensity":  true,
+                                               "tunnelingAlias":  true,
+                                               "qualityWeight":  true,
+                                               "qualityDitherFloor":  true,
+                                               "qualityDitherCeiling":  true,
+                                               "stereoVarying":  true,
+                                               "stereoInit":  true,
+                                               "stereoSetup":  true,
+                                               "oldFixedDither":  false
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Art/Shaders/Hecton_HUD_DiegeticProjectionUnlit.shader",
+                                               "sha256":  "7933BF7DEB6610E0185A675EAB10E78415B90E93407A7B8979B416B2624B7C16",
+                                               "comfortSignals":  true,
+                                               "comfortMotion":  true,
+                                               "somaticState":  true,
+                                               "brownoutIntensity":  true,
+                                               "tunnelingAlias":  true,
+                                               "qualityWeight":  true,
+                                               "qualityDitherFloor":  true,
+                                               "qualityDitherCeiling":  true,
+                                               "stereoVarying":  true,
+                                               "stereoInit":  true,
+                                               "stereoSetup":  true,
+                                               "oldFixedDither":  false
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Art/Shaders/Hecton_TerminalTextureArrayPanel.shader",
+                                               "sha256":  "D913CD40ECE6581436113AAE3CBBCC8C33B7323D8EE0D21EDE641EF59D5C75A4",
+                                               "comfortSignals":  true,
+                                               "comfortMotion":  true,
+                                               "somaticState":  true,
+                                               "brownoutIntensity":  true,
+                                               "tunnelingAlias":  true,
+                                               "qualityWeight":  true,
+                                               "qualityDitherFloor":  true,
+                                               "qualityDitherCeiling":  true,
+                                               "stereoVarying":  true,
+                                               "stereoInit":  true,
+                                               "stereoSetup":  true,
+                                               "oldFixedDither":  false
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Art/Shaders/Hecton_PdaScreen.shader",
+                                               "sha256":  "BF0827A4B77E10F2BFE0E4B6ED7D4367C9245A2A87DAC3731A3486B80AB00627",
+                                               "comfortSignals":  true,
+                                               "comfortMotion":  true,
+                                               "somaticState":  true,
+                                               "brownoutIntensity":  true,
+                                               "tunnelingAlias":  true,
+                                               "qualityWeight":  true,
+                                               "qualityDitherFloor":  true,
+                                               "qualityDitherCeiling":  true,
+                                               "stereoVarying":  true,
+                                               "stereoInit":  true,
+                                               "stereoSetup":  true,
+                                               "oldFixedDither":  false
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Art/Shaders/Hecton_WristHudSDF.shader",
+                                               "sha256":  "66CC928CE8A25E02974EB18C91D1855044CFC0A2B9385E9E6B0668197466150B",
+                                               "comfortSignals":  true,
+                                               "comfortMotion":  true,
+                                               "somaticState":  true,
+                                               "brownoutIntensity":  true,
+                                               "tunnelingAlias":  true,
+                                               "qualityWeight":  true,
+                                               "qualityDitherFloor":  true,
+                                               "qualityDitherCeiling":  true,
+                                               "stereoVarying":  true,
+                                               "stereoInit":  true,
+                                               "stereoSetup":  true,
+                                               "oldFixedDither":  false
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Art/Shaders/Hecton_PDA_SonarPointCloud.shader",
+                                               "sha256":  "7C05BD705BBA8D1FB76889590B8D5DC1BA426DD67FAFD390D98FCBA507949E8F",
+                                               "comfortSignals":  true,
+                                               "comfortMotion":  true,
+                                               "somaticState":  true,
+                                               "brownoutIntensity":  true,
+                                               "tunnelingAlias":  true,
+                                               "qualityWeight":  true,
+                                               "qualityDitherFloor":  true,
+                                               "qualityDitherCeiling":  true,
+                                               "stereoVarying":  true,
+                                               "stereoInit":  true,
+                                               "stereoSetup":  true,
+                                               "oldFixedDither":  false
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader",
+                                               "sha256":  "7D91EF308859B2E7BA29B76B82EA758F942BA32C18C02671DDE7C504270CC213",
+                                               "comfortSignals":  true,
+                                               "comfortMotion":  true,
+                                               "somaticState":  true,
+                                               "brownoutIntensity":  true,
+                                               "tunnelingAlias":  true,
+                                               "qualityWeight":  true,
+                                               "qualityDitherFloor":  true,
+                                               "qualityDitherCeiling":  true,
+                                               "stereoVarying":  true,
+                                               "stereoInit":  true,
+                                               "stereoSetup":  true,
+                                               "oldFixedDither":  false
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipGlyph.shader",
+                                               "sha256":  "C3571893EF1A597032DC007D8FA5206E0D50017813CA755D867691FE22FA98EC",
+                                               "comfortSignals":  true,
+                                               "comfortMotion":  true,
+                                               "somaticState":  true,
+                                               "brownoutIntensity":  true,
+                                               "tunnelingAlias":  true,
+                                               "qualityWeight":  true,
+                                               "qualityDitherFloor":  true,
+                                               "qualityDitherCeiling":  true,
+                                               "stereoVarying":  true,
+                                               "stereoInit":  true,
+                                               "stereoSetup":  true,
+                                               "oldFixedDither":  false
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipIndirect.shader",
+                                               "sha256":  "E43CBDA626C90EDD87FADE234F2D091DBDA6E886CC1DD6043CC958BA601F4F22",
+                                               "comfortSignals":  true,
+                                               "comfortMotion":  true,
+                                               "somaticState":  true,
+                                               "brownoutIntensity":  true,
+                                               "tunnelingAlias":  true,
+                                               "qualityWeight":  true,
+                                               "qualityDitherFloor":  true,
+                                               "qualityDitherCeiling":  true,
+                                               "stereoVarying":  true,
+                                               "stereoInit":  true,
+                                               "stereoSetup":  true,
+                                               "oldFixedDither":  false
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Art/Shaders/Hecton_UI_CompassRibbon.shader",
+                                               "sha256":  "C0C50FBDBDF4A68CF730C4D05C26511136D227F5EAE968BCD653EA0241CCFA43",
+                                               "comfortSignals":  true,
+                                               "comfortMotion":  true,
+                                               "somaticState":  true,
+                                               "brownoutIntensity":  true,
+                                               "tunnelingAlias":  true,
+                                               "qualityWeight":  true,
+                                               "qualityDitherFloor":  true,
+                                               "qualityDitherCeiling":  true,
+                                               "stereoVarying":  true,
+                                               "stereoInit":  true,
+                                               "stereoSetup":  true,
+                                               "oldFixedDither":  false
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Art/Shaders/Hecton_PDA_SonarMap.shader",
+                                               "sha256":  "958F509F1594734699E789B851F1C83B18D363427CFBF5AA07617BC8ACE163BA",
+                                               "comfortSignals":  true,
+                                               "comfortMotion":  true,
+                                               "somaticState":  true,
+                                               "brownoutIntensity":  true,
+                                               "tunnelingAlias":  true,
+                                               "qualityWeight":  true,
+                                               "qualityDitherFloor":  true,
+                                               "qualityDitherCeiling":  true,
+                                               "stereoVarying":  true,
+                                               "stereoInit":  true,
+                                               "stereoSetup":  true,
+                                               "oldFixedDither":  false
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Art/Shaders/Hecton_PDA_FrequencyTuningWave.shader",
+                                               "sha256":  "7F1BAE0ABE74A9403CDC914DFAA12D83D806F066503771543EDF561D7309BA6E",
+                                               "comfortSignals":  true,
+                                               "comfortMotion":  true,
+                                               "somaticState":  true,
+                                               "brownoutIntensity":  true,
+                                               "tunnelingAlias":  true,
+                                               "qualityWeight":  true,
+                                               "qualityDitherFloor":  true,
+                                               "qualityDitherCeiling":  true,
+                                               "stereoVarying":  true,
+                                               "stereoInit":  true,
+                                               "stereoSetup":  true,
+                                               "oldFixedDither":  false
+                                           },
+                                           {
+                                               "path":  "Assets/_Project/Art/Shaders/Hecton_SubmarineSonarHoloMapStencil.shader",
+                                               "sha256":  "E48C6966A758E2C1339E6ADD8E03B0D29888652366F7CB912D51805EEEC3299D",
+                                               "comfortSignals":  true,
+                                               "comfortMotion":  true,
+                                               "somaticState":  true,
+                                               "brownoutIntensity":  true,
+                                               "tunnelingAlias":  true,
+                                               "qualityWeight":  true,
+                                               "qualityDitherFloor":  true,
+                                               "qualityDitherCeiling":  true,
+                                               "stereoVarying":  true,
+                                               "stereoInit":  true,
+                                               "stereoSetup":  true,
+                                               "oldFixedDither":  false
+                                           }
+                                       ]
+                       },
+    "timingProof":  {
+                        "publisherSignals":  "HectonPlayerMovement.FlushVrComfortShaderSignals()",
+                        "publisherSignalsLine":  4488,
+                        "publisherSomatic":  "VRSomaticProvider.FlushQueuedSomaticComfortShaderState()",
+                        "publisherSomaticLine":  1346,
+                        "consumer":  "HectonVRBrownoutFeature.TryBuildRuntimeState reads already-published globals for each eligible XR camera.",
+                        "consumerLine":  422,
+                        "conclusion":  "One physiology scalar/vector route is sampled by all eligible XR cameras; direct diegetic shaders consume the same global vectors, so no per-camera comfort authority exists."
+                    },
+    "continuousScalability":  {
+                                  "directGlobalQualityWeightUsageInPatch":  true,
+                                  "publisher":  "HomeostasisBrain.ScalabilityDictator publishes _GlobalQualityWeight and _H8GlobalQualityWeight.",
+                                  "publisherPropertyLine":  36,
+                                  "publisherSetLine":  216,
+                                  "binaryLowEndSwitchesInPatch":  0,
+                                  "qualityMath":  "q=saturate(_H8GlobalQualityWeight); floor=0.56-0.06q; ceiling=0.90+0.06q; mean=(floor+ceiling)/2=0.73 invariant for q in [0,1].",
+                                  "cinematicCheat":  "Direct fragment dither/darkening and one final fullscreen brownout are visual fakes; no physical simulation, blur stack, per-terminal camera render, or duplicate post pass was added."
+                              },
+    "buildGate":  {
+                      "dotnetBuildInvoked":  false,
+                      "finalPreflightCpuLoadPercent":  100,
+                      "finalPreflightCompilerProcesses":  {
+                                                              "Id":  32028,
+                                                              "ProcessName":  "dotnet",
+                                                              "CPU":  66.953125,
+                                                              "StartTime":  "\/Date(1779932497116)\/"
+                                                          },
+                      "buildAllowedByGate":  false,
+                      "solutionProbe":  {
+                                            "hecton8SlnxExists":  true,
+                                            "hecton8SlnExists":  false,
+                                            "solutionFile":  "Hecton8.slnx"
+                                        },
+                      "reason":  "Build forbidden by Compilation Resource Throttling: CPU \u003e50 percent or compiler process active."
+                  },
+    "latentRisks":  [
+                        {
+                            "risk":  "Runtime XR visual proof, RenderGraph Viewer proof, Unity shader compilation, and ProfilerRecorder GC proof remain unavailable without a legal Unity/build window.",
+                            "status":  "PENDING_RUNTIME_VERIFICATION"
+                        }
+                    ],
+    "hashes":  [
+                   {
+                       "path":  "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs",
+                       "sha256":  "D9F40B84BD8A15FD45F792552FD745A7F4F36124B1A9B799B2931ECB827E21F0"
+                   },
+                   {
+                       "path":  "Assets/_Project/Scripts/Editor/VRSomaticComfortEvaluatorEditTests.cs",
+                       "sha256":  "FE3FF712B6A0F5417BB703A76B24A54DAE58CC954955695DFEA49C8E979845F0"
+                   },
+                   {
+                       "path":  "Assets/_Project/Art/Shaders/Hidden_Hecton_VRBrownout.shader",
+                       "sha256":  "90F12CD6E9D663B452643F64503FDDD66327920502D54DC401CDFAD2C42D9C26"
+                   },
+                   {
+                       "path":  "Assets/_Project/Data/Mobile_Renderer.asset",
+                       "sha256":  "77772AFEA02FCE5DF2B7DB44833B829393473A51A5E571D45AFCB364C62B7E2D"
+                   },
+                   {
+                       "path":  "Assets/_Project/Data/Quest_VR_Renderer.asset",
+                       "sha256":  "CE8AAE6512EF1CBC3162872754B835406DDE43C5943FB8591141003AA8482668"
+                   },
+                   {
+                       "path":  "Assets/_Project/Data/PC_Renderer.asset",
+                       "sha256":  "7D1A3389C38E183208D8B8F66257A4F1F0201ECC8B09A26C1685F2A019783F05"
+                   },
+                   {
+                       "path":  "Assets/_Project/Data/PC_High_Renderer.asset",
+                       "sha256":  "748A0C2EBE98E842A321D16AC6F9FC33E38C5DAF3AC92494614C7E5CF76E83BC"
+                   },
+                   {
+                       "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader",
+                       "sha256":  "DB394EE83DCAE843B6A07F1B5F2D38083E9EF42B9CDD35119E6F2AF8D4CBB1CA"
+                   },
+                   {
+                       "path":  "Assets/_Project/Shaders/UI/Hecton_DiegeticPanelDepthFade.shader",
+                       "sha256":  "F5EB7C9CEFDFC053310252930FEC16B3DEDBBF568F83A2CF7A5671754002F4F6"
+                   },
+                   {
+                       "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticTerminal.shader",
+                       "sha256":  "578EB164CA80F5F19FC5D948AC3DF2208F1820AE99AFF2E733382CD3629BB607"
+                   },
+                   {
+                       "path":  "Assets/_Project/Shaders/UI/Hecton_DiegeticVisorCurvedHUD.shader",
+                       "sha256":  "9489636C73E3BCB4A4296C5A295AD91BA3DCE6145B24ECDBAEEA459A95BBD888"
+                   },
+                   {
+                       "path":  "Assets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader",
+                       "sha256":  "DF531E60A2F4FD450C467FE8C92BADA671D57EC11C789B697EF4A68C289301D4"
+                   },
+                   {
+                       "path":  "Assets/_Project/Art/Shaders/Hecton_HUD_DiegeticProjectionUnlit.shader",
+                       "sha256":  "7933BF7DEB6610E0185A675EAB10E78415B90E93407A7B8979B416B2624B7C16"
+                   },
+                   {
+                       "path":  "Assets/_Project/Art/Shaders/Hecton_TerminalTextureArrayPanel.shader",
+                       "sha256":  "D913CD40ECE6581436113AAE3CBBCC8C33B7323D8EE0D21EDE641EF59D5C75A4"
+                   },
+                   {
+                       "path":  "Assets/_Project/Art/Shaders/Hecton_PdaScreen.shader",
+                       "sha256":  "BF0827A4B77E10F2BFE0E4B6ED7D4367C9245A2A87DAC3731A3486B80AB00627"
+                   },
+                   {
+                       "path":  "Assets/_Project/Art/Shaders/Hecton_WristHudSDF.shader",
+                       "sha256":  "66CC928CE8A25E02974EB18C91D1855044CFC0A2B9385E9E6B0668197466150B"
+                   },
+                   {
+                       "path":  "Assets/_Project/Art/Shaders/Hecton_PDA_SonarPointCloud.shader",
+                       "sha256":  "7C05BD705BBA8D1FB76889590B8D5DC1BA426DD67FAFD390D98FCBA507949E8F"
+                   },
+                   {
+                       "path":  "Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader",
+                       "sha256":  "7D91EF308859B2E7BA29B76B82EA758F942BA32C18C02671DDE7C504270CC213"
+                   },
+                   {
+                       "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipGlyph.shader",
+                       "sha256":  "C3571893EF1A597032DC007D8FA5206E0D50017813CA755D867691FE22FA98EC"
+                   },
+                   {
+                       "path":  "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipIndirect.shader",
+                       "sha256":  "E43CBDA626C90EDD87FADE234F2D091DBDA6E886CC1DD6043CC958BA601F4F22"
+                   },
+                   {
+                       "path":  "Assets/_Project/Art/Shaders/Hecton_UI_CompassRibbon.shader",
+                       "sha256":  "C0C50FBDBDF4A68CF730C4D05C26511136D227F5EAE968BCD653EA0241CCFA43"
+                   },
+                   {
+                       "path":  "Assets/_Project/Art/Shaders/Hecton_PDA_SonarMap.shader",
+                       "sha256":  "958F509F1594734699E789B851F1C83B18D363427CFBF5AA07617BC8ACE163BA"
+                   },
+                   {
+                       "path":  "Assets/_Project/Art/Shaders/Hecton_PDA_FrequencyTuningWave.shader",
+                       "sha256":  "7F1BAE0ABE74A9403CDC914DFAA12D83D806F066503771543EDF561D7309BA6E"
+                   },
+                   {
+                       "path":  "Assets/_Project/Art/Shaders/Hecton_SubmarineSonarHoloMapStencil.shader",
+                       "sha256":  "E48C6966A758E2C1339E6ADD8E03B0D29888652366F7CB912D51805EEEC3299D"
+                   },
+                   {
+                       "path":  "Docs/AgentLogs/Prompt_1407_EXTRACTED.md",
+                       "sha256":  "CCF6248154A8B07970E1BB514DFE7D60A5DD57B6CC31F7E8D0495572B34119A5"
+                   }
+               ]
+}

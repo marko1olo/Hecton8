@@ -48,9 +48,7 @@ namespace Hecton.Localization
             switch (_kind)
             {
                 case NumericKind.Float:
-                    return format.Length == 0
-                        ? _floatValue.TryFormat(destination, out charsWritten)
-                        : _floatValue.TryFormat(destination, out charsWritten, format);
+                    return ZeroGCFormatter.TryFormatFloat(_floatValue, destination, format, out charsWritten);
 
                 default:
                     int cursor = 0;

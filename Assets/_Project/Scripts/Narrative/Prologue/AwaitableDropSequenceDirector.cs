@@ -912,25 +912,95 @@ namespace Hecton8.Narrative.Prologue
             return unchecked((hash ^ value) * 16777619u);
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 32)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
         private struct PrologueSequenceTelemetryEntry
         {
-            [FieldOffset(0)]
-            public uint Frame;
-            [FieldOffset(4)]
-            public uint StateHash;
-            [FieldOffset(8)]
+            [System.Runtime.InteropServices.FieldOffset(0)]
             public double UniverseSpeedMetersPerSecond;
-            [FieldOffset(16)]
+            [System.Runtime.InteropServices.FieldOffset(8)]
             public double PlanetDistanceMeters;
-            [FieldOffset(24)]
+            [System.Runtime.InteropServices.FieldOffset(16)]
+            public uint Frame;
+            [System.Runtime.InteropServices.FieldOffset(20)]
+            public uint StateHash;
+            [System.Runtime.InteropServices.FieldOffset(24)]
             public ushort Sequence;
-            [FieldOffset(26)]
+            [System.Runtime.InteropServices.FieldOffset(26)]
             public byte Stage;
-            [FieldOffset(27)]
+            [System.Runtime.InteropServices.FieldOffset(27)]
             public byte Flags;
-            [FieldOffset(28)]
-            private uint _pad0;
+            [System.Runtime.InteropServices.FieldOffset(28)]
+            private byte _pad0;
+            [System.Runtime.InteropServices.FieldOffset(29)]
+            private byte _pad1;
+            [System.Runtime.InteropServices.FieldOffset(30)]
+            private byte _pad2;
+            [System.Runtime.InteropServices.FieldOffset(31)]
+            private byte _pad3;
+            [System.Runtime.InteropServices.FieldOffset(32)]
+            private byte _pad4;
+            [System.Runtime.InteropServices.FieldOffset(33)]
+            private byte _pad5;
+            [System.Runtime.InteropServices.FieldOffset(34)]
+            private byte _pad6;
+            [System.Runtime.InteropServices.FieldOffset(35)]
+            private byte _pad7;
+            [System.Runtime.InteropServices.FieldOffset(36)]
+            private byte _pad8;
+            [System.Runtime.InteropServices.FieldOffset(37)]
+            private byte _pad9;
+            [System.Runtime.InteropServices.FieldOffset(38)]
+            private byte _pad10;
+            [System.Runtime.InteropServices.FieldOffset(39)]
+            private byte _pad11;
+            [System.Runtime.InteropServices.FieldOffset(40)]
+            private byte _pad12;
+            [System.Runtime.InteropServices.FieldOffset(41)]
+            private byte _pad13;
+            [System.Runtime.InteropServices.FieldOffset(42)]
+            private byte _pad14;
+            [System.Runtime.InteropServices.FieldOffset(43)]
+            private byte _pad15;
+            [System.Runtime.InteropServices.FieldOffset(44)]
+            private byte _pad16;
+            [System.Runtime.InteropServices.FieldOffset(45)]
+            private byte _pad17;
+            [System.Runtime.InteropServices.FieldOffset(46)]
+            private byte _pad18;
+            [System.Runtime.InteropServices.FieldOffset(47)]
+            private byte _pad19;
+            [System.Runtime.InteropServices.FieldOffset(48)]
+            private byte _pad20;
+            [System.Runtime.InteropServices.FieldOffset(49)]
+            private byte _pad21;
+            [System.Runtime.InteropServices.FieldOffset(50)]
+            private byte _pad22;
+            [System.Runtime.InteropServices.FieldOffset(51)]
+            private byte _pad23;
+            [System.Runtime.InteropServices.FieldOffset(52)]
+            private byte _pad24;
+            [System.Runtime.InteropServices.FieldOffset(53)]
+            private byte _pad25;
+            [System.Runtime.InteropServices.FieldOffset(54)]
+            private byte _pad26;
+            [System.Runtime.InteropServices.FieldOffset(55)]
+            private byte _pad27;
+            [System.Runtime.InteropServices.FieldOffset(56)]
+            private byte _pad28;
+            [System.Runtime.InteropServices.FieldOffset(57)]
+            private byte _pad29;
+            [System.Runtime.InteropServices.FieldOffset(58)]
+            private byte _pad30;
+            [System.Runtime.InteropServices.FieldOffset(59)]
+            private byte _pad31;
+            [System.Runtime.InteropServices.FieldOffset(60)]
+            private byte _pad32;
+            [System.Runtime.InteropServices.FieldOffset(61)]
+            private byte _pad33;
+            [System.Runtime.InteropServices.FieldOffset(62)]
+            private byte _pad34;
+            [System.Runtime.InteropServices.FieldOffset(63)]
+            private byte _pad35;
         }
     }
 }

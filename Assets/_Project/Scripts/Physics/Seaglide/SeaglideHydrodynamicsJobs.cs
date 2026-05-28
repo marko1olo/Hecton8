@@ -216,6 +216,7 @@ namespace Hecton8.Physics
             float addedMass = math.max(0f, SanitizeFinite(math.select(tuning.AddedMassKg, state.AddedMassKg, state.AddedMassKg > 0f), SeaglideHydrodynamicsConstants.DefaultAddedMassKg));
             float waterDensity = math.max(1f, SanitizeFinite(tuning.WaterDensityKgPerM3, SeaglideHydrodynamicsConstants.DefaultWaterDensityKgPerM3));
             float crossSection = math.max(0.01f, SanitizeFinite(math.select(tuning.CrossSectionAreaM2, request.CrossSectionAreaOverrideM2, request.CrossSectionAreaOverrideM2 > 0f), SeaglideHydrodynamicsConstants.DefaultCrossSectionAreaM2));
+            float linearDragCoefficient = math.max(0f, SanitizeFinite(tuning.LinearDragCoefficient, SeaglideHydrodynamicsConstants.DefaultLinearDragCoefficient));
             float quadraticDragCoefficient = math.max(0f, SanitizeFinite(math.select(tuning.QuadraticDragCoefficient, request.DragCoefficientOverride, request.DragCoefficientOverride > 0f), SeaglideHydrodynamicsConstants.DefaultQuadraticDragCoefficient));
             int flowSampleCount = math.clamp(tuning.FlowSampleCount, 0, FlowSamples.IsCreated ? FlowSamples.Length : 0);
 
@@ -224,8 +225,9 @@ namespace Hecton8.Physics
             float speedSq = math.lengthsq(relativeVelocity);
             float speed = SeaglideSimdMath.LengthFromSq(speedSq);
             float3 thrustForce = inputDirection * (maxThrust * throttle * battery);
+            float3 linearDrag = -relativeVelocity * linearDragCoefficient * (mass + addedMass);
             float3 quadraticDrag = -SafeNormalize(relativeVelocity, float3.zero) * (0.5f * waterDensity * speedSq * quadraticDragCoefficient * crossSection);
-            float3 dragForce = quadraticDrag;
+            float3 dragForce = math.lerp(linearDrag, quadraticDrag, presentationQuality);
             float3 flowForce = flowVelocity * math.max(0f, tuning.FlowForceCoefficient) * (mass + addedMass);
             float forceCadenceScale = ResolveForceCadenceScale(SimulationTickDelta, request.DeltaTime);
             float3 netForce = (thrustForce + dragForce + flowForce) * forceCadenceScale;

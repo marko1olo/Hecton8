@@ -209,61 +209,68 @@ namespace Hecton8.Physics
             if (!TryLockJobBuffers(vault))
                 return;
 
-            GerstnerWaveTuningDTO tuningDto = PrepareTuning(tuning[0], requests.Length, fixedDeltaTime);
-            tuning[0] = tuningDto;
-            int sampleCount = math.clamp(tuningDto.ActiveRequestCount, 0, math.min(requests.Length, results.Length));
-            if (sampleCount <= 0)
+            bool scheduled = false;
+            try
             {
-                UnlockJobBuffers();
-                return;
-            }
+                GerstnerWaveTuningDTO tuningDto = PrepareTuning(tuning[0], requests.Length, fixedDeltaTime);
+                tuning[0] = tuningDto;
+                int sampleCount = math.clamp(tuningDto.ActiveRequestCount, 0, math.min(requests.Length, results.Length));
+                if (sampleCount <= 0)
+                    return;
 
-            ClearCounterLanes(counters);
-            JobHandle handle = default;
+                ClearCounterLanes(counters);
+                JobHandle handle = default;
 
-            if (_seedMockRequestsWhenEmpty && ConsumeMockRequestSeedGate(requests, sampleCount, _simulationFrame))
-            {
-                GenerateMockWaveRequestsJob requestJob = new GenerateMockWaveRequestsJob
+                if (_seedMockRequestsWhenEmpty && ConsumeMockRequestSeedGate(requests, sampleCount, _simulationFrame))
+                {
+                    GenerateMockWaveRequestsJob requestJob = new GenerateMockWaveRequestsJob
+                    {
+                        Requests = requests,
+                        Count = sampleCount,
+                        OriginAUP = tuningDto.LocalOriginAUP,
+                        FrameIndex = _simulationFrame,
+                        OriginShiftSequence = tuningDto.OriginShiftSequence
+                    };
+                    handle = requestJob.Schedule(sampleCount, 128, handle);
+                }
+
+                int gridResolution = math.clamp(tuningDto.MacroGridResolution, 2, AnalyticalGerstnerWaveConstants.MacroGridMaxResolution);
+                int gridCells = math.min(gridResolution * gridResolution, macroGrid.Length);
+                if (gridCells > 0)
+                {
+                    BuildMacroSwellGridJob gridJob = new BuildMacroSwellGridJob
+                    {
+                        Spectrum = spectrum,
+                        MacroGrid = macroGrid,
+                        Tuning = tuningDto
+                    };
+                    handle = gridJob.Schedule(gridCells, 64, handle);
+                }
+
+                EvaluateAnalyticalWavesJob evaluateJob = new EvaluateAnalyticalWavesJob
                 {
                     Requests = requests,
-                    Count = sampleCount,
-                    OriginAUP = tuningDto.LocalOriginAUP,
-                    FrameIndex = _simulationFrame,
-                    OriginShiftSequence = tuningDto.OriginShiftSequence
-                };
-                handle = requestJob.Schedule(sampleCount, 128, handle);
-            }
-
-            int gridResolution = math.clamp(tuningDto.MacroGridResolution, 2, AnalyticalGerstnerWaveConstants.MacroGridMaxResolution);
-            int gridCells = math.min(gridResolution * gridResolution, macroGrid.Length);
-            if (gridCells > 0)
-            {
-                BuildMacroSwellGridJob gridJob = new BuildMacroSwellGridJob
-                {
                     Spectrum = spectrum,
                     MacroGrid = macroGrid,
-                    Tuning = tuningDto
+                    Results = results,
+                    Counters = counters,
+                    Tuning = tuningDto,
+                    SampleCount = sampleCount
                 };
-                handle = gridJob.Schedule(gridCells, 64, handle);
+
+                int groupCount = (sampleCount + 3) >> 2;
+                _scheduleTimestamp = Stopwatch.GetTimestamp();
+                _scheduledSampleCount = sampleCount;
+                _pendingHandle = evaluateJob.Schedule(groupCount, 32, handle);
+                _jobScheduled = true;
+                scheduled = true;
+                H8Memory.RegisterActiveJob(SystemID.Physics, _pendingHandle);
             }
-
-            EvaluateAnalyticalWavesJob evaluateJob = new EvaluateAnalyticalWavesJob
+            finally
             {
-                Requests = requests,
-                Spectrum = spectrum,
-                MacroGrid = macroGrid,
-                Results = results,
-                Counters = counters,
-                Tuning = tuningDto,
-                SampleCount = sampleCount
-            };
-
-            int groupCount = (sampleCount + 3) >> 2;
-            _scheduleTimestamp = Stopwatch.GetTimestamp();
-            _scheduledSampleCount = sampleCount;
-            _pendingHandle = evaluateJob.Schedule(groupCount, 32, handle);
-            H8Memory.RegisterActiveJob(SystemID.Physics, _pendingHandle);
-            _jobScheduled = true;
+                if (!scheduled)
+                    UnlockJobBuffers();
+            }
         }
 
         public void PostFixedTick(float fixedDeltaTime)
@@ -271,55 +278,68 @@ namespace Hecton8.Physics
             if (!_jobScheduled)
                 return;
 
+            bool finalized;
             DispatcherJobFence.BeginPostFixedSwapWindow();
-            bool finalized = DispatcherJobFence.TryFinalizeCompleted(ref _pendingHandle);
-            DispatcherJobFence.EndPostFixedSwapWindow();
+            try
+            {
+                finalized = DispatcherJobFence.TryFinalizeCompleted(ref _pendingHandle);
+            }
+            finally
+            {
+                DispatcherJobFence.EndPostFixedSwapWindow();
+            }
+
             if (!finalized)
                 return;
 
-            float elapsedMicros = ResolveElapsedMicros(_scheduleTimestamp);
-            IDataVault vault = _dataVault;
-            if (vault != null &&
-                TryLockTelemetryBuffers(vault) &&
-                TryResolveRuntimeBuffers(
-                    vault,
-                    out _,
-                    out NativeArray<GerstnerWaveTuningDTO> tuning,
-                    out _,
-                    out NativeArray<OceanSampleResultDTO> results,
-                    out _,
-                    out NativeArray<WaveMathCounterLane> counters) &&
-                ResolveTelemetryBuffers(
-                    vault,
-                    out NativeArray<WaveMathTelemetryEntry> telemetry,
-                    out NativeArray<int> telemetryCursor))
+            try
             {
-                GerstnerWaveTuningDTO tuningDto = tuning[0];
-                var telemetryJob = new RecordWaveMathTelemetryJob
+                float elapsedMicros = ResolveElapsedMicros(_scheduleTimestamp);
+                IDataVault vault = _dataVault;
+                if (vault != null &&
+                    TryLockTelemetryBuffers(vault) &&
+                    TryResolveRuntimeBuffers(
+                        vault,
+                        out _,
+                        out NativeArray<GerstnerWaveTuningDTO> tuning,
+                        out _,
+                        out NativeArray<OceanSampleResultDTO> results,
+                        out _,
+                        out NativeArray<WaveMathCounterLane> counters) &&
+                    ResolveTelemetryBuffers(
+                        vault,
+                        out NativeArray<WaveMathTelemetryEntry> telemetry,
+                        out NativeArray<int> telemetryCursor))
                 {
-                    Results = results,
-                    Counters = counters,
-                    TelemetryRing = telemetry,
-                    TelemetryCursor = telemetryCursor,
-                    Tuning = tuningDto,
-                    SampleCount = _scheduledSampleCount,
-                    BurstMicros = elapsedMicros
-                };
-                telemetryJob.Execute();
+                    GerstnerWaveTuningDTO tuningDto = tuning[0];
+                    var telemetryJob = new RecordWaveMathTelemetryJob
+                    {
+                        Results = results,
+                        Counters = counters,
+                        TelemetryRing = telemetry,
+                        TelemetryCursor = telemetryCursor,
+                        Tuning = tuningDto,
+                        SampleCount = _scheduledSampleCount,
+                        BurstMicros = elapsedMicros
+                    };
+                    telemetryJob.Execute();
 
-                float dumpThreshold = math.max(1f, math.select(AnalyticalGerstnerWaveConstants.DefaultDumpThresholdMicros, tuningDto.MaxSolverMicrosBeforeDump, math.isfinite(tuningDto.MaxSolverMicrosBeforeDump)));
-                int nonFinite = counters.IsCreated && counters.Length > 2 ? counters[2].Value : 0;
-                if (!_dumpedFault && (elapsedMicros > dumpThreshold || nonFinite > 0))
-                {
-                    DumpBlackBoxOnce(telemetry, telemetryCursor);
-                    _dumpedFault = true;
+                    float dumpThreshold = math.max(1f, math.select(AnalyticalGerstnerWaveConstants.DefaultDumpThresholdMicros, tuningDto.MaxSolverMicrosBeforeDump, math.isfinite(tuningDto.MaxSolverMicrosBeforeDump)));
+                    int nonFinite = counters.IsCreated && counters.Length > 2 ? counters[2].Value : 0;
+                    if (!_dumpedFault && (elapsedMicros > dumpThreshold || nonFinite > 0))
+                    {
+                        DumpBlackBoxOnce(telemetry, telemetryCursor);
+                        _dumpedFault = true;
+                    }
                 }
             }
-
-            UnlockJobBuffers();
-            _jobScheduled = false;
-            _scheduledSampleCount = 0;
-            _simulationFrame++;
+            finally
+            {
+                UnlockJobBuffers();
+                _jobScheduled = false;
+                _scheduledSampleCount = 0;
+                _simulationFrame++;
+            }
         }
 
         public void OnGlobalRegistryServiceReplaced(GlobalRegistryServiceSlot serviceSlot, object previousService, object currentService)
@@ -728,8 +748,15 @@ namespace Hecton8.Physics
             if (_jobScheduled)
             {
                 DispatcherJobFence.BeginPostFixedSwapWindow();
-                DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true);
-                DispatcherJobFence.EndPostFixedSwapWindow();
+                try
+                {
+                    DispatcherJobFence.TryComplete(ref _pendingHandle, forceComplete: true);
+                }
+                finally
+                {
+                    DispatcherJobFence.EndPostFixedSwapWindow();
+                }
+
                 _jobScheduled = false;
             }
 

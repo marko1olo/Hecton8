@@ -1,0 +1,48 @@
+﻿{
+  "status": "PENDING_VERIFICATION",
+  "agent": "UNKNOWN",
+  "date": "2026-05-28",
+  "domain": "Core & Memory Infrastructure",
+  "pass": "Unity Homeostasis DataVault Rebind Pass",
+  "filesChanged": [
+    "Assets/_Project/Scripts/Core/HomeostasisBrain.cs"
+  ],
+  "dirtyFilesReadOnly": [
+    "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs"
+  ],
+  "problem": [
+    "DataVault hot-swap released Homeostasis and ScalabilityDictator handles but did not reopen replacement buffers before frame code resumed",
+    "PreSimulationTick used TryResolveRuntimeBuffers, which could call EnsureGenerationHandle through TryResolveOrAcquire",
+    "A read-like helper name hid DataVault open/allocation behavior"
+  ],
+  "changes": [
+    "Added ReopenRuntimeBuffersAfterDataVaultRebindCold after DataVault service rebind",
+    "Renamed the mutating buffer route to OpenOrAcquireRuntimeBuffers",
+    "Changed PreSimulationTick to consume a pure TryResolveRuntimeBuffers route",
+    "Made TryResolveRuntimeBuffers resolve existing handles only",
+    "Removed unused mutating TryResolveHardwareMetrics"
+  ],
+  "proof": {
+    "openOrAcquireRuntimeBuffersReferences": 3,
+    "tryResolveRuntimeBuffersReferences": 4,
+    "tryResolveHardwareMetricsReferences": 0,
+    "homeostasisBraceDelta": 0,
+    "gitDiffCheck": "exit 0; line-ending warning only",
+    "cpuLoadPercent": 100,
+    "activeDotnetPid": 41344
+  },
+  "runtimeProof": {
+    "dotnetBuild": "not run; compile-wall repair assigned to another agent and load guard blocks competing builds",
+    "unityImport": "not run",
+    "playMode": "not run",
+    "profiler": "not run",
+    "gcMonitor": "not run",
+    "deviceRun": "not run"
+  },
+  "microsecondsSavedClaimed": 0,
+  "residualRisk": [
+    "No runtime DataVault hot-swap test verified Homeostasis after replacement",
+    "ScalabilityDictator partial remains dirty from another agent and was left untouched",
+    "Other private Ensure helpers in the dirty partial require a separate ownership pass after concurrent edits settle"
+  ]
+}

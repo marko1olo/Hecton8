@@ -57,17 +57,89 @@ namespace Hecton8.World.FloraAmbientSway
         [FieldOffset(28)] public uint StateHash;
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
     public struct SwayTelemetryEntry
     {
-        [FieldOffset(0)] public uint Frame;
-        [FieldOffset(4)] public uint Flags;
-        [FieldOffset(8)] public float WrappedTime;
-        [FieldOffset(12)] public float FlowMagnitude;
-        [FieldOffset(16)] public float GlobalQualityWeight;
-        [FieldOffset(20)] public float AmplitudeMeters;
-        [FieldOffset(24)] public uint StateHash;
-        [FieldOffset(28)] public uint SourceHash;
+        [System.Runtime.InteropServices.FieldOffset(0)]
+        public uint Frame;
+        [System.Runtime.InteropServices.FieldOffset(4)]
+        public uint Flags;
+        [System.Runtime.InteropServices.FieldOffset(8)]
+        public float WrappedTime;
+        [System.Runtime.InteropServices.FieldOffset(12)]
+        public float FlowMagnitude;
+        [System.Runtime.InteropServices.FieldOffset(16)]
+        public float GlobalQualityWeight;
+        [System.Runtime.InteropServices.FieldOffset(20)]
+        public float AmplitudeMeters;
+        [System.Runtime.InteropServices.FieldOffset(24)]
+        public uint StateHash;
+        [System.Runtime.InteropServices.FieldOffset(28)]
+        public uint SourceHash;
+        [System.Runtime.InteropServices.FieldOffset(32)]
+        private byte _pad0;
+        [System.Runtime.InteropServices.FieldOffset(33)]
+        private byte _pad1;
+        [System.Runtime.InteropServices.FieldOffset(34)]
+        private byte _pad2;
+        [System.Runtime.InteropServices.FieldOffset(35)]
+        private byte _pad3;
+        [System.Runtime.InteropServices.FieldOffset(36)]
+        private byte _pad4;
+        [System.Runtime.InteropServices.FieldOffset(37)]
+        private byte _pad5;
+        [System.Runtime.InteropServices.FieldOffset(38)]
+        private byte _pad6;
+        [System.Runtime.InteropServices.FieldOffset(39)]
+        private byte _pad7;
+        [System.Runtime.InteropServices.FieldOffset(40)]
+        private byte _pad8;
+        [System.Runtime.InteropServices.FieldOffset(41)]
+        private byte _pad9;
+        [System.Runtime.InteropServices.FieldOffset(42)]
+        private byte _pad10;
+        [System.Runtime.InteropServices.FieldOffset(43)]
+        private byte _pad11;
+        [System.Runtime.InteropServices.FieldOffset(44)]
+        private byte _pad12;
+        [System.Runtime.InteropServices.FieldOffset(45)]
+        private byte _pad13;
+        [System.Runtime.InteropServices.FieldOffset(46)]
+        private byte _pad14;
+        [System.Runtime.InteropServices.FieldOffset(47)]
+        private byte _pad15;
+        [System.Runtime.InteropServices.FieldOffset(48)]
+        private byte _pad16;
+        [System.Runtime.InteropServices.FieldOffset(49)]
+        private byte _pad17;
+        [System.Runtime.InteropServices.FieldOffset(50)]
+        private byte _pad18;
+        [System.Runtime.InteropServices.FieldOffset(51)]
+        private byte _pad19;
+        [System.Runtime.InteropServices.FieldOffset(52)]
+        private byte _pad20;
+        [System.Runtime.InteropServices.FieldOffset(53)]
+        private byte _pad21;
+        [System.Runtime.InteropServices.FieldOffset(54)]
+        private byte _pad22;
+        [System.Runtime.InteropServices.FieldOffset(55)]
+        private byte _pad23;
+        [System.Runtime.InteropServices.FieldOffset(56)]
+        private byte _pad24;
+        [System.Runtime.InteropServices.FieldOffset(57)]
+        private byte _pad25;
+        [System.Runtime.InteropServices.FieldOffset(58)]
+        private byte _pad26;
+        [System.Runtime.InteropServices.FieldOffset(59)]
+        private byte _pad27;
+        [System.Runtime.InteropServices.FieldOffset(60)]
+        private byte _pad28;
+        [System.Runtime.InteropServices.FieldOffset(61)]
+        private byte _pad29;
+        [System.Runtime.InteropServices.FieldOffset(62)]
+        private byte _pad30;
+        [System.Runtime.InteropServices.FieldOffset(63)]
+        private byte _pad31;
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -226,7 +298,7 @@ namespace Hecton8.World.FloraAmbientSway
         private const uint TelemetrySourceHash = 0x53465759u;
         private const uint TelemetryDumpMagic = 0x37363253u; // "S267" little-endian bytes.
         private const uint TelemetryDumpVersion = 1u;
-        private const uint SwayTelemetryEntrySizeBytes = 32u;
+        private const uint SwayTelemetryEntrySizeBytes = 64u;
 
         private static int s_runtimeClaimed;
         private static FunctionPointer<GenerateMockAmbientFlowKernelDelegate> s_generateMockKernel;
@@ -1037,17 +1109,12 @@ namespace Hecton8.World.FloraAmbientSway
                     WriteUInt32LittleEndian(stream, SwayTelemetryEntrySizeBytes);
                     WriteInt32LittleEndian(stream, ring.Length);
                     WriteInt32LittleEndian(stream, cursorArray.IsCreated && cursorArray.Length > 0 ? cursorArray[0] : 0);
+                    Span<byte> entryBytes = stackalloc byte[(int)SwayTelemetryEntrySizeBytes];
                     for (int i = 0; i < ring.Length; i++)
                     {
                         SwayTelemetryEntry entry = ring[i];
-                        WriteUInt32LittleEndian(stream, entry.Frame);
-                        WriteUInt32LittleEndian(stream, entry.Flags);
-                        WriteSingleLittleEndian(stream, entry.WrappedTime);
-                        WriteSingleLittleEndian(stream, entry.FlowMagnitude);
-                        WriteSingleLittleEndian(stream, entry.GlobalQualityWeight);
-                        WriteSingleLittleEndian(stream, entry.AmplitudeMeters);
-                        WriteUInt32LittleEndian(stream, entry.StateHash);
-                        WriteUInt32LittleEndian(stream, entry.SourceHash);
+                        WriteSwayTelemetryEntry(entryBytes, in entry);
+                        stream.Write(entryBytes);
                     }
                 }
             }
@@ -1063,6 +1130,29 @@ namespace Hecton8.World.FloraAmbientSway
             {
                 CrashTelemetryBuffer.ReportBlackBoxExportFailure();
             }
+        }
+
+        private static void WriteSwayTelemetryEntry(Span<byte> destination, in SwayTelemetryEntry entry)
+        {
+            destination.Clear();
+            WriteUInt32LittleEndian(destination, 0, entry.Frame);
+            WriteUInt32LittleEndian(destination, 4, entry.Flags);
+            WriteSingleLittleEndian(destination, 8, entry.WrappedTime);
+            WriteSingleLittleEndian(destination, 12, entry.FlowMagnitude);
+            WriteSingleLittleEndian(destination, 16, entry.GlobalQualityWeight);
+            WriteSingleLittleEndian(destination, 20, entry.AmplitudeMeters);
+            WriteUInt32LittleEndian(destination, 24, entry.StateHash);
+            WriteUInt32LittleEndian(destination, 28, entry.SourceHash);
+        }
+
+        private static void WriteSingleLittleEndian(Span<byte> destination, int offset, float value)
+        {
+            WriteUInt32LittleEndian(destination, offset, math.asuint(value));
+        }
+
+        private static void WriteUInt32LittleEndian(Span<byte> destination, int offset, uint value)
+        {
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(offset, 4), value);
         }
 
         private static void WriteInt32LittleEndian(Stream stream, int value)

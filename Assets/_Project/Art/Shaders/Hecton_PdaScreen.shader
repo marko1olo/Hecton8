@@ -52,6 +52,12 @@ Shader "Hidden/Hecton8/Hecton_PdaScreen"
             TEXTURE2D(_HectonPdaInterfaceAtlas);
             SAMPLER(sampler_HectonPdaInterfaceAtlas);
             float4 _BlitTexture_TexelSize;
+            float4 _HectonVrComfortSignals;
+            float4 _HectonVrComfortMotion;
+            float4 _HectonVRSomaticComfortState;
+            float _HectonVRBrownoutIntensity;
+            float _HectonTunnelingIntensity;
+            float _H8GlobalQualityWeight;
 
             struct Attributes
             {
@@ -118,6 +124,32 @@ Shader "Hidden/Hecton8/Hecton_PdaScreen"
                 p = frac(p * float2(123.34, 456.21));
                 p += dot(p, p + 34.45);
                 return frac(p.x * p.y);
+            }
+
+            float HectonComfortIgn(float2 pixel)
+            {
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
+            float ResolveHectonComfortBlackAmount(float2 screenUV, float2 positionCS)
+            {
+                float vrComfortEnabled = saturate(_HectonVrComfortSignals.w);
+                float somaticTunnel = saturate(_HectonVRSomaticComfortState.x);
+                float vrComfortTunnel = saturate(max(max(_HectonVrComfortSignals.x, _HectonVrComfortMotion.z) * vrComfortEnabled, max(_HectonTunnelingIntensity, somaticTunnel)));
+                float vrComfortBlackout = saturate(max(_HectonVrComfortSignals.y * vrComfortEnabled, _HectonVRBrownoutIntensity));
+                float2 radial = screenUV * 2.0 - 1.0;
+                radial.x *= _ScreenParams.x * rcp(max(_ScreenParams.y, 1.0));
+                float radialMagnitudeSq = saturate(dot(radial, radial));
+                float tunnelInner = lerp(0.74, 0.34, vrComfortTunnel);
+                float tunnelInnerSq = tunnelInner * tunnelInner;
+                float tunnelMask = saturate((radialMagnitudeSq - tunnelInnerSq) * rcp(max(1.0 - tunnelInnerSq, 0.0009765625))) * vrComfortTunnel;
+                float ign = HectonComfortIgn(floor(positionCS));
+                float tunnelDither = step(ign, saturate(tunnelMask + vrComfortTunnel * 0.0625));
+                float comfortQualityWeight = saturate(_H8GlobalQualityWeight);
+                float ditherFloor = 0.56 - 0.06 * comfortQualityWeight;
+                float ditherCeiling = 0.90 + 0.06 * comfortQualityWeight;
+                float ditheredTunnel = tunnelMask * lerp(ditherFloor, ditherCeiling, tunnelDither);
+                return saturate(max(ditheredTunnel, vrComfortBlackout));
             }
 
             float2 ResolveAtlasUv(float2 planeUv, float2 refractionOffset)
@@ -230,7 +262,10 @@ Shader "Hidden/Hecton8/Hecton_PdaScreen"
                 float edgeFade = ResolveLinearRamp01(0.0, 0.055, min(min(planeUv.x, 1.0 - planeUv.x), min(planeUv.y, 1.0 - planeUv.y)));
                 float alpha = saturate(pdaColor.a * inside * edgeFade * (0.85 + quality * 0.35));
                 float3 emissive = pdaColor.rgb * (0.85 + _HectonPdaVisualParams.x * 0.15) + float3(0.02, 0.08, 0.07) * alpha;
-                return float4(lerp(sourceColor.rgb, emissive, alpha), sourceColor.a);
+                float3 color = lerp(sourceColor.rgb, emissive, alpha);
+                float comfortBlackAmount = ResolveHectonComfortBlackAmount(input.screenUV, input.positionCS.xy);
+                color = lerp(color, float3(0.0015, 0.0023, 0.0031), comfortBlackAmount);
+                return float4(color, sourceColor.a);
             }
             ENDHLSL
         }

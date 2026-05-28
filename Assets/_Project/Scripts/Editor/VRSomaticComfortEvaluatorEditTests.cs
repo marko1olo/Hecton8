@@ -63,6 +63,10 @@ namespace Hecton8.EditorTests
             Assert.IsFalse(ContainsOrdinal(block, "cos("));
             Assert.IsTrue(ContainsOrdinal(block, "frac("));
             Assert.IsTrue(ContainsOrdinal(block, "step("));
+            Assert.IsTrue(ContainsOrdinal(shader, "_H8GlobalQualityWeight"));
+            Assert.IsTrue(ContainsOrdinal(block, "float comfortQualityWeight = saturate(_H8GlobalQualityWeight);"));
+            Assert.IsTrue(ContainsOrdinal(block, "float ditherFloor = 0.56 - 0.06 * comfortQualityWeight;"));
+            Assert.IsTrue(ContainsOrdinal(block, "float ditherCeiling = 0.90 + 0.06 * comfortQualityWeight;"));
             Assert.IsTrue(ContainsOrdinal(shader, "FoveatedRemapLinearToNonUniform"));
             Assert.IsTrue(ContainsOrdinal(shader, "ResolveFoveatedSourceUV(sampleUv)"));
             Assert.IsTrue(ContainsOrdinal(shader, "ResolveFoveatedSourceUV(saturate(sampleUv + blurStep))"));
@@ -142,6 +146,127 @@ namespace Hecton8.EditorTests
             Assert.IsTrue(ContainsOrdinal(feature, "context.cmd.SetGlobalConstantBuffer"));
             Assert.IsFalse(ContainsOrdinal(feature, "AddBlitPass"));
             Assert.IsFalse(ContainsOrdinal(feature, "Shader.SetGlobalConstantBuffer"));
+        }
+
+        [Test]
+        public void BrownoutFeature_AcceptsXrVisibleSecondaryCameras()
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string featurePath = Path.Combine(projectRoot, "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs");
+            string feature = File.ReadAllText(featurePath);
+
+            Assert.IsTrue(ContainsOrdinal(feature, "TryBuildRuntimeState(renderCamera, renderingData.cameraData.xr"));
+            Assert.IsTrue(ContainsOrdinal(feature, "IsComfortEligibleCamera(renderCamera, xrPass)"));
+            Assert.IsTrue(ContainsOrdinal(feature, "HectonXRRuntimeState.IsXRActive"));
+            Assert.IsFalse(ContainsOrdinal(feature, "ReferenceEquals(renderCamera, playerCamera)"));
+            Assert.IsFalse(ContainsOrdinal(feature, "GlobalRegistry.Player"));
+            Assert.IsFalse(ContainsOrdinal(feature, "IGlobalRegistryHotSwapListener"));
+        }
+
+        [Test]
+        public void RendererAssets_ContainSingleActiveBrownoutFeature()
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string[] rendererPaths =
+            {
+                "Assets/_Project/Data/PC_Renderer.asset",
+                "Assets/_Project/Data/PC_High_Renderer.asset",
+                "Assets/_Project/Data/Mobile_Renderer.asset",
+                "Assets/_Project/Data/Quest_VR_Renderer.asset",
+            };
+
+            for (int i = 0; i < rendererPaths.Length; i++)
+            {
+                string path = Path.Combine(projectRoot, rendererPaths[i]);
+                string renderer = File.ReadAllText(path);
+                Assert.AreEqual(1, CountOccurrences(renderer, "m_Name: HectonVRBrownoutFeature"), rendererPaths[i]);
+                int nameIndex = renderer.IndexOf("HectonVRBrownoutFeature", StringComparison.Ordinal);
+                Assert.GreaterOrEqual(nameIndex, 0, rendererPaths[i]);
+                int blockStart = Math.Max(0, nameIndex - 512);
+                int blockLength = Math.Min(1536, renderer.Length - blockStart);
+                string featureBlock = renderer.Substring(blockStart, blockLength);
+                Assert.IsTrue(ContainsOrdinal(featureBlock, "m_Active: 1"), rendererPaths[i]);
+                Assert.IsTrue(ContainsOrdinal(featureBlock, "guid: fd51d08180ac4679bed75a6b4cc8e888"), rendererPaths[i]);
+                AssertBrownoutAfterFeatureIfPresent(renderer, rendererPaths[i], "HectonHalfResParticlesFeature");
+                AssertBrownoutAfterFeatureIfPresent(renderer, rendererPaths[i], "HectonAtmosphereSootFeature");
+                AssertBrownoutAfterFeatureIfPresent(renderer, rendererPaths[i], "WristPdaScreenProjectorFeature");
+                AssertBrownoutAfterFeatureIfPresent(renderer, rendererPaths[i], "HectonVisorUberPostFeature");
+                AssertRendererFeatureMapMatchesList(renderer, rendererPaths[i]);
+            }
+        }
+
+        [Test]
+        public void DiegeticComfortShaders_ReadUnifiedTunnelGlobals()
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string[] shaderPaths =
+            {
+                "Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader",
+                "Assets/_Project/Shaders/UI/Hecton_DiegeticPanelDepthFade.shader",
+                "Assets/_Project/Art/Shaders/Hecton_DiegeticTerminal.shader",
+                "Assets/_Project/Shaders/UI/Hecton_DiegeticVisorCurvedHUD.shader",
+                "Assets/_Project/Art/Shaders/Hecton_ToolScreenDiegetic.shader",
+                "Assets/_Project/Art/Shaders/Hecton_HUD_DiegeticProjectionUnlit.shader",
+                "Assets/_Project/Art/Shaders/Hecton_TerminalTextureArrayPanel.shader",
+                "Assets/_Project/Art/Shaders/Hecton_PdaScreen.shader",
+                "Assets/_Project/Art/Shaders/Hecton_WristHudSDF.shader",
+                "Assets/_Project/Art/Shaders/Hecton_PDA_SonarPointCloud.shader",
+                "Assets/_Project/Art/Shaders/Hecton_HUD_AcousticRadarOverlay.shader",
+                "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipGlyph.shader",
+                "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipIndirect.shader",
+                "Assets/_Project/Art/Shaders/Hecton_UI_CompassRibbon.shader",
+                "Assets/_Project/Art/Shaders/Hecton_PDA_SonarMap.shader",
+                "Assets/_Project/Art/Shaders/Hecton_PDA_FrequencyTuningWave.shader",
+                "Assets/_Project/Art/Shaders/Hecton_SubmarineSonarHoloMapStencil.shader",
+            };
+
+            for (int i = 0; i < shaderPaths.Length; i++)
+            {
+                string shader = File.ReadAllText(Path.Combine(projectRoot, shaderPaths[i]));
+                Assert.IsTrue(ContainsOrdinal(shader, "_HectonTunnelingIntensity"), shaderPaths[i]);
+                Assert.IsTrue(ContainsOrdinal(shader, "_HectonVrComfortSignals"), shaderPaths[i]);
+                Assert.IsTrue(ContainsOrdinal(shader, "_HectonVrComfortMotion"), shaderPaths[i]);
+                Assert.IsTrue(ContainsOrdinal(shader, "_HectonVRSomaticComfortState"), shaderPaths[i]);
+                Assert.IsTrue(ContainsOrdinal(shader, "_HectonVRBrownoutIntensity"), shaderPaths[i]);
+                Assert.IsTrue(ContainsOrdinal(shader, "_H8GlobalQualityWeight"), shaderPaths[i]);
+                Assert.IsTrue(ContainsOrdinal(shader, "52.9829189"), shaderPaths[i]);
+                Assert.IsTrue(ContainsOrdinal(shader, "0.06711056"), shaderPaths[i]);
+                Assert.IsTrue(ContainsOrdinal(shader, "0.00583715"), shaderPaths[i]);
+                Assert.IsTrue(ContainsOrdinal(shader, "0.0009765625"), shaderPaths[i]);
+                Assert.IsTrue(ContainsOrdinal(shader, "radialMagnitudeSq"), shaderPaths[i]);
+                Assert.IsTrue(ContainsOrdinal(shader, "lerp(0.74, 0.34, vrComfortTunnel)"), shaderPaths[i]);
+                Assert.IsTrue(ContainsOrdinal(shader, "step(ign, saturate(tunnelMask + vrComfortTunnel * 0.0625))"), shaderPaths[i]);
+                Assert.IsTrue(ContainsOrdinal(shader, "float comfortQualityWeight = saturate(_H8GlobalQualityWeight);"), shaderPaths[i]);
+                Assert.IsTrue(ContainsOrdinal(shader, "float ditherFloor = 0.56 - 0.06 * comfortQualityWeight;"), shaderPaths[i]);
+                Assert.IsTrue(ContainsOrdinal(shader, "float ditherCeiling = 0.90 + 0.06 * comfortQualityWeight;"), shaderPaths[i]);
+                Assert.IsTrue(
+                    ContainsOrdinal(shader, "ResolveHectonComfortEyeStableScreenUV") ||
+                    ContainsOrdinal(shader, "H8ResolveComfortEyeStableScreenUV") ||
+                    ContainsOrdinal(shader, "ResolveHectonComfortBlackAmount(input.screenUV"),
+                    shaderPaths[i]);
+                Assert.IsFalse(ContainsOrdinal(shader, "smoothstep"), shaderPaths[i]);
+                Assert.IsFalse(ContainsOrdinal(shader, "length("), shaderPaths[i]);
+                Assert.IsFalse(ContainsOrdinal(shader, "pow("), shaderPaths[i]);
+                Assert.IsFalse(ContainsOrdinal(shader, "sin("), shaderPaths[i]);
+                Assert.IsFalse(ContainsOrdinal(shader, "cos("), shaderPaths[i]);
+            }
+        }
+
+        [Test]
+        public void ComfortTunnelGlobals_UseSinglePublishedRoute()
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string movement = File.ReadAllText(Path.Combine(projectRoot, "Assets/_Project/Scripts/HectonPlayerMovement.cs"));
+            string feature = File.ReadAllText(Path.Combine(projectRoot, "Assets/_Project/Scripts/Visor/HectonVRBrownoutFeature.cs"));
+            string terminal = File.ReadAllText(Path.Combine(projectRoot, "Assets/_Project/Art/Shaders/Hecton_DiegeticTerminal.shader"));
+
+            Assert.IsTrue(ContainsOrdinal(movement, "Shader.SetGlobalVector(VrComfortSignalsId, signals);"));
+            Assert.IsTrue(ContainsOrdinal(movement, "Shader.SetGlobalVector(VrComfortMotionId, motionSignal);"));
+            Assert.IsTrue(ContainsOrdinal(feature, "Shader.GetGlobalVector(ShaderConstants.VrSomaticComfortStateId)"));
+            Assert.IsTrue(ContainsOrdinal(feature, "Shader.GetGlobalVector(ShaderConstants.VrComfortSignalsId)"));
+            Assert.IsTrue(ContainsOrdinal(feature, "Shader.GetGlobalVector(ShaderConstants.VrComfortMotionId)"));
+            Assert.IsTrue(ContainsOrdinal(terminal, "float somaticTunnel = saturate(_HectonVRSomaticComfortState.x);"));
+            Assert.IsTrue(ContainsOrdinal(terminal, "max(_HectonTunnelingIntensity, somaticTunnel)"));
         }
 
         [Test]
@@ -724,6 +849,95 @@ namespace Hecton8.EditorTests
         private static bool ContainsOrdinal(string text, string value)
         {
             return text.IndexOf(value, StringComparison.Ordinal) >= 0;
+        }
+
+        private static int CountOccurrences(string text, string value)
+        {
+            int count = 0;
+            int index = 0;
+            while (index < text.Length)
+            {
+                index = text.IndexOf(value, index, StringComparison.Ordinal);
+                if (index < 0)
+                    break;
+
+                count++;
+                index += value.Length;
+            }
+
+            return count;
+        }
+
+        private static void AssertBrownoutAfterFeatureIfPresent(string renderer, string rendererPath, string featureName)
+        {
+            int brownoutIndex = ResolveRendererFeatureListIndex(renderer, "HectonVRBrownoutFeature");
+            int featureIndex = ResolveRendererFeatureListIndex(renderer, featureName);
+            if (featureIndex < 0)
+                return;
+
+            Assert.Greater(brownoutIndex, featureIndex, rendererPath + " must enqueue brownout after " + featureName);
+        }
+
+        private static int ResolveRendererFeatureListIndex(string renderer, string featureName)
+        {
+            string id = ResolveRendererFeatureId(renderer, featureName);
+            if (string.IsNullOrEmpty(id))
+                return -1;
+
+            return renderer.IndexOf("  - {fileID: " + id + "}", StringComparison.Ordinal);
+        }
+
+        private static string ResolveRendererFeatureId(string renderer, string featureName)
+        {
+            int nameIndex = renderer.IndexOf("m_Name: " + featureName, StringComparison.Ordinal);
+            if (nameIndex < 0)
+                return string.Empty;
+
+            const string BlockPrefix = "--- !u!114 &";
+            int blockStart = renderer.LastIndexOf(BlockPrefix, nameIndex, StringComparison.Ordinal);
+            if (blockStart < 0)
+                return string.Empty;
+
+            int idStart = blockStart + BlockPrefix.Length;
+            int idEnd = renderer.IndexOf('\n', idStart);
+            if (idEnd < 0 || idEnd <= idStart)
+                return string.Empty;
+
+            return renderer.Substring(idStart, idEnd - idStart).Trim();
+        }
+
+        private static void AssertRendererFeatureMapMatchesList(string renderer, string rendererPath)
+        {
+            const string FeaturesMarker = "  m_RendererFeatures:";
+            const string FeatureLinePrefix = "  - {fileID: ";
+            const string MapMarker = "  m_RendererFeatureMap: ";
+            int featuresStart = renderer.IndexOf(FeaturesMarker, StringComparison.Ordinal);
+            int mapStart = renderer.IndexOf(MapMarker, StringComparison.Ordinal);
+            Assert.GreaterOrEqual(featuresStart, 0, rendererPath);
+            Assert.Greater(mapStart, featuresStart, rendererPath);
+
+            int mapValueStart = mapStart + MapMarker.Length;
+            int mapValueEnd = renderer.IndexOf('\n', mapValueStart);
+            string featureMap = renderer.Substring(mapValueStart, mapValueEnd - mapValueStart).Trim();
+            string expectedMap = string.Empty;
+            int scan = featuresStart;
+            while (scan > -1 && scan < mapStart)
+            {
+                int lineStart = renderer.IndexOf(FeatureLinePrefix, scan, StringComparison.Ordinal);
+                if (lineStart < 0 || lineStart >= mapStart)
+                    break;
+
+                int idStart = lineStart + FeatureLinePrefix.Length;
+                int idEnd = renderer.IndexOf('}', idStart);
+                long id = long.Parse(renderer.Substring(idStart, idEnd - idStart));
+                byte[] bytes = BitConverter.GetBytes(id);
+                for (int i = 0; i < bytes.Length; i++)
+                    expectedMap += bytes[i].ToString("x2");
+
+                scan = idEnd + 1;
+            }
+
+            Assert.AreEqual(expectedMap, featureMap, rendererPath);
         }
 
         private static int OffsetOf<T>(string fieldName) where T : struct

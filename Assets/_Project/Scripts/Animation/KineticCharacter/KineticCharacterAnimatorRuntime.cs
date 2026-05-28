@@ -775,6 +775,7 @@ namespace Hecton8.Animation.KineticCharacter
             out NativeArray<T> buffer,
             NativeArrayOptions options = NativeArrayOptions.UninitializedMemory) where T : struct
         {
+            buffer = default;
             if (IsOwnedVaultHandle(in handle, bufferId) &&
                 TryResolveVaultBuffer(vault, in handle, requiredLength, out buffer))
             {

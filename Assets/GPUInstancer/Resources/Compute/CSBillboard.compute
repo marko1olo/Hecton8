@@ -5,7 +5,8 @@
 
 RWTexture2D<float4> result;
 Texture2D<float4> billboardSource;
-uint2 billboardSize;
+uint billboardWidth;
+uint billboardHeight;
 uint frameCount;
 bool isLinearSpace;
 bool isNormal;
@@ -33,9 +34,12 @@ inline half3 LinearToGamma(half3 linRGB)
 [numthreads(GPUI_THREADS_2D, GPUI_THREADS_2D, 1)]
 void CSBillboardDilate(uint3 id : SV_DispatchThreadID)
 {
-    uint frameWidth = billboardSize.x / frameCount;
+    if (frameCount == 0 || billboardWidth < frameCount || billboardHeight == 0)
+        return;
 
-    if (id.x > frameWidth)
+    uint frameWidth = billboardWidth / frameCount;
+
+    if (id.x >= frameWidth || id.y >= billboardHeight)
         return;
 
     uint indexX = id.x + (id.z * frameWidth); // shift x by frames.
@@ -56,7 +60,7 @@ void CSBillboardDilate(uint3 id : SV_DispatchThreadID)
                 
                 uint3 neighbourCoord = uint3(indexX + (offset.x * s), id.y + (offset.y * s), 0);
 
-                if (neighbourCoord.x >= frameWidth * (id.z + 1) || neighbourCoord.x < frameWidth * id.z)
+                if (neighbourCoord.x >= frameWidth * (id.z + 1) || neighbourCoord.x < frameWidth * id.z || neighbourCoord.y >= billboardHeight)
                     continue;
 
                 float4 neighbourCol = billboardSource.Load(neighbourCoord);

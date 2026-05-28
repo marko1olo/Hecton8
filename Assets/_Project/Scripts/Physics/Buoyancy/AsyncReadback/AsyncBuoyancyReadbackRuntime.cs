@@ -207,38 +207,39 @@ namespace Hecton8.Physics
             if (!IsRuntimeReady())
                 return false;
 
-            NativeArray<ReadbackRequestDTO> requests = AcquireVaultWriteBuffer(_dataVault, in _requestsHandle);
-            if (!requests.IsCreated || _queuedRequestCount >= math.min(requests.Length, AsyncBuoyancyReadbackConstants.RequestCapacity))
+            NativeArray<ReadbackRequestDTO> requests = default;
+            bool requestsLocked = false;
+            try
             {
-                ReleaseVaultWriteBuffer(_dataVault, in _requestsHandle);
-                return false;
-            }
+                requests = AcquireVaultWriteBuffer(_dataVault, in _requestsHandle);
+                requestsLocked = requests.IsCreated;
+                if (!requestsLocked || _queuedRequestCount >= math.min(requests.Length, AsyncBuoyancyReadbackConstants.RequestCapacity))
+                    return false;
 
-            if (cameraShiftSequence != _cachedOriginShiftSequence)
+                if (cameraShiftSequence != _cachedOriginShiftSequence)
+                    return false;
+
+                double3 delta = sampleAup - cameraAup;
+                if (!math.all(math.isfinite(delta)))
+                    return false;
+
+                ReadbackRequestDTO request = default;
+                request.LocalXZ = new float2((float)delta.x, (float)delta.z);
+                request.ResultHeight = 0f;
+                request.EntityHash = entityHash != 0u ? entityHash : 1u;
+                requests[_queuedRequestCount++] = request;
+                _cameraAup = cameraAup;
+                _publishedCameraAup = cameraAup;
+                _publishedCameraShiftSequence = cameraShiftSequence;
+                _publishedCameraFrame = _frameIndex;
+                _hasPublishedCameraAup = 1;
+                return true;
+            }
+            finally
             {
-                ReleaseVaultWriteBuffer(_dataVault, in _requestsHandle);
-                return false;
+                if (requestsLocked)
+                    ReleaseVaultWriteBuffer(_dataVault, in _requestsHandle);
             }
-
-            double3 delta = sampleAup - cameraAup;
-            if (!math.all(math.isfinite(delta)))
-            {
-                ReleaseVaultWriteBuffer(_dataVault, in _requestsHandle);
-                return false;
-            }
-
-            ReadbackRequestDTO request = default;
-            request.LocalXZ = new float2((float)delta.x, (float)delta.z);
-            request.ResultHeight = 0f;
-            request.EntityHash = entityHash != 0u ? entityHash : 1u;
-            requests[_queuedRequestCount++] = request;
-            _cameraAup = cameraAup;
-            _publishedCameraAup = cameraAup;
-            _publishedCameraShiftSequence = cameraShiftSequence;
-            _publishedCameraFrame = _frameIndex;
-            _hasPublishedCameraAup = 1;
-            ReleaseVaultWriteBuffer(_dataVault, in _requestsHandle);
-            return true;
         }
 
         public bool TryPublishCameraAupSnapshot(double3 cameraAup, uint shiftSequence, uint frameIndex)
@@ -604,7 +605,11 @@ namespace Hecton8.Physics
                 waveCountRef = waveUploadCount;
             }
 
-            int activeWaveCount = ResolveShaderActiveWaveIndex(AsyncBuoyancyReadbackConstants.WaveCapacity * 3);
+            float shaderQuality = math.saturate(math.select(
+                AsyncBuoyancyReadbackConstants.AuthoritativeQualityWeight,
+                _globalQualityWeight,
+                math.isfinite(_globalQualityWeight)));
+            int activeWaveCount = ResolveShaderActiveWaveIndex(AsyncBuoyancyReadbackConstants.WaveCapacity * 3, shaderQuality);
             float maxWavelength = ResolveMaxWavelength(waves);
             ResolveWavePhaseBases(_cameraAup, waves, activeWaveCount + 1, out float4 phaseBase0, out float4 phaseBase1);
             Vector4 shorelineParams = Shader.GetGlobalVector(OceanShorelineDepthParamsId);
@@ -616,12 +621,17 @@ namespace Hecton8.Physics
             waveHeightSamplerCompute.SetInt(WaveSampleCountId, _dispatchRequestCount);
             waveHeightSamplerCompute.SetFloat(WaveSampleSeaLevelId, seaLevel);
             waveHeightSamplerCompute.SetFloat(OceanTimeId, _timeSeconds);
-            waveHeightSamplerCompute.SetFloat(OceanQualityId, AsyncBuoyancyReadbackConstants.AuthoritativeQualityWeight);
+            waveHeightSamplerCompute.SetFloat(OceanQualityId, shaderQuality);
             waveHeightSamplerCompute.SetInt(OceanWaveCountId, activeWaveCount);
             waveHeightSamplerCompute.SetVector(OceanLocalProjectionId, ToVector4(new float4(cameraProjection.x, cameraProjection.y, maxWavelength, wakeWorldSize)));
             waveHeightSamplerCompute.SetVector(OceanWavePhaseBase0Id, ToVector4(phaseBase0));
             waveHeightSamplerCompute.SetVector(OceanWavePhaseBase1Id, ToVector4(phaseBase1));
-            waveHeightSamplerCompute.SetVector(WaveSampleLodId, new Vector4(maxWavelength, activeWaveCount, AsyncBuoyancyReadbackConstants.AuthoritativeQualityWeight, _timeSeconds));
+            Vector4 waveSampleLod = default;
+            waveSampleLod.x = maxWavelength;
+            waveSampleLod.y = activeWaveCount;
+            waveSampleLod.z = shaderQuality;
+            waveSampleLod.w = _timeSeconds;
+            waveHeightSamplerCompute.SetVector(WaveSampleLodId, waveSampleLod);
             Texture wakeDisplacement = Shader.GetGlobalTexture(OceanWakeDisplacementId);
             waveHeightSamplerCompute.SetTexture(_kernelIndex, OceanWakeDisplacementId, wakeDisplacement != null ? wakeDisplacement : Texture2D.blackTexture);
             waveHeightSamplerCompute.SetVector(OceanShorelineDepthParamsId, shorelineParams);
@@ -674,22 +684,32 @@ namespace Hecton8.Physics
                     continue;
                 }
 
-                NativeArray<ReadbackRequestDTO> completed = AcquireVaultWriteBuffer(_dataVault, in _completedRequestsHandle);
-                if (!completed.IsCreated)
-                    continue;
+                NativeArray<ReadbackRequestDTO> completed = default;
+                bool completedLocked = false;
+                try
+                {
+                    completed = AcquireVaultWriteBuffer(_dataVault, in _completedRequestsHandle);
+                    completedLocked = completed.IsCreated;
+                    if (!completedLocked)
+                        continue;
 
-                NativeArray<ReadbackRequestDTO> readbackData = request.GetData<ReadbackRequestDTO>();
-                int copyCount = math.min(count, math.min(completed.Length, readbackData.Length));
-                for (int i = 0; i < copyCount; i++)
-                    completed[i] = readbackData[i];
-                ReleaseVaultWriteBuffer(_dataVault, in _completedRequestsHandle);
+                    NativeArray<ReadbackRequestDTO> readbackData = request.GetData<ReadbackRequestDTO>();
+                    int copyCount = math.min(count, math.min(completed.Length, readbackData.Length));
+                    for (int i = 0; i < copyCount; i++)
+                        completed[i] = readbackData[i];
 
-                activeRef = 0;
-                _completedRequestCount = copyCount;
-                _lastLatencyFrames = math.max(0, unchecked((int)_frameIndex - (int)ResolveReadbackFrameRef(slot)));
-                if (_lastLatencyFrames > 4)
-                    _dumpRequested = true;
-                return;
+                    activeRef = 0;
+                    _completedRequestCount = copyCount;
+                    _lastLatencyFrames = math.max(0, unchecked((int)_frameIndex - (int)ResolveReadbackFrameRef(slot)));
+                    if (_lastLatencyFrames > 4)
+                        _dumpRequested = true;
+                    return;
+                }
+                finally
+                {
+                    if (completedLocked)
+                        ReleaseVaultWriteBuffer(_dataVault, in _completedRequestsHandle);
+                }
             }
         }
 
@@ -704,39 +724,49 @@ namespace Hecton8.Physics
 
         private void SeedEmergencySamples()
         {
-            NativeArray<ReadbackRequestDTO> requests = AcquireVaultWriteBuffer(_dataVault, in _requestsHandle);
-            if (!requests.IsCreated)
-                return;
-
-            VehicleSamplingProfileDTO profile = ResolvePrimaryVehicleProfile();
-            int count = AsyncBuoyancyReadbackMath.ResolveSampleBudget(math.max(1, profile.MinSamples), math.max(profile.MinSamples, profile.MaxSamples));
-            count = math.min(count, math.min(requests.Length, AsyncBuoyancyReadbackConstants.RequestCapacity));
-            float length = math.max(1f, profile.LengthMeters);
-            float beam = math.max(1f, profile.BeamMeters);
-            float inset = math.max(0f, profile.InsetMeters);
-            float usableLength = math.max(0.5f, length - (inset * 2f));
-            float usableBeam = math.max(0.5f, beam - (inset * 2f));
-            float columnEstimateSq = math.max(1f, count * (usableLength / math.max(0.25f, usableBeam)));
-            float columnEstimate = columnEstimateSq * math.rsqrt(math.max(columnEstimateSq, 0.0001f));
-            int columns = math.max(1, (int)math.ceil(columnEstimate));
-            int rows = math.max(1, (int)math.ceil((float)count / columns));
-            uint baseHash = profile.VehicleHash != 0u ? profile.VehicleHash : 0x53483236u;
-
-            for (int i = 0; i < count; i++)
+            NativeArray<ReadbackRequestDTO> requests = default;
+            bool requestsLocked = false;
+            try
             {
-                int column = i % columns;
-                int row = i / columns;
-                float x01 = columns <= 1 ? 0.5f : (float)column / (columns - 1);
-                float z01 = rows <= 1 ? 0.5f : (float)row / (rows - 1);
-                ReadbackRequestDTO request = default;
-                request.LocalXZ = new float2((x01 - 0.5f) * usableLength, (z01 - 0.5f) * usableBeam);
-                request.ResultHeight = 0f;
-                request.EntityHash = baseHash ^ ((uint)(i + 1) * 0x9E3779B9u);
-                requests[i] = request;
-            }
+                requests = AcquireVaultWriteBuffer(_dataVault, in _requestsHandle);
+                requestsLocked = requests.IsCreated;
+                if (!requestsLocked)
+                    return;
 
-            _queuedRequestCount = count;
-            ReleaseVaultWriteBuffer(_dataVault, in _requestsHandle);
+                VehicleSamplingProfileDTO profile = ResolvePrimaryVehicleProfile();
+                int count = AsyncBuoyancyReadbackMath.ResolveSampleBudget(math.max(1, profile.MinSamples), math.max(profile.MinSamples, profile.MaxSamples));
+                count = math.min(count, math.min(requests.Length, AsyncBuoyancyReadbackConstants.RequestCapacity));
+                float length = math.max(1f, profile.LengthMeters);
+                float beam = math.max(1f, profile.BeamMeters);
+                float inset = math.max(0f, profile.InsetMeters);
+                float usableLength = math.max(0.5f, length - (inset * 2f));
+                float usableBeam = math.max(0.5f, beam - (inset * 2f));
+                float columnEstimateSq = math.max(1f, count * (usableLength / math.max(0.25f, usableBeam)));
+                float columnEstimate = columnEstimateSq * math.rsqrt(math.max(columnEstimateSq, 0.0001f));
+                int columns = math.max(1, (int)math.ceil(columnEstimate));
+                int rows = math.max(1, (int)math.ceil((float)count / columns));
+                uint baseHash = profile.VehicleHash != 0u ? profile.VehicleHash : 0x53483236u;
+
+                for (int i = 0; i < count; i++)
+                {
+                    int column = i % columns;
+                    int row = i / columns;
+                    float x01 = columns <= 1 ? 0.5f : (float)column / (columns - 1);
+                    float z01 = rows <= 1 ? 0.5f : (float)row / (rows - 1);
+                    ReadbackRequestDTO request = default;
+                    request.LocalXZ = new float2((x01 - 0.5f) * usableLength, (z01 - 0.5f) * usableBeam);
+                    request.ResultHeight = 0f;
+                    request.EntityHash = baseHash ^ ((uint)(i + 1) * 0x9E3779B9u);
+                    requests[i] = request;
+                }
+
+                _queuedRequestCount = count;
+            }
+            finally
+            {
+                if (requestsLocked)
+                    ReleaseVaultWriteBuffer(_dataVault, in _requestsHandle);
+            }
         }
 
         private VehicleSamplingProfileDTO ResolvePrimaryVehicleProfile()
@@ -823,44 +853,55 @@ namespace Hecton8.Physics
 
         private void SeedFallbackWavesIfNeeded()
         {
-            NativeArray<AsyncBuoyancyWaveParametersDTO> waves = AcquireVaultWriteBuffer(_dataVault, in _fallbackWavesHandle);
-            if (!waves.IsCreated || waves.Length < AsyncBuoyancyReadbackConstants.WaveCapacity)
+            NativeArray<AsyncBuoyancyWaveParametersDTO> waves = default;
+            bool wavesLocked = false;
+            try
             {
-                ReleaseVaultWriteBuffer(_dataVault, in _fallbackWavesHandle);
-                return;
-            }
-            if (math.any(waves[0].Wave1 != float4.zero))
-            {
-                ReleaseVaultWriteBuffer(_dataVault, in _fallbackWavesHandle);
-                return;
-            }
+                waves = AcquireVaultWriteBuffer(_dataVault, in _fallbackWavesHandle);
+                wavesLocked = waves.IsCreated;
+                if (!wavesLocked || waves.Length < AsyncBuoyancyReadbackConstants.WaveCapacity)
+                    return;
+                if (math.any(waves[0].Wave1 != float4.zero))
+                    return;
 
-            AsyncBuoyancyWaveParametersDTO primary = default;
-            primary.Wave1 = new float4(0.12f, 0.42f, 28f, 0.28f);
-            primary.Wave2 = new float4(1.64f, 0.32f, 16f, -0.18f);
-            primary.Wave3 = new float4(2.71f, 0.18f, 9f, 0.11f);
-            primary.GlobalWindAndStorm = new float4(0.8f, 0.25f, 0.15f, 0f);
-            AsyncBuoyancyWaveParametersDTO secondary = default;
-            secondary.Wave1 = new float4(0.76f, 0.12f, 6f, 0.21f);
-            secondary.Wave2 = new float4(2.32f, 0.10f, 4f, -0.17f);
-            secondary.Wave3 = new float4(3.04f, 0.08f, 2.6f, 0.09f);
-            secondary.GlobalWindAndStorm = new float4(0.8f, 0.25f, 0.15f, 0f);
-            waves[0] = primary;
-            waves[1] = secondary;
-            ReleaseVaultWriteBuffer(_dataVault, in _fallbackWavesHandle);
+                AsyncBuoyancyWaveParametersDTO primary = default;
+                primary.Wave1 = new float4(0.12f, 0.42f, 28f, 0.28f);
+                primary.Wave2 = new float4(1.64f, 0.32f, 16f, -0.18f);
+                primary.Wave3 = new float4(2.71f, 0.18f, 9f, 0.11f);
+                primary.GlobalWindAndStorm = new float4(0.8f, 0.25f, 0.15f, 0f);
+                AsyncBuoyancyWaveParametersDTO secondary = default;
+                secondary.Wave1 = new float4(0.76f, 0.12f, 6f, 0.21f);
+                secondary.Wave2 = new float4(2.32f, 0.10f, 4f, -0.17f);
+                secondary.Wave3 = new float4(3.04f, 0.08f, 2.6f, 0.09f);
+                secondary.GlobalWindAndStorm = new float4(0.8f, 0.25f, 0.15f, 0f);
+                waves[0] = primary;
+                waves[1] = secondary;
+            }
+            finally
+            {
+                if (wavesLocked)
+                    ReleaseVaultWriteBuffer(_dataVault, in _fallbackWavesHandle);
+            }
         }
 
         private void SeedDefaultVehicleProfileIfNeeded()
         {
-            NativeArray<VehicleSamplingProfileDTO> profiles = AcquireVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle);
-            if (!profiles.IsCreated || profiles.Length <= 0 || profiles[0].VehicleHash != 0u)
+            NativeArray<VehicleSamplingProfileDTO> profiles = default;
+            bool profilesLocked = false;
+            try
             {
-                ReleaseVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle);
-                return;
-            }
+                profiles = AcquireVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle);
+                profilesLocked = profiles.IsCreated;
+                if (!profilesLocked || profiles.Length <= 0 || profiles[0].VehicleHash != 0u)
+                    return;
 
-            profiles[0] = ResolvePrimaryVehicleProfile();
-            ReleaseVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle);
+                profiles[0] = ResolvePrimaryVehicleProfile();
+            }
+            finally
+            {
+                if (profilesLocked)
+                    ReleaseVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle);
+            }
         }
 
         private bool EnsureGpuBuffers()
@@ -1118,109 +1159,143 @@ namespace Hecton8.Physics
 
         private void WriteTuningSnapshot(float fixedDelta)
         {
-            NativeArray<ReadbackTuningDTO> tuning = AcquireVaultWriteBuffer(_dataVault, in _tuningHandle);
-            if (!tuning.IsCreated || tuning.Length <= 0)
+            NativeArray<ReadbackTuningDTO> tuning = default;
+            bool tuningLocked = false;
+            try
             {
-                ReleaseVaultWriteBuffer(_dataVault, in _tuningHandle);
-                return;
-            }
+                tuning = AcquireVaultWriteBuffer(_dataVault, in _tuningHandle);
+                tuningLocked = tuning.IsCreated;
+                if (!tuningLocked || tuning.Length <= 0)
+                    return;
 
-            ReadbackTuningDTO value = default;
-            value.CameraAup = _cameraAup;
-            value.GlobalQualityWeight = _globalQualityWeight;
-            value.FixedDeltaTime = fixedDelta;
-            value.ActiveRequestCount = _dispatchRequestCount;
-            value.ActiveCompletedCount = _completedRequestCount;
-            value.MinSampleCount = minimumSampleCount;
-            value.MaxSampleCount = maximumSampleCount;
-            value.FrameIndex = _frameIndex;
-            value.Flags = _mockPathThisFrame ? AsyncBuoyancyReadbackConstants.FlagMockPath : AsyncBuoyancyReadbackConstants.FlagGpuPath;
-            value.SmoothingAlpha = AsyncBuoyancyReadbackMath.ResolveSmoothingAlpha();
-            value.DeadReckoningDecayRate = ResolveDeadReckoningDecayRate();
-            tuning[0] = value;
-            ReleaseVaultWriteBuffer(_dataVault, in _tuningHandle);
+                ReadbackTuningDTO value = default;
+                value.CameraAup = _cameraAup;
+                value.GlobalQualityWeight = _globalQualityWeight;
+                value.FixedDeltaTime = fixedDelta;
+                value.ActiveRequestCount = _dispatchRequestCount;
+                value.ActiveCompletedCount = _completedRequestCount;
+                value.MinSampleCount = minimumSampleCount;
+                value.MaxSampleCount = maximumSampleCount;
+                value.FrameIndex = _frameIndex;
+                value.Flags = _mockPathThisFrame ? AsyncBuoyancyReadbackConstants.FlagMockPath : AsyncBuoyancyReadbackConstants.FlagGpuPath;
+                value.SmoothingAlpha = AsyncBuoyancyReadbackMath.ResolveSmoothingAlpha();
+                value.DeadReckoningDecayRate = ResolveDeadReckoningDecayRate();
+                tuning[0] = value;
+            }
+            finally
+            {
+                if (tuningLocked)
+                    ReleaseVaultWriteBuffer(_dataVault, in _tuningHandle);
+            }
         }
 
         private void UpdateCounterPreSimulation()
         {
-            NativeArray<AsyncReadbackCounterDTO> counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle);
-            if (!counters.IsCreated || counters.Length <= 0)
+            NativeArray<AsyncReadbackCounterDTO> counters = default;
+            bool countersLocked = false;
+            try
             {
-                ReleaseVaultWriteBuffer(_dataVault, in _counterHandle);
-                return;
-            }
+                counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle);
+                countersLocked = counters.IsCreated;
+                if (!countersLocked || counters.Length <= 0)
+                    return;
 
-            AsyncReadbackCounterDTO counter = counters[0];
-            counter.QueuedCount = _queuedRequestCount;
-            counter.DispatchCount = _dispatchRequestCount;
-            counter.ActiveRingSlots = CountActiveReadbackSlots();
-            counter.DroppedRequests = _droppedRequests;
-            counter.FailedRequests = _failedRequests;
-            counter.FrameIndex = _frameIndex;
-            counter.DispatchMicros = _lastDispatchMicros;
-            counter.Flags = _mockPathThisFrame ? AsyncBuoyancyReadbackConstants.FlagMockPath : AsyncBuoyancyReadbackConstants.FlagGpuPath;
-            counters[0] = counter;
-            ReleaseVaultWriteBuffer(_dataVault, in _counterHandle);
+                AsyncReadbackCounterDTO counter = counters[0];
+                counter.QueuedCount = _queuedRequestCount;
+                counter.DispatchCount = _dispatchRequestCount;
+                counter.ActiveRingSlots = CountActiveReadbackSlots();
+                counter.DroppedRequests = _droppedRequests;
+                counter.FailedRequests = _failedRequests;
+                counter.FrameIndex = _frameIndex;
+                counter.DispatchMicros = _lastDispatchMicros;
+                counter.Flags = _mockPathThisFrame ? AsyncBuoyancyReadbackConstants.FlagMockPath : AsyncBuoyancyReadbackConstants.FlagGpuPath;
+                counters[0] = counter;
+            }
+            finally
+            {
+                if (countersLocked)
+                    ReleaseVaultWriteBuffer(_dataVault, in _counterHandle);
+            }
         }
 
         private void UpdateCounterPostSimulation()
         {
-            NativeArray<AsyncReadbackCounterDTO> counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle);
-            if (!counters.IsCreated || counters.Length <= 0)
+            NativeArray<AsyncReadbackCounterDTO> counters = default;
+            bool countersLocked = false;
+            try
             {
-                ReleaseVaultWriteBuffer(_dataVault, in _counterHandle);
-                return;
-            }
+                counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle);
+                countersLocked = counters.IsCreated;
+                if (!countersLocked || counters.Length <= 0)
+                    return;
 
-            AsyncReadbackCounterDTO counter = counters[0];
-            counter.CompletedCount = _completedRequestCount;
-            counter.ActiveRingSlots = CountActiveReadbackSlots();
-            counter.LastLatencyFrames = _lastLatencyFrames;
-            counter.DroppedRequests = _droppedRequests;
-            counter.FailedRequests = _failedRequests;
-            counter.ApplyMicros = _lastApplyMicros;
-            counter.DispatchMicros = _lastDispatchMicros;
-            if (_lastLatencyFrames > 4)
-                counter.Flags |= AsyncBuoyancyReadbackConstants.FlagDumpedLatency;
-            counter.Flags |= AsyncBuoyancyReadbackConstants.FlagApplyMicrosScheduleOnly;
-            counters[0] = counter;
-            ReleaseVaultWriteBuffer(_dataVault, in _counterHandle);
+                AsyncReadbackCounterDTO counter = counters[0];
+                counter.CompletedCount = _completedRequestCount;
+                counter.ActiveRingSlots = CountActiveReadbackSlots();
+                counter.LastLatencyFrames = _lastLatencyFrames;
+                counter.DroppedRequests = _droppedRequests;
+                counter.FailedRequests = _failedRequests;
+                counter.ApplyMicros = _lastApplyMicros;
+                counter.DispatchMicros = _lastDispatchMicros;
+                if (_lastLatencyFrames > 4)
+                    counter.Flags |= AsyncBuoyancyReadbackConstants.FlagDumpedLatency;
+                counter.Flags |= AsyncBuoyancyReadbackConstants.FlagApplyMicrosScheduleOnly;
+                counters[0] = counter;
+            }
+            finally
+            {
+                if (countersLocked)
+                    ReleaseVaultWriteBuffer(_dataVault, in _counterHandle);
+            }
         }
 
         private void WriteTelemetryDirect()
         {
-            NativeArray<ReadbackTelemetryEntry> telemetry = AcquireVaultWriteBuffer(_dataVault, in _telemetryRingHandle);
-            NativeArray<int> cursor = AcquireVaultWriteBuffer(_dataVault, in _telemetryCursorHandle);
-            NativeArray<AsyncReadbackCounterDTO> counters = ReadVaultBuffer(_dataVault, in _counterHandle);
-            if (!telemetry.IsCreated || telemetry.Length <= 0 || !cursor.IsCreated || cursor.Length <= 0)
+            NativeArray<ReadbackTelemetryEntry> telemetry = default;
+            NativeArray<int> cursor = default;
+            bool telemetryLocked = false;
+            bool cursorLocked = false;
+            try
             {
-                ReleaseVaultWriteBuffer(_dataVault, in _telemetryCursorHandle);
-                ReleaseVaultWriteBuffer(_dataVault, in _telemetryRingHandle);
-                return;
-            }
+                telemetry = AcquireVaultWriteBuffer(_dataVault, in _telemetryRingHandle);
+                telemetryLocked = telemetry.IsCreated;
+                if (!telemetryLocked || telemetry.Length <= 0)
+                    return;
 
-            AsyncReadbackCounterDTO counter = counters.IsCreated && counters.Length > 0 ? counters[0] : default;
-            int write = math.max(0, cursor[0]) % telemetry.Length;
-            ReadbackTelemetryEntry entry = default;
-            entry.FrameIndex = _frameIndex;
-            entry.RequestedSamples = counter.DispatchCount;
-            entry.CompletedSamples = counter.CompletedCount;
-            entry.ActiveRingSlots = counter.ActiveRingSlots;
-            entry.ReadbackLatencyFrames = counter.LastLatencyFrames;
-            entry.DroppedRequests = counter.DroppedRequests;
-            entry.FailedRequests = counter.FailedRequests;
-            entry.MaxStaleFrames = counter.MaxStaleFrames;
-            entry.GlobalQualityWeight = _globalQualityWeight;
-            entry.ApplyMicros = counter.ApplyMicros;
-            entry.DispatchMicros = counter.DispatchMicros;
-            entry.SmoothedAlpha = AsyncBuoyancyReadbackMath.ResolveSmoothingAlpha();
-            entry.Flags = counter.Flags;
-            entry.LastEntityHash = counter.LastEntityHash;
-            entry.LastLocalHeight = counter.LastLocalHeight;
-            telemetry[write] = entry;
-            cursor[0] = cursor[0] + 1;
-            ReleaseVaultWriteBuffer(_dataVault, in _telemetryCursorHandle);
-            ReleaseVaultWriteBuffer(_dataVault, in _telemetryRingHandle);
+                cursor = AcquireVaultWriteBuffer(_dataVault, in _telemetryCursorHandle);
+                cursorLocked = cursor.IsCreated;
+                if (!cursorLocked || cursor.Length <= 0)
+                    return;
+
+                NativeArray<AsyncReadbackCounterDTO> counters = ReadVaultBuffer(_dataVault, in _counterHandle);
+                AsyncReadbackCounterDTO counter = counters.IsCreated && counters.Length > 0 ? counters[0] : default;
+                int write = math.max(0, cursor[0]) % telemetry.Length;
+                ReadbackTelemetryEntry entry = default;
+                entry.FrameIndex = _frameIndex;
+                entry.RequestedSamples = counter.DispatchCount;
+                entry.CompletedSamples = counter.CompletedCount;
+                entry.ActiveRingSlots = counter.ActiveRingSlots;
+                entry.ReadbackLatencyFrames = counter.LastLatencyFrames;
+                entry.DroppedRequests = counter.DroppedRequests;
+                entry.FailedRequests = counter.FailedRequests;
+                entry.MaxStaleFrames = counter.MaxStaleFrames;
+                entry.GlobalQualityWeight = _globalQualityWeight;
+                entry.ApplyMicros = counter.ApplyMicros;
+                entry.DispatchMicros = counter.DispatchMicros;
+                entry.SmoothedAlpha = AsyncBuoyancyReadbackMath.ResolveSmoothingAlpha();
+                entry.Flags = counter.Flags;
+                entry.LastEntityHash = counter.LastEntityHash;
+                entry.LastLocalHeight = counter.LastLocalHeight;
+                telemetry[write] = entry;
+                cursor[0] = cursor[0] + 1;
+            }
+            finally
+            {
+                if (cursorLocked)
+                    ReleaseVaultWriteBuffer(_dataVault, in _telemetryCursorHandle);
+                if (telemetryLocked)
+                    ReleaseVaultWriteBuffer(_dataVault, in _telemetryRingHandle);
+            }
         }
 
         private int CountActiveReadbackSlots()
@@ -1286,23 +1361,22 @@ namespace Hecton8.Physics
             if (!File.Exists(path))
                 return;
 
-            NativeArray<VehicleSamplingProfileDTO> profiles = AcquireVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle);
-            if (!profiles.IsCreated || profiles.Length <= 0)
-            {
-                ReleaseVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle);
-                return;
-            }
-
-            NativeArray<byte> scratch = AcquireVaultWriteBuffer(_dataVault, in _csvScratchHandle);
-            if (!scratch.IsCreated || scratch.Length <= 0)
-            {
-                ReleaseVaultWriteBuffer(_dataVault, in _csvScratchHandle);
-                ReleaseVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle);
-                return;
-            }
-
+            NativeArray<VehicleSamplingProfileDTO> profiles = default;
+            NativeArray<byte> scratch = default;
+            bool profilesLocked = false;
+            bool scratchLocked = false;
             try
             {
+                profiles = AcquireVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle);
+                profilesLocked = profiles.IsCreated;
+                if (!profilesLocked || profiles.Length <= 0)
+                    return;
+
+                scratch = AcquireVaultWriteBuffer(_dataVault, in _csvScratchHandle);
+                scratchLocked = scratch.IsCreated;
+                if (!scratchLocked || scratch.Length <= 0)
+                    return;
+
                 int bytesRead = 0;
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
@@ -1337,8 +1411,10 @@ namespace Hecton8.Physics
             }
             finally
             {
-                ReleaseVaultWriteBuffer(_dataVault, in _csvScratchHandle);
-                ReleaseVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle);
+                if (scratchLocked)
+                    ReleaseVaultWriteBuffer(_dataVault, in _csvScratchHandle);
+                if (profilesLocked)
+                    ReleaseVaultWriteBuffer(_dataVault, in _vehicleProfilesHandle);
             }
         }
 
@@ -1730,20 +1806,28 @@ namespace Hecton8.Physics
             if (_mockRingWriteLocked || _completedRequestsWriteLocked || _counterWriteLocked)
                 return false;
 
-            mockRing = AcquireVaultWriteBuffer(_dataVault, in _mockRingHandle);
-            _mockRingWriteLocked = mockRing.IsCreated;
-            completed = AcquireVaultWriteBuffer(_dataVault, in _completedRequestsHandle);
-            _completedRequestsWriteLocked = completed.IsCreated;
-            counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle);
-            _counterWriteLocked = counters.IsCreated;
-            if (mockRing.IsCreated && completed.IsCreated && counters.IsCreated)
-                return true;
-
-            ReleaseSimulationWriteLocks();
-            mockRing = default;
-            completed = default;
-            counters = default;
-            return false;
+            bool acquiredAll = false;
+            try
+            {
+                mockRing = AcquireVaultWriteBuffer(_dataVault, in _mockRingHandle);
+                _mockRingWriteLocked = mockRing.IsCreated;
+                completed = AcquireVaultWriteBuffer(_dataVault, in _completedRequestsHandle);
+                _completedRequestsWriteLocked = completed.IsCreated;
+                counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle);
+                _counterWriteLocked = counters.IsCreated;
+                acquiredAll = mockRing.IsCreated && completed.IsCreated && counters.IsCreated;
+                return acquiredAll;
+            }
+            finally
+            {
+                if (!acquiredAll)
+                {
+                    ReleaseSimulationWriteLocks();
+                    mockRing = default;
+                    completed = default;
+                    counters = default;
+                }
+            }
         }
 
         private bool TryAcquireApplyJobWriteBuffers(
@@ -1758,45 +1842,53 @@ namespace Hecton8.Physics
                 return false;
 
             bool counterWasLocked = _counterWriteLocked;
-            resolved = AcquireVaultWriteBuffer(_dataVault, in _resolvedHeightsHandle);
-            _resolvedHeightsWriteLocked = resolved.IsCreated;
-            states = AcquireVaultWriteBuffer(_dataVault, in _resultStatesHandle);
-            _resultStatesWriteLocked = states.IsCreated;
-            if (_counterWriteLocked)
+            bool acquiredAll = false;
+            try
             {
-                counters = ReadVaultBuffer(_dataVault, in _counterHandle);
+                resolved = AcquireVaultWriteBuffer(_dataVault, in _resolvedHeightsHandle);
+                _resolvedHeightsWriteLocked = resolved.IsCreated;
+                states = AcquireVaultWriteBuffer(_dataVault, in _resultStatesHandle);
+                _resultStatesWriteLocked = states.IsCreated;
+                if (_counterWriteLocked)
+                {
+                    counters = ReadVaultBuffer(_dataVault, in _counterHandle);
+                }
+                else
+                {
+                    counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle);
+                    _counterWriteLocked = counters.IsCreated;
+                }
+
+                acquiredAll = resolved.IsCreated && states.IsCreated && counters.IsCreated;
+                return acquiredAll;
             }
-            else
+            finally
             {
-                counters = AcquireVaultWriteBuffer(_dataVault, in _counterHandle);
-                _counterWriteLocked = counters.IsCreated;
+                if (!acquiredAll)
+                {
+                    if (_resultStatesWriteLocked)
+                    {
+                        ReleaseVaultWriteBuffer(_dataVault, in _resultStatesHandle);
+                        _resultStatesWriteLocked = false;
+                    }
+
+                    if (_resolvedHeightsWriteLocked)
+                    {
+                        ReleaseVaultWriteBuffer(_dataVault, in _resolvedHeightsHandle);
+                        _resolvedHeightsWriteLocked = false;
+                    }
+
+                    if (!counterWasLocked && _counterWriteLocked)
+                    {
+                        ReleaseVaultWriteBuffer(_dataVault, in _counterHandle);
+                        _counterWriteLocked = false;
+                    }
+
+                    resolved = default;
+                    states = default;
+                    counters = default;
+                }
             }
-
-            if (resolved.IsCreated && states.IsCreated && counters.IsCreated)
-                return true;
-
-            if (_resultStatesWriteLocked)
-            {
-                ReleaseVaultWriteBuffer(_dataVault, in _resultStatesHandle);
-                _resultStatesWriteLocked = false;
-            }
-
-            if (_resolvedHeightsWriteLocked)
-            {
-                ReleaseVaultWriteBuffer(_dataVault, in _resolvedHeightsHandle);
-                _resolvedHeightsWriteLocked = false;
-            }
-
-            if (!counterWasLocked && _counterWriteLocked)
-            {
-                ReleaseVaultWriteBuffer(_dataVault, in _counterHandle);
-                _counterWriteLocked = false;
-            }
-
-            resolved = default;
-            states = default;
-            counters = default;
-            return false;
         }
 
         private bool HasSimulationWriteLocks()
@@ -1879,10 +1971,15 @@ namespace Hecton8.Physics
             return fixedDelta;
         }
 
-        private static int ResolveShaderActiveWaveIndex(int maxWaveCount)
+        private static int ResolveShaderActiveWaveIndex(int maxWaveCount, float globalQualityWeight)
         {
             int safeMax = math.max(1, maxWaveCount);
-            return safeMax - 1;
+            float quality = math.saturate(math.select(
+                AsyncBuoyancyReadbackConstants.AuthoritativeQualityWeight,
+                globalQualityWeight,
+                math.isfinite(globalQualityWeight)));
+            float activeWaveCount = math.lerp(2f, (float)safeMax, quality);
+            return math.clamp((int)math.ceil(activeWaveCount) - 1, 0, safeMax - 1);
         }
 
         private static float ResolveMaxWavelength(NativeArray<AsyncBuoyancyWaveParametersDTO> waves)

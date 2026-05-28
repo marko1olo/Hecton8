@@ -4452,6 +4452,9 @@ namespace Hecton8.Core
         public static void RegisterDataVault(IDataVault instance)
         {
             RegisterService(ref _dataVault, instance);
+            MathGuard.BindDataVaultCold(instance);
+            SignalBusRegistry.BindDataVaultCold(instance);
+            GlobalTelemetryBus.BindBlackboxDataVaultCold(instance);
         }
 
         /// <summary>
@@ -4467,6 +4470,13 @@ namespace Hecton8.Core
         /// </summary>
         public static void UnregisterDataVault(IDataVault instance)
         {
+            if (ReferenceEquals(_dataVault, instance))
+            {
+                MathGuard.BindDataVaultCold(null);
+                SignalBusRegistry.BindDataVaultCold(null);
+                GlobalTelemetryBus.BindBlackboxDataVaultCold(null);
+            }
+
             UnregisterService(ref _dataVault, instance);
         }
 

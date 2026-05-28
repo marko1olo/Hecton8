@@ -40,6 +40,8 @@ namespace Crest
 
             // Global
             public static readonly int s_CrestOceanMaskTexture = Shader.PropertyToID("_CrestOceanMaskTexture");
+            public static readonly int s_CrestOceanMaskWidth = Shader.PropertyToID("_CrestOceanMaskWidth");
+            public static readonly int s_CrestOceanMaskHeight = Shader.PropertyToID("_CrestOceanMaskHeight");
             public static readonly int s_CrestOceanMaskDepthTexture = Shader.PropertyToID("_CrestOceanMaskDepthTexture");
             public static readonly int s_CrestWaterVolumeFrontFaceTexture = Shader.PropertyToID("_CrestWaterVolumeFrontFaceTexture");
             public static readonly int s_CrestWaterVolumeBackFaceTexture = Shader.PropertyToID("_CrestWaterVolumeBackFaceTexture");
@@ -343,6 +345,8 @@ namespace Crest
             }
 
             buffer.SetComputeTextureParam(_fixMaskComputeShader, _fixMaskKernel, ShaderIDs.s_CrestOceanMaskTexture, target);
+            buffer.SetComputeIntParam(_fixMaskComputeShader, ShaderIDs.s_CrestOceanMaskWidth, descriptor.width);
+            buffer.SetComputeIntParam(_fixMaskComputeShader, ShaderIDs.s_CrestOceanMaskHeight, descriptor.height);
             // XR SPI will have a volume depth of two. If using RTHandles, then set manually as will be two for all cameras.
             _fixMaskComputeShader.SetKeyword("STEREO_INSTANCING_ON", descriptor.volumeDepth > 1);
 

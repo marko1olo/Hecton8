@@ -519,7 +519,9 @@ namespace Hecton8.Physics
             bool simulateBody = inputFinite & hasBody & !wasSleeping;
             float simulateWeight = math.select(0f, 1f, simulateBody);
 
-            float quality = BuoyancyDisplacementConstants.AuthoritativeQualityWeight;
+            float jobQuality = math.saturate(math.select(BuoyancyDisplacementConstants.AuthoritativeQualityWeight, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
+            float tuningQuality = math.saturate(math.select(jobQuality, Tuning.GlobalQualityWeight, math.isfinite(Tuning.GlobalQualityWeight)));
+            float quality = math.min(jobQuality, tuningQuality);
             float qualityCurve = Smooth01(quality);
             float exactSpeedBlend = Smooth01(math.saturate((quality - 0.3f) * 1.4285715f));
             float quadraticDragBlend = Smooth01(math.saturate((quality - 0.25f) * 1.3333334f));

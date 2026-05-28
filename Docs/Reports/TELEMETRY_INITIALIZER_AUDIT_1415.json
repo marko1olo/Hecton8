@@ -1,0 +1,542 @@
+{
+  "agent": "1415",
+  "generatedUtc": "2026-05-28T00:15:35Z",
+  "targetCount": 38,
+  "entries": [
+    {
+      "name": "PathFunnelTelemetryEntry",
+      "file": "Assets/_Project/Scripts/AI/Pathfinding/PathFunnelContracts.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12834,
+      "sizeRefCount": 1,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/AI/Pathfinding/PathFunnelNavmeshRuntime.cs",
+          "line": 994
+        }
+      ],
+      "sizeRefs": [
+        {
+          "file": "Assets/_Project/Scripts/AI/Pathfinding/PathFunnelNavmeshRuntime.cs",
+          "line": 1036
+        }
+      ]
+    },
+    {
+      "name": "EncounterDirectorBlackBoxEntry",
+      "file": "Assets/_Project/Scripts/EncounterDirector.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12834,
+      "sizeRefCount": 0,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/EncounterDirector.cs",
+          "line": 1097
+        }
+      ],
+      "sizeRefs": []
+    },
+    {
+      "name": "RetinalTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+      "objectInitializerCount": 0,
+      "defaultAssignmentCount": 12834,
+      "sizeRefCount": 0,
+      "objectInitializers": [],
+      "sizeRefs": []
+    },
+    {
+      "name": "DispatcherPipelineTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Core/SystemDispatcherContracts.cs",
+      "objectInitializerCount": 0,
+      "defaultAssignmentCount": 12834,
+      "sizeRefCount": 0,
+      "objectInitializers": [],
+      "sizeRefs": []
+    },
+    {
+      "name": "HardwareThermalTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12834,
+      "sizeRefCount": 0,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs",
+          "line": 761
+        }
+      ],
+      "sizeRefs": []
+    },
+    {
+      "name": "SeismicTideTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+      "objectInitializerCount": 0,
+      "defaultAssignmentCount": 12834,
+      "sizeRefCount": 0,
+      "objectInitializers": [],
+      "sizeRefs": []
+    },
+    {
+      "name": "FuzzerTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Core/Memory/Editor/OOP_MemorySentryConcurrentRelocationFuzzer.cs",
+      "objectInitializerCount": 0,
+      "defaultAssignmentCount": 12834,
+      "sizeRefCount": 0,
+      "objectInitializers": [],
+      "sizeRefs": []
+    },
+    {
+      "name": "ScalabilityTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+      "objectInitializerCount": 0,
+      "defaultAssignmentCount": 12834,
+      "sizeRefCount": 2,
+      "objectInitializers": [],
+      "sizeRefs": [
+        {
+          "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+          "line": 1467
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+          "line": 1971
+        }
+      ]
+    },
+    {
+      "name": "DrsTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
+      "objectInitializerCount": 0,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 1,
+      "objectInitializers": [],
+      "sizeRefs": [
+        {
+          "file": "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
+          "line": 2045
+        }
+      ]
+    },
+    {
+      "name": "TBDRPipelineTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
+          "line": 1678
+        }
+      ],
+      "sizeRefs": []
+    },
+    {
+      "name": "HabitatDeconstructionTelemetryEntry",
+      "file": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/ConstructionManager.cs",
+          "line": 2113
+        }
+      ],
+      "sizeRefs": []
+    },
+    {
+      "name": "DataArchaeologyTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Gameplay/DataArchaeologyRuntime.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/Gameplay/DataArchaeologyRuntime.cs",
+          "line": 1624
+        }
+      ],
+      "sizeRefs": []
+    },
+    {
+      "name": "HabitatFloodBlackBoxEntry",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "objectInitializerCount": 0,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [],
+      "sizeRefs": []
+    },
+    {
+      "name": "FluidPipeTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Construction/FluidPipeGraphTypes.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 1,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/Construction/FluidPipePressureJobs.cs",
+          "line": 383
+        }
+      ],
+      "sizeRefs": [
+        {
+          "file": "Assets/_Project/Scripts/Construction/FluidPipeGraphTypes.cs",
+          "line": 216
+        }
+      ]
+    },
+    {
+      "name": "SalinityCorrosionTelemetryEntry",
+      "file": "Assets/_Project/Scripts/PlayerInventory.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/PlayerInventory.cs",
+          "line": 5188
+        }
+      ],
+      "sizeRefs": []
+    },
+    {
+      "name": "PrologueSequenceTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Narrative/Prologue/AwaitableDropSequenceDirector.cs",
+      "objectInitializerCount": 0,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [],
+      "sizeRefs": []
+    },
+    {
+      "name": "MetaCampaignBlackBoxEntry",
+      "file": "Assets/_Project/Scripts/Narrative/Campaign/MetaCampaignService.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/Narrative/Campaign/MetaCampaignService.cs",
+          "line": 1240
+        }
+      ],
+      "sizeRefs": []
+    },
+    {
+      "name": "ModCullTelemetryEntry",
+      "file": "Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs",
+          "line": 680
+        }
+      ],
+      "sizeRefs": []
+    },
+    {
+      "name": "WorldRegrowthTelemetryEntry",
+      "file": "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 1,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs",
+          "line": 984
+        }
+      ],
+      "sizeRefs": [
+        {
+          "file": "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs",
+          "line": 630
+        }
+      ]
+    },
+    {
+      "name": "RtgTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Power/Generators/RadioisotopeThermalGenerator.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/Power/Generators/RadioisotopeThermalGenerator.cs",
+          "line": 1134
+        }
+      ],
+      "sizeRefs": []
+    },
+    {
+      "name": "AsyncPersistenceTelemetryEntry",
+      "file": "Assets/_Project/Scripts/SaveManager.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 1,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/SaveManager.cs",
+          "line": 2672
+        }
+      ],
+      "sizeRefs": [
+        {
+          "file": "Assets/_Project/Scripts/SaveManager.cs",
+          "line": 2913
+        }
+      ]
+    },
+    {
+      "name": "HeadlessTelemetryEntry",
+      "file": "Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs",
+          "line": 838
+        }
+      ],
+      "sizeRefs": []
+    },
+    {
+      "name": "ReentryVfxTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs",
+          "line": 934
+        }
+      ],
+      "sizeRefs": []
+    },
+    {
+      "name": "DiegeticHudTelemetryEntry",
+      "file": "Assets/_Project/Scripts/UI/DiegeticVisorHudMesh.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/UI/DiegeticVisorHudMesh.cs",
+          "line": 687
+        }
+      ],
+      "sizeRefs": []
+    },
+    {
+      "name": "FloraGrowthTelemetryEntry",
+      "file": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+          "line": 3494
+        }
+      ],
+      "sizeRefs": []
+    },
+    {
+      "name": "ScatterCullTelemetryEntry",
+      "file": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+          "line": 3676
+        }
+      ],
+      "sizeRefs": []
+    },
+    {
+      "name": "TooltipBlackBoxEntry",
+      "file": "Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs",
+          "line": 1421
+        }
+      ],
+      "sizeRefs": []
+    },
+    {
+      "name": "ManualOverrideLeverTelemetryEntry",
+      "file": "Assets/_Project/Scripts/UI/VR/OpenXRManualOverrideLever.cs",
+      "objectInitializerCount": 0,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [],
+      "sizeRefs": []
+    },
+    {
+      "name": "SwayTelemetryEntry",
+      "file": "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+      "objectInitializerCount": 0,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 1,
+      "objectInitializers": [],
+      "sizeRefs": [
+        {
+          "file": "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+          "line": 695
+        }
+      ]
+    },
+    {
+      "name": "FrequencyTuningTelemetryEntry",
+      "file": "Assets/_Project/Scripts/UI/PDADecryptionSpectrogramPanel.cs",
+      "objectInitializerCount": 0,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [],
+      "sizeRefs": []
+    },
+    {
+      "name": "MacroSwarmTelemetryEntry",
+      "file": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "objectInitializerCount": 2,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 1,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "line": 5271
+        },
+        {
+          "file": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "line": 5296
+        }
+      ],
+      "sizeRefs": [
+        {
+          "file": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "line": 5325
+        }
+      ]
+    },
+    {
+      "name": "FaunaMutationTelemetryEntry",
+      "file": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 1,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "line": 5368
+        }
+      ],
+      "sizeRefs": [
+        {
+          "file": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "line": 5562
+        }
+      ]
+    },
+    {
+      "name": "BiomassTelemetryEntry",
+      "file": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 1,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "line": 6429
+        }
+      ],
+      "sizeRefs": [
+        {
+          "file": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+          "line": 6458
+        }
+      ]
+    },
+    {
+      "name": "BiolumTelemetryEntry",
+      "file": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+          "line": 1404
+        }
+      ],
+      "sizeRefs": []
+    },
+    {
+      "name": "ActiveSonarGeoTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "objectInitializerCount": 0,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [],
+      "sizeRefs": []
+    },
+    {
+      "name": "WaterlineTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs",
+          "line": 714
+        }
+      ],
+      "sizeRefs": []
+    },
+    {
+      "name": "VisorRefractionTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 0,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs",
+          "line": 1343
+        }
+      ],
+      "sizeRefs": []
+    },
+    {
+      "name": "BiolumPulseTelemetryEntry",
+      "file": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+      "objectInitializerCount": 1,
+      "defaultAssignmentCount": 12832,
+      "sizeRefCount": 1,
+      "objectInitializers": [
+        {
+          "file": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+          "line": 3052
+        }
+      ],
+      "sizeRefs": [
+        {
+          "file": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+          "line": 1277
+        }
+      ]
+    }
+  ]
+}

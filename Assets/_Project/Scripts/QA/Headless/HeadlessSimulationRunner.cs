@@ -1561,22 +1561,31 @@ namespace Hecton8.QA.Headless
             [FieldOffset(84)] private uint _pad0;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 72)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
         private struct HeadlessTelemetryEntry
         {
-            [FieldOffset(0)] public uint Frame;
-            [FieldOffset(4)] public int Day;
-            [FieldOffset(8)] public uint StateHash;
-            [FieldOffset(12)] private uint _pad0;
-            [FieldOffset(16)] public long GridX;
-            [FieldOffset(24)] public long GridY;
-            [FieldOffset(32)] public long GridZ;
-            [FieldOffset(40)] public float3 Local;
-            [FieldOffset(52)] public float PreyBiomass;
-            [FieldOffset(56)] public float PredatorBiomass;
-            [FieldOffset(60)] public float NativeBytesMb;
-            [FieldOffset(64)] public uint Flags;
-            [FieldOffset(68)] private uint _pad1;
+            [System.Runtime.InteropServices.FieldOffset(0)]
+            public long GridX;
+            [System.Runtime.InteropServices.FieldOffset(8)]
+            public long GridY;
+            [System.Runtime.InteropServices.FieldOffset(16)]
+            public long GridZ;
+            [System.Runtime.InteropServices.FieldOffset(24)]
+            public uint Frame;
+            [System.Runtime.InteropServices.FieldOffset(28)]
+            public int Day;
+            [System.Runtime.InteropServices.FieldOffset(32)]
+            public uint StateHash;
+            [System.Runtime.InteropServices.FieldOffset(36)]
+            public float3 Local;
+            [System.Runtime.InteropServices.FieldOffset(48)]
+            public float PreyBiomass;
+            [System.Runtime.InteropServices.FieldOffset(52)]
+            public float PredatorBiomass;
+            [System.Runtime.InteropServices.FieldOffset(56)]
+            public float NativeBytesMb;
+            [System.Runtime.InteropServices.FieldOffset(60)]
+            public uint Flags;
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]

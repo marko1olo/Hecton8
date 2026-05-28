@@ -17,7 +17,7 @@ namespace Hecton8.Core
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8600)]
-    public sealed unsafe class MemorySentinelRuntime : MonoBehaviour, IDispatcherSystem
+    public sealed unsafe class MemorySentinelRuntime : MonoBehaviour, IDispatcherSystem, IGlobalRegistryHotSwapListener
     {
         private static int s_x001MemorySentinelRuntimeSignalPushDropCount;
         private const uint SystemHash = 0x53483733u; // SH73
@@ -99,6 +99,7 @@ namespace Hecton8.Core
         private bool _mockSeeded;
         private bool _modQuarantineSeeded;
         private bool _forceValidationNextFrame;
+        private bool _registeredHotSwapListener;
 
         public static bool IsActive => s_active != null;
 
@@ -133,6 +134,7 @@ namespace Hecton8.Core
             s_active = this;
             RefreshVaultDependencyCold();
             ConfigureSignalLanes();
+            TryRegisterHotSwapListener();
 
             if (!_registeredDispatcher && GlobalRegistry.TryRegisterDispatcherSystem(this))
                 _registeredDispatcher = true;
@@ -142,6 +144,7 @@ namespace Hecton8.Core
         {
             CompleteValidationJob(forceComplete: true);
             UnlockTargetBuffers();
+            TryUnregisterHotSwapListener();
 
             if (_registeredDispatcher)
             {
@@ -185,7 +188,7 @@ namespace Hecton8.Core
         public void VisualSyncTick(in DispatcherTimingDTO timing)
         {
             IDataVault vault = ResolveVault();
-            if (vault == null || !EnsureVaultBuffers(vault))
+            if (vault == null || !TryResolveVaultBuffers(vault))
                 return;
 
             uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
@@ -382,7 +385,7 @@ namespace Hecton8.Core
                 return true;
 
             IDataVault vault = runtime.ResolveVault();
-            return vault == null || !runtime.EnsureVaultBuffers(vault)
+            return vault == null || !runtime.TryResolveVaultBuffers(vault)
                 ? true
                 : runtime.ApplyHashDelta(vault, in signal);
         }
@@ -406,14 +409,52 @@ namespace Hecton8.Core
 
         private void RefreshVaultDependencyCold()
         {
-            IDataVault nextVault = GlobalRegistry.DataVault;
+            RebindVaultDependencyCold(GlobalRegistry.DataVault);
+        }
+
+        private void RebindVaultDependencyCold(IDataVault nextVault)
+        {
             if (ReferenceEquals(_dataVault, nextVault))
+            {
+                if (_dataVault != null)
+                    EnsureVaultBuffers(_dataVault);
                 return;
+            }
 
             CompleteValidationJob(forceComplete: true);
             UnlockTargetBuffers();
             ReleaseVaultHandles(_dataVault);
             _dataVault = nextVault;
+            if (_dataVault != null)
+                EnsureVaultBuffers(_dataVault);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (!isActiveAndEnabled || serviceSlot != GlobalRegistryServiceSlot.DataVault)
+                return;
+
+            RebindVaultDependencyCold(currentService as IDataVault);
         }
 
         private static bool TryResolveRequired<T>(
@@ -591,6 +632,20 @@ namespace Hecton8.Core
             SeedMockInventory(vault);
             SeedModQuarantine(vault);
             return true;
+        }
+
+        private bool TryResolveVaultBuffers(IDataVault vault)
+        {
+            return TryResolveRequired(vault, in _statesHandle, MaxTargets, out NativeArray<ValidationStateDTO> _) &&
+                   TryResolveRequired(vault, in _targetsHandle, MaxTargets, out NativeArray<MemorySentinelTargetDTO> _) &&
+                   TryResolveRequired(vault, in _resultsHandle, MaxTargets, out NativeArray<MemorySentinelResultDTO> _) &&
+                   TryResolveRequired(vault, in _rollbackHandle, RollbackByteCapacity, out NativeArray<byte> _) &&
+                   TryResolveRequired(vault, in _mockInventoryHandle, MockInventoryCount, out NativeArray<MockInventorySpan> _) &&
+                   TryResolveRequired(vault, in _modQuarantineHandle, ModQuarantineSpanCount, out NativeArray<MemorySentinelModQuarantineSpan> _) &&
+                   TryResolveRequired(vault, in _telemetryHandle, MemorySentinelConstants.TelemetryCapacity, out NativeArray<MemorySentinelTelemetryEntry> _) &&
+                   TryResolveRequired(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<MemorySentinelRuntimeStateDTO> _) &&
+                   TryResolveRequired(vault, in _aupSnapshotHandle, AupSnapshotCount, out NativeArray<MemorySentinelAupSnapshotDTO> _) &&
+                   TryResolveRequired(vault, in _csvScratchHandle, CsvScratchCapacity, out NativeArray<byte> _);
         }
 
         private MemorySentinelRuntimeStateDTO OpenRuntimeStateForOwner(NativeArray<MemorySentinelRuntimeStateDTO> runtimeArray)
@@ -1082,7 +1137,7 @@ namespace Hecton8.Core
             _jobPending = false;
 
             IDataVault vault = ResolveVault();
-            if (vault == null || !EnsureVaultBuffers(vault))
+            if (vault == null || !(forceComplete ? EnsureVaultBuffers(vault) : TryResolveVaultBuffers(vault)))
             {
                 UnlockTargetBuffers();
                 return true;

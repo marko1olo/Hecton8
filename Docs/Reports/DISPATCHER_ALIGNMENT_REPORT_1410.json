@@ -1,0 +1,328 @@
+{
+  "agent": "1410",
+  "role": "DISPATCHER_PHASE_ALIGNMENT_AND_LATEFRAME_SYNC_VALIDATOR",
+  "domain": "Echelon 1 Core Infrastructure / Tick Dispatcher & Time Dilation",
+  "taskCount": 20,
+  "generatedAtUtc": "2026-05-28T01:26:27.651767+00:00",
+  "status": "STATIC_PROOF_COMPLETE_BUILD_BLOCKED_BY_CONTENTION",
+  "truthBoundary": "Unity import, Play Mode, profiler, GCMonitor, player build, and device runtime proof are absent; only static proof and text scan evidence are claimed.",
+  "phaseDependencyScan": {
+    "path": "Docs/Reports/DISPATCHER_PHASE_DEPENDENCY_SCAN_1410.json",
+    "filesScanned": 2455,
+    "methodCount": 74942,
+    "rootMethodCount": 1751,
+    "elapsedMicroseconds": 247460347,
+    "runtimeMagicMethods": 0,
+    "editorMagicMethods": 16,
+    "presentationFindings": 0,
+    "readbackCandidates": 2,
+    "confirmedReadbackFindings": 0,
+    "readbackFalsePositiveCandidates": 2,
+    "manualReadbackClassificationUtc": "2026-05-28T01:25:00.681787+00:00"
+  },
+  "buildGate": {
+    "agent": "1410",
+    "generatedAtUtc": "2026-05-28T01:16:17.3803034Z",
+    "cpuAveragePercent": 100,
+    "compilerProcesses": [
+      {
+        "Id": 55080,
+        "ProcessName": "dotnet",
+        "CPU": 443.25,
+        "StartTime": "/Date(1779929913006)/"
+      }
+    ],
+    "buildAllowed": false,
+    "dotnetBuildInvoked": false,
+    "decision": "BLOCKED_BY_CPU_CONTENTION",
+    "reason": "CPU sample is >= 50%; compilation resource throttling forbids dotnet build."
+  },
+  "dotnetBuild": {
+    "invokedByAgent1410": false,
+    "reason": "CPU sample is >= 50%; compilation resource throttling forbids dotnet build.",
+    "cpuAveragePercent": 100,
+    "compilerProcesses": [
+      {
+        "Id": 55080,
+        "ProcessName": "dotnet",
+        "CPU": 443.25,
+        "StartTime": "/Date(1779929913006)/"
+      }
+    ]
+  },
+  "editsOwnedBy1410": [
+    {
+      "file": "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+      "lines": [
+        88,
+        454,
+        468,
+        550,
+        1157
+      ],
+      "summary": "Deferred chunk fade registration transfer is FixedList512Bytes<long> key-only; overflow fails closed with numeric telemetry; dissolve curve consumes GlobalQualityWeight in LateFrameTick."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+      "lines": [
+        270,
+        962,
+        972,
+        1057,
+        1078
+      ],
+      "summary": "PreSimulation scalability shader globals stage primitive dirty flags/floats; Shader.SetGlobalFloat executes only in FlushVisualSyncShaderState."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "lines": [
+        5425
+      ],
+      "summary": "Visual-sync lane invokes Homeostasis shader flush before master visual systems."
+    },
+    {
+      "file": "Assets/_Project/Tests/Editor/DispatcherPhaseAlignment1410EditTests.cs",
+      "lines": [
+        null,
+        87,
+        92
+      ],
+      "summary": "Editor static tests anchor method extraction and enforce no managed pending fade volume lane."
+    }
+  ],
+  "zeroGcHotPathScan": {
+    "allModifiedHotRowsZeroForbiddenTokens": true,
+    "forbiddenTokenFamilies": [
+      "new reference candidates",
+      "string.Format",
+      ".ToString()",
+      "LINQ",
+      "foreach"
+    ],
+    "rows": [
+      {
+        "file": "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+        "method": "RegisterChunkFade",
+        "line": 454,
+        "counts": {
+          "newReferenceCandidateCount": 0,
+          "newReferenceCandidates": [],
+          "stringFormatCount": 0,
+          "toStringCount": 0,
+          "linqCount": 0,
+          "foreachCount": 0,
+          "totalForbiddenCount": 0
+        }
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+        "method": "FlushPendingChunkFadeRegistrations",
+        "line": 468,
+        "counts": {
+          "newReferenceCandidateCount": 0,
+          "newReferenceCandidates": [],
+          "stringFormatCount": 0,
+          "toStringCount": 0,
+          "linqCount": 0,
+          "foreachCount": 0,
+          "totalForbiddenCount": 0
+        }
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+        "method": "TickChunkFade",
+        "line": 527,
+        "counts": {
+          "newReferenceCandidateCount": 0,
+          "newReferenceCandidates": [],
+          "stringFormatCount": 0,
+          "toStringCount": 0,
+          "linqCount": 0,
+          "foreachCount": 0,
+          "totalForbiddenCount": 0
+        }
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+        "method": "ResolveChunkFadeQualityWeight01",
+        "line": 668,
+        "counts": {
+          "newReferenceCandidateCount": 0,
+          "newReferenceCandidates": [],
+          "stringFormatCount": 0,
+          "toStringCount": 0,
+          "linqCount": 0,
+          "foreachCount": 0,
+          "totalForbiddenCount": 0
+        }
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+        "method": "ClearPendingChunkFadeRegistrations",
+        "line": 1157,
+        "counts": {
+          "newReferenceCandidateCount": 0,
+          "newReferenceCandidates": [],
+          "stringFormatCount": 0,
+          "toStringCount": 0,
+          "linqCount": 0,
+          "foreachCount": 0,
+          "totalForbiddenCount": 0
+        }
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+        "method": "RefreshMathLodLowScalar",
+        "line": 962,
+        "counts": {
+          "newReferenceCandidateCount": 0,
+          "newReferenceCandidates": [],
+          "stringFormatCount": 0,
+          "toStringCount": 0,
+          "linqCount": 0,
+          "foreachCount": 0,
+          "totalForbiddenCount": 0
+        }
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+        "method": "UpdateCullingMultiplier",
+        "line": 972,
+        "counts": {
+          "newReferenceCandidateCount": 0,
+          "newReferenceCandidates": [],
+          "stringFormatCount": 0,
+          "toStringCount": 0,
+          "linqCount": 0,
+          "foreachCount": 0,
+          "totalForbiddenCount": 0
+        }
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+        "method": "PublishQualityShaderGlobals",
+        "line": 1057,
+        "counts": {
+          "newReferenceCandidateCount": 0,
+          "newReferenceCandidates": [],
+          "stringFormatCount": 0,
+          "toStringCount": 0,
+          "linqCount": 0,
+          "foreachCount": 0,
+          "totalForbiddenCount": 0
+        }
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+        "method": "FlushVisualSyncShaderState",
+        "line": 1078,
+        "counts": {
+          "newReferenceCandidateCount": 0,
+          "newReferenceCandidates": [],
+          "stringFormatCount": 0,
+          "toStringCount": 0,
+          "linqCount": 0,
+          "foreachCount": 0,
+          "totalForbiddenCount": 0
+        }
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+        "method": "RunDispatcherLateFrame",
+        "line": 5391,
+        "counts": {
+          "newReferenceCandidateCount": 0,
+          "newReferenceCandidates": [],
+          "stringFormatCount": 0,
+          "toStringCount": 0,
+          "linqCount": 0,
+          "foreachCount": 0,
+          "totalForbiddenCount": 0
+        }
+      }
+    ],
+    "keyOnlyStateTransfer": {
+      "pendingChunkFadeVolumesOccurrences": 0,
+      "managedLongArrayPendingKeyDeclarationOccurrences": 0,
+      "fixedListPendingKeyDeclarationOccurrences": 1,
+      "fieldLine": 88,
+      "registerLine": 454,
+      "flushLine": 468,
+      "clearLine": 1157,
+      "statePayload": "long cave key only; GameObject volume resolved method-local inside LateFrameTick flush via TryGetActiveVolume",
+      "heapTransfer": "no managed array/delegate/list/queue between Tick and LateFrameTick after FixedList512Bytes<long> conversion"
+    }
+  },
+  "dataSovereignty": {
+    "newGlobalDataVaultMigrationBy1410": false,
+    "bufferIdsSecuredBy1410": [],
+    "tryAcquireWriteLockSitesBy1410": [],
+    "releaseFinallySitesBy1410": [],
+    "reason": "1410 did not migrate a new buffer into GlobalDataVault; phase transfer was narrowed to FixedList512Bytes<long> and primitive Homeostasis dirty fields. Existing GlobalDataVault buffers in shared files are pre-existing or concurrent surfaces and are not claimed as 1410 migrations."
+  },
+  "unmanagedLayoutProof": {
+    "scalabilityTelemetryEntryObservedInSharedFile": {
+      "ScalabilityTelemetryEntryStructLine": 73,
+      "StructLayoutSize64Line": 72,
+      "TimestampOffset0Line": 75,
+      "RawFrameMsOffset8Line": 77,
+      "SmoothedFrameMsOffset12Line": 79,
+      "GlobalQualityWeightOffset16Line": 81,
+      "VramPressureOffset20Line": 83,
+      "FlagsOffset24Line": 85,
+      "Pad0Offset28Line": 87,
+      "FinalPadOffset63Line": 151,
+      "UnsafeSizeOf64AssertionLine": 2017,
+      "DumpHeaderStride64Line": 2067,
+      "Stackalloc64Line": 2070,
+      "Comment64Line": 69
+    },
+    "offsets": {
+      "Timestamp": 0,
+      "RawFrameMs": 8,
+      "SmoothedFrameMs": 12,
+      "GlobalQualityWeight": 16,
+      "VramPressure": 20,
+      "Flags": 24,
+      "_pad0": 28,
+      "_pad1_to__pad32": "32..63",
+      "totalSizeBytes": 64
+    },
+    "note": "No new unmanaged DTO was required for the 1410 key-only fade transfer. This struct exists in the shared Homeostasis file and the source contains an UnsafeUtility.SizeOf == 64 guard."
+  },
+  "cinematicCheatAndScalability": {
+    "voxelFade": "Uses material dissolve scalar, not physical voxel fade simulation. GlobalQualityWeight blends linear fade to smoothstep in LateFrameTick.",
+    "homeostasisShaderGlobals": "PreSimulation computes scalar truth; VisualSync performs GPU upload only when primitive dirty flags are set.",
+    "binaryLowEndSwitchesAdded": 0,
+    "globalQualityWeightUses": [
+      {
+        "file": "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs",
+        "line": 670,
+        "use": "continuous fade curve blend"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+        "line": 944,
+        "use": "continuous Math LOD pressure"
+      }
+    ]
+  },
+  "modifiedFileSha256": {
+    "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs": "5329b6e2976bbeb30aee316d8b2718b28928fe26eb0655a6092c147ccd536fdc",
+    "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs": "c2237f1181f931f7e274448d7b1fbd278cb157a504dfb04ff3889b23dd0c4841",
+    "Assets/_Project/Scripts/Core/SystemDispatcher.cs": "885450a5163a4b9b603ae6d83589b0cc5fdb4b25640668f62226756cb9402961",
+    "Assets/_Project/Tests/Editor/DispatcherPhaseAlignment1410EditTests.cs": "beefcaa001c6beba3adc1a87350aeab655e906c00b38831052dd0d315c6046d3"
+  },
+  "reports": {
+    "phaseDependency": "Docs/Reports/DISPATCHER_PHASE_DEPENDENCY_SCAN_1410.json",
+    "phaseDependencyStrictMirror": "Docs/Reports/DISPATCHER_PHASE_DEPENDENCY_SCAN_1410_STRICT.json",
+    "apexPresentation": "Docs/Reports/DISPATCHER_APEX_PRESENTATION_SCAN_1410.json",
+    "buildGate": "Docs/Reports/DISPATCHER_BUILD_GATE_1410.json",
+    "final": "Docs/Reports/DISPATCHER_ALIGNMENT_REPORT_1410.json"
+  },
+  "knownFaultsAndLimits": [
+    "No dotnet build was run because CPU gate is 100% and active dotnet process exists.",
+    "No Unity Play Mode, Profiler, GCMonitor, RenderDoc, or player/device proof was generated in this turn.",
+    "SystemDispatcher.cs and HomeostasisBrain.ScalabilityDictator.cs contain concurrent non-1410 edits in git diff; 1410 only claims the line-scoped phase deferral listed above."
+  ]
+}

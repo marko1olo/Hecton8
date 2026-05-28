@@ -1,0 +1,246 @@
+{
+    "agent":  "1415",
+    "generatedUtc":  "2026-05-28T01:19:49Z",
+    "materializedCount":  39,
+    "skippedCount":  0,
+    "materialized":  [
+                         {
+                             "name":  "ActiveSonarGeoTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                             "dataBytes":  28,
+                             "paddingBytes":  36
+                         },
+                         {
+                             "name":  "AsyncPersistenceTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                             "dataBytes":  32,
+                             "paddingBytes":  32
+                         },
+                         {
+                             "name":  "BiolumPulseTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+                             "dataBytes":  32,
+                             "paddingBytes":  32
+                         },
+                         {
+                             "name":  "BiolumTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+                             "dataBytes":  32,
+                             "paddingBytes":  32
+                         },
+                         {
+                             "name":  "BiomassTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+                             "dataBytes":  32,
+                             "paddingBytes":  32
+                         },
+                         {
+                             "name":  "DataArchaeologyTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/Gameplay/DataArchaeologyRuntime.cs",
+                             "dataBytes":  32,
+                             "paddingBytes":  32
+                         },
+                         {
+                             "name":  "DiegeticHudTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/UI/DiegeticVisorHudMesh.cs",
+                             "dataBytes":  36,
+                             "paddingBytes":  28
+                         },
+                         {
+                             "name":  "DispatcherPipelineTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/Core/SystemDispatcherContracts.cs",
+                             "dataBytes":  32,
+                             "paddingBytes":  32
+                         },
+                         {
+                             "name":  "DrsTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
+                             "dataBytes":  48,
+                             "paddingBytes":  16
+                         },
+                         {
+                             "name":  "EncounterDirectorBlackBoxEntry",
+                             "file":  "Assets/_Project/Scripts/EncounterDirector.cs",
+                             "dataBytes":  48,
+                             "paddingBytes":  16
+                         },
+                         {
+                             "name":  "FaunaMutationTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+                             "dataBytes":  48,
+                             "paddingBytes":  16
+                         },
+                         {
+                             "name":  "FloraGrowthTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+                             "dataBytes":  40,
+                             "paddingBytes":  24
+                         },
+                         {
+                             "name":  "FluidPipeTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/Construction/FluidPipeGraphTypes.cs",
+                             "dataBytes":  32,
+                             "paddingBytes":  32
+                         },
+                         {
+                             "name":  "FrequencyTuningTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/UI/PDADecryptionSpectrogramPanel.cs",
+                             "dataBytes":  32,
+                             "paddingBytes":  32
+                         },
+                         {
+                             "name":  "FuzzerTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/Core/Memory/Editor/OOP_MemorySentryConcurrentRelocationFuzzer.cs",
+                             "dataBytes":  60,
+                             "paddingBytes":  4
+                         },
+                         {
+                             "name":  "HabitatDeconstructionTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/ConstructionManager.cs",
+                             "dataBytes":  24,
+                             "paddingBytes":  40
+                         },
+                         {
+                             "name":  "HabitatFloodBlackBoxEntry",
+                             "file":  "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+                             "dataBytes":  40,
+                             "paddingBytes":  24
+                         },
+                         {
+                             "name":  "HardwareThermalTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs",
+                             "dataBytes":  24,
+                             "paddingBytes":  40
+                         },
+                         {
+                             "name":  "HeadlessTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs",
+                             "dataBytes":  64,
+                             "paddingBytes":  0
+                         },
+                         {
+                             "name":  "MacroSwarmTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+                             "dataBytes":  32,
+                             "paddingBytes":  32
+                         },
+                         {
+                             "name":  "ManualOverrideLeverTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/UI/VR/OpenXRManualOverrideLever.cs",
+                             "dataBytes":  41,
+                             "paddingBytes":  23
+                         },
+                         {
+                             "name":  "MetaCampaignBlackBoxEntry",
+                             "file":  "Assets/_Project/Scripts/Narrative/Campaign/MetaCampaignService.cs",
+                             "dataBytes":  24,
+                             "paddingBytes":  40
+                         },
+                         {
+                             "name":  "ModCullTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs",
+                             "dataBytes":  24,
+                             "paddingBytes":  40
+                         },
+                         {
+                             "name":  "PathFunnelTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/AI/Pathfinding/PathFunnelContracts.cs",
+                             "dataBytes":  48,
+                             "paddingBytes":  16
+                         },
+                         {
+                             "name":  "PrologueSequenceTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/Narrative/Prologue/AwaitableDropSequenceDirector.cs",
+                             "dataBytes":  28,
+                             "paddingBytes":  36
+                         },
+                         {
+                             "name":  "ReentryVfxTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs",
+                             "dataBytes":  48,
+                             "paddingBytes":  16
+                         },
+                         {
+                             "name":  "RetinalTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+                             "dataBytes":  32,
+                             "paddingBytes":  32
+                         },
+                         {
+                             "name":  "RtgTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/Power/Generators/RadioisotopeThermalGenerator.cs",
+                             "dataBytes":  23,
+                             "paddingBytes":  41
+                         },
+                         {
+                             "name":  "SalinityCorrosionTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/PlayerInventory.cs",
+                             "dataBytes":  32,
+                             "paddingBytes":  32
+                         },
+                         {
+                             "name":  "ScalabilityTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+                             "dataBytes":  28,
+                             "paddingBytes":  36
+                         },
+                         {
+                             "name":  "ScatterCullTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+                             "dataBytes":  40,
+                             "paddingBytes":  24
+                         },
+                         {
+                             "name":  "SeismicTideTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+                             "dataBytes":  40,
+                             "paddingBytes":  24
+                         },
+                         {
+                             "name":  "SwayTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+                             "dataBytes":  32,
+                             "paddingBytes":  32
+                         },
+                         {
+                             "name":  "TBDRPipelineTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
+                             "dataBytes":  32,
+                             "paddingBytes":  32
+                         },
+                         {
+                             "name":  "TooltipBlackBoxEntry",
+                             "file":  "Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs",
+                             "dataBytes":  32,
+                             "paddingBytes":  32
+                         },
+                         {
+                             "name":  "UberNoirShaderTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
+                             "dataBytes":  48,
+                             "paddingBytes":  16
+                         },
+                         {
+                             "name":  "VisorRefractionTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs",
+                             "dataBytes":  48,
+                             "paddingBytes":  16
+                         },
+                         {
+                             "name":  "WaterlineTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs",
+                             "dataBytes":  40,
+                             "paddingBytes":  24
+                         },
+                         {
+                             "name":  "WorldRegrowthTelemetryEntry",
+                             "file":  "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs",
+                             "dataBytes":  48,
+                             "paddingBytes":  16
+                         }
+                     ],
+    "skipped":  [
+
+                ],
+    "note":  "APEX recheck: UberNoirShaderTelemetryEntry was a real DataVault telemetry ring entry, not a valid permanent complex_body skip; it is now materialized as a 64-byte explicit layout."
+}

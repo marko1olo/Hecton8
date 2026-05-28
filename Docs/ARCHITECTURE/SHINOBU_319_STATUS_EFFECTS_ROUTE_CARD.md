@@ -3,14 +3,14 @@
 Date: 2026-05-22
 Owner: `SHINOBU_319 / STATUS_EFFECTS_FSM_ENGINE`
 Domain: Echelon 5 Combat & Physiology
-Evidence: STATIC_SOURCE / STATIC_DOC. Unity import, Burst Inspector, profiler, GCMonitor, and player-build proof remain pending under CPU/compiler guard.
+Evidence: STATIC_SOURCE / STATIC_DOC. Unity import, Burst Inspector, profiler, GCMonitor, and player-build proof remain pending under CPU/compiler guard. Agent 1417 amended the ingress lane on 2026-05-28 to remove the residual persistent `NativeQueue` owner alias.
 
 ## Authority
 
 - One fact: active poison, bleed, burn, stun, brittle, hypoxia, crush, irradiation masks and timers.
 - One owner: `CombatDamageRuntime` status partial.
-- One route: `CombatStatusEffectRequest` queue -> `ApplyStatusEffectRequestsJob` -> Vault `CombatStatusEffectState.StatusEffectMask` -> `EvaluateStatusEffectsJob` -> Vault `CombatDamageSignal[MaxTargets]` staging -> owner completion -> `SignalBus<CombatDamageSignal>` for health truth.
-- One proof artifact: Vault `CombatStatusEffectTelemetryEntry[300]` plus `Docs/AgentLogs/Dump_SHINOBU_319.bin`.
+- One route: Vault `CombatStatusEffectRequest[MaxQueuedSignals]` ingress -> `ApplyStatusEffectRequestsJob` -> Vault `CombatStatusEffectState.StatusEffectMask` -> `EvaluateStatusEffectsJob` -> Vault `CombatDamageSignal[MaxTargets]` staging -> owner completion -> `SignalBus<CombatDamageSignal>` for health truth.
+- One proof artifact: Vault `CombatStatusEffectTelemetryEntry[300]` plus `Docs/AgentLogs/Dump_1417_CombatStatusEffects.bin`.
 
 ## Vault Buffers
 
@@ -25,6 +25,7 @@ Evidence: STATIC_SOURCE / STATIC_DOC. Unity import, Burst Inspector, profiler, G
 | `71266` | `Shinobu319StatusEffectScannerReport` | reserved ID only; not requested by runtime | `0` | `SystemID.GameplayCombat` |
 | `71267` | `Shinobu319StatusEffectVfxRequests` | `CombatStatusEffectVfxRequest` | `MaxTargets` | `SystemID.GameplayCombat` |
 | `71268` | `Shinobu319StatusEffectDamageSignals` | `CombatDamageSignal` | `MaxTargets` | `SystemID.GameplayCombat` |
+| `71269` | `Shinobu319StatusEffectRequests` | `CombatStatusEffectRequest` | `MaxQueuedSignals` | `SystemID.GameplayCombat` |
 
 ## ABI
 
@@ -38,7 +39,7 @@ Evidence: STATIC_SOURCE / STATIC_DOC. Unity import, Burst Inspector, profiler, G
 
 ## Phase Route
 
-- PRE_SIMULATION: `ApplyStatusEffectRequestsJob` drains bounded requests and atomically ORs mask bits.
+- PRE_SIMULATION: `ApplyStatusEffectRequestsJob` scans bounded Vault request rows and atomically ORs mask bits.
 - If cadence debt has not matured, request-only frame stops here and skips the O(MaxTargets) evaluator.
 - It does not require armor `TargetRootAups` and does not lock VFX/damage staging buffers.
 - SLOW_TICK / SIMULATION:
@@ -67,4 +68,4 @@ Evidence: STATIC_SOURCE / STATIC_DOC. Unity import, Burst Inspector, profiler, G
 - The 300-entry telemetry ring records active live-mask row count, request count, damage, VFX count, bit extraction count, state hash, anomaly hash, and elapsed microseconds.
 - Active row count is captured before result early-out, so stable poison/bleed rows remain visible even if they emit no damage/change row in that frame.
 - Per-result telemetry is folded by owner completion after the Burst fence; the parallel job never writes the ring.
-- Non-finite health/damage/mask faults, `SignalBus<CombatDamageSignal>.TryPush` backpressure (`0x5319D001`), missing damage SignalBus native storage at publish time (`0x5319D002`), or solve time above `200us` write `Docs/AgentLogs/Dump_SHINOBU_319.bin` in ring order.
+- Non-finite health/damage/mask faults, `SignalBus<CombatDamageSignal>.TryPush` backpressure (`0x5319D001`), missing damage SignalBus native storage at publish time (`0x5319D002`), or solve time above `200us` write `Docs/AgentLogs/Dump_1417_CombatStatusEffects.bin` in ring order.

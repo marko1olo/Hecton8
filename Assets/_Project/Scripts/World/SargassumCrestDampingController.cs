@@ -1,5 +1,6 @@
 using Hecton8.Core;
 using UnityEngine;
+using UnityEngine.Serialization;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -61,6 +62,14 @@ namespace Hecton8.World
         [Tooltip("Optional explicit compute shader override used to bake both public damping facade textures in one dispatch.")]
         private ComputeShader facadeBakeComputeOverride;
 
+        [Header("Legacy Crest Inputs")]
+        [SerializeField] private Transform wavesInputTransform;
+        [SerializeField] private Renderer wavesInputRenderer;
+        [SerializeField] private Transform foamInputTransform;
+        [SerializeField] private Renderer foamInputRenderer;
+        [SerializeField] private Transform oilFilmInputTransform;
+        [SerializeField] private Renderer oilFilmInputRenderer;
+
         [Header("── Wave Damping Facade ─────────────")]
         [SerializeField, Range(0.5f, 4f)]
         [Tooltip("Power applied to canopy density before writing the public wave-damping facade texture.")]
@@ -84,6 +93,7 @@ namespace Hecton8.World
         private float oilFilmAlphaScale = 0.92f;
 
         [Header("── Diagnostics ─────────────────────")]
+        [FormerlySerializedAs("_debugDensityWorldRect")]
         [SerializeField]
         [Tooltip("Current world rect encoded as minX, minZ, invSizeX, invSizeZ for both public facade textures.")]
         private Vector4 _debugFacadeWorldRect;
@@ -626,16 +636,43 @@ namespace Hecton8.World
 
             _legacyInputsResolved = true;
             _usesCrest4LegacyInputs = false;
-            _wavesInputRenderer = ResolveLegacyInputRenderer(WavesInputName, ref _wavesInputState);
-            _foamInputRenderer = ResolveLegacyInputRenderer(FoamInputName, ref _foamInputState);
-            _oilFilmInputRenderer = ResolveLegacyInputRenderer(OilFilmInputName, ref _oilFilmInputState);
+            _wavesInputRenderer = ResolveLegacyInputRenderer(
+                WavesInputName,
+                wavesInputTransform,
+                wavesInputRenderer,
+                ref _wavesInputState);
+            _foamInputRenderer = ResolveLegacyInputRenderer(
+                FoamInputName,
+                foamInputTransform,
+                foamInputRenderer,
+                ref _foamInputState);
+            _oilFilmInputRenderer = ResolveLegacyInputRenderer(
+                OilFilmInputName,
+                oilFilmInputTransform,
+                oilFilmInputRenderer,
+                ref _oilFilmInputState);
         }
 
-        private Renderer ResolveLegacyInputRenderer(string childName, ref LegacyInputState state)
+        private Renderer ResolveLegacyInputRenderer(
+            string childName,
+            Transform authoredTransform,
+            Renderer authoredRenderer,
+            ref LegacyInputState state)
         {
-            Transform child = transform.Find(childName);
-            if (child == null || !child.TryGetComponent(out Renderer renderer))
-                return null;
+            Transform child = authoredTransform;
+            Renderer renderer = authoredRenderer;
+            if (child == null && renderer != null)
+                child = renderer.transform;
+
+            if (renderer == null && child != null)
+                child.TryGetComponent(out renderer);
+
+            if (child == null || renderer == null)
+            {
+                child = transform.Find(childName);
+                if (child == null || !child.TryGetComponent(out renderer))
+                    return null;
+            }
 
             state.Renderer = renderer;
             state.Transform = child;

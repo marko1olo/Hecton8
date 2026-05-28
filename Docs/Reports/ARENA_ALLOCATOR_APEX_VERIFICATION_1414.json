@@ -1,0 +1,246 @@
+{
+  "agent": "1414",
+  "status": "APEX_STATIC_VERIFIED_BUILD_BLOCKED_BY_HOST_CONTENTION",
+  "prompt": {
+    "path": "Docs/Tasks/CURRENT_BATCH.md",
+    "taskCount": 20,
+    "sha256": "22323d22279e444c27790cf29585eacf5528bb19964887e38f8c1efb5dab014e"
+  },
+  "zeroGcHotPathScan": {
+    "scanner": "PowerShell method-body text scan",
+    "elapsedMicroseconds": 1477291,
+    "terms": [
+      "new ",
+      "string.Format",
+      ".ToString(",
+      "System.Linq",
+      "Enumerable.",
+      ".Select(",
+      ".Where(",
+      ".ToList(",
+      ".ToArray(",
+      "foreach"
+    ],
+    "results": [
+      {
+        "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+        "signature": "public static H8RawReallocationGuard Create",
+        "line": 2223,
+        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+        "signature": "internal static void* ReallocateRaw",
+        "line": 2945,
+        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "signature": "private bool TryEnsureVaultBuffer<T>",
+        "line": 1084,
+        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "signature": "public bool TryAcquireWriteLock<T>",
+        "line": 1657,
+        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "signature": "public bool ReleaseWriteLock<T>",
+        "line": 1800,
+        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "signature": "private bool QueueDeferredRelease",
+        "line": 1925,
+        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "signature": "private bool DrainDeferredWriterReleaseLocked",
+        "line": 2035,
+        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "signature": "private bool DrainDeferredBufferPinReleaseLocked",
+        "line": 2083,
+        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "signature": "private bool TryReadFlatMetadata",
+        "line": 3583,
+        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "signature": "private bool TryGrowArenaForBytes",
+        "line": 4787,
+        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "signature": "private bool TryGrowArena",
+        "line": 4844,
+        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "signature": "public bool ProcessDeferredArenaGrowth",
+        "line": 4943,
+        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "signature": "private void QueueDeferredArenaGrowth",
+        "line": 4976,
+        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "signature": "private void ClearDeferredArenaGrowthIfSatisfied",
+        "line": 4995,
+        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "signature": "private bool CanSatisfyContiguousFreeBlock",
+        "line": 5009,
+        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+        "signature": "private void ProcessDeferredArenaGrowthPostSimulation",
+        "line": 2899,
+        "counts": { "new ": 0, "string.Format": 0, ".ToString(": 0, "System.Linq": 0, "Enumerable.": 0, ".Select(": 0, ".Where(": 0, ".ToList(": 0, ".ToArray(": 0, "foreach": 0 }
+      }
+    ]
+  },
+  "layoutProof": {
+    "struct": "H8RawReallocationGuard",
+    "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+    "line": 2211,
+    "declaredSizeBytes": 16,
+    "fields": [
+      { "name": "CompactionFenceHeld", "type": "int", "offset": 0, "size": 4 },
+      { "name": "ActiveLockMask", "type": "uint", "offset": 4, "size": 4 },
+      { "name": "HasPinnedExternalViews", "type": "byte", "offset": 8, "size": 1 },
+      { "name": "Reserved0", "type": "byte", "offset": 9, "size": 1 },
+      { "name": "Reserved1", "type": "ushort", "offset": 10, "size": 2 },
+      { "name": "Signature", "type": "uint", "offset": 12, "size": 4 }
+    ],
+    "math": "0+4=4; 4+4=8; 8+1=9; 9+1=10; 10+2=12; 12+4=16; 16 % 8 == 0.",
+    "managedReferences": 0,
+    "runtimeBoolFields": 0
+  },
+  "dataSovereignty": {
+    "migratedFieldsToGlobalDataVault": false,
+    "addedBufferIdConstantsInModifiedMethodBodies": 0,
+    "tryAcquireWriteLockFenceChecks": [
+      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1660",
+      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1673",
+      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1705"
+    ],
+    "tryLockBufferFenceChecks": [
+      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:2387",
+      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:2396"
+    ],
+    "releaseInFinallyProof": [
+      "TryAcquireWriteLock block mutation gate release: Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1791",
+      "ReleaseWriteLock release mutation gate release: Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1851",
+      "TryLockBuffer block mutation gate release: Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:2471",
+      "TryUnlockBuffer release mutation gate release: Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:2565",
+      "TryGrowArena relocation gate/fence release: Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:4933-4939"
+    ]
+  },
+  "deferredGrowthRaceProof": {
+    "writer": "QueueDeferredArenaGrowth uses Interlocked.CompareExchange max loop at GlobalDataVault.cs:4976-4988.",
+    "clear": "ClearDeferredArenaGrowthIfSatisfied uses Interlocked.CompareExchange zero-at-observed at GlobalDataVault.cs:4995-5006.",
+    "fenceQueueFix": "TryEnsureVaultBuffer now queues requiredBytes on any active compaction fence at GlobalDataVault.cs:1121-1124.",
+    "proof": "If a larger writer wins before clear observation, clear tests the larger observed target. If the writer wins after observation, clear CAS fails because current != observed. If no writer races, clear only occurs after CanSatisfyContiguousFreeBlock(observed)."
+  },
+  "sparseBufferIdProof": {
+    "problem": "High sparse BufferID values such as PlayerHandIkPublishedStates=315736 exceeded MaxGenerationHandleCapacity=100000; handles could be built through map metadata but public resolve/lock routes that used TryReadFlatMetadata could falsely fail.",
+    "fix": "TryReadFlatMetadata keeps the flat-array fast path and falls back to _metadata.TryGetValue for sparse keys without increasing native array capacity.",
+    "secondaryFix": "Generic write-lock acquire/release and deferred release queue now avoid flat-array length rejection and route ActiveWriterSystemID updates through WriteMetadata, which updates both flat metadata and sparse map metadata.",
+    "proofSites": [
+      "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:103-109",
+      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:3583-3597",
+      "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorRuntime.cs:992",
+      "Assets/_Project/Scripts/Gameplay/PlayerKinematicsRuntime_HandIK.cs:582",
+      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1657-1791",
+      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1800-1851",
+      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:1925-1935"
+    ],
+    "staticTests": [
+      "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs:55",
+      "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs:65"
+    ],
+    "capacityChangeBytes": 0
+  },
+  "deferredGrowthDuplicateCheck": {
+    "problem": "ProcessDeferredArenaGrowth contained a duplicated HasActiveBurstLocks(0u) predicate after concurrent deferred-release edits.",
+    "fix": "Removed the duplicate predicate; the method now checks active burst locks once and pinned external views once.",
+    "proofSites": [
+      "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:4943-4957",
+      "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs:81"
+    ]
+  },
+  "cinematicCheatAndScalability": {
+    "physicalSimulationAdded": false,
+    "visualFakeRelevance": "Allocator work is memory authority, not water/light/deformation simulation; the cheap path is fail-closed deferred growth rather than simulating allocator physics.",
+    "globalQualityRoute": [
+      "GameBootstrapper.ResolveBootstrapQualityWeight01 reads HomeostasisBrain.GlobalQualityWeight at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3931-3934.",
+      "GameBootstrapper.ResolveBootstrapScalabilityProfileByte maps the continuous 0..1 value to byte profile at Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:3925-3928.",
+      "GlobalDataVault.ResolveArenaCapacityLimit(byte) smoothsteps the profile from 512 MiB to 4 GiB at Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs:4745-4751."
+    ],
+    "binaryLowEndSwitchScan": [
+      { "term": "isLowEnd", "count": 0 },
+      { "term": "lowEnd", "count": 0 },
+      { "term": "LowEnd", "count": 0 },
+      { "term": "MathLodMode.Low", "count": 0 },
+      { "term": "MathPrecisionLevel.Low", "count": 0 },
+      { "term": "switchTier", "count": 0 },
+      { "term": "switchQuality", "count": 0 }
+    ],
+    "binaryLowEndSwitchFalsePositiveNotes": [
+      "The broad regex 'if (.*Low' only matched _mutationGuardMaskLow, not low-end device branches."
+    ]
+  },
+  "compilationThrottle": {
+    "dotnetBuildInvocationsThisApexPass": 0,
+    "apexInitialCpuLoadPercentage": 100,
+    "apexInitialActiveCompilerProcesses": [
+      { "processName": "dotnet", "pid": 53704 }
+    ],
+    "latestFinalGateCpuLoadPercentage": 66,
+    "latestFinalGateActiveCompilerProcesses": [
+      { "processName": "csc", "pid": 67916 },
+      { "processName": "dotnet", "pid": 20440 }
+    ],
+    "decision": "No build launched."
+  },
+  "sourceHashesAfterApexFixes": {
+    "Assets/_Project/Scripts/Core/Memory/H8Memory.cs": "5244a1a957fc131c908190f6734a54ad2a17a186901d62306faa44384d083657",
+    "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs": "1bf5afd57181118d831f9502afb2b76439c7b058bfb85db18b35d1acfd94f243",
+    "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs": "d6cc77f5fb89f2cbde4147a7bd1364f9632aa8c6da3ce856c043138ecdd3c2cc",
+    "Assets/_Project/Scripts/Core/SystemDispatcher.cs": "2764521680859df474d966e08c278aad7be7b8a03f95ef0a5dcb057bf3429c74",
+    "Assets/_Project/Tests/Editor/ArenaAllocatorSentinel1414EditTests.cs": "ade4c888cbd116a8ee5b3c7fd6f3c41f3e3926f0e73b295541f87cac9e80db33"
+  },
+  "blackBoxAndDumpState": {
+    "h8MemoryRingEntries": 300,
+    "globalDataVaultDefragRingEntries": 300,
+    "existingDumpRoutes": [
+      "Docs/AgentLogs/Dump_SENTINEL_DISPOSAL_GUARD.bin",
+      "Docs/AgentLogs/Dump_MEMORY_DEFRAGMENTATION_OVERSEER.bin",
+      "Docs/AgentLogs/Dump_MEMORY_DEFRAGMENTATION_OVERSEER_PHIVOD.bin",
+      "Docs/AgentLogs/Dump_1310_MemorySentry.bin"
+    ],
+    "dump1414Exists": false,
+    "dump1414Reason": "No runtime crash, NaN, or executed failing test occurred during this static pass; creating a fake dump would be false evidence."
+  }
+}

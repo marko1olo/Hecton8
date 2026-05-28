@@ -129,6 +129,7 @@ $spatialContractsPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\
 $modLoaderPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\ModLoader.cs'
 $modBuilderWindowPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\Editor\ModdingSDK\ModBuilderWindow.cs'
 $moddingSdkHubPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\Editor\ModdingSDK\ModdingSdkHubWindow.cs'
+$externalStarterKitWorkbenchPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\Editor\ModdingSDK\ExternalStarterKitWorkbenchWindow.cs'
 $iHectonModPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\IHectonMod.cs'
 $modMetadataPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\ModMetadata.cs'
 $modRuntimeInfoPath = Join-Path $RepoRoot 'Assets\_Project\Scripts\ModdingAPI\ModRuntimeInfo.cs'
@@ -172,6 +173,7 @@ Assert-True (Test-Path -LiteralPath $signalSourceDirectoryPath) "Missing signal 
 Assert-True (Test-Path -LiteralPath $projectionPath) "Missing projection bridge: $projectionPath"
 Assert-True (Test-Path -LiteralPath $commandDispatcherPath) "Missing command dispatcher: $commandDispatcherPath"
 Assert-True (Test-Path -LiteralPath $futureCommandSandboxPath) "Missing future command sandbox validator: $futureCommandSandboxPath"
+Assert-True (Test-Path -LiteralPath $externalStarterKitWorkbenchPath) "Missing external starter kit workbench: $externalStarterKitWorkbenchPath"
 Assert-True (Test-Path -LiteralPath $modApiSandboxTunerWindowPath) "Missing mod API sandbox tuner window: $modApiSandboxTunerWindowPath"
 Assert-True (Test-Path -LiteralPath $modKernelInspectorWindowPath) "Missing mod kernel inspector window: $modKernelInspectorWindowPath"
 Assert-True (Test-Path -LiteralPath $allowedOpcodesCsvPath) "Missing allowed opcode CSV: $allowedOpcodesCsvPath"
@@ -257,6 +259,7 @@ $externalStarterKitContractText = Get-Content -Raw -LiteralPath $externalStarter
 $changeControlChecklistText = Get-Content -Raw -LiteralPath $changeControlChecklistPath
 $runtimePlaybookText = Get-Content -Raw -LiteralPath $runtimePlaybookPath
 $specText = Get-Content -Raw -LiteralPath $specPath
+$externalStarterKitWorkbenchSource = Get-Content -Raw -LiteralPath $externalStarterKitWorkbenchPath
 $externalStarterKitTemplateReviewManifestBuilderSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateReviewManifestBuilderPath
 $externalStarterKitTemplateAllowedOpcodeListToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateAllowedOpcodeListToolPath
 $externalStarterKitTemplateIdentityToolSource = Get-Content -Raw -LiteralPath $externalStarterKitTemplateIdentityToolPath
@@ -350,12 +353,25 @@ function Invoke-StarterPrepareToolProbe([string]$TemplatePath) {
         $runtime = Get-Content -Raw -LiteralPath (Join-Path $probeFull 'mod.json') | ConvertFrom-Json
         $review = Get-Content -Raw -LiteralPath (Join-Path $probeFull 'Reports\review_manifest.json') | ConvertFrom-Json
         $reviewPaths = @($review.Files | ForEach-Object { [string]$_.Path })
+        $outputExisting = & powershell -NoProfile -ExecutionPolicy Bypass -File $toolPath -Root $probeFull
+        $existingExitCode = $LASTEXITCODE
+        $reviewExisting = Get-Content -Raw -LiteralPath (Join-Path $probeFull 'Reports\review_manifest.json') | ConvertFrom-Json
         return [pscustomobject]@{
             ExitCode = $exitCode
             Output = @($output)
+            ExistingExitCode = $existingExitCode
+            ExistingOutput = @($outputExisting)
             AuthoringId = [string]$authoring.Id
             RuntimeId = [string]$runtime.Id
             ReviewRootId = [string]$review.RootId
+            ReviewIdentityId = [string]$review.Identity.Id
+            ExistingReviewRootId = [string]$reviewExisting.RootId
+            ExistingReviewIdentityId = [string]$reviewExisting.Identity.Id
+            ReviewIdentityDisplayName = [string]$review.Identity.DisplayName
+            ReviewIdentityAuthor = [string]$review.Identity.Author
+            ReviewIdentityVersion = [string]$review.Identity.Version
+            ReviewIdentityRequiredAPIVersion = [int]$review.Identity.RequiredAPIVersion
+            ReviewIdentityModPriority = [int]$review.Identity.ModPriority
             ReviewFileCount = [int]$review.FileCount
             ReviewTotalBytes = [long]$review.TotalBytes
             ReviewMaxFiles = [int]$review.Limits.MaxFiles
@@ -776,6 +792,28 @@ $builderRejectsDuplicateManagedAssemblyFileNames =
 Assert-True $builderRejectsDuplicateManagedAssemblyFileNames 'ModBuilderWindow must reject duplicate selected DLL file names before copy.'
 $moddingSdkHubPresent = $moddingSdkHubSource.Contains('[MenuItem("Hecton/Modding/SDK Hub")]')
 $moddingSdkHubOpensBuilder = $moddingSdkHubSource.Contains('ModBuilderWindow.ShowWindow()')
+$moddingSdkHubOpensStarterWorkbench =
+    $moddingSdkHubSource.Contains('Open Starter Kit Workbench') -and
+    $moddingSdkHubSource.Contains('ExternalStarterKitWorkbenchWindow.ShowWindow()')
+$starterKitButtonIndex = $moddingSdkHubSource.IndexOf('Create External Starter Kit')
+$starterWorkbenchButtonIndex = $moddingSdkHubSource.IndexOf('Open Starter Kit Workbench')
+$legacyBuilderButtonIndex = $moddingSdkHubSource.IndexOf('Open Internal Legacy Mod Builder')
+$moddingSdkHubPrioritizesExternalStarterKit =
+    $starterKitButtonIndex -ge 0 -and
+    $starterWorkbenchButtonIndex -ge 0 -and
+    $legacyBuilderButtonIndex -ge 0 -and
+    $starterKitButtonIndex -lt $starterWorkbenchButtonIndex -and
+    $starterWorkbenchButtonIndex -lt $legacyBuilderButtonIndex
+$moddingSdkHubGatesLegacyBuilder =
+    $moddingSdkHubSource.Contains('OpenLegacyModBuilder') -and
+    $moddingSdkHubSource.Contains('EditorUtility.DisplayDialog') -and
+    $moddingSdkHubSource.Contains('Internal Legacy Mod Builder') -and
+    $moddingSdkHubSource.Contains('Public authors should use External Starter Kit')
+$modBuilderMenuIsInternalLegacy =
+    $modBuilderWindowSource.Contains('[MenuItem("Hecton/Modding/Internal/Legacy Mod Builder")]') -and
+    $modBuilderWindowSource.Contains('HECTON-8 Legacy Mod Builder') -and
+    $modBuilderWindowSource.Contains('Build Internal Legacy Package') -and
+    $modBuilderWindowSource.Contains('Internal legacy package builder')
 $moddingSdkHubLinksCoreDocs =
     $moddingSdkHubSource.Contains('Docs/Modding/README.md') -and
     $moddingSdkHubSource.Contains('Docs/Modding/Mod_API_Specification.md') -and
@@ -789,11 +827,77 @@ $moddingSdkHubRunsStaticValidator =
 $moddingSdkHubShowsEnvelopeOnlyBoundary =
     $moddingSdkHubSource.Contains('Runtime API: envelope-only') -and
     $moddingSdkHubSource.Contains('Managed DLL entries are legacy/internal')
+$externalStarterKitWorkbenchPresent =
+    $externalStarterKitWorkbenchSource.Contains('[MenuItem("Hecton/Modding/External Starter Kit Workbench")]') -and
+    $externalStarterKitWorkbenchSource.Contains('HECTON-8 External Starter Kit Workbench')
+$externalStarterKitWorkbenchUsesIdentityTool =
+    $externalStarterKitWorkbenchSource.Contains('Apply Identity + Validate') -and
+    $externalStarterKitWorkbenchSource.Contains('Tools/set_mod_identity.ps1')
+$externalStarterKitWorkbenchUsesPrepareTool =
+    $externalStarterKitWorkbenchSource.Contains('Validate + Build Review') -and
+    $externalStarterKitWorkbenchSource.Contains('Tools/prepare_mod.ps1')
+$externalStarterKitWorkbenchCanRefreshStarterKit =
+    $externalStarterKitWorkbenchSource.Contains('Create/Refresh Starter Kit') -and
+    $externalStarterKitWorkbenchSource.Contains('ModdingSdkHubWindow.CreateExternalStarterKit()')
+$externalStarterKitWorkbenchListsOpcodes =
+    $externalStarterKitWorkbenchSource.Contains('List Graph Opcodes') -and
+    $externalStarterKitWorkbenchSource.Contains('Tools/list_allowed_opcodes.ps1')
+$externalStarterKitWorkbenchShowsReviewSummary =
+    $externalStarterKitWorkbenchSource.Contains('Review Summary') -and
+    $externalStarterKitWorkbenchSource.Contains('Reports/review_manifest.json') -and
+    $externalStarterKitWorkbenchSource.Contains('FileCount') -and
+    $externalStarterKitWorkbenchSource.Contains('TotalBytes')
+$externalStarterKitWorkbenchShowsEnvelopeBoundary =
+    $externalStarterKitWorkbenchSource.Contains('Runtime API: envelope-only') -and
+    $externalStarterKitWorkbenchSource.Contains('does not enable managed DLL') -and
+    $externalStarterKitWorkbenchSource.Contains('loose AssetBundle')
+$externalStarterKitWorkbenchShowsStarterHealth =
+    $externalStarterKitWorkbenchSource.Contains('Starter Health') -and
+    $externalStarterKitWorkbenchSource.Contains('RequiredStarterFiles') -and
+    $externalStarterKitWorkbenchSource.Contains('Missing required files')
+$externalStarterKitWorkbenchRunsStructureValidator =
+    $externalStarterKitWorkbenchSource.Contains('Validate Structure Only') -and
+    $externalStarterKitWorkbenchSource.Contains('Tools/validate_structure.ps1')
+$externalStarterKitWorkbenchLinksCoreDocs =
+    $externalStarterKitWorkbenchSource.Contains('File Contract') -and
+    $externalStarterKitWorkbenchSource.Contains('Docs/Modding/External_Starter_Kit_File_Contract.md') -and
+    $externalStarterKitWorkbenchSource.Contains('Docs/Modding/Mod_API_Specification.md') -and
+    $externalStarterKitWorkbenchSource.Contains('Docs/Modding/SDK_Authoring_Interface_Plan.md') -and
+    $externalStarterKitWorkbenchSource.Contains('Docs/Modding/Runtime_Verification_Playbook.md')
+$externalStarterKitWorkbenchRunsToolsAsync =
+    $externalStarterKitWorkbenchSource.Contains('BeginOutputReadLine') -and
+    $externalStarterKitWorkbenchSource.Contains('BeginErrorReadLine') -and
+    $externalStarterKitWorkbenchSource.Contains('EditorApplication.update') -and
+    $externalStarterKitWorkbenchSource.Contains('PollRunningTool') -and
+    -not $externalStarterKitWorkbenchSource.Contains('StandardOutput.ReadToEnd') -and
+    -not $externalStarterKitWorkbenchSource.Contains('WaitForExit()')
+$externalStarterKitWorkbenchShowsReviewFreshness =
+    $externalStarterKitWorkbenchSource.Contains('Review Freshness') -and
+    $externalStarterKitWorkbenchSource.Contains('MaxFreshnessScanFiles') -and
+    $externalStarterKitWorkbenchSource.Contains('Report is stale') -and
+    $externalStarterKitWorkbenchSource.Contains('Generated/') -and
+    $externalStarterKitWorkbenchSource.Contains('Reports/')
 Assert-True $moddingSdkHubPresent 'ModdingSdkHubWindow must expose Hecton/Modding/SDK Hub.'
 Assert-True $moddingSdkHubOpensBuilder 'ModdingSdkHubWindow must open ModBuilderWindow.'
+Assert-True $moddingSdkHubOpensStarterWorkbench 'ModdingSdkHubWindow must open the External Starter Kit Workbench from public authoring actions.'
+Assert-True $moddingSdkHubPrioritizesExternalStarterKit 'ModdingSdkHubWindow must present External Starter Kit before the legacy builder.'
+Assert-True $moddingSdkHubGatesLegacyBuilder 'ModdingSdkHubWindow must gate the legacy builder behind an explicit internal warning.'
+Assert-True $modBuilderMenuIsInternalLegacy 'ModBuilderWindow menu and UI must be marked internal legacy.'
 Assert-True $moddingSdkHubLinksCoreDocs 'ModdingSdkHubWindow must link core SDK docs.'
 Assert-True $moddingSdkHubRunsStaticValidator 'ModdingSdkHubWindow must launch Validate_Mod_API_Static.ps1.'
 Assert-True $moddingSdkHubShowsEnvelopeOnlyBoundary 'ModdingSdkHubWindow must show the envelope-only runtime boundary.'
+Assert-True $externalStarterKitWorkbenchPresent 'ExternalStarterKitWorkbenchWindow must expose a dedicated starter kit workbench menu.'
+Assert-True $externalStarterKitWorkbenchUsesIdentityTool 'External Starter Kit Workbench must route identity edits through set_mod_identity.ps1.'
+Assert-True $externalStarterKitWorkbenchUsesPrepareTool 'External Starter Kit Workbench must route validation/review through prepare_mod.ps1.'
+Assert-True $externalStarterKitWorkbenchCanRefreshStarterKit 'External Starter Kit Workbench must reuse the SDK Hub starter kit generator.'
+Assert-True $externalStarterKitWorkbenchListsOpcodes 'External Starter Kit Workbench must expose graph opcode discovery.'
+Assert-True $externalStarterKitWorkbenchShowsReviewSummary 'External Starter Kit Workbench must show review manifest identity/file summary.'
+Assert-True $externalStarterKitWorkbenchShowsEnvelopeBoundary 'External Starter Kit Workbench must show the envelope-only boundary.'
+Assert-True $externalStarterKitWorkbenchShowsStarterHealth 'External Starter Kit Workbench must show required starter-file health.'
+Assert-True $externalStarterKitWorkbenchRunsStructureValidator 'External Starter Kit Workbench must run the local structure validator directly.'
+Assert-True $externalStarterKitWorkbenchLinksCoreDocs 'External Starter Kit Workbench must link core starter/API docs.'
+Assert-True $externalStarterKitWorkbenchRunsToolsAsync 'External Starter Kit Workbench must run starter tools asynchronously without blocking stdout/stderr reads.'
+Assert-True $externalStarterKitWorkbenchShowsReviewFreshness 'External Starter Kit Workbench must show bounded review manifest freshness against starter sources.'
 $externalStarterKitGeneratorPresent =
     $moddingSdkHubSource.Contains('ExternalStarterKitRoot = "ModdingSDK/ExternalStarterKit"') -and
     $moddingSdkHubSource.Contains('CreateExternalStarterKit') -and
@@ -1026,6 +1130,12 @@ $externalStarterKitPrepareToolPasses =
     $externalStarterKitPrepareProbe.AuthoringId -eq 'com.validation.prepared' -and
     $externalStarterKitPrepareProbe.RuntimeId -eq 'com.validation.prepared' -and
     $externalStarterKitPrepareProbe.ReviewRootId -eq 'com.validation.prepared' -and
+    $externalStarterKitPrepareProbe.ReviewIdentityId -eq 'com.validation.prepared' -and
+    $externalStarterKitPrepareProbe.ReviewIdentityDisplayName -eq 'Prepared Validation' -and
+    $externalStarterKitPrepareProbe.ReviewIdentityAuthor -eq 'StaticValidator' -and
+    $externalStarterKitPrepareProbe.ReviewIdentityVersion -eq '10.0.0' -and
+    $externalStarterKitPrepareProbe.ReviewIdentityRequiredAPIVersion -eq 2 -and
+    $externalStarterKitPrepareProbe.ReviewIdentityModPriority -eq 0 -and
     $externalStarterKitPrepareProbe.ReviewFileCount -gt 0 -and
     $externalStarterKitPrepareProbe.ReviewTotalBytes -gt 0 -and
     $externalStarterKitPrepareProbe.ReviewMaxFiles -eq 256 -and
@@ -1034,6 +1144,13 @@ $externalStarterKitPrepareToolPasses =
     $externalStarterKitPrepareProbe.ReviewHasPrepareTool -eq $true -and
     $externalStarterKitPrepareProbe.ReviewHasAllowedOpcodeListTool -eq $true -and
     $externalStarterKitPrepareProbe.ReviewExcludesReports -eq $true
+$externalStarterKitPrepareToolSupportsExistingManifest =
+    $externalStarterKitPrepareProbe.ExistingExitCode -eq 0 -and
+    $externalStarterKitPrepareProbe.ExistingOutput -contains 'PASS HECTON-8 starter prepared: com.validation.prepared' -and
+    $externalStarterKitPrepareProbe.ExistingReviewRootId -eq 'com.validation.prepared' -and
+    $externalStarterKitPrepareProbe.ExistingReviewIdentityId -eq 'com.validation.prepared' -and
+    $externalStarterKitTemplatePrepareToolSource.Contains('$hasIdentityEdits = -not [string]::IsNullOrWhiteSpace($Id)') -and
+    $externalStarterKitTemplatePrepareToolSource.Contains('Review manifest did not report package identity')
 $externalStarterKitReviewManifestLimitProbe = Invoke-StarterReviewManifestLimitProbe $externalStarterKitTemplatePath
 $externalStarterKitReviewManifestRejectsOversizedFile =
     $externalStarterKitReviewManifestLimitProbe.ExitCode -ne 0
@@ -1046,7 +1163,9 @@ $externalStarterKitReviewManifestHasLimits =
     $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Review manifest total byte limit exceeded') -and
     $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Limits = [pscustomobject][ordered]@{') -and
     $externalStarterKitTemplateReviewManifestBuilderSource.Contains('TotalBytes = $totalBytes') -and
+    $externalStarterKitTemplateReviewManifestBuilderSource.Contains('Identity = [pscustomobject][ordered]@{') -and
     $moddingSdkHubSource.Contains('$MaxReviewFiles = 256') -and
+    $moddingSdkHubSource.Contains('Identity = [pscustomobject][ordered]@{') -and
     $moddingSdkHubSource.Contains('Review file exceeds max bytes') -and
     $externalStarterKitPrepareToolPasses -and
     $externalStarterKitReviewManifestRejectsOversizedFile
@@ -1110,6 +1229,8 @@ if (Test-Path -LiteralPath $externalStarterKitTemplateReviewManifestPath -PathTy
 }
 $externalStarterKitReviewManifestPaths = @()
 $externalStarterKitReviewManifestHashShapeValid = $false
+$externalStarterKitReviewManifestIncludesIdentity = $false
+$externalStarterKitReviewManifestIdentityMatchesRuntimeManifest = $false
 if ($null -ne $externalStarterKitReviewManifest) {
     $externalStarterKitReviewManifestFiles = @($externalStarterKitReviewManifest.Files)
     $externalStarterKitReviewManifestPaths = @($externalStarterKitReviewManifestFiles | ForEach-Object { [string]$_.Path })
@@ -1121,6 +1242,28 @@ if ($null -ne $externalStarterKitReviewManifest) {
             $externalStarterKitReviewManifestHashShapeValid = $false
         }
     }
+
+    $templateAuthoring = Get-Content -Raw -LiteralPath (Join-Path $externalStarterKitTemplatePath 'mod.h8manifest.json') | ConvertFrom-Json
+    $templateRuntime = Get-Content -Raw -LiteralPath (Join-Path $externalStarterKitTemplatePath 'mod.json') | ConvertFrom-Json
+    $externalStarterKitReviewManifestIncludesIdentity =
+        $null -ne $externalStarterKitReviewManifest.Identity -and
+        -not [string]::IsNullOrWhiteSpace([string]$externalStarterKitReviewManifest.Identity.Id) -and
+        -not [string]::IsNullOrWhiteSpace([string]$externalStarterKitReviewManifest.Identity.DisplayName) -and
+        -not [string]::IsNullOrWhiteSpace([string]$externalStarterKitReviewManifest.Identity.Author) -and
+        ([string]$externalStarterKitReviewManifest.Identity.Version) -match '^(0|[1-9][0-9]*)[.](0|[1-9][0-9]*)[.](0|[1-9][0-9]*)(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?([+][0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$' -and
+        [int]$externalStarterKitReviewManifest.Identity.RequiredAPIVersion -eq [int]$templateRuntime.RequiredAPIVersion -and
+        [int]$externalStarterKitReviewManifest.Identity.ModPriority -eq [int]$templateRuntime.ModPriority
+    $externalStarterKitReviewManifestIdentityMatchesRuntimeManifest =
+        $externalStarterKitReviewManifestIncludesIdentity -and
+        [string]$externalStarterKitReviewManifest.RootId -eq [string]$externalStarterKitReviewManifest.Identity.Id -and
+        [string]$externalStarterKitReviewManifest.Identity.Id -eq [string]$templateRuntime.Id -and
+        [string]$externalStarterKitReviewManifest.Identity.Id -eq [string]$templateAuthoring.Id -and
+        [string]$externalStarterKitReviewManifest.Identity.DisplayName -eq [string]$templateRuntime.Name -and
+        [string]$externalStarterKitReviewManifest.Identity.DisplayName -eq [string]$templateAuthoring.DisplayName -and
+        [string]$externalStarterKitReviewManifest.Identity.Author -eq [string]$templateRuntime.Author -and
+        [string]$externalStarterKitReviewManifest.Identity.Author -eq [string]$templateAuthoring.Author -and
+        [string]$externalStarterKitReviewManifest.Identity.Version -eq [string]$templateRuntime.Version -and
+        [string]$externalStarterKitReviewManifest.Identity.Version -eq [string]$templateAuthoring.Version
 }
 $externalStarterKitReviewManifestHashesFiles =
     $externalStarterKitReviewManifestPasses -and
@@ -1128,6 +1271,8 @@ $externalStarterKitReviewManifestHashesFiles =
     [string]$externalStarterKitReviewManifest.Schema -eq 'hecton8.external_review_manifest.v1' -and
     [string]$externalStarterKitReviewManifest.Runtime -eq 'envelope-only' -and
     [string]$externalStarterKitReviewManifest.RootId -eq 'com.example.starter' -and
+    $externalStarterKitReviewManifestIncludesIdentity -and
+    $externalStarterKitReviewManifestIdentityMatchesRuntimeManifest -and
     [int]$externalStarterKitReviewManifest.FileCount -eq @($externalStarterKitReviewManifest.Files).Count -and
     $externalStarterKitReviewManifestHashShapeValid -and
     $externalStarterKitReviewManifestPaths -contains 'mod.h8manifest.json' -and
@@ -1180,6 +1325,7 @@ Assert-True $externalStarterKitReviewManifestHasLimits 'Versioned external start
 Assert-True $externalStarterKitReviewManifestRejectsOversizedFile 'Versioned external starter kit review manifest must reject oversized source files.'
 Assert-True $externalStarterKitIdentityToolPasses 'Versioned external starter kit identity helper must update both manifests and pass validation on a temp copy.'
 Assert-True $externalStarterKitPrepareToolPasses 'Versioned external starter kit prepare tool must set identity and build the review manifest on a temp copy.'
+Assert-True $externalStarterKitPrepareToolSupportsExistingManifest 'Versioned external starter kit prepare tool must validate existing manifests and rebuild review reports without requiring identity arguments.'
 Assert-True $externalStarterKitTemplateJsonSchemasVersioned 'Versioned external starter kit must include JSON Schema files.'
 Assert-True $externalStarterKitTemplateJsonSchemasParse 'Versioned external starter kit JSON Schema files must parse and declare object schemas.'
 Assert-True $externalStarterKitEditorSchemaMappingPresent 'Versioned external starter kit must include VS Code JSON schema mapping.'
@@ -1740,16 +1886,34 @@ Assert-True ($missingBuilderManifestFields.Count -eq 0) "ModBuilder manifest mis
 Assert-True ($extraBuilderManifestFields.Count -eq 0) "ModBuilder manifest has fields absent from loader manifest: $($extraBuilderManifestFields -join ', ')"
 Assert-True ($schema.sdkAuthoringAudit.hubWindowPath -eq 'Assets/_Project/Scripts/Editor/ModdingSDK/ModdingSdkHubWindow.cs') 'Schema sdkAuthoringAudit hub path drift.'
 Assert-True ($schema.sdkAuthoringAudit.builderWindowPath -eq 'Assets/_Project/Scripts/Editor/ModdingSDK/ModBuilderWindow.cs') 'Schema sdkAuthoringAudit builder path drift.'
+Assert-True ($schema.sdkAuthoringAudit.starterWorkbenchWindowPath -eq 'Assets/_Project/Scripts/Editor/ModdingSDK/ExternalStarterKitWorkbenchWindow.cs') 'Schema sdkAuthoringAudit starter workbench path drift.'
 Assert-True ($schema.sdkAuthoringAudit.hubMenuPath -eq 'Hecton/Modding/SDK Hub') 'Schema sdkAuthoringAudit hub menu path drift.'
-Assert-True ($schema.sdkAuthoringAudit.builderMenuPath -eq 'Hecton/Modding/Mod Builder') 'Schema sdkAuthoringAudit builder menu path drift.'
+Assert-True ($schema.sdkAuthoringAudit.builderMenuPath -eq 'Hecton/Modding/Internal/Legacy Mod Builder') 'Schema sdkAuthoringAudit builder menu path drift.'
+Assert-True ($schema.sdkAuthoringAudit.starterWorkbenchMenuPath -eq 'Hecton/Modding/External Starter Kit Workbench') 'Schema sdkAuthoringAudit starter workbench menu path drift.'
 Assert-True ($schema.sdkAuthoringAudit.externalStarterKitContractPath -eq 'Docs/Modding/External_Starter_Kit_File_Contract.md') 'Schema sdkAuthoringAudit external starter kit contract path drift.'
 Assert-True ($schema.sdkAuthoringAudit.externalStarterKitOutputPath -eq 'ModdingSDK/ExternalStarterKit') 'Schema sdkAuthoringAudit external starter kit output path drift.'
 Assert-True ($schema.sdkAuthoringAudit.externalStarterKitTemplatePath -eq 'ModdingSDK/ExternalStarterKit') 'Schema sdkAuthoringAudit external starter kit template path drift.'
 Assert-True ($schema.sdkAuthoringAudit.staticValidatorPath -eq 'Docs/Modding/Validate_Mod_API_Static.ps1') 'Schema sdkAuthoringAudit validator path drift.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.hubOpensBuilder) 'Schema sdkAuthoringAudit must record SDK hub builder launch.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.hubOpensStarterWorkbench) 'Schema sdkAuthoringAudit must record SDK hub starter workbench launch.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.hubPrioritizesExternalStarterKit) 'Schema sdkAuthoringAudit must record external starter kit priority.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.hubGatesLegacyBuilder) 'Schema sdkAuthoringAudit must record legacy builder warning gate.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.builderMenuIsInternalLegacy) 'Schema sdkAuthoringAudit must record internal legacy builder menu.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.hubLinksCoreDocs) 'Schema sdkAuthoringAudit must record SDK hub docs links.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.hubRunsStaticValidator) 'Schema sdkAuthoringAudit must record SDK hub static validator action.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.hubShowsEnvelopeOnlyBoundary) 'Schema sdkAuthoringAudit must record envelope-only boundary visibility.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchPresent) 'Schema sdkAuthoringAudit must record starter workbench presence.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchUsesIdentityTool) 'Schema sdkAuthoringAudit must record starter workbench identity tool route.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchUsesPrepareTool) 'Schema sdkAuthoringAudit must record starter workbench prepare tool route.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchCanRefreshStarterKit) 'Schema sdkAuthoringAudit must record starter workbench generator reuse.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchListsOpcodes) 'Schema sdkAuthoringAudit must record starter workbench opcode discovery.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchShowsReviewSummary) 'Schema sdkAuthoringAudit must record starter workbench review summary.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchShowsEnvelopeBoundary) 'Schema sdkAuthoringAudit must record starter workbench envelope-only boundary.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchShowsStarterHealth) 'Schema sdkAuthoringAudit must record starter workbench health panel.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchRunsStructureValidator) 'Schema sdkAuthoringAudit must record starter workbench structure validator route.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchLinksCoreDocs) 'Schema sdkAuthoringAudit must record starter workbench core doc links.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchRunsToolsAsync) 'Schema sdkAuthoringAudit must record async starter tool execution.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.starterWorkbenchShowsReviewFreshness) 'Schema sdkAuthoringAudit must record starter workbench review freshness.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitGeneratorPresent) 'Schema sdkAuthoringAudit must record external starter kit generator presence.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesAuthoringManifest) 'Schema sdkAuthoringAudit must record external starter kit authoring manifest output.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitWritesRuntimeManifest) 'Schema sdkAuthoringAudit must record external starter kit runtime manifest output.'
@@ -1787,11 +1951,14 @@ Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitTemplatePassesLoc
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitTemplateReferenceCsvsMatchSource) 'Schema sdkAuthoringAudit must record starter template reference CSV source parity.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitReviewManifestPasses) 'Schema sdkAuthoringAudit must record starter review manifest pass.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitReviewManifestHashesFiles) 'Schema sdkAuthoringAudit must record starter review manifest hash proof.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitReviewManifestIncludesIdentity) 'Schema sdkAuthoringAudit must record starter review manifest identity summary.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitReviewManifestIdentityMatchesRuntimeManifest) 'Schema sdkAuthoringAudit must record starter review manifest identity parity.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitReviewManifestExcludesReports) 'Schema sdkAuthoringAudit must record starter review manifest report/output exclusion.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitReviewManifestHasLimits) 'Schema sdkAuthoringAudit must record starter review manifest count/byte limits.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitReviewManifestRejectsOversizedFile) 'Schema sdkAuthoringAudit must record starter review manifest oversized-file rejection.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitIdentityToolPasses) 'Schema sdkAuthoringAudit must record starter identity helper pass.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitPrepareToolPasses) 'Schema sdkAuthoringAudit must record starter prepare tool pass.'
+Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitPrepareToolSupportsExistingManifest) 'Schema sdkAuthoringAudit must record starter prepare existing-manifest rerun proof.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitTemplateJsonSchemasVersioned) 'Schema sdkAuthoringAudit must record versioned starter JSON Schemas.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitTemplateJsonSchemasParse) 'Schema sdkAuthoringAudit must record starter JSON Schema parse proof.'
 Assert-True ([bool]$schema.sdkAuthoringAudit.externalStarterKitEditorSchemaMappingPresent) 'Schema sdkAuthoringAudit must record editor JSON schema mapping.'
@@ -2192,11 +2359,18 @@ Assert-True ($sdkAuthoringPlanText.Contains('Hecton/Modding/SDK Hub')) 'SDK auth
 Assert-True ($sdkAuthoringPlanText.Contains('Create External Starter Kit') -and $sdkAuthoringPlanText.Contains('ModdingSDK/ExternalStarterKit')) 'SDK authoring plan missing external starter kit workflow.'
 Assert-True ($sdkProductBlueprintText.Contains('HECTON Mod Workbench')) 'SDK product blueprint missing Workbench product surface.'
 Assert-True ($sdkProductBlueprintText.Contains('ExternalStarterKit') -and $sdkProductBlueprintText.Contains('no full Unity project')) 'SDK product blueprint missing current external starter kit surface.'
+Assert-True ($sdkAuthoringPlanText.Contains('required starter-file health') -and $sdkAuthoringPlanText.Contains('direct structure validation')) 'SDK authoring plan missing starter workbench health/direct validation surface.'
+Assert-True ($sdkProductBlueprintText.Contains('current External Starter Kit required-file health') -and $sdkProductBlueprintText.Contains('Tools/validate_structure.ps1')) 'SDK product blueprint missing starter workbench health/validator surface.'
+Assert-True ($sdkAuthoringPlanText.Contains('asynchronous starter tool execution') -and $sdkProductBlueprintText.Contains('async starter tool status')) 'SDK authoring docs missing async starter tool surface.'
+Assert-True ($sdkAuthoringPlanText.Contains('review manifest freshness') -and $sdkProductBlueprintText.Contains('review freshness status')) 'SDK authoring docs missing review freshness surface.'
 Assert-True ($externalStarterKitContractText.Contains('Required Files') -and $externalStarterKitContractText.Contains('mod.h8manifest.json') -and $externalStarterKitContractText.Contains('mod.json')) 'External starter kit contract missing required file layout.'
+Assert-True ($externalStarterKitContractText.Contains('required-file health') -and $externalStarterKitContractText.Contains('Tools/validate_structure.ps1') -and $externalStarterKitContractText.Contains('opens the core file/API contracts')) 'External starter kit contract missing workbench health/direct validator/doc-link rules.'
+Assert-True ($externalStarterKitContractText.Contains('runs starter tools asynchronously')) 'External starter kit contract missing async Workbench tool rule.'
+Assert-True ($externalStarterKitContractText.Contains('review manifest freshness') -and $externalStarterKitContractText.Contains('Generated/') -and $externalStarterKitContractText.Contains('Reports/')) 'External starter kit contract missing review freshness rule.'
 Assert-True ($externalStarterKitContractText.Contains('validate_structure.ps1') -and $externalStarterKitContractText.Contains('Compatibility.Runtime = envelope-only') -and $externalStarterKitContractText.Contains('empty `EntryAssembly`') -and $externalStarterKitContractText.Contains('matching authoring/runtime IDs')) 'External starter kit contract missing local structure validator rules.'
 Assert-True ($externalStarterKitContractText.Contains('build_review_manifest.ps1') -and $externalStarterKitContractText.Contains('Reports/review_manifest.json') -and $externalStarterKitContractText.Contains('SHA-256')) 'External starter kit contract missing review manifest builder rules.'
 Assert-True ($externalStarterKitContractText.Contains('set_mod_identity.ps1') -and $externalStarterKitContractText.Contains('canonical mod id') -and $externalStarterKitContractText.Contains('both manifests')) 'External starter kit contract missing identity helper rules.'
-Assert-True ($externalStarterKitContractText.Contains('prepare_mod.ps1') -and $externalStarterKitContractText.Contains('one-command') -and $externalStarterKitContractText.Contains('pwsh')) 'External starter kit contract missing one-command prepare and cross-platform shell guidance.'
+Assert-True ($externalStarterKitContractText.Contains('prepare_mod.ps1') -and $externalStarterKitContractText.Contains('one-command') -and $externalStarterKitContractText.Contains('Without identity arguments') -and $externalStarterKitContractText.Contains('pwsh')) 'External starter kit contract missing one-command prepare existing-manifest and cross-platform shell guidance.'
 Assert-True ($externalStarterKitContractText.Contains('Schemas/') -and $externalStarterKitContractText.Contains('.vscode/settings.json') -and $externalStarterKitContractText.Contains('JSON Schemas')) 'External starter kit contract missing JSON Schema/editor mapping rules.'
 $expectedSourceSignalText = 'Source `ISignal` structs: `' + [string]$schema.sourceSignalInventory.uniqueISignalStructCount + '`'
 Assert-True ($contractIndexText.Contains($expectedSourceSignalText)) 'Contract index missing current signal count.'
@@ -2271,9 +2445,25 @@ Assert-True ($lastStaticValidation.assetBundleSuffixFallbackDisabled -eq $true) 
 Assert-True ($lastStaticValidation.assetBundleGetAllAssetNamesForbidden -eq $true) "Schema lastStaticValidationSnapshot must record forbidden AssetBundle.GetAllAssetNames lookup."
 Assert-True ($lastStaticValidation.moddingSdkHubPresent -eq $true) "Schema lastStaticValidationSnapshot must record SDK hub presence."
 Assert-True ($lastStaticValidation.moddingSdkHubOpensBuilder -eq $true) "Schema lastStaticValidationSnapshot must record SDK hub builder launch."
+Assert-True ($lastStaticValidation.moddingSdkHubOpensStarterWorkbench -eq $true) "Schema lastStaticValidationSnapshot must record SDK hub starter workbench launch."
+Assert-True ($lastStaticValidation.moddingSdkHubPrioritizesExternalStarterKit -eq $true) "Schema lastStaticValidationSnapshot must record SDK hub external starter kit priority."
+Assert-True ($lastStaticValidation.moddingSdkHubGatesLegacyBuilder -eq $true) "Schema lastStaticValidationSnapshot must record SDK hub legacy builder warning gate."
+Assert-True ($lastStaticValidation.modBuilderMenuIsInternalLegacy -eq $true) "Schema lastStaticValidationSnapshot must record internal legacy builder menu."
 Assert-True ($lastStaticValidation.moddingSdkHubLinksCoreDocs -eq $true) "Schema lastStaticValidationSnapshot must record SDK hub doc links."
 Assert-True ($lastStaticValidation.moddingSdkHubRunsStaticValidator -eq $true) "Schema lastStaticValidationSnapshot must record SDK hub static validator action."
 Assert-True ($lastStaticValidation.moddingSdkHubShowsEnvelopeOnlyBoundary -eq $true) "Schema lastStaticValidationSnapshot must record SDK hub envelope-only warning."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchPresent -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench presence."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchUsesIdentityTool -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench identity tool route."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchUsesPrepareTool -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench prepare tool route."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchCanRefreshStarterKit -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench generator reuse."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchListsOpcodes -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench opcode discovery."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchShowsReviewSummary -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench review summary."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchShowsEnvelopeBoundary -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench envelope-only warning."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchShowsStarterHealth -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench health panel."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchRunsStructureValidator -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench structure validator route."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchLinksCoreDocs -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench core doc links."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchRunsToolsAsync -eq $true) "Schema lastStaticValidationSnapshot must record async starter tool execution."
+Assert-True ($lastStaticValidation.externalStarterKitWorkbenchShowsReviewFreshness -eq $true) "Schema lastStaticValidationSnapshot must record starter workbench review freshness."
 Assert-True ($lastStaticValidation.externalStarterKitGeneratorPresent -eq $true) "Schema lastStaticValidationSnapshot must record external starter kit generator presence."
 Assert-True ($lastStaticValidation.externalStarterKitWritesAuthoringManifest -eq $true) "Schema lastStaticValidationSnapshot must record external starter kit authoring manifest output."
 Assert-True ($lastStaticValidation.externalStarterKitWritesRuntimeManifest -eq $true) "Schema lastStaticValidationSnapshot must record external starter kit runtime manifest output."
@@ -2311,11 +2501,14 @@ Assert-True ($lastStaticValidation.externalStarterKitTemplatePassesLocalValidato
 Assert-True ($lastStaticValidation.externalStarterKitTemplateReferenceCsvsMatchSource -eq $true) "Schema lastStaticValidationSnapshot must record starter template reference CSV source parity."
 Assert-True ($lastStaticValidation.externalStarterKitReviewManifestPasses -eq $true) "Schema lastStaticValidationSnapshot must record starter review manifest pass."
 Assert-True ($lastStaticValidation.externalStarterKitReviewManifestHashesFiles -eq $true) "Schema lastStaticValidationSnapshot must record starter review manifest hash proof."
+Assert-True ($lastStaticValidation.externalStarterKitReviewManifestIncludesIdentity -eq $true) "Schema lastStaticValidationSnapshot must record starter review manifest identity summary."
+Assert-True ($lastStaticValidation.externalStarterKitReviewManifestIdentityMatchesRuntimeManifest -eq $true) "Schema lastStaticValidationSnapshot must record starter review manifest identity parity."
 Assert-True ($lastStaticValidation.externalStarterKitReviewManifestExcludesReports -eq $true) "Schema lastStaticValidationSnapshot must record starter review manifest report/output exclusion."
 Assert-True ($lastStaticValidation.externalStarterKitReviewManifestHasLimits -eq $true) "Schema lastStaticValidationSnapshot must record starter review manifest count/byte limits."
 Assert-True ($lastStaticValidation.externalStarterKitReviewManifestRejectsOversizedFile -eq $true) "Schema lastStaticValidationSnapshot must record starter review manifest oversized-file rejection."
 Assert-True ($lastStaticValidation.externalStarterKitIdentityToolPasses -eq $true) "Schema lastStaticValidationSnapshot must record starter identity helper pass."
 Assert-True ($lastStaticValidation.externalStarterKitPrepareToolPasses -eq $true) "Schema lastStaticValidationSnapshot must record starter prepare tool pass."
+Assert-True ($lastStaticValidation.externalStarterKitPrepareToolSupportsExistingManifest -eq $true) "Schema lastStaticValidationSnapshot must record starter prepare existing-manifest rerun proof."
 Assert-True ($lastStaticValidation.externalStarterKitTemplateJsonSchemasVersioned -eq $true) "Schema lastStaticValidationSnapshot must record versioned starter JSON Schemas."
 Assert-True ($lastStaticValidation.externalStarterKitTemplateJsonSchemasParse -eq $true) "Schema lastStaticValidationSnapshot must record starter JSON Schema parse proof."
 Assert-True ($lastStaticValidation.externalStarterKitEditorSchemaMappingPresent -eq $true) "Schema lastStaticValidationSnapshot must record editor JSON schema mapping."
@@ -2414,9 +2607,25 @@ Assert-True ($runtimePlaybookText.Contains('AssetBundleSuffixFallbackDisabled = 
 Assert-True ($runtimePlaybookText.Contains('AssetBundleGetAllAssetNamesForbidden = True')) 'Runtime playbook missing AssetBundle.GetAllAssetNames closure evidence.'
 Assert-True ($runtimePlaybookText.Contains('ModdingSdkHubPresent = True')) 'Runtime playbook missing SDK Hub presence evidence.'
 Assert-True ($runtimePlaybookText.Contains('ModdingSdkHubOpensBuilder = True')) 'Runtime playbook missing SDK Hub builder action evidence.'
+Assert-True ($runtimePlaybookText.Contains('ModdingSdkHubPrioritizesExternalStarterKit = True')) 'Runtime playbook missing SDK Hub external starter priority evidence.'
+Assert-True ($runtimePlaybookText.Contains('ModdingSdkHubGatesLegacyBuilder = True')) 'Runtime playbook missing SDK Hub legacy builder gate evidence.'
+Assert-True ($runtimePlaybookText.Contains('ModBuilderMenuIsInternalLegacy = True')) 'Runtime playbook missing internal legacy builder menu evidence.'
 Assert-True ($runtimePlaybookText.Contains('ModdingSdkHubLinksCoreDocs = True')) 'Runtime playbook missing SDK Hub docs link evidence.'
 Assert-True ($runtimePlaybookText.Contains('ModdingSdkHubRunsStaticValidator = True')) 'Runtime playbook missing SDK Hub validator action evidence.'
+Assert-True ($runtimePlaybookText.Contains('ModdingSdkHubOpensStarterWorkbench = True')) 'Runtime playbook missing SDK Hub starter workbench action evidence.'
 Assert-True ($runtimePlaybookText.Contains('ModdingSdkHubShowsEnvelopeOnlyBoundary = True')) 'Runtime playbook missing SDK Hub envelope-only boundary evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchPresent = True')) 'Runtime playbook missing starter workbench presence evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchUsesIdentityTool = True')) 'Runtime playbook missing starter workbench identity tool evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchUsesPrepareTool = True')) 'Runtime playbook missing starter workbench prepare tool evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchCanRefreshStarterKit = True')) 'Runtime playbook missing starter workbench generator reuse evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchListsOpcodes = True')) 'Runtime playbook missing starter workbench opcode discovery evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchShowsReviewSummary = True')) 'Runtime playbook missing starter workbench review summary evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchShowsEnvelopeBoundary = True')) 'Runtime playbook missing starter workbench envelope-only boundary evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchShowsStarterHealth = True')) 'Runtime playbook missing starter workbench health panel evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchRunsStructureValidator = True')) 'Runtime playbook missing starter workbench structure validator evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchLinksCoreDocs = True')) 'Runtime playbook missing starter workbench doc link evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchRunsToolsAsync = True')) 'Runtime playbook missing starter workbench async tool evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWorkbenchShowsReviewFreshness = True')) 'Runtime playbook missing starter workbench review freshness evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitGeneratorPresent = True')) 'Runtime playbook missing external starter kit generator evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesAuthoringManifest = True')) 'Runtime playbook missing external starter kit authoring manifest evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitWritesRuntimeManifest = True')) 'Runtime playbook missing external starter kit runtime manifest evidence.'
@@ -2454,11 +2663,14 @@ Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitTemplatePassesLoca
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitTemplateReferenceCsvsMatchSource = True')) 'Runtime playbook missing starter template reference CSV source parity evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitReviewManifestPasses = True')) 'Runtime playbook missing starter review manifest pass evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitReviewManifestHashesFiles = True')) 'Runtime playbook missing starter review manifest hash evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitReviewManifestIncludesIdentity = True')) 'Runtime playbook missing starter review manifest identity evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitReviewManifestIdentityMatchesRuntimeManifest = True')) 'Runtime playbook missing starter review manifest identity parity evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitReviewManifestExcludesReports = True')) 'Runtime playbook missing starter review manifest output-exclusion evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitReviewManifestHasLimits = True')) 'Runtime playbook missing starter review manifest count/byte limit evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitReviewManifestRejectsOversizedFile = True')) 'Runtime playbook missing starter review manifest oversized-file rejection evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitIdentityToolPasses = True')) 'Runtime playbook missing starter identity helper pass evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitPrepareToolPasses = True')) 'Runtime playbook missing starter prepare tool pass evidence.'
+Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitPrepareToolSupportsExistingManifest = True')) 'Runtime playbook missing starter prepare existing-manifest rerun evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitTemplateJsonSchemasVersioned = True')) 'Runtime playbook missing starter JSON Schema template evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitTemplateJsonSchemasParse = True')) 'Runtime playbook missing starter JSON Schema parse evidence.'
 Assert-True ($runtimePlaybookText.Contains('ExternalStarterKitEditorSchemaMappingPresent = True')) 'Runtime playbook missing starter editor schema mapping evidence.'
@@ -2608,9 +2820,25 @@ $result = [pscustomobject]@{
     AssetBundleGetAllAssetNamesForbidden = $assetBundleGetAllAssetNamesForbidden
     ModdingSdkHubPresent = $moddingSdkHubPresent
     ModdingSdkHubOpensBuilder = $moddingSdkHubOpensBuilder
+    ModdingSdkHubOpensStarterWorkbench = $moddingSdkHubOpensStarterWorkbench
+    ModdingSdkHubPrioritizesExternalStarterKit = $moddingSdkHubPrioritizesExternalStarterKit
+    ModdingSdkHubGatesLegacyBuilder = $moddingSdkHubGatesLegacyBuilder
+    ModBuilderMenuIsInternalLegacy = $modBuilderMenuIsInternalLegacy
     ModdingSdkHubLinksCoreDocs = $moddingSdkHubLinksCoreDocs
     ModdingSdkHubRunsStaticValidator = $moddingSdkHubRunsStaticValidator
     ModdingSdkHubShowsEnvelopeOnlyBoundary = $moddingSdkHubShowsEnvelopeOnlyBoundary
+    ExternalStarterKitWorkbenchPresent = $externalStarterKitWorkbenchPresent
+    ExternalStarterKitWorkbenchUsesIdentityTool = $externalStarterKitWorkbenchUsesIdentityTool
+    ExternalStarterKitWorkbenchUsesPrepareTool = $externalStarterKitWorkbenchUsesPrepareTool
+    ExternalStarterKitWorkbenchCanRefreshStarterKit = $externalStarterKitWorkbenchCanRefreshStarterKit
+    ExternalStarterKitWorkbenchListsOpcodes = $externalStarterKitWorkbenchListsOpcodes
+    ExternalStarterKitWorkbenchShowsReviewSummary = $externalStarterKitWorkbenchShowsReviewSummary
+    ExternalStarterKitWorkbenchShowsEnvelopeBoundary = $externalStarterKitWorkbenchShowsEnvelopeBoundary
+    ExternalStarterKitWorkbenchShowsStarterHealth = $externalStarterKitWorkbenchShowsStarterHealth
+    ExternalStarterKitWorkbenchRunsStructureValidator = $externalStarterKitWorkbenchRunsStructureValidator
+    ExternalStarterKitWorkbenchLinksCoreDocs = $externalStarterKitWorkbenchLinksCoreDocs
+    ExternalStarterKitWorkbenchRunsToolsAsync = $externalStarterKitWorkbenchRunsToolsAsync
+    ExternalStarterKitWorkbenchShowsReviewFreshness = $externalStarterKitWorkbenchShowsReviewFreshness
     ExternalStarterKitGeneratorPresent = $externalStarterKitGeneratorPresent
     ExternalStarterKitWritesAuthoringManifest = $externalStarterKitWritesAuthoringManifest
     ExternalStarterKitWritesRuntimeManifest = $externalStarterKitWritesRuntimeManifest
@@ -2648,11 +2876,14 @@ $result = [pscustomobject]@{
     ExternalStarterKitTemplateReferenceCsvsMatchSource = $externalStarterKitTemplateReferenceCsvsMatchSource
     ExternalStarterKitReviewManifestPasses = $externalStarterKitReviewManifestPasses
     ExternalStarterKitReviewManifestHashesFiles = $externalStarterKitReviewManifestHashesFiles
+    ExternalStarterKitReviewManifestIncludesIdentity = $externalStarterKitReviewManifestIncludesIdentity
+    ExternalStarterKitReviewManifestIdentityMatchesRuntimeManifest = $externalStarterKitReviewManifestIdentityMatchesRuntimeManifest
     ExternalStarterKitReviewManifestExcludesReports = $externalStarterKitReviewManifestExcludesReports
     ExternalStarterKitReviewManifestHasLimits = $externalStarterKitReviewManifestHasLimits
     ExternalStarterKitReviewManifestRejectsOversizedFile = $externalStarterKitReviewManifestRejectsOversizedFile
     ExternalStarterKitIdentityToolPasses = $externalStarterKitIdentityToolPasses
     ExternalStarterKitPrepareToolPasses = $externalStarterKitPrepareToolPasses
+    ExternalStarterKitPrepareToolSupportsExistingManifest = $externalStarterKitPrepareToolSupportsExistingManifest
     ExternalStarterKitTemplateJsonSchemasVersioned = $externalStarterKitTemplateJsonSchemasVersioned
     ExternalStarterKitTemplateJsonSchemasParse = $externalStarterKitTemplateJsonSchemasParse
     ExternalStarterKitEditorSchemaMappingPresent = $externalStarterKitEditorSchemaMappingPresent

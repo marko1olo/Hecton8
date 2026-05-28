@@ -1841,3 +1841,171 @@ Rejected Alternatives: Keeping the warning was rejected because it hides real si
 Scalability potential: Low, middle, high, and ultra runtime behavior is unchanged. The value is cleaner audit separation between editor dashboards and runtime payload contracts.
 
 Hardware Impact: Runtime microseconds saved claimed: `0`; editor-only rename.
+
+## Decision 145 - Remove Profile Disk Flush From SlowTick
+
+Problem: `GlobalProfileManager.SlowTick()` could call `FlushIfDirty()`, which reached `Directory.CreateDirectory`, `JsonUtility.ToJson`, `File.WriteAllText`, `File.Delete`, and `File.Move` every 15 seconds after profile changes. That is a real main-thread IO and managed-string allocation route in a global service.
+
+Solution: Move profile persistence to cold lifecycle routes only: disable, destroy, quit, pause, and focus-lost. Rename the actual IO helpers to `FlushIfDirtyCold()`, `TryWriteProfileCold()`, and `LoadProfileFromDiskCold()`. Keep `SlowTick()` to record dirty age only.
+
+Rejected Alternatives: Keeping the periodic flush was rejected because it blocks the dispatcher route. Adding async/threaded JSON write was rejected because it would widen profile persistence semantics and Unity `JsonUtility` thread-safety risk without runtime proof.
+
+Scalability potential: Low-tier devices avoid recurring disk-write hitches during play. Middle, high, and ultra tiers keep the same meta profile truth; extra hardware does not change save identity or authority route.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof. Expected impact is hitch-risk removal and cleaner phase ownership.
+
+## Decision 146 - Classify Babel File Reads As Background Cold
+
+Problem: Babel dictionary `FileStream` reads were flagged as runtime sync IO even though the call path enters `Awaitable.BackgroundThreadAsync()` before copying bytes into the staged Vault buffer.
+
+Solution: Rename the staging readers to `ReadBabelDictionaryIntoStageBackgroundCold()`, `ReadBabelDictionaryWithMmfBackgroundCold()`, and `ReadBabelDictionaryWithStreamBackgroundCold()`. The dispatcher still only commits an already staged dictionary in `POST_SIMULATION`.
+
+Rejected Alternatives: Rewriting the locale swap pipeline was rejected because the existing path already separates background file read from main-thread commit. Suppressing the audit rule was rejected because other sync IO warnings are real.
+
+Scalability potential: Low-tier devices keep locale disk read off the main thread. Higher tiers keep the same staged dictionary path and do not gain gameplay truth changes.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; contract clarity only.
+
+## Decision 147 - Mark Cold Persistence And QA Artifact IO Explicitly
+
+Problem: `ControlRemapper`, `QAEnduranceWatchdogBot`, and `LutArrayResolver` had helper names that looked runtime-generic while containing file IO. Some were user-commit persistence, some QA-only artifact writing, and one was boot-time LUT loading.
+
+Solution: Keep public behavior unchanged and rename only the actual IO helpers with `Cold` names. `BeginRun()` stays as a public wrapper, while the artifact setup is `BeginRunCold()`.
+
+Rejected Alternatives: Removing the IO was rejected because these routes are required persistence, QA artifact, or boot asset-load behavior. Editing unrelated AI/World/VFX residuals was rejected without a proven hot call path and with parallel agents active.
+
+Scalability potential: Low-tier devices benefit from real hot-route separation. High and ultra tiers keep identical presentation and QA behavior.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof.
+
+## Decision 148 - Stop At Proven Domain Boundary
+
+Problem: Final audit still has `40` sync-IO review warnings across AI, World, VFX, Rendering, Quest, Narrative, Construction, UI, Gameplay, Economy, Fauna, Visor, and Thermodynamics. Bulk renaming every warning would risk hiding true defects and colliding with other agents.
+
+Solution: Stop source edits after fixing the proven `GlobalProfileManager` defect and clarifying low-risk cold/background helpers. Record the remaining warning surface in the report.
+
+Rejected Alternatives: Mass cross-domain edits were rejected because no hot path was proven for those files in this pass. Full solution build was rejected because the user assigned compile errors to another agent.
+
+Scalability potential: The pass reduces known main-thread hitch risk while preserving cross-domain ownership.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; static contract warning count changed from `57` to `40`.
+
+## Decision 149 - Bind Babel Vault Cold Instead Of Polling Registry In Lookup Helpers
+
+Problem: `LocRegistry.TryResolveBabelVault()` read `GlobalRegistry.DataVault` from helpers reachable by `TryGetLocalizedSpan()`, missing-key fallback, and Babel telemetry setup. That made a read/lookup helper capable of global service polling.
+
+Solution: Add `LocRegistry.BindBabelVaultCold(IDataVault)` and make `TryResolveBabelVault()` read only cached `_babelVault`. `LocalizationManager` binds the Vault in `Awake()` before `ReloadBinaryOrMock()` and rebinds on `GlobalRegistryServiceSlot.DataVault`.
+
+Rejected Alternatives: Keeping the lazy registry fallback was rejected because missing bootstrap dependencies should fail closed, not be hidden by hot lookup code. Adding another global facade was rejected because the owner already exists.
+
+Scalability potential: Low-tier devices avoid hidden lookup/branch work in UI localization fallback. Middle, high, and ultra tiers keep the same Babel DTO layout, BufferIDs, and staged swap path.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler proof. Stability gain is route determinism and cleaner Vault ownership.
+
+## Decision 150 - Cache SignalBus DataVault For Late Lane Initialization
+
+Problem: `SignalBus<T>.TryPush()` can lazily call `EnsureInitialized()` for lanes not prewarmed by bootstrap. That path acquired frame snapshot storage through `GlobalRegistry.DataVault`, so first publish on a late lane could poll the registry.
+
+Solution: Add `SignalBusRegistry.BindDataVaultCold(IDataVault)` and `TryGetBoundDataVault()`. Bind from `GlobalRegistry.RegisterDataVault()`, clear on `UnregisterDataVault()`, and bind again in `GlobalSignals.InitializeAllQueues()` before lane initialization.
+
+Rejected Alternatives: Removing lazy lane initialization was rejected as too broad for this pass. Keeping lazy registry lookup was rejected because SignalBus publishes are hot broadcast routes and must consume cached owner state.
+
+Scalability potential: Low-tier devices keep first-publish behavior deterministic without registry fallback. Higher tiers can still use the same lane capacities and frame snapshots without changing gameplay truth ownership.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no player/profiler proof. Expected gain is avoiding a hidden first-publish hitch and preserving one Vault route.
+
+## Decision 151 - Pass Signal Telemetry Ring The Boot Vault
+
+Problem: `SignalTelemetryRingBuffer.Initialize()` resolved `GlobalRegistry.DataVault` internally although `GlobalSignals.InitializeAllQueues()` already had the boot Vault.
+
+Solution: Change it to `Initialize(IDataVault vault)` and pass the existing cold boot Vault.
+
+Rejected Alternatives: Leaving the internal lookup was rejected because it is unnecessary global surface inside a critical telemetry owner. Moving all SignalWarden tables to a new owner was rejected as scope inflation.
+
+Scalability potential: Runtime behavior is unchanged across low, middle, high, and ultra profiles. The value is a simpler proof chain for the signal black-box ring.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; cold-route clarity only.
+
+## Decision 152 - Repair Hardware Thermal Blackbox ABI And Write Route
+
+Problem: `HardwareThermalTelemetryEntry` had been expanded to a 64-byte explicit-layout telemetry record, but `DumpBlackBoxCold()` still wrote dump header stride `24` and emitted `stackalloc byte[24]` per frame. That makes postmortem dump readers consume a different ABI than the native ring stores. The same file also used mutating `TryResolveThermalSeverity()` and `TryResolveThermalBlackBox()` helpers that could allocate or acquire mutable DataVault views behind read-like names.
+
+Solution: Promote `HardwareThermalTelemetryEntryBytes=64` as the single stride constant, make the struct `Size=HardwareThermalTelemetryEntryBytes`, and dump 64 bytes per ring entry. The dump now uses a read-only DataVault view. Severity and blackbox writes now use `OpenOrAcquire*WriteView()` helpers backed by `TryAcquireWriteLock()` and release in `finally`. DataVault replacement now disposes old handles, caches the new Vault, and warms native state while the service is active.
+
+Rejected Alternatives: Reverting the telemetry entry to 24 bytes was rejected because it would undo ARM64/cache-line padding work already present in source. Keeping a compact 24-byte dump was rejected because it violates crash artifact ABI. Keeping `TryResolve*` names was rejected because project doctrine says read accessors and resolve helpers must not allocate, publish, or mutate global/native state. Running a full build under active `dotnet.exe` and CPU `100%` was rejected by the build-load rule and by the user's compile-wall boundary.
+
+Scalability potential: Low-tier devices keep the same bounded 300-frame blackbox, but crash dumps are now parseable against the actual 64-byte native record. Middle, high, and ultra tiers keep identical thermal behavior while the debug/postmortem route remains deterministic. This does not add quality-tier switches or gameplay truth changes.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is native lifetime/ABI correctness and lower risk of losing the last 300 thermal frames during crash analysis.
+
+## Decision 153 - Split Global Telemetry Blackbox Read And Open Routes
+
+Problem: `GlobalTelemetryBus.TryGetBlackboxRingBuffer()` looked like a read accessor, but on the main thread it could call `EnsureBlackboxInitialized()`. That initializer can open DataVault buffers, set blackbox state, and prepare backing storage. The route violates the project rule that `Get*`, `TryGet*`, `Resolve*`, and `Read*` accessors must not allocate, publish, sync, or mutate global/native state.
+
+Solution: Replace the old API with two explicit routes. `TryResolveBlackboxRingBufferView()` is pure with respect to service lifetime: it resolves an already-open DataVault view and returns false if unavailable. `OpenOrInitializeBlackboxRingBufferView()` owns the mutating path and may initialize only on the owner thread. The DTO population code is shared through `PopulateBlackboxRingBufferDto()` so both routes expose the same pointer, stride, counters, and fatal-hash fields.
+
+Rejected Alternatives: Keeping the old `TryGet*` name was rejected because it normalizes hidden initialization behind read-like language. Forcing every caller through the mutating path was rejected because Burst job field injection needs a no-surprise existing-view route. Adding write locks here was rejected for this pass because the DTO is a raw blackbox view and no active source call sites used the old method; widening ownership semantics without runtime proof would be broader than the defect.
+
+Scalability potential: Low-tier devices avoid first-use blackbox allocation through a method that appears to be a read. Middle, high, and ultra tiers keep the same 300-frame blackbox capacity, frame stride, and telemetry fidelity. This does not change gameplay truth, DTO layout, save identity, or quality-tier authority.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The gain is route determinism and removal of one hidden initialization surface in global telemetry.
+
+## Decision 154 - Make Hardware Tier Properties Pure Snapshots
+
+Problem: `HardwareTierDetector` and `QuestVulkanRuntimePolicy` used public property getters that called `EnsureInitialized()`. Those getters are read accessors, but `EnsureInitialized()` reads Unity platform state, writes cached fields, and can make the first read become the initialization phase. The global doctrine requires boot or explicit owner calls to mutate, not property reads.
+
+Solution: Keep `RuntimeInitializeOnLoadMethod(BeforeSceneLoad)` and explicit `EnsureInitialized()` as the mutating routes. Convert hardware and Quest policy properties to pure snapshot reads. Initialize `_recommendedVramBudgetMegabytes` to the conservative default `1600` so a pre-boot budget read is not zero. Keep compute/high-resource flags false until initialized, and make `IsQuestVulkanCandidate` false until its policy has initialized.
+
+Rejected Alternatives: Leaving lazy property initialization was rejected because it hides Unity `SystemInfo` and XR probing behind read accessors. Forcing all existing call sites to call `EnsureInitialized()` was rejected as broad cross-domain churn; the existing boot hook already prewarms the policy in normal runtime. Returning optimistic compute permissions before init was rejected because low-end and Quest-like paths must fail closed.
+
+Scalability potential: Low-tier devices get conservative pre-boot defaults: no high-resource compute and a bounded default VRAM budget. Middle, high, and ultra tiers receive the same richer policy after explicit boot initialization. No binary quality switch was added; this only separates ownership of when the snapshot is produced.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is deterministic read behavior and removal of hidden platform probing from property getters.
+
+## Decision 155 - Bind Global Telemetry Blackbox Vault Explicitly
+
+Problem: After the read-accessor split, `GlobalTelemetryBus.TryBindBlackboxVaultBuffersNoLock()` still read `GlobalRegistry.DataVault` internally. That means the first blackbox bind could still poll the global registry from inside telemetry storage setup instead of consuming a cold-bound owner dependency.
+
+Solution: Add `_blackboxBoundVault` and `BindBlackboxDataVaultCold(IDataVault)` to `GlobalTelemetryBus.Blackbox`. `GlobalRegistry.RegisterDataVault()` now binds the blackbox route beside the SignalBus route, and `UnregisterDataVault()` clears both when the authoritative Vault is removed. `TryBindBlackboxVaultBuffersNoLock()` now uses the cached `_blackboxBoundVault`, and full blackbox static disposal clears the bound Vault.
+
+Rejected Alternatives: Adding a lazy `GlobalTelemetryBus.Initialize()` fallback to read `GlobalRegistry.DataVault` was rejected because it preserves a hidden global lookup surface. Passing the Vault through every legacy `GlobalTelemetryBus.Initialize()` call site was rejected as broad cross-domain churn while many other agents are active. Editing gameplay/physics callers was rejected because the defect is the Core owner route, not their publish API.
+
+Scalability potential: Low-tier devices fail closed if boot has not supplied a Vault; no first-use registry polling or surprise DataVault bind occurs from telemetry. Middle, high, and ultra tiers keep the same SHINOBU blackbox frame count, stride, BufferIDs, watchdog, MMF, and dump behavior after explicit boot binding. No quality tier changes, DTO layout changes, save identity changes, or authority-route changes were introduced.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is route determinism and lower risk of hidden first-bind work in global telemetry.
+
+## Decision 156 - Move Memory Sentinel Vault Binding Out Of VisualSync
+
+Problem: `MemorySentinelRuntime` cached `_dataVault` but did not subscribe to `GlobalRegistry` hot-swap. If it enabled before Vault registration, or if the Vault was replaced, it could keep a null or stale Vault. Its `VisualSyncTick()` and `PublishHashDelta()` also called `EnsureVaultBuffers()`, which can open DataVault buffers via `EnsureGenerationHandle<T>()`; that is a hot-route allocation fallback.
+
+Solution: Make `MemorySentinelRuntime` implement `IGlobalRegistryHotSwapListener`. Register in `OnEnable`, unregister in `OnDisable`, and rebind only on `GlobalRegistryServiceSlot.DataVault`. Add `RebindVaultDependencyCold(IDataVault)` that completes pending validation, unlocks old buffers, releases handles, assigns the new Vault, and opens required buffers from the cold lifecycle/hot-swap route. Add `TryResolveVaultBuffers()` and make `VisualSyncTick()`, `PublishHashDelta()`, and non-forced validation completion consume existing views only.
+
+Rejected Alternatives: Leaving the first `VisualSyncTick()` to allocate was rejected because dispatcher visual sync is a frame phase, not an ownership bootstrap phase. Polling `GlobalRegistry.DataVault` every frame was rejected by the registry doctrine. Removing the defensive cold `EnsureVaultBuffers()` from editor/tuner/manual dump paths was rejected because those are explicit owner or diagnostic operations, not hot visual-sync cadence.
+
+Scalability potential: Low-tier devices avoid a first-frame or post-rebind DataVault open in visual sync. Middle, high, and ultra tiers keep the same sentinel capacity, telemetry DTO layout, validation cadence, rollback bytes, and continuous `GlobalQualityWeight` behavior. No gameplay truth, save identity, signal DTO, or authority route was changed.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The expected benefit is removing a hidden frame-phase allocation/stale-Vault risk from integrity validation.
+
+## Decision 157 - Bind MathGuard DataVault From The Owner Route
+
+Problem: `MathGuard.Initialize()` called `CacheDataVaultCold()`, and that helper read `GlobalRegistry.DataVault` inside MathGuard. MathGuard is reached from physics/runtime finite-value ingress and owns invalid-number DataVault handles, so its Vault dependency should be supplied by the authoritative DataVault registration route.
+
+Solution: Add `MathGuard.BindDataVaultCold(IDataVault)`. `GlobalRegistry.RegisterDataVault()` now binds MathGuard beside SignalBus and GlobalTelemetry blackbox. `GlobalRegistry.UnregisterDataVault()` clears MathGuard when the authoritative Vault is removed. `MathGuard.Initialize()` now consumes only the bound Vault, and `CacheDataVaultCold()` was removed.
+
+Rejected Alternatives: Keeping lazy `GlobalRegistry.DataVault` lookup was rejected because it hides dependency discovery in a global finite guard. Polling the registry from physics consumers was rejected by the registry doctrine. Editing broad physics call sites was rejected because the fault was the Core owner route.
+
+Scalability potential: Low-tier devices avoid hidden dependency lookup/rebind ambiguity in the invalid-number telemetry lane. Middle, high, and ultra tiers keep the same finite-guard behavior, invalid-number queue capacity, DTO layout, and telemetry drain cadence.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is DataVault lifetime determinism and lower risk of stale invalid-number handles after Vault replacement.
+
+## Decision 158 - Reopen Homeostasis Buffers On DataVault Rebind Before Frame Code Resumes
+
+Problem: `HomeostasisBrain.RebindRegistryDependency(DataVault)` released Homeostasis and ScalabilityDictator Vault handles and then set `_globalHardwareMetricsHandle`, `_frameTimeMsHandle`, and `_blackBoxHandle` to default. The next `PreSimulationTick()` called `TryResolveRuntimeBuffers()`, and before this pass that helper could reach `vault.EnsureGenerationHandle<T>()` through `TryResolveOrAcquire()`. That made pre-simulation a hidden DataVault open/allocation fallback after service replacement.
+
+Solution: Add `ReopenRuntimeBuffersAfterDataVaultRebindCold()` immediately after assigning the new Vault. Split the API by intent: `OpenOrAcquireRuntimeBuffers()` is the mutating cold/init/hot-swap route, while `TryResolveRuntimeBuffers()` is resolve-only and returns false when handles are absent or invalid. Remove unused `TryResolveHardwareMetrics()` because it was another mutating read-like helper.
+
+Rejected Alternatives: Touching `HomeostasisBrain.ScalabilityDictator.cs` was rejected because another agent has active edits there. Leaving the first post-rebind frame to allocate was rejected because frame phases are consumers, not ownership setup. Reopening only the three base buffers was rejected because `ResetScalabilityDictatorVaultHandles()` also clears MathLOD/scalability handles, so the owner hot-swap route must reopen the dependent set before frame code resumes. Running a full build was rejected because CPU was `100%`, `dotnet.exe` PID `41344` was active, and compile-wall repair belongs to another agent.
+
+Scalability potential: Low-tier devices avoid a post-rebind allocation/open path in pre-simulation. Middle, high, and ultra tiers keep the same continuous `GlobalQualityWeight`, telemetry capacities, BufferIDs, DTO layout, and save identity. The change does not add binary quality switches.
+
+Hardware Impact: Runtime microseconds saved claimed: `0`; no profiler/player proof. The value is frame-phase determinism and lower risk of stale or unopened Homeostasis buffers after DataVault replacement.

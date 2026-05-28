@@ -1,0 +1,30 @@
+﻿{
+    "agent":  "1401",
+    "generatedAt":  "2026-05-28T04:54:37.7377534+04:00",
+    "evidenceClass":  "STATIC_SOURCE",
+    "scanRoots":  [
+                      "Assets/AmplifyImpostors/Plugins/Scripts",
+                      "Assets/Technie/PhysicsCreator/Scripts",
+                      "Assets/Candice AI for Games/Scripts",
+                      "Assets/GPUInstancer/Scripts",
+                      "Assets/Plugins/DarkTonic/MasterAudio/Scripts"
+                  ],
+    "skippedEditorFolders":  true,
+    "unguardedEditorSymbolCount":  0,
+    "findings":  [
+
+                 ],
+    "guardedRuntimeEditorSymbols":  [
+                                        {
+                                            "file":  "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Singleton\\SingletonScriptable.cs",
+                                            "guardLine":  4,
+                                            "symbolLine":  5
+                                        },
+                                        {
+                                            "file":  "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Singleton\\MasterAudio.cs",
+                                            "guardLine":  2,
+                                            "symbolLine":  3
+                                        }
+                                    ],
+    "note":  "Tracks preprocessor UNITY_EDITOR guards for runtime-path C# files. Comments and Editor folders are excluded. AnimatorControllerParameter is not treated as UnityEditor."
+}

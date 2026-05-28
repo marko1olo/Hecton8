@@ -1,0 +1,18 @@
+{
+    "name": "DarkTonic.MasterAudio.Editor",
+    "rootNamespace": "DarkTonic.MasterAudio.EditorScripts",
+    "references": [
+        "DarkTonic.MasterAudio.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

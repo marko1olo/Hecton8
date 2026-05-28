@@ -1,0 +1,692 @@
+{
+  "agent": "1415",
+  "generatedUtc": "2026-05-28T00:30:40Z",
+  "entryCount": 38,
+  "externalPaddingReferenceFailureCount": 13,
+  "failures": [
+    {
+      "name": "DispatcherPipelineTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Core/SystemDispatcherContracts.cs",
+      "externalPaddingReferenceCount": 2,
+      "externalPaddingReferences": [
+        {
+          "field": "_pad0",
+          "line": 86,
+          "context": "nameof(DispatcherTimingDTO._pad0)) == 20 &&"
+        },
+        {
+          "field": "_pad11",
+          "line": 87,
+          "context": "nameof(DispatcherTimingDTO._pad11)) == 31;"
+        }
+      ]
+    },
+    {
+      "name": "HardwareThermalTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs",
+      "externalPaddingReferenceCount": 5,
+      "externalPaddingReferences": [
+        {
+          "field": "Reserved0",
+          "line": 757,
+          "context": ".Reserved0;"
+        },
+        {
+          "field": "Reserved1",
+          "line": 758,
+          "context": ".Reserved1;"
+        },
+        {
+          "field": "Reserved2",
+          "line": 759,
+          "context": ".Reserved2;"
+        },
+        {
+          "field": "Reserved3",
+          "line": 760,
+          "context": ".Reserved3;"
+        },
+        {
+          "field": "Reserved4",
+          "line": 761,
+          "context": ".Reserved4;"
+        }
+      ]
+    },
+    {
+      "name": "SeismicTideTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+      "externalPaddingReferenceCount": 1,
+      "externalPaddingReferences": [
+        {
+          "field": "_pad0",
+          "line": 4807,
+          "context": "._pad0 = 0UL;"
+        }
+      ]
+    },
+    {
+      "name": "FuzzerTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Core/Memory/Editor/OOP_MemorySentryConcurrentRelocationFuzzer.cs",
+      "externalPaddingReferenceCount": 2,
+      "externalPaddingReferences": [
+        {
+          "field": "Reserved0",
+          "line": 972,
+          "context": ".Reserved0);"
+        },
+        {
+          "field": "Reserved1",
+          "line": 973,
+          "context": ".Reserved1);"
+        }
+      ]
+    },
+    {
+      "name": "ScalabilityTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+      "externalPaddingReferenceCount": 4,
+      "externalPaddingReferences": [
+        {
+          "field": "_pad0",
+          "line": 1149,
+          "context": "._pad0 = 0u;"
+        },
+        {
+          "field": "_pad0",
+          "line": 1436,
+          "context": "._pad0 = 0u;"
+        },
+        {
+          "field": "_pad0",
+          "line": 2034,
+          "context": "._pad0);"
+        },
+        {
+          "field": "_pad0",
+          "line": 2082,
+          "context": "._pad0 = 0u;"
+        }
+      ]
+    },
+    {
+      "name": "TBDRPipelineTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
+      "externalPaddingReferenceCount": 1,
+      "externalPaddingReferences": [
+        {
+          "field": "_pad0",
+          "line": 615,
+          "context": "._pad0 = 0u;"
+        }
+      ]
+    },
+    {
+      "name": "DataArchaeologyTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Gameplay/DataArchaeologyRuntime.cs",
+      "externalPaddingReferenceCount": 1,
+      "externalPaddingReferences": [
+        {
+          "field": "Reserved0",
+          "line": 1948,
+          "context": ".Reserved0);"
+        }
+      ]
+    },
+    {
+      "name": "HabitatFloodBlackBoxEntry",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "externalPaddingReferenceCount": 2,
+      "externalPaddingReferences": [
+        {
+          "field": "Reserved0",
+          "line": 2852,
+          "context": ".Reserved0 = 0;"
+        },
+        {
+          "field": "Reserved0",
+          "line": 2959,
+          "context": ".Reserved0);"
+        }
+      ]
+    },
+    {
+      "name": "WorldRegrowthTelemetryEntry",
+      "file": "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs",
+      "externalPaddingReferenceCount": 4,
+      "externalPaddingReferences": [
+        {
+          "field": "Reserved0",
+          "line": 1172,
+          "context": ".Reserved0 = ReverseBytes(header.Reserved0);"
+        },
+        {
+          "field": "Reserved0",
+          "line": 1172,
+          "context": ".Reserved0);"
+        },
+        {
+          "field": "Reserved1",
+          "line": 1173,
+          "context": ".Reserved1 = ReverseBytes(header.Reserved1);"
+        },
+        {
+          "field": "Reserved1",
+          "line": 1173,
+          "context": ".Reserved1);"
+        }
+      ]
+    },
+    {
+      "name": "ReentryVfxTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs",
+      "externalPaddingReferenceCount": 1,
+      "externalPaddingReferences": [
+        {
+          "field": "Reserved2",
+          "line": 1032,
+          "context": ".Reserved2);"
+        }
+      ]
+    },
+    {
+      "name": "FloraGrowthTelemetryEntry",
+      "file": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "externalPaddingReferenceCount": 5,
+      "externalPaddingReferences": [
+        {
+          "field": "Reserved0",
+          "line": 3411,
+          "context": ".Reserved0 < 0f)"
+        },
+        {
+          "field": "Reserved0",
+          "line": 3418,
+          "context": ".Reserved0 > 0.0001f)"
+        },
+        {
+          "field": "Reserved0",
+          "line": 3419,
+          "context": ".Reserved0);"
+        },
+        {
+          "field": "Reserved0",
+          "line": 3589,
+          "context": ".Reserved0);"
+        },
+        {
+          "field": "Reserved0",
+          "line": 3782,
+          "context": ".Reserved0);"
+        }
+      ]
+    },
+    {
+      "name": "ScatterCullTelemetryEntry",
+      "file": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "externalPaddingReferenceCount": 5,
+      "externalPaddingReferences": [
+        {
+          "field": "Reserved0",
+          "line": 3411,
+          "context": ".Reserved0 < 0f)"
+        },
+        {
+          "field": "Reserved0",
+          "line": 3418,
+          "context": ".Reserved0 > 0.0001f)"
+        },
+        {
+          "field": "Reserved0",
+          "line": 3419,
+          "context": ".Reserved0);"
+        },
+        {
+          "field": "Reserved0",
+          "line": 3589,
+          "context": ".Reserved0);"
+        },
+        {
+          "field": "Reserved0",
+          "line": 3782,
+          "context": ".Reserved0);"
+        }
+      ]
+    },
+    {
+      "name": "WaterlineTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs",
+      "externalPaddingReferenceCount": 2,
+      "externalPaddingReferences": [
+        {
+          "field": "Reserved0",
+          "line": 864,
+          "context": ".Reserved0;"
+        },
+        {
+          "field": "Reserved1",
+          "line": 865,
+          "context": ".Reserved1);"
+        }
+      ]
+    }
+  ],
+  "entries": [
+    {
+      "name": "PathFunnelTelemetryEntry",
+      "file": "Assets/_Project/Scripts/AI/Pathfinding/PathFunnelContracts.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "EncounterDirectorBlackBoxEntry",
+      "file": "Assets/_Project/Scripts/EncounterDirector.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "RetinalTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "DispatcherPipelineTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Core/SystemDispatcherContracts.cs",
+      "externalPaddingReferenceCount": 2,
+      "externalPaddingReferences": [
+        {
+          "field": "_pad0",
+          "line": 86,
+          "context": "nameof(DispatcherTimingDTO._pad0)) == 20 &&"
+        },
+        {
+          "field": "_pad11",
+          "line": 87,
+          "context": "nameof(DispatcherTimingDTO._pad11)) == 31;"
+        }
+      ]
+    },
+    {
+      "name": "HardwareThermalTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs",
+      "externalPaddingReferenceCount": 5,
+      "externalPaddingReferences": [
+        {
+          "field": "Reserved0",
+          "line": 757,
+          "context": ".Reserved0;"
+        },
+        {
+          "field": "Reserved1",
+          "line": 758,
+          "context": ".Reserved1;"
+        },
+        {
+          "field": "Reserved2",
+          "line": 759,
+          "context": ".Reserved2;"
+        },
+        {
+          "field": "Reserved3",
+          "line": 760,
+          "context": ".Reserved3;"
+        },
+        {
+          "field": "Reserved4",
+          "line": 761,
+          "context": ".Reserved4;"
+        }
+      ]
+    },
+    {
+      "name": "SeismicTideTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+      "externalPaddingReferenceCount": 1,
+      "externalPaddingReferences": [
+        {
+          "field": "_pad0",
+          "line": 4807,
+          "context": "._pad0 = 0UL;"
+        }
+      ]
+    },
+    {
+      "name": "FuzzerTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Core/Memory/Editor/OOP_MemorySentryConcurrentRelocationFuzzer.cs",
+      "externalPaddingReferenceCount": 2,
+      "externalPaddingReferences": [
+        {
+          "field": "Reserved0",
+          "line": 972,
+          "context": ".Reserved0);"
+        },
+        {
+          "field": "Reserved1",
+          "line": 973,
+          "context": ".Reserved1);"
+        }
+      ]
+    },
+    {
+      "name": "ScalabilityTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+      "externalPaddingReferenceCount": 4,
+      "externalPaddingReferences": [
+        {
+          "field": "_pad0",
+          "line": 1149,
+          "context": "._pad0 = 0u;"
+        },
+        {
+          "field": "_pad0",
+          "line": 1436,
+          "context": "._pad0 = 0u;"
+        },
+        {
+          "field": "_pad0",
+          "line": 2034,
+          "context": "._pad0);"
+        },
+        {
+          "field": "_pad0",
+          "line": 2082,
+          "context": "._pad0 = 0u;"
+        }
+      ]
+    },
+    {
+      "name": "DrsTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "TBDRPipelineTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
+      "externalPaddingReferenceCount": 1,
+      "externalPaddingReferences": [
+        {
+          "field": "_pad0",
+          "line": 615,
+          "context": "._pad0 = 0u;"
+        }
+      ]
+    },
+    {
+      "name": "HabitatDeconstructionTelemetryEntry",
+      "file": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "DataArchaeologyTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Gameplay/DataArchaeologyRuntime.cs",
+      "externalPaddingReferenceCount": 1,
+      "externalPaddingReferences": [
+        {
+          "field": "Reserved0",
+          "line": 1948,
+          "context": ".Reserved0);"
+        }
+      ]
+    },
+    {
+      "name": "HabitatFloodBlackBoxEntry",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "externalPaddingReferenceCount": 2,
+      "externalPaddingReferences": [
+        {
+          "field": "Reserved0",
+          "line": 2852,
+          "context": ".Reserved0 = 0;"
+        },
+        {
+          "field": "Reserved0",
+          "line": 2959,
+          "context": ".Reserved0);"
+        }
+      ]
+    },
+    {
+      "name": "FluidPipeTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Construction/FluidPipeGraphTypes.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "SalinityCorrosionTelemetryEntry",
+      "file": "Assets/_Project/Scripts/PlayerInventory.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "PrologueSequenceTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Narrative/Prologue/AwaitableDropSequenceDirector.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "MetaCampaignBlackBoxEntry",
+      "file": "Assets/_Project/Scripts/Narrative/Campaign/MetaCampaignService.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "ModCullTelemetryEntry",
+      "file": "Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "WorldRegrowthTelemetryEntry",
+      "file": "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs",
+      "externalPaddingReferenceCount": 4,
+      "externalPaddingReferences": [
+        {
+          "field": "Reserved0",
+          "line": 1172,
+          "context": ".Reserved0 = ReverseBytes(header.Reserved0);"
+        },
+        {
+          "field": "Reserved0",
+          "line": 1172,
+          "context": ".Reserved0);"
+        },
+        {
+          "field": "Reserved1",
+          "line": 1173,
+          "context": ".Reserved1 = ReverseBytes(header.Reserved1);"
+        },
+        {
+          "field": "Reserved1",
+          "line": 1173,
+          "context": ".Reserved1);"
+        }
+      ]
+    },
+    {
+      "name": "RtgTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Power/Generators/RadioisotopeThermalGenerator.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "AsyncPersistenceTelemetryEntry",
+      "file": "Assets/_Project/Scripts/SaveManager.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "HeadlessTelemetryEntry",
+      "file": "Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "ReentryVfxTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs",
+      "externalPaddingReferenceCount": 1,
+      "externalPaddingReferences": [
+        {
+          "field": "Reserved2",
+          "line": 1032,
+          "context": ".Reserved2);"
+        }
+      ]
+    },
+    {
+      "name": "DiegeticHudTelemetryEntry",
+      "file": "Assets/_Project/Scripts/UI/DiegeticVisorHudMesh.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "FloraGrowthTelemetryEntry",
+      "file": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "externalPaddingReferenceCount": 5,
+      "externalPaddingReferences": [
+        {
+          "field": "Reserved0",
+          "line": 3411,
+          "context": ".Reserved0 < 0f)"
+        },
+        {
+          "field": "Reserved0",
+          "line": 3418,
+          "context": ".Reserved0 > 0.0001f)"
+        },
+        {
+          "field": "Reserved0",
+          "line": 3419,
+          "context": ".Reserved0);"
+        },
+        {
+          "field": "Reserved0",
+          "line": 3589,
+          "context": ".Reserved0);"
+        },
+        {
+          "field": "Reserved0",
+          "line": 3782,
+          "context": ".Reserved0);"
+        }
+      ]
+    },
+    {
+      "name": "ScatterCullTelemetryEntry",
+      "file": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "externalPaddingReferenceCount": 5,
+      "externalPaddingReferences": [
+        {
+          "field": "Reserved0",
+          "line": 3411,
+          "context": ".Reserved0 < 0f)"
+        },
+        {
+          "field": "Reserved0",
+          "line": 3418,
+          "context": ".Reserved0 > 0.0001f)"
+        },
+        {
+          "field": "Reserved0",
+          "line": 3419,
+          "context": ".Reserved0);"
+        },
+        {
+          "field": "Reserved0",
+          "line": 3589,
+          "context": ".Reserved0);"
+        },
+        {
+          "field": "Reserved0",
+          "line": 3782,
+          "context": ".Reserved0);"
+        }
+      ]
+    },
+    {
+      "name": "TooltipBlackBoxEntry",
+      "file": "Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "ManualOverrideLeverTelemetryEntry",
+      "file": "Assets/_Project/Scripts/UI/VR/OpenXRManualOverrideLever.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "SwayTelemetryEntry",
+      "file": "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "FrequencyTuningTelemetryEntry",
+      "file": "Assets/_Project/Scripts/UI/PDADecryptionSpectrogramPanel.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "MacroSwarmTelemetryEntry",
+      "file": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "FaunaMutationTelemetryEntry",
+      "file": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "BiomassTelemetryEntry",
+      "file": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "BiolumTelemetryEntry",
+      "file": "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "ActiveSonarGeoTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "WaterlineTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs",
+      "externalPaddingReferenceCount": 2,
+      "externalPaddingReferences": [
+        {
+          "field": "Reserved0",
+          "line": 864,
+          "context": ".Reserved0;"
+        },
+        {
+          "field": "Reserved1",
+          "line": 865,
+          "context": ".Reserved1);"
+        }
+      ]
+    },
+    {
+      "name": "VisorRefractionTelemetryEntry",
+      "file": "Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    },
+    {
+      "name": "BiolumPulseTelemetryEntry",
+      "file": "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+      "externalPaddingReferenceCount": 0,
+      "externalPaddingReferences": []
+    }
+  ]
+}

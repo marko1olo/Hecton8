@@ -17,7 +17,7 @@ namespace Hecton8.Core
     public sealed class HectonUberNoirRuntimeBridge : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int TelemetryCapacity = 300;
-        private const int TelemetryEntrySizeBytes = 48;
+        private const int TelemetryEntrySizeBytes = 64;
         private const int RecoveryFramesRequired = 120;
         private const float StressShedThreshold = 0.8f;
         private const float StressRecoveryThreshold = 0.72f;
@@ -84,6 +84,38 @@ namespace Hecton8.Core
             public float Refraction01;
             [FieldOffset(44)]
             public float Reserved0;
+            [FieldOffset(48)]
+            private byte _pad0;
+            [FieldOffset(49)]
+            private byte _pad1;
+            [FieldOffset(50)]
+            private byte _pad2;
+            [FieldOffset(51)]
+            private byte _pad3;
+            [FieldOffset(52)]
+            private byte _pad4;
+            [FieldOffset(53)]
+            private byte _pad5;
+            [FieldOffset(54)]
+            private byte _pad6;
+            [FieldOffset(55)]
+            private byte _pad7;
+            [FieldOffset(56)]
+            private byte _pad8;
+            [FieldOffset(57)]
+            private byte _pad9;
+            [FieldOffset(58)]
+            private byte _pad10;
+            [FieldOffset(59)]
+            private byte _pad11;
+            [FieldOffset(60)]
+            private byte _pad12;
+            [FieldOffset(61)]
+            private byte _pad13;
+            [FieldOffset(62)]
+            private byte _pad14;
+            [FieldOffset(63)]
+            private byte _pad15;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -173,8 +205,7 @@ namespace Hecton8.Core
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            ReleaseVaultBuffer(previousService as IDataVault ?? _dataVault, ref _telemetryHandle);
-            _dataVault = currentService as IDataVault;
+            RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
             EnsureTelemetryBuffer(allowAllocation: true);
         }
 
@@ -247,11 +278,17 @@ namespace Hecton8.Core
                 return;
 
             IDataVault vault = GlobalRegistry.DataVault;
-            if (!ReferenceEquals(_dataVault, vault))
-            {
-                ReleaseTelemetryBuffer();
-                _dataVault = vault;
-            }
+            RebindDataVaultForLifecycle(vault);
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault vault, IDataVault releaseVaultOverride = null)
+        {
+            if (ReferenceEquals(_dataVault, vault))
+                return;
+
+            ReleaseVaultBuffer(_dataVault ?? releaseVaultOverride, ref _telemetryHandle);
+            _dataVault = vault;
+            _telemetryCursor = 0;
         }
 
         private bool EnsureTelemetryBuffer(bool allowAllocation)
@@ -273,6 +310,7 @@ namespace Hecton8.Core
             if (vault.TryGetGenerationHandle(
                     BufferID.ShaderFeatureTelemetryRing,
                     out VaultGenerationHandle<UberNoirShaderTelemetryEntry> existing) &&
+                IsTelemetryHandle(in existing) &&
                 TryReadTelemetryRing(vault, in existing, out NativeArray<UberNoirShaderTelemetryEntry>.ReadOnly existingRing) &&
                 existingRing.Length >= TelemetryCapacity)
             {
@@ -542,7 +580,9 @@ namespace Hecton8.Core
 
         private static bool IsTelemetryHandle(in VaultGenerationHandle<UberNoirShaderTelemetryEntry> handle)
         {
-            return handle.BufferID == (uint)BufferID.ShaderFeatureTelemetryRing && handle.Generation != 0u;
+            return handle.BufferID == (uint)BufferID.ShaderFeatureTelemetryRing &&
+                   handle.SystemID == (uint)SystemID.GraphicsScalability &&
+                   handle.Generation != 0u;
         }
 
         private static void WriteDumpHeader(Span<byte> destination, uint reasonFlags, int telemetryCursor, int entryCount)
@@ -555,6 +595,7 @@ namespace Hecton8.Core
 
         private static void WriteTelemetryEntry(Span<byte> destination, in UberNoirShaderTelemetryEntry entry)
         {
+            destination.Clear();
             WriteUInt32LittleEndian(destination, 0, entry.Frame);
             WriteUInt32LittleEndian(destination, 4, entry.FeatureMask);
             WriteFloatLittleEndian(destination, 8, entry.SystemStress01);
@@ -715,8 +756,13 @@ namespace Hecton8.Core
 
         private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (vault != null && IsVaultHandleCreated(in handle))
+            if (vault != null &&
+                handle.BufferID == (uint)BufferID.ShaderFeatureTelemetryRing &&
+                handle.SystemID == (uint)SystemID.GraphicsScalability &&
+                handle.Generation != 0u)
+            {
                 vault.ReleaseBuffer(in handle);
+            }
 
             handle = default;
         }

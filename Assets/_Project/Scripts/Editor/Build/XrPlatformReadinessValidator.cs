@@ -107,7 +107,7 @@ namespace Hecton8.Editor.Build
                 throw new BuildFailedException("OpenXR Android settings could not be created.");
             }
 
-            openXrSettings.renderMode = OpenXRSettings.RenderMode.SinglePassInstanced;
+            ConfigureAndroidQuestOpenXrRenderSettings(openXrSettings);
             EnableAndroidQuestOpenXrFeatureSet(openXrSettings);
 
             XRGeneralSettings generalSettings = perTargetSettings.SettingsForBuildTarget(BuildTargetGroup.Android);
@@ -263,11 +263,46 @@ namespace Hecton8.Editor.Build
 
             bool changed = false;
             changed |= EnableOpenXrFeature(openXrSettings.GetFeature<MetaQuestFeature>());
+            FoveatedRenderingFeature foveatedRenderingFeature = openXrSettings.GetFeature<FoveatedRenderingFeature>();
+            changed |= EnableOpenXrFeature(foveatedRenderingFeature);
+            changed |= SetFoveatedSubsampledLayoutEnabled(foveatedRenderingFeature, true);
             changed |= EnableOpenXrFeature(openXrSettings.GetFeature<OculusTouchControllerProfile>());
             changed |= EnableOpenXrFeature(openXrSettings.GetFeature<MetaQuestTouchPlusControllerProfile>());
             changed |= EnableOpenXrFeature(openXrSettings.GetFeature<MetaQuestTouchProControllerProfile>());
             if (changed)
                 EditorUtility.SetDirty(openXrSettings);
+        }
+
+        private static void ConfigureAndroidQuestOpenXrRenderSettings(OpenXRSettings openXrSettings)
+        {
+            if (openXrSettings == null)
+                return;
+
+            openXrSettings.renderMode = OpenXRSettings.RenderMode.SinglePassInstanced;
+            openXrSettings.symmetricProjection = true;
+#if UNITY_6000_1_OR_NEWER
+            openXrSettings.multiviewRenderRegionsOptimizationMode =
+                OpenXRSettings.MultiviewRenderRegionsOptimizationMode.FinalPass;
+#endif
+#if UNITY_2023_2_OR_NEWER
+            openXrSettings.foveatedRenderingApi = OpenXRSettings.BackendFovationApi.SRPFoveation;
+#endif
+        }
+
+        private static bool SetFoveatedSubsampledLayoutEnabled(FoveatedRenderingFeature feature, bool enabled)
+        {
+            if (feature == null)
+                return false;
+
+            SerializedObject serialized = new SerializedObject(feature);
+            SerializedProperty property = serialized.FindProperty("enableSubsampledLayout");
+            if (property == null || property.boolValue == enabled)
+                return false;
+
+            property.boolValue = enabled;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(feature);
+            return true;
         }
 
         private static bool EnableOpenXrFeature(OpenXRFeature feature)
@@ -294,6 +329,41 @@ namespace Hecton8.Editor.Build
                 Append(failures, "OpenXR Android Meta Quest Support feature is disabled.");
             }
 
+            FoveatedRenderingFeature foveatedRenderingFeature = openXrSettings.GetFeature<FoveatedRenderingFeature>();
+            if (foveatedRenderingFeature == null || !foveatedRenderingFeature.enabled)
+            {
+                Append(failures, "OpenXR Android Foveated Rendering feature is disabled.");
+            }
+            else if (!IsFoveatedSubsampledLayoutEnabled(foveatedRenderingFeature))
+            {
+                Append(failures, "OpenXR Android Foveated Rendering subsampled layout is disabled.");
+            }
+
+            if (openXrSettings.renderMode != OpenXRSettings.RenderMode.SinglePassInstanced)
+            {
+                Append(failures, "OpenXR Android render mode is not Single Pass Instanced / Multi-view.");
+            }
+
+            if (!openXrSettings.symmetricProjection)
+            {
+                Append(failures, "OpenXR Android symmetric projection is disabled; multiview render regions will not provide the expected Quest benefit.");
+            }
+
+#if UNITY_6000_1_OR_NEWER
+            if (openXrSettings.multiviewRenderRegionsOptimizationMode ==
+                OpenXRSettings.MultiviewRenderRegionsOptimizationMode.None)
+            {
+                Append(failures, "OpenXR Android multiview render regions optimization mode is None.");
+            }
+#endif
+
+#if UNITY_2023_2_OR_NEWER
+            if (openXrSettings.foveatedRenderingApi != OpenXRSettings.BackendFovationApi.SRPFoveation)
+            {
+                Append(failures, "OpenXR Android foveated rendering API is not SRP Foveation.");
+            }
+#endif
+
             if (!IsOpenXrFeatureEnabled<OculusTouchControllerProfile>(openXrSettings) &&
                 !IsOpenXrFeatureEnabled<MetaQuestTouchPlusControllerProfile>(openXrSettings) &&
                 !IsOpenXrFeatureEnabled<MetaQuestTouchProControllerProfile>(openXrSettings))
@@ -307,6 +377,16 @@ namespace Hecton8.Editor.Build
         {
             TFeature feature = openXrSettings != null ? openXrSettings.GetFeature<TFeature>() : null;
             return feature != null && feature.enabled;
+        }
+
+        private static bool IsFoveatedSubsampledLayoutEnabled(FoveatedRenderingFeature feature)
+        {
+            if (feature == null)
+                return false;
+
+            SerializedObject serialized = new SerializedObject(feature);
+            SerializedProperty property = serialized.FindProperty("enableSubsampledLayout");
+            return property != null && property.boolValue;
         }
 
         private static void ValidateAndroidQualityRoute(string root, StringBuilder failures)

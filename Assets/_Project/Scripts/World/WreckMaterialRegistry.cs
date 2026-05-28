@@ -94,6 +94,7 @@ namespace Hecton8.World
             private ShadowCastingMode _shadowCastingMode;
             private bool _receiveShadows;
             private bool _ownsRuntimeMaterial;
+            private bool _matrixUploadDirty;
 
             public ModuleBatch(WreckMaterialRegistry owner, int moduleIndex)
             {
@@ -103,6 +104,8 @@ namespace Hecton8.World
             }
 
             public bool HasContent => _matrixCount > 0;
+
+            public bool HasPendingMatrixUpload => _matrixUploadDirty;
 
             public bool HasPendingVisibilityCull => false;
 
@@ -125,6 +128,7 @@ namespace Hecton8.World
                 _visibleCount = 0;
                 _uploadedInstanceCount = 0;
                 _visibleSubsetFrustumVersion = InvalidFrustumVersion;
+                _matrixUploadDirty = false;
             }
 
             public void Configure(
@@ -194,6 +198,7 @@ namespace Hecton8.World
                 if (visibleCount <= 0)
                 {
                     _uploadedInstanceCount = 0;
+                    _matrixUploadDirty = false;
                     return true;
                 }
 
@@ -221,6 +226,7 @@ namespace Hecton8.World
                 SyncBatchBuffer(_activeMatrixBuffer);
                 SyncBatchRegistration();
                 _uploadedInstanceCount = visibleCount;
+                _matrixUploadDirty = false;
                 _batchRendererGroup.SetGlobalBounds(_drawBounds);
                 WreckMaterialRegistry.PublishBrgUploadWarningIfNeeded(uploadStartTimestamp);
                 return true;
@@ -341,25 +347,46 @@ namespace Hecton8.World
 
                     int uploadCount = math.min(_uploadedInstanceCount, _visibleCount);
                     if (uploadCount > 0)
-                    {
-                        EnsureMatrixBufferCapacity(uploadCount);
-                        GraphicsBuffer matrixWriteBuffer = _uploadBufferIndex == 0 ? _matrixBufferA : _matrixBufferB;
-                        if (matrixWriteBuffer == null)
-                            return;
-
-                        _uploadedInstanceCount = uploadCount;
-                        UploadManagedArray(matrixWriteBuffer, _visibleMatrices, uploadCount);
-                        _activeMatrixBuffer = matrixWriteBuffer;
-                        _uploadBufferIndex ^= 1;
-                        if (_runtimeMaterial != null)
-                            _runtimeMaterial.SetBuffer(_WreckMatricesId, _activeMatrixBuffer);
-                        SyncBatchBuffer(_activeMatrixBuffer);
-                    }
+                        _matrixUploadDirty = true;
+                    else
+                        _matrixUploadDirty = false;
                 }
 
                 _drawBounds.center += runtimeOffset;
-                if (_batchRendererGroup != null)
-                    _batchRendererGroup.SetGlobalBounds(_drawBounds);
+            }
+
+            public bool FlushPendingMatrixUpload()
+            {
+                if (!_matrixUploadDirty)
+                    return true;
+
+                int uploadCount = math.min(_uploadedInstanceCount, _visibleCount);
+                if (uploadCount <= 0 || _visibleMatrices == null)
+                {
+                    _uploadedInstanceCount = 0;
+                    _matrixUploadDirty = false;
+                    return true;
+                }
+
+                if (_batchRendererGroup == null || _runtimeMaterial == null)
+                    return false;
+
+                EnsureMatrixBufferCapacity(uploadCount);
+                GraphicsBuffer matrixWriteBuffer = _uploadBufferIndex == 0 ? _matrixBufferA : _matrixBufferB;
+                if (matrixWriteBuffer == null)
+                    return false;
+
+                long uploadStartTimestamp = global::System.Diagnostics.Stopwatch.GetTimestamp();
+                _uploadedInstanceCount = uploadCount;
+                UploadManagedArray(matrixWriteBuffer, _visibleMatrices, uploadCount);
+                _activeMatrixBuffer = matrixWriteBuffer;
+                _uploadBufferIndex ^= 1;
+                _runtimeMaterial.SetBuffer(_WreckMatricesId, _activeMatrixBuffer);
+                SyncBatchBuffer(_activeMatrixBuffer);
+                _batchRendererGroup.SetGlobalBounds(_drawBounds);
+                _matrixUploadDirty = false;
+                WreckMaterialRegistry.PublishBrgUploadWarningIfNeeded(uploadStartTimestamp);
+                return true;
             }
 
             private static void ApplyOriginShiftToMatrices(Matrix4x4[] matrices, int count, Vector3 runtimeOffset)
@@ -428,6 +455,7 @@ namespace Hecton8.World
                 _visibleAges = null;
                 _matrixCount = 0;
                 _visibleCount = 0;
+                _matrixUploadDirty = false;
             }
 
             private bool TryFinalizePendingVisibilityCullNoWait()
@@ -750,6 +778,7 @@ namespace Hecton8.World
         private bool _hasPublishedWreck;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
+        private bool _originShiftListenerRegistered;
         private bool _hotSwapListenerRegistered;
         private IDataVault _dataVault;
         private VaultGenerationHandle<MetadataValue> _batchMetadataHandle;
@@ -757,6 +786,7 @@ namespace Hecton8.World
         private bool _pdaSignalLatched;
         private bool _hasCachedFrustumState;
         private bool _visibilityUploadRequested;
+        private bool _originShiftUploadRequested;
         private bool _pendingWreckSignalPing;
         private float3 _pendingWreckSignalOrigin;
         private float _pendingWreckSignalRadius;
@@ -785,16 +815,16 @@ namespace Hecton8.World
             ResolveIndirectShader();
             EnsureBatches();
             EnsureFrustumScratch();
-            HectonFloatingOrigin.RegisterListener(this);
             TryRegisterHotSwapListener();
-            TryRegisterSlowTick();
+            RefreshRuntimeTickRegistration();
         }
 
         private void OnDisable()
         {
             TryUnregisterSlowTick();
+            TryUnregisterLateFrameTick();
+            TryUnregisterOriginShiftListener();
             TryUnregisterHotSwapListener();
-            HectonFloatingOrigin.UnregisterListener(this);
             DisposeBatches();
             ClearCachedRegistryServices();
         }
@@ -802,8 +832,9 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             TryUnregisterSlowTick();
+            TryUnregisterLateFrameTick();
+            TryUnregisterOriginShiftListener();
             TryUnregisterHotSwapListener();
-            HectonFloatingOrigin.UnregisterListener(this);
             DisposeBatches();
             ClearCachedRegistryServices();
         }
@@ -811,11 +842,19 @@ namespace Hecton8.World
         public void SlowTick()
         {
             if (!_hasPublishedWreck)
+            {
+                _visibilityUploadRequested = false;
+                _originShiftUploadRequested = false;
+                RefreshRuntimeTickRegistration();
                 return;
+            }
 
             _visibilityUploadRequested = true;
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+            {
+                RefreshRuntimeTickRegistration();
                 return;
+            }
 
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in _publishedWreckCenterAup);
             float signalRadius = math.max(1f, pdaSignalRadiusMeters);
@@ -823,13 +862,17 @@ namespace Hecton8.World
             if (distanceSq <= signalRadiusSq)
             {
                 if (_pdaSignalLatched)
+                {
+                    RefreshRuntimeTickRegistration();
                     return;
+                }
 
                 _pdaSignalLatched = true;
                 Vector3 pingCenter = _publishedWorldBounds.center;
                 _pendingWreckSignalOrigin = new float3(pingCenter.x, pingCenter.y, pingCenter.z);
                 _pendingWreckSignalRadius = math.max(1f, pdaSignalPingRadiusMeters);
                 _pendingWreckSignalPing = true;
+                RefreshRuntimeTickRegistration();
                 return;
             }
 
@@ -837,6 +880,8 @@ namespace Hecton8.World
             double rearmRadiusSq = (double)rearmRadius * rearmRadius;
             if (distanceSq >= rearmRadiusSq)
                 _pdaSignalLatched = false;
+
+            RefreshRuntimeTickRegistration();
         }
 
         public void LateFrameTick()
@@ -847,11 +892,16 @@ namespace Hecton8.World
                 ScanEvents.TryRaiseWreckSignalPing(_pendingWreckSignalOrigin, _pendingWreckSignalRadius);
             }
 
-            if (!_visibilityUploadRequested)
-                return;
+            if (_visibilityUploadRequested)
+            {
+                _visibilityUploadRequested = false;
+                RefreshVisibilityUploads();
+            }
 
-            _visibilityUploadRequested = false;
-            RefreshVisibilityUploads();
+            if (_originShiftUploadRequested)
+                FlushOriginShiftUploads();
+
+            RefreshRuntimeTickRegistration();
         }
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
@@ -896,16 +946,63 @@ namespace Hecton8.World
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
-            if (!_HasUsableShift(shiftData.ShiftOffset))
+            if (!_hasPublishedWreck || !_HasUsableShift(shiftData.ShiftOffset))
                 return;
 
             Vector3 runtimeOffset = -shiftData.ShiftOffset;
-            EnsureBatches();
+            bool hasPendingMatrixUpload = false;
+            if (_moduleBatches == null)
+            {
+                _publishedWorldBounds.center += runtimeOffset;
+                _hasPublishedWreck = false;
+                _originShiftUploadRequested = false;
+                _hasCachedFrustumState = false;
+                RefreshRuntimeTickRegistration();
+                return;
+            }
+
             for (int i = 0; i < _moduleBatches.Length; i++)
-                _moduleBatches[i]?.ApplyOriginShift(runtimeOffset);
+            {
+                ModuleBatch batch = _moduleBatches[i];
+                if (batch == null)
+                    continue;
+
+                batch.ApplyOriginShift(runtimeOffset);
+                hasPendingMatrixUpload |= batch.HasPendingMatrixUpload;
+            }
 
             _publishedWorldBounds.center += runtimeOffset;
+            _originShiftUploadRequested = hasPendingMatrixUpload;
             _hasCachedFrustumState = false;
+            RefreshRuntimeTickRegistration();
+        }
+
+        private void FlushOriginShiftUploads()
+        {
+            if (!_originShiftUploadRequested)
+                return;
+
+            if (_moduleBatches == null)
+            {
+                _originShiftUploadRequested = false;
+                return;
+            }
+
+            bool hasPendingMatrixUpload = false;
+            for (int i = 0; i < _moduleBatches.Length; i++)
+            {
+                ModuleBatch batch = _moduleBatches[i];
+                if (batch == null || !batch.HasPendingMatrixUpload)
+                    continue;
+
+                if (!batch.FlushPendingMatrixUpload())
+                {
+                    hasPendingMatrixUpload = true;
+                    IncrementCounterSaturated(ref _skippedVisibilityUploadCount);
+                }
+            }
+
+            _originShiftUploadRequested = hasPendingMatrixUpload;
         }
 
         private void RefreshVisibilityUploads()
@@ -989,11 +1086,17 @@ namespace Hecton8.World
             _hasPublishedWreck = false;
             _pdaSignalLatched = false;
             _hasCachedFrustumState = false;
+            _visibilityUploadRequested = false;
+            _originShiftUploadRequested = false;
+            _pendingWreckSignalPing = false;
             bool hasFiniteWorldBounds = IsFiniteBounds(worldBounds);
             _publishedWreckCenterAup = default;
 
             if (worldMatrices == null || moduleIds == null || instanceCount <= 0)
+            {
+                RefreshRuntimeTickRegistration();
                 return;
+            }
 
             int moduleDefinitionCount = math.min(
                 math.min(moduleDefinitions != null ? moduleDefinitions.Length : 0, MaxModuleContracts),
@@ -1031,6 +1134,7 @@ namespace Hecton8.World
                                     enableFrustumCulling: true,
                                     frustumVersion: _frustumStateVersion);
                         }
+                        RefreshRuntimeTickRegistration();
                         return;
                     }
                 }
@@ -1078,12 +1182,18 @@ namespace Hecton8.World
                 ? wreckCenterAup
                 : default;
             if (!hasAnyBatchContent)
+            {
+                RefreshRuntimeTickRegistration();
                 return;
+            }
 
             PrepareUploadResourcesForContent(moduleDefinitionCount);
             bool hasFrustumForPublish = TryPopulateFrustumPlanes(out _);
             if (!hasFrustumForPublish)
+            {
+                RefreshRuntimeTickRegistration();
                 return;
+            }
 
             for (int moduleIndex = 0; moduleIndex < moduleDefinitionCount; moduleIndex++)
             {
@@ -1095,6 +1205,7 @@ namespace Hecton8.World
                         enableFrustumCulling: true,
                         frustumVersion: _frustumStateVersion);
             }
+            RefreshRuntimeTickRegistration();
         }
 
         private void PrepareUploadResourcesForContent(int moduleDefinitionCount)
@@ -1378,11 +1489,17 @@ namespace Hecton8.World
 
         private void TryRegisterSlowTick()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!HasSlowTickWork() || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_registeredSlowTick)
                 _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (!HasLateFrameTickWork() || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
 
             if (!_registeredLateFrameTick)
                 _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -1390,17 +1507,79 @@ namespace Hecton8.World
 
         private void TryUnregisterSlowTick()
         {
-            if (_registeredLateFrameTick)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredLateFrameTick = false;
-            }
-
             if (!_registeredSlowTick)
                 return;
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registeredSlowTick = false;
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (!_registeredLateFrameTick)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrameTick = false;
+        }
+
+        private bool HasSlowTickWork()
+        {
+            return _hasPublishedWreck;
+        }
+
+        private bool HasLateFrameTickWork()
+        {
+            return _visibilityUploadRequested || _originShiftUploadRequested || _pendingWreckSignalPing;
+        }
+
+        private bool HasRuntimeDispatcherWork()
+        {
+            return HasSlowTickWork() || HasLateFrameTickWork();
+        }
+
+        private void RefreshRuntimeTickRegistration()
+        {
+            if (HasSlowTickWork())
+                TryRegisterSlowTick();
+            else
+                TryUnregisterSlowTick();
+
+            if (HasLateFrameTickWork())
+                TryRegisterLateFrameTick();
+            else
+                TryUnregisterLateFrameTick();
+
+            RefreshOriginShiftRegistration();
+        }
+
+        private void RefreshOriginShiftRegistration()
+        {
+            if (_hasPublishedWreck)
+            {
+                TryRegisterOriginShiftListener();
+                return;
+            }
+
+            TryUnregisterOriginShiftListener();
+        }
+
+        private void TryRegisterOriginShiftListener()
+        {
+            if (_originShiftListenerRegistered || !Application.isPlaying)
+                return;
+
+            HectonFloatingOrigin.RegisterListener(this);
+            _originShiftListenerRegistered = true;
+        }
+
+        private void TryUnregisterOriginShiftListener()
+        {
+            if (!_originShiftListenerRegistered)
+                return;
+
+            HectonFloatingOrigin.UnregisterListener(this);
+            _originShiftListenerRegistered = false;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -1413,7 +1592,7 @@ namespace Hecton8.World
                 _registeredSlowTick = false;
                 _registeredLateFrameTick = false;
                 if (currentService != null && isActiveAndEnabled)
-                    TryRegisterSlowTick();
+                    RefreshRuntimeTickRegistration();
             }
             else if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
@@ -1505,7 +1684,14 @@ namespace Hecton8.World
             {
                 _hasPublishedWreck = false;
                 _publishedWreckCenterAup = default;
+                _visibilityUploadRequested = false;
+                _originShiftUploadRequested = false;
+                _pendingWreckSignalPing = false;
+                _pendingWreckSignalOrigin = default;
+                _pendingWreckSignalRadius = 0f;
+                _pdaSignalLatched = false;
                 ReleaseBatchMetadataBuffer();
+                RefreshRuntimeTickRegistration();
                 return;
             }
 
@@ -1515,9 +1701,16 @@ namespace Hecton8.World
             _moduleBatches = null;
             _hasPublishedWreck = false;
             _publishedWreckCenterAup = default;
+            _visibilityUploadRequested = false;
+            _originShiftUploadRequested = false;
+            _pendingWreckSignalPing = false;
+            _pendingWreckSignalOrigin = default;
+            _pendingWreckSignalRadius = 0f;
+            _pdaSignalLatched = false;
             _hasCachedFrustumState = false;
             DisposeFrustumScratch();
             ReleaseBatchMetadataBuffer();
+            RefreshRuntimeTickRegistration();
         }
 
         private void DisposeFrustumScratch()

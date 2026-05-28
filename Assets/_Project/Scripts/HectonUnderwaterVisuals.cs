@@ -60,7 +60,6 @@ using Hecton8.World;
 using NASAPunk.Visor;
 using UnityEngine;
 using Unity.Collections;
-using Unity.Jobs;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -796,7 +795,6 @@ namespace Hecton8.Environment
         private const float SurfaceHorizonDaylightBlueBias = 0.18f;
         private const float SurfaceSkyDaylightBlueBias = 0.10f;
         private const float OceanSkyDirectionality = 0.78f;
-        private const int BiomeFogSourceCapacity = HectonBiomeVisualFamilyUtility.VisualFamilyCount;
         private const float GIRelaySurfaceEmissionEpsilon = 0.0005f;
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
@@ -833,15 +831,6 @@ namespace Hecton8.Environment
         private AbsoluteUniversePositionBlit128 _biomeFogTransitionFromAup;
         private AbsoluteUniversePositionBlit128 _biomeFogTransitionToAup;
         private bool _biomeFogTransitionActive;
-        private bool _biomeFogBlendScheduled;
-        private JobHandle _biomeFogBlendHandle;
-        private IDataVault _biomeFogVault;
-        private VaultGenerationHandle<BiomeTransitionSample> _biomeFogSamplesHandle;
-        private VaultGenerationHandle<BiomeTransitionFogSource> _biomeFogSourcesHandle;
-        private VaultGenerationHandle<AbsoluteUniversePositionBlit128> _biomeFogFromAupHandle;
-        private VaultGenerationHandle<AbsoluteUniversePositionBlit128> _biomeFogToAupHandle;
-        private VaultGenerationHandle<AbsoluteUniversePositionBlit128> _biomeFogPlayerAupHandle;
-        private VaultGenerationHandle<BiomeTransitionFogResult> _biomeFogResultsHandle;
         private WorldProceduralFaunaMood _currentFaunaMood;
         private string _currentFaunaAmbienceSummary;
         private float _ecologySuspendedMotesMultiplier = 1f;
@@ -1181,18 +1170,6 @@ namespace Hecton8.Environment
                    spaceRenderer.SupportsCameraStackingType(CameraRenderType.Base);
         }
 
-        private static void EnsureCameraTextureRequirements(Camera camera)
-        {
-            if (camera == null ||
-                !camera.TryGetComponent(out UniversalAdditionalCameraData cameraData) ||
-                cameraData == null)
-            {
-                return;
-            }
-
-            EnsureCameraTextureRequirements(cameraData);
-        }
-
         private void EnsureCameraTextureRequirementsCached(
             Camera camera,
             ref Camera cachedCamera,
@@ -1276,7 +1253,7 @@ namespace Hecton8.Environment
             }
         }
 
-        private static void EnsureCameraTextureRequirements(UniversalAdditionalCameraData cameraData, Camera camera = null)
+        private static void EnsureCameraTextureRequirements(UniversalAdditionalCameraData cameraData, Camera camera)
         {
             if (cameraData == null)
                 return;
@@ -1284,17 +1261,17 @@ namespace Hecton8.Environment
             if (cameraData.requiresDepthOption != CameraOverrideOption.On)
                 cameraData.requiresDepthOption = CameraOverrideOption.On;
 
-            if (cameraData.requiresColorOption != CameraOverrideOption.On)
-                cameraData.requiresColorOption = CameraOverrideOption.On;
-
             if (!cameraData.requiresDepthTexture)
                 cameraData.requiresDepthTexture = true;
 
+            if (HectonUrpTextureRequirementsGuard.UsesQuestVrMobileSurvivalPolicy)
+                return;
+
+            if (cameraData.requiresColorOption != CameraOverrideOption.On)
+                cameraData.requiresColorOption = CameraOverrideOption.On;
+
             if (!cameraData.requiresColorTexture)
                 cameraData.requiresColorTexture = true;
-
-            if (camera == null)
-                cameraData.TryGetComponent(out camera);
 
             bool shouldEnablePostProcessing = camera != null && HasUnderwaterPass(camera);
             if (!shouldEnablePostProcessing &&
@@ -1583,7 +1560,6 @@ namespace Hecton8.Environment
             ReleaseRuntimeSkyboxMaterial();
             ReleaseHudFogLuminanceResources();
             ReleasePhotophobiaFieldResources();
-            ReleaseBiomeFogBlendBuffers();
             Shader.SetGlobalVector(_SargassumCanopyShadowParamsId, Vector4.zero);
             Shader.SetGlobalVector(_SargassumCanopyLightingParamsId, new Vector4(0f, 0f, 1f, 0f));
             ResetNoirResolveGlobals();
@@ -1630,7 +1606,6 @@ namespace Hecton8.Environment
 
             ReleaseHudFogLuminanceResources();
             ReleasePhotophobiaFieldResources();
-            ReleaseBiomeFogBlendBuffers();
         }
 
 #if UNITY_EDITOR
@@ -2030,7 +2005,6 @@ namespace Hecton8.Environment
 
             EnsureGameplayCameraStackEnabled();
             EnsureOceanUnderwaterPassOwnership();
-            TryCompleteBiomeFogBlendJob();
             if (_pendingOceanMaterialBindingDirty)
             {
                 _pendingOceanMaterialBindingDirty = false;
@@ -2072,7 +2046,7 @@ namespace Hecton8.Environment
 
             float lerpT = math.saturate(biomeTransitionSpeed * slowTickInterval);
             InterpolateBiomeParameters(lerpT);
-            ScheduleBiomeFogBlendJob(lerpT);
+            ApplyBiomeFogBlend(lerpT);
 
             _pendingOceanMaterialBindingDirty = true;
         }
@@ -2229,8 +2203,6 @@ namespace Hecton8.Environment
             _soundscapeRuntime = GlobalRegistry.Soundscape;
             _mapMagicRuntime = GlobalRegistry.MapMagic;
             _playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
-            _biomeFogVault = GlobalRegistry.DataVault;
-            EnsureBiomeFogBlendBuffers(allowAcquire: true);
 
             if (depthZoneDirector == null)
                 depthZoneDirector = GlobalRegistry.DepthZone;
@@ -2310,15 +2282,6 @@ namespace Hecton8.Environment
                     _playerTransportCoordinator = null;
                     _nextRuntimePlayerCameraResolveTime = float.NegativeInfinity;
                     ResolvePlayerCamera();
-                    break;
-
-                case GlobalRegistryServiceSlot.DataVault:
-                    bool canPrewarmBiomeFogBuffers = !_biomeFogBlendScheduled;
-                    if (canPrewarmBiomeFogBuffers)
-                        ReleaseBiomeFogBlendBuffers();
-                    _biomeFogVault = currentService as IDataVault;
-                    if (canPrewarmBiomeFogBuffers)
-                        EnsureBiomeFogBlendBuffers(allowAcquire: true);
                     break;
 
                 case GlobalRegistryServiceSlot.FluidRuntime:
@@ -3657,25 +3620,12 @@ namespace Hecton8.Environment
             _biomeFogTransitionToAup = BuildAupFromRuntimePosition(center + forward * halfLength);
         }
 
-        private void ScheduleBiomeFogBlendJob(float lerpT)
+        private void ApplyBiomeFogBlend(float lerpT)
         {
             if (!Application.isPlaying ||
                 !_biomeFogTransitionActive ||
-                _biomeFogBlendScheduled ||
                 _biomeFogFromProfile == null ||
-                _biomeFogToProfile == null ||
-                !EnsureBiomeFogBlendBuffers(allowAcquire: false))
-            {
-                return;
-            }
-
-            if (!TryResolveBiomeFogBlendBuffers(
-                    out NativeArray<BiomeTransitionSample> samples,
-                    out NativeArray<BiomeTransitionFogSource> sources,
-                    out NativeArray<AbsoluteUniversePositionBlit128> fromAup,
-                    out NativeArray<AbsoluteUniversePositionBlit128> toAup,
-                    out NativeArray<AbsoluteUniversePositionBlit128> playerAup,
-                    out NativeArray<BiomeTransitionFogResult> results))
+                _biomeFogToProfile == null)
             {
                 return;
             }
@@ -3683,46 +3633,63 @@ namespace Hecton8.Environment
             Transform cameraTransform = playerCamera;
             Vector3 playerPosition = cameraTransform != null ? cameraTransform.position : Vector3.zero;
             _biomeFogFallbackBlend01 = math.saturate(_biomeFogFallbackBlend01 + math.max(0.001f, lerpT));
-            samples[0] = new BiomeTransitionSample
-            {
-                FromBiomeId = _biomeFogFromId,
-                ToBiomeId = _biomeFogToId,
-                Blend255 = (byte)math.clamp((int)(_biomeFogFallbackBlend01 * 255f + 0.5f), 0, 255),
-                Flags = 0
-            };
-            sources[_biomeFogFromId] = BuildBiomeFogSource(_biomeFogFromId, _biomeFogFromProfile);
-            sources[_biomeFogToId] = BuildBiomeFogSource(_biomeFogToId, _biomeFogToProfile);
-            fromAup[0] = _biomeFogTransitionFromAup;
-            toAup[0] = _biomeFogTransitionToAup;
-            playerAup[0] = BuildAupFromRuntimePosition(playerPosition);
 
-            BiomeTransitionFogBlendJob job = new BiomeTransitionFogBlendJob
-            {
-                Samples = samples,
-                FogSourcesByBiomeId = sources,
-                FromAup = fromAup,
-                ToAup = toAup,
-                PlayerAup = playerAup,
-                Results = results,
-                TransitionLengthMeters = Mathf.Max(4f, biomeFogTransitionLengthMeters)
-            };
+            BiomeTransitionSample sample = default;
+            sample.FromBiomeId = _biomeFogFromId;
+            sample.ToBiomeId = _biomeFogToId;
+            sample.Blend255 = (byte)math.clamp((int)(_biomeFogFallbackBlend01 * 255f + 0.5f), 0, 255);
+            sample.Flags = 0;
 
-            _biomeFogBlendHandle = job.Schedule(1, 1);
-            _biomeFogBlendScheduled = true;
+            BiomeTransitionFogSource from = BuildBiomeFogSource(_biomeFogFromId, _biomeFogFromProfile);
+            BiomeTransitionFogSource to = BuildBiomeFogSource(_biomeFogToId, _biomeFogToProfile);
+            AbsoluteUniversePositionBlit128 playerAup = BuildAupFromRuntimePosition(playerPosition);
+            float blend = ResolveBiomeFogAupBlend(
+                in _biomeFogTransitionFromAup,
+                in _biomeFogTransitionToAup,
+                in playerAup,
+                sample.Blend255 * (1f / 255f),
+                Mathf.Max(4f, biomeFogTransitionLengthMeters));
+            float smoothBlend = BiomeTransitionMath.Smooth01(blend);
+            sample.Blend255 = (byte)math.round(math.saturate(smoothBlend) * 255f);
+
+            BiomeTransitionFogResult result = default;
+            result.Sample = sample;
+            result.FogColor = math.lerp(from.FogColor, to.FogColor, smoothBlend);
+            result.Density = math.lerp(from.Density, to.Density, smoothBlend);
+            result.Turbidity = math.lerp(from.Turbidity, to.Turbidity, smoothBlend);
+            result.Absorption = math.lerp(from.Absorption, to.Absorption, smoothBlend);
+            result.FogAttenuationDistance = math.max(
+                0.001f,
+                math.lerp(from.FogAttenuationDistance, to.FogAttenuationDistance, smoothBlend));
+            result.NormalizedWeightSum = 1f;
+            CommitBiomeFogBlendResult(in result);
         }
 
-        private void TryCompleteBiomeFogBlendJob()
+        private static float ResolveBiomeFogAupBlend(
+            in AbsoluteUniversePositionBlit128 fromAup,
+            in AbsoluteUniversePositionBlit128 toAup,
+            in AbsoluteUniversePositionBlit128 playerAup,
+            float fallbackBlend,
+            float transitionLengthMeters)
         {
-            if (!_biomeFogBlendScheduled)
-                return;
+            double3 from = BiomeTransitionMath.ToAbsoluteDouble3(in fromAup);
+            double3 to = BiomeTransitionMath.ToAbsoluteDouble3(in toAup);
+            double3 player = BiomeTransitionMath.ToAbsoluteDouble3(in playerAup);
+            float3 segment = (float3)(to - from);
+            float3 playerFrom = (float3)(player - from);
+            float lengthSq = math.lengthsq(segment);
+            if (lengthSq <= BiomeTransitionConstants.NaNEpsilon)
+                return math.saturate(fallbackBlend);
 
-            if (!DispatcherJobSwap.TryComplete(ref _biomeFogBlendHandle, forceComplete: false))
-                return;
-
-            _biomeFogBlendScheduled = false;
-            NativeArray<BiomeTransitionFogResult> results = ResolveBiomeFogResults();
-            if (results.IsCreated && results.Length > 0)
-                CommitBiomeFogBlendResult(results[0]);
+            float projected = math.dot(playerFrom, segment) * math.rcp(math.max(lengthSq, BiomeTransitionConstants.NaNEpsilon));
+            float segmentBlend = math.saturate(projected);
+            float transitionLength = math.max(0.001f, transitionLengthMeters);
+            float transitionLengthSq = transitionLength * transitionLength;
+            float halfWindow = math.saturate(transitionLengthSq * math.rcp(math.max(lengthSq, BiomeTransitionConstants.NaNEpsilon))) * 0.5f;
+            float lower = math.max(0f, 0.5f - halfWindow);
+            float upper = math.min(1f, 0.5f + halfWindow);
+            float remapped = math.saturate((segmentBlend - lower) * math.rcp(math.max(0.001f, upper - lower)));
+            return math.max(remapped, math.saturate(fallbackBlend));
         }
 
         private void CommitBiomeFogBlendResult(in BiomeTransitionFogResult result)
@@ -3740,258 +3707,14 @@ namespace Hecton8.Environment
             }
         }
 
-        private bool EnsureBiomeFogBlendBuffers(bool allowAcquire)
-        {
-            if (AreBiomeFogBlendBuffersCreated())
-                return true;
-
-            if (!allowAcquire)
-                return false;
-
-            if (HasPartialBiomeFogBlendBuffers())
-                ReleaseBiomeFogBlendBuffers();
-
-            IDataVault vault = _biomeFogVault;
-            if (vault == null)
-                return false;
-
-            return OpenOrAcquireBiomeFogBuffer(
-                       vault,
-                       ref _biomeFogSamplesHandle,
-                       BufferID.UnderwaterBiomeFogSamples,
-                       1,
-                       out NativeArray<BiomeTransitionSample> _) &&
-                   OpenOrAcquireBiomeFogBuffer(
-                       vault,
-                       ref _biomeFogSourcesHandle,
-                       BufferID.UnderwaterBiomeFogSources,
-                       BiomeFogSourceCapacity,
-                       out NativeArray<BiomeTransitionFogSource> _) &&
-                   OpenOrAcquireBiomeFogBuffer(
-                       vault,
-                       ref _biomeFogFromAupHandle,
-                       BufferID.UnderwaterBiomeFogFromAup,
-                       1,
-                       out NativeArray<AbsoluteUniversePositionBlit128> _) &&
-                   OpenOrAcquireBiomeFogBuffer(
-                       vault,
-                       ref _biomeFogToAupHandle,
-                       BufferID.UnderwaterBiomeFogToAup,
-                       1,
-                       out NativeArray<AbsoluteUniversePositionBlit128> _) &&
-                   OpenOrAcquireBiomeFogBuffer(
-                       vault,
-                       ref _biomeFogPlayerAupHandle,
-                       BufferID.UnderwaterBiomeFogPlayerAup,
-                       1,
-                       out NativeArray<AbsoluteUniversePositionBlit128> _) &&
-                   OpenOrAcquireBiomeFogBuffer(
-                       vault,
-                       ref _biomeFogResultsHandle,
-                       BufferID.UnderwaterBiomeFogResults,
-                       1,
-                       out NativeArray<BiomeTransitionFogResult> _);
-        }
-
-        private bool AreBiomeFogBlendBuffersCreated()
-        {
-            return IsBiomeFogHandle(in _biomeFogSamplesHandle, BufferID.UnderwaterBiomeFogSamples) &&
-                   IsBiomeFogHandle(in _biomeFogSourcesHandle, BufferID.UnderwaterBiomeFogSources) &&
-                   IsBiomeFogHandle(in _biomeFogFromAupHandle, BufferID.UnderwaterBiomeFogFromAup) &&
-                   IsBiomeFogHandle(in _biomeFogToAupHandle, BufferID.UnderwaterBiomeFogToAup) &&
-                   IsBiomeFogHandle(in _biomeFogPlayerAupHandle, BufferID.UnderwaterBiomeFogPlayerAup) &&
-                   IsBiomeFogHandle(in _biomeFogResultsHandle, BufferID.UnderwaterBiomeFogResults);
-        }
-
-        private bool HasPartialBiomeFogBlendBuffers()
-        {
-            return _biomeFogSamplesHandle.BufferID != 0u ||
-                   _biomeFogSourcesHandle.BufferID != 0u ||
-                   _biomeFogFromAupHandle.BufferID != 0u ||
-                   _biomeFogToAupHandle.BufferID != 0u ||
-                   _biomeFogPlayerAupHandle.BufferID != 0u ||
-                   _biomeFogResultsHandle.BufferID != 0u;
-        }
-
-        private void ReleaseBiomeFogBlendBuffers()
-        {
-            if (_biomeFogBlendScheduled)
-                return;
-
-            _biomeFogSamplesHandle = default;
-            _biomeFogSourcesHandle = default;
-            _biomeFogFromAupHandle = default;
-            _biomeFogToAupHandle = default;
-            _biomeFogPlayerAupHandle = default;
-            _biomeFogResultsHandle = default;
-            _biomeFogVault = null;
-        }
-
-        private bool TryResolveBiomeFogBlendBuffers(
-            out NativeArray<BiomeTransitionSample> samples,
-            out NativeArray<BiomeTransitionFogSource> sources,
-            out NativeArray<AbsoluteUniversePositionBlit128> fromAup,
-            out NativeArray<AbsoluteUniversePositionBlit128> toAup,
-            out NativeArray<AbsoluteUniversePositionBlit128> playerAup,
-            out NativeArray<BiomeTransitionFogResult> results)
-        {
-            samples = default;
-            sources = default;
-            fromAup = default;
-            toAup = default;
-            playerAup = default;
-            results = default;
-            IDataVault vault = _biomeFogVault;
-            if (vault == null)
-                return false;
-
-            if (!TryOpenBiomeFogBuffer(
-                    vault,
-                    ref _biomeFogSamplesHandle,
-                    BufferID.UnderwaterBiomeFogSamples,
-                    1,
-                    out samples) ||
-                !TryOpenBiomeFogBuffer(
-                    vault,
-                    ref _biomeFogSourcesHandle,
-                    BufferID.UnderwaterBiomeFogSources,
-                    BiomeFogSourceCapacity,
-                    out sources) ||
-                !TryOpenBiomeFogBuffer(
-                    vault,
-                    ref _biomeFogFromAupHandle,
-                    BufferID.UnderwaterBiomeFogFromAup,
-                    1,
-                    out fromAup) ||
-                !TryOpenBiomeFogBuffer(
-                    vault,
-                    ref _biomeFogToAupHandle,
-                    BufferID.UnderwaterBiomeFogToAup,
-                    1,
-                    out toAup) ||
-                !TryOpenBiomeFogBuffer(
-                    vault,
-                    ref _biomeFogPlayerAupHandle,
-                    BufferID.UnderwaterBiomeFogPlayerAup,
-                    1,
-                    out playerAup) ||
-                !TryOpenBiomeFogBuffer(
-                    vault,
-                    ref _biomeFogResultsHandle,
-                    BufferID.UnderwaterBiomeFogResults,
-                    1,
-                    out results))
-            {
-                return false;
-            }
-
-            return samples.IsCreated &&
-                   sources.IsCreated &&
-                   fromAup.IsCreated &&
-                   toAup.IsCreated &&
-                   playerAup.IsCreated &&
-                   results.IsCreated &&
-                   samples.Length > 0 &&
-                   sources.Length > _biomeFogFromId &&
-                   sources.Length > _biomeFogToId &&
-                   fromAup.Length > 0 &&
-                   toAup.Length > 0 &&
-                   playerAup.Length > 0 &&
-                   results.Length > 0;
-        }
-
-        private NativeArray<BiomeTransitionFogResult> ResolveBiomeFogResults()
-        {
-            IDataVault vault = _biomeFogVault;
-            if (vault == null ||
-                !TryOpenBiomeFogBuffer(
-                    vault,
-                    ref _biomeFogResultsHandle,
-                    BufferID.UnderwaterBiomeFogResults,
-                    1,
-                    out NativeArray<BiomeTransitionFogResult> results))
-            {
-                return default;
-            }
-
-            return results;
-        }
-
-        private static bool OpenOrAcquireBiomeFogBuffer<T>(
-            IDataVault vault,
-            ref VaultGenerationHandle<T> handle,
-            BufferID bufferId,
-            int requiredLength,
-            out NativeArray<T> buffer) where T : struct
-        {
-            if (TryOpenBiomeFogBuffer(vault, ref handle, bufferId, requiredLength, out buffer))
-                return true;
-
-            if (vault == null || requiredLength <= 0)
-            {
-                buffer = default;
-                return false;
-            }
-
-            if (vault.IsCompactionFenceActive || vault.IsAllocationLocked)
-            {
-                if (!vault.TryGetGenerationHandle(bufferId, out handle))
-                {
-                    buffer = default;
-                    return false;
-                }
-
-                return TryOpenBiomeFogBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
-            }
-
-            handle = vault.EnsureGenerationHandle<T>(
-                bufferId,
-                requiredLength,
-                SystemID.GraphicsScalability,
-                NativeArrayOptions.UninitializedMemory);
-            return TryOpenBiomeFogBuffer(vault, ref handle, bufferId, requiredLength, out buffer);
-        }
-
-        private static bool TryOpenBiomeFogBuffer<T>(
-            IDataVault vault,
-            ref VaultGenerationHandle<T> handle,
-            BufferID bufferId,
-            int requiredLength,
-            out NativeArray<T> buffer) where T : struct
-        {
-            buffer = default;
-            if (vault == null ||
-                requiredLength <= 0 ||
-                !IsBiomeFogHandle(in handle, bufferId) ||
-                !vault.TryResolveHandle(in handle, out buffer) ||
-                !buffer.IsCreated ||
-                buffer.Length < requiredLength)
-            {
-                buffer = default;
-                return false;
-            }
-
-            return true;
-        }
-
-        private static bool IsBiomeFogHandle<T>(
-            in VaultGenerationHandle<T> handle,
-            BufferID bufferId) where T : struct
-        {
-            return handle.BufferID == (uint)bufferId &&
-                   handle.SystemID == (uint)SystemID.GraphicsScalability &&
-                   handle.Generation != 0u;
-        }
-
         private BiomeTransitionFogSource BuildBiomeFogSource(byte visualFamilyId, HectonBiomeProfile profile)
         {
-            return new BiomeTransitionFogSource
-            {
-                FogColor = ToFloat4(ResolveVisualFamilyFogColor(visualFamilyId)),
-                Density = ResolveProfileFogDensityScale(profile),
-                Turbidity = ResolveProfileTurbidity(profile),
-                Absorption = ResolveProfileAbsorption(profile)
-            };
+            BiomeTransitionFogSource source = default;
+            source.FogColor = ToFloat4(ResolveVisualFamilyFogColor(visualFamilyId));
+            source.Density = ResolveProfileFogDensityScale(profile);
+            source.Turbidity = ResolveProfileTurbidity(profile);
+            source.Absorption = ResolveProfileAbsorption(profile);
+            return source;
         }
 
         private HectonBiomeProfile ResolveMatrixRuntimeVisualProfile(HectonBiomeMatrixProfile profile)
@@ -4760,21 +4483,6 @@ namespace Hecton8.Environment
                     return;
                 }
 
-                Transform root = transform.root;
-                if (root != null)
-                {
-                    Transform rootMainCameraTransform = root.Find("Main Camera");
-                    if (rootMainCameraTransform != null)
-                    {
-                        rootMainCameraTransform.TryGetComponent(out Camera rootMainCamera);
-                        if (IsRuntimeMainCamera(rootMainCamera))
-                        {
-                            mainCamera = rootMainCamera;
-                            return;
-                        }
-                    }
-                }
-
                 Camera parentCamera = ResolveNearestParentCamera(transform);
                 if (IsRuntimeMainCamera(parentCamera))
                     mainCamera = parentCamera;
@@ -4977,7 +4685,11 @@ namespace Hecton8.Environment
                 CopyUnderwaterPassSettings(template, _editorOceanUnderwaterPass);
             }
 
-            EnsureCameraTextureRequirements(_gameplayMainCamera);
+            EnsureCameraTextureRequirementsCached(
+                _gameplayMainCamera,
+                ref _cachedMainCameraDataCamera,
+                ref _cachedMainCameraData,
+                ref _cachedMainCameraDataMissing);
             SetCopyOceanMaterialParamsEachFrame(_editorOceanUnderwaterPass, true);
             if (!IsUnderwaterPassEnabled(_editorOceanUnderwaterPass))
             {

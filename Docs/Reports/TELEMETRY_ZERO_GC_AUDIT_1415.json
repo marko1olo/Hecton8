@@ -1,0 +1,1298 @@
+{
+    "agent":  "1415",
+    "generatedUtc":  "2026-05-28T00:43:23Z",
+    "scope":  "materialized telemetry structs plus directly patched validator/serializer/dump blocks",
+    "hotPathSummary":  {
+                           "stringFormat":  0,
+                           "toString":  0,
+                           "foreach":  0,
+                           "linqQuery":  0,
+                           "linqExtension":  0,
+                           "newReferenceTypeCandidates":  0,
+                           "newValueTypeOrSpanCandidates":  0
+                       },
+    "coldIoSummary":  {
+                          "stringFormat":  0,
+                          "toString":  0,
+                          "foreach":  0,
+                          "linqQuery":  0,
+                          "linqExtension":  0,
+                          "newReferenceTypeCandidates":  2,
+                          "newValueTypeOrSpanCandidates":  1
+                      },
+    "allScannedBlockSummary":  {
+                                   "stringFormat":  0,
+                                   "toString":  0,
+                                   "foreach":  0,
+                                   "linqQuery":  0,
+                                   "linqExtension":  0,
+                                   "newReferenceTypeCandidates":  2,
+                                   "newValueTypeOrSpanCandidates":  1
+                               },
+    "blockCount":  49,
+    "blocks":  [
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "PathFunnelTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/AI/Pathfinding/PathFunnelContracts.cs",
+                       "startLine":  164,
+                       "endLine":  222,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "EncounterDirectorBlackBoxEntry",
+                       "file":  "Assets/_Project/Scripts/EncounterDirector.cs",
+                       "startLine":  137,
+                       "endLine":  191,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "RetinalTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+                       "startLine":  161,
+                       "endLine":  243,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "DispatcherPipelineTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/Core/SystemDispatcherContracts.cs",
+                       "startLine":  188,
+                       "endLine":  270,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "HardwareThermalTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/Core/Hardware/HardwareThermalService.cs",
+                       "startLine":  112,
+                       "endLine":  152,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "SeismicTideTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+                       "startLine":  5063,
+                       "endLine":  5127,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "FuzzerTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/Core/Memory/Editor/OOP_MemorySentryConcurrentRelocationFuzzer.cs",
+                       "startLine":  1198,
+                       "endLine":  1228,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "ScalabilityTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+                       "startLine":  73,
+                       "endLine":  153,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "DrsTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
+                       "startLine":  237,
+                       "endLine":  303,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "TBDRPipelineTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/Graphics/Culling/TBDRPipelineSurgeonTypes.cs",
+                       "startLine":  194,
+                       "endLine":  276,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "HabitatDeconstructionTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/ConstructionManager.cs",
+                       "startLine":  86,
+                       "endLine":  188,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "DataArchaeologyTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/Gameplay/DataArchaeologyRuntime.cs",
+                       "startLine":  161,
+                       "endLine":  243,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "HabitatFloodBlackBoxEntry",
+                       "file":  "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+                       "startLine":  97,
+                       "endLine":  171,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "FluidPipeTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/Construction/FluidPipeGraphTypes.cs",
+                       "startLine":  88,
+                       "endLine":  170,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "SalinityCorrosionTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/PlayerInventory.cs",
+                       "startLine":  149,
+                       "endLine":  231,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "PrologueSequenceTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/Narrative/Prologue/AwaitableDropSequenceDirector.cs",
+                       "startLine":  916,
+                       "endLine":  1004,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "MetaCampaignBlackBoxEntry",
+                       "file":  "Assets/_Project/Scripts/Narrative/Campaign/MetaCampaignService.cs",
+                       "startLine":  66,
+                       "endLine":  164,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "ModCullTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs",
+                       "startLine":  726,
+                       "endLine":  820,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "WorldRegrowthTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/World/Resources/WorldRegrowthSimulation.cs",
+                       "startLine":  146,
+                       "endLine":  204,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "RtgTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/Power/Generators/RadioisotopeThermalGenerator.cs",
+                       "startLine":  1192,
+                       "endLine":  1290,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "AsyncPersistenceTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/SaveManager.cs",
+                       "startLine":  518,
+                       "endLine":  600,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "HeadlessTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/QA/Headless/HeadlessSimulationRunner.cs",
+                       "startLine":  1565,
+                       "endLine":  1589,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "ReentryVfxTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs",
+                       "startLine":  63,
+                       "endLine":  129,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "DiegeticHudTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/UI/DiegeticVisorHudMesh.cs",
+                       "startLine":  882,
+                       "endLine":  958,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "FloraGrowthTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+                       "startLine":  608,
+                       "endLine":  678,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "ScatterCullTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+                       "startLine":  706,
+                       "endLine":  776,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "TooltipBlackBoxEntry",
+                       "file":  "Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs",
+                       "startLine":  1721,
+                       "endLine":  1803,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "ManualOverrideLeverTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/UI/VR/OpenXRManualOverrideLever.cs",
+                       "startLine":  1248,
+                       "endLine":  1310,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "SwayTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+                       "startLine":  61,
+                       "endLine":  143,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "FrequencyTuningTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/UI/PDADecryptionSpectrogramPanel.cs",
+                       "startLine":  1165,
+                       "endLine":  1251,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "MacroSwarmTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+                       "startLine":  57,
+                       "endLine":  139,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "FaunaMutationTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+                       "startLine":  142,
+                       "endLine":  200,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "BiomassTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+                       "startLine":  588,
+                       "endLine":  670,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "BiolumTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/World/Biolum/HectonBiolumManager.cs",
+                       "startLine":  56,
+                       "endLine":  142,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "ActiveSonarGeoTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                       "startLine":  2794,
+                       "endLine":  2878,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "WaterlineTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs",
+                       "startLine":  44,
+                       "endLine":  118,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "VisorRefractionTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs",
+                       "startLine":  183,
+                       "endLine":  243,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "layout_struct",
+                       "hotPath":  true,
+                       "name":  "BiolumPulseTelemetryEntry",
+                       "file":  "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+                       "startLine":  3612,
+                       "endLine":  3698,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "method",
+                       "hotPath":  true,
+                       "name":  "ValidateRuntimeDtos",
+                       "file":  "Assets/_Project/Scripts/Construction/FluidPipeGraphTypes.cs",
+                       "startLine":  212,
+                       "endLine":  246,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "method",
+                       "hotPath":  true,
+                       "name":  "WriteDrsTelemetryEntryLittleEndian",
+                       "file":  "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
+                       "startLine":  2015,
+                       "endLine":  2036,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "method",
+                       "hotPath":  true,
+                       "name":  "ValidateAbiLayout",
+                       "file":  "Assets/_Project/Scripts/Graphics/Scalability/ThermalDynamicResolutionAdapter.cs",
+                       "startLine":  2041,
+                       "endLine":  2050,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "method",
+                       "hotPath":  true,
+                       "name":  "ValidateScalabilityDtoLayouts",
+                       "file":  "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+                       "startLine":  1957,
+                       "endLine":  1972,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "method",
+                       "hotPath":  true,
+                       "name":  "SanitizeTelemetryEntryForDump",
+                       "file":  "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+                       "startLine":  2038,
+                       "endLine":  2084,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "method",
+                       "hotPath":  false,
+                       "name":  "WriteScalabilityTelemetryFile",
+                       "file":  "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
+                       "startLine":  2002,
+                       "endLine":  2038,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  1,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+                                                          {
+                                                              "match":  "new FileStream(",
+                                                              "offset":  40,
+                                                              "type":  "FileStream"
+                                                          }
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "method",
+                       "hotPath":  true,
+                       "name":  "CopyBlackBoxDumpSnapshot",
+                       "file":  "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+                       "startLine":  3098,
+                       "endLine":  3146,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "method",
+                       "hotPath":  false,
+                       "name":  "WriteQueuedBlackBoxDump",
+                       "file":  "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+                       "startLine":  3270,
+                       "endLine":  3296,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "method",
+                       "hotPath":  false,
+                       "name":  "WriteBlackBoxDumpBytes",
+                       "file":  "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+                       "startLine":  3296,
+                       "endLine":  3314,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  1,
+                                      "newValueTypeOrSpanCandidates":  1
+                                  },
+                       "newReferenceTypeCandidates":  [
+                                                          {
+                                                              "match":  "new FileStream(",
+                                                              "offset":  346,
+                                                              "type":  "FileStream"
+                                                          }
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+                                                            {
+                                                                "match":  "new ReadOnlySpan\u003cbyte\u003e(",
+                                                                "offset":  553,
+                                                                "type":  "ReadOnlySpan\u003cbyte\u003e"
+                                                            }
+                                                        ]
+                   },
+                   {
+                       "kind":  "method",
+                       "hotPath":  true,
+                       "name":  "WriteSalinityCorrosionBlackBoxFrame",
+                       "file":  "Assets/_Project/Scripts/PlayerInventory.cs",
+                       "startLine":  5174,
+                       "endLine":  5201,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   },
+                   {
+                       "kind":  "method",
+                       "hotPath":  false,
+                       "name":  "DumpSalinityCorrosionBlackBoxOnce",
+                       "file":  "Assets/_Project/Scripts/PlayerInventory.cs",
+                       "startLine":  5201,
+                       "endLine":  5237,
+                       "counts":  {
+                                      "stringFormat":  0,
+                                      "toString":  0,
+                                      "foreach":  0,
+                                      "linqQuery":  0,
+                                      "linqExtension":  0,
+                                      "newReferenceTypeCandidates":  0,
+                                      "newValueTypeOrSpanCandidates":  0
+                                  },
+                       "newReferenceTypeCandidates":  [
+
+                                                      ],
+                       "newValueTypeOrSpanCandidates":  [
+
+                                                        ]
+                   }
+               ],
+    "apexIncrementalUberNoirScan":  {
+                                        "generatedUtc":  "2026-05-28T01:19:49Z",
+                                        "summary":  {
+                                                        "scannedBlockCount":  2,
+                                                        "newReferenceType":  0,
+                                                        "stringFormat":  0,
+                                                        "toString":  0,
+                                                        "linqQueryOrExtension":  0,
+                                                        "foreachLoop":  0
+                                                    },
+                                        "blocks":  [
+                                                       {
+                                                           "name":  "UberNoirShaderTelemetryEntry explicit layout",
+                                                           "file":  "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
+                                                           "startLine":  58,
+                                                           "endLine":  119,
+                                                           "hotPath":  true,
+                                                           "counts":  {
+                                                                          "newReferenceType":  0,
+                                                                          "stringFormat":  0,
+                                                                          "toString":  0,
+                                                                          "linqQueryOrExtension":  0,
+                                                                          "foreachLoop":  0
+                                                                      }
+                                                       },
+                                                       {
+                                                           "name":  "UberNoir PushBlackBox write-lock hot path",
+                                                           "file":  "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
+                                                           "startLine":  339,
+                                                           "endLine":  386,
+                                                           "hotPath":  true,
+                                                           "counts":  {
+                                                                          "newReferenceType":  0,
+                                                                          "stringFormat":  0,
+                                                                          "toString":  0,
+                                                                          "linqQueryOrExtension":  0,
+                                                                          "foreachLoop":  0
+                                                                      }
+                                                       },
+                                                       {
+                                                           "name":  "UberNoir WriteTelemetryEntry dump serializer",
+                                                           "file":  "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
+                                                           "startLine":  596,
+                                                           "endLine":  611,
+                                                           "hotPath":  false,
+                                                           "counts":  {
+                                                                          "newReferenceType":  0,
+                                                                          "stringFormat":  0,
+                                                                          "toString":  0,
+                                                                          "linqQueryOrExtension":  0,
+                                                                          "foreachLoop":  0
+                                                                      }
+                                                       }
+                                                   ]
+                                    },
+    "apexDumpStrideRecheckScan":  {
+                                      "generatedUtc":  "2026-05-28T01:33:35Z",
+                                      "summary":  {
+                                                      "scannedBlockCount":  2,
+                                                      "newReferenceType":  0,
+                                                      "stringFormat":  0,
+                                                      "toString":  0,
+                                                      "linqQueryOrExtension":  0,
+                                                      "foreachLoop":  0
+                                                  },
+                                      "blocks":  [
+                                                     {
+                                                         "name":  "Waterline WriteTelemetry hot path",
+                                                         "file":  "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs",
+                                                         "startLine":  697,
+                                                         "endLine":  748,
+                                                         "hotPath":  true,
+                                                         "counts":  {
+                                                                        "newReferenceType":  0,
+                                                                        "stringFormat":  0,
+                                                                        "toString":  0,
+                                                                        "linqQueryOrExtension":  0,
+                                                                        "foreachLoop":  0
+                                                                    }
+                                                     },
+                                                     {
+                                                         "name":  "VisorRefraction blackbox hot path",
+                                                         "file":  "Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs",
+                                                         "startLine":  1328,
+                                                         "endLine":  1364,
+                                                         "hotPath":  true,
+                                                         "counts":  {
+                                                                        "newReferenceType":  0,
+                                                                        "stringFormat":  0,
+                                                                        "toString":  0,
+                                                                        "linqQueryOrExtension":  0,
+                                                                        "foreachLoop":  0
+                                                                    }
+                                                     },
+                                                     {
+                                                         "name":  "ActiveSonar dump serializer",
+                                                         "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                                         "startLine":  3536,
+                                                         "endLine":  3546,
+                                                         "hotPath":  false,
+                                                         "counts":  {
+                                                                        "newReferenceType":  0,
+                                                                        "stringFormat":  0,
+                                                                        "toString":  0,
+                                                                        "linqQueryOrExtension":  0,
+                                                                        "foreachLoop":  0
+                                                                    }
+                                                     },
+                                                     {
+                                                         "name":  "Sway dump serializer",
+                                                         "file":  "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+                                                         "startLine":  1135,
+                                                         "endLine":  1152,
+                                                         "hotPath":  false,
+                                                         "counts":  {
+                                                                        "newReferenceType":  0,
+                                                                        "stringFormat":  0,
+                                                                        "toString":  0,
+                                                                        "linqQueryOrExtension":  0,
+                                                                        "foreachLoop":  0
+                                                                    }
+                                                     }
+                                                 ]
+                                  }
+}

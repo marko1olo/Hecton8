@@ -287,7 +287,7 @@ namespace Hecton8.Atmosphere
         private void Initialize()
         {
             _shutdown = false;
-            _vault = GlobalRegistry.DataVault;
+            ApplyVaultRebind(GlobalRegistry.DataVault);
             TryRegisterHotSwapListener();
             SignalBus<FluidIncursionSignal>.EnsureInitialized();
             SignalBus<PlayerBaseEnterSignal>.EnsureInitialized();
@@ -314,6 +314,8 @@ namespace Hecton8.Atmosphere
             UnlockJobBuffers();
             TryUnregisterHotSwapListener();
             UnregisterDispatcherPhases();
+            ReleaseVaultHandles(_vault);
+            ClearVaultHandles();
             _vault = null;
             _pendingVault = null;
             _lockedVault = null;
@@ -425,11 +427,92 @@ namespace Hecton8.Atmosphere
 
         private void ApplyVaultRebind(IDataVault vault)
         {
+            if (ReferenceEquals(_vault, vault))
+                return;
+
+            ReleaseVaultHandles(_vault);
+            ClearVaultHandles();
             _vault = vault;
             _vaultInitialized = false;
             _defaultsInitialized = false;
             _layoutChecked = false;
             _layoutValid = false;
+        }
+
+        private void ReleaseVaultHandles(IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            ReleaseVaultHandle(vault, ref _frontCells);
+            ReleaseVaultHandle(vault, ref _backCells);
+            ReleaseVaultHandle(vault, ref _nodes);
+            ReleaseVaultHandle(vault, ref _connections);
+            ReleaseVaultHandle(vault, ref _edgeOffsets);
+            ReleaseVaultHandle(vault, ref _edgeDestinations);
+            ReleaseVaultHandle(vault, ref _edgeConductance);
+            ReleaseVaultHandle(vault, ref _edgeWriteCursor);
+            ReleaseVaultHandle(vault, ref _consumers);
+            ReleaseVaultHandle(vault, ref _sources);
+            ReleaseVaultHandle(vault, ref _vents);
+            ReleaseVaultHandle(vault, ref _counters);
+            ReleaseVaultHandle(vault, ref _tuning);
+            ReleaseVaultHandle(vault, ref _telemetry);
+            ReleaseVaultHandle(vault, ref _oxygenDeltaUnits);
+            ReleaseVaultHandle(vault, ref _carbonDioxideDeltaUnits);
+            ReleaseVaultHandle(vault, ref _nitrogenDeltaUnits);
+            ReleaseVaultHandle(vault, ref _toxinDeltaUnits);
+            ReleaseVaultHandle(vault, ref _temperatureDeltaMilli);
+            ReleaseVaultHandle(vault, ref _remainders);
+            ReleaseVaultHandle(vault, ref _shaderPayload);
+#if UNITY_EDITOR
+            ReleaseVaultHandle(vault, ref _csvScratch);
+            ReleaseVaultHandle(vault, ref _profiles);
+#endif
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (IsOwnedVaultHandle(in handle))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)OwnerSystemId;
+        }
+
+        private void ClearVaultHandles()
+        {
+            _frontCells = default;
+            _backCells = default;
+            _nodes = default;
+            _connections = default;
+            _edgeOffsets = default;
+            _edgeDestinations = default;
+            _edgeConductance = default;
+            _edgeWriteCursor = default;
+            _consumers = default;
+            _sources = default;
+            _vents = default;
+            _counters = default;
+            _tuning = default;
+            _telemetry = default;
+            _oxygenDeltaUnits = default;
+            _carbonDioxideDeltaUnits = default;
+            _nitrogenDeltaUnits = default;
+            _toxinDeltaUnits = default;
+            _temperatureDeltaMilli = default;
+            _remainders = default;
+            _shaderPayload = default;
+#if UNITY_EDITOR
+            _csvScratch = default;
+            _profiles = default;
+#endif
         }
 
         private void PreSimulationTick(in DispatcherTimingDTO timing)

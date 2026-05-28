@@ -59,25 +59,73 @@ namespace Hecton8.Prologue.VFX
             Complete = 4
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = 48)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
         private struct ReentryVfxTelemetryEntry
         {
-            [FieldOffset(0)] public uint Frame;
-            [FieldOffset(4)] public ushort Sequence;
-            [FieldOffset(6)] public ushort HydrationSequence;
-            [FieldOffset(8)] public float Heat01;
-            [FieldOffset(12)] public float Opacity01;
-            [FieldOffset(16)] public float AltitudeMeters;
-            [FieldOffset(20)] public float VelocityMetersPerSecond;
-            [FieldOffset(24)] public float AmbientBlend01;
-            [FieldOffset(28)] public float OverlayDistanceMeters;
-            [FieldOffset(32)] public byte Phase;
-            [FieldOffset(33)] public byte QualityWeightByte;
-            [FieldOffset(34)] public byte Flags;
-            [FieldOffset(35)] public byte Reserved;
-            [FieldOffset(36)] public uint StateHash;
-            [FieldOffset(40)] public uint SectorHashLo;
-            [FieldOffset(44)] public uint Reserved2;
+            [System.Runtime.InteropServices.FieldOffset(0)]
+            public uint Frame;
+            [System.Runtime.InteropServices.FieldOffset(4)]
+            public float Heat01;
+            [System.Runtime.InteropServices.FieldOffset(8)]
+            public float Opacity01;
+            [System.Runtime.InteropServices.FieldOffset(12)]
+            public float AltitudeMeters;
+            [System.Runtime.InteropServices.FieldOffset(16)]
+            public float VelocityMetersPerSecond;
+            [System.Runtime.InteropServices.FieldOffset(20)]
+            public float AmbientBlend01;
+            [System.Runtime.InteropServices.FieldOffset(24)]
+            public float OverlayDistanceMeters;
+            [System.Runtime.InteropServices.FieldOffset(28)]
+            public uint StateHash;
+            [System.Runtime.InteropServices.FieldOffset(32)]
+            public uint SectorHashLo;
+            [System.Runtime.InteropServices.FieldOffset(36)]
+            public uint Reserved2;
+            [System.Runtime.InteropServices.FieldOffset(40)]
+            public ushort Sequence;
+            [System.Runtime.InteropServices.FieldOffset(42)]
+            public ushort HydrationSequence;
+            [System.Runtime.InteropServices.FieldOffset(44)]
+            public byte Phase;
+            [System.Runtime.InteropServices.FieldOffset(45)]
+            public byte QualityWeightByte;
+            [System.Runtime.InteropServices.FieldOffset(46)]
+            public byte Flags;
+            [System.Runtime.InteropServices.FieldOffset(47)]
+            public byte Reserved;
+            [System.Runtime.InteropServices.FieldOffset(48)]
+            private byte _pad0;
+            [System.Runtime.InteropServices.FieldOffset(49)]
+            private byte _pad1;
+            [System.Runtime.InteropServices.FieldOffset(50)]
+            private byte _pad2;
+            [System.Runtime.InteropServices.FieldOffset(51)]
+            private byte _pad3;
+            [System.Runtime.InteropServices.FieldOffset(52)]
+            private byte _pad4;
+            [System.Runtime.InteropServices.FieldOffset(53)]
+            private byte _pad5;
+            [System.Runtime.InteropServices.FieldOffset(54)]
+            private byte _pad6;
+            [System.Runtime.InteropServices.FieldOffset(55)]
+            private byte _pad7;
+            [System.Runtime.InteropServices.FieldOffset(56)]
+            private byte _pad8;
+            [System.Runtime.InteropServices.FieldOffset(57)]
+            private byte _pad9;
+            [System.Runtime.InteropServices.FieldOffset(58)]
+            private byte _pad10;
+            [System.Runtime.InteropServices.FieldOffset(59)]
+            private byte _pad11;
+            [System.Runtime.InteropServices.FieldOffset(60)]
+            private byte _pad12;
+            [System.Runtime.InteropServices.FieldOffset(61)]
+            private byte _pad13;
+            [System.Runtime.InteropServices.FieldOffset(62)]
+            private byte _pad14;
+            [System.Runtime.InteropServices.FieldOffset(63)]
+            private byte _pad15;
         }
 
         [Header("Bindings")]

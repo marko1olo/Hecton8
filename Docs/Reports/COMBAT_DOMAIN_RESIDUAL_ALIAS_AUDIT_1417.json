@@ -1,0 +1,66 @@
+{
+  "agent": "1417",
+  "date": "2026-05-28",
+  "status": "STATIC_CLEAN_BUILD_BLOCKED",
+  "scope": "Combat domain scan after primary 43-entry purge plus status-effect residual migration",
+  "primaryLedger": "Docs/Reports/COMBAT_NATIVE_ALIAS_LEDGER_1417.json",
+  "originalResidualFindings": {
+    "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs",
+    "persistentNativeCollectionFields": 8,
+    "symbols": [
+      "_statusEffectRequests",
+      "_statusEffectStates",
+      "_statusEffectTuning",
+      "_statusEffectTelemetryRing",
+      "_statusEffectTelemetryCursor",
+      "_statusEffectCounters",
+      "_statusEffectVfxRequests",
+      "_statusEffectDamageSignals"
+    ]
+  },
+  "remediation": {
+    "requestIngress": "BufferID.Shinobu319StatusEffectRequests = 71269, CombatStatusEffectRequest[MaxQueuedSignals]",
+    "stateBuffers": [
+      "71260 Shinobu319StatusEffectStates",
+      "71263 Shinobu319StatusEffectTuning",
+      "71261 Shinobu319StatusEffectTelemetryRing",
+      "71262 Shinobu319StatusEffectTelemetryCursor",
+      "71264 Shinobu319StatusEffectCounters",
+      "71267 Shinobu319StatusEffectVfxRequests",
+      "71268 Shinobu319StatusEffectDamageSignals"
+    ],
+    "routeCardUpdated": "Docs/ARCHITECTURE/SHINOBU_319_STATUS_EFFECTS_ROUTE_CARD.md",
+    "editorFacadeUpdated": "Assets/_Project/Scripts/Gameplay/Combat/StatusEffectsEditorFacade.cs"
+  },
+  "staticScans": {
+    "persistentNativeFieldScanCommand": "rg -n --pcre2 \"private\\s+static\\s+(?:readonly\\s+)?(?:NativeArray|NativeQueue|NativeList|NativeParallelHashMap|NativeHashMap)<[^>]+>\\s+[_A-Za-z0-9]+\\s*;\" Assets/_Project/Scripts/Gameplay/Combat",
+    "persistentNativeFieldMatches": 0,
+    "primaryAndStatusLegacyContainerScanCommand": "rg -n \"NativeQueue<|NativeParallelHashMap<|new\\s+Native(Array|Queue|List|ParallelHashMap|HashMap)<|PrewarmQueue|DataVaultExempt\" CombatDamageRuntime.cs CombatDamageRuntime_StatusEffects.cs CombatDamageRuntime_VaultViews.cs HectonCombatRuntime_ArmorPenetration.cs",
+    "primaryAndStatusLegacyContainerMatches": 0,
+    "zeroGcForbiddenTokenScanCommand": "rg -n \"string\\.Format|\\.ToString\\(|\\.Select\\(|\\.Where\\(|\\.ToArray\\(|\\.ToList\\(|Enumerable\\.|foreach\\s*\\(\" CombatDamageRuntime.cs CombatDamageRuntime_StatusEffects.cs CombatDamageRuntime_VaultViews.cs HectonCombatRuntime_ArmorPenetration.cs",
+    "zeroGcForbiddenTokenMatches": 0
+  },
+  "lockEvidence": {
+    "statusRequestTryAcquireWriteLock": "CombatDamageRuntime_StatusEffects.cs:244",
+    "statusRequestFinallyRelease": "CombatDamageRuntime_StatusEffects.cs:258-260",
+    "statusTuningTryAcquireWriteLock": "CombatDamageRuntime_StatusEffects.cs:643",
+    "statusTuningFinallyRelease": "CombatDamageRuntime_StatusEffects.cs:656-658",
+    "statusStateResetCopyWriteLocks": [
+      "CombatDamageRuntime_StatusEffects.cs:1248-1262",
+      "CombatDamageRuntime_StatusEffects.cs:1269-1287"
+    ],
+    "statusCounterWriteLock": "CombatDamageRuntime_StatusEffects.cs:1646-1662",
+    "jobPinLocks": "CombatDamageRuntime_StatusEffects.cs:1131-1242, reverse unlock count-guarded"
+  },
+  "buildGate": {
+    "cpuLoadPercentSamples": [97, 68],
+    "activeCompilerOrDotnetProcess": "none observed in Get-Process dotnet,csc,VBCSCompiler",
+    "dotnetBuildLaunchedByAgent1417": false,
+    "decision": "BLOCKED_BY_CONTENTION_CPU_GT_50"
+  },
+  "remainingFaults": [
+    "No Unity import proof.",
+    "No PlayMode/profiler/GCMonitor proof.",
+    "Task 16 editor stress harness source exists but was not executed."
+  ]
+}

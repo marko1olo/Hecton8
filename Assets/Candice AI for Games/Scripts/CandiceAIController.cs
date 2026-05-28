@@ -1,4 +1,5 @@
 ﻿using CandiceAIforGames.AI;
+#pragma warning disable CS0169
 using CandiceAIforGames.AI.Pathfinding;
 using System;
 using System.Collections;
@@ -817,3 +818,4 @@ namespace CandiceAIforGames.AI
         }
     }
 }
+#pragma warning restore CS0169

@@ -27,7 +27,6 @@ namespace Hecton8.Core
         private static IDataVault _dataVault;
         private static VaultGenerationHandle<int> _invalidNumberCodesHandle;
         private static VaultGenerationHandle<InvalidNumberCounter64> _invalidNumberCounterHandle;
-        private static bool _dataVaultColdCacheAttempted;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -38,7 +37,6 @@ namespace Hecton8.Core
         /// <summary>Resolves the vault-owned invalid-number ring before Burst jobs can request a writer.</summary>
         public static void Initialize()
         {
-            CacheDataVaultCold();
             if (!TryResolveInvalidNumberBuffers(
                     allowAllocate: true,
                     out _,
@@ -51,10 +49,31 @@ namespace Hecton8.Core
             ResetInvalidNumberCounters(ref counter);
         }
 
+        /// <summary>Binds the bootstrap-owned DataVault used for invalid-number telemetry.</summary>
+        internal static void BindDataVaultCold(IDataVault vault)
+        {
+            if (ReferenceEquals(_dataVault, vault))
+            {
+                if (vault != null)
+                    Initialize();
+                return;
+            }
+
+            ReleaseInvalidNumberBuffers(_dataVault);
+            _dataVault = vault;
+            if (vault != null)
+                Initialize();
+        }
+
         /// <summary>Releases the vault-owned invalid-number ring handles.</summary>
         public static void Dispose()
         {
-            IDataVault vault = _dataVault;
+            ReleaseInvalidNumberBuffers(_dataVault);
+            _dataVault = null;
+        }
+
+        private static void ReleaseInvalidNumberBuffers(IDataVault vault)
+        {
             if (vault != null)
             {
                 if (IsVaultHandleCreated(in _invalidNumberCodesHandle))
@@ -65,8 +84,6 @@ namespace Hecton8.Core
 
             _invalidNumberCodesHandle = default;
             _invalidNumberCounterHandle = default;
-            _dataVault = null;
-            _dataVaultColdCacheAttempted = false;
         }
 
         /// <summary>Returns a Burst-safe writer for invalid-number error codes.</summary>
@@ -333,14 +350,10 @@ namespace Hecton8.Core
             invalidNumberCodes = default;
             invalidNumberCounters = default;
 
-            if (allowAllocate)
-                CacheDataVaultCold();
-
             IDataVault vault = _dataVault;
             if (vault == null)
                 return false;
 
-            _dataVault = vault;
             if (!IsVaultHandleCreated(in _invalidNumberCodesHandle))
             {
                 if (!allowAllocate || vault.IsAllocationLocked)
@@ -390,15 +403,6 @@ namespace Hecton8.Core
                 invalidNumberCounters.IsCreated &&
                 invalidNumberCodes.Length >= InvalidNumberQueuePrewarmCapacity &&
                 invalidNumberCounters.Length > 0;
-        }
-
-        private static void CacheDataVaultCold()
-        {
-            if (_dataVaultColdCacheAttempted)
-                return;
-
-            _dataVault = GlobalRegistry.DataVault;
-            _dataVaultColdCacheAttempted = true;
         }
 
         private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle)

@@ -598,8 +598,44 @@ namespace Hecton8.Lighting
 
         private void CacheDependencies()
         {
-            _vault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
             _playerContext = GlobalRegistry.Player;
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault vault)
+        {
+            if (ReferenceEquals(_vault, vault))
+                return;
+
+            if (_jobActive)
+            {
+                DispatcherJobFence.TryComplete(ref _pendingCullHandle, forceComplete: true);
+                UnlockJobBuffers();
+                _jobActive = false;
+            }
+
+            UnlockMockSeedBuffers();
+            UnlockMockSdfBuffer();
+            UnlockSourceManifestBuffer();
+            ReleaseDynamicPointLightVaultHandles(_vault);
+
+            _vault = vault;
+            ResetNativeEpochState();
+        }
+
+        private void ResetNativeEpochState()
+        {
+            _pendingCullHandle = default;
+            _pendingScheduleTicks = 0L;
+            _nativeStorageReady = false;
+            _sourceBufferSeeded = false;
+            _mockSdfSeeded = false;
+            _timeoutFaultPending = false;
+            _blackBoxDumped = false;
+            _profileRuleCount = 0;
+            _activeSourceCount = 0;
+            _telemetryWriteCursor = 0;
+            _lastGpuUploadBytes = 0UL;
         }
 
         private bool EnsureNativeStorage(bool allowAllocation = true, bool allowMockGeneration = true)
@@ -795,32 +831,33 @@ namespace Hecton8.Lighting
 
         private void ReleaseDynamicPointLightVaultHandles(IDataVault vault)
         {
-            ReleaseDynamicPointLightVaultHandle(vault, ref _sources);
-            ReleaseDynamicPointLightVaultHandle(vault, ref _states);
-            ReleaseDynamicPointLightVaultHandle(vault, ref _sourceManifest);
-            ReleaseDynamicPointLightVaultHandle(vault, ref _settings);
-            ReleaseDynamicPointLightVaultHandle(vault, ref _gpuPayloadFront);
-            ReleaseDynamicPointLightVaultHandle(vault, ref _gpuPayloadBack);
-            ReleaseDynamicPointLightVaultHandle(vault, ref _telemetryRing);
-            ReleaseDynamicPointLightVaultHandle(vault, ref _telemetryCursor);
-            ReleaseDynamicPointLightVaultHandle(vault, ref _importanceKeys);
-            ReleaseDynamicPointLightVaultHandle(vault, ref _importanceIndices);
-            ReleaseDynamicPointLightVaultHandle(vault, ref _sortScratchKeys);
-            ReleaseDynamicPointLightVaultHandle(vault, ref _sortScratchIndices);
-            ReleaseDynamicPointLightVaultHandle(vault, ref _csvScratch);
-            ReleaseDynamicPointLightVaultHandle(vault, ref _profileRules);
-            ReleaseDynamicPointLightVaultHandle(vault, ref _mockSdfSamples);
-            ReleaseDynamicPointLightVaultHandle(vault, ref _dynamicProbeLights);
-            ReleaseDynamicPointLightVaultHandle(vault, ref _runtimeCounters);
-            ReleaseDynamicPointLightVaultHandle(vault, ref _frustumPlanes);
-            ReleaseDynamicPointLightVaultHandle(vault, ref _selfAudit);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _sources, DynamicPointLightCullingVaultIds.Sources);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _states, DynamicPointLightCullingVaultIds.States);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _sourceManifest, DynamicPointLightCullingVaultIds.SourceManifest);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _settings, DynamicPointLightCullingVaultIds.Settings);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _gpuPayloadFront, DynamicPointLightCullingVaultIds.GpuPayloadFront);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _gpuPayloadBack, DynamicPointLightCullingVaultIds.GpuPayloadBack);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _telemetryRing, DynamicPointLightCullingVaultIds.TelemetryRing);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _telemetryCursor, DynamicPointLightCullingVaultIds.TelemetryCursor);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _importanceKeys, DynamicPointLightCullingVaultIds.ImportanceKeys);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _importanceIndices, DynamicPointLightCullingVaultIds.ImportanceIndices);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _sortScratchKeys, DynamicPointLightCullingVaultIds.SortScratchKeys);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _sortScratchIndices, DynamicPointLightCullingVaultIds.SortScratchIndices);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _csvScratch, DynamicPointLightCullingVaultIds.CsvScratch);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _profileRules, DynamicPointLightCullingVaultIds.ProfileRules);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _mockSdfSamples, DynamicPointLightCullingVaultIds.MockSdfSamples);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _dynamicProbeLights, DynamicPointLightCullingVaultIds.DynamicProbeLights);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _runtimeCounters, DynamicPointLightCullingVaultIds.RuntimeCounters);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _frustumPlanes, DynamicPointLightCullingVaultIds.FrustumPlanes);
+            ReleaseDynamicPointLightVaultHandle(vault, ref _selfAudit, DynamicPointLightCullingVaultIds.SelfAudit);
         }
 
         private static void ReleaseDynamicPointLightVaultHandle<T>(
             IDataVault vault,
-            ref VaultGenerationHandle<T> handle) where T : struct
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
         {
-            if (handle.BufferID != 0u && handle.Generation != 0u && vault != null)
+            if (vault != null && HasDynamicPointLightHandle(in handle, bufferId))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
@@ -850,10 +887,7 @@ namespace Hecton8.Lighting
             UnlockMockSdfBuffer();
             UnlockSourceManifestBuffer();
             ReleaseDynamicPointLightVaultHandles(_vault);
-            _nativeStorageReady = false;
-            _sourceBufferSeeded = false;
-            _mockSdfSeeded = false;
-            _activeSourceCount = 0;
+            ResetNativeEpochState();
 
             if (_registeredTick)
             {
@@ -884,26 +918,7 @@ namespace Hecton8.Lighting
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.DataVault:
-                    if (!ReferenceEquals(_vault, currentService))
-                    {
-                        IDataVault oldVault = _vault;
-                        if (_jobActive)
-                        {
-                            DispatcherJobFence.TryComplete(ref _pendingCullHandle, forceComplete: true);
-                            UnlockJobBuffers();
-                            _jobActive = false;
-                        }
-
-                        UnlockMockSeedBuffers();
-                        UnlockMockSdfBuffer();
-                        UnlockSourceManifestBuffer();
-                        ReleaseDynamicPointLightVaultHandles(oldVault);
-                        _vault = currentService as IDataVault;
-                        _nativeStorageReady = false;
-                        _sourceBufferSeeded = false;
-                        _mockSdfSeeded = false;
-                        _activeSourceCount = 0;
-                    }
+                    RebindDataVaultForLifecycle(currentService as IDataVault);
 
                     if (_vault != null && isActiveAndEnabled)
                         EnsureNativeStorage(allowAllocation: true, allowMockGeneration: false);

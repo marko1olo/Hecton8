@@ -23,6 +23,7 @@ uniform float noiseSpread;
 uniform float detailUniqueValue;
 uniform float detailDensity;
 uniform float terrainNormalEffect;
+uniform uint instanceCapacity;
 
 RWStructuredBuffer<uint> counterBuffer;
 
@@ -39,14 +40,21 @@ inline uint FixBounds(uint value, uint max, uint failValue)
 [numthreads(GPUI_THREADS_2D, 1, GPUI_THREADS_2D)]
 void CSInstancedRenderingGrassInstantiationKernel(uint3 id : SV_DispatchThreadID)
 {
+    uint detailMapWidth = (uint)detailAndHeightMapSize.x;
+    uint detailMapHeight = (uint)detailAndHeightMapSize.y;
+    uint heightMapWidth = (uint)detailAndHeightMapSize.z;
+    uint heightMapHeight = (uint)detailAndHeightMapSize.w;
+
     // Check if out of terrain detail size 
-    if (id.x >= uint(detailAndHeightMapSize.x))
+    if (id.x >= detailMapWidth)
         return;
-    if (id.z >= uint(detailAndHeightMapSize.y))
+    if (id.z >= detailMapHeight)
+        return;
+    if (heightMapWidth == 0 || heightMapHeight == 0)
         return;
 
     // Get detail index on maps
-    uint detailIndex = id.x + id.z * detailAndHeightMapSize.x;
+    uint detailIndex = id.x + id.z * detailMapWidth;
     
     // Get detail count
     uint detailCount = detailMapData[detailIndex];
@@ -56,7 +64,7 @@ void CSInstancedRenderingGrassInstantiationKernel(uint3 id : SV_DispatchThreadID
         return;
     
     // Get heightMap info
-    uint heightDataSize = detailAndHeightMapSize.z * detailAndHeightMapSize.w;
+    uint heightDataSize = heightMapWidth * heightMapHeight;
     float detailHeightMapScale = (heightResolution - 1.0) / detailResolution;
     
     // Convert to world coordinates
@@ -71,6 +79,8 @@ void CSInstancedRenderingGrassInstantiationKernel(uint3 id : SV_DispatchThreadID
     {
         uint index;
         InterlockedAdd(counterBuffer[0], 1, index);
+        if (index >= instanceCapacity)
+            return;
 
         float multiplier = (i + 1) * abs(detailUniqueValue);
         
@@ -89,11 +99,12 @@ void CSInstancedRenderingGrassInstantiationKernel(uint3 id : SV_DispatchThreadID
         
         // Get heights around position 
         float2 heightPoint = float2((float(id.x) + randomPoint.x) * detailHeightMapScale, (float(id.z) + randomPoint.y) * detailHeightMapScale);
-        uint heightIndex = floor(heightPoint.x) + floor(heightPoint.y) * detailAndHeightMapSize.z;
+        uint heightIndex = (uint)floor(heightPoint.x) + (uint)floor(heightPoint.y) * heightMapWidth;
+        heightIndex = FixBounds(heightIndex, heightDataSize, 0);
         float leftBottomH = heightMapData[heightIndex];
-        float leftTopH = heightMapData[FixBounds(heightIndex + detailAndHeightMapSize.z, heightDataSize, heightIndex)];
-        float rightBottomH = heightMapData[heightIndex + 1];
-        float rightTopH = heightMapData[FixBounds(heightIndex + detailAndHeightMapSize.z + 1, heightDataSize, heightIndex)];
+        float leftTopH = heightMapData[FixBounds(heightIndex + heightMapWidth, heightDataSize, heightIndex)];
+        float rightBottomH = heightMapData[FixBounds(heightIndex + 1, heightDataSize, heightIndex)];
+        float rightTopH = heightMapData[FixBounds(heightIndex + heightMapWidth + 1, heightDataSize, heightIndex)];
         
         // Set grass position
         float sampledHeight = SampleHeight(frac(heightPoint), leftBottomH, leftTopH, rightBottomH, rightTopH);

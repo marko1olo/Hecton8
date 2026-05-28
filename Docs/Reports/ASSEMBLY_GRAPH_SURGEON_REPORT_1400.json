@@ -1,0 +1,1142 @@
+﻿{
+    "generatedAt":  "2026-05-28T05:23:49.1439928+04:00",
+    "agentId":  "1400",
+    "role":  "UNITY_EDITOR_DOMAIN_RELOAD_AND_ASSEMBLY_GRAPH_SURGEON",
+    "domain":  "E9-82 The Integrator (Compile Medic)",
+    "taskCount":  20,
+    "status":  "PENDING_VERIFICATION_BLOCKED_BY_CONTENTION_STATIC_INTERCEPTION_GREEN_STATIC_HEALTH_GREEN_STRICT_WARNING_AUDIT_INSTALLED_ACTIVE_PROJECT_MASKS_CLEAR",
+    "modifiedSourceFiles":  [
+                                "Directory.Build.props",
+                                "Directory.Build.targets",
+                                "Tools/Run_Guarded_Compile_1400.ps1",
+                                "Tools/Test_Msbuild_Graph_Fuzzer_1400.ps1",
+                                "Tools/Test_Static_Msbuild_Interception_1400.ps1",
+                                "Tools/Test_BuildGraph_StaticHealth_1400.ps1"
+                            ],
+    "modifiedSourceHashes":  [
+                                 {
+                                     "path":  "Directory.Build.props",
+                                     "sha256":  "6CAFA13A3299FD971213F6013DA74064B1BE2CC9BCAEC7ED638CD0CA04A8F2EC"
+                                 },
+                                 {
+                                     "path":  "Directory.Build.targets",
+                                     "sha256":  "B115FDC5AFE8D33F70E04A0E348E6FB07DD6346C45D5CE54313DC4907AB89C85"
+                                 },
+                                 {
+                                     "path":  "Tools/Run_Guarded_Compile_1400.ps1",
+                                     "sha256":  "1D5ACA8A04D9682202792F21EEBA5CD56179F8F91AEA7751BFDAA7C2ECCE85FB"
+                                 },
+                                 {
+                                     "path":  "Tools/Test_Msbuild_Graph_Fuzzer_1400.ps1",
+                                     "sha256":  "226C496D9BE6B28A54DEC10E6DF5AF9C348DD63D78A069F87A9B887C34CD06DC"
+                                 },
+                                 {
+                                     "path":  "Tools/Test_Static_Msbuild_Interception_1400.ps1",
+                                     "sha256":  "C7851C18C65426FFE9F392185F9AE450F7AB8AC6A9C0EDF27A0110B15F4C8ECF"
+                                 },
+                                 {
+                                     "path":  "Tools/Test_BuildGraph_StaticHealth_1400.ps1",
+                                     "sha256":  "27F8DF42439EFDDA4E4FA06921311895A015A3C0CBAD7D732EAA8D9292DA4142"
+                                 }
+                             ],
+    "evidenceArtifactHashes":  [
+                                   {
+                                       "path":  "Docs/AgentLogs/MsbuildSurgerySelfAudit_1400.json",
+                                       "sha256":  "397A4D163BF0B76588FE782B9362318C4CFA538C7127C007B7742BDBB5BCBD53"
+                                   },
+                                   {
+                                       "path":  "Docs/AgentLogs/MsbuildInterceptionStaticProof_1400.json",
+                                       "sha256":  "58CB8661683566ADFC88DE6AE3A7997C15E5A83E21E7E59D9ADACAE0D70939E3"
+                                   },
+                                   {
+                                       "path":  "Docs/AgentLogs/BuildGraphStaticHealth_1400.json",
+                                       "sha256":  "BBC21383BC7115367CA900BE32C8C9CBE78EAE9D874EAC593D67E18EDA8C8E1E"
+                                   },
+                                   {
+                                       "path":  "Docs/AgentLogs/Build_1400_Output.json",
+                                       "sha256":  "76974FB1FFC3E4700166FC198FF19181A0B32AF6E0E42DC25154049D7683DF4D"
+                                   },
+                                   {
+                                       "path":  "Docs/AgentLogs/MsbuildGraphFuzzer_1400.json",
+                                       "sha256":  "E43266EA6AA3EC0B9E10AE8E1A89E9313C1B7CD7D1EF8B89C2D3EB98CD0C28B1"
+                                   },
+                                   {
+                                       "path":  "Docs/AgentLogs/StrictWarningAudit_1400.json",
+                                       "sha256":  "4AE783B56EC89BF54E6BD13E5858C6A9EFD3CF7DCDB734076F768BABBAA24248"
+                                   },
+                                   {
+                                       "path":  "Docs/AgentLogs/ActiveProjectWarningMaskAudit_1400.json",
+                                       "sha256":  "AC8E367D655EA400AF70179BE405E8141F0F759436373D0B1ABCE044EAC4D4EB"
+                                   },
+                                   {
+                                       "path":  "Docs/AgentLogs/ResidualCompileRiskAudit_1400.json",
+                                       "sha256":  "AE7BFE92765CE477068097C0D08E82B039727F509891338EE7DF3E6290158AE7"
+                                   },
+                                   {
+                                       "path":  "Docs/AgentLogs/ZeroGcFinalAudit_1400.json",
+                                       "sha256":  "EE561E098051D90AACAC7FA746C8BBF8AA3914BDECF438E167EE211607F74827"
+                                   },
+                                   {
+                                       "path":  "Docs/AgentLogs/ToolingZeroGcAudit_1400.json",
+                                       "sha256":  "614B04F8C93979EA2B5C17381B196DD0F523CC758877874AB75864FE2087395B"
+                                   },
+                                   {
+                                       "path":  "Docs/AgentLogs/DataSovereigntySurfaceAudit_1400.json",
+                                       "sha256":  "22ED5BDF7F16AD8BA7F20AF07F76CD6F852455325CB5E2800FC5E1D7F4E8C416"
+                                   },
+                                   {
+                                       "path":  "Docs/AgentLogs/ScalabilityCinematicAudit_1400.json",
+                                       "sha256":  "B0CC15B599D8A7F1D9B67FD33699EE2D51BCD8FC9425E96E92DBE062D07F449B"
+                                   },
+                                   {
+                                       "path":  "Docs/AgentLogs/WarningSuppressionDebt_1400.json",
+                                       "sha256":  "41C4BD7D19685AC49DEA60C0CBC0FE220C9ED50966474B5A32AEBF63573DB9CA"
+                                   }
+                               ],
+    "modifiedAsmdefFilesOwnedByAgent1400":  [
+
+                                            ],
+    "modifiedAsmdefHashesOwnedByAgent1400":  [
+
+                                             ],
+    "lineEvidence":  [
+                         {
+                             "path":  "Directory.Build.props",
+                             "lines":  "5",
+                             "evidence":  "Unity 6000.4 CLI version defines present."
+                         },
+                         {
+                             "path":  "Directory.Build.targets",
+                             "lines":  "7,18-19,106,111-113",
+                             "evidence":  "HectonStrictWarningAudit default false; existing warning masks bypassed when strict audit is true."
+                         },
+                         {
+                             "path":  "Directory.Build.targets",
+                             "lines":  "5,97-98",
+                             "evidence":  "Scoped Sirenix.OdinInspector.Attributes CLI linkage through project-relative HintPath."
+                         },
+                         {
+                             "path":  "Directory.Build.targets",
+                             "lines":  "129-140",
+                             "evidence":  "FixUnityCircularReferences swaps Unity package ProjectReferences to Library/ScriptAssemblies DLL References."
+                         },
+                         {
+                             "path":  "Directory.Build.targets",
+                             "lines":  "330-331,491",
+                             "evidence":  "Dead direct Compile Includes corrected: Alpha Leviathan contracts now point to Core/Contracts/AI, Cable solver points to Physics/Cable132; missing direct compile include count now 0."
+                         },
+                         {
+                             "path":  "Tools/Run_Guarded_Compile_1400.ps1",
+                             "lines":  "50-66,95-112,139-147,154-166",
+                             "evidence":  "CPU/process gate, ISO process snapshot, line-by-line summary parser, strict warning audit property, single dotnet invocation behind gate."
+                         },
+                         {
+                             "path":  "Tools/Test_Msbuild_Graph_Fuzzer_1400.ps1",
+                             "lines":  "61-78,99-106,114-126,150-177",
+                             "evidence":  "CPU/process gate, runtime-computed XML-escaped project-root references, deterministic log, single dotnet msbuild invocation behind gate."
+                         },
+                         {
+                             "path":  "Tools/Test_BuildGraph_StaticHealth_1400.ps1",
+                             "lines":  "1-339",
+                             "evidence":  "No-dotnet active solution graph health audit: missing projects, missing ProjectReferences, cycles, duplicate targets, direct compile include drift."
+                         }
+                     ],
+    "actualFaultsFoundThisPass":  [
+                                      {
+                                          "fault":  "Directory.Build.targets carried dead direct Compile Includes for nonexistent AcousticAup.cs, Physics/CablePhysicsSolver132.cs, and wrong AlphaLeviathan contract paths.",
+                                          "fix":  "Removed nonexistent AcousticAup direct include, removed stale Cable path, corrected Alpha contract include paths to Core/Contracts/AI.",
+                                          "evidence":  "Docs/AgentLogs/BuildGraphStaticHealth_1400.json missingDirectCompileIncludeCount=0; Directory.Build.targets lines 330-331 and 491."
+                                      },
+                                      {
+                                          "fault":  "Static graph health was not independently checking active .slnx cycles/missing ProjectReferences.",
+                                          "fix":  "Added Tools/Test_BuildGraph_StaticHealth_1400.ps1 and BuildGraphStaticHealth_1400.json.",
+                                          "evidence":  "62 active projects, 83 active edges, 0 missing ProjectReferences, 0 cycles, 0 duplicate targets."
+                                      },
+                                      {
+                                          "fault":  "Generated active .csproj warning-mask surface had not been independently audited.",
+                                          "fix":  "Regenerated ActiveProjectWarningMaskAudit_1400.json.",
+                                          "evidence":  "62 active projects, 0 active warning masks, 0 parse failures."
+                                      },
+                                      {
+                                          "fault":  "Build/fuzzer verification still cannot legally execute under current host contention.",
+                                          "fix":  "No source workaround; guarded wrappers blocked before dotnet invocation.",
+                                          "evidence":  "Build and fuzzer gates at 2026-05-28T05:17 local report CPU 100, active dotnet PID 55080."
+                                      }
+                                  ],
+    "residualCompileRiskAudit":  {
+                                     "generatedAt":  "2026-05-28T05:20:10.6547658+04:00",
+                                     "agentId":  "1400",
+                                     "status":  "RESIDUAL_RISKS_DOCUMENTED_STATIC_HEALTH_GREEN_COMPILE_FUZZER_BLOCKED_BY_CONTENTION",
+                                     "latestBuildGate":  {
+                                                             "generatedAt":  "2026-05-28T05:17:39.5612557+04:00",
+                                                             "status":  "BLOCKED_BY_CONTENTION",
+                                                             "solutionPath":  "Hecton8.slnx",
+                                                             "logPath":  "Docs/AgentLogs/Build_1400_Output.log",
+                                                             "cpuLoadPercent":  100,
+                                                             "compilerProcesses":  [
+                                                                                       {
+                                                                                           "Id":  55080,
+                                                                                           "ProcessName":  "dotnet",
+                                                                                           "CPU":  469.59375,
+                                                                                           "StartTime":  "2026-05-28T04:58:33.0068704+04:00"
+                                                                                       }
+                                                                                   ],
+                                                             "exitCode":  -1,
+                                                             "durationMilliseconds":  0,
+                                                             "warnings":  null,
+                                                             "errors":  null,
+                                                             "message":  "BLOCKED_BY_CONTENTION: cpu=100 compilerProcessCount=1"
+                                                         },
+                                     "latestFuzzerGate":  {
+                                                              "generatedAt":  "2026-05-28T05:17:52.6472006+04:00",
+                                                              "status":  "BLOCKED_BY_CONTENTION",
+                                                              "cpuLoadPercent":  100,
+                                                              "compilerProcesses":  [
+                                                                                        {
+                                                                                            "Id":  55080,
+                                                                                            "ProcessName":  "dotnet",
+                                                                                            "CPU":  477.40625,
+                                                                                            "StartTime":  "2026-05-28T04:58:33.0068704+04:00"
+                                                                                        }
+                                                                                    ],
+                                                              "exitCode":  -1,
+                                                              "durationMilliseconds":  0,
+                                                              "message":  "BLOCKED_BY_CONTENTION: cpu=100 compilerProcessCount=1",
+                                                              "projectPath":  "",
+                                                              "reportPath":  "",
+                                                              "logPath":  "Docs/AgentLogs/MsbuildGraphFuzzer_1400.log"
+                                                          },
+                                     "buildGraphStaticHealth":  {
+                                                                    "status":  "STATIC_BUILD_GRAPH_HEALTH_GREEN",
+                                                                    "activeSolutionProjectCount":  62,
+                                                                    "activeProjectReferenceEdgeCount":  83,
+                                                                    "missingProjectReferenceCount":  0,
+                                                                    "activeProjectReferenceCycleCount":  0,
+                                                                    "missingDirectCompileIncludeCount":  0,
+                                                                    "hash":  "BBC21383BC7115367CA900BE32C8C9CBE78EAE9D874EAC593D67E18EDA8C8E1E"
+                                                                },
+                                     "staticInterception":  {
+                                                                "status":  "GREEN_STATIC_INTERCEPTION_READY",
+                                                                "activeInterceptedProjectReferenceCount":  16,
+                                                                "activeMissingReplacementDllCount":  0,
+                                                                "hash":  "58CB8661683566ADFC88DE6AE3A7997C15E5A83E21E7E59D9ADACAE0D70939E3"
+                                                            },
+                                     "strictWarningAudit":  {
+                                                                "status":  "STRICT_WARNING_AUDIT_SWITCH_INSTALLED_STATIC_PROOF",
+                                                                "guardedCompileArgument":  "/p:HectonStrictWarningAudit=true",
+                                                                "hectonCoreProjectReferenceCount":  0,
+                                                                "hash":  "4AE783B56EC89BF54E6BD13E5858C6A9EFD3CF7DCDB734076F768BABBAA24248"
+                                                            },
+                                     "activeProjectWarningMaskAudit":  {
+                                                                           "status":  "ACTIVE_PROJECT_WARNING_MASKS_CLEAR",
+                                                                           "activeProjectWarningMaskCount":  0,
+                                                                           "directoryBuildAllMasksGuardedByStrictAudit":  true,
+                                                                           "hash":  "AC8E367D655EA400AF70179BE405E8141F0F759436373D0B1ABCE044EAC4D4EB"
+                                                                       },
+                                     "warningSuppressionDebt":  {
+                                                                    "totalRecords":  105,
+                                                                    "noWarn":  3,
+                                                                    "msbuildWarningsAsMessages":  1,
+                                                                    "hash":  "41C4BD7D19685AC49DEA60C0CBC0FE220C9ED50966474B5A32AEBF63573DB9CA"
+                                                                },
+                                     "residualProblems":  [
+                                                              {
+                                                                  "id":  "NO_SUCCESSFUL_BUILD_LOG",
+                                                                  "severity":  "BLOCKER_FOR_ZERO_WARNING_PROOF",
+                                                                  "evidence":  "Docs/AgentLogs/Build_1400_Output.json status BLOCKED_BY_CONTENTION; warnings/errors null.",
+                                                                  "action":  "Retry guarded wrapper only when CPU \u003c= 50 and no dotnet/csc/VBCSCompiler processes exist."
+                                                              },
+                                                              {
+                                                                  "id":  "REAL_MSBUILD_FUZZER_NOT_EXECUTED",
+                                                                  "severity":  "BLOCKER_FOR_TASK16_RUNTIME_PROOF",
+                                                                  "evidence":  "Docs/AgentLogs/MsbuildGraphFuzzer_1400.json status BLOCKED_BY_CONTENTION; log records block.",
+                                                                  "action":  "Retry guarded fuzzer only when gate opens."
+                                                              },
+                                                              {
+                                                                  "id":  "WARNING_SUPPRESSION_DEBT",
+                                                                  "severity":  "BLOCKER_FOR_HONEST_ZERO_WARNING_CLAIM_UNTIL_BUILD_RUNS",
+                                                                  "evidence":  "Docs/AgentLogs/WarningSuppressionDebt_1400.json totalRecords=105",
+                                                                  "action":  "Strict compile route exposes Directory.Build masks; active generated projects have no warning masks."
+                                                              },
+                                                              {
+                                                                  "id":  "BROAD_PROJECTREFERENCE_PRUNING",
+                                                                  "severity":  "CURRENT_STATIC_NOOP_REQUIRES_BUILD_VALIDATION",
+                                                                  "evidence":  "Hecton8.Core.csproj ProjectReference XPath count=0; scoped remove lines remain in Directory.Build.targets.",
+                                                                  "action":  "No extra patch without build diagnostics."
+                                                              }
+                                                          ]
+                                 },
+    "strictWarningAudit":  {
+                               "generatedAt":  "2026-05-28T05:20:09.4695849+04:00",
+                               "agentId":  "1400",
+                               "status":  "STRICT_WARNING_AUDIT_SWITCH_INSTALLED_STATIC_PROOF",
+                               "directoryBuildTargetsXmlParse":  "OK",
+                               "strictWarningAuditDefault":  "false",
+                               "guardedCompilePassesStrictWarningAudit":  true,
+                               "guardedCompileArgument":  "/p:HectonStrictWarningAudit=true",
+                               "warningMaskLines":  [
+                                                        {
+                                                            "line":  7,
+                                                            "text":  "\u003cHectonStrictWarningAudit Condition=\"\u0027$(HectonStrictWarningAudit)\u0027 == \u0027\u0027\"\u003efalse\u003c/HectonStrictWarningAudit\u003e"
+                                                        },
+                                                        {
+                                                            "line":  18,
+                                                            "text":  "\u003cPropertyGroup Condition=\"\u0027$(HectonStrictWarningAudit)\u0027 != \u0027true\u0027 And $([System.String]::Copy(\u0027$(HectonVendorGeneratedWarningProjects)\u0027).Contains(\u0027|$(MSBuildProjectName)|\u0027))\"\u003e"
+                                                        },
+                                                        {
+                                                            "line":  19,
+                                                            "text":  "\u003cNoWarn\u003e$(NoWarn);0108;0169;0414;0436;0618;0619;0649;2008;UNT0006\u003c/NoWarn\u003e"
+                                                        },
+                                                        {
+                                                            "line":  106,
+                                                            "text":  "\u003cNoWarn Condition=\"\u0027$(HectonStrictWarningAudit)\u0027 != \u0027true\u0027\"\u003e$(NoWarn);0067;0169;0414;0436;0618;0649;2002\u003c/NoWarn\u003e"
+                                                        },
+                                                        {
+                                                            "line":  111,
+                                                            "text":  "\u003cPropertyGroup Condition=\"\u0027$(HectonStrictWarningAudit)\u0027 != \u0027true\u0027 And \u0027$(MSBuildProjectName)\u0027 == \u0027Hecton8.Editor\u0027\"\u003e"
+                                                        },
+                                                        {
+                                                            "line":  112,
+                                                            "text":  "\u003cNoWarn\u003e$(NoWarn);MSB3277\u003c/NoWarn\u003e"
+                                                        },
+                                                        {
+                                                            "line":  113,
+                                                            "text":  "\u003cMSBuildWarningsAsMessages\u003e$(MSBuildWarningsAsMessages);MSB3277\u003c/MSBuildWarningsAsMessages\u003e"
+                                                        }
+                                                    ],
+                               "guardedCompileLines":  [
+                                                           {
+                                                               "line":  160,
+                                                               "text":  "\"/p:UseSharedCompilation=false\","
+                                                           },
+                                                           {
+                                                               "line":  161,
+                                                               "text":  "\"/p:HectonStrictWarningAudit=true\""
+                                                           }
+                                                       ],
+                               "hectonCoreProjectReferenceCount":  0,
+                               "hectonCoreProjectReferenceCountMethod":  "XmlDocument.SelectNodes(//ProjectReference)",
+                               "scopedBroadProjectReferenceRemoveLines":  [
+                                                                              {
+                                                                                  "line":  379,
+                                                                                  "text":  "\u003cProjectReference Remove=\"@(ProjectReference)\" /\u003e"
+                                                                              },
+                                                                              {
+                                                                                  "line":  661,
+                                                                                  "text":  "\u003cProjectReference Remove=\"@(ProjectReference)\" /\u003e"
+                                                                              }
+                                                                          ],
+                               "broadProjectReferenceRemoveCurrentEffect":  "NO_CURRENT_Hecton8.Core_ProjectReference_ITEMS_IN_GENERATED_CSPROJ",
+                               "evidence":  "Static source/XML proof only. No dotnet build invoked by this audit."
+                           },
+    "activeProjectWarningMaskAudit":  {
+                                          "generatedAt":  "2026-05-28T05:20:10.2384817+04:00",
+                                          "agentId":  "1400",
+                                          "status":  "ACTIVE_PROJECT_WARNING_MASKS_CLEAR",
+                                          "activeSolutionProjectCount":  62,
+                                          "activeProjectWarningMaskCount":  0,
+                                          "activeProjectWarningMasks":  [
+
+                                                                        ],
+                                          "directoryBuildWarningMaskCount":  4,
+                                          "directoryBuildWarningMasks":  [
+                                                                             {
+                                                                                 "file":  "Directory.Build.targets",
+                                                                                 "nodeName":  "NoWarn",
+                                                                                 "text":  "$(NoWarn);0108;0169;0414;0436;0618;0619;0649;2008;UNT0006",
+                                                                                 "outerXml":  "\u003cNoWarn\u003e$(NoWarn);0108;0169;0414;0436;0618;0619;0649;2008;UNT0006\u003c/NoWarn\u003e",
+                                                                                 "guardedByStrictAudit":  true
+                                                                             },
+                                                                             {
+                                                                                 "file":  "Directory.Build.targets",
+                                                                                 "nodeName":  "NoWarn",
+                                                                                 "text":  "$(NoWarn);0067;0169;0414;0436;0618;0649;2002",
+                                                                                 "outerXml":  "\u003cNoWarn Condition=\"\u0027$(HectonStrictWarningAudit)\u0027 != \u0027true\u0027\"\u003e$(NoWarn);0067;0169;0414;0436;0618;0649;2002\u003c/NoWarn\u003e",
+                                                                                 "guardedByStrictAudit":  true
+                                                                             },
+                                                                             {
+                                                                                 "file":  "Directory.Build.targets",
+                                                                                 "nodeName":  "NoWarn",
+                                                                                 "text":  "$(NoWarn);MSB3277",
+                                                                                 "outerXml":  "\u003cNoWarn\u003e$(NoWarn);MSB3277\u003c/NoWarn\u003e",
+                                                                                 "guardedByStrictAudit":  true
+                                                                             },
+                                                                             {
+                                                                                 "file":  "Directory.Build.targets",
+                                                                                 "nodeName":  "MSBuildWarningsAsMessages",
+                                                                                 "text":  "$(MSBuildWarningsAsMessages);MSB3277",
+                                                                                 "outerXml":  "\u003cMSBuildWarningsAsMessages\u003e$(MSBuildWarningsAsMessages);MSB3277\u003c/MSBuildWarningsAsMessages\u003e",
+                                                                                 "guardedByStrictAudit":  true
+                                                                             }
+                                                                         ],
+                                          "directoryBuildAllMasksGuardedByStrictAudit":  true,
+                                          "parseFailureCount":  0,
+                                          "parseFailures":  [
+
+                                                            ],
+                                          "evidence":  "Static XML XPath scan. No dotnet build invoked."
+                                      },
+    "buildGraphStaticHealth":  {
+                                   "generatedAt":  "2026-05-28T05:16:13.1611206+04:00",
+                                   "status":  "STATIC_BUILD_GRAPH_HEALTH_GREEN",
+                                   "evidence":  "Static XML graph health audit only. No dotnet build and no dotnet msbuild executed.",
+                                   "activeSolutionProjectCount":  62,
+                                   "activeProjectReferenceEdgeCount":  83,
+                                   "missingSolutionProjectCount":  0,
+                                   "missingSolutionProjects":  [
+
+                                                               ],
+                                   "duplicateSolutionProjectCount":  0,
+                                   "duplicateSolutionProjects":  [
+
+                                                                 ],
+                                   "activeProjectXmlParseFailureCount":  0,
+                                   "activeProjectXmlParseFailures":  [
+
+                                                                     ],
+                                   "missingProjectReferenceCount":  0,
+                                   "missingProjectReferences":  [
+
+                                                                ],
+                                   "externalProjectReferenceCount":  0,
+                                   "externalProjectReferences":  [
+
+                                                                 ],
+                                   "selfProjectReferenceCount":  0,
+                                   "selfProjectReferences":  [
+
+                                                             ],
+                                   "activeProjectReferenceCycleCount":  0,
+                                   "activeProjectReferenceCycles":  [
+
+                                                                    ],
+                                   "shimProjectReferenceCount":  16,
+                                   "shimProjectReferences":  [
+                                                                 {
+                                                                     "project":  "Unity.ShaderGraph.Editor.csproj",
+                                                                     "include":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                                                     "target":  "Unity.RenderPipelines.Core.Editor.csproj"
+                                                                 },
+                                                                 {
+                                                                     "project":  "ShapesEditor.csproj",
+                                                                     "include":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                                                     "target":  "Unity.RenderPipelines.Universal.Editor.csproj"
+                                                                 },
+                                                                 {
+                                                                     "project":  "ShapesEditor.csproj",
+                                                                     "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                     "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                                                 },
+                                                                 {
+                                                                     "project":  "GPUInstancer.Editor.csproj",
+                                                                     "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                     "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                                                 },
+                                                                 {
+                                                                     "project":  "MoreMountains.Tools.csproj",
+                                                                     "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                     "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                                                 },
+                                                                 {
+                                                                     "project":  "Crest.csproj",
+                                                                     "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                     "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                                                 },
+                                                                 {
+                                                                     "project":  "ShapesRuntime.csproj",
+                                                                     "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                     "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                                                 },
+                                                                 {
+                                                                     "project":  "MoreMountains.Feedbacks.URP.csproj",
+                                                                     "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                     "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                                                 },
+                                                                 {
+                                                                     "project":  "VolumetricLightBeam.csproj",
+                                                                     "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                     "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                                                 },
+                                                                 {
+                                                                     "project":  "JBooth.MicroSplat.Core.csproj",
+                                                                     "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                     "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                                                 },
+                                                                 {
+                                                                     "project":  "Hecton8.Editor.csproj",
+                                                                     "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                     "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                                                 },
+                                                                 {
+                                                                     "project":  "MoreMountains.Feedbacks.csproj",
+                                                                     "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                     "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                                                 },
+                                                                 {
+                                                                     "project":  "GPUInstancer.csproj",
+                                                                     "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                     "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                                                 },
+                                                                 {
+                                                                     "project":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                                                     "include":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                                                     "target":  "Unity.RenderPipelines.Core.Editor.csproj"
+                                                                 },
+                                                                 {
+                                                                     "project":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                                                     "include":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                     "target":  "Unity.RenderPipelines.Universal.Runtime.csproj"
+                                                                 },
+                                                                 {
+                                                                     "project":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                                                     "include":  "Unity.ShaderGraph.Editor.csproj",
+                                                                     "target":  "Unity.ShaderGraph.Editor.csproj"
+                                                                 }
+                                                             ],
+                                   "duplicateDirectoryBuildTargetCount":  0,
+                                   "duplicateDirectoryBuildTargets":  [
+
+                                                                      ],
+                                   "directCompileIncludeCount":  159,
+                                   "missingDirectCompileIncludeCount":  0,
+                                   "missingDirectCompileIncludes":  [
+
+                                                                    ],
+                                   "broadProjectReferenceRemoveLines":  [
+                                                                            {
+                                                                                "line":  379,
+                                                                                "text":  "\u003cProjectReference Remove=\"@(ProjectReference)\" /\u003e"
+                                                                            },
+                                                                            {
+                                                                                "line":  661,
+                                                                                "text":  "\u003cProjectReference Remove=\"@(ProjectReference)\" /\u003e"
+                                                                            }
+                                                                        ],
+                                   "fixUnityCircularReferenceLines":  [
+                                                                          {
+                                                                              "line":  129,
+                                                                              "text":  "\u003cTarget Name=\"FixUnityCircularReferences\""
+                                                                          },
+                                                                          {
+                                                                              "line":  133,
+                                                                              "text":  "\u003c_HectonUnityPackageProjectReference Include=\"@(ProjectReference)\""
+                                                                          },
+                                                                          {
+                                                                              "line":  135,
+                                                                              "text":  "\u003cReference Include=\"%(_HectonUnityPackageProjectReference.Filename)\""
+                                                                          },
+                                                                          {
+                                                                              "line":  136,
+                                                                              "text":  "Condition=\"\u0027@(_HectonUnityPackageProjectReference)\u0027 != \u0027\u0027 And !$([System.String]::Copy(\u0027@(Reference)\u0027).Contains(\u0027%(_HectonUnityPackageProjectReference.Filename)\u0027))\"\u003e"
+                                                                          },
+                                                                          {
+                                                                              "line":  137,
+                                                                              "text":  "\u003cHintPath\u003e$(MSBuildThisFileDirectory)Library/ScriptAssemblies/%(_HectonUnityPackageProjectReference.Filename).dll\u003c/HintPath\u003e"
+                                                                          },
+                                                                          {
+                                                                              "line":  140,
+                                                                              "text":  "\u003cProjectReference Remove=\"@(_HectonUnityPackageProjectReference)\" /\u003e"
+                                                                          },
+                                                                          {
+                                                                              "line":  141,
+                                                                              "text":  "\u003c_HectonUnityPackageProjectReference Remove=\"@(_HectonUnityPackageProjectReference)\" /\u003e"
+                                                                          }
+                                                                      ]
+                               },
+    "interceptedCircularReferenceCandidates":  [
+                                                   "Unity.ShaderGraph.Editor",
+                                                   "Unity.RenderPipelines.Core.Editor",
+                                                   "Unity.RenderPipelines.Universal.Editor",
+                                                   "Unity.RenderPipelines.Universal.Runtime"
+                                               ],
+    "csharp14FieldCandidatesFound":  355,
+    "csharp14SyntaxFixesApplied":  0,
+    "csharp14Decision":  "No rename applied. field is contextual; broad 143-file mutation rejected without compiler diagnostic/accessor collision.",
+    "mapMagicDecision":  "No asmdef created by agent 1400. Actual package path is Assets/MapMagic, not Assets/Plugins/MapMagic; existing runtime/editor asmdefs already isolate editor platforms.",
+    "latestCompilationGate":  {
+                                  "generatedAt":  "2026-05-28T05:17:39.5612557+04:00",
+                                  "status":  "BLOCKED_BY_CONTENTION",
+                                  "solutionPath":  "Hecton8.slnx",
+                                  "logPath":  "Docs/AgentLogs/Build_1400_Output.log",
+                                  "cpuLoadPercent":  100,
+                                  "compilerProcesses":  [
+                                                            {
+                                                                "Id":  55080,
+                                                                "ProcessName":  "dotnet",
+                                                                "CPU":  469.59375,
+                                                                "StartTime":  "2026-05-28T04:58:33.0068704+04:00"
+                                                            }
+                                                        ],
+                                  "exitCode":  -1,
+                                  "durationMilliseconds":  0,
+                                  "warnings":  null,
+                                  "errors":  null,
+                                  "message":  "BLOCKED_BY_CONTENTION: cpu=100 compilerProcessCount=1"
+                              },
+    "latestFuzzerGate":  {
+                             "generatedAt":  "2026-05-28T05:17:52.6472006+04:00",
+                             "status":  "BLOCKED_BY_CONTENTION",
+                             "cpuLoadPercent":  100,
+                             "compilerProcesses":  [
+                                                       {
+                                                           "Id":  55080,
+                                                           "ProcessName":  "dotnet",
+                                                           "CPU":  477.40625,
+                                                           "StartTime":  "2026-05-28T04:58:33.0068704+04:00"
+                                                       }
+                                                   ],
+                             "exitCode":  -1,
+                             "durationMilliseconds":  0,
+                             "message":  "BLOCKED_BY_CONTENTION: cpu=100 compilerProcessCount=1",
+                             "projectPath":  "",
+                             "reportPath":  "",
+                             "logPath":  "Docs/AgentLogs/MsbuildGraphFuzzer_1400.log"
+                         },
+    "staticInterceptionProof":  {
+                                    "generatedAt":  "2026-05-28T05:16:23.0137950+04:00",
+                                    "status":  "GREEN_STATIC_INTERCEPTION_READY",
+                                    "targetExists":  true,
+                                    "targetBeforeTargets":  "PrepareProjectReferences;ResolveProjectReferences",
+                                    "shimProjectCount":  4,
+                                    "activeSolutionProjectCount":  62,
+                                    "expectedDlls":  [
+                                                         {
+                                                             "projectName":  "Unity.RenderPipelines.Core.Editor",
+                                                             "dllPath":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Core.Editor.dll",
+                                                             "exists":  true
+                                                         },
+                                                         {
+                                                             "projectName":  "Unity.RenderPipelines.Universal.Editor",
+                                                             "dllPath":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Editor.dll",
+                                                             "exists":  true
+                                                         },
+                                                         {
+                                                             "projectName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                             "dllPath":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                             "exists":  true
+                                                         },
+                                                         {
+                                                             "projectName":  "Unity.ShaderGraph.Editor",
+                                                             "dllPath":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.ShaderGraph.Editor.dll",
+                                                             "exists":  true
+                                                         }
+                                                     ],
+                                    "interceptedProjectReferenceCount":  24,
+                                    "activeInterceptedProjectReferenceCount":  16,
+                                    "passiveInterceptedProjectReferenceCount":  8,
+                                    "interceptedProjectReferences":  [
+                                                                         {
+                                                                             "project":  "Crest.csproj",
+                                                                             "activeSolutionProject":  true,
+                                                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "GPUInstancer.csproj",
+                                                                             "activeSolutionProject":  true,
+                                                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "GPUInstancer.Editor.csproj",
+                                                                             "activeSolutionProject":  true,
+                                                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "Hecton8.Editor.csproj",
+                                                                             "activeSolutionProject":  true,
+                                                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "JBooth.MicroSplat.Core.csproj",
+                                                                             "activeSolutionProject":  true,
+                                                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "MoreMountains.Feedbacks.csproj",
+                                                                             "activeSolutionProject":  true,
+                                                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "MoreMountains.Feedbacks.URP.csproj",
+                                                                             "activeSolutionProject":  true,
+                                                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "MoreMountains.Tools.csproj",
+                                                                             "activeSolutionProject":  true,
+                                                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "ShapesEditor.csproj",
+                                                                             "activeSolutionProject":  true,
+                                                                             "projectReference":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Editor",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Editor.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "ShapesEditor.csproj",
+                                                                             "activeSolutionProject":  true,
+                                                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "ShapesRuntime.csproj",
+                                                                             "activeSolutionProject":  true,
+                                                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                                                             "activeSolutionProject":  true,
+                                                                             "projectReference":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Core.Editor",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Core.Editor.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                                                             "activeSolutionProject":  true,
+                                                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                                                             "activeSolutionProject":  true,
+                                                                             "projectReference":  "Unity.ShaderGraph.Editor.csproj",
+                                                                             "referenceFileName":  "Unity.ShaderGraph.Editor",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.ShaderGraph.Editor.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "Unity.ShaderGraph.Editor.csproj",
+                                                                             "activeSolutionProject":  true,
+                                                                             "projectReference":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Core.Editor",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Core.Editor.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "VolumetricLightBeam.csproj",
+                                                                             "activeSolutionProject":  true,
+                                                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.csproj",
+                                                                             "activeSolutionProject":  false,
+                                                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Editor.csproj",
+                                                                             "activeSolutionProject":  false,
+                                                                             "projectReference":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Core.Editor",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Core.Editor.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Editor.csproj",
+                                                                             "activeSolutionProject":  false,
+                                                                             "projectReference":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Editor",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Editor.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Editor.csproj",
+                                                                             "activeSolutionProject":  false,
+                                                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Editor.csproj",
+                                                                             "activeSolutionProject":  false,
+                                                                             "projectReference":  "Unity.ShaderGraph.Editor.csproj",
+                                                                             "referenceFileName":  "Unity.ShaderGraph.Editor",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.ShaderGraph.Editor.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Shared.csproj",
+                                                                             "activeSolutionProject":  false,
+                                                                             "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Shared.Editor.csproj",
+                                                                             "activeSolutionProject":  false,
+                                                                             "projectReference":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                                                             "referenceFileName":  "Unity.RenderPipelines.Core.Editor",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Core.Editor.dll",
+                                                                             "replacementDllExists":  true
+                                                                         },
+                                                                         {
+                                                                             "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Shared.Editor.csproj",
+                                                                             "activeSolutionProject":  false,
+                                                                             "projectReference":  "Unity.ShaderGraph.Editor.csproj",
+                                                                             "referenceFileName":  "Unity.ShaderGraph.Editor",
+                                                                             "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.ShaderGraph.Editor.dll",
+                                                                             "replacementDllExists":  true
+                                                                         }
+                                                                     ],
+                                    "activeInterceptedProjectReferences":  [
+                                                                               {
+                                                                                   "project":  "Crest.csproj",
+                                                                                   "activeSolutionProject":  true,
+                                                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                                   "replacementDllExists":  true
+                                                                               },
+                                                                               {
+                                                                                   "project":  "GPUInstancer.csproj",
+                                                                                   "activeSolutionProject":  true,
+                                                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                                   "replacementDllExists":  true
+                                                                               },
+                                                                               {
+                                                                                   "project":  "GPUInstancer.Editor.csproj",
+                                                                                   "activeSolutionProject":  true,
+                                                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                                   "replacementDllExists":  true
+                                                                               },
+                                                                               {
+                                                                                   "project":  "Hecton8.Editor.csproj",
+                                                                                   "activeSolutionProject":  true,
+                                                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                                   "replacementDllExists":  true
+                                                                               },
+                                                                               {
+                                                                                   "project":  "JBooth.MicroSplat.Core.csproj",
+                                                                                   "activeSolutionProject":  true,
+                                                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                                   "replacementDllExists":  true
+                                                                               },
+                                                                               {
+                                                                                   "project":  "MoreMountains.Feedbacks.csproj",
+                                                                                   "activeSolutionProject":  true,
+                                                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                                   "replacementDllExists":  true
+                                                                               },
+                                                                               {
+                                                                                   "project":  "MoreMountains.Feedbacks.URP.csproj",
+                                                                                   "activeSolutionProject":  true,
+                                                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                                   "replacementDllExists":  true
+                                                                               },
+                                                                               {
+                                                                                   "project":  "MoreMountains.Tools.csproj",
+                                                                                   "activeSolutionProject":  true,
+                                                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                                   "replacementDllExists":  true
+                                                                               },
+                                                                               {
+                                                                                   "project":  "ShapesEditor.csproj",
+                                                                                   "activeSolutionProject":  true,
+                                                                                   "projectReference":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Editor",
+                                                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Editor.dll",
+                                                                                   "replacementDllExists":  true
+                                                                               },
+                                                                               {
+                                                                                   "project":  "ShapesEditor.csproj",
+                                                                                   "activeSolutionProject":  true,
+                                                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                                   "replacementDllExists":  true
+                                                                               },
+                                                                               {
+                                                                                   "project":  "ShapesRuntime.csproj",
+                                                                                   "activeSolutionProject":  true,
+                                                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                                   "replacementDllExists":  true
+                                                                               },
+                                                                               {
+                                                                                   "project":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                                                                   "activeSolutionProject":  true,
+                                                                                   "projectReference":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                                                                   "referenceFileName":  "Unity.RenderPipelines.Core.Editor",
+                                                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Core.Editor.dll",
+                                                                                   "replacementDllExists":  true
+                                                                               },
+                                                                               {
+                                                                                   "project":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                                                                   "activeSolutionProject":  true,
+                                                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                                   "replacementDllExists":  true
+                                                                               },
+                                                                               {
+                                                                                   "project":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                                                                   "activeSolutionProject":  true,
+                                                                                   "projectReference":  "Unity.ShaderGraph.Editor.csproj",
+                                                                                   "referenceFileName":  "Unity.ShaderGraph.Editor",
+                                                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.ShaderGraph.Editor.dll",
+                                                                                   "replacementDllExists":  true
+                                                                               },
+                                                                               {
+                                                                                   "project":  "Unity.ShaderGraph.Editor.csproj",
+                                                                                   "activeSolutionProject":  true,
+                                                                                   "projectReference":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                                                                   "referenceFileName":  "Unity.RenderPipelines.Core.Editor",
+                                                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Core.Editor.dll",
+                                                                                   "replacementDllExists":  true
+                                                                               },
+                                                                               {
+                                                                                   "project":  "VolumetricLightBeam.csproj",
+                                                                                   "activeSolutionProject":  true,
+                                                                                   "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                                   "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                                   "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                                   "replacementDllExists":  true
+                                                                               }
+                                                                           ],
+                                    "passiveInterceptedProjectReferences":  [
+                                                                                {
+                                                                                    "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.csproj",
+                                                                                    "activeSolutionProject":  false,
+                                                                                    "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                                    "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                                    "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                                    "replacementDllExists":  true
+                                                                                },
+                                                                                {
+                                                                                    "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Editor.csproj",
+                                                                                    "activeSolutionProject":  false,
+                                                                                    "projectReference":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                                                                    "referenceFileName":  "Unity.RenderPipelines.Core.Editor",
+                                                                                    "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Core.Editor.dll",
+                                                                                    "replacementDllExists":  true
+                                                                                },
+                                                                                {
+                                                                                    "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Editor.csproj",
+                                                                                    "activeSolutionProject":  false,
+                                                                                    "projectReference":  "Unity.RenderPipelines.Universal.Editor.csproj",
+                                                                                    "referenceFileName":  "Unity.RenderPipelines.Universal.Editor",
+                                                                                    "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Editor.dll",
+                                                                                    "replacementDllExists":  true
+                                                                                },
+                                                                                {
+                                                                                    "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Editor.csproj",
+                                                                                    "activeSolutionProject":  false,
+                                                                                    "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                                    "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                                    "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                                    "replacementDllExists":  true
+                                                                                },
+                                                                                {
+                                                                                    "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Editor.csproj",
+                                                                                    "activeSolutionProject":  false,
+                                                                                    "projectReference":  "Unity.ShaderGraph.Editor.csproj",
+                                                                                    "referenceFileName":  "Unity.ShaderGraph.Editor",
+                                                                                    "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.ShaderGraph.Editor.dll",
+                                                                                    "replacementDllExists":  true
+                                                                                },
+                                                                                {
+                                                                                    "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Shared.csproj",
+                                                                                    "activeSolutionProject":  false,
+                                                                                    "projectReference":  "Unity.RenderPipelines.Universal.Runtime.csproj",
+                                                                                    "referenceFileName":  "Unity.RenderPipelines.Universal.Runtime",
+                                                                                    "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Universal.Runtime.dll",
+                                                                                    "replacementDllExists":  true
+                                                                                },
+                                                                                {
+                                                                                    "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Shared.Editor.csproj",
+                                                                                    "activeSolutionProject":  false,
+                                                                                    "projectReference":  "Unity.RenderPipelines.Core.Editor.csproj",
+                                                                                    "referenceFileName":  "Unity.RenderPipelines.Core.Editor",
+                                                                                    "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.RenderPipelines.Core.Editor.dll",
+                                                                                    "replacementDllExists":  true
+                                                                                },
+                                                                                {
+                                                                                    "project":  "Docs\\Archive\\Crest_Version_Quarantine\\GeneratedProject\\WaveHarmonic.Crest.Shared.Editor.csproj",
+                                                                                    "activeSolutionProject":  false,
+                                                                                    "projectReference":  "Unity.ShaderGraph.Editor.csproj",
+                                                                                    "referenceFileName":  "Unity.ShaderGraph.Editor",
+                                                                                    "replacementDll":  "C:\\hades\\Hecton8\\Library\\ScriptAssemblies\\Unity.ShaderGraph.Editor.dll",
+                                                                                    "replacementDllExists":  true
+                                                                                }
+                                                                            ],
+                                    "missingReplacementDllCount":  0,
+                                    "activeMissingReplacementDllCount":  0,
+                                    "parseFailureCount":  0,
+                                    "activeParseFailureCount":  0,
+                                    "parseFailures":  [
+
+                                                      ],
+                                    "excludedSyntheticProjectCount":  0,
+                                    "excludedSyntheticProjects":  [
+
+                                                                  ],
+                                    "evidence":  "Static XML simulation only. No dotnet build, no dotnet msbuild, no Roslyn compile."
+                                },
+    "zeroGcFinalAudit":  {
+                             "generatedAt":  "2026-05-28T05:23:48.7195464+04:00",
+                             "ownedFiles":  [
+                                                "Directory.Build.props",
+                                                "Directory.Build.targets",
+                                                "Tools/Run_Guarded_Compile_1400.ps1",
+                                                "Tools/Test_Msbuild_Graph_Fuzzer_1400.ps1",
+                                                "Tools/Test_Static_Msbuild_Interception_1400.ps1",
+                                                "Tools/Test_BuildGraph_StaticHealth_1400.ps1"
+                                            ],
+                             "agentOwnedRuntimeCSharpFiles":  [
+
+                                                              ],
+                             "hotPathCSharpFilesTouched":  0,
+                             "forbiddenHotPathTokenCounts":  {
+                                                                 "newReferenceTypes":  0,
+                                                                 "stringFormat":  0,
+                                                                 "toString":  0,
+                                                                 "linq":  0,
+                                                                 "foreachLoops":  0
+                                                             },
+                             "exactTextScanningResult":  "No agent-owned .cs files exist in this patch. Token counts are zero by empty runtime C# hot-path surface, not by assumption. PowerShell foreach/New-Object counts are tooling-only and listed in ToolingZeroGcAudit_1400.json.",
+                             "toolingAudit":  "Docs/AgentLogs/ToolingZeroGcAudit_1400.json",
+                             "strictWarningAudit":  "Docs/AgentLogs/StrictWarningAudit_1400.json",
+                             "excludedWorkspaceCSharpChanges":  "Other agents have modified C# files in working tree; excluded from agent 1400 proof by ownership."
+                         },
+    "toolingZeroGcAudit":  {
+                               "generatedAt":  "2026-05-28T05:20:10.4772389+04:00",
+                               "agentId":  "1400",
+                               "status":  "PASS_TOOLING_STATIC_AUDIT_WITH_BLOCKED_DOTNET_EXECUTION",
+                               "scope":  "PowerShell build evidence tooling only; no runtime C# hot path touched.",
+                               "tools":  [
+                                             {
+                                                 "path":  "Tools/Run_Guarded_Compile_1400.ps1",
+                                                 "sha256":  "1D5ACA8A04D9682202792F21EEBA5CD56179F8F91AEA7751BFDAA7C2ECCE85FB",
+                                                 "dotnetInvocationCount":  1,
+                                                 "rawGetContentCount":  0,
+                                                 "startJobCount":  0,
+                                                 "registerObjectEventCount":  0,
+                                                 "newObjectCount":  0,
+                                                 "foreachLoopCount":  0
+                                             },
+                                             {
+                                                 "path":  "Tools/Test_Msbuild_Graph_Fuzzer_1400.ps1",
+                                                 "sha256":  "226C496D9BE6B28A54DEC10E6DF5AF9C348DD63D78A069F87A9B887C34CD06DC",
+                                                 "dotnetInvocationCount":  1,
+                                                 "rawGetContentCount":  0,
+                                                 "startJobCount":  0,
+                                                 "registerObjectEventCount":  0,
+                                                 "newObjectCount":  0,
+                                                 "foreachLoopCount":  0
+                                             },
+                                             {
+                                                 "path":  "Tools/Test_Static_Msbuild_Interception_1400.ps1",
+                                                 "sha256":  "C7851C18C65426FFE9F392185F9AE450F7AB8AC6A9C0EDF27A0110B15F4C8ECF",
+                                                 "dotnetInvocationCount":  0,
+                                                 "rawGetContentCount":  0,
+                                                 "startJobCount":  0,
+                                                 "registerObjectEventCount":  0,
+                                                 "newObjectCount":  10,
+                                                 "foreachLoopCount":  6
+                                             },
+                                             {
+                                                 "path":  "Tools/Test_BuildGraph_StaticHealth_1400.ps1",
+                                                 "sha256":  "27F8DF42439EFDDA4E4FA06921311895A015A3C0CBAD7D732EAA8D9292DA4142",
+                                                 "dotnetInvocationCount":  0,
+                                                 "rawGetContentCount":  0,
+                                                 "startJobCount":  0,
+                                                 "registerObjectEventCount":  0,
+                                                 "newObjectCount":  5,
+                                                 "foreachLoopCount":  12
+                                             }
+                                         ],
+                               "forbiddenRuntimeHotPathTokenCounts":  {
+                                                                          "newReferenceTypes":  0,
+                                                                          "stringFormat":  0,
+                                                                          "toString":  0,
+                                                                          "linq":  0,
+                                                                          "foreachLoops":  0
+                                                                      },
+                               "evidence":  "dotnet invocation sites exist only in guarded compile/fuzzer wrappers behind CPU/process gates; static proof/health tools have 0 dotnet invocation sites."
+                           },
+    "dataSovereigntyAudit":  {
+                                 "generatedAt":  "2026-05-28T05:23:49.0249268+04:00",
+                                 "root":  "C:\\hades\\Hecton8",
+                                 "dataVaultFieldsMigrated":  0,
+                                 "bufferIdsSecured":  [
+
+                                                      ],
+                                 "tryAcquireWriteLockSites":  [
+
+                                                              ],
+                                 "finallyReleaseSites":  [
+
+                                                         ],
+                                 "evidence":  "Agent 1400 modified build tooling/MSBuild reports only; no GlobalDataVault migration or runtime native ownership edits were performed."
+                             },
+    "scalabilityCinematicAudit":  {
+                                      "generatedAt":  "2026-05-28T05:23:49.0431723+04:00",
+                                      "root":  "C:\\hades\\Hecton8",
+                                      "cinematicCheatSurface":  "Not applicable: build graph / MSBuild / compiler tooling only. No water/light/deformation/physics simulation added.",
+                                      "globalQualityWeightUsage":  "Not applicable to compile tooling. No runtime algorithm, gameplay truth, DTO layout, save identity, or authority route was changed.",
+                                      "binaryQualitySwitchesIntroduced":  0,
+                                      "runtimeQualityTierLogicChanged":  0,
+                                      "evidence":  "STATIC_SOURCE/git diff only. Compile-domain changes do not add physical simulation or binary quality switches."
+                                  },
+    "finalCompilationTimeMilliseconds":  null,
+    "finalWarnings":  null,
+    "finalErrors":  null,
+    "compilationResourceThrottling":  "COMPLIANT: no raw dotnet build; final guarded build attempt blocked before dotnet at CPU 100 with active dotnet PID 55080.",
+    "dumpFile":  null,
+    "dumpReason":  "No runtime crash or NaN execution occurred in this compile-domain pass."
+}

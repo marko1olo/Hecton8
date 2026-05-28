@@ -1,0 +1,95 @@
+{
+  "agent_id": "1414",
+  "status": "PENDING_VERIFICATION",
+  "source_scope": [
+    "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+    "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+    "Assets/_Project/Scripts/Core/NativeMemorySentinel.cs",
+    "Assets/_Project/Scripts/Core/SystemDispatcher.cs"
+  ],
+  "allocator_mutation_paths": [
+    {
+      "method": "H8Memory.AllocateRaw",
+      "lines": "2865-2905",
+      "base_pointer_mutation": false,
+      "unsafe_calls": ["UnsafeUtility.Malloc", "UnsafeUtility.MemClear", "UnsafeUtility.Free_on_register_failure"],
+      "current_guard": "owner != Unknown, TryReserveBytes, EnsureTrackingCapacity",
+      "gap": "does not participate in arena relocation; not the stale-pointer free site"
+    },
+    {
+      "method": "H8Memory.ReallocateRaw",
+      "lines": "2910-2973",
+      "base_pointer_mutation": true,
+      "unsafe_calls": ["UnsafeUtility.Malloc", "UnsafeUtility.MemMove", "UnsafeUtility.MemClear", "UnsafeUtility.Free_oldPointer"],
+      "current_guard": "tracked owner and replacement byte reserve",
+      "gap": "method signature does not require proof that caller raised compaction fence and observed zero active locks/pins"
+    },
+    {
+      "method": "H8Memory.FreeRaw",
+      "lines": "2987-3005",
+      "base_pointer_mutation": false,
+      "unsafe_calls": ["UnsafeUtility.Free"],
+      "current_guard": "owner-tagged UnregisterPointer",
+      "gap": "not arena growth; owner safety only"
+    },
+    {
+      "method": "GlobalDataVault.TryEnsureVaultBuffer",
+      "lines": "1040-1210",
+      "base_pointer_mutation": false,
+      "unsafe_calls": ["UnsafeUtility.MemClear"],
+      "current_guard": "compaction fence early fail, type/layout validation, TryGrowArenaForBytes before block allocation",
+      "gap": "fence-active fail path does not queue growth when arena growth is already in progress"
+    },
+    {
+      "method": "GlobalDataVault.TryGrowArenaForBytes",
+      "lines": "4441-4489",
+      "base_pointer_mutation": false,
+      "unsafe_calls": [],
+      "current_guard": "allocation lock, compaction fence, active lock mask, external pins, capacity limit",
+      "gap": "allocationLock/fence early return does not always queue deferred target"
+    },
+    {
+      "method": "GlobalDataVault.TryGrowArena",
+      "lines": "4492-4579",
+      "base_pointer_mutation": true,
+      "unsafe_calls": ["H8Memory.ReallocateRaw"],
+      "current_guard": "raises _compactionFence, acquires block mutation gate, checks active locks/pins before relocation",
+      "gap": "blindly clears _deferredArenaGrowthBytes after success, losing concurrent larger requests"
+    },
+    {
+      "method": "GlobalDataVault.QueueDeferredArenaGrowth",
+      "lines": "4581-4598",
+      "base_pointer_mutation": false,
+      "unsafe_calls": [],
+      "current_guard": "Interlocked.CompareExchange max update",
+      "gap": "writer side is correct; clear side is not yet race-safe"
+    },
+    {
+      "method": "NativeMemorySentinel.RegisterPointer",
+      "lines": "455-565",
+      "base_pointer_mutation": false,
+      "unsafe_calls": [],
+      "current_guard": "fixed capacity array, hash labels, no Dictionary",
+      "gap": "no mutation gate around _records/_count/_trackedBytes"
+    },
+    {
+      "method": "NativeMemorySentinel.Unregister*",
+      "lines": "570-680",
+      "base_pointer_mutation": false,
+      "unsafe_calls": [],
+      "current_guard": "linear fixed-array removal",
+      "gap": "no mutation gate around _records/_count/_trackedBytes"
+    }
+  ],
+  "race_condition_proof": {
+    "free_site": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:2970",
+    "sequence": [
+      "Job A resolves a NativeArray view from GlobalDataVault while arena base is oldBase.",
+      "Arena growth copies bytes to newBase and frees oldBase.",
+      "Job A writes through its old pointer after the free.",
+      "The write targets freed unmanaged memory; C# exceptions cannot catch it and Unity may hard-crash."
+    ],
+    "required_invariant": "No ReallocateRaw call while _compactionFence is inactive, ActiveBurstLockMask is non-zero, _activeLocks has any lock bit, or any block has an external view pin."
+  },
+  "planned_report": "Docs/Reports/ARENA_ALLOCATOR_OPTIMIZATION_REPORT_1414.json"
+}

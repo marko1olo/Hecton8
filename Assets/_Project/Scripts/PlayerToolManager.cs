@@ -36,6 +36,7 @@ namespace Hecton8.Gameplay
     using Hecton8.World;
     using Unity.Mathematics;
     using UnityEngine;
+    using UnityEngine.Serialization;
 #if UNITY_EDITOR
     using UnityEditor;
 #endif
@@ -70,6 +71,7 @@ namespace Hecton8.Gameplay
         [Tooltip("ÐŸÑ€Ð¾Ð³Ñ€ÐµÐ²Ð°ÐµÑ‚ assigned held-tool pools Ð¿Ñ€Ð¸ Ð²ÐºÐ»ÑŽÑ‡ÐµÐ½Ð¸Ð¸ Ð¼ÐµÐ½ÐµÐ´Ð¶ÐµÑ€Ð°, Ñ‡Ñ‚Ð¾Ð±Ñ‹ ÑƒÐ±Ñ€Ð°Ñ‚ÑŒ runtime Instantiate Ð¿Ñ€Ð¸ Ð¿ÐµÑ€Ð²Ð¾Ð¼ ÑÐºÐ¸Ð¿Ðµ.")]
         [SerializeField] private bool warmupAssignedToolPoolsOnEnable = true;
         [Tooltip("ÐœÐ¸Ð½Ð¸Ð¼Ð°Ð»ÑŒÐ½Ñ‹Ð¹ Ñ€ÐµÐ·ÐµÑ€Ð² ÑÐºÐ·ÐµÐ¼Ð¿Ð»ÑÑ€Ð¾Ð² Ð² pool Ð´Ð»Ñ ÐºÐ°Ð¶Ð´Ð¾Ð³Ð¾ assigned held-tool prefab.")]
+        [FormerlySerializedAs("constructionGhostWarmupCount")]
         [SerializeField] private int toolPoolWarmupCount = 1;
         [Header("── Swap Animation ────────────────────────────")]
         [Tooltip("Skorost animatsii smeny instrumenta (lerp factor per second). " +

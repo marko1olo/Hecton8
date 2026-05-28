@@ -1,0 +1,178 @@
+﻿{
+    "agent_id":  "1423",
+    "role":  "ZERO_GC_SUBTITLES_AND_BABEL_LOCALIZATION_COMPILER",
+    "generated_local":  "2026-05-28T05:42:48+04:00",
+    "source_files_changed":  [
+                                 {
+                                     "path":  "Assets/_Project/Scripts/Core/Contracts/BabelLocalizationContract.cs",
+                                     "exists":  true,
+                                     "sha256":  "08124D34399C8F54138C9F181114ABA9FF74B7FF9C5CF100E0E40BA7C2449E24",
+                                     "counts":  {
+                                                    "string_format":  0,
+                                                    "tmp_text_assignment":  0,
+                                                    "to_string":  0,
+                                                    "interpolation":  0,
+                                                    "string_builder":  0,
+                                                    "new_string":  0
+                                                }
+                                 },
+                                 {
+                                     "path":  "Assets/_Project/Scripts/Core/ZeroGCFormatter.cs",
+                                     "exists":  true,
+                                     "sha256":  "DF0E50E0EDEA48D8CE2FADBEE1EB2842C1E27C78D78580D68EDBC52DC8A16CB0",
+                                     "counts":  {
+                                                    "string_format":  0,
+                                                    "tmp_text_assignment":  0,
+                                                    "to_string":  0,
+                                                    "interpolation":  0,
+                                                    "string_builder":  0,
+                                                    "new_string":  0
+                                                }
+                                 },
+                                 {
+                                     "path":  "Assets/_Project/Scripts/LocalizationManager.cs",
+                                     "exists":  true,
+                                     "sha256":  "9BD64EB488B606B4E759DC8455F6FC200390E47558A7671D2C4E8C8DA2A50CFB",
+                                     "counts":  {
+                                                    "string_format":  0,
+                                                    "tmp_text_assignment":  0,
+                                                    "to_string":  0,
+                                                    "interpolation":  0,
+                                                    "string_builder":  0,
+                                                    "new_string":  0
+                                                }
+                                 },
+                                 {
+                                     "path":  "Assets/_Project/Scripts/LocNumericBuffer.cs",
+                                     "exists":  true,
+                                     "sha256":  "E29798E924AED1DAEB42912860B43547341F465D4CC2288FA78552BEED9134A4",
+                                     "counts":  {
+                                                    "string_format":  0,
+                                                    "tmp_text_assignment":  0,
+                                                    "to_string":  0,
+                                                    "interpolation":  0,
+                                                    "string_builder":  0,
+                                                    "new_string":  0
+                                                }
+                                 },
+                                 {
+                                     "path":  "Assets/_Project/Scripts/LocRegistry.cs",
+                                     "exists":  true,
+                                     "sha256":  "0373500D2E9922E80FD36D48D7D287E19B1816609ECEFA4E429670BFDE6E055B",
+                                     "counts":  {
+                                                    "string_format":  0,
+                                                    "tmp_text_assignment":  0,
+                                                    "to_string":  0,
+                                                    "interpolation":  0,
+                                                    "string_builder":  0,
+                                                    "new_string":  0
+                                                }
+                                 },
+                                 {
+                                     "path":  "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+                                     "exists":  true,
+                                     "sha256":  "307C447476BF3C02B8267D8DA643F6AB594AB812E092E3A4CB35A3693C0C6BD6",
+                                     "counts":  {
+                                                    "string_format":  0,
+                                                    "tmp_text_assignment":  0,
+                                                    "to_string":  0,
+                                                    "interpolation":  0,
+                                                    "string_builder":  0,
+                                                    "new_string":  0
+                                                }
+                                 },
+                                 {
+                                     "path":  "Assets/_Project/Scripts/UI/TmpTextNoAlloc.cs",
+                                     "exists":  true,
+                                     "sha256":  "AD4DF42A151E811A70FA51F87085E011BF170CBB9185D1E0E532ECD9CB0F7063",
+                                     "counts":  {
+                                                    "string_format":  0,
+                                                    "tmp_text_assignment":  0,
+                                                    "to_string":  0,
+                                                    "interpolation":  0,
+                                                    "string_builder":  0,
+                                                    "new_string":  0
+                                                }
+                                 },
+                                 {
+                                     "path":  "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs",
+                                     "exists":  true,
+                                     "sha256":  "DE985B18946DEF6D15CDE7DD4B2291D6AE3620682540199776BA5D6680281588",
+                                     "counts":  {
+                                                    "string_format":  0,
+                                                    "tmp_text_assignment":  0,
+                                                    "to_string":  0,
+                                                    "interpolation":  0,
+                                                    "string_builder":  0,
+                                                    "new_string":  0
+                                                }
+                                 }
+                             ],
+    "string_allocation_calls_deleted":  0,
+    "note_on_deleted_calls":  "Task 01 found no real runtime hot hits for string.Format, TMP_Text.text assignment, ToString, or interpolation in the assigned UI/Audio/Babel target set; edits hardened existing zero-GC span routes instead of deleting false positives.",
+    "systems_hardened":  [
+                             "ZeroGCFormatter",
+                             "LocNumericBuffer",
+                             "LocRegistry Babel decode",
+                             "TmpTextNoAlloc",
+                             "IBabelLocalization contract",
+                             "BabelSubtitleSyncRuntime UI optimization telemetry"
+                         ],
+    "final_runtime_hot_scan":  {
+                                   "scanned_roots":  [
+                                                         "Assets/_Project/Scripts/UI",
+                                                         "Assets/_Project/Scripts/Audio",
+                                                         "Assets/_Project/Scripts/LocalizationManager.cs",
+                                                         "Assets/_Project/Scripts/LocRegistry.cs",
+                                                         "Assets/_Project/Scripts/LocNumericBuffer.cs",
+                                                         "Assets/_Project/Scripts/Core/ZeroGCFormatter.cs"
+                                                     ],
+                                   "hit_count_total":  0,
+                                   "known_false_positive_paths":  [
+                                                                      "Assets/_Project/Scripts/UI/GlitchTable.cs",
+                                                                      "Assets/_Project/Scripts/UI/FontAssetRecovery.cs"
+                                                                  ],
+                                   "real_hot_hit_count":  0,
+                                   "real_hot_hits":  [
+
+                                                     ]
+                               },
+    "formatter_cursor_proof":  {
+                                   "invariant":  "cursor is checked before every slice; append helpers clamp negative cursor to 0 and over-capacity cursor to destination.Length; write cursor increments only by TryFormat charsWritten after TryFormat succeeds.",
+                                   "overflow_policy":  "recognized Babel placeholders that cannot fit set formatterOverflow/truncated, clamp charCursor to maxGlyphs, and append ASCII ellipsis through existing bounded path.",
+                                   "max_destination":  "LocRegistry uses min(destination.Length, MaxDecodedGlyphs); TmpTextNoAlloc uses fixed CharBufferPool leases."
+                               },
+    "truncation_proof":  {
+                             "method":  "ZeroGCFormatter.AppendToSpanTruncated plus LocRegistry truncation branch",
+                             "ellipsis":  "ASCII ... only when capacity \u003e= 3; high-surrogate boundary is backed up before writing dots.",
+                             "failure_codes":  [
+                                                   "MissingLocalizationHash",
+                                                   "TextBufferOverflow",
+                                                   "FormatterOverflow",
+                                                   "InvalidTextState"
+                                               ]
+                         },
+    "telemetry_ring_evidence":  {
+                                    "struct":  "UIOptimizationTelemetryEntry",
+                                    "capacity":  300,
+                                    "buffer_id":  15070552,
+                                    "dump_path":  "Docs/AgentLogs/Dump_1423.bin",
+                                    "write_path":  "BabelSubtitleSyncRuntime.RecordUIOptimizationFailure"
+                                },
+    "mock_fuzzer":  {
+                        "test_file":  "Assets/_Project/Tests/Editor/ZeroGCSubtitleFormatter1423EditTests.cs",
+                        "iterations":  500,
+                        "runtime_gc_bytes":  null,
+                        "runtime_gc_status":  "NOT_MEASURED_BUILD_BLOCKED_BY_CPU_THROTTLE"
+                    },
+    "compilation_status":  {
+                               "dotnet_build_launched":  false,
+                               "reason":  "CPU samples after edits were 58.24 percent then 98.85 percent; policy forbids build above 50 percent.",
+                               "csc_process_detected":  false
+                           },
+    "verification_limits":  [
+                                "No Unity runtime profiler run",
+                                "No GCMonitor sample",
+                                "No dotnet build because CPU throttle failed"
+                            ]
+}

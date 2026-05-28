@@ -137,6 +137,7 @@
   "lootRefreshBatchLockHits": [],
   "lootPrewarmCommitOrderHits": [],
   "dataVaultHotSwapReleaseHits": [],
+  "dispatcherHotSwapLateFrameResetHits": [],
   "generationVaultEpochHits": [],
   "runtimeDefinitionBatchLockHits": [],
   "debrisClusterResetHits": [],
@@ -174,6 +175,10 @@
   "placementStorageCapacityHits": [],
   "mergedMeshCopyCompletenessHits": [],
   "nativeArrayPublishOverloadHits": [],
+  "runtimeRegistrationRestoreHits": [],
+  "lootLateFrameRetryHits": [],
+  "pendingLootSpawnRollbackHits": [],
+  "wreckMaterialRegistryTickRegistrationHits": [],
   "widePaddingHits": [],
   "layoutOrderViolations": [],
   "absoluteAupCastsFound": 0,
@@ -576,5 +581,5 @@
       }
     }
   ],
-  "verificationHashSha256": "97AF8271CB901CF5254DAAB73359C585A3774EBA46AF6BBCEC7FB2337D8BF3FA"
+  "verificationHashSha256": "A42D030DEBE3981DE4F94EA15B7C011D54EB37D9024E18121F09E163E41CE10A"
 }

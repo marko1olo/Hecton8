@@ -1,0 +1,412 @@
+{
+    "agent":  "1415",
+    "role":  "CIRCULAR_TELEMETRY_RING_HARDENER",
+    "domain":  "Echelon 1 Core Infrastructure / Crash Telemetry Layout",
+    "generatedUtc":  "2026-05-28T01:21:05Z",
+    "evidenceClass":  "STATIC_SOURCE_PLUS_PREVIOUS_AST_AUDIT; COMPILER_BLOCKED_BY_HOST_LOAD",
+    "prompt":  {
+                   "source":  "Docs/Tasks/CURRENT_BATCH.md",
+                   "extractedCopy":  "Docs/Tasks/_1415_extracted_prompt.tmp.md",
+                   "startLine":  1346,
+                   "endLine":  1434,
+                   "taskCount":  20,
+                   "sha256":  "b922c32c7f14ef7844c5f6bfa20bcdeb1e370a8c02d21641c43739f7c96780b0"
+               },
+    "apexFinding":  {
+                        "previousClaim":  "Previous final report claimed 38 materialized structs and kept UberNoirShaderTelemetryEntry as skipped complex_body.",
+                        "actualFault":  "UberNoirShaderTelemetryEntry is a real ShaderFeatureTelemetryRing DataVault entry and remained 48 bytes.",
+                        "correction":  "Changed entry size to 64, added explicit tail padding 48-63, added validator spec row, and zero-cleared dump row bytes before serializing payload 0-47.",
+                        "falsePositive":  "AcousticTelemetryEntry in ShinobuAcousticDspSmokeTester.cs is a string literal assertion, not a source struct declaration."
+                    },
+    "layoutProof":  {
+                        "totalFieldPreserving64ByteStructs":  39,
+                        "previousAstAudit":  {
+                                                 "file":  "Docs/Reports/TELEMETRY_LAYOUT_AST_AUDIT_1415.json",
+                                                 "targetCount":  38,
+                                                 "failureCount":  0,
+                                                 "sha256":  "17828ccdd63eb612c48dba9779df71c9e0c2e633502446ff5e5351387c42f514"
+                                             },
+                        "incrementalStruct":  {
+                                                  "name":  "UberNoirShaderTelemetryEntry",
+                                                  "file":  "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
+                                                  "declarationLine":  59,
+                                                  "sizeConstantLine":  20,
+                                                  "structLayoutLine":  58,
+                                                  "sizeBytes":  64,
+                                                  "dataBytes":  48,
+                                                  "paddingBytes":  16,
+                                                  "holeCount":  0,
+                                                  "overlapCount":  0,
+                                                  "unalignedFieldCount":  0,
+                                                  "fields":  [
+                                                                 {
+                                                                     "field":  "Frame",
+                                                                     "type":  "uint",
+                                                                     "offset":  0,
+                                                                     "size":  4,
+                                                                     "byteRange":  "0-3",
+                                                                     "alignment":  4
+                                                                 },
+                                                                 {
+                                                                     "field":  "FeatureMask",
+                                                                     "type":  "uint",
+                                                                     "offset":  4,
+                                                                     "size":  4,
+                                                                     "byteRange":  "4-7",
+                                                                     "alignment":  4
+                                                                 },
+                                                                 {
+                                                                     "field":  "SystemStress01",
+                                                                     "type":  "float",
+                                                                     "offset":  8,
+                                                                     "size":  4,
+                                                                     "byteRange":  "8-11",
+                                                                     "alignment":  4
+                                                                 },
+                                                                 {
+                                                                     "field":  "HighCostAllowed01",
+                                                                     "type":  "float",
+                                                                     "offset":  12,
+                                                                     "size":  4,
+                                                                     "byteRange":  "12-15",
+                                                                     "alignment":  4
+                                                                 },
+                                                                 {
+                                                                     "field":  "VisualOverkill01",
+                                                                     "type":  "float",
+                                                                     "offset":  16,
+                                                                     "size":  4,
+                                                                     "byteRange":  "16-19",
+                                                                     "alignment":  4
+                                                                 },
+                                                                 {
+                                                                     "field":  "QualityWeightByte",
+                                                                     "type":  "uint",
+                                                                     "offset":  20,
+                                                                     "size":  4,
+                                                                     "byteRange":  "20-23",
+                                                                     "alignment":  4
+                                                                 },
+                                                                 {
+                                                                     "field":  "Flags",
+                                                                     "type":  "uint",
+                                                                     "offset":  24,
+                                                                     "size":  4,
+                                                                     "byteRange":  "24-27",
+                                                                     "alignment":  4
+                                                                 },
+                                                                 {
+                                                                     "field":  "StateHash",
+                                                                     "type":  "uint",
+                                                                     "offset":  28,
+                                                                     "size":  4,
+                                                                     "byteRange":  "28-31",
+                                                                     "alignment":  4
+                                                                 },
+                                                                 {
+                                                                     "field":  "PomEnabled01",
+                                                                     "type":  "float",
+                                                                     "offset":  32,
+                                                                     "size":  4,
+                                                                     "byteRange":  "32-35",
+                                                                     "alignment":  4
+                                                                 },
+                                                                 {
+                                                                     "field":  "ReservedVisualDetail01",
+                                                                     "type":  "float",
+                                                                     "offset":  36,
+                                                                     "size":  4,
+                                                                     "byteRange":  "36-39",
+                                                                     "alignment":  4
+                                                                 },
+                                                                 {
+                                                                     "field":  "Refraction01",
+                                                                     "type":  "float",
+                                                                     "offset":  40,
+                                                                     "size":  4,
+                                                                     "byteRange":  "40-43",
+                                                                     "alignment":  4
+                                                                 },
+                                                                 {
+                                                                     "field":  "Reserved0",
+                                                                     "type":  "float",
+                                                                     "offset":  44,
+                                                                     "size":  4,
+                                                                     "byteRange":  "44-47",
+                                                                     "alignment":  4
+                                                                 }
+                                                             ],
+                                                  "padding":  [
+                                                                  {
+                                                                      "field":  "_pad0",
+                                                                      "type":  "byte",
+                                                                      "offset":  48,
+                                                                      "size":  1,
+                                                                      "byteRange":  "48-48",
+                                                                      "alignment":  1
+                                                                  },
+                                                                  {
+                                                                      "field":  "_pad1",
+                                                                      "type":  "byte",
+                                                                      "offset":  49,
+                                                                      "size":  1,
+                                                                      "byteRange":  "49-49",
+                                                                      "alignment":  1
+                                                                  },
+                                                                  {
+                                                                      "field":  "_pad2",
+                                                                      "type":  "byte",
+                                                                      "offset":  50,
+                                                                      "size":  1,
+                                                                      "byteRange":  "50-50",
+                                                                      "alignment":  1
+                                                                  },
+                                                                  {
+                                                                      "field":  "_pad3",
+                                                                      "type":  "byte",
+                                                                      "offset":  51,
+                                                                      "size":  1,
+                                                                      "byteRange":  "51-51",
+                                                                      "alignment":  1
+                                                                  },
+                                                                  {
+                                                                      "field":  "_pad4",
+                                                                      "type":  "byte",
+                                                                      "offset":  52,
+                                                                      "size":  1,
+                                                                      "byteRange":  "52-52",
+                                                                      "alignment":  1
+                                                                  },
+                                                                  {
+                                                                      "field":  "_pad5",
+                                                                      "type":  "byte",
+                                                                      "offset":  53,
+                                                                      "size":  1,
+                                                                      "byteRange":  "53-53",
+                                                                      "alignment":  1
+                                                                  },
+                                                                  {
+                                                                      "field":  "_pad6",
+                                                                      "type":  "byte",
+                                                                      "offset":  54,
+                                                                      "size":  1,
+                                                                      "byteRange":  "54-54",
+                                                                      "alignment":  1
+                                                                  },
+                                                                  {
+                                                                      "field":  "_pad7",
+                                                                      "type":  "byte",
+                                                                      "offset":  55,
+                                                                      "size":  1,
+                                                                      "byteRange":  "55-55",
+                                                                      "alignment":  1
+                                                                  },
+                                                                  {
+                                                                      "field":  "_pad8",
+                                                                      "type":  "byte",
+                                                                      "offset":  56,
+                                                                      "size":  1,
+                                                                      "byteRange":  "56-56",
+                                                                      "alignment":  1
+                                                                  },
+                                                                  {
+                                                                      "field":  "_pad9",
+                                                                      "type":  "byte",
+                                                                      "offset":  57,
+                                                                      "size":  1,
+                                                                      "byteRange":  "57-57",
+                                                                      "alignment":  1
+                                                                  },
+                                                                  {
+                                                                      "field":  "_pad10",
+                                                                      "type":  "byte",
+                                                                      "offset":  58,
+                                                                      "size":  1,
+                                                                      "byteRange":  "58-58",
+                                                                      "alignment":  1
+                                                                  },
+                                                                  {
+                                                                      "field":  "_pad11",
+                                                                      "type":  "byte",
+                                                                      "offset":  59,
+                                                                      "size":  1,
+                                                                      "byteRange":  "59-59",
+                                                                      "alignment":  1
+                                                                  },
+                                                                  {
+                                                                      "field":  "_pad12",
+                                                                      "type":  "byte",
+                                                                      "offset":  60,
+                                                                      "size":  1,
+                                                                      "byteRange":  "60-60",
+                                                                      "alignment":  1
+                                                                  },
+                                                                  {
+                                                                      "field":  "_pad13",
+                                                                      "type":  "byte",
+                                                                      "offset":  61,
+                                                                      "size":  1,
+                                                                      "byteRange":  "61-61",
+                                                                      "alignment":  1
+                                                                  },
+                                                                  {
+                                                                      "field":  "_pad14",
+                                                                      "type":  "byte",
+                                                                      "offset":  62,
+                                                                      "size":  1,
+                                                                      "byteRange":  "62-62",
+                                                                      "alignment":  1
+                                                                  },
+                                                                  {
+                                                                      "field":  "_pad15",
+                                                                      "type":  "byte",
+                                                                      "offset":  63,
+                                                                      "size":  1,
+                                                                      "byteRange":  "63-63",
+                                                                      "alignment":  1
+                                                                  }
+                                                              ]
+                                              },
+                        "validator":  {
+                                          "file":  "Assets/_Project/Scripts/Editor/TelemetryLayoutValidator1415.cs",
+                                          "specRows":  39,
+                                          "uberNoirSpecLine":  51,
+                                          "splitLine":  68,
+                                          "sha256":  "69d9002c373003bf4eae08a9dc97102bfb78544770f018ddfcabbf58f45b488a"
+                                      }
+                    },
+    "zeroGc":  {
+                   "modifiedHotPathScan":  {
+                                               "scannedBlockCount":  2,
+                                               "newReferenceType":  0,
+                                               "stringFormat":  0,
+                                               "toString":  0,
+                                               "linqQueryOrExtension":  0,
+                                               "foreachLoop":  0
+                                           },
+                   "blocks":  [
+                                  {
+                                      "name":  "UberNoirShaderTelemetryEntry explicit layout",
+                                      "file":  "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
+                                      "startLine":  58,
+                                      "endLine":  119,
+                                      "hotPath":  true,
+                                      "counts":  {
+                                                     "newReferenceType":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linqQueryOrExtension":  0,
+                                                     "foreachLoop":  0
+                                                 }
+                                  },
+                                  {
+                                      "name":  "UberNoir PushBlackBox write-lock hot path",
+                                      "file":  "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
+                                      "startLine":  339,
+                                      "endLine":  386,
+                                      "hotPath":  true,
+                                      "counts":  {
+                                                     "newReferenceType":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linqQueryOrExtension":  0,
+                                                     "foreachLoop":  0
+                                                 }
+                                  },
+                                  {
+                                      "name":  "UberNoir WriteTelemetryEntry dump serializer",
+                                      "file":  "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
+                                      "startLine":  596,
+                                      "endLine":  611,
+                                      "hotPath":  false,
+                                      "counts":  {
+                                                     "newReferenceType":  0,
+                                                     "stringFormat":  0,
+                                                     "toString":  0,
+                                                     "linqQueryOrExtension":  0,
+                                                     "foreachLoop":  0
+                                                 }
+                                  }
+                              ],
+                   "note":  "WriteBlackBoxFile contains cold FileStream allocation outside hot path; modified hot layout/write-lock blocks contain zero forbidden constructs."
+               },
+    "dataSovereignty":  {
+                            "migratedFieldsToGlobalDataVault":  false,
+                            "newBufferIds":  [
+
+                                             ],
+                            "existingBufferIdsSecured":  [
+                                                             "BufferID.ShaderFeatureTelemetryRing"
+                                                         ],
+                            "acquisition":  {
+                                                "file":  "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
+                                                "line":  541,
+                                                "expression":  "vault.TryAcquireWriteLock(in handle, SystemID.GraphicsScalability, out buffer)"
+                                            },
+                            "releaseProof":  [
+                                                 {
+                                                     "file":  "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
+                                                     "line":  384,
+                                                     "route":  "normal PushBlackBox finally release",
+                                                     "expression":  "vault.ReleaseWriteLock(in _telemetryHandle, SystemID.GraphicsScalability)"
+                                                 },
+                                                 {
+                                                     "file":  "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
+                                                     "line":  550,
+                                                     "route":  "invalid buffer branch release",
+                                                     "expression":  "vault.ReleaseWriteLock(in handle, SystemID.GraphicsScalability)"
+                                                 }
+                                             ]
+                        },
+    "scalabilityAndCinematic":  {
+                                    "globalQualityWeightLine":  704,
+                                    "continuousQualityEvidence":  [
+                                                                      "quality01 = ResolveGlobalQualityWeight01() line 225",
+                                                                      "highCostAllowed01 = quality01 * hardwareCeiling01 * stressAllowance01 line 229",
+                                                                      "visualOverkill01 continuous ramp line 232",
+                                                                      "EncodeQualityWeightByte line 736"
+                                                                  ],
+                                    "binarySwitchScan":  {
+                                                             "lowTierNameMatches":  14,
+                                                             "file":  "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
+                                                             "isLowEndMatches":  0,
+                                                             "note":  "lowTier symbols are continuous weights, not binary if(isLowEnd) switches."
+                                                         },
+                                    "physicalSimulationAdded":  false,
+                                    "cinematicCheatDecision":  "No physical simulation added; this patch only normalizes forensic DTO layout and dump stride."
+                                },
+    "compilationThrottle":  {
+                                "cpuLoadPercentSample":  100,
+                                "activeCompilerProcesses":  [
+                                                                {
+                                                                    "Id":  8756,
+                                                                    "ProcessName":  "csc",
+                                                                    "CpuSeconds":  71.21875,
+                                                                    "StartTime":  "2026-05-28T05:20:12+04:00"
+                                                                },
+                                                                {
+                                                                    "Id":  55080,
+                                                                    "ProcessName":  "dotnet",
+                                                                    "CpuSeconds":  524.09375,
+                                                                    "StartTime":  "2026-05-28T04:58:33+04:00"
+                                                                }
+                                                            ],
+                                "dotnetBuildInvoked":  false,
+                                "reason":  "CPU \u003e 50 and active dotnet process; final compiler confirmation remains blocked by coordinator rule."
+                            },
+    "dumpArtifact":  {
+                         "crashDumpCreated":  false,
+                         "dumpPath":  "Docs/AgentLogs/Dump_1415.bin",
+                         "reason":  "No runtime crash/NaN execution occurred in this static source pass."
+                     },
+    "sourceHashes":  [
+                         {
+                             "file":  "Assets/_Project/Scripts/Rendering/HectonUberNoirRuntimeBridge.cs",
+                             "sha256":  "e64cd6322d9a42305e748dd7899f882bdff0ce6f86f13b39af1d5ac63fdaa425"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Editor/TelemetryLayoutValidator1415.cs",
+                             "sha256":  "69d9002c373003bf4eae08a9dc97102bfb78544770f018ddfcabbf58f45b488a"
+                         }
+                     ]
+}

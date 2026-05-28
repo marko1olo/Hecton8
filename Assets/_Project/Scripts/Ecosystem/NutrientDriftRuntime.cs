@@ -439,12 +439,7 @@ namespace Hecton8.Ecosystem
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.DataVault:
-                    CompleteScheduledJobForVaultSwapBarrier();
-                    ReleaseVaultHandles(previousService as IDataVault ?? _vault);
-                    _vault = currentService as IDataVault;
-                    _initialized = false;
-                    _profilesLoadedCold = false;
-                    ResetHandlesNoRelease();
+                    RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
                     if (_vault != null)
                     {
                         EnsureDensityTexture();
@@ -467,8 +462,7 @@ namespace Hecton8.Ecosystem
         {
             CompleteScheduledJobForTeardown();
             TryUnregister();
-            ReleaseVaultHandles(_vault);
-            _vault = null;
+            RebindDataVaultForLifecycle(null);
             _thermalVentReadModel = null;
             _abyssalFlowReadModel = null;
             _playerContext = null;
@@ -492,13 +486,29 @@ namespace Hecton8.Ecosystem
 
         private void Activate()
         {
-            _vault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
             _thermalVentReadModel = GlobalRegistry.NutrientThermalVents;
             _abyssalFlowReadModel = GlobalRegistry.AbyssalFlowVolume;
             _playerContext = GlobalRegistry.Player;
             TryRegister();
             EnsureDensityTexture();
             EnsureVaultState();
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault vault, IDataVault releaseVaultOverride = null)
+        {
+            if (ReferenceEquals(_vault, vault))
+                return;
+
+            CompleteScheduledJobForVaultSwapBarrier();
+            ReleaseVaultHandles(_vault ?? releaseVaultOverride);
+            _vault = vault;
+            _initialized = false;
+            _profilesLoadedCold = false;
+            _telemetryCursor = 0;
+            _lastTelemetrySlot = 0;
+            _lastActiveAxis = 0;
+            _lastSourceCount = 0;
         }
 
         private bool EnsureVaultState()
@@ -1222,7 +1232,8 @@ namespace Hecton8.Ecosystem
         private static bool IsMatchingVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
         {
             return handle.BufferID == unchecked((uint)(int)bufferId) &&
-                   handle.Generation != 0u;
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)SystemID.AIEcology;
         }
 
         private static bool ReadSnapshotReady(NutrientDriftTuningDTO raw, out NutrientDriftTuningDTO tuning)
@@ -1251,25 +1262,28 @@ namespace Hecton8.Ecosystem
                 return;
             }
 
-            ReleaseVaultHandle(vault, ref _frontHandle);
-            ReleaseVaultHandle(vault, ref _backHandle);
-            ReleaseVaultHandle(vault, ref _flowHandle);
-            ReleaseVaultHandle(vault, ref _injectionHandle);
-            ReleaseVaultHandle(vault, ref _sourceHandle);
-            ReleaseVaultHandle(vault, ref _sourceCountHandle);
-            ReleaseVaultHandle(vault, ref _tuningHandle);
-            ReleaseVaultHandle(vault, ref _telemetryHandle);
-            ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
-            ReleaseVaultHandle(vault, ref _densityUploadHandle);
-            ReleaseVaultHandle(vault, ref _headerHandle);
-            ReleaseVaultHandle(vault, ref _csvScratchHandle);
-            ReleaseVaultHandle(vault, ref _profileHandle);
-            ReleaseVaultHandle(vault, ref _faultFlagHandle);
+            ReleaseVaultHandle(vault, ref _frontHandle, BufferID.ShinobuNutrientDriftCellFront);
+            ReleaseVaultHandle(vault, ref _backHandle, BufferID.ShinobuNutrientDriftCellBack);
+            ReleaseVaultHandle(vault, ref _flowHandle, BufferID.ShinobuNutrientDriftFlowField);
+            ReleaseVaultHandle(vault, ref _injectionHandle, BufferID.ShinobuNutrientDriftInjection);
+            ReleaseVaultHandle(vault, ref _sourceHandle, BufferID.ShinobuNutrientDriftSources);
+            ReleaseVaultHandle(vault, ref _sourceCountHandle, BufferID.ShinobuNutrientDriftSourceCount);
+            ReleaseVaultHandle(vault, ref _tuningHandle, BufferID.ShinobuNutrientDriftTuning);
+            ReleaseVaultHandle(vault, ref _telemetryHandle, BufferID.ShinobuNutrientDriftTelemetryRing);
+            ReleaseVaultHandle(vault, ref _telemetryCursorHandle, BufferID.ShinobuNutrientDriftTelemetryCursor);
+            ReleaseVaultHandle(vault, ref _densityUploadHandle, BufferID.ShinobuNutrientDriftDensityUpload);
+            ReleaseVaultHandle(vault, ref _headerHandle, BufferID.ShinobuNutrientDriftGridHeader);
+            ReleaseVaultHandle(vault, ref _csvScratchHandle, BufferID.ShinobuNutrientDriftCsvScratch);
+            ReleaseVaultHandle(vault, ref _profileHandle, BufferID.ShinobuNutrientDriftProfiles);
+            ReleaseVaultHandle(vault, ref _faultFlagHandle, BufferID.ShinobuNutrientDriftFaultFlags);
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        private static void ReleaseVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
         {
-            if (vault != null && handle.Generation != 0u)
+            if (vault != null && IsMatchingVaultHandle(in handle, bufferId))
                 vault.ReleaseBuffer(in handle);
             handle = default;
         }

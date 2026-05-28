@@ -219,6 +219,8 @@ namespace GPUInstancer
                     ComputeBuffer counterBuffer = new ComputeBuffer(1, GPUInstancerConstants.STRIDE_SIZE_INT);
                     uint[] emptyCounterData = new uint[1];
 
+                    int treeDataLength = treeDataList.Count;
+                    int treeScalesLength = treeScales.Length;
                     treeDataList = null;
                     treeScales = null;
 
@@ -250,6 +252,12 @@ namespace GPUInstancer
                             GPUInstancerConstants.GrassKernelProperties.COUNTER_BUFFER, counterBuffer);
                         _treeInstantiationComputeShader.SetInt(
                             GPUInstancerConstants.VisibilityKernelPoperties.BUFFER_PARAMETER_BUFFER_SIZE, instanceTotal);
+                        _treeInstantiationComputeShader.SetInt(
+                            GPUInstancerConstants.TreeKernelProperties.TREE_DATA_LENGTH, treeDataLength);
+                        _treeInstantiationComputeShader.SetInt(
+                            GPUInstancerConstants.TreeKernelProperties.TREE_SCALES_LENGTH, treeScalesLength);
+                        _treeInstantiationComputeShader.SetInt(
+                            GPUInstancerConstants.TreeKernelProperties.INSTANCE_CAPACITY, instanceCount);
                         //_treeInstantiationComputeShader.SetVector(
                         //    GPUInstancerConstants.GrassKernelProperties.TERRAIN_SIZE_DATA, terrain.terrainData.size);
                         //_treeInstantiationComputeShader.SetVector(
@@ -262,7 +270,7 @@ namespace GPUInstancer
                             GPUInstancerConstants.TreeKernelProperties.PROTOTYPE_INDEX, i);
 
                         _treeInstantiationComputeShader.Dispatch(0,
-                            Mathf.CeilToInt(instanceTotal / GPUInstancerConstants.COMPUTE_SHADER_THREAD_COUNT), 1, 1);
+                            GPUInstancerConstants.GetComputeThreadGroupCount(instanceTotal), 1, 1);
 
                         GPUInstancerUtility.InitializeGPUBuffer(runtimeData);
 

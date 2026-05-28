@@ -1,7 +1,9 @@
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -78,11 +80,6 @@ namespace Hecton8.AI.Ecosystem
         private const string SpatialGridCsvPrecomputedRelativePath = ShinobuSpatialGridConstants.ProfileCsvPrecomputedRelativePath;
         private const string CsvRelativePath = "ecosystem_balance.csv";
         private const string CsvPrecomputedRelativePath = "Data/Precomputed/ecosystem_balance.csv";
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_105.bin";
-        private const string DumpH8RelativePath = "Docs/AgentLogs/Dump_SHINOBU_105.h8dump";
-        private const string FlockingDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_307.bin";
-        private const ulong DumpMagic = 0x414259535357524DUL; // ABYSSWRM
-        private const int DumpVersion = 4;
         private const uint SourceHash = 0x5348494Eu; // SHIN
 
         internal const uint EntityFlagActive = 1u << 0;
@@ -144,7 +141,7 @@ namespace Hecton8.AI.Ecosystem
         private VaultGenerationHandle<EcosystemSectorDTO> _sectorHandle;
         private VaultGenerationHandle<ShinobuEcosystemTuning> _tuningHandle;
         private VaultGenerationHandle<int> _counterHandle;
-        private VaultGenerationHandle<ShinobuTelemetryEntry> _telemetryHandle;
+        private VaultGenerationHandle<EcosystemTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<FlockingThreatDTO> _flockingThreatHandle;
         private VaultGenerationHandle<int> _flockingThreatCountHandle;
         private VaultGenerationHandle<FlockingTelemetryEntry> _flockingTelemetryHandle;
@@ -164,6 +161,7 @@ namespace Hecton8.AI.Ecosystem
         private VaultGenerationHandle<SpatialGridProfileDTO> _spatialGridProfileHandle;
         private VaultGenerationHandle<byte> _spatialGridCsvScratchHandle;
         private VaultGenerationHandle<byte> _spatialGridDumpSnapshotHandle;
+        private VaultGenerationHandle<byte> _ecosystemDumpSnapshotHandle;
         private VaultGenerationHandle<byte> _csvScratchHandle;
         private VaultGenerationHandle<byte> _legacyScratchHandle;
         private VaultGenerationHandle<SwarmSpeciesProfileDTO> _swarmSpeciesProfileHandle;
@@ -284,6 +282,7 @@ namespace Hecton8.AI.Ecosystem
             TryRegisterHotSwapListener();
             if (EnsureVaultState())
             {
+                TryEnsureEcosystemDumpWorker(_dataVault);
                 TryEnsureSpatialGridDumpWorker(_dataVault);
                 TryRegisterTicks();
             }
@@ -302,6 +301,17 @@ namespace Hecton8.AI.Ecosystem
             }
         }
 
+        private void TryEnsureEcosystemDumpWorker(IDataVault vault)
+        {
+            if (!ShinobuEcosystemTelemetryForensics.EnsureDumpWorker(
+                    BuildProjectRootForIo(),
+                    vault,
+                    in _ecosystemDumpSnapshotHandle))
+            {
+                ShinobuEcosystemTelemetryForensics.RecordQueueFailure();
+            }
+        }
+
         public void Dispose()
         {
             CompleteFrameJobForTeardown();
@@ -309,6 +319,7 @@ namespace Hecton8.AI.Ecosystem
             TryUnregisterTicks();
             TryUnregisterHotSwapListener();
             UnlockJobBuffers();
+            ShinobuEcosystemTelemetryForensics.ShutdownDumpWorker();
             ShinobuSpatialGridForensics.ShutdownDumpWorker();
             _gpuUploadDispatcher.Dispose();
             ReleaseVaultStateForLifecycle(clearRenderState: true);
@@ -333,6 +344,7 @@ namespace Hecton8.AI.Ecosystem
 
             CompleteFrameJobForTeardown();
             UnlockJobBuffers();
+            ShinobuEcosystemTelemetryForensics.ShutdownDumpWorker();
             ShinobuSpatialGridForensics.ShutdownDumpWorker();
             RebindDataVaultForLifecycle(currentService as IDataVault);
 
@@ -343,6 +355,7 @@ namespace Hecton8.AI.Ecosystem
             }
 
             ClearSpatialGridRangeTable(_dataVault);
+            TryEnsureEcosystemDumpWorker(_dataVault);
             TryEnsureSpatialGridDumpWorker(_dataVault);
             TryRegisterTicks();
         }
@@ -360,78 +373,82 @@ namespace Hecton8.AI.Ecosystem
                 return;
 
             RefreshCameraSignals();
-            if (!TryResolveBuffers(
-                    vault,
-                    out NativeArray<AmbientEntityDTO> entities,
-                    out NativeArray<AmbientEntityAupDTO> aups,
-                    out NativeArray<BoidStateDTO> boidStates,
-                    out NativeArray<AmbientEntityDTO> entitySnapshot,
-                    out NativeArray<AmbientEntityAupDTO> aupSnapshot,
-                    out NativeArray<BoidStateDTO> boidStateSnapshot,
-                    out NativeArray<EcosystemSectorDTO> sectors,
-                    out NativeArray<ShinobuEcosystemTuning> tuningArray,
-                    out NativeArray<int> counters,
-                    out NativeArray<ShinobuTelemetryEntry> telemetry,
-                    out NativeArray<ShinobuSpatialHashDebugCell> debugCells,
-                    out NativeArray<BoidMatrixDTO> matrices,
-                    out NativeArray<BoidCustomDataDTO> customData,
-                    out NativeArray<BoidIndirectArgsDTO> indirectArgs,
-                    out NativeArray<int> spatialHashBucketHeads,
-                    out NativeArray<int> spatialHashNext))
-            {
-                return;
-            }
-
-            if (!TryResolveSpatialGridBuffers(
-                    vault,
-                    out NativeArray<SpatialGridEntryDTO> spatialGridEntries,
-                    out NativeArray<SpatialGridEntryDTO> spatialGridScratch,
-                    out NativeArray<SpatialGridBucketRangeDTO> spatialGridBucketRanges,
-                    out NativeArray<SpatialGridTelemetryEntry> spatialGridTelemetry,
-                    out NativeArray<int> spatialGridTelemetryCursor,
-                    out NativeArray<SpatialGridTuningDTO> spatialGridTuningArray,
-                    out _,
-                    out _))
-            {
-                return;
-            }
-
-            if (!TryResolveFlockingBuffers(
-                    vault,
-                    out NativeArray<FlockingThreatDTO> flockingThreats,
-                    out NativeArray<int> flockingThreatCount,
-                    out NativeArray<FlockingCounter64> flockingCounters,
-                    out _))
-            {
-                return;
-            }
-
-            int count = entityCapacity;
-            count = math.min(count, entities.Length);
-            count = math.min(count, aups.Length);
-            count = math.min(count, boidStates.Length);
-            count = math.min(count, entitySnapshot.Length);
-            count = math.min(count, aupSnapshot.Length);
-            count = math.min(count, boidStateSnapshot.Length);
-            count = math.min(count, spatialHashNext.Length);
-            count = math.min(count, spatialGridEntries.Length);
-            count = math.min(count, spatialGridScratch.Length);
-            count = math.min(count, matrices.Length);
-            count = math.min(count, customData.Length);
-            float visualQualityWeight = ResolveGlobalQualityWeight01();
-            float spatialQualityWeight = visualQualityWeight;
-            float systemStress01 = ResolveSystemStress01();
-            count = ResolveActiveEntityBudget(count);
-            if (count <= 0)
-                return;
 
             if (!TryLockJobBuffers(vault))
                 return;
 
             JobHandle scheduledHandle = default;
             bool scheduledWork = false;
+            bool keepLocksForScheduledJob = false;
+            int count = 0;
+            float visualQualityWeight = 0f;
             try
             {
+                if (!TryResolveBuffers(
+                        vault,
+                        out NativeArray<AmbientEntityDTO> entities,
+                        out NativeArray<AmbientEntityAupDTO> aups,
+                        out NativeArray<BoidStateDTO> boidStates,
+                        out NativeArray<AmbientEntityDTO> entitySnapshot,
+                        out NativeArray<AmbientEntityAupDTO> aupSnapshot,
+                        out NativeArray<BoidStateDTO> boidStateSnapshot,
+                        out NativeArray<EcosystemSectorDTO> sectors,
+                        out NativeArray<ShinobuEcosystemTuning> tuningArray,
+                        out NativeArray<int> counters,
+                        out NativeArray<EcosystemTelemetryEntry> telemetry,
+                        out NativeArray<ShinobuSpatialHashDebugCell> debugCells,
+                        out NativeArray<BoidMatrixDTO> matrices,
+                        out NativeArray<BoidCustomDataDTO> customData,
+                        out NativeArray<BoidIndirectArgsDTO> indirectArgs,
+                        out NativeArray<int> spatialHashBucketHeads,
+                        out NativeArray<int> spatialHashNext))
+                {
+                    return;
+                }
+
+                if (!TryResolveSpatialGridBuffers(
+                        vault,
+                        out NativeArray<SpatialGridEntryDTO> spatialGridEntries,
+                        out NativeArray<SpatialGridEntryDTO> spatialGridScratch,
+                        out NativeArray<SpatialGridBucketRangeDTO> spatialGridBucketRanges,
+                        out NativeArray<SpatialGridTelemetryEntry> spatialGridTelemetry,
+                        out NativeArray<int> spatialGridTelemetryCursor,
+                        out NativeArray<SpatialGridTuningDTO> spatialGridTuningArray,
+                        out _,
+                        out _))
+                {
+                    return;
+                }
+
+                if (!TryResolveFlockingBuffers(
+                        vault,
+                        out NativeArray<FlockingThreatDTO> flockingThreats,
+                        out NativeArray<int> flockingThreatCount,
+                        out NativeArray<FlockingCounter64> flockingCounters,
+                        out _))
+                {
+                    return;
+                }
+
+                count = entityCapacity;
+                count = math.min(count, entities.Length);
+                count = math.min(count, aups.Length);
+                count = math.min(count, boidStates.Length);
+                count = math.min(count, entitySnapshot.Length);
+                count = math.min(count, aupSnapshot.Length);
+                count = math.min(count, boidStateSnapshot.Length);
+                count = math.min(count, spatialHashNext.Length);
+                count = math.min(count, spatialGridEntries.Length);
+                count = math.min(count, spatialGridScratch.Length);
+                count = math.min(count, matrices.Length);
+                count = math.min(count, customData.Length);
+                visualQualityWeight = ResolveGlobalQualityWeight01();
+                float spatialQualityWeight = visualQualityWeight;
+                float systemStress01 = ResolveSystemStress01();
+                count = ResolveActiveEntityBudget(count);
+                if (count <= 0)
+                    return;
+
                 for (int i = 0; i < CounterCapacity && i < counters.Length; i++)
                     counters[i] = 0;
                 for (int i = 0; i < FlockingCounterCapacity && i < flockingCounters.Length; i++)
@@ -440,7 +457,6 @@ namespace Hecton8.AI.Ecosystem
                 if (spatialHashBucketHeads.Length < SpatialHashBucketCapacity)
                 {
                     counters[CounterSpatialHashOverflow] = 1;
-                    UnlockJobBuffers();
                     return;
                 }
 
@@ -622,6 +638,7 @@ namespace Hecton8.AI.Ecosystem
                 _scheduledPipelineKind = ScheduledPipelineFrame;
                 _jobScheduled = true;
                 _jobLocksHeld = true;
+                keepLocksForScheduledJob = true;
                 H8Memory.RegisterActiveJob(SystemID.AIEcology, _activeJobHandle);
             }
             catch (InvalidOperationException)
@@ -634,14 +651,16 @@ namespace Hecton8.AI.Ecosystem
                     _scheduledPipelineKind = ScheduledPipelineFrame;
                     _jobScheduled = true;
                     _jobLocksHeld = true;
+                    keepLocksForScheduledJob = true;
                     H8Memory.RegisterActiveJob(SystemID.AIEcology, _activeJobHandle);
-                }
-                else
-                {
-                    UnlockJobBuffers();
                 }
 
                 GlobalTelemetryBus.PublishPerformanceWarning(0x534A4F42u, SourceHash, 0f);
+            }
+            finally
+            {
+                if (!keepLocksForScheduledJob)
+                    UnlockJobBuffers();
             }
         }
 
@@ -991,7 +1010,7 @@ namespace Hecton8.AI.Ecosystem
                 BufferID.ShinobuEcosystemCounters,
                 CounterCapacity,
                 NativeArrayOptions.ClearMemory);
-            _telemetryHandle = ClaimVaultHandle<ShinobuTelemetryEntry>(
+            _telemetryHandle = ClaimVaultHandle<EcosystemTelemetryEntry>(
                 vault,
                 BufferID.ShinobuEcosystemTelemetryRing,
                 TelemetryCapacity,
@@ -1091,6 +1110,11 @@ namespace Hecton8.AI.Ecosystem
                 BufferID.ShinobuSpatialGridDumpSnapshot,
                 ShinobuSpatialGridForensics.DumpSnapshotBytes,
                 NativeArrayOptions.UninitializedMemory);
+            _ecosystemDumpSnapshotHandle = ClaimVaultHandle<byte>(
+                vault,
+                BufferID.ShinobuEcosystemDumpSnapshot,
+                ShinobuEcosystemTelemetryForensics.DumpSnapshotBytes,
+                NativeArrayOptions.UninitializedMemory);
             _csvScratchHandle = ClaimVaultHandle<byte>(
                 vault,
                 BufferID.ShinobuEcosystemCsvScratch,
@@ -1138,7 +1162,7 @@ namespace Hecton8.AI.Ecosystem
                    TryOpenVaultView(vault, in _sectorHandle, sectorCapacity, out NativeArray<EcosystemSectorDTO> _) &&
                    TryOpenVaultView(vault, in _tuningHandle, 1, out NativeArray<ShinobuEcosystemTuning> _) &&
                    TryOpenVaultView(vault, in _counterHandle, CounterCapacity, out NativeArray<int> _) &&
-                   TryOpenVaultView(vault, in _telemetryHandle, TelemetryCapacity, out NativeArray<ShinobuTelemetryEntry> _) &&
+                   TryOpenVaultView(vault, in _telemetryHandle, TelemetryCapacity, out NativeArray<EcosystemTelemetryEntry> _) &&
                    TryOpenVaultView(vault, in _flockingThreatHandle, FlockingThreatCapacity, out NativeArray<FlockingThreatDTO> _) &&
                    TryOpenVaultView(vault, in _flockingThreatCountHandle, 1, out NativeArray<int> _) &&
                    TryOpenVaultView(vault, in _flockingTelemetryHandle, FlockingTelemetryCapacity, out NativeArray<FlockingTelemetryEntry> _) &&
@@ -1158,6 +1182,7 @@ namespace Hecton8.AI.Ecosystem
                    TryOpenVaultView(vault, in _spatialGridProfileHandle, SpatialGridProfileCapacity, out NativeArray<SpatialGridProfileDTO> _) &&
                    TryOpenVaultView(vault, in _spatialGridCsvScratchHandle, SpatialGridCsvMaxBytes, out NativeArray<byte> _) &&
                    TryOpenVaultView(vault, in _spatialGridDumpSnapshotHandle, ShinobuSpatialGridForensics.DumpSnapshotBytes, out NativeArray<byte> _) &&
+                   TryOpenVaultView(vault, in _ecosystemDumpSnapshotHandle, ShinobuEcosystemTelemetryForensics.DumpSnapshotBytes, out NativeArray<byte> _) &&
                    TryOpenVaultView(vault, in _csvScratchHandle, CsvMaxBytes, out NativeArray<byte> _) &&
                    TryOpenVaultView(vault, in _legacyScratchHandle, LegacyProfileReadBytes, out NativeArray<byte> _) &&
                    TryOpenVaultView(vault, in _swarmSpeciesProfileHandle, SwarmSpeciesProfileCapacity, out NativeArray<SwarmSpeciesProfileDTO> _);
@@ -1254,7 +1279,7 @@ namespace Hecton8.AI.Ecosystem
             out NativeArray<EcosystemSectorDTO> sectors,
             out NativeArray<ShinobuEcosystemTuning> tuning,
             out NativeArray<int> counters,
-            out NativeArray<ShinobuTelemetryEntry> telemetry,
+            out NativeArray<EcosystemTelemetryEntry> telemetry,
             out NativeArray<ShinobuSpatialHashDebugCell> debugCells,
             out NativeArray<BoidMatrixDTO> matrices,
             out NativeArray<BoidCustomDataDTO> customData,
@@ -1304,7 +1329,7 @@ namespace Hecton8.AI.Ecosystem
             out NativeArray<EcosystemSectorDTO> sectors,
             out NativeArray<ShinobuEcosystemTuning> tuning,
             out NativeArray<int> counters,
-            out NativeArray<ShinobuTelemetryEntry> telemetry,
+            out NativeArray<EcosystemTelemetryEntry> telemetry,
             out NativeArray<ShinobuSpatialHashDebugCell> debugCells,
             out NativeArray<BoidMatrixDTO> matrices,
             out NativeArray<BoidCustomDataDTO> customData)
@@ -1691,7 +1716,7 @@ namespace Hecton8.AI.Ecosystem
                     out NativeArray<EcosystemSectorDTO> sectors,
                     out NativeArray<ShinobuEcosystemTuning> tuningArray,
                     out NativeArray<int> counters,
-                    out NativeArray<ShinobuTelemetryEntry> telemetry,
+                    out NativeArray<EcosystemTelemetryEntry> telemetry,
                     out NativeArray<ShinobuSpatialHashDebugCell> debugCells,
                     out NativeArray<BoidMatrixDTO> matrices,
                     out NativeArray<BoidCustomDataDTO> customData,
@@ -1862,7 +1887,7 @@ namespace Hecton8.AI.Ecosystem
 
         private void WriteTelemetryAndFaultDump(IDataVault vault)
         {
-            if (!TryOpenVaultView(vault, in _telemetryHandle, TelemetryCapacity, out NativeArray<ShinobuTelemetryEntry> telemetry) ||
+            if (!TryOpenVaultView(vault, in _telemetryHandle, TelemetryCapacity, out NativeArray<EcosystemTelemetryEntry> telemetry) ||
                 !TryOpenVaultView(vault, in _counterHandle, CounterCapacity, out NativeArray<int> counters))
             {
                 return;
@@ -1890,7 +1915,7 @@ namespace Hecton8.AI.Ecosystem
             uint stateHash = MixTelemetryHash(active, hydrated, dehydrated, skipped, invalidMath, overflow);
             bool solveOverBudget = _lastFlockingMs > TelemetryFaultThresholdMs;
 
-            telemetry[index] = new ShinobuTelemetryEntry
+            telemetry[index] = new EcosystemTelemetryEntry
             {
                 Frame = ResolveCurrentSimulationFrame(),
                 StateHash = stateHash,
@@ -1945,6 +1970,12 @@ namespace Hecton8.AI.Ecosystem
                 if (!_dumpedSpatialGridFault && spatialFault)
                 {
                     _dumpedSpatialGridFault = true;
+                    if (!_dumpedFault)
+                    {
+                        _dumpedFault = true;
+                        DumpBlackBox(telemetry, nextCursor);
+                    }
+
                     if (!ShinobuSpatialGridForensics.TryQueueTelemetryDump(
                             vault,
                             in _spatialGridDumpSnapshotHandle,
@@ -2173,6 +2204,7 @@ namespace Hecton8.AI.Ecosystem
             _spatialGridProfileHandle = default;
             _spatialGridCsvScratchHandle = default;
             _spatialGridDumpSnapshotHandle = default;
+            _ecosystemDumpSnapshotHandle = default;
             _csvScratchHandle = default;
             _legacyScratchHandle = default;
             _swarmSpeciesProfileHandle = default;
@@ -2191,6 +2223,7 @@ namespace Hecton8.AI.Ecosystem
         {
             CompleteFrameJobForTeardown();
             UnlockJobBuffers();
+            ShinobuEcosystemTelemetryForensics.ShutdownDumpWorker();
             ShinobuSpatialGridForensics.ShutdownDumpWorker();
             ReleaseOwnedVaultHandles(_dataVault);
             ClearCachedState(clearRenderState);
@@ -2227,6 +2260,7 @@ namespace Hecton8.AI.Ecosystem
             ReleaseOwnedVaultHandle(vault, ref _spatialGridProfileHandle);
             ReleaseOwnedVaultHandle(vault, ref _spatialGridCsvScratchHandle);
             ReleaseOwnedVaultHandle(vault, ref _spatialGridDumpSnapshotHandle);
+            ReleaseOwnedVaultHandle(vault, ref _ecosystemDumpSnapshotHandle);
             ReleaseOwnedVaultHandle(vault, ref _csvScratchHandle);
             ReleaseOwnedVaultHandle(vault, ref _legacyScratchHandle);
             ReleaseOwnedVaultHandle(vault, ref _swarmSpeciesProfileHandle);
@@ -2748,77 +2782,18 @@ namespace Hecton8.AI.Ecosystem
             return parent != null ? parent.FullName : assetsPath;
         }
 
-        private static void DumpBlackBox(NativeArray<ShinobuTelemetryEntry> telemetry, int cursor)
+        private void DumpBlackBox(NativeArray<EcosystemTelemetryEntry> telemetry, int cursor)
         {
-            try
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                !ShinobuEcosystemTelemetryForensics.TryQueueTelemetryDump(
+                    vault,
+                    in _ecosystemDumpSnapshotHandle,
+                    telemetry,
+                    cursor))
             {
-                string root = BuildProjectRootForIo();
-                WriteBlackBoxFile(Path.Combine(root, DumpRelativePath), telemetry, cursor);
-                WriteBlackBoxFile(Path.Combine(root, DumpH8RelativePath), telemetry, cursor);
-            }
-            catch (IOException)
-            {
+                ShinobuEcosystemTelemetryForensics.RecordQueueFailure();
                 GlobalTelemetryBus.PublishPerformanceWarning(0x444D5046u, SourceHash, 0f);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x444D5046u, SourceHash, 0f);
-            }
-            catch (ArgumentException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x444D5046u, SourceHash, 0f);
-            }
-            catch (NotSupportedException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x444D5046u, SourceHash, 0f);
-            }
-            catch (InvalidOperationException)
-            {
-                GlobalTelemetryBus.PublishPerformanceWarning(0x444D5046u, SourceHash, 0f);
-            }
-        }
-
-        private static void WriteBlackBoxFile(string path, NativeArray<ShinobuTelemetryEntry> telemetry, int cursor)
-        {
-            string directory = Path.GetDirectoryName(path);
-            if (directory != null && directory.Length != 0 && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
-            using (BinaryWriter writer = new BinaryWriter(stream))
-            {
-                int capacity = telemetry.Length;
-                int written = math.max(0, cursor);
-                int dumpCount = math.min(capacity, written);
-                int start = written < capacity ? 0 : cursor % capacity;
-                writer.Write(DumpMagic);
-                writer.Write(DumpVersion);
-                writer.Write(capacity);
-                writer.Write(dumpCount);
-                writer.Write(cursor);
-                writer.Write(start);
-                writer.Write(UnsafeUtility.SizeOf<ShinobuTelemetryEntry>());
-                for (int offset = 0; offset < dumpCount; offset++)
-                {
-                    ShinobuTelemetryEntry entry = telemetry[(start + offset) % capacity];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.StateHash);
-                    writer.Write(entry.ActiveBoidCount);
-                    writer.Write(entry.HydratedBoidCount);
-                    writer.Write(entry.DehydratedSectorCount);
-                    writer.Write(entry.SkippedBoidCount);
-                    writer.Write(entry.FlockingSolveTimeMs);
-                    writer.Write(entry.GlobalQualityWeight);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.SpatialHashTimeMs);
-                    writer.Write(entry.MatrixUploadTimeMs);
-                    writer.Write(entry.ReproducedCount);
-                    writer.Write(entry.TombstonedCount);
-                    writer.Write(entry.DebugCellCount);
-                    writer.Write(entry.Pad0);
-                    writer.Write(entry.CsvLoadedCount);
-                    writer.Write(entry.ProfileLoadedCount);
-                }
             }
         }
 
@@ -3339,6 +3314,473 @@ namespace Hecton8.AI.Ecosystem
         }
     }
 
+    public static unsafe class ShinobuEcosystemTelemetryForensics
+    {
+        private const ulong DumpMagic = 0x414259535357524DUL;
+        private const int DumpVersion = 4;
+        private const int DumpHeaderBytes = 32;
+        private const int DumpStateIdle = 0;
+        private const int DumpStateSnapshotting = 1;
+        private const int DumpStatePending = 2;
+        private const int DumpStateWriting = 3;
+        private const int DumpWorkerJoinMilliseconds = 500;
+        private const int DumpWorkerPollMilliseconds = 100;
+        private const int DumpFailureOwnerPath = 1;
+        private const int DumpFailureH8Path = 2;
+        private const int DumpFailureAgent1419Path = 4;
+        private const int DumpFailureQueue = 8;
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_105.bin";
+        private const string DumpH8RelativePath = "Docs/AgentLogs/Dump_SHINOBU_105.h8dump";
+        private const string Agent1419DumpRelativePath = "Docs/AgentLogs/Dump_1419_EcosystemSwarm.bin";
+
+        public const int DumpSnapshotBytes = DumpHeaderBytes + (300 * 64);
+
+        private static IDataVault s_dumpVault;
+        private static VaultGenerationHandle<byte> s_dumpSnapshotHandle;
+        private static Thread s_dumpWorker;
+        private static AutoResetEvent s_dumpSignal;
+        private static string s_ownerDumpPath;
+        private static string s_h8DumpPath;
+        private static string s_agent1419DumpPath;
+        private static int s_dumpState;
+        private static int s_stopRequested;
+        private static int s_pendingByteCount;
+        private static int s_lastDumpFailureFlags;
+        private static int s_totalDumpWriteFailures;
+
+        public static int LastDumpFailureFlags => Volatile.Read(ref s_lastDumpFailureFlags);
+
+        public static int TotalDumpWriteFailures => Volatile.Read(ref s_totalDumpWriteFailures);
+
+        public static void RecordQueueFailure()
+        {
+            AddDumpFailureFlags(DumpFailureQueue);
+            Interlocked.Increment(ref s_totalDumpWriteFailures);
+        }
+
+        public static bool EnsureDumpWorker(
+            string projectRoot,
+            IDataVault vault,
+            in VaultGenerationHandle<byte> snapshotHandle)
+        {
+            if (projectRoot == null ||
+                projectRoot.Length == 0 ||
+                vault == null ||
+                !ValidateSnapshotHandle(in snapshotHandle))
+            {
+                return false;
+            }
+
+            if (s_dumpSignal != null &&
+                s_dumpWorker != null &&
+                s_dumpWorker.IsAlive &&
+                Volatile.Read(ref s_stopRequested) == 0 &&
+                s_dumpVault == vault &&
+                SameSnapshotHandle(in snapshotHandle))
+            {
+                return true;
+            }
+
+            try
+            {
+                if (s_dumpWorker != null &&
+                    s_dumpWorker.IsAlive &&
+                    (Volatile.Read(ref s_stopRequested) != 0 ||
+                     s_dumpVault != vault ||
+                     !SameSnapshotHandle(in snapshotHandle)))
+                {
+                    return false;
+                }
+
+                s_dumpVault = vault;
+                s_dumpSnapshotHandle = snapshotHandle;
+                s_ownerDumpPath = Path.Combine(projectRoot, DumpRelativePath);
+                s_h8DumpPath = Path.Combine(projectRoot, DumpH8RelativePath);
+                s_agent1419DumpPath = Path.Combine(projectRoot, Agent1419DumpRelativePath);
+                EnsureDirectory(s_ownerDumpPath);
+                EnsureDirectory(s_h8DumpPath);
+                EnsureDirectory(s_agent1419DumpPath);
+
+                Volatile.Write(ref s_stopRequested, 0);
+                if (s_dumpSignal == null)
+                    s_dumpSignal = new AutoResetEvent(false);
+
+                if (s_dumpWorker == null || !s_dumpWorker.IsAlive)
+                {
+                    s_dumpWorker = new Thread(DumpWorkerLoop)
+                    {
+                        IsBackground = true,
+                        Name = "H8.AI.EcosystemDump"
+                    };
+                    s_dumpWorker.Start();
+                }
+
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ThreadStateException)
+            {
+                return false;
+            }
+            catch (OutOfMemoryException)
+            {
+                return false;
+            }
+        }
+
+        public static bool TryQueueTelemetryDump(
+            IDataVault vault,
+            in VaultGenerationHandle<byte> snapshotHandle,
+            NativeArray<EcosystemTelemetryEntry> telemetry,
+            int cursor)
+        {
+            if (!IsDumpWorkerPrepared(vault, in snapshotHandle))
+                return false;
+
+            if (vault == null ||
+                !ValidateSnapshotHandle(in snapshotHandle) ||
+                !telemetry.IsCreated ||
+                telemetry.Length <= 0)
+            {
+                return false;
+            }
+
+            if (Volatile.Read(ref s_stopRequested) != 0)
+                return false;
+
+            if (Interlocked.CompareExchange(ref s_dumpState, DumpStateSnapshotting, DumpStateIdle) != DumpStateIdle)
+                return false;
+
+            NativeArray<byte> snapshot = default;
+            bool snapshotLocked = false;
+            try
+            {
+                snapshotLocked = vault.TryAcquireWriteLock(in snapshotHandle, SystemID.AIEcology, out snapshot);
+                if (!snapshotLocked || !snapshot.IsCreated || snapshot.Length < DumpSnapshotBytes)
+                {
+                    Volatile.Write(ref s_dumpState, DumpStateIdle);
+                    return false;
+                }
+
+                int capacity = telemetry.Length;
+                int written = math.max(0, cursor);
+                int count = math.min(capacity, written);
+                int start = written < capacity ? 0 : cursor % capacity;
+                int entrySize = UnsafeUtility.SizeOf<EcosystemTelemetryEntry>();
+                int byteCount = DumpHeaderBytes + (count * entrySize);
+                if (entrySize != 64 ||
+                    byteCount < DumpHeaderBytes ||
+                    byteCount > DumpSnapshotBytes)
+                {
+                    Volatile.Write(ref s_dumpState, DumpStateIdle);
+                    return false;
+                }
+
+                Span<byte> bytes = AsSpan(snapshot, DumpSnapshotBytes);
+                BinaryPrimitives.WriteUInt64LittleEndian(bytes.Slice(0, 8), DumpMagic);
+                BinaryPrimitives.WriteInt32LittleEndian(bytes.Slice(8, 4), DumpVersion);
+                BinaryPrimitives.WriteInt32LittleEndian(bytes.Slice(12, 4), capacity);
+                BinaryPrimitives.WriteInt32LittleEndian(bytes.Slice(16, 4), count);
+                BinaryPrimitives.WriteInt32LittleEndian(bytes.Slice(20, 4), cursor);
+                BinaryPrimitives.WriteInt32LittleEndian(bytes.Slice(24, 4), start);
+                BinaryPrimitives.WriteInt32LittleEndian(bytes.Slice(28, 4), entrySize);
+
+                int offset = DumpHeaderBytes;
+                for (int i = 0; i < count; i++)
+                {
+                    EcosystemTelemetryEntry entry = telemetry[(start + i) % capacity];
+                    ReadOnlySpan<EcosystemTelemetryEntry> entrySpan =
+                        MemoryMarshal.CreateReadOnlySpan(ref entry, 1);
+                    MemoryMarshal.AsBytes(entrySpan).CopyTo(bytes.Slice(offset, entrySize));
+                    offset += entrySize;
+                }
+
+                if (byteCount < DumpSnapshotBytes)
+                    bytes.Slice(byteCount).Clear();
+
+                Volatile.Write(ref s_pendingByteCount, byteCount);
+            }
+            finally
+            {
+                if (snapshotLocked)
+                    vault.ReleaseWriteLock(in snapshotHandle, SystemID.AIEcology);
+            }
+
+            Thread.MemoryBarrier();
+            Volatile.Write(ref s_dumpState, DumpStatePending);
+
+            AutoResetEvent signal = s_dumpSignal;
+            if (signal == null)
+            {
+                Volatile.Write(ref s_pendingByteCount, 0);
+                Volatile.Write(ref s_dumpState, DumpStateIdle);
+                return false;
+            }
+
+            try
+            {
+                signal.Set();
+                return true;
+            }
+            catch (ObjectDisposedException)
+            {
+                Volatile.Write(ref s_pendingByteCount, 0);
+                Volatile.Write(ref s_dumpState, DumpStateIdle);
+                return false;
+            }
+        }
+
+        public static void ShutdownDumpWorker()
+        {
+            Volatile.Write(ref s_stopRequested, 1);
+            AutoResetEvent signal = s_dumpSignal;
+            if (signal != null)
+            {
+                try
+                {
+                    signal.Set();
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+            }
+
+            Thread worker = s_dumpWorker;
+            bool workerStopped = worker == null || !worker.IsAlive;
+            if (worker != null && worker.IsAlive)
+                workerStopped = worker.Join(DumpWorkerJoinMilliseconds);
+
+            if (!workerStopped)
+                return;
+
+            DrainPendingDump();
+            s_dumpWorker = null;
+            if (signal != null)
+                signal.Dispose();
+            s_dumpSignal = null;
+            s_dumpVault = null;
+            s_dumpSnapshotHandle = default;
+            Volatile.Write(ref s_pendingByteCount, 0);
+            Volatile.Write(ref s_dumpState, DumpStateIdle);
+            Volatile.Write(ref s_stopRequested, 0);
+        }
+
+        private static void AddDumpFailureFlags(int flags)
+        {
+            if (flags == 0)
+                return;
+
+            int observed;
+            int updated;
+            do
+            {
+                observed = Volatile.Read(ref s_lastDumpFailureFlags);
+                updated = observed | flags;
+                if (updated == observed)
+                    return;
+            }
+            while (Interlocked.CompareExchange(ref s_lastDumpFailureFlags, updated, observed) != observed);
+        }
+
+        private static void DumpWorkerLoop()
+        {
+            while (Volatile.Read(ref s_stopRequested) == 0)
+            {
+                AutoResetEvent signal = s_dumpSignal;
+                if (signal == null)
+                    return;
+
+                try
+                {
+                    signal.WaitOne(DumpWorkerPollMilliseconds);
+                }
+                catch (ObjectDisposedException)
+                {
+                    return;
+                }
+
+                DrainPendingDump();
+            }
+
+            DrainPendingDump();
+        }
+
+        private static void DrainPendingDump()
+        {
+            if (Interlocked.CompareExchange(ref s_dumpState, DumpStateWriting, DumpStatePending) != DumpStatePending)
+                return;
+
+            int baselineFailureFlags = Volatile.Read(ref s_lastDumpFailureFlags);
+            bool wroteOwner = TryWriteQueuedDumpFile(s_ownerDumpPath);
+            bool wroteH8 = TryWriteQueuedDumpFile(s_h8DumpPath);
+            bool wroteAgent1419 = TryWriteQueuedDumpFile(s_agent1419DumpPath);
+            int failureFlags = 0;
+            if (!wroteOwner)
+                failureFlags |= DumpFailureOwnerPath;
+            if (!wroteH8)
+                failureFlags |= DumpFailureH8Path;
+            if (!wroteAgent1419)
+                failureFlags |= DumpFailureAgent1419Path;
+
+            if (failureFlags != 0)
+            {
+                AddDumpFailureFlags(failureFlags);
+                Interlocked.Increment(ref s_totalDumpWriteFailures);
+            }
+            else
+            {
+                Interlocked.CompareExchange(ref s_lastDumpFailureFlags, 0, baselineFailureFlags);
+            }
+
+            Volatile.Write(ref s_pendingByteCount, 0);
+            Volatile.Write(ref s_dumpState, DumpStateIdle);
+        }
+
+        private static bool TryWriteQueuedDumpFile(string path)
+        {
+            int byteCount = Volatile.Read(ref s_pendingByteCount);
+            NativeArray<byte> snapshot = default;
+            bool snapshotLocked = false;
+            if (path == null ||
+                path.Length == 0 ||
+                byteCount < DumpHeaderBytes ||
+                byteCount > DumpSnapshotBytes)
+            {
+                return false;
+            }
+
+            try
+            {
+                snapshotLocked = TryLockSnapshotForRead(out snapshot);
+                if (!snapshotLocked || !snapshot.IsCreated || snapshot.Length < byteCount)
+                    return false;
+
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
+                {
+                    stream.Write(AsReadOnlySpan(snapshot, byteCount));
+                }
+
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            finally
+            {
+                if (snapshotLocked)
+                    UnlockSnapshotRead();
+            }
+        }
+
+        private static bool TryLockSnapshotForRead(out NativeArray<byte> snapshot)
+        {
+            snapshot = default;
+            IDataVault vault = s_dumpVault;
+            if (vault == null ||
+                !ValidateSnapshotHandle(in s_dumpSnapshotHandle) ||
+                !vault.TryLockBuffer(BufferID.ShinobuEcosystemDumpSnapshot, SystemID.AIEcology))
+            {
+                return false;
+            }
+
+            if (!vault.TryResolveHandle(in s_dumpSnapshotHandle, out NativeArray<byte> resolved) ||
+                !resolved.IsCreated ||
+                resolved.Length < DumpSnapshotBytes)
+            {
+                vault.TryUnlockBuffer(BufferID.ShinobuEcosystemDumpSnapshot, SystemID.AIEcology);
+                return false;
+            }
+
+            snapshot = resolved;
+            return true;
+        }
+
+        private static bool IsDumpWorkerPrepared(
+            IDataVault vault,
+            in VaultGenerationHandle<byte> snapshotHandle)
+        {
+            AutoResetEvent signal = s_dumpSignal;
+            Thread worker = s_dumpWorker;
+            return signal != null &&
+                   worker != null &&
+                   worker.IsAlive &&
+                   Volatile.Read(ref s_stopRequested) == 0 &&
+                   s_dumpVault == vault &&
+                   SameSnapshotHandle(in snapshotHandle);
+        }
+
+        private static void UnlockSnapshotRead()
+        {
+            IDataVault vault = s_dumpVault;
+            if (vault != null)
+                vault.TryUnlockBuffer(BufferID.ShinobuEcosystemDumpSnapshot, SystemID.AIEcology);
+        }
+
+        private static void EnsureDirectory(string path)
+        {
+            string directory = Path.GetDirectoryName(path);
+            if (directory != null && directory.Length != 0)
+                Directory.CreateDirectory(directory);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool ValidateSnapshotHandle(in VaultGenerationHandle<byte> handle)
+        {
+            return handle.BufferID == (uint)BufferID.ShinobuEcosystemDumpSnapshot &&
+                   handle.SystemID == (uint)SystemID.AIEcology &&
+                   handle.Generation != 0u;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool SameSnapshotHandle(in VaultGenerationHandle<byte> handle)
+        {
+            return s_dumpSnapshotHandle.BufferID == handle.BufferID &&
+                   s_dumpSnapshotHandle.SystemID == handle.SystemID &&
+                   s_dumpSnapshotHandle.Generation == handle.Generation &&
+                   s_dumpSnapshotHandle.Flags == handle.Flags;
+        }
+
+        private static Span<byte> AsSpan(NativeArray<byte> buffer, int byteCount)
+        {
+            int safeCount = math.clamp(byteCount, 0, buffer.Length);
+            return new Span<byte>(NativeArrayUnsafeUtility.GetUnsafePtr(buffer), safeCount);
+        }
+
+        private static ReadOnlySpan<byte> AsReadOnlySpan(NativeArray<byte> buffer, int byteCount)
+        {
+            int safeCount = math.clamp(byteCount, 0, buffer.Length);
+            return new ReadOnlySpan<byte>(NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffer), safeCount);
+        }
+    }
+
     /// <summary>
     /// Cold render-graph payload for optional GPU visibility culling of the procedural swarm.
     /// </summary>
@@ -3832,6 +4274,7 @@ namespace Hecton8.AI.Ecosystem
             AssertSize<BoidStateDTO>(32);
             AssertSize<BoidTargetDTO>(32);
             AssertSize<BoidMatrixDTO>(64);
+            AssertSize<BoidCustomDataDTO>(16);
             AssertSize<BoidIndirectArgsDTO>(16);
             AssertSize<SwarmSpeciesProfileDTO>(32);
             AssertSize<FlockingThreatDTO>(32);
@@ -3841,7 +4284,7 @@ namespace Hecton8.AI.Ecosystem
             AssertSize<AmbientEntityAupDTO>(64);
             AssertSize<EcosystemSectorDTO>(32);
             AssertSize<ShinobuEcosystemTuning>(64);
-            AssertSize<ShinobuTelemetryEntry>(64);
+            AssertSize<EcosystemTelemetryEntry>(64);
             AssertSize<MockPredatorSignal>(64);
             AssertSize<MockPredatorRuntime>(32);
             AssertSize<MockTerrainSample>(16);
@@ -3870,14 +4313,49 @@ namespace Hecton8.AI.Ecosystem
             AssertOffset<FlockingThreatDTO>(nameof(FlockingThreatDTO.LocalPosition), 0);
             AssertOffset<FlockingThreatDTO>(nameof(FlockingThreatDTO.RadiusMeters), 12);
             AssertOffset<FlockingThreatDTO>(nameof(FlockingThreatDTO.Intensity01), 16);
+            AssertOffset<FlockingThreatDTO>(nameof(FlockingThreatDTO.SourceId), 20);
+            AssertOffset<FlockingThreatDTO>(nameof(FlockingThreatDTO.TypeHash), 24);
+            AssertOffset<FlockingThreatDTO>(nameof(FlockingThreatDTO.DirectionalBias), 28);
+            AssertOffset<FlockingTelemetryEntry>(nameof(FlockingTelemetryEntry.Frame), 0);
+            AssertOffset<FlockingTelemetryEntry>(nameof(FlockingTelemetryEntry.StateHash), 4);
+            AssertOffset<FlockingTelemetryEntry>(nameof(FlockingTelemetryEntry.SimulatedBoidCount), 8);
+            AssertOffset<FlockingTelemetryEntry>(nameof(FlockingTelemetryEntry.NeighborSamplesTotal), 12);
+            AssertOffset<FlockingTelemetryEntry>(nameof(FlockingTelemetryEntry.AverageNeighbors), 16);
+            AssertOffset<FlockingTelemetryEntry>(nameof(FlockingTelemetryEntry.ActiveThreatCount), 20);
+            AssertOffset<FlockingTelemetryEntry>(nameof(FlockingTelemetryEntry.BurstExecutionMicroseconds), 24);
+            AssertOffset<FlockingTelemetryEntry>(nameof(FlockingTelemetryEntry.GlobalQualityWeight), 28);
+            AssertOffset<FlockingTelemetryEntry>(nameof(FlockingTelemetryEntry.Flags), 32);
+            AssertOffset<FlockingTelemetryEntry>(nameof(FlockingTelemetryEntry.PanicBoidCount), 36);
+            AssertOffset<FlockingTelemetryEntry>(nameof(FlockingTelemetryEntry.MaxNeighborsPerBoid), 40);
+            AssertOffset<FlockingTelemetryEntry>(nameof(FlockingTelemetryEntry.SpatialHashOverflowCount), 44);
+            AssertOffset<FlockingTelemetryEntry>(nameof(FlockingTelemetryEntry.InvalidMathCount), 48);
+            AssertOffset<FlockingTelemetryEntry>(nameof(FlockingTelemetryEntry.SpatialHashMicroseconds), 52);
+            AssertOffset<FlockingTelemetryEntry>(nameof(FlockingTelemetryEntry.MatrixUploadMicroseconds), 56);
             AssertOffset<FlockingTelemetryEntry>(nameof(FlockingTelemetryEntry.Pad0), 60);
             AssertOffset<FlockingCounter64>(nameof(FlockingCounter64.Value), 0);
+            AssertOffset<FlockingCounter64>(nameof(FlockingCounter64.Pad0), 4);
+            AssertOffset<FlockingCounter64>(nameof(FlockingCounter64.Pad1), 8);
+            AssertOffset<FlockingCounter64>(nameof(FlockingCounter64.Pad2), 12);
+            AssertOffset<FlockingCounter64>(nameof(FlockingCounter64.Pad3), 16);
+            AssertOffset<FlockingCounter64>(nameof(FlockingCounter64.Pad4), 20);
+            AssertOffset<FlockingCounter64>(nameof(FlockingCounter64.Pad5), 24);
+            AssertOffset<FlockingCounter64>(nameof(FlockingCounter64.Pad6), 28);
+            AssertOffset<FlockingCounter64>(nameof(FlockingCounter64.Pad7), 32);
+            AssertOffset<FlockingCounter64>(nameof(FlockingCounter64.Pad8), 36);
+            AssertOffset<FlockingCounter64>(nameof(FlockingCounter64.Pad9), 40);
+            AssertOffset<FlockingCounter64>(nameof(FlockingCounter64.Pad10), 44);
+            AssertOffset<FlockingCounter64>(nameof(FlockingCounter64.Pad11), 48);
+            AssertOffset<FlockingCounter64>(nameof(FlockingCounter64.Pad12), 52);
+            AssertOffset<FlockingCounter64>(nameof(FlockingCounter64.Pad13), 56);
             AssertOffset<FlockingCounter64>(nameof(FlockingCounter64.Pad14), 60);
-            AssertOffset<ShinobuEcosystemTuning>(nameof(ShinobuEcosystemTuning.EvasionRadiusMeters), 60);
             AssertOffset<BoidMatrixDTO>(nameof(BoidMatrixDTO.C0), 0);
             AssertOffset<BoidMatrixDTO>(nameof(BoidMatrixDTO.C1), 16);
             AssertOffset<BoidMatrixDTO>(nameof(BoidMatrixDTO.C2), 32);
             AssertOffset<BoidMatrixDTO>(nameof(BoidMatrixDTO.C3), 48);
+            AssertOffset<BoidCustomDataDTO>(nameof(BoidCustomDataDTO.GeneticLow), 0);
+            AssertOffset<BoidCustomDataDTO>(nameof(BoidCustomDataDTO.GeneticHigh), 4);
+            AssertOffset<BoidCustomDataDTO>(nameof(BoidCustomDataDTO.PanicOrSkip), 8);
+            AssertOffset<BoidCustomDataDTO>(nameof(BoidCustomDataDTO.QualityWeight), 12);
             AssertOffset<BoidIndirectArgsDTO>(nameof(BoidIndirectArgsDTO.VertexCountPerInstance), 0);
             AssertOffset<BoidIndirectArgsDTO>(nameof(BoidIndirectArgsDTO.InstanceCount), 4);
             AssertOffset<BoidIndirectArgsDTO>(nameof(BoidIndirectArgsDTO.StartVertex), 8);
@@ -3891,6 +4369,15 @@ namespace Hecton8.AI.Ecosystem
             AssertOffset<SwarmSpeciesProfileDTO>(nameof(SwarmSpeciesProfileDTO.Pad0), 24);
             AssertOffset<SwarmSpeciesProfileDTO>(nameof(SwarmSpeciesProfileDTO.SpeciesID), 28);
             AssertOffset<SwarmSpeciesProfileDTO>(nameof(SwarmSpeciesProfileDTO.Flags), 30);
+            AssertOffset<AbyssalFlowTensorDTO>(nameof(AbyssalFlowTensorDTO.AxisXAndStrength), 0);
+            AssertOffset<AbyssalFlowTensorDTO>(nameof(AbyssalFlowTensorDTO.AxisYAndCurl), 16);
+            AssertOffset<AbyssalFlowTensorDTO>(nameof(AbyssalFlowTensorDTO.AxisZAndTurbulence), 32);
+            AssertOffset<AbyssalFlowTensorDTO>(nameof(AbyssalFlowTensorDTO.LocalOriginAndQuality), 48);
+            AssertOffset<AmbientEntityAupDTO>(nameof(AmbientEntityAupDTO.PositionAup), 0);
+            AssertOffset<AmbientEntityAupDTO>(nameof(AmbientEntityAupDTO.Flags), 48);
+            AssertOffset<AmbientEntityAupDTO>(nameof(AmbientEntityAupDTO.SectorHash), 52);
+            AssertOffset<AmbientEntityAupDTO>(nameof(AmbientEntityAupDTO.SpatialCellHash), 56);
+            AssertOffset<AmbientEntityAupDTO>(nameof(AmbientEntityAupDTO.StableSeed), 60);
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.SectorHash), 0);
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.HerbivoreMass), 4);
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.CarnivoreMass), 8);
@@ -3899,9 +4386,39 @@ namespace Hecton8.AI.Ecosystem
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.SectorY), 20);
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.SectorZ), 24);
             AssertOffset<EcosystemSectorDTO>(nameof(EcosystemSectorDTO.Flags), 28);
-            AssertOffset<ShinobuTelemetryEntry>(nameof(ShinobuTelemetryEntry.Pad0), 56);
-            AssertOffset<ShinobuTelemetryEntry>(nameof(ShinobuTelemetryEntry.CsvLoadedCount), 60);
-            AssertOffset<ShinobuTelemetryEntry>(nameof(ShinobuTelemetryEntry.ProfileLoadedCount), 62);
+            AssertOffset<ShinobuEcosystemTuning>(nameof(ShinobuEcosystemTuning.SeparationWeight), 0);
+            AssertOffset<ShinobuEcosystemTuning>(nameof(ShinobuEcosystemTuning.AlignmentWeight), 4);
+            AssertOffset<ShinobuEcosystemTuning>(nameof(ShinobuEcosystemTuning.CohesionWeight), 8);
+            AssertOffset<ShinobuEcosystemTuning>(nameof(ShinobuEcosystemTuning.PredatorAvoidanceWeight), 12);
+            AssertOffset<ShinobuEcosystemTuning>(nameof(ShinobuEcosystemTuning.HerbivoreBirthRate), 16);
+            AssertOffset<ShinobuEcosystemTuning>(nameof(ShinobuEcosystemTuning.CarnivoreBirthRate), 20);
+            AssertOffset<ShinobuEcosystemTuning>(nameof(ShinobuEcosystemTuning.HerbivoreDeathRate), 24);
+            AssertOffset<ShinobuEcosystemTuning>(nameof(ShinobuEcosystemTuning.CarnivoreDeathRate), 28);
+            AssertOffset<ShinobuEcosystemTuning>(nameof(ShinobuEcosystemTuning.FloraGrowthRate), 32);
+            AssertOffset<ShinobuEcosystemTuning>(nameof(ShinobuEcosystemTuning.FeedRate), 36);
+            AssertOffset<ShinobuEcosystemTuning>(nameof(ShinobuEcosystemTuning.BiomassReproductionThreshold), 40);
+            AssertOffset<ShinobuEcosystemTuning>(nameof(ShinobuEcosystemTuning.MaxSpeedMetersPerSecond), 44);
+            AssertOffset<ShinobuEcosystemTuning>(nameof(ShinobuEcosystemTuning.CarryingCapacity), 48);
+            AssertOffset<ShinobuEcosystemTuning>(nameof(ShinobuEcosystemTuning.PredationRate), 52);
+            AssertOffset<ShinobuEcosystemTuning>(nameof(ShinobuEcosystemTuning.Flags), 56);
+            AssertOffset<ShinobuEcosystemTuning>(nameof(ShinobuEcosystemTuning.EvasionRadiusMeters), 60);
+            AssertOffset<EcosystemTelemetryEntry>(nameof(EcosystemTelemetryEntry.Frame), 0);
+            AssertOffset<EcosystemTelemetryEntry>(nameof(EcosystemTelemetryEntry.StateHash), 4);
+            AssertOffset<EcosystemTelemetryEntry>(nameof(EcosystemTelemetryEntry.ActiveBoidCount), 8);
+            AssertOffset<EcosystemTelemetryEntry>(nameof(EcosystemTelemetryEntry.HydratedBoidCount), 12);
+            AssertOffset<EcosystemTelemetryEntry>(nameof(EcosystemTelemetryEntry.DehydratedSectorCount), 16);
+            AssertOffset<EcosystemTelemetryEntry>(nameof(EcosystemTelemetryEntry.SkippedBoidCount), 20);
+            AssertOffset<EcosystemTelemetryEntry>(nameof(EcosystemTelemetryEntry.FlockingSolveTimeMs), 24);
+            AssertOffset<EcosystemTelemetryEntry>(nameof(EcosystemTelemetryEntry.GlobalQualityWeight), 28);
+            AssertOffset<EcosystemTelemetryEntry>(nameof(EcosystemTelemetryEntry.Flags), 32);
+            AssertOffset<EcosystemTelemetryEntry>(nameof(EcosystemTelemetryEntry.SpatialHashTimeMs), 36);
+            AssertOffset<EcosystemTelemetryEntry>(nameof(EcosystemTelemetryEntry.MatrixUploadTimeMs), 40);
+            AssertOffset<EcosystemTelemetryEntry>(nameof(EcosystemTelemetryEntry.ReproducedCount), 44);
+            AssertOffset<EcosystemTelemetryEntry>(nameof(EcosystemTelemetryEntry.TombstonedCount), 48);
+            AssertOffset<EcosystemTelemetryEntry>(nameof(EcosystemTelemetryEntry.DebugCellCount), 52);
+            AssertOffset<EcosystemTelemetryEntry>(nameof(EcosystemTelemetryEntry.Pad0), 56);
+            AssertOffset<EcosystemTelemetryEntry>(nameof(EcosystemTelemetryEntry.CsvLoadedCount), 60);
+            AssertOffset<EcosystemTelemetryEntry>(nameof(EcosystemTelemetryEntry.ProfileLoadedCount), 62);
             AssertOffset<SpatialGridEntryDTO>(nameof(SpatialGridEntryDTO.EntityHashID), 0);
             AssertOffset<SpatialGridEntryDTO>(nameof(SpatialGridEntryDTO.EntityRowIndex), 0);
             AssertOffset<SpatialGridEntryDTO>(nameof(SpatialGridEntryDTO.CellHash), 4);
@@ -4173,7 +4690,7 @@ namespace Hecton8.AI.Ecosystem
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
-    public struct ShinobuTelemetryEntry
+    public struct EcosystemTelemetryEntry
     {
         [FieldOffset(0)] public uint Frame;
         [FieldOffset(4)] public uint StateHash;

@@ -18,7 +18,7 @@ namespace Hecton8.Visor
     /// <summary>
     /// Single fullscreen VR visor brownout and focus blur pass.
     /// </summary>
-    public sealed class HectonVRBrownoutFeature : ScriptableRendererFeature, IGlobalRegistryHotSwapListener
+    public sealed class HectonVRBrownoutFeature : ScriptableRendererFeature
     {
         private const int VRBrownoutGlobalsStrideBytes = 64;
 
@@ -383,14 +383,13 @@ namespace Hecton8.Visor
             internal static readonly int DitherStrengthId = Shader.PropertyToID("_HectonVRBrownoutDitherStrength");
             internal static readonly int VrComfortSignalsId = Shader.PropertyToID("_HectonVrComfortSignals");
             internal static readonly int VrComfortMotionId = Shader.PropertyToID("_HectonVrComfortMotion");
+            internal static readonly int VrSomaticComfortStateId = Shader.PropertyToID("_HectonVRSomaticComfortState");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
 
         private BrownoutPass _pass;
         private Material _material;
-        private IPlayerRuntimeContext _cachedPlayerContext;
-        private bool _hotSwapRegistered;
 
         /// <inheritdoc />
         public override void Create()
@@ -411,8 +410,6 @@ namespace Hecton8.Visor
 
             RecreateMaterial(ref _material, shader);
             _pass.PrepareResources();
-            TryRegisterHotSwapListener();
-            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         /// <inheritdoc />
@@ -422,7 +419,7 @@ namespace Hecton8.Visor
                 return;
 
             Camera renderCamera = renderingData.cameraData.camera;
-            if (!TryBuildRuntimeState(renderCamera, out RuntimeState runtimeState))
+            if (!TryBuildRuntimeState(renderCamera, renderingData.cameraData.xr, out RuntimeState runtimeState))
                 return;
 
             _pass.Setup(settings, _material, runtimeState);
@@ -435,33 +432,15 @@ namespace Hecton8.Visor
             _pass?.Dispose();
             CoreUtils.Destroy(_material);
             _material = null;
-            _cachedPlayerContext = null;
-            TryUnregisterHotSwapListener();
         }
 
-        public void OnGlobalRegistryServiceReplaced(
-            GlobalRegistryServiceSlot serviceSlot,
-            object previousService,
-            object currentService)
-        {
-            if (serviceSlot == GlobalRegistryServiceSlot.Player)
-                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
-        }
-
-        private void OnDisable()
-        {
-            TryUnregisterHotSwapListener();
-        }
-
-        private bool TryBuildRuntimeState(Camera renderCamera, out RuntimeState runtimeState)
+        private bool TryBuildRuntimeState(Camera renderCamera, XRPass xrPass, out RuntimeState runtimeState)
         {
             runtimeState = default;
             if (renderCamera == null || !HectonXRRuntimeState.IsXRActive)
                 return false;
 
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
-            if (playerCamera == null || !ReferenceEquals(renderCamera, playerCamera))
+            if (!IsComfortEligibleCamera(renderCamera, xrPass))
                 return false;
 
             float brownoutIntensity = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.BrownoutIntensityId));
@@ -469,6 +448,13 @@ namespace Hecton8.Visor
             float nearCollisionIntensity = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.NearCollisionIntensityId));
             Vector4 vrComfortSignals = SanitizeVrComfortSignals(Shader.GetGlobalVector(ShaderConstants.VrComfortSignalsId));
             Vector4 vrComfortMotion = SanitizeVrComfortMotion(Shader.GetGlobalVector(ShaderConstants.VrComfortMotionId));
+            Vector4 vrSomaticComfortState = SanitizeVrSomaticComfortState(Shader.GetGlobalVector(ShaderConstants.VrSomaticComfortStateId));
+            float somaticTunnel = vrSomaticComfortState.x;
+            if (somaticTunnel > vrComfortSignals.x)
+                vrComfortSignals.x = somaticTunnel;
+            if (somaticTunnel > 0.001f)
+                vrComfortSignals.w = math.max(vrComfortSignals.w, 1f);
+
             if (brownoutIntensity <= 0.001f &&
                 worldFocusBlur <= 0.001f &&
                 nearCollisionIntensity <= 0.001f &&
@@ -486,21 +472,13 @@ namespace Hecton8.Visor
             return true;
         }
 
-        private void TryRegisterHotSwapListener()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsComfortEligibleCamera(Camera renderCamera, XRPass xrPass)
         {
-            if (_hotSwapRegistered)
-                return;
+            if (xrPass != null && xrPass.enabled)
+                return true;
 
-            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
-        }
-
-        private void TryUnregisterHotSwapListener()
-        {
-            if (!_hotSwapRegistered)
-                return;
-
-            GlobalRegistry.TryUnregisterHotSwapListener(this);
-            _hotSwapRegistered = false;
+            return renderCamera.stereoTargetEye != StereoTargetEyeMask.None;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -532,6 +510,16 @@ namespace Hecton8.Visor
                 math.isfinite(value.x) ? math.clamp(value.x, -1f, 1f) : 0f,
                 math.isfinite(value.y) ? math.clamp(value.y, -1f, 1f) : 0f,
                 Sanitize01(value.z),
+                Sanitize01(value.w));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Vector4 SanitizeVrSomaticComfortState(Vector4 value)
+        {
+            return new Vector4(
+                Sanitize01(value.x),
+                Sanitize01(value.y),
+                math.isfinite(value.z) ? math.max(1f, value.z) : 1f,
                 Sanitize01(value.w));
         }
 

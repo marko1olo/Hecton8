@@ -69,6 +69,12 @@ Shader "Hecton8/Submarine/SonarHoloMapStencil"
 
             float4 _HectonSubOsSonarSweep;
             float4 _SubInteriorLightingState;
+            float4 _HectonVrComfortSignals;
+            float4 _HectonVrComfortMotion;
+            float4 _HectonVRSomaticComfortState;
+            float _HectonVRBrownoutIntensity;
+            float _HectonTunnelingIntensity;
+            float _H8GlobalQualityWeight;
 
             float TrianglePulse01(float value)
             {
@@ -88,6 +94,42 @@ Shader "Hecton8/Submarine/SonarHoloMapStencil"
                 float lowPower = saturate((0.15 - _SubInteriorLightingState.z) * 6.666667);
                 float gridNoise = frac(positionOS.x * 19.0 + positionOS.y * 31.0 + _Time.y * 23.0);
                 return lerp(1.0, 0.62 + gridNoise * 0.38, lowPower);
+            }
+
+            float HectonComfortIgn(float2 pixel)
+            {
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
+            float2 ResolveHectonComfortEyeStableScreenUV(float2 positionCS)
+            {
+                float2 screenUV = saturate(positionCS * rcp(max(_ScreenParams.xy, float2(1.0, 1.0))));
+#if defined(UNITY_SINGLE_PASS_STEREO) || defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
+                float4 stereoScaleOffset = unity_StereoScaleOffset[unity_StereoEyeIndex];
+                screenUV = (screenUV - stereoScaleOffset.zw) * rcp(max(stereoScaleOffset.xy, float2(0.0001, 0.0001)));
+#endif
+                return saturate(screenUV);
+            }
+
+            float ResolveHectonComfortBlackAmount(float2 screenUV, float2 positionCS)
+            {
+                float vrComfortEnabled = saturate(_HectonVrComfortSignals.w);
+                float somaticTunnel = saturate(_HectonVRSomaticComfortState.x);
+                float vrComfortTunnel = saturate(max(max(_HectonVrComfortSignals.x, _HectonVrComfortMotion.z) * vrComfortEnabled, max(_HectonTunnelingIntensity, somaticTunnel)));
+                float vrComfortBlackout = saturate(max(_HectonVrComfortSignals.y * vrComfortEnabled, _HectonVRBrownoutIntensity));
+                float2 radial = screenUV * 2.0 - 1.0;
+                radial.x *= _ScreenParams.x * rcp(max(_ScreenParams.y, 1.0));
+                float radialMagnitudeSq = saturate(dot(radial, radial));
+                float tunnelInner = lerp(0.74, 0.34, vrComfortTunnel);
+                float tunnelInnerSq = tunnelInner * tunnelInner;
+                float tunnelMask = saturate((radialMagnitudeSq - tunnelInnerSq) * rcp(max(1.0 - tunnelInnerSq, 0.0009765625))) * vrComfortTunnel;
+                float ign = HectonComfortIgn(floor(positionCS));
+                float tunnelDither = step(ign, saturate(tunnelMask + vrComfortTunnel * 0.0625));
+                float comfortQualityWeight = saturate(_H8GlobalQualityWeight);
+                float ditherFloor = 0.56 - 0.06 * comfortQualityWeight;
+                float ditherCeiling = 0.90 + 0.06 * comfortQualityWeight;
+                float ditheredTunnel = tunnelMask * lerp(ditherFloor, ditherCeiling, tunnelDither);
+                return saturate(max(ditheredTunnel, vrComfortBlackout));
             }
 
             Varyings Vert(Attributes input)
@@ -113,6 +155,9 @@ Shader "Hecton8/Submarine/SonarHoloMapStencil"
                 half3 color = lerp(_BaseColor.rgb, half3(1.0h, 0.12h, 0.08h), (half)emergency);
                 color *= (half)(0.72 + gate * _SweepBoost);
                 color *= (half)LowPowerFlicker01(input.positionOS.xz);
+                float2 comfortScreenUV = ResolveHectonComfortEyeStableScreenUV(input.positionCS.xy);
+                float comfortBlackAmount = ResolveHectonComfortBlackAmount(comfortScreenUV, input.positionCS.xy);
+                color = lerp(color, half3(0.0015h, 0.0023h, 0.0031h), (half)comfortBlackAmount);
                 return half4(color, 1.0h);
             }
             ENDHLSL

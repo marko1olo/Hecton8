@@ -1,0 +1,122 @@
+{
+  "agentId": "1402",
+  "generatedUtc": "2026-05-28T01:10:03+00:00",
+  "evidenceClass": "STATIC_SOURCE",
+  "status": "PENDING_UNITY_EDITOR_VERIFICATION",
+  "filesModified": 0,
+  "yamlBytesRewritten": 0,
+  "obsoletePropertiesMigrated": 0,
+  "exactObsoletePropertiesRemainingInTargetSet": 0,
+  "exactObsoletePropertiesRemainingFullScope": 0,
+  "schemaMismatchCandidatesFullScope": 47,
+  "backupGenerated": true,
+  "backupAllHashesMatch": true,
+  "dryRunAbortReason": "NO_EXACT_OBSOLETE_PROPERTY_HITS",
+  "validationFailures": 0,
+  "prefabObsoletePropertyPathHits": 0,
+  "missingScriptReferences": 0,
+  "dotnetBuildRun": false,
+  "compilerSkipReason": "No CSharp Editor migrator created; build not required by Task 15 condition",
+  "parserFuzzerFailures": 0,
+  "alignment": [
+    {
+      "file": "Assets/_Project/Scenes/02_HECTON_WORLD.unity",
+      "sourceMono": 0,
+      "backupMono": 0,
+      "monoMatch": true,
+      "hasRootGameObject": false
+    },
+    {
+      "file": "Assets/_Project/Prefabs/Player.prefab",
+      "sourceMono": 44,
+      "backupMono": 44,
+      "monoMatch": true,
+      "hasRootGameObject": false
+    },
+    {
+      "file": "Assets/_Project/Prefabs/Construction/Final/PFB_Module_Corridor.prefab",
+      "sourceMono": 5,
+      "backupMono": 5,
+      "monoMatch": true,
+      "hasRootGameObject": false
+    },
+    {
+      "file": "Assets/_Project/Prefabs/Construction/Final/PFB_Module_CurrentTurbine.prefab",
+      "sourceMono": 1,
+      "backupMono": 1,
+      "monoMatch": true,
+      "hasRootGameObject": false
+    },
+    {
+      "file": "Assets/_Project/Prefabs/Construction/Final/PFB_Module_Foundation.prefab",
+      "sourceMono": 7,
+      "backupMono": 7,
+      "monoMatch": true,
+      "hasRootGameObject": false
+    },
+    {
+      "file": "Assets/_Project/Prefabs/Construction/Final/PFB_Module_Pylon.prefab",
+      "sourceMono": 1,
+      "backupMono": 1,
+      "monoMatch": true,
+      "hasRootGameObject": false
+    },
+    {
+      "file": "Assets/_Project/Prefabs/Construction/Final/PFB_Module_ServicePump.prefab",
+      "sourceMono": 1,
+      "backupMono": 1,
+      "monoMatch": true,
+      "hasRootGameObject": false
+    }
+  ],
+  "targetFileHashes": [
+    {
+      "file": "Assets/_Project/Scenes/02_HECTON_WORLD.unity",
+      "bytes": 33756552,
+      "sha256": "d96ae444158b0d8410460a9fe8588db89c809df3f2c6ebeabe534f5894d700d0"
+    },
+    {
+      "file": "Assets/_Project/Prefabs/Player.prefab",
+      "bytes": 173951,
+      "sha256": "1d9cb07939fd761c01d28bab42acaad51e8184cc29a4aebcf3a740a844cbb191"
+    },
+    {
+      "file": "Assets/_Project/Prefabs/Construction/Final/PFB_Module_Corridor.prefab",
+      "bytes": 56393,
+      "sha256": "f2184388800fb12a4014c8134fa28b1272ff615335ef9356157d4c865b3b0ba5"
+    },
+    {
+      "file": "Assets/_Project/Prefabs/Construction/Final/PFB_Module_CurrentTurbine.prefab",
+      "bytes": 4659,
+      "sha256": "407ac3c47afe80d9c443192e94ba9011c2734901139f54ed59e24fa34c5862f2"
+    },
+    {
+      "file": "Assets/_Project/Prefabs/Construction/Final/PFB_Module_Foundation.prefab",
+      "bytes": 60347,
+      "sha256": "0a0684ad145490ced303f4bc6d15d6af1452c0cb882c1fa39ccc182b543d0af3"
+    },
+    {
+      "file": "Assets/_Project/Prefabs/Construction/Final/PFB_Module_Pylon.prefab",
+      "bytes": 4647,
+      "sha256": "294f902ddc08a5372ca63a0d8e321e4e4d89b8b1ef627149251e74d2ef8c309a"
+    },
+    {
+      "file": "Assets/_Project/Prefabs/Construction/Final/PFB_Module_ServicePump.prefab",
+      "bytes": 4640,
+      "sha256": "97c197b46eb1d5dfca6a68cc74fe855f549dd8c44922aa2750cb2151e1986afa"
+    }
+  ],
+  "artifacts": {
+    "targetLedger": "Docs/AgentLogs/YamlDesyncLedger_1402.json",
+    "fullLedger": "Docs/AgentLogs/YamlDesyncLedger_1402_full.json",
+    "backupPlan": "Docs/AgentLogs/BackupPlan_1402.json",
+    "backupExecution": "Docs/AgentLogs/BackupExecution_1402.json",
+    "dryRun": "Docs/AgentLogs/YamlDryRun_1402.json",
+    "validation": "Docs/AgentLogs/YamlValidation_1402.json",
+    "alignment": "Docs/AgentLogs/FileIdAlignment_1402.json",
+    "prefabOverrideGuard": "Docs/AgentLogs/PrefabOverrideGuard_1402.json",
+    "missingReferenceSweep": "Docs/AgentLogs/MissingReferenceSweep_1402.json",
+    "compileSkip": "Docs/AgentLogs/CompileSkip_1402.json",
+    "parserFuzzer": "Docs/AgentLogs/YamlParserFuzzer_1402.json"
+  }
+}

@@ -133,14 +133,19 @@ namespace Hecton8.World
             public VaultGenerationHandle<byte> BiomeLayersHandle;
             public VaultGenerationHandle<Vector2> FlowDirectionsHandle;
             public VaultGenerationHandle<Vector3> FlowVectorsHandle;
+            public VaultGenerationHandle<byte> MatrixDirtyPagesHandle;
+            public VaultGenerationHandle<byte> MetadataDirtyPagesHandle;
             public int Capacity;
+            public int DirtyPageCapacity;
             public bool IsCreated => MatricesHandle.BufferID != 0u ||
                                      MetadataHandle.BufferID != 0u ||
                                      TypesHandle.BufferID != 0u ||
                                      SemanticTypesHandle.BufferID != 0u ||
                                      BiomeLayersHandle.BufferID != 0u ||
                                      FlowDirectionsHandle.BufferID != 0u ||
-                                     FlowVectorsHandle.BufferID != 0u;
+                                     FlowVectorsHandle.BufferID != 0u ||
+                                     MatrixDirtyPagesHandle.BufferID != 0u ||
+                                     MetadataDirtyPagesHandle.BufferID != 0u;
 
             public void Dispose()
             {
@@ -156,7 +161,10 @@ namespace Hecton8.World
                 BiomeLayersHandle = default;
                 FlowDirectionsHandle = default;
                 FlowVectorsHandle = default;
+                MatrixDirtyPagesHandle = default;
+                MetadataDirtyPagesHandle = default;
                 Capacity = 0;
+                DirtyPageCapacity = 0;
             }
         }
 

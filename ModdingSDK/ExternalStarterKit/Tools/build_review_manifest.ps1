@@ -78,11 +78,20 @@ Get-ChildItem -LiteralPath $rootFull -Recurse -File | ForEach-Object {
 }
 
 $orderedFiles = @($files | Sort-Object -Property Path)
+$authoring = Get-Content -Raw -LiteralPath (Join-StarterPath $rootFull 'mod.h8manifest.json') | ConvertFrom-Json
 $runtime = Get-Content -Raw -LiteralPath (Join-StarterPath $rootFull 'mod.json') | ConvertFrom-Json
 $manifest = [pscustomobject][ordered]@{
     Schema = 'hecton8.external_review_manifest.v1'
     Runtime = 'envelope-only'
     RootId = [string]$runtime.Id
+    Identity = [pscustomobject][ordered]@{
+        Id = [string]$runtime.Id
+        DisplayName = [string]$authoring.DisplayName
+        Author = [string]$runtime.Author
+        Version = [string]$runtime.Version
+        RequiredAPIVersion = [int]$runtime.RequiredAPIVersion
+        ModPriority = [int]$runtime.ModPriority
+    }
     FileCount = $orderedFiles.Count
     TotalBytes = $totalBytes
     Limits = [pscustomobject][ordered]@{

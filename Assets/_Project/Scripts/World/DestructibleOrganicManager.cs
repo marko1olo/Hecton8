@@ -4932,22 +4932,8 @@ namespace Hecton8.World
                     nextHarvestDescriptorIndexByFloraTemplateIndex[i] = -1;
             }
 
-            if (!vault.TryLockBuffer(OrganicTemplateDescriptorsBufferId, OrganicVaultSystemId))
-            {
-                _templateCacheReady = canPreserveExistingCache;
-                return;
-            }
-
-            bool descriptorLockHeld = true;
-            if (!vault.TryLockBuffer(OrganicLootEntriesBufferId, OrganicVaultSystemId))
-            {
-                vault.TryUnlockBuffer(OrganicTemplateDescriptorsBufferId, OrganicVaultSystemId);
-                _templateCacheReady = canPreserveExistingCache;
-                return;
-            }
-
-            bool lootLockHeld = true;
-            bool cacheBuilt = false;
+            HarvestableTemplate.RuntimeDescriptor[] descriptorScratch = new HarvestableTemplate.RuntimeDescriptor[descriptorCapacity]; // COLD ALLOC: RuntimeDescriptor[templateCount] - prebuilt descriptor payload copied into vault under short lock - owner: DestructibleOrganicManager
+            HarvestableTemplate.LootRuntimeEntry[] lootEntryScratch = new HarvestableTemplate.LootRuntimeEntry[lootCapacity]; // COLD ALLOC: LootRuntimeEntry[lootCount] - prebuilt loot payload copied into vault under short lock - owner: DestructibleOrganicManager
             int descriptorWriteIndex = 0;
             int lootWriteIndex = 0;
             NativeList<HarvestableTemplate.LootRuntimeEntry> lootScratch =
@@ -4959,6 +4945,120 @@ namespace Hecton8.World
                 NativeAllocationLifetime.Temp);
             try
             {
+                if (hasFloraTemplates)
+                {
+                    for (int i = 0; i < floraTemplates.Length; i++)
+                    {
+                        FloraDataTemplate floraTemplate = floraTemplates[i];
+                        HarvestableTemplate template = floraTemplate != null ? floraTemplate.HarvestTemplate : null;
+                        if (floraTemplate == null || template == null)
+                            continue;
+
+                        int lootStartIndex = lootWriteIndex;
+                        lootScratch.Clear();
+                        template.CopyLootTableNonAlloc(lootScratch);
+                        for (int lootIndex = 0; lootIndex < lootScratch.Length && lootWriteIndex < lootEntryScratch.Length; lootIndex++)
+                        {
+                            lootEntryScratch[lootWriteIndex] = lootScratch[lootIndex];
+                            lootWriteIndex++;
+                        }
+
+                        int copiedLootCount = lootWriteIndex - lootStartIndex;
+                        if (descriptorWriteIndex >= descriptorScratch.Length)
+                            continue;
+
+                        HarvestableTemplate.RuntimeDescriptor descriptor = template.BuildRuntimeDescriptor(lootStartIndex);
+                        FloraDataTemplate.RuntimeDescriptor floraRuntimeDescriptor = floraTemplate.BuildRuntimeDescriptor();
+                        descriptor.StableHashId = floraRuntimeDescriptor.StableHashId;
+                        descriptor.BaseHealth = floraTemplate.MaxHealth;
+                        descriptor.LootCount = (byte)math.min(byte.MaxValue, copiedLootCount);
+                        descriptorScratch[descriptorWriteIndex] = descriptor;
+                        nextDescriptorHarvestTemplates[descriptorWriteIndex] = template;
+                        nextFloraCategoryByDescriptorIndex[descriptorWriteIndex] = (byte)floraTemplate.Category;
+                        nextAudioMaterialByDescriptorIndex[descriptorWriteIndex] = floraTemplate.AudioMaterialID;
+                        nextGrowthTimeSecondsByDescriptorIndex[descriptorWriteIndex] = floraTemplate.GrowthTimeSeconds;
+                        nextSporeAcousticEmitterByDescriptorIndex[descriptorWriteIndex] = floraTemplate.EmitsMatureSporeAcoustic ? (byte)1 : (byte)0;
+                        nextSporeAcousticClipByDescriptorIndex[descriptorWriteIndex] = floraTemplate.MatureSporeAcousticClip;
+                        nextSporePulseFrequencyByDescriptorIndex[descriptorWriteIndex] = floraTemplate.PulseFrequency;
+                        nextSporeAcousticVolumeByDescriptorIndex[descriptorWriteIndex] = floraTemplate.MatureSporeAcousticVolume;
+                        nextHarvestDescriptorIndexByFloraTemplateIndex[i] = descriptorWriteIndex;
+
+                        int materialIndex = descriptor.MaterialClassId;
+                        if ((uint)materialIndex < (uint)nextTemplateIndexByMaterialClass.Length && nextTemplateIndexByMaterialClass[materialIndex] < 0)
+                            nextTemplateIndexByMaterialClass[materialIndex] = descriptorWriteIndex;
+
+                        descriptorWriteIndex++;
+                    }
+                }
+                else if (harvestTemplates != null)
+                {
+                    for (int i = 0; i < harvestTemplates.Length; i++)
+                    {
+                        HarvestableTemplate template = harvestTemplates[i];
+                        if (template == null)
+                            continue;
+
+                        int lootStartIndex = lootWriteIndex;
+                        lootScratch.Clear();
+                        template.CopyLootTableNonAlloc(lootScratch);
+                        for (int lootIndex = 0; lootIndex < lootScratch.Length && lootWriteIndex < lootEntryScratch.Length; lootIndex++)
+                        {
+                            lootEntryScratch[lootWriteIndex] = lootScratch[lootIndex];
+                            lootWriteIndex++;
+                        }
+
+                        int copiedLootCount = lootWriteIndex - lootStartIndex;
+                        if (descriptorWriteIndex >= descriptorScratch.Length)
+                            continue;
+
+                        HarvestableTemplate.RuntimeDescriptor descriptor = template.BuildRuntimeDescriptor(lootStartIndex);
+                        descriptor.LootCount = (byte)math.min(byte.MaxValue, copiedLootCount);
+                        descriptorScratch[descriptorWriteIndex] = descriptor;
+                        nextDescriptorHarvestTemplates[descriptorWriteIndex] = template;
+                        nextFloraCategoryByDescriptorIndex[descriptorWriteIndex] = (byte)InferCategoryFromMaterialClass(template.TemplateMaterialClass);
+                        nextGrowthTimeSecondsByDescriptorIndex[descriptorWriteIndex] = 480f;
+
+                        int materialIndex = descriptor.MaterialClassId;
+                        if ((uint)materialIndex < (uint)nextTemplateIndexByMaterialClass.Length && nextTemplateIndexByMaterialClass[materialIndex] < 0)
+                            nextTemplateIndexByMaterialClass[materialIndex] = descriptorWriteIndex;
+
+                        descriptorWriteIndex++;
+                    }
+                }
+            }
+            finally
+            {
+                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, TemplateLootBuildScratchLabel);
+
+                if (lootScratch.IsCreated)
+                    lootScratch.Dispose();
+            }
+
+            bool cacheBuilt = descriptorWriteIndex > 0;
+            if (!cacheBuilt)
+            {
+                _templateCacheReady = canPreserveExistingCache;
+                return;
+            }
+
+            if (!vault.TryLockBuffer(OrganicTemplateDescriptorsBufferId, OrganicVaultSystemId))
+            {
+                _templateCacheReady = canPreserveExistingCache;
+                return;
+            }
+
+            bool descriptorLockHeld = true;
+            bool lootLockHeld = false;
+            try
+            {
+                if (!vault.TryLockBuffer(OrganicLootEntriesBufferId, OrganicVaultSystemId))
+                {
+                    _templateCacheReady = canPreserveExistingCache;
+                    return;
+                }
+
+                lootLockHeld = true;
+
                 if (!_templateDescriptors.TryResolve(out NativeArray<HarvestableTemplate.RuntimeDescriptor> templateDescriptors) ||
                     !_lootEntries.TryResolve(out NativeArray<HarvestableTemplate.LootRuntimeEntry> lootEntries) ||
                     !templateDescriptors.IsCreated ||
@@ -4976,97 +5076,19 @@ namespace Hecton8.World
                     for (int i = 0; i < lootEntries.Length; i++)
                         lootEntries[i] = default;
 
-                    if (hasFloraTemplates)
-                    {
-                        for (int i = 0; i < floraTemplates.Length; i++)
-                        {
-                            FloraDataTemplate floraTemplate = floraTemplates[i];
-                            HarvestableTemplate template = floraTemplate != null ? floraTemplate.HarvestTemplate : null;
-                            if (floraTemplate == null || template == null)
-                                continue;
+                    int safeDescriptorCount = math.min(descriptorWriteIndex, templateDescriptors.Length);
+                    for (int i = 0; i < safeDescriptorCount; i++)
+                        templateDescriptors[i] = descriptorScratch[i];
 
-                            int lootStartIndex = lootWriteIndex;
-                            lootScratch.Clear();
-                            template.CopyLootTableNonAlloc(lootScratch);
-                            for (int lootIndex = 0; lootIndex < lootScratch.Length && lootWriteIndex < lootEntries.Length; lootIndex++)
-                            {
-                                lootEntries[lootWriteIndex] = lootScratch[lootIndex];
-                                lootWriteIndex++;
-                            }
-                            int copiedLootCount = lootWriteIndex - lootStartIndex;
+                    int safeLootCount = math.min(lootWriteIndex, lootEntries.Length);
+                    for (int i = 0; i < safeLootCount; i++)
+                        lootEntries[i] = lootEntryScratch[i];
 
-                            if (descriptorWriteIndex >= templateDescriptors.Length)
-                                continue;
-
-                            HarvestableTemplate.RuntimeDescriptor descriptor = template.BuildRuntimeDescriptor(lootStartIndex);
-                            FloraDataTemplate.RuntimeDescriptor floraRuntimeDescriptor = floraTemplate.BuildRuntimeDescriptor();
-                            descriptor.StableHashId = floraRuntimeDescriptor.StableHashId;
-                            descriptor.BaseHealth = floraTemplate.MaxHealth;
-                            descriptor.LootCount = (byte)math.min(byte.MaxValue, copiedLootCount);
-                            templateDescriptors[descriptorWriteIndex] = descriptor;
-                            nextDescriptorHarvestTemplates[descriptorWriteIndex] = template;
-                            nextFloraCategoryByDescriptorIndex[descriptorWriteIndex] = (byte)floraTemplate.Category;
-                            nextAudioMaterialByDescriptorIndex[descriptorWriteIndex] = floraTemplate.AudioMaterialID;
-                            nextGrowthTimeSecondsByDescriptorIndex[descriptorWriteIndex] = floraTemplate.GrowthTimeSeconds;
-                            nextSporeAcousticEmitterByDescriptorIndex[descriptorWriteIndex] = floraTemplate.EmitsMatureSporeAcoustic ? (byte)1 : (byte)0;
-                            nextSporeAcousticClipByDescriptorIndex[descriptorWriteIndex] = floraTemplate.MatureSporeAcousticClip;
-                            nextSporePulseFrequencyByDescriptorIndex[descriptorWriteIndex] = floraTemplate.PulseFrequency;
-                            nextSporeAcousticVolumeByDescriptorIndex[descriptorWriteIndex] = floraTemplate.MatureSporeAcousticVolume;
-                            nextHarvestDescriptorIndexByFloraTemplateIndex[i] = descriptorWriteIndex;
-
-                            int materialIndex = descriptor.MaterialClassId;
-                            if ((uint)materialIndex < (uint)nextTemplateIndexByMaterialClass.Length && nextTemplateIndexByMaterialClass[materialIndex] < 0)
-                                nextTemplateIndexByMaterialClass[materialIndex] = descriptorWriteIndex;
-
-                            descriptorWriteIndex++;
-                        }
-                    }
-                    else if (harvestTemplates != null)
-                    {
-                        for (int i = 0; i < harvestTemplates.Length; i++)
-                        {
-                            HarvestableTemplate template = harvestTemplates[i];
-                            if (template == null)
-                                continue;
-
-                            int lootStartIndex = lootWriteIndex;
-                            lootScratch.Clear();
-                            template.CopyLootTableNonAlloc(lootScratch);
-                            for (int lootIndex = 0; lootIndex < lootScratch.Length && lootWriteIndex < lootEntries.Length; lootIndex++)
-                            {
-                                lootEntries[lootWriteIndex] = lootScratch[lootIndex];
-                                lootWriteIndex++;
-                            }
-                            int copiedLootCount = lootWriteIndex - lootStartIndex;
-
-                            if (descriptorWriteIndex >= templateDescriptors.Length)
-                                continue;
-
-                            HarvestableTemplate.RuntimeDescriptor descriptor = template.BuildRuntimeDescriptor(lootStartIndex);
-                            descriptor.LootCount = (byte)math.min(byte.MaxValue, copiedLootCount);
-                            templateDescriptors[descriptorWriteIndex] = descriptor;
-                            nextDescriptorHarvestTemplates[descriptorWriteIndex] = template;
-                            nextFloraCategoryByDescriptorIndex[descriptorWriteIndex] = (byte)InferCategoryFromMaterialClass(template.TemplateMaterialClass);
-                            nextGrowthTimeSecondsByDescriptorIndex[descriptorWriteIndex] = 480f;
-
-                            int materialIndex = descriptor.MaterialClassId;
-                            if ((uint)materialIndex < (uint)nextTemplateIndexByMaterialClass.Length && nextTemplateIndexByMaterialClass[materialIndex] < 0)
-                                nextTemplateIndexByMaterialClass[materialIndex] = descriptorWriteIndex;
-
-                            descriptorWriteIndex++;
-                        }
-                    }
-
-                    cacheBuilt = descriptorWriteIndex > 0;
+                    cacheBuilt = safeDescriptorCount > 0;
                 }
             }
             finally
             {
-                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, TemplateLootBuildScratchLabel);
-
-                if (lootScratch.IsCreated)
-                    lootScratch.Dispose();
-
                 if (lootLockHeld)
                     vault.TryUnlockBuffer(OrganicLootEntriesBufferId, OrganicVaultSystemId);
 

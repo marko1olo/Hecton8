@@ -394,7 +394,7 @@ namespace Hecton8.Atmosphere
 
         private void CacheRegistryServicesCold()
         {
-            _dataVault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
             _powerGrid = GlobalRegistry.PowerGrid;
         }
 
@@ -423,9 +423,7 @@ namespace Hecton8.Atmosphere
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.DataVault:
-                    ReleaseNativeStateAliases(previousService as IDataVault ?? _dataVault, resetSeed: true);
-                    _dataVault = currentService as IDataVault;
-                    _pendingVaultRebind = true;
+                    RebindDataVaultForLifecycle(currentService as IDataVault, previousService as IDataVault);
                     if (!_coldTickRunning && TryFinalizeDeferredNativeDisposal())
                         RebindNativeStateAfterVaultReplacement();
                     break;
@@ -775,6 +773,25 @@ namespace Hecton8.Atmosphere
             ReleaseNativeStateAliases(_dataVault, resetSeed: true);
         }
 
+        private void RebindDataVaultForLifecycle(IDataVault currentVault, IDataVault releaseVaultOverride = null)
+        {
+            if (ReferenceEquals(_dataVault, currentVault))
+                return;
+
+            bool hadNativeState = HasNativeStateHandle();
+            ReleaseNativeStateAliases(_dataVault ?? releaseVaultOverride, resetSeed: true);
+            _dataVault = currentVault;
+            _pendingVaultRebind = currentVault != null && hadNativeState;
+        }
+
+        private bool HasNativeStateHandle()
+        {
+            return IsHandleCreated(in _frontHandle) ||
+                   IsHandleCreated(in _backHandle) ||
+                   IsHandleCreated(in _carbonDioxideByteLaneHandle) ||
+                   IsHandleCreated(in _blackBoxHandle);
+        }
+
         private void RebindNativeStateAfterVaultReplacement()
         {
             if (!TryFinalizeDeferredNativeDisposal())
@@ -870,10 +887,18 @@ namespace Hecton8.Atmosphere
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
             where T : struct
         {
-            if (IsHandleCreated(in handle))
+            if (IsOwnedVaultHandle(in handle))
                 vault.ReleaseBuffer(in handle);
 
             handle = default;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return IsHandleCreated(in handle) &&
+                   handle.Generation != 0u &&
+                   handle.SystemID == (uint)OwnerSystemId;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

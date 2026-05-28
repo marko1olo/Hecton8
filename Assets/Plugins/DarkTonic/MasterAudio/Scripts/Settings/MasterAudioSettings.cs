@@ -17,15 +17,18 @@ namespace DarkTonic.MasterAudio
         public bool BusesShownInNarrow = true;
         public bool ShowWelcomeWindowOnStart = true;
 
+#if UNITY_EDITOR
         static MasterAudioSettings()
         {
-            AssetNameToLoad = string.Format("{0}/{1}", AssetFolder, AssetName);
+            AssetNameToLoad = AssetFolder + "/" + AssetName;
             ResourceNameToLoad = ResourcePath;
-            FoldersToCreate = new System.Collections.Generic.List<string> {
+            // COLD ALLOC: List<string>[2] - editor-only singleton asset folder list - owner: MasterAudioSettings
+            FoldersToCreate = new System.Collections.Generic.List<string>(2) {
                 "Assets/Resources",
                 "Assets/Resources/MasterAudio"
             };
         }
+#endif
     }
 }
 /*! \endcond */

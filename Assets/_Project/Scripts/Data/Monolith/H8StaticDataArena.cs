@@ -8,9 +8,6 @@ using System.IO.MemoryMappedFiles;
 #endif
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-using System.Text;
-#endif
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
@@ -20,7 +17,7 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
-#if !UNITY_WEBGL
+#if !UNITY_WEBGL && !UNITY_ANDROID
 using UnityEngine.Networking;
 #endif
 
@@ -49,8 +46,15 @@ namespace Hecton8.Data
         private const uint PathFlagNativeFile = 16u;
         private const uint PathFlagStreamingUriRequiresAsync = 32u;
         private const uint PathFlagStreamingUriStagingCancelled = 64u;
+        private const uint PathFlagAndroidAssetManager = 128u;
+        private const uint PathFlagAndroidJavaAssetManager = 256u;
 #if UNITY_EDITOR
         private const int EditorHotReloadSnapshotChunkBytes = 64 * 1024;
+#endif
+#if UNITY_ANDROID && !UNITY_EDITOR
+        private const int AndroidAssetMissing = -4;
+        private const int AndroidPersistentPathUtf8Capacity = 1024;
+        private const int DataMonolithWriterReleaseRetryCount = 4;
 #endif
 #if (UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN) && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
         private const uint NativeGenericRead = 0x80000000u;
@@ -137,6 +141,13 @@ namespace Hecton8.Data
                 expectedAppVersionHash,
                 failIfMissing,
                 out status);
+#elif UNITY_ANDROID && !UNITY_EDITOR
+            return TryInitializeFromAndroidStreamingAssets(
+                vault,
+                expectedWorldSeed,
+                expectedAppVersionHash,
+                failIfMissing,
+                out status);
 #elif UNITY_WEBGL && !UNITY_EDITOR
             if (!IsLoaded)
                 _vault = vault;
@@ -218,6 +229,14 @@ namespace Hecton8.Data
                 failIfMissing,
                 out H8DataBlobLoadStatus status);
             return new H8DataBlobLoadResult(loaded, status);
+#elif UNITY_ANDROID && !UNITY_EDITOR
+            bool loaded = TryInitializeFromAndroidStreamingAssets(
+                vault,
+                expectedWorldSeed,
+                expectedAppVersionHash,
+                failIfMissing,
+                out H8DataBlobLoadStatus status);
+            return new H8DataBlobLoadResult(loaded, status);
 #elif UNITY_WEBGL && !UNITY_EDITOR
             if (!IsLoaded)
                 _vault = vault;
@@ -235,7 +254,7 @@ namespace Hecton8.Data
             uint pathFlags = 0u;
             if (!IsFilesystemPath(absolutePath))
             {
-#if !UNITY_WEBGL
+#if !UNITY_WEBGL && !UNITY_ANDROID
                 string stagedPath = await TryStageStreamingAssetsUriToCacheAsync(absolutePath, cancellationToken);
                 if (string.IsNullOrEmpty(stagedPath))
                 {
@@ -293,7 +312,7 @@ namespace Hecton8.Data
         }
 #endif
 
-#if !UNITY_WEBGL
+#if !UNITY_WEBGL && !UNITY_ANDROID
         private static async Awaitable<string> TryStageStreamingAssetsUriToCacheAsync(
             string streamingUri,
             CancellationToken cancellationToken)
@@ -692,7 +711,7 @@ namespace Hecton8.Data
                 return false;
             }
 
-            if (!TryRefreshArenaView(out NativeArray<byte> arena) || arena.Length < sourceBytes)
+            if (!TryAcquireArenaWriteView(out NativeArray<byte> arena))
             {
                 status = H8DataBlobLoadStatus.ReadFailed;
                 RecordFailureTelemetry(status, 0u);
@@ -700,9 +719,23 @@ namespace Hecton8.Data
                 return false;
             }
 
-            byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(arena);
-            _residentBlobBytes = sourceBytes;
-            if (!UnsafeMemoryCopyGuard.TryMemCpy(destination, sourceBytes, source, sourceBytes))
+            bool copied = false;
+            bool writeLockReleased = false;
+            try
+            {
+                if (arena.Length >= sourceBytes)
+                {
+                    byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(arena);
+                    _residentBlobBytes = sourceBytes;
+                    copied = UnsafeMemoryCopyGuard.TryMemCpy(destination, sourceBytes, source, sourceBytes);
+                }
+            }
+            finally
+            {
+                writeLockReleased = ReleaseArenaWriteView();
+            }
+
+            if (!copied || !writeLockReleased)
             {
                 status = H8DataBlobLoadStatus.ReadFailed;
                 RecordTelemetry(status, 0L, 0L, 0u);
@@ -1820,49 +1853,77 @@ namespace Hecton8.Data
             _lastReadPathFlags = pathFlags;
             try
             {
-                if (!TryRefreshArenaView(out NativeArray<byte> arena) || arena.Length < expectedBytes)
+                if (!TryAcquireArenaWriteView(out NativeArray<byte> arena))
                 {
                     status = H8DataBlobLoadStatus.ReadFailed;
                     return false;
                 }
 
-                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(arena);
-#if (UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN) && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
-                if (TryReadViaNativeFile(absolutePath, destination, arena.Length, expectedBytes))
+                bool readSucceeded = false;
+                bool writeLockReleased = false;
+                try
                 {
-                    long nativeElapsedTicks = Stopwatch.GetTimestamp() - readStart;
-                    _lastReadTicks = nativeElapsedTicks;
-                    _lastReadPathFlags = pathFlags | PathFlagNativeFile;
-                    return true;
-                }
+                    if (arena.Length < expectedBytes)
+                    {
+                        status = H8DataBlobLoadStatus.ReadFailed;
+                    }
+                    else
+                    {
+                        byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(arena);
+#if (UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN) && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
+                        if (TryReadViaNativeFile(absolutePath, destination, arena.Length, expectedBytes))
+                        {
+                            long nativeElapsedTicks = Stopwatch.GetTimestamp() - readStart;
+                            _lastReadTicks = nativeElapsedTicks;
+                            _lastReadPathFlags = pathFlags | PathFlagNativeFile;
+                            readSucceeded = true;
+                        }
 #endif
 #if !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
-                if (TryReadViaMemoryMappedFile(absolutePath, destination, arena.Length, expectedBytes))
-                {
-                    long mmfElapsedTicks = Stopwatch.GetTimestamp() - readStart;
-                    _lastReadTicks = mmfElapsedTicks;
-                    _lastReadPathFlags = pathFlags | PathFlagMemoryMappedFile;
-                    return true;
-                }
+                        if (!readSucceeded && TryReadViaMemoryMappedFile(absolutePath, destination, arena.Length, expectedBytes))
+                        {
+                            long mmfElapsedTicks = Stopwatch.GetTimestamp() - readStart;
+                            _lastReadTicks = mmfElapsedTicks;
+                            _lastReadPathFlags = pathFlags | PathFlagMemoryMappedFile;
+                            readSucceeded = true;
+                        }
 #endif
-                using FileStream stream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.Read, 64 * 1024, FileOptions.SequentialScan);
-                Span<byte> destinationBytes = new Span<byte>(destination, expectedBytes);
-                int totalRead = 0;
-                while (totalRead < expectedBytes)
-                {
-                    int read = stream.Read(destinationBytes.Slice(totalRead));
-                    if (read <= 0)
-                        break;
+                        if (!readSucceeded)
+                        {
+                            using FileStream stream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.Read, 64 * 1024, FileOptions.SequentialScan);
+                            Span<byte> destinationBytes = new Span<byte>(destination, expectedBytes);
+                            int totalRead = 0;
+                            while (totalRead < expectedBytes)
+                            {
+                                int read = stream.Read(destinationBytes.Slice(totalRead));
+                                if (read <= 0)
+                                    break;
 
-                    totalRead += read;
+                                totalRead += read;
+                            }
+
+                            readSucceeded = totalRead == expectedBytes && stream.Length == expectedBytes;
+                            status = readSucceeded ? H8DataBlobLoadStatus.None : H8DataBlobLoadStatus.ReadFailed;
+                            long streamElapsedTicks = Stopwatch.GetTimestamp() - readStart;
+                            _lastReadTicks = streamElapsedTicks;
+                            _lastReadPathFlags = pathFlags | PathFlagManagedFileFallback;
+                        }
+                    }
+                }
+                finally
+                {
+                    writeLockReleased = ReleaseArenaWriteView();
                 }
 
-                bool ok = totalRead == expectedBytes && stream.Length == expectedBytes;
-                status = ok ? H8DataBlobLoadStatus.None : H8DataBlobLoadStatus.ReadFailed;
-                long streamElapsedTicks = Stopwatch.GetTimestamp() - readStart;
-                _lastReadTicks = streamElapsedTicks;
-                _lastReadPathFlags = pathFlags | PathFlagManagedFileFallback;
-                return ok;
+                if (!writeLockReleased)
+                {
+                    status = H8DataBlobLoadStatus.ReadFailed;
+                    _lastReadTicks = Stopwatch.GetTimestamp() - readStart;
+                    _lastReadPathFlags = pathFlags;
+                    return false;
+                }
+
+                return readSucceeded;
             }
             catch (IOException)
             {
@@ -2026,6 +2087,278 @@ namespace Hecton8.Data
         {
             return ticks > Stopwatch.Frequency / 20L;
         }
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+        private static unsafe bool TryInitializeFromAndroidStreamingAssets(
+            IDataVault vault,
+            uint expectedWorldSeed,
+            uint expectedAppVersionHash,
+            bool failIfMissing,
+            out H8DataBlobLoadStatus status)
+        {
+            if (IsWriteLocked && IsLoaded)
+            {
+                status = H8DataBlobLoadStatus.ReadyLocked;
+                return false;
+            }
+
+            AdoptVaultForLoad(vault);
+            uint pathFlags = PathFlagVaultBacked | PathFlagAndroidAssetManager | PathFlagAndroidJavaAssetManager;
+            long readStart = Stopwatch.GetTimestamp();
+            bool arenaReplaced = false;
+            status = H8DataBlobLoadStatus.ReadFailed;
+            _lastReadTicks = 0L;
+            _lastReadPathFlags = pathFlags;
+
+            int assetNameCapacity = H8DataLayoutConstants.DefaultStreamingAssetsRelativePath.Length + 1;
+            byte* assetName = stackalloc byte[assetNameCapacity];
+            if (!TryWriteAndroidAssetName(assetName, assetNameCapacity))
+            {
+                RecordFailureTelemetry(status, pathFlags);
+                return false;
+            }
+
+            try
+            {
+                IntPtr unityPlayerClass = IntPtr.Zero;
+                IntPtr activity = IntPtr.Zero;
+                IntPtr activityClass = IntPtr.Zero;
+                IntPtr assetManager = IntPtr.Zero;
+                try
+                {
+                    unityPlayerClass = AndroidJNI.FindClass("com/unity3d/player/UnityPlayer");
+                    if (TryConsumePendingAndroidJniException() || unityPlayerClass == IntPtr.Zero)
+                    {
+                        RecordFailureTelemetry(status, pathFlags);
+                        return !failIfMissing && IsLoaded;
+                    }
+
+                    IntPtr activityField = AndroidJNI.GetStaticFieldID(
+                        unityPlayerClass,
+                        "currentActivity",
+                        "Landroid/app/Activity;");
+                    if (TryConsumePendingAndroidJniException() || activityField == IntPtr.Zero)
+                    {
+                        RecordFailureTelemetry(status, pathFlags);
+                        return !failIfMissing && IsLoaded;
+                    }
+
+                    activity = AndroidJNI.GetStaticObjectField(unityPlayerClass, activityField);
+                    if (TryConsumePendingAndroidJniException() || activity == IntPtr.Zero)
+                    {
+                        RecordFailureTelemetry(status, pathFlags);
+                        return !failIfMissing && IsLoaded;
+                    }
+
+                    activityClass = AndroidJNI.GetObjectClass(activity);
+                    if (TryConsumePendingAndroidJniException() || activityClass == IntPtr.Zero)
+                    {
+                        RecordFailureTelemetry(status, pathFlags);
+                        return !failIfMissing && IsLoaded;
+                    }
+
+                    IntPtr getAssetsMethod = AndroidJNI.GetMethodID(
+                        activityClass,
+                        "getAssets",
+                        "()Landroid/content/res/AssetManager;");
+                    if (TryConsumePendingAndroidJniException() || getAssetsMethod == IntPtr.Zero)
+                    {
+                        RecordFailureTelemetry(status, pathFlags);
+                        return !failIfMissing && IsLoaded;
+                    }
+
+                    assetManager = AndroidJNI.CallObjectMethodUnsafe(activity, getAssetsMethod, null);
+                    if (TryConsumePendingAndroidJniException() || assetManager == IntPtr.Zero)
+                    {
+                        RecordFailureTelemetry(status, pathFlags);
+                        return !failIfMissing && IsLoaded;
+                    }
+
+                    IntPtr javaVm = AndroidJNI.GetJavaVM();
+                    if (javaVm == IntPtr.Zero)
+                    {
+                        RecordFailureTelemetry(status, pathFlags);
+                        return !failIfMissing && IsLoaded;
+                    }
+
+                    int blobBytes = H8_GetAssetSize(javaVm, assetManager, assetName);
+                    if (blobBytes == AndroidAssetMissing)
+                    {
+                        status = H8DataBlobLoadStatus.Missing;
+                        if (failIfMissing)
+                            RecordFailureTelemetry(status, pathFlags);
+
+                        return !failIfMissing && IsLoaded;
+                    }
+
+                    if (blobBytes < H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes)
+                    {
+                        status = blobBytes >= 0 ? H8DataBlobLoadStatus.FileTooSmall : H8DataBlobLoadStatus.ReadFailed;
+                        RecordFailureTelemetry(status, pathFlags);
+                        return false;
+                    }
+
+                    if (blobBytes > MaxBlobBytes)
+                    {
+                        status = H8DataBlobLoadStatus.FileTooLarge;
+                        RecordFailureTelemetry(status, pathFlags);
+                        return false;
+                    }
+
+                    IDataVault activeVault = _vault;
+                    ShutdownArenaOnly();
+                    arenaReplaced = true;
+                    _vault = activeVault;
+                    if (!TryAllocateArena(blobBytes))
+                    {
+                        status = H8DataBlobLoadStatus.ReadFailed;
+                        RecordFailureTelemetry(status, pathFlags);
+                        return false;
+                    }
+
+                    if (!TryAcquireArenaWriteView(out NativeArray<byte> arena))
+                    {
+                        status = H8DataBlobLoadStatus.ReadFailed;
+                        RecordFailureTelemetry(status, pathFlags);
+                        ShutdownArenaOnly();
+                        return false;
+                    }
+
+                    bool loaded = false;
+                    bool writeLockReleased = false;
+                    try
+                    {
+                        if (arena.Length >= blobBytes)
+                        {
+                            byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(arena);
+                            _residentBlobBytes = blobBytes;
+                            loaded = H8_LoadAssetToPointer(javaVm, assetManager, assetName, destination, blobBytes);
+                        }
+                    }
+                    finally
+                    {
+                        writeLockReleased = ReleaseArenaWriteView();
+                    }
+
+                    if (!loaded || !writeLockReleased)
+                    {
+                        status = H8DataBlobLoadStatus.ReadFailed;
+                        _lastReadTicks = Stopwatch.GetTimestamp() - readStart;
+                        _lastReadPathFlags = pathFlags;
+                        RecordTelemetry(status, _lastReadTicks, _lastReadTicks, _lastReadPathFlags);
+                        DumpTelemetry(status);
+                        ShutdownArenaOnly();
+                        return false;
+                    }
+
+                    _lastReadTicks = Stopwatch.GetTimestamp() - readStart;
+                    _lastReadPathFlags = pathFlags;
+                    if (!TryValidateResidentArena(expectedWorldSeed, expectedAppVersionHash, out status))
+                    {
+                        RecordTelemetry(status, _lastReadTicks, _lastReadTicks, _lastReadPathFlags);
+                        DumpTelemetry(status);
+                        ShutdownArenaOnly();
+                        return false;
+                    }
+
+                    Volatile.Write(ref _loaded, 1);
+                    LockReady();
+                    status = H8DataBlobLoadStatus.Loaded;
+                    RecordTelemetry(status, _lastReadTicks, _lastReadTicks, _lastReadPathFlags);
+                    if (ExceedsTelemetryDumpThreshold(_lastReadTicks))
+                        DumpTelemetry(status);
+
+                    return true;
+                }
+                finally
+                {
+                    if (assetManager != IntPtr.Zero)
+                        AndroidJNI.DeleteLocalRef(assetManager);
+
+                    if (activityClass != IntPtr.Zero)
+                        AndroidJNI.DeleteLocalRef(activityClass);
+
+                    if (activity != IntPtr.Zero)
+                        AndroidJNI.DeleteLocalRef(activity);
+
+                    if (unityPlayerClass != IntPtr.Zero)
+                        AndroidJNI.DeleteLocalRef(unityPlayerClass);
+                }
+            }
+            catch (AndroidJavaException)
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+            }
+            catch (DllNotFoundException)
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+            }
+            catch (EntryPointNotFoundException)
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+            }
+            catch (InvalidOperationException)
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+            }
+
+            _lastReadTicks = Stopwatch.GetTimestamp() - readStart;
+            _lastReadPathFlags = pathFlags;
+            RecordTelemetry(status, _lastReadTicks, _lastReadTicks, _lastReadPathFlags);
+            DumpTelemetry(status);
+            if (arenaReplaced)
+                ShutdownArenaOnly();
+
+            return false;
+        }
+
+        private static bool TryConsumePendingAndroidJniException()
+        {
+            IntPtr exception = AndroidJNI.ExceptionOccurred();
+            if (exception == IntPtr.Zero)
+                return false;
+
+            AndroidJNI.ExceptionClear();
+            AndroidJNI.DeleteLocalRef(exception);
+            return true;
+        }
+
+        private static unsafe bool TryWriteAndroidAssetName(byte* destination, int capacity)
+        {
+            ReadOnlySpan<char> relativePath = H8DataLayoutConstants.DefaultStreamingAssetsRelativePath.AsSpan();
+            if (destination == null || capacity <= relativePath.Length)
+                return false;
+
+            for (int i = 0; i < relativePath.Length; i++)
+            {
+                char c = relativePath[i];
+                if (c > 0x7F)
+                    return false;
+
+                destination[i] = (byte)c;
+            }
+
+            destination[relativePath.Length] = 0;
+            return true;
+        }
+
+        [DllImport("__Internal", EntryPoint = "H8_GetAssetSize", CallingConvention = CallingConvention.Cdecl)]
+        private static unsafe extern int H8_GetAssetSize(IntPtr javaVm, IntPtr assetManager, byte* filename);
+
+        [DllImport("__Internal", EntryPoint = "H8_LoadAssetToPointer", CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private static unsafe extern bool H8_LoadAssetToPointer(IntPtr javaVm, IntPtr assetManager, byte* filename, void* destinationBuffer, int bufferSize);
+
+        [DllImport("__Internal", EntryPoint = "H8_WriteTelemetryDump", CallingConvention = CallingConvention.Cdecl)]
+        [return: MarshalAs(UnmanagedType.I1)]
+        private static unsafe extern bool H8_WriteTelemetryDump(
+            byte* persistentDataPath,
+            void* telemetryEntries,
+            int entryCount,
+            int entrySize,
+            uint status,
+            int cursor);
+#endif
 
 #if !UNITY_EDITOR && !DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
         private static unsafe bool TryInitializeFromWindowsPlayerStreamingAssets(
@@ -2202,43 +2535,75 @@ namespace Hecton8.Data
             uint pathFlags = PathFlagVaultBacked | PathFlagNativeFile;
             _lastReadTicks = 0L;
             _lastReadPathFlags = pathFlags;
-            if (!TryRefreshArenaView(out NativeArray<byte> arena) || arena.Length < expectedBytes)
+            if (!TryAcquireArenaWriteView(out NativeArray<byte> arena))
             {
                 status = H8DataBlobLoadStatus.ReadFailed;
                 return false;
             }
 
-            byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(arena);
-            IntPtr handle = CreateFileWNative(
-                path,
-                NativeGenericRead,
-                NativeFileShareRead,
-                IntPtr.Zero,
-                NativeOpenExisting,
-                NativeFileFlagSequentialScan,
-                IntPtr.Zero);
-            if (handle == IntPtr.Zero || handle == NativeInvalidHandleValue)
+            bool ok = false;
+            bool writeLockReleased = false;
+            try
+            {
+                if (arena.Length < expectedBytes)
+                {
+                    status = H8DataBlobLoadStatus.ReadFailed;
+                }
+                else
+                {
+                    byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(arena);
+                    IntPtr handle = CreateFileWNative(
+                        path,
+                        NativeGenericRead,
+                        NativeFileShareRead,
+                        IntPtr.Zero,
+                        NativeOpenExisting,
+                        NativeFileFlagSequentialScan,
+                        IntPtr.Zero);
+                    if (handle == IntPtr.Zero || handle == NativeInvalidHandleValue)
+                    {
+                        status = H8DataBlobLoadStatus.ReadFailed;
+                        _lastReadTicks = Stopwatch.GetTimestamp() - readStart;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            int totalRead = 0;
+                            while (totalRead < expectedBytes)
+                            {
+                                uint chunkBytes = (uint)Math.Min(1024 * 1024, expectedBytes - totalRead);
+                                if (!ReadFileNative(handle, destination + totalRead, chunkBytes, out uint read, IntPtr.Zero) || read == 0u)
+                                    break;
+
+                                totalRead += (int)read;
+                            }
+
+                            ok = totalRead == expectedBytes;
+                            status = ok ? H8DataBlobLoadStatus.None : H8DataBlobLoadStatus.ReadFailed;
+                            _lastReadTicks = Stopwatch.GetTimestamp() - readStart;
+                            _lastReadPathFlags = pathFlags;
+                        }
+                        finally
+                        {
+                            CloseHandleNative(handle);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                writeLockReleased = ReleaseArenaWriteView();
+            }
+
+            if (!writeLockReleased)
             {
                 status = H8DataBlobLoadStatus.ReadFailed;
                 _lastReadTicks = Stopwatch.GetTimestamp() - readStart;
+                _lastReadPathFlags = pathFlags;
                 return false;
             }
 
-            int totalRead = 0;
-            while (totalRead < expectedBytes)
-            {
-                uint chunkBytes = (uint)Math.Min(1024 * 1024, expectedBytes - totalRead);
-                if (!ReadFileNative(handle, destination + totalRead, chunkBytes, out uint read, IntPtr.Zero) || read == 0u)
-                    break;
-
-                totalRead += (int)read;
-            }
-
-            CloseHandleNative(handle);
-            bool ok = totalRead == expectedBytes;
-            status = ok ? H8DataBlobLoadStatus.None : H8DataBlobLoadStatus.ReadFailed;
-            _lastReadTicks = Stopwatch.GetTimestamp() - readStart;
-            _lastReadPathFlags = pathFlags;
             return ok;
         }
 
@@ -2489,6 +2854,12 @@ namespace Hecton8.Data
         {
             int capacity = ComputeArenaCapacity(blobBytes);
             IDataVault vault = _vault;
+            if (_arenaHandle.BufferID != 0u)
+            {
+                if (vault == null || !ReleaseVaultHandle(vault, ref _arenaHandle))
+                    return false;
+            }
+
             _arenaHandle = default;
 
             if (vault != null)
@@ -2499,7 +2870,7 @@ namespace Hecton8.Data
                     SystemID.CoreDataVault,
                     NativeArrayOptions.UninitializedMemory);
 
-                if (vault.TryResolveHandle(in _arenaHandle, out NativeArray<byte> arena) &&
+                if (vault.TryReadOnlyHandle(in _arenaHandle, out NativeArray<byte>.ReadOnly arena) &&
                     arena.IsCreated &&
                     arena.Length >= capacity)
                 {
@@ -2516,14 +2887,55 @@ namespace Hecton8.Data
                 _vault = vault;
         }
 
-        private static bool TryRefreshArenaView(out NativeArray<byte> arena)
+        private static bool TryAcquireArenaWriteView(out NativeArray<byte> arena)
         {
             arena = default;
             IDataVault vault = _vault;
-            if (vault == null || _arenaHandle.BufferID == 0u)
+            if (vault == null ||
+                _arenaHandle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in _arenaHandle, SystemID.CoreDataVault, out arena))
+            {
+                return false;
+            }
+
+            if (arena.IsCreated)
+                return true;
+
+            ReleaseWriteLockWithRetry(vault, in _arenaHandle, SystemID.CoreDataVault);
+            arena = default;
+            return false;
+        }
+
+        private static bool ReleaseArenaWriteView()
+        {
+            IDataVault vault = _vault;
+            if (vault != null && _arenaHandle.BufferID != 0u)
+                return ReleaseWriteLockWithRetry(vault, in _arenaHandle, SystemID.CoreDataVault);
+
+            return false;
+        }
+
+        private static bool ReleaseWriteLockWithRetry<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            SystemID owner) where T : struct
+        {
+            if (vault == null || handle.BufferID == 0u || owner == SystemID.Unknown)
                 return false;
 
-            return vault.TryResolveHandle(in _arenaHandle, out arena) && arena.IsCreated;
+#if UNITY_ANDROID && !UNITY_EDITOR
+            for (int attempt = 0; attempt < DataMonolithWriterReleaseRetryCount; attempt++)
+            {
+                if (vault.ReleaseWriteLock(in handle, owner))
+                    return true;
+
+                Thread.Yield();
+            }
+
+            return false;
+#else
+            return vault.ReleaseWriteLock(in handle, owner);
+#endif
         }
 
         private static bool TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly arena)
@@ -2543,7 +2955,7 @@ namespace Hecton8.Data
                 return false;
 
             if (_telemetryHandle.BufferID == 0u ||
-                !vault.TryResolveHandle(in _telemetryHandle, out NativeArray<H8DataMonolithTelemetryEntry> ring) ||
+                !vault.TryReadOnlyHandle(in _telemetryHandle, out NativeArray<H8DataMonolithTelemetryEntry>.ReadOnly ring) ||
                 !ring.IsCreated ||
                 ring.Length < H8DataLayoutConstants.TelemetryRingCapacity)
             {
@@ -2555,7 +2967,7 @@ namespace Hecton8.Data
             }
 
             if (_telemetryCursorHandle.BufferID == 0u ||
-                !vault.TryResolveHandle(in _telemetryCursorHandle, out NativeArray<int> cursor) ||
+                !vault.TryReadOnlyHandle(in _telemetryCursorHandle, out NativeArray<int>.ReadOnly cursor) ||
                 !cursor.IsCreated ||
                 cursor.Length < 1)
             {
@@ -2566,12 +2978,12 @@ namespace Hecton8.Data
                     NativeArrayOptions.ClearMemory);
             }
 
-            return TryResolveTelemetry(out _, out _);
+            return TryReadTelemetry(out _, out _);
         }
 
-        private static bool TryResolveTelemetry(
-            out NativeArray<H8DataMonolithTelemetryEntry> ring,
-            out NativeArray<int> cursor)
+        private static bool TryReadTelemetry(
+            out NativeArray<H8DataMonolithTelemetryEntry>.ReadOnly ring,
+            out NativeArray<int>.ReadOnly cursor)
         {
             ring = default;
             cursor = default;
@@ -2579,67 +2991,122 @@ namespace Hecton8.Data
             return vault != null &&
                    _telemetryHandle.BufferID != 0u &&
                    _telemetryCursorHandle.BufferID != 0u &&
-                   vault.TryResolveHandle(in _telemetryHandle, out ring) &&
+                   vault.TryReadOnlyHandle(in _telemetryHandle, out ring) &&
                    ring.IsCreated &&
                    ring.Length >= H8DataLayoutConstants.TelemetryRingCapacity &&
-                   vault.TryResolveHandle(in _telemetryCursorHandle, out cursor) &&
+                   vault.TryReadOnlyHandle(in _telemetryCursorHandle, out cursor) &&
                    cursor.IsCreated &&
                    cursor.Length >= 1;
+        }
+
+        private static bool TryAcquireTelemetryWriteViews(
+            out NativeArray<H8DataMonolithTelemetryEntry> ring,
+            out NativeArray<int> cursor)
+        {
+            ring = default;
+            cursor = default;
+            IDataVault vault = _vault;
+            if (vault == null ||
+                _telemetryHandle.BufferID == 0u ||
+                _telemetryCursorHandle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in _telemetryHandle, SystemID.CoreDataVault, out ring))
+            {
+                return false;
+            }
+
+            bool cursorLocked = false;
+            try
+            {
+                if (!vault.TryAcquireWriteLock(in _telemetryCursorHandle, SystemID.CoreDataVault, out cursor))
+                    return false;
+
+                cursorLocked = true;
+                return ring.IsCreated &&
+                       ring.Length >= H8DataLayoutConstants.TelemetryRingCapacity &&
+                       cursor.IsCreated &&
+                       cursor.Length >= 1;
+            }
+            finally
+            {
+                if (!cursorLocked || !ring.IsCreated || !cursor.IsCreated || ring.Length < H8DataLayoutConstants.TelemetryRingCapacity || cursor.Length < 1)
+                {
+                    if (cursorLocked)
+                        ReleaseWriteLockWithRetry(vault, in _telemetryCursorHandle, SystemID.CoreDataVault);
+
+                    ReleaseWriteLockWithRetry(vault, in _telemetryHandle, SystemID.CoreDataVault);
+                }
+            }
+        }
+
+        private static bool ReleaseTelemetryWriteViews()
+        {
+            IDataVault vault = _vault;
+            if (vault == null || _telemetryHandle.BufferID == 0u || _telemetryCursorHandle.BufferID == 0u)
+                return false;
+
+            bool cursorReleased = ReleaseWriteLockWithRetry(vault, in _telemetryCursorHandle, SystemID.CoreDataVault);
+            bool ringReleased = ReleaseWriteLockWithRetry(vault, in _telemetryHandle, SystemID.CoreDataVault);
+            return cursorReleased && ringReleased;
         }
 
         private static void RecordTelemetry(H8DataBlobLoadStatus status, long loadTicks, long ioTicks, uint pathFlags)
         {
             if (!EnsureTelemetry() ||
-                !TryResolveTelemetry(out NativeArray<H8DataMonolithTelemetryEntry> ring, out NativeArray<int> cursor))
+                !TryAcquireTelemetryWriteViews(out NativeArray<H8DataMonolithTelemetryEntry> ring, out NativeArray<int> cursor))
             {
                 return;
             }
 
-            int index = cursor[0];
-            if ((uint)index >= H8DataLayoutConstants.TelemetryRingCapacity)
-                index = 0;
+            try
+            {
+                int index = cursor[0];
+                if ((uint)index >= H8DataLayoutConstants.TelemetryRingCapacity)
+                    index = 0;
 
-            uint stateHash = ((uint)_residentBlobBytes * H8DataHash.Fnv1A32Prime) ^
-                             ((uint)_directory.SectionCount << 16) ^
-                             (uint)status;
-            H8DataMonolithTelemetryEntry entry = default;
-            entry.Checksum64 = _header.Checksum64;
-            entry.LoadTicks = loadTicks;
-            entry.IoTicks = ioTicks;
-            entry.FrameIndex = (uint)Interlocked.Increment(ref _telemetryFrame);
-            entry.BlobBytes = (uint)Math.Max(0, _residentBlobBytes);
-            entry.SectionCount = _directory.SectionCount;
-            entry.LoadStatus = (uint)status;
-            entry.PathFlags = pathFlags;
-            entry.StateHash = stateHash;
-            ring[index] = entry;
+                uint stateHash = ((uint)_residentBlobBytes * H8DataHash.Fnv1A32Prime) ^
+                                 ((uint)_directory.SectionCount << 16) ^
+                                 (uint)status;
+                H8DataMonolithTelemetryEntry entry = default;
+                entry.Checksum64 = _header.Checksum64;
+                entry.LoadTicks = loadTicks;
+                entry.IoTicks = ioTicks;
+                entry.FrameIndex = (uint)Interlocked.Increment(ref _telemetryFrame);
+                entry.BlobBytes = (uint)Math.Max(0, _residentBlobBytes);
+                entry.SectionCount = _directory.SectionCount;
+                entry.LoadStatus = (uint)status;
+                entry.PathFlags = pathFlags;
+                entry.StateHash = stateHash;
+                ring[index] = entry;
 
-            index++;
-            if (index >= H8DataLayoutConstants.TelemetryRingCapacity)
-                index = 0;
-            cursor[0] = index;
+                index++;
+                if (index >= H8DataLayoutConstants.TelemetryRingCapacity)
+                    index = 0;
+                cursor[0] = index;
+            }
+            finally
+            {
+                ReleaseTelemetryWriteViews();
+            }
         }
 
         private static void DumpTelemetry(H8DataBlobLoadStatus status)
         {
             if (!EnsureTelemetry() ||
-                !TryResolveTelemetry(out NativeArray<H8DataMonolithTelemetryEntry> ring, out NativeArray<int> cursor))
+                !TryReadTelemetry(out NativeArray<H8DataMonolithTelemetryEntry>.ReadOnly ring, out NativeArray<int>.ReadOnly cursor))
             {
                 return;
             }
 
 #if !UNITY_EDITOR && !DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
             WriteTelemetryDumpsWin32(status, ring, cursor[0]);
+#elif UNITY_ANDROID && !UNITY_EDITOR
+            WriteTelemetryDumpAndroid(status, ring, cursor[0]);
 #elif UNITY_EDITOR || DEVELOPMENT_BUILD
             try
             {
                 string folder = System.IO.Path.GetFullPath("Docs/AgentLogs");
                 System.IO.Directory.CreateDirectory(folder);
-                WriteTelemetryDump(System.IO.Path.Combine(folder, "Dump_SHINOBU_103.bin"), status, ring, cursor[0]);
-                WriteTelemetryDump(System.IO.Path.Combine(folder, "Dump_DATA_MONOLITH.bin"), status, ring, cursor[0]);
-                WriteTelemetryDump(System.IO.Path.Combine(folder, "Dump_X_002.bin"), status, ring, cursor[0]);
-                WriteTelemetryDump(System.IO.Path.Combine(folder, "Dump_1313.bin"), status, ring, cursor[0]);
-                WriteTelemetryDump(System.IO.Path.Combine(folder, "Dump_1330.bin"), status, ring, cursor[0]);
+                WriteTelemetryDump(System.IO.Path.Combine(folder, "Dump_1404.bin"), status, ring, cursor[0]);
             }
             catch (IOException)
             {
@@ -2662,15 +3129,122 @@ namespace Hecton8.Data
 #endif
         }
 
+#if UNITY_ANDROID && !UNITY_EDITOR
+        private static unsafe bool WriteTelemetryDumpAndroid(
+            H8DataBlobLoadStatus status,
+            NativeArray<H8DataMonolithTelemetryEntry>.ReadOnly ring,
+            int cursor)
+        {
+            string persistentDataPath = Application.persistentDataPath;
+            if (string.IsNullOrEmpty(persistentDataPath))
+                return false;
+
+            byte* persistentDataPathUtf8 = stackalloc byte[AndroidPersistentPathUtf8Capacity];
+            if (!TryWriteUtf8NullTerminated(
+                    persistentDataPath.AsSpan(),
+                    persistentDataPathUtf8,
+                    AndroidPersistentPathUtf8Capacity,
+                    out _))
+            {
+                return false;
+            }
+
+            void* ringPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
+            return H8_WriteTelemetryDump(
+                persistentDataPathUtf8,
+                ringPtr,
+                H8DataLayoutConstants.TelemetryRingCapacity,
+                UnsafeUtility.SizeOf<H8DataMonolithTelemetryEntry>(),
+                (uint)status,
+                cursor);
+        }
+
+        private static unsafe bool TryWriteUtf8NullTerminated(
+            ReadOnlySpan<char> source,
+            byte* destination,
+            int capacity,
+            out int byteCount)
+        {
+            byteCount = 0;
+            if (destination == null || capacity <= 0)
+                return false;
+
+            for (int i = 0; i < source.Length; i++)
+            {
+                uint codePoint = source[i];
+                if (codePoint == 0u)
+                    return false;
+
+                if (codePoint >= 0xD800u && codePoint <= 0xDBFFu)
+                {
+                    if (i + 1 >= source.Length)
+                        return false;
+
+                    uint low = source[++i];
+                    if (low < 0xDC00u || low > 0xDFFFu)
+                        return false;
+
+                    codePoint = 0x10000u + ((codePoint - 0xD800u) << 10) + (low - 0xDC00u);
+                }
+                else if (codePoint >= 0xDC00u && codePoint <= 0xDFFFu)
+                {
+                    return false;
+                }
+
+                if (codePoint <= 0x7Fu)
+                {
+                    if (byteCount + 1 >= capacity)
+                        return false;
+
+                    destination[byteCount++] = (byte)codePoint;
+                }
+                else if (codePoint <= 0x7FFu)
+                {
+                    if (byteCount + 2 >= capacity)
+                        return false;
+
+                    destination[byteCount++] = (byte)(0xC0u | (codePoint >> 6));
+                    destination[byteCount++] = (byte)(0x80u | (codePoint & 0x3Fu));
+                }
+                else if (codePoint <= 0xFFFFu)
+                {
+                    if (byteCount + 3 >= capacity)
+                        return false;
+
+                    destination[byteCount++] = (byte)(0xE0u | (codePoint >> 12));
+                    destination[byteCount++] = (byte)(0x80u | ((codePoint >> 6) & 0x3Fu));
+                    destination[byteCount++] = (byte)(0x80u | (codePoint & 0x3Fu));
+                }
+                else if (codePoint <= 0x10FFFFu)
+                {
+                    if (byteCount + 4 >= capacity)
+                        return false;
+
+                    destination[byteCount++] = (byte)(0xF0u | (codePoint >> 18));
+                    destination[byteCount++] = (byte)(0x80u | ((codePoint >> 12) & 0x3Fu));
+                    destination[byteCount++] = (byte)(0x80u | ((codePoint >> 6) & 0x3Fu));
+                    destination[byteCount++] = (byte)(0x80u | (codePoint & 0x3Fu));
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            destination[byteCount] = 0;
+            return true;
+        }
+#endif
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static void WriteTelemetryDump(
             string path,
             H8DataBlobLoadStatus status,
-            NativeArray<H8DataMonolithTelemetryEntry> ring,
+            NativeArray<H8DataMonolithTelemetryEntry>.ReadOnly ring,
             int cursor)
         {
             using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-            using BinaryWriter writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: false);
+            using BinaryWriter writer = new BinaryWriter(stream, System.Text.Encoding.UTF8, leaveOpen: false);
             writer.Write(0x4858444Du);
             writer.Write((uint)status);
             writer.Write(cursor);
@@ -2699,7 +3273,7 @@ namespace Hecton8.Data
 #if !UNITY_EDITOR && !DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
         private static unsafe void WriteTelemetryDumpsWin32(
             H8DataBlobLoadStatus status,
-            NativeArray<H8DataMonolithTelemetryEntry> ring,
+            NativeArray<H8DataMonolithTelemetryEntry>.ReadOnly ring,
             int cursor)
         {
             char* path = stackalloc char[NativePathCapacity];
@@ -2709,19 +3283,7 @@ namespace Hecton8.Data
             if (TryBuildCurrentDirectoryPath(path, NativePathCapacity, "Docs\\AgentLogs"))
                 CreateDirectoryWNative(path, IntPtr.Zero);
 
-            if (TryBuildCurrentDirectoryPath(path, NativePathCapacity, "Docs\\AgentLogs\\Dump_SHINOBU_103.bin"))
-                WriteTelemetryDumpWin32(path, status, ring, cursor);
-
-            if (TryBuildCurrentDirectoryPath(path, NativePathCapacity, "Docs\\AgentLogs\\Dump_DATA_MONOLITH.bin"))
-                WriteTelemetryDumpWin32(path, status, ring, cursor);
-
-            if (TryBuildCurrentDirectoryPath(path, NativePathCapacity, "Docs\\AgentLogs\\Dump_X_002.bin"))
-                WriteTelemetryDumpWin32(path, status, ring, cursor);
-
-            if (TryBuildCurrentDirectoryPath(path, NativePathCapacity, "Docs\\AgentLogs\\Dump_1313.bin"))
-                WriteTelemetryDumpWin32(path, status, ring, cursor);
-
-            if (TryBuildCurrentDirectoryPath(path, NativePathCapacity, "Docs\\AgentLogs\\Dump_1330.bin"))
+            if (TryBuildCurrentDirectoryPath(path, NativePathCapacity, "Docs\\AgentLogs\\Dump_1404.bin"))
                 WriteTelemetryDumpWin32(path, status, ring, cursor);
         }
 
@@ -2748,7 +3310,7 @@ namespace Hecton8.Data
         private static unsafe bool WriteTelemetryDumpWin32(
             char* path,
             H8DataBlobLoadStatus status,
-            NativeArray<H8DataMonolithTelemetryEntry> ring,
+            NativeArray<H8DataMonolithTelemetryEntry>.ReadOnly ring,
             int cursor)
         {
             IntPtr handle = CreateFileWNative(
@@ -2913,23 +3475,41 @@ namespace Hecton8.Data
             IDataVault vault = _vault;
             if (vault != null)
             {
-                ReleaseVaultHandle(vault, ref _arenaHandle);
-                ReleaseVaultHandle(vault, ref _telemetryHandle);
-                ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
+                _ = ReleaseVaultHandle(vault, ref _arenaHandle);
+                _ = ReleaseVaultHandle(vault, ref _telemetryHandle);
+                _ = ReleaseVaultHandle(vault, ref _telemetryCursorHandle);
             }
 
-            _arenaHandle = default;
-            _telemetryHandle = default;
-            _telemetryCursorHandle = default;
-            _vault = null;
+            if (_arenaHandle.BufferID == 0u &&
+                _telemetryHandle.BufferID == 0u &&
+                _telemetryCursorHandle.BufferID == 0u)
+            {
+                _vault = null;
+            }
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        private static bool ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
         {
-            if (handle.BufferID != 0u)
-                vault.ReleaseBuffer(in handle);
+            if (handle.BufferID == 0u)
+            {
+                handle = default;
+                return true;
+            }
 
-            handle = default;
+            if (vault.ReleaseBuffer(in handle))
+            {
+                handle = default;
+                return true;
+            }
+
+            if (ReleaseWriteLockWithRetry(vault, in handle, SystemID.CoreDataVault) &&
+                vault.ReleaseBuffer(in handle))
+            {
+                handle = default;
+                return true;
+            }
+
+            return false;
         }
     }
 }

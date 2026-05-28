@@ -919,6 +919,7 @@ namespace Hecton8.Gameplay
                 !views.TelemetryRing.IsCreated ||
                 views.TelemetryRing.Length == 0)
             {
+                UnlockCombatDamageVaultBuffersForJobs(CombatDamageVaultJobLockCount);
                 UnlockArmorVaultBuffersForJobs();
                 return;
             }
@@ -940,6 +941,7 @@ namespace Hecton8.Gameplay
             if ((entry.Flags & (ArmorTelemetryFlagsNanGuard | ArmorTelemetryFlagsOverBudget)) != 0)
                 DumpArmorTelemetryIfNeeded(views.TelemetryRing, entry);
 
+            UnlockCombatDamageVaultBuffersForJobs(CombatDamageVaultJobLockCount);
             UnlockArmorVaultBuffersForJobs();
             TryApplyPendingArmorVaultRebind();
         }
@@ -1006,23 +1008,14 @@ namespace Hecton8.Gameplay
             writer.Write(entry._pad1);
         }
 
-        private static void WriteSignalImpactAup(int detailIndex, double3 impactAup)
-        {
-            if (!TryResolveArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: false) ||
-                !views.SignalImpactAups.IsCreated ||
-                (uint)detailIndex >= (uint)views.SignalImpactAups.Length)
-                return;
-
-            views.SignalImpactAups[detailIndex] = math.select(double3.zero, impactAup, new bool3(IsFinite(impactAup)));
-        }
-
         private static void SeedTargetArmorProfile(
             int slot,
             int targetId,
             CombatEntityKind kind,
             CombatArmorClass armorClass,
             float safeMaxHealth,
-            float armorValue)
+            float armorValue,
+            float targetHeight)
         {
             if (!TryResolveArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: true) ||
                 !CanUseArmorTargetSlot(in views, slot))
@@ -1046,8 +1039,7 @@ namespace Hecton8.Gameplay
 
             views.TargetArmorProfiles[slot] = profile;
             views.TargetRotations[slot] = quaternion.identity;
-            views.TargetHalfExtents[slot] = ResolveArmorHalfExtents(
-                _targetHeights.IsCreated && (uint)slot < (uint)_targetHeights.Length ? _targetHeights[slot] : 1f);
+            views.TargetHalfExtents[slot] = ResolveArmorHalfExtents(targetHeight);
             views.TargetRootAups[slot] = double3.zero;
         }
 
@@ -1102,17 +1094,20 @@ namespace Hecton8.Gameplay
                    (uint)slot < (uint)views.TargetHalfExtents.Length;
         }
 
-        private static bool CanUseArmorEvaluatorTargetBuffers(in ArmorPenetrationVaultViews views, int targetCount)
+        private static bool CanUseArmorEvaluatorTargetBuffers(
+            ref CombatDamageVaultViews damageViews,
+            in ArmorPenetrationVaultViews views,
+            int targetCount)
         {
             return targetCount > 0 &&
-                   _instanceIds.IsCreated &&
-                   (uint)targetCount <= (uint)_instanceIds.Length &&
-                   _targetFlags.IsCreated &&
-                   (uint)targetCount <= (uint)_targetFlags.Length &&
-                   _targetHeights.IsCreated &&
-                   (uint)targetCount <= (uint)_targetHeights.Length &&
-                   _damageArmorLut.IsCreated &&
-                   _damageArmorLut.Length >= DamageArmorLutLength &&
+                   damageViews.InstanceIds.IsCreated &&
+                   (uint)targetCount <= (uint)damageViews.InstanceIds.Length &&
+                   damageViews.TargetFlags.IsCreated &&
+                   (uint)targetCount <= (uint)damageViews.TargetFlags.Length &&
+                   damageViews.TargetHeights.IsCreated &&
+                   (uint)targetCount <= (uint)damageViews.TargetHeights.Length &&
+                   damageViews.DamageArmorLut.IsCreated &&
+                   damageViews.DamageArmorLut.Length >= DamageArmorLutLength &&
                    views.TargetRootAups.IsCreated &&
                    (uint)targetCount <= (uint)views.TargetRootAups.Length &&
                    views.TargetRotations.IsCreated &&
@@ -1150,7 +1145,8 @@ namespace Hecton8.Gameplay
                 !views.TargetRotations.IsCreated ||
                 !views.TargetHalfExtents.IsCreated ||
                 _receiverTransforms == null ||
-                !_targetHeights.IsCreated)
+                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews damageViews, ensure: false) ||
+                !damageViews.TargetHeights.IsCreated)
             {
                 return;
             }
@@ -1162,7 +1158,7 @@ namespace Hecton8.Gameplay
                 math.min(
                     _receiverTransforms.Length,
                     math.min(
-                        _targetHeights.Length,
+                        damageViews.TargetHeights.Length,
                         math.min(views.TargetRootAups.Length, math.min(views.TargetRotations.Length, views.TargetHalfExtents.Length)))));
             for (int i = 0; i < count; i++)
             {
@@ -1171,7 +1167,7 @@ namespace Hecton8.Gameplay
                 {
                     views.TargetRootAups[i] = double3.zero;
                     views.TargetRotations[i] = quaternion.identity;
-                    views.TargetHalfExtents[i] = ResolveArmorHalfExtents(_targetHeights[i]);
+                    views.TargetHalfExtents[i] = ResolveArmorHalfExtents(damageViews.TargetHeights[i]);
                     continue;
                 }
 
@@ -1186,7 +1182,7 @@ namespace Hecton8.Gameplay
                     quaternion.identity.value,
                     q.value * math.rsqrt(math.max(lengthSq, 0.0001f)),
                     new bool4(validRotation)));
-                views.TargetHalfExtents[i] = ResolveArmorHalfExtents(_targetHeights[i]);
+                views.TargetHalfExtents[i] = ResolveArmorHalfExtents(damageViews.TargetHeights[i]);
             }
         }
 
@@ -1924,7 +1920,8 @@ namespace Hecton8.Gameplay
 
         private static unsafe bool ApplyCsvProfileToTargets(ref ArmorPenetrationVaultViews views, in ArmorProfileDTO profile)
         {
-            if (!views.TargetArmorProfiles.IsCreated)
+            if (!views.TargetArmorProfiles.IsCreated ||
+                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews damageViews, ensure: false))
                 return false;
 
             bool applied = false;
@@ -1936,9 +1933,9 @@ namespace Hecton8.Gameplay
 
                 ArmorProfileDTO merged = profile;
                 if (!(merged.BaseHealth > 0f))
-                    merged.BaseHealth = _maxHealth.IsCreated && (uint)i < (uint)_maxHealth.Length ? _maxHealth[i] : 1f;
+                    merged.BaseHealth = damageViews.MaxHealth.IsCreated && (uint)i < (uint)damageViews.MaxHealth.Length ? damageViews.MaxHealth[i] : 1f;
                 if (!(merged.BaseArmor >= 0f))
-                    merged.BaseArmor = _armorValues.IsCreated && (uint)i < (uint)_armorValues.Length ? _armorValues[i] : 0f;
+                    merged.BaseArmor = damageViews.ArmorValues.IsCreated && (uint)i < (uint)damageViews.ArmorValues.Length ? damageViews.ArmorValues[i] : 0f;
                 views.TargetArmorProfiles[i] = merged;
                 applied = true;
             }
@@ -1953,6 +1950,7 @@ namespace Hecton8.Gameplay
             EnsureInitialized();
             if (_damageJobScheduled ||
                 _targetCount <= 0 ||
+                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews damageViews, ensure: false) ||
                 !TryResolveArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: true, includeMock: true) ||
                 !views.MockRequests.IsCreated)
             {
@@ -1965,7 +1963,7 @@ namespace Hecton8.Gameplay
             {
                 RefreshArmorTargetSnapshots(ref views);
                 int targetCount = math.max(0, _targetCount);
-                if (!CanUseArmorEvaluatorTargetBuffers(in views, targetCount))
+                if (!CanUseArmorEvaluatorTargetBuffers(ref damageViews, in views, targetCount))
                     return false;
 
                 if (!TryLockArmorVaultBuffersForJobs())
@@ -1986,7 +1984,7 @@ namespace Hecton8.Gameplay
                     Count = count,
                     TargetCount = targetCount,
                     SourceHash = ArmorSourceHash,
-                    InstanceIds = _instanceIds,
+                    InstanceIds = damageViews.InstanceIds,
                     TargetRootAups = views.TargetRootAups,
                     TargetHalfExtents = views.TargetHalfExtents,
                     Requests = views.MockRequests,
@@ -2027,7 +2025,8 @@ namespace Hecton8.Gameplay
             EnsureInitialized();
             if (_damageJobScheduled ||
                 _targetCount <= 0 ||
-                !_damageArmorLut.IsCreated ||
+                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews damageViews, ensure: false) ||
+                !damageViews.DamageArmorLut.IsCreated ||
                 !TryResolveArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: true, includeEvaluatorTorture: true) ||
                 !views.TargetArmorProfiles.IsCreated ||
                 !views.TortureRequests.IsCreated ||
@@ -2045,7 +2044,7 @@ namespace Hecton8.Gameplay
             {
                 RefreshArmorTargetSnapshots(ref views);
                 int targetCount = math.max(0, _targetCount);
-                if (!CanUseArmorEvaluatorTargetBuffers(in views, targetCount))
+                if (!CanUseArmorEvaluatorTargetBuffers(ref damageViews, in views, targetCount))
                     return false;
 
                 if (!TryLockArmorVaultBuffersForJobs())
@@ -2074,7 +2073,7 @@ namespace Hecton8.Gameplay
                     Count = count,
                     TargetCount = targetCount,
                     SourceHash = ArmorSourceHash,
-                    InstanceIds = _instanceIds,
+                    InstanceIds = damageViews.InstanceIds,
                     TargetRootAups = views.TargetRootAups,
                     TargetHalfExtents = views.TargetHalfExtents,
                     Requests = views.TortureRequests,
@@ -2090,13 +2089,13 @@ namespace Hecton8.Gameplay
                 {
                     Count = count,
                     TargetCount = targetCount,
-                    TargetFlags = _targetFlags,
-                    TargetHeights = _targetHeights,
+                    TargetFlags = damageViews.TargetFlags,
+                    TargetHeights = damageViews.TargetHeights,
                     TargetRootAups = views.TargetRootAups,
                     TargetRotations = views.TargetRotations,
                     TargetHalfExtents = views.TargetHalfExtents,
                     TargetArmorProfiles = views.TargetArmorProfiles,
-                    DamageArmorLut = _damageArmorLut,
+                    DamageArmorLut = damageViews.DamageArmorLut,
                     ArmorTuning = tuning,
                     Requests = views.TortureRequests,
                     Details = views.TortureDetails,

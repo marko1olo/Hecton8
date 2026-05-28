@@ -548,6 +548,41 @@ namespace Hecton8.World
             ProducerHandle = producerHandle;
             HasExplicitBoundsFlag = hasExplicitBounds ? (byte)1 : (byte)0;
             DrawBounds = drawBounds;
+            ContentRevision = 0;
+            MatrixDirtyPages = default;
+            InstanceDataDirtyPages = default;
+            DirtyPageSize = 0;
+            DirtyPageFlags = 0;
+        }
+
+        /// <summary>
+        /// Creates one native read token with optional dirty-page metadata for partial GPU uploads.
+        /// </summary>
+        public HectonIndirectVegetationNativeReadBuffer(
+            NativeArray<Matrix4x4> instanceMatrices,
+            NativeArray<HectonVegetationInstanceData> instanceData,
+            int instanceCount,
+            int bufferIndex,
+            JobHandle producerHandle,
+            bool hasExplicitBounds,
+            Bounds drawBounds,
+            int contentRevision,
+            NativeArray<byte> matrixDirtyPages,
+            NativeArray<byte> instanceDataDirtyPages,
+            int dirtyPageSize)
+        {
+            InstanceMatrices = instanceMatrices;
+            InstanceData = instanceData;
+            InstanceCount = instanceCount;
+            BufferIndex = bufferIndex;
+            ProducerHandle = producerHandle;
+            HasExplicitBoundsFlag = hasExplicitBounds ? (byte)1 : (byte)0;
+            DrawBounds = drawBounds;
+            ContentRevision = contentRevision;
+            MatrixDirtyPages = matrixDirtyPages;
+            InstanceDataDirtyPages = instanceDataDirtyPages;
+            DirtyPageSize = dirtyPageSize;
+            DirtyPageFlags = (byte)((matrixDirtyPages.IsCreated ? 1 : 0) | (instanceDataDirtyPages.IsCreated ? 2 : 0));
         }
 
         /// <summary>Native matrix payload exported by the producer.</summary>
@@ -571,6 +606,21 @@ namespace Hecton8.World
         /// <summary>Explicit world-space bounds for the acquired read token.</summary>
         public readonly Bounds DrawBounds;
 
+        /// <summary>Producer-owned content revision. Changes even when front/back index returns to the same value.</summary>
+        public readonly int ContentRevision;
+
+        /// <summary>Optional dirty page flags for matrix uploads. Non-zero page entries require upload.</summary>
+        public readonly NativeArray<byte> MatrixDirtyPages;
+
+        /// <summary>Optional dirty page flags for instance metadata uploads. Non-zero page entries require upload.</summary>
+        public readonly NativeArray<byte> InstanceDataDirtyPages;
+
+        /// <summary>Number of instances covered by one dirty page when page flags are supplied.</summary>
+        public readonly int DirtyPageSize;
+
+        /// <summary>Bit 0 = matrix dirty pages supplied, bit 1 = metadata dirty pages supplied.</summary>
+        public readonly byte DirtyPageFlags;
+
         /// <summary>True when the token contains enough data for upload.</summary>
         public static bool IsValid(in HectonIndirectVegetationNativeReadBuffer readBuffer)
         {
@@ -585,6 +635,12 @@ namespace Hecton8.World
         public static bool HasExplicitBounds(in HectonIndirectVegetationNativeReadBuffer readBuffer)
         {
             return readBuffer.HasExplicitBoundsFlag != 0;
+        }
+
+        /// <summary>True when the producer supplied any dirty-page lane.</summary>
+        public static bool HasDirtyPages(in HectonIndirectVegetationNativeReadBuffer readBuffer)
+        {
+            return readBuffer.DirtyPageFlags != 0 && readBuffer.DirtyPageSize > 0;
         }
     }
 

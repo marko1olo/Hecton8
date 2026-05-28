@@ -376,7 +376,9 @@ namespace Hecton8.World
                 return;
 
             ThreatPropagationPendingJob pending = _threatPropagationJob;
-            pending.Handle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete))
+                return;
+
             try
             {
                 bool permanentEchoChanged = InvalidateChunksForNewPermanentEchoes(pending.PreviousEchoFlags, pending.EchoOutput);
@@ -429,7 +431,9 @@ namespace Hecton8.World
                 return;
 
             FlowFieldPendingJob pending = _flowFieldJob;
-            pending.Handle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete))
+                return;
+
             try
             {
                 if (!TryCopyVegetationMemorySnapshot(
@@ -462,7 +466,9 @@ namespace Hecton8.World
                 return;
 
             ThermalGridPendingJob pending = _thermalGridJob;
-            pending.Handle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete))
+                return;
+
             try
             {
                 bool biolumeSurge = pending.CanComparePreviousFlowVolume &&
@@ -508,6 +514,7 @@ namespace Hecton8.World
             H8Memory.Release(ref pending.ThreatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
             H8Memory.Release(ref pending.DensityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
             H8Memory.Release(ref pending.ArtificialStructures, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.PreviousThreat, VegetationMemorySovereigntyConstants.OwnerSystemId);
             H8Memory.Release(ref pending.PreviousEchoFlags, VegetationMemorySovereigntyConstants.OwnerSystemId);
             H8Memory.Release(ref pending.ThreatOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
             H8Memory.Release(ref pending.CompressedOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
@@ -522,6 +529,7 @@ namespace Hecton8.World
             H8Memory.Release(ref pending.FlowDensityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
             H8Memory.Release(ref pending.ThreatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
             H8Memory.Release(ref pending.NavSupportGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            H8Memory.Release(ref pending.ThreatGridSnapshot, VegetationMemorySovereigntyConstants.OwnerSystemId);
             H8Memory.Release(ref pending.FlowOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
             pending.Handle = default;
         }
@@ -664,6 +672,11 @@ namespace Hecton8.World
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
                 Allocator.TempJob,
                 NativeArrayOptions.UninitializedMemory);
+            NativeArray<float> previousThreat = H8Memory.Allocate<float>(
+                _ecosystemThreatGridCellCount,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
+                Allocator.TempJob,
+                NativeArrayOptions.UninitializedMemory);
             NativeArray<byte> voxelOutput = H8Memory.Allocate<byte>(
                 _ecosystemThreatVoxelCellCount,
                 VegetationMemorySovereigntyConstants.OwnerSystemId,
@@ -677,6 +690,8 @@ namespace Hecton8.World
                 echoOutput.Length < _ecosystemThreatGridCellCount ||
                 !previousEchoFlags.IsCreated ||
                 previousEchoFlags.Length < _ecosystemThreatGridCellCount ||
+                !previousThreat.IsCreated ||
+                previousThreat.Length < _ecosystemThreatGridCellCount ||
                 !voxelOutput.IsCreated ||
                 voxelOutput.Length < _ecosystemThreatVoxelCellCount)
             {
@@ -688,6 +703,7 @@ namespace Hecton8.World
                 H8Memory.Release(ref compressedOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
                 H8Memory.Release(ref echoOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
                 H8Memory.Release(ref previousEchoFlags, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref previousThreat, VegetationMemorySovereigntyConstants.OwnerSystemId);
                 H8Memory.Release(ref voxelOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
                 RecordVegetationMemoryTelemetry(
                     BufferID.VegetationEcosystemThreatGrid,
@@ -703,11 +719,12 @@ namespace Hecton8.World
                 return;
             }
 
+            NativeArray<float>.Copy(currentThreat, previousThreat, _ecosystemThreatGridCellCount);
             NativeArray<byte>.Copy(currentEchoFlags, previousEchoFlags, _ecosystemThreatGridCellCount);
 
             var job = new ThreatPropagationJob
             {
-                CurrentThreat = currentThreat,
+                CurrentThreat = previousThreat,
                 NextThreat = threatOutput,
                 NextThreatCompressed = compressedOutput,
                 CurrentEchoFlags = previousEchoFlags,
@@ -768,6 +785,7 @@ namespace Hecton8.World
                 ThreatAttractorGrid = threatAttractorGrid,
                 DensityGrid = densityGrid,
                 ArtificialStructures = artificialStructures,
+                PreviousThreat = previousThreat,
                 ThreatOutput = threatOutput,
                 CompressedOutput = compressedOutput,
                 EchoOutput = echoOutput,
@@ -981,6 +999,25 @@ namespace Hecton8.World
                 return;
             }
 
+            NativeArray<float> threatGridSnapshot = H8Memory.Allocate<float>(
+                _ecosystemThreatGridCellCount,
+                VegetationMemorySovereigntyConstants.OwnerSystemId,
+                Allocator.TempJob,
+                NativeArrayOptions.UninitializedMemory);
+            if (!threatGridSnapshot.IsCreated ||
+                threatGridSnapshot.Length < _ecosystemThreatGridCellCount)
+            {
+                H8Memory.Release(ref flowChunks, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref flowDensityGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref threatAttractorGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref navSupportGrid, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref flowOutput, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                H8Memory.Release(ref threatGridSnapshot, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                return;
+            }
+
+            NativeArray<float>.Copy(currentThreatGrid, threatGridSnapshot, _ecosystemThreatGridCellCount);
+
             Vector3 playerPosition = hasPlayerRuntimePosition ? playerRuntimePosition : flowCenter;
             Vector3 hotspotPosition = _currentThreatHotspotLevel >= flowFieldHotspotMinimumThreat
                 ? _currentThreatHotspotPosition
@@ -993,7 +1030,7 @@ namespace Hecton8.World
 
             var job = new BuildAbyssalFlowFieldJob
             {
-                ThreatGrid = currentThreatGrid,
+                ThreatGrid = threatGridSnapshot,
                 FlowChunks = flowChunks,
                 FlowDensityGrid = flowDensityGrid,
                 ThreatAttractorGrid = threatAttractorGrid,
@@ -1033,6 +1070,7 @@ namespace Hecton8.World
                 FlowDensityGrid = flowDensityGrid,
                 ThreatAttractorGrid = threatAttractorGrid,
                 NavSupportGrid = navSupportGrid,
+                ThreatGridSnapshot = threatGridSnapshot,
                 FlowOutput = flowOutput,
                 FlowCenter = flowCenter,
                 RuntimeTime = runtimeTime,

@@ -1,0 +1,37 @@
+﻿{
+    "agentId":  "1411",
+    "status":  "PASS",
+    "checkedAtUtc":  "2026-05-28T01:16:58.8921990Z",
+    "targets":  [
+                    "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+                    "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+                    "Assets/_Project/Scripts/World/HectonIndirectVegetationContracts.cs",
+                    "Assets/_Project/Scripts/World/PcieBandwidthGuard1411SelfTest.cs",
+                    "Assets/_Project/Scripts/VFX/Debris/CarveDebrisComputeRenderer.cs"
+                ],
+    "checks":  {
+                   "UploadRangeMethodPresent":  true,
+                   "OffsetLockPresent":  true,
+                   "LongByteOffsetPresent":  true,
+                   "GuardedMemcpyPresent":  true,
+                   "FinallyUnlockPresent":  true,
+                   "DirtyStatsUsesSafeCount":  true,
+                   "FirstDirtyPageByteResolverPresent":  true,
+                   "DirtyTokenFieldsPresent":  true,
+                   "RendererSkipGatePresent":  true,
+                   "RendererPartialUploadPresent":  true,
+                   "RendererBudgetUsesQuality":  true,
+                   "RendererCombinedBudgetGatePresent":  true,
+                   "SelfTestSinglePagePresent":  true,
+                   "SelfTestCombinedBudgetPresent":  true,
+                   "SelfTestPingPongPresent":  true,
+                   "CarveDebrisUsesLockBuffer":  true,
+                   "CarveDebrisUsesLongByteOffset":  true,
+                   "CarveDebrisUsesGuardedMemcpy":  true,
+                   "CarveDebrisFinallyUnlocks":  true,
+                   "CarveDebrisBuffersLockCapable":  true
+               },
+    "fatalFailures":  [
+
+                      ]
+}

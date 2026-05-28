@@ -118,6 +118,15 @@ namespace Hecton8.World
         private const int InitialCorruptedChunkCapacity = 512;
         private const int MaxPersistentArtificialStructureRecords = 256;
         private const int ChunkPoolBytesPerInstance = 128;
+        private const int ActiveAggregateDirtyPageSize = 256;
+        private const BufferID SurfaceAggregateFrontMatrixDirtyPagesId = (BufferID)74607;
+        private const BufferID SurfaceAggregateFrontMetadataDirtyPagesId = (BufferID)74608;
+        private const BufferID SurfaceAggregateBackMatrixDirtyPagesId = (BufferID)74609;
+        private const BufferID SurfaceAggregateBackMetadataDirtyPagesId = (BufferID)74610;
+        private const BufferID UnderwaterAggregateFrontMatrixDirtyPagesId = (BufferID)74611;
+        private const BufferID UnderwaterAggregateFrontMetadataDirtyPagesId = (BufferID)74612;
+        private const BufferID UnderwaterAggregateBackMatrixDirtyPagesId = (BufferID)74613;
+        private const BufferID UnderwaterAggregateBackMetadataDirtyPagesId = (BufferID)74614;
         private const int MinimumNativePoolBudgetMb = 64;
         private const double MaxRuntimeFloatCoordinate = 1048576.0;
         private const int DensityGridResolution = VegetationMath.DensityGridResolution;
@@ -1862,6 +1871,7 @@ namespace Hecton8.World
             public NativeArray<float2> ThreatAttractorGrid;
             public NativeArray<float3> DensityGrid;
             public NativeArray<ArtificialStructureRecord> ArtificialStructures;
+            public NativeArray<float> PreviousThreat;
             public NativeArray<float> ThreatOutput;
             public NativeArray<byte> CompressedOutput;
             public NativeArray<byte> EchoOutput;
@@ -1878,6 +1888,7 @@ namespace Hecton8.World
             public NativeArray<float3> FlowDensityGrid;
             public NativeArray<float2> ThreatAttractorGrid;
             public NativeArray<float> NavSupportGrid;
+            public NativeArray<float> ThreatGridSnapshot;
             public NativeArray<float2> FlowOutput;
             public Vector3 FlowCenter;
             public float RuntimeTime;
@@ -1895,6 +1906,25 @@ namespace Hecton8.World
             public Vector3 ThermalCenter;
             public float RuntimeTime;
             public bool CanComparePreviousFlowVolume;
+            public JobHandle Handle;
+        }
+
+        private struct AbyssalPathPendingJob
+        {
+            public NativeList<Vector3> RawPath;
+            public NativeList<Vector3> ResultPath;
+            public NativeArray<VegetationDensityChunkRecord> DensityChunks;
+            public NativeArray<float3> DensityGrid;
+            public NativeArray<float2> ThreatAttractorGrid;
+            public NativeArray<TerrainHoleRecord> TerrainHoles;
+            public NativeArray<ArtificialStructureRecord> ArtificialStructures;
+            public NativeArray<byte> NavPassabilityGrid;
+            public NativeArray<byte> ThreatVoxelGrid;
+            public Vector3 TargetPosition;
+            public int EndNode;
+            public long ScheduleTicks;
+            public bool CanReuseLastTarget;
+            public bool ScheduledMacroVoxelRoute;
             public JobHandle Handle;
         }
 
@@ -2238,6 +2268,7 @@ namespace Hecton8.World
         private ThreatPropagationPendingJob _threatPropagationJob;
         private FlowFieldPendingJob _flowFieldJob;
         private ThermalGridPendingJob _thermalGridJob;
+        private AbyssalPathPendingJob _abyssalPathJob;
         private JobHandle _abyssalPathHandle;
         private JobHandle _hlodCullHandle;
         private JobHandle _surfacePoolDefragHandle;
@@ -5432,7 +5463,7 @@ namespace Hecton8.World
         private void CompleteAndReleaseChunkBuildJob(int slot)
         {
             ChunkBuildPendingJob pending = _chunkBuildJobs[slot];
-            pending.Handle.Complete();
+            DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete: true);
             ReleaseChunkBuildPendingJob(ref pending);
             _chunkBuildJobs[slot] = default;
         }
@@ -5469,7 +5500,7 @@ namespace Hecton8.World
             NativeMemorySentinel.UnregisterNativeArray(array);
             if (dependency.IsCompleted)
             {
-                dependency.Complete();
+                DispatcherJobFence.TryComplete(ref dependency, forceComplete: true);
                 array.Dispose();
             }
             else
@@ -5492,7 +5523,7 @@ namespace Hecton8.World
 
             if (dependency.IsCompleted)
             {
-                dependency.Complete();
+                DispatcherJobFence.TryComplete(ref dependency, forceComplete: true);
                 list.Dispose();
             }
             else
@@ -5532,7 +5563,7 @@ namespace Hecton8.World
 
             if (dependency.IsCompleted)
             {
-                dependency.Complete();
+                DispatcherJobFence.TryComplete(ref dependency, forceComplete: true);
                 map.Dispose();
             }
             else
@@ -7021,11 +7052,16 @@ namespace Hecton8.World
         private bool EnsureActiveAggregateBufferCapacity(
             ref ActiveAggregateNativeBufferSet buffers,
             BufferID matrixBufferId,
+            BufferID matrixDirtyPageBufferId,
+            BufferID metadataDirtyPageBufferId,
             int requiredCount)
         {
             if (requiredCount <= 0)
                 return false;
 
+            int requiredDirtyPageCount = GraphicsBufferUploadUtility.ResolveDirtyPageCount(
+                requiredCount,
+                ActiveAggregateDirtyPageSize);
             bool ready =
                 EnsureAggregateBuffer(ref buffers.MatricesHandle, matrixBufferId, requiredCount) &&
                 EnsureAggregateBuffer(ref buffers.MetadataHandle, NextBufferID(matrixBufferId, 1), requiredCount) &&
@@ -7033,10 +7069,43 @@ namespace Hecton8.World
                 EnsureAggregateBuffer(ref buffers.SemanticTypesHandle, NextBufferID(matrixBufferId, 3), requiredCount) &&
                 EnsureAggregateBuffer(ref buffers.BiomeLayersHandle, NextBufferID(matrixBufferId, 4), requiredCount) &&
                 EnsureAggregateBuffer(ref buffers.FlowDirectionsHandle, NextBufferID(matrixBufferId, 5), requiredCount) &&
-                EnsureAggregateBuffer(ref buffers.FlowVectorsHandle, NextBufferID(matrixBufferId, 6), requiredCount);
+                EnsureAggregateBuffer(ref buffers.FlowVectorsHandle, NextBufferID(matrixBufferId, 6), requiredCount) &&
+                EnsureAggregateDirtyPageBuffer(ref buffers.MatrixDirtyPagesHandle, matrixDirtyPageBufferId, requiredDirtyPageCount) &&
+                EnsureAggregateDirtyPageBuffer(ref buffers.MetadataDirtyPagesHandle, metadataDirtyPageBufferId, requiredDirtyPageCount);
             if (ready)
+            {
                 buffers.Capacity = math.max(buffers.Capacity, requiredCount);
+                buffers.DirtyPageCapacity = math.max(buffers.DirtyPageCapacity, requiredDirtyPageCount);
+            }
             return ready;
+        }
+
+        private bool EnsureAggregateDirtyPageBuffer(
+            ref VaultGenerationHandle<byte> handle,
+            BufferID initialBufferId,
+            int requiredCount)
+        {
+            if (requiredCount <= 0)
+                return false;
+
+            BufferID bufferId = handle.BufferID != 0u
+                ? unchecked((BufferID)(int)handle.BufferID)
+                : initialBufferId;
+            if (handle.BufferID != 0u &&
+                TryReadOnlyVegetationMemoryBuffer(
+                    in handle,
+                    bufferId,
+                    requiredCount,
+                    out NativeArray<byte>.ReadOnly _))
+            {
+                return true;
+            }
+
+            return EnsureVegetationMemoryBufferReleased(
+                ref handle,
+                bufferId,
+                requiredCount,
+                NativeArrayOptions.ClearMemory);
         }
 
         private bool EnsureAggregateBuffer<T>(
@@ -7300,6 +7369,119 @@ namespace Hecton8.World
                 : default;
         }
 
+        private bool TryAcquireActiveAggregateDirtyPagesForWrite(
+            ref ActiveAggregateNativeBufferSet buffers,
+            int elementCount,
+            out IDataVault vault,
+            out NativeArray<byte> matrixDirtyPages,
+            out NativeArray<byte> metadataDirtyPages)
+        {
+            vault = null;
+            matrixDirtyPages = default;
+            metadataDirtyPages = default;
+            int requiredPages = GraphicsBufferUploadUtility.ResolveDirtyPageCount(
+                elementCount,
+                ActiveAggregateDirtyPageSize);
+            if (requiredPages <= 0 || buffers.DirtyPageCapacity < requiredPages)
+                return false;
+
+            bool matrixLocked = false;
+            bool metadataLocked = false;
+            IDataVault metadataVault = null;
+            bool success = false;
+            try
+            {
+                if (!TryAcquireAggregateWriteBuffer(
+                        ref buffers.MatrixDirtyPagesHandle,
+                        requiredPages,
+                        out vault,
+                        out matrixDirtyPages))
+                {
+                    return false;
+                }
+
+                matrixLocked = true;
+                if (!TryAcquireAggregateWriteBuffer(
+                        ref buffers.MetadataDirtyPagesHandle,
+                        requiredPages,
+                        out metadataVault,
+                        out metadataDirtyPages))
+                {
+                    return false;
+                }
+
+                metadataLocked = true;
+                success = true;
+                return true;
+            }
+            finally
+            {
+                if (!success)
+                {
+                    if (metadataLocked)
+                        metadataVault.ReleaseWriteLock(in buffers.MetadataDirtyPagesHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                    if (matrixLocked)
+                        vault.ReleaseWriteLock(in buffers.MatrixDirtyPagesHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+                    vault = null;
+                    matrixDirtyPages = default;
+                    metadataDirtyPages = default;
+                }
+            }
+        }
+
+        private static void ReleaseActiveAggregateDirtyPageWriteLocks(
+            in ActiveAggregateNativeBufferSet buffers,
+            IDataVault vault)
+        {
+            if (vault == null)
+                return;
+
+            vault.ReleaseWriteLock(in buffers.MetadataDirtyPagesHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            vault.ReleaseWriteLock(in buffers.MatrixDirtyPagesHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+        }
+
+        private static BufferID ResolveSurfaceAggregateMatrixBufferId(int bufferIndex)
+        {
+            return (bufferIndex & 1) == 0
+                ? BufferID.VegetationSurfaceAggregateFrontMatrices
+                : BufferID.VegetationSurfaceAggregateBackMatrices;
+        }
+
+        private static BufferID ResolveUnderwaterAggregateMatrixBufferId(int bufferIndex)
+        {
+            return (bufferIndex & 1) == 0
+                ? BufferID.VegetationUnderwaterAggregateFrontMatrices
+                : BufferID.VegetationUnderwaterAggregateBackMatrices;
+        }
+
+        private static BufferID ResolveSurfaceAggregateMatrixDirtyPageBufferId(int bufferIndex)
+        {
+            return (bufferIndex & 1) == 0
+                ? SurfaceAggregateFrontMatrixDirtyPagesId
+                : SurfaceAggregateBackMatrixDirtyPagesId;
+        }
+
+        private static BufferID ResolveSurfaceAggregateMetadataDirtyPageBufferId(int bufferIndex)
+        {
+            return (bufferIndex & 1) == 0
+                ? SurfaceAggregateFrontMetadataDirtyPagesId
+                : SurfaceAggregateBackMetadataDirtyPagesId;
+        }
+
+        private static BufferID ResolveUnderwaterAggregateMatrixDirtyPageBufferId(int bufferIndex)
+        {
+            return (bufferIndex & 1) == 0
+                ? UnderwaterAggregateFrontMatrixDirtyPagesId
+                : UnderwaterAggregateBackMatrixDirtyPagesId;
+        }
+
+        private static BufferID ResolveUnderwaterAggregateMetadataDirtyPageBufferId(int bufferIndex)
+        {
+            return (bufferIndex & 1) == 0
+                ? UnderwaterAggregateFrontMetadataDirtyPagesId
+                : UnderwaterAggregateBackMetadataDirtyPagesId;
+        }
+
         private static BufferID NextBufferID(BufferID baseId, int offset)
         {
             return unchecked((BufferID)((int)baseId + offset));
@@ -7363,6 +7545,7 @@ namespace Hecton8.World
                 _surfaceFrontBufferIndex,
                 _surfaceFrontDrawBounds,
                 _hasSurfaceFrontBounds,
+                _surfaceActiveAggregateRevision,
                 default,
                 out readBuffer);
         }
@@ -7375,6 +7558,7 @@ namespace Hecton8.World
                 _underwaterFrontBufferIndex,
                 _underwaterFrontDrawBounds,
                 _hasUnderwaterFrontBounds,
+                _underwaterActiveAggregateRevision,
                 default,
                 out readBuffer);
         }
@@ -7385,6 +7569,7 @@ namespace Hecton8.World
             int bufferIndex,
             Bounds drawBounds,
             bool hasExplicitBounds,
+            int contentRevision,
             JobHandle producerHandle,
             out HectonIndirectVegetationNativeReadBuffer readBuffer)
         {
@@ -7398,6 +7583,19 @@ namespace Hecton8.World
                 return false;
             }
 
+            NativeArray<byte> matrixDirtyPages = default;
+            NativeArray<byte> metadataDirtyPages = default;
+            int dirtyPageSize = 0;
+            int dirtyPageCount = GraphicsBufferUploadUtility.ResolveDirtyPageCount(
+                count,
+                ActiveAggregateDirtyPageSize);
+            if (dirtyPageCount > 0 &&
+                TryReadAggregateBuffer(in buffers.MatrixDirtyPagesHandle, dirtyPageCount, out matrixDirtyPages) &&
+                TryReadAggregateBuffer(in buffers.MetadataDirtyPagesHandle, dirtyPageCount, out metadataDirtyPages))
+            {
+                dirtyPageSize = ActiveAggregateDirtyPageSize;
+            }
+
             readBuffer = new HectonIndirectVegetationNativeReadBuffer(
                 matrices,
                 metadata,
@@ -7405,7 +7603,11 @@ namespace Hecton8.World
                 bufferIndex,
                 producerHandle,
                 hasExplicitBounds,
-                drawBounds);
+                drawBounds,
+                contentRevision,
+                matrixDirtyPages,
+                metadataDirtyPages,
+                dirtyPageSize);
             return true;
         }
 
@@ -7458,6 +7660,8 @@ namespace Hecton8.World
             ReleaseVegetationMemoryBuffer(ref buffers.BiomeLayersHandle);
             ReleaseVegetationMemoryBuffer(ref buffers.FlowDirectionsHandle);
             ReleaseVegetationMemoryBuffer(ref buffers.FlowVectorsHandle);
+            ReleaseVegetationMemoryBuffer(ref buffers.MatrixDirtyPagesHandle);
+            ReleaseVegetationMemoryBuffer(ref buffers.MetadataDirtyPagesHandle);
             buffers.Dispose();
         }
 

@@ -2886,12 +2886,24 @@ namespace Hecton8.Core
                         DisableMasterSystem(i, system);
                     }
                 }
+
+                ProcessDeferredArenaGrowthPostSimulation();
             }
 
             _masterLastPostSimulationMs = ElapsedMilliseconds(_masterPostSimulationStartTimestamp);
             _masterPhaseTimingSnapshotMs[1] = _masterLastSimWaitMs;
             _masterPhaseTimingSnapshotMs[2] = _masterLastPostSimulationMs;
             RecordVaultSovereigntyPostSimulationHeartbeat();
+        }
+
+        private void ProcessDeferredArenaGrowthPostSimulation()
+        {
+            IDataVault dataVault = _dataVault;
+            if (dataVault == null && TryResolveCachedDataVault(out dataVault))
+                _dataVault = dataVault;
+
+            if (dataVault is GlobalDataVault globalDataVault)
+                globalDataVault.ProcessDeferredArenaGrowth();
         }
 
         private void RunMasterVisualSyncPhase()
@@ -5410,6 +5422,7 @@ namespace Hecton8.Core
                 HectonXRRuntimeState.FlushVisualSyncShaderState();
                 WfcLaserCutRuntime.FlushVisualSync();
                 HectonShaderGlobalDataVaultBridge.FlushFallbackVisualSync();
+                HomeostasisBrain.FlushVisualSyncShaderState();
                 RunMasterVisualSyncPhase();
                 BeginLateFrameEventBudget();
                 SetActiveLateFrameEventLane(_LateFrameTickablesQueueHash);
@@ -7058,6 +7071,17 @@ namespace Hecton8.Core
     /// </summary>
     internal static class GraphicsBufferUploadUtility
     {
+        public const int DefaultDirtyPageSize = 256;
+
+        public struct PageUploadStats
+        {
+            public int UploadedPages;
+            public int DeferredPages;
+            public int LockSpans;
+            public long UploadedBytes;
+            public int FirstDeferredPage;
+        }
+
         /// <summary>
         /// Creates a structured buffer configured for standard SetData uploads.
         /// </summary>
@@ -7160,16 +7184,362 @@ namespace Hecton8.Core
             destination.SetData(source, 0, 0, safeCount);
         }
 
+        public static int ResolveDirtyPageCount(int elementCount, int pageSize)
+        {
+            if (elementCount <= 0)
+                return 0;
+
+            int safePageSize = math.max(1, pageSize);
+            return (elementCount + safePageSize - 1) / safePageSize;
+        }
+
+        public static bool HasAnyDirtyPage(NativeArray<byte> dirtyPages, int elementCount, int pageSize)
+        {
+            if (!dirtyPages.IsCreated || elementCount <= 0)
+                return false;
+
+            int pageCount = math.min(dirtyPages.Length, ResolveDirtyPageCount(elementCount, pageSize));
+            for (int i = 0; i < pageCount; i++)
+            {
+                if (dirtyPages[i] != 0)
+                    return true;
+            }
+
+            return false;
+        }
+
+        public static void MarkDirtyPage(NativeArray<byte> dirtyPages, int elementIndex, int elementCount, int pageSize)
+        {
+            if (!dirtyPages.IsCreated || elementIndex < 0 || elementIndex >= elementCount)
+                return;
+
+            int safePageSize = math.max(1, pageSize);
+            int pageIndex = elementIndex / safePageSize;
+            if ((uint)pageIndex < (uint)dirtyPages.Length)
+                dirtyPages[pageIndex] = 1;
+        }
+
+        public static void MarkDirtyPageRange(NativeArray<byte> dirtyPages, int startElementIndex, int elementCountToMark, int totalElementCount, int pageSize)
+        {
+            if (!dirtyPages.IsCreated ||
+                startElementIndex < 0 ||
+                elementCountToMark <= 0 ||
+                totalElementCount <= 0 ||
+                startElementIndex >= totalElementCount)
+            {
+                return;
+            }
+
+            int safePageSize = math.max(1, pageSize);
+            int endElementExclusive = startElementIndex + elementCountToMark;
+            if (endElementExclusive < startElementIndex || endElementExclusive > totalElementCount)
+                endElementExclusive = totalElementCount;
+
+            int firstPage = startElementIndex / safePageSize;
+            int lastPage = (endElementExclusive - 1) / safePageSize;
+            int pageLimit = math.min(dirtyPages.Length, ResolveDirtyPageCount(totalElementCount, safePageSize));
+            for (int pageIndex = firstPage; pageIndex <= lastPage && pageIndex < pageLimit; pageIndex++)
+                dirtyPages[pageIndex] = 1;
+        }
+
+        public static void MarkAllDirtyPages(NativeArray<byte> dirtyPages, int elementCount, int pageSize)
+        {
+            if (!dirtyPages.IsCreated || elementCount <= 0)
+                return;
+
+            int pageCount = math.min(dirtyPages.Length, ResolveDirtyPageCount(elementCount, pageSize));
+            for (int i = 0; i < pageCount; i++)
+                dirtyPages[i] = 1;
+        }
+
+        public static void ClearDirtyPages(NativeArray<byte> dirtyPages, int elementCount, int pageSize)
+        {
+            if (!dirtyPages.IsCreated || elementCount <= 0)
+                return;
+
+            int pageCount = math.min(dirtyPages.Length, ResolveDirtyPageCount(elementCount, pageSize));
+            for (int i = 0; i < pageCount; i++)
+                dirtyPages[i] = 0;
+        }
+
+        public static int ResolveFirstDirtyPageBytes<T>(NativeArray<byte> dirtyPages, int elementCount, int pageSize)
+            where T : struct
+        {
+            if (!dirtyPages.IsCreated || elementCount <= 0)
+                return 0;
+
+            int safePageSize = math.max(1, pageSize);
+            int pageCount = math.min(dirtyPages.Length, ResolveDirtyPageCount(elementCount, safePageSize));
+            int stride = UnsafeUtility.SizeOf<T>();
+            for (int i = 0; i < pageCount; i++)
+            {
+                if (dirtyPages[i] == 0)
+                    continue;
+
+                int pageElementStart = i * safePageSize;
+                int pageElementCount = math.min(safePageSize, elementCount - pageElementStart);
+                if (pageElementCount <= 0)
+                    return 0;
+
+                long pageBytes = (long)pageElementCount * stride;
+                return pageBytes > int.MaxValue ? int.MaxValue : (int)pageBytes;
+            }
+
+            return 0;
+        }
+
+        public static PageUploadStats CalculateDirtyPageUploadStats<T>(
+            NativeArray<byte> dirtyPages,
+            int sourceLength,
+            int destinationCount,
+            int requestedCount,
+            int pageSize,
+            int maxBytesThisFrame)
+            where T : struct
+        {
+            int safeCount = ResolveSafeWriteCount<T>(destinationCount, UnsafeUtility.SizeOf<T>(), sourceLength, requestedCount);
+            return CalculateDirtyPageUploadStats<T>(dirtyPages, safeCount, pageSize, maxBytesThisFrame);
+        }
+
+        public static PageUploadStats UploadNativeArrayDirtyPages<T>(
+            GraphicsBuffer destination,
+            NativeArray<T> source,
+            NativeArray<byte> dirtyPages,
+            int count,
+            int pageSize,
+            int maxBytesThisFrame,
+            bool clearUploadedPages)
+            where T : struct
+        {
+            int safeCount = ResolveSafeWriteCount<T>(destination, source.IsCreated ? source.Length : 0, count);
+            if (safeCount <= 0 || !dirtyPages.IsCreated)
+                return CreateEmptyPageUploadStats();
+
+            int safePageSize = math.max(1, pageSize);
+            int pageCount = math.min(dirtyPages.Length, ResolveDirtyPageCount(safeCount, safePageSize));
+            if (pageCount <= 0)
+                return CreateEmptyPageUploadStats();
+
+            int stride = UnsafeUtility.SizeOf<T>();
+            long byteBudget = maxBytesThisFrame > 0 ? maxBytesThisFrame : long.MaxValue;
+            PageUploadStats stats = CreateEmptyPageUploadStats();
+            int pageIndex = 0;
+            while (pageIndex < pageCount)
+            {
+                if (dirtyPages[pageIndex] == 0)
+                {
+                    pageIndex++;
+                    continue;
+                }
+
+                int runStartPage = pageIndex;
+                int runPageCount = 0;
+                long runBytes = 0L;
+                while (pageIndex < pageCount && dirtyPages[pageIndex] != 0)
+                {
+                    int pageElementStart = pageIndex * safePageSize;
+                    int pageElementCount = math.min(safePageSize, safeCount - pageElementStart);
+                    if (pageElementCount <= 0)
+                    {
+                        pageIndex++;
+                        continue;
+                    }
+
+                    long pageBytes = (long)pageElementCount * stride;
+                    bool overBudget = stats.UploadedBytes + runBytes + pageBytes > byteBudget;
+                    if (overBudget && (stats.UploadedBytes > 0L || runPageCount > 0))
+                        break;
+
+                    runBytes += pageBytes;
+                    runPageCount++;
+                    pageIndex++;
+                }
+
+                if (runPageCount <= 0)
+                {
+                    stats.FirstDeferredPage = runStartPage;
+                    stats.DeferredPages += CountDirtyPagesInRange(dirtyPages, runStartPage, pageCount);
+                    return stats;
+                }
+
+                int startElement = runStartPage * safePageSize;
+                int elementCount = math.min(runPageCount * safePageSize, safeCount - startElement);
+                UploadNativeArrayRange(destination, source, startElement, elementCount);
+                if (clearUploadedPages)
+                {
+                    int runEnd = runStartPage + runPageCount;
+                    for (int i = runStartPage; i < runEnd; i++)
+                        dirtyPages[i] = 0;
+                }
+
+                stats.UploadedPages += runPageCount;
+                stats.UploadedBytes += runBytes;
+                stats.LockSpans++;
+
+                if (stats.UploadedBytes >= byteBudget && pageIndex < pageCount)
+                {
+                    int deferred = CountDirtyPagesInRange(dirtyPages, pageIndex, pageCount);
+                    if (deferred > 0)
+                    {
+                        stats.FirstDeferredPage = ResolveFirstDirtyPage(dirtyPages, pageIndex, pageCount);
+                        stats.DeferredPages += deferred;
+                        return stats;
+                    }
+                }
+            }
+
+            return stats;
+        }
+
+        private static PageUploadStats CalculateDirtyPageUploadStats<T>(
+            NativeArray<byte> dirtyPages,
+            int safeCount,
+            int pageSize,
+            int maxBytesThisFrame)
+            where T : struct
+        {
+            if (safeCount <= 0 || !dirtyPages.IsCreated)
+                return CreateEmptyPageUploadStats();
+
+            int safePageSize = math.max(1, pageSize);
+            int pageCount = math.min(dirtyPages.Length, ResolveDirtyPageCount(safeCount, safePageSize));
+            if (pageCount <= 0)
+                return CreateEmptyPageUploadStats();
+
+            int stride = UnsafeUtility.SizeOf<T>();
+            long byteBudget = maxBytesThisFrame > 0 ? maxBytesThisFrame : long.MaxValue;
+            PageUploadStats stats = CreateEmptyPageUploadStats();
+            int pageIndex = 0;
+            while (pageIndex < pageCount)
+            {
+                if (dirtyPages[pageIndex] == 0)
+                {
+                    pageIndex++;
+                    continue;
+                }
+
+                int runStartPage = pageIndex;
+                int runPageCount = 0;
+                long runBytes = 0L;
+                while (pageIndex < pageCount && dirtyPages[pageIndex] != 0)
+                {
+                    int pageElementStart = pageIndex * safePageSize;
+                    int pageElementCount = math.min(safePageSize, safeCount - pageElementStart);
+                    if (pageElementCount <= 0)
+                    {
+                        pageIndex++;
+                        continue;
+                    }
+
+                    long pageBytes = (long)pageElementCount * stride;
+                    bool overBudget = stats.UploadedBytes + runBytes + pageBytes > byteBudget;
+                    if (overBudget && (stats.UploadedBytes > 0L || runPageCount > 0))
+                        break;
+
+                    runBytes += pageBytes;
+                    runPageCount++;
+                    pageIndex++;
+                }
+
+                if (runPageCount <= 0)
+                {
+                    stats.FirstDeferredPage = runStartPage;
+                    stats.DeferredPages += CountDirtyPagesInRange(dirtyPages, runStartPage, pageCount);
+                    return stats;
+                }
+
+                stats.UploadedPages += runPageCount;
+                stats.UploadedBytes += runBytes;
+                stats.LockSpans++;
+
+                if (stats.UploadedBytes >= byteBudget && pageIndex < pageCount)
+                {
+                    int deferred = CountDirtyPagesInRange(dirtyPages, pageIndex, pageCount);
+                    if (deferred > 0)
+                    {
+                        stats.FirstDeferredPage = ResolveFirstDirtyPage(dirtyPages, pageIndex, pageCount);
+                        stats.DeferredPages += deferred;
+                        return stats;
+                    }
+                }
+            }
+
+            return stats;
+        }
+
+        private static void UploadNativeArrayRange<T>(GraphicsBuffer destination, NativeArray<T> source, int startIndex, int count) where T : struct
+        {
+            if (count <= 0)
+                return;
+
+            NativeArray<T> mapped = destination.LockBufferForWrite<T>(startIndex, count);
+            try
+            {
+                unsafe
+                {
+                    int stride = UnsafeUtility.SizeOf<T>();
+                    void* sourcePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source) + ((long)startIndex * stride);
+                    void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                    long copyBytes = (long)stride * count;
+                    long destinationBytes = (long)stride * mapped.Length;
+                    if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
+                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SystemDispatcher));
+                }
+            }
+            finally
+            {
+                destination.UnlockBufferAfterWrite<T>(count);
+            }
+        }
+
+        private static int CountDirtyPagesInRange(NativeArray<byte> dirtyPages, int startPage, int pageCount)
+        {
+            int count = 0;
+            for (int i = math.max(0, startPage); i < pageCount; i++)
+            {
+                if (dirtyPages[i] != 0)
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static int ResolveFirstDirtyPage(NativeArray<byte> dirtyPages, int startPage, int pageCount)
+        {
+            for (int i = math.max(0, startPage); i < pageCount; i++)
+            {
+                if (dirtyPages[i] != 0)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static PageUploadStats CreateEmptyPageUploadStats()
+        {
+            return new PageUploadStats
+            {
+                FirstDeferredPage = -1
+            };
+        }
+
         private static int ResolveSafeWriteCount<T>(GraphicsBuffer destination, int sourceLength, int requestedCount) where T : struct
         {
             if (destination == null || requestedCount <= 0 || sourceLength <= 0 || destination.count <= 0)
                 return 0;
 
-            int stride = UnsafeUtility.SizeOf<T>();
-            if (destination.stride != stride)
+            return ResolveSafeWriteCount<T>(destination.count, destination.stride, sourceLength, requestedCount);
+        }
+
+        private static int ResolveSafeWriteCount<T>(int destinationCount, int destinationStride, int sourceLength, int requestedCount) where T : struct
+        {
+            if (requestedCount <= 0 || sourceLength <= 0 || destinationCount <= 0)
                 return 0;
 
-            return math.min(math.min(requestedCount, sourceLength), destination.count);
+            if (destinationStride != UnsafeUtility.SizeOf<T>())
+                return 0;
+
+            return math.min(math.min(requestedCount, sourceLength), destinationCount);
         }
     }
 

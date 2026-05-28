@@ -263,6 +263,7 @@ namespace Hecton8.Core
         private const int BlackboxMmfQueued = 1;
         private const int BlackboxMmfWriting = 2;
 
+        private static IDataVault _blackboxBoundVault;
         private static IDataVault _blackboxVault;
         private static VaultGenerationHandle<byte> _blackboxBytesHandle;
         private static VaultGenerationHandle<byte> _blackboxMmfScratchHandle;
@@ -315,6 +316,18 @@ namespace Hecton8.Core
         public static int BlackboxActiveFrameCount => Volatile.Read(ref _blackboxActiveFrameCount);
 
         public static int BlackboxValidFrameCount => Volatile.Read(ref _blackboxValidFrameCount);
+
+        internal static void BindBlackboxDataVaultCold(IDataVault vault)
+        {
+            lock (_blackboxGate)
+            {
+                if (ReferenceEquals(_blackboxBoundVault, vault))
+                    return;
+
+                DisposeBlackboxArraysNoLock();
+                _blackboxBoundVault = vault;
+            }
+        }
 
         private static bool IsBlackboxBufferBound()
         {
@@ -468,9 +481,23 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Exposes a raw view suitable for Burst job field injection.
+        /// Resolves an already-open raw view suitable for Burst job field injection.
+        /// This accessor is intentionally read-only with respect to service lifetime.
         /// </summary>
-        internal static unsafe bool TryGetBlackboxRingBuffer(out BlackboxRingBufferDTO dto)
+        internal static unsafe bool TryResolveBlackboxRingBufferView(out BlackboxRingBufferDTO dto)
+        {
+            dto = default;
+            if (!TryResolveBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte> bytes))
+                return false;
+
+            PopulateBlackboxRingBufferDto(ref dto, bytes);
+            return true;
+        }
+
+        /// <summary>
+        /// Opens or initializes the raw ring view on the owner thread.
+        /// </summary>
+        internal static unsafe bool OpenOrInitializeBlackboxRingBufferView(out BlackboxRingBufferDTO dto)
         {
             dto = default;
             if (!TryResolveBlackboxBuffer(in _blackboxBytesHandle, out NativeArray<byte> bytes))
@@ -484,6 +511,12 @@ namespace Hecton8.Core
             if (!TryResolveBlackboxBuffer(in _blackboxBytesHandle, out bytes))
                 return false;
 
+            PopulateBlackboxRingBufferDto(ref dto, bytes);
+            return true;
+        }
+
+        private static unsafe void PopulateBlackboxRingBufferDto(ref BlackboxRingBufferDTO dto, NativeArray<byte> bytes)
+        {
             dto.Bytes = (byte*)bytes.GetUnsafePtr();
             dto.FrameCapacity = bytes.Length / BlackboxFrameStrideBytes;
             dto.ActiveFrameCount = Volatile.Read(ref _blackboxActiveFrameCount);
@@ -492,7 +525,6 @@ namespace Hecton8.Core
             dto.WriteIndex = Volatile.Read(ref _blackboxFrameWriteIndex);
             dto.TotalWrites = Volatile.Read(ref _blackboxTotalFrameWrites);
             dto.FatalHash = unchecked((uint)ReadBlackboxAtomic(1));
-            return true;
         }
 
         /// <summary>
@@ -660,7 +692,7 @@ namespace Hecton8.Core
 
         private static bool TryBindBlackboxVaultBuffersNoLock(int desiredFrameCount, int byteCount)
         {
-            IDataVault vault = GlobalRegistry.DataVault;
+            IDataVault vault = _blackboxBoundVault;
             if (vault == null)
                 return false;
 
@@ -937,6 +969,7 @@ namespace Hecton8.Core
             lock (_blackboxGate)
             {
                 DisposeBlackboxArraysNoLock();
+                _blackboxBoundVault = null;
                 _blackboxActiveFrameCount = 0;
                 _blackboxFrameWriteIndex = 0;
                 _blackboxValidFrameCount = 0;

@@ -1,0 +1,304 @@
+{
+  "agent_id": "1408",
+  "role": "MAIN_THREAD_SYNCHRONOUS_JOB_BLOCKER_PURGER",
+  "status": "STATIC_PASS_WORLD_RUNTIME_SYNC_CLEAN_THREAT_FLOW_SNAPSHOT_REPAIRED_BUILD_BLOCKED_BY_CONTENTION",
+  "generated_at_local": "2026-05-28",
+  "domain": "Echelon 3 / World vegetation residency and flow-field async execution",
+  "scope": {
+    "prompt_file": "Docs/Tasks/CURRENT_BATCH.md",
+    "prompt_target_files": [
+      "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "Assets/_Project/Scripts/World/VegetationFlowFieldIntegration.cs"
+    ],
+    "resolved_actual_files": [
+      "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+      "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs"
+    ],
+    "missing_prompt_file": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegration.cs",
+    "missing_prompt_file_resolution": "Live implementation is Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs."
+  },
+  "initial_scan": {
+    "microseconds": 535971,
+    "run_calls_found": 0,
+    "complete_calls_found_in_prompt_targets": 4,
+    "ledger": "Docs/AgentLogs/SyncBlockerLedger_1408.json"
+  },
+  "final_scan": {
+    "microseconds": 242098,
+    "runtime_sources_scanned": [
+      "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+      "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+      "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+      "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs"
+    ],
+    "result": "NO_RUNTIME_SYNC_CALLS_IN_WORLD_NON_EDITOR",
+    "run_calls_remaining": 0,
+    "raw_complete_calls_remaining": 0
+  },
+  "eliminated_calls": {
+    "run_calls": [
+      {
+        "file": "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs",
+        "method": "ScheduleRadarJob",
+        "old_call": "job.Run();",
+        "new_call": "JobHandle handle = job.Schedule();",
+        "phase": "LateFrameTick schedules; next dispatcher LateFrame completion calls CompleteRadarJob",
+        "consumer_after_fence": "CommitCompletedScan, GPR GraphicsBuffer upload, telemetry write, and acoustic signal publish."
+      }
+    ],
+    "raw_complete_calls": [
+      {
+        "file": "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs",
+        "method": "FinalizeChunkBuildJob",
+        "old_call": "pending.Handle.Complete();",
+        "new_call": "DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete: false)",
+        "phase": "LateFrameTick completion path",
+        "consumer_after_fence": "BuildChunkPayloadFromJob and chunk payload cache publish."
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+        "method": "CompleteThreatPropagationJob",
+        "old_call": "pending.Handle.Complete();",
+        "new_call": "DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete)",
+        "phase": "LateFrameTick non-forced path or teardown forced path",
+        "consumer_after_fence": "Threat grid, compressed threat grid, echo, and voxel DataVault snapshot publish."
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+        "method": "CompleteFlowFieldJob",
+        "old_call": "pending.Handle.Complete();",
+        "new_call": "DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete)",
+        "phase": "LateFrameTick non-forced path or teardown forced path",
+        "consumer_after_fence": "Abyssal flow-field DataVault snapshot publish."
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+        "method": "CompleteThermalGridJob",
+        "old_call": "pending.Handle.Complete();",
+        "new_call": "DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete)",
+        "phase": "LateFrameTick non-forced path or teardown forced path",
+        "consumer_after_fence": "Thermal grid and abyssal flow-volume DataVault snapshot publish."
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+        "method": "CompleteAndReleaseChunkBuildJob",
+        "old_call": "pending.Handle.Complete();",
+        "new_call": "DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete: true)",
+        "phase": "forced teardown/tile cancellation",
+        "consumer_after_fence": "ReleaseChunkBuildPendingJob."
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+        "method": "DisposeNativeArray",
+        "old_call": "dependency.Complete();",
+        "new_call": "DispatcherJobFence.TryComplete(ref dependency, forceComplete: true)",
+        "phase": "forced native disposal",
+        "consumer_after_fence": "NativeArray.Dispose."
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+        "method": "DisposeNativeList",
+        "old_call": "dependency.Complete();",
+        "new_call": "DispatcherJobFence.TryComplete(ref dependency, forceComplete: true)",
+        "phase": "forced native disposal",
+        "consumer_after_fence": "NativeList.Dispose."
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+        "method": "DisposeNativeParallelMultiHashMap",
+        "old_call": "dependency.Complete();",
+        "new_call": "DispatcherJobFence.TryComplete(ref dependency, forceComplete: true)",
+        "phase": "forced native disposal",
+        "consumer_after_fence": "NativeParallelMultiHashMap.Dispose."
+      }
+    ]
+  },
+  "hidden_sync_blockers_eliminated": [
+    {
+      "file": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "method": "TryScheduleAbyssalPath",
+      "old_call": "ForceCompleteAbyssalPathDependency(ref smoothingHandle) and later ForceCompleteAbyssalPathDependency(ref pathSourceHandle)",
+      "new_flow": "Store AbyssalPathPendingJob and commit from CompleteAbyssalPathJob; optional smoothing overlays degrade to default inputs instead of forcing pathSourceHandle completion.",
+      "phase": "Schedule in caller phase, non-forced completion in LateFrameTick dispatcher gate",
+      "consumer_after_fence": "CommitAbyssalPathResult and DataVault publish for BufferID.VegetationAbyssalPathSnapshot."
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs",
+      "method": "ScheduleThreatPropagationJob/ScheduleFlowFieldJob",
+      "old_call": "Worker jobs consumed live BufferID.VegetationEcosystemThreatGrid NativeArray views from TryReadVegetationMemoryBuffer.",
+      "new_flow": "ScheduleThreatPropagationJob copies currentThreat into PreviousThreat; ScheduleFlowFieldJob copies currentThreatGrid into ThreatGridSnapshot; both snapshots are owned by pending structs and released in completion finally paths.",
+      "phase": "SlowTick schedule, LateFrameTick dispatcher completion",
+      "consumer_after_fence": "ThreatPropagationJob, ThreatVoxelizationJob, and BuildAbyssalFlowFieldJob read TempJob snapshots instead of live DataVault views."
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs",
+      "method": "TryGetVisibleHLODPayload/RebuildHLODRegistrySnapshot",
+      "old_call": "CompleteHLODCullJob(forceComplete: false)",
+      "new_flow": "Read accessors and SlowTick rebuild no longer complete HLOD jobs; HLOD completion remains in the LateFrameTick dispatcher gate.",
+      "phase": "LateFrameTick only",
+      "consumer_after_fence": "Visible HLOD DataVault snapshot publish."
+    }
+  ],
+  "jobhandle_chains": [
+    {
+      "system": "chunk_build",
+      "stored_handle": "_chunkBuildJobs[slot].Handle",
+      "producer_chain": "grass, kelp, and floating record jobs are scheduled and combined before ChunkBuildPendingJob is published.",
+      "completion_gate": "FinalizeCompletedChunkBuilds checks Handle.IsCompleted; FinalizeChunkBuildJob uses non-forced DispatcherJobSwap.TryComplete before payload read."
+    },
+    {
+      "system": "threat_propagation",
+      "stored_handle": "_threatPropagationJob.Handle",
+      "producer_chain": "ThreatPropagationJob schedules first using PreviousThreat TempJob snapshot; voxel job schedules with threatHandle as dependency.",
+      "completion_gate": "CompleteThreatPropagationJob fences final voxel handle before DataVault snapshot copy and releases PreviousThreat in finally."
+    },
+    {
+      "system": "flow_field",
+      "stored_handle": "_flowFieldJob.Handle",
+      "producer_chain": "FlowFieldJob schedules from density, attractor, nav support, and ThreatGridSnapshot TempJob snapshots.",
+      "completion_gate": "CompleteFlowFieldJob fences flow handle before DataVault snapshot copy and releases ThreatGridSnapshot in finally."
+    },
+    {
+      "system": "thermal_grid",
+      "stored_handle": "_thermalGridJob.Handle",
+      "producer_chain": "BuildAbyssalThermalGridJob schedules first; flow-volume job schedules with thermalHandle as dependency.",
+      "completion_gate": "CompleteThermalGridJob fences final flow-volume handle before publish and biolume surge state update."
+    },
+    {
+      "system": "ground_penetrating_radar",
+      "stored_handle": "_radarJobHandle",
+      "producer_chain": "GroundRadarRaymarchJob schedules as a worker IJob. Ore SoA reads are registered through IWorldResourceSpawnerReadDependencySink; when no sink exists, ore arrays are dropped and the scan fails closed.",
+      "completion_gate": "CompleteRadarJob uses DispatcherJobFence.TryComplete before CommitCompletedScan, then releases SDF and GPR DataVault buffer locks in finally."
+    },
+    {
+      "system": "abyssal_path",
+      "stored_handle": "_abyssalPathHandle and _abyssalPathJob.Handle",
+      "producer_chain": "NativeAStarJob schedules first when macro voxel route is unavailable; StringPullPathJob schedules with pathSourceHandle as dependency. A* threat grid/voxel and smoothing passability/threat inputs are copied to TempJob snapshots.",
+      "completion_gate": "CompleteAbyssalPathJob uses DispatcherJobSwap.TryComplete before CommitAbyssalPathResult, then ReleaseAbyssalPathPendingJob releases every pending native payload in finally."
+    }
+  ],
+  "datavault_lifetime": {
+    "finding": "No new DataVault fields were migrated. Vegetation jobs publish through existing BufferID lanes after dispatcher fences. Threat propagation, flow-field solving, and abyssal A* no longer capture live ecosystem threat DataVault arrays across frames. GPR now keeps existing TryLockBuffer locks until scheduled raymarch completion.",
+    "job_memory_owner": "Vegetation TempJob/H8Memory pending structs stay alive until dispatcher-fenced completion; threat propagation releases PreviousThreat in ReleaseThreatPropagationPendingJob; flow-field solving releases ThreatGridSnapshot in ReleaseFlowFieldPendingJob; abyssal A* threat snapshots are released through pathSourceHandle; GPR persistent Vault buffers remain locked while the worker owns slices.",
+    "publish_order": "vegetation: fence -> TryCopyVegetationMemorySnapshot -> metadata update -> Release*PendingJob in finally; abyssal path: Schedule A*/StringPull -> CompleteAbyssalPathJob fence -> CommitAbyssalPathResult -> ReleaseAbyssalPathPendingJob in finally; GPR: ScheduleRadarJob locks -> job.Schedule -> CompleteRadarJob fence -> CommitCompletedScan -> UnlockSdfSnapshotBuffer/ReleaseScanJobBufferLocks in finally",
+    "rejected_alternative": "Holding DataVault write locks across asynchronous worker execution."
+  },
+  "zero_gc_proof": {
+    "runtime_hot_path_managed_allocations_added": 0,
+    "runtime_hot_path_new_keywords_added": 0,
+    "runtime_hot_path_linq_or_string_format_added": 0,
+    "diff_added_line_scan": {
+      "added_line_count": 77,
+      "added_new_tokens": 0,
+      "added_string_format": 0,
+      "added_tostring": 0,
+      "added_foreach": 0,
+      "added_linq": 0,
+      "added_struct_layout": 0
+    },
+    "gpr_schedule_existing_value_type_new_tokens": [
+      "GroundRadarRaymarchJob struct",
+      "NativeSlice<float3> struct",
+      "NativeSlice<float> struct",
+      "NativeSlice<float> struct",
+      "NativeSlice<int> struct",
+      "NativeSlice<float4> struct",
+      "NativeSlice<int> struct",
+      "NativeSlice<float> struct"
+    ],
+    "apex_loop8_hot_path_method_scan": {
+      "ScheduleThreatPropagationJob": {
+        "newTokens": ["float3", "ThreatPropagationJob", "ThreatPropagationPendingJob", "ThreatVoxelizationJob", "Vector3"],
+        "referenceTypeNew": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      },
+      "ScheduleFlowFieldJob": {
+        "newTokens": ["BuildAbyssalFlowFieldJob", "float2", "float3", "FlowFieldPendingJob"],
+        "referenceTypeNew": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      },
+      "TryScheduleAbyssalPathSpecies": {
+        "newTokens": ["AbyssalPathPendingJob", "float3", "int3", "NativeAStarJob", "NativeList<Vector3>", "StringPullPathJob"],
+        "referenceTypeNew": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      },
+      "CompleteAbyssalPathJob": {
+        "referenceTypeNew": 0,
+        "stringFormat": 0,
+        "toString": 0,
+        "linqLikeCalls": 0,
+        "foreach": 0
+      }
+    },
+    "note": "Editor test source allocates strings/arrays only inside EditMode tests. Runtime hot-path method-body scan reports no reference-type new/string.Format/ToString/foreach/LINQ. Struct layout edits remain zero."
+  },
+  "teardown_safety": {
+    "on_disable": "forces threat, flow, and thermal completion before DisposeThreatGridState, DisposeFlowFieldState, DisposeThermalGridState, and native aggregate disposal",
+    "on_destroy": "same forced completion order as OnDisable",
+    "chunk_cancellation": "CompleteAndReleaseChunkBuildJob force-fences pending chunk jobs before ReleaseChunkBuildPendingJob",
+    "ground_radar": "Dispose calls CompleteRadarJob(forceComplete: true) before clearing DataVault handles; CompleteRadarJob releases SDF and GPR buffer locks in finally.",
+    "test_artifact": "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs"
+  },
+  "test_artifacts": [
+    {
+      "file": "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs",
+      "tests": [
+        "AssignedVegetationSources_ContainNoRawRunOrCompleteTokens",
+        "ChunkBuildFinalization_UsesNonForcedDispatcherFenceBeforeReadingJobOutput",
+        "FlowFieldCompletion_UsesDispatcherFenceBeforeDataVaultPublishAndNativeRelease",
+        "HotSchedulingPhase_DoesNotReadBackOrFenceWorkerJobs",
+        "LateFrameAndTeardown_AreTheExplicitVegetationCompletionGates",
+        "StaticHotPathAudit_RejectsSynchronousTokensOutsideLateFrameAndTeardown",
+        "GroundRadarScheduling_DefersReadbackUntilDispatcherCompletion",
+        "AbyssalPathScheduling_DefersReadbackUntilDispatcherCompletion",
+        "AbyssalPathBudgets_UseContinuousGlobalQualityWeight",
+        "HlodReadAndSlowTickPaths_DoNotCompleteJobsOutsideDispatcherGate"
+      ],
+      "execution_status": "not executed; dotnet build/test blocked by CPU contention"
+    }
+  ],
+  "build_verification": {
+    "attempted": false,
+    "status": "BLOCKED_BY_CONTENTION",
+    "preflight": {
+      "cpu_load_percent": 100,
+      "active_compiler_or_build_processes": [
+        {
+          "process": "csc",
+          "pid": 8756,
+          "cpu": 5.640625
+        },
+        {
+          "process": "dotnet",
+          "pid": 55080,
+          "cpu": 524.09375
+        }
+      ]
+    },
+    "reason": "Project mandate forbids dotnet build when CPU exceeds 50% or another compiler/build process is active."
+  },
+  "measured_runtime_microseconds_saved": null,
+  "runtime_savings_note": "No runtime profiler pass was executed; measured microseconds saved are not claimed. The proof is source-level removal of raw main-thread barriers from assigned vegetation runtime sources plus the expanded non-Editor World runtime scan.",
+  "file_hashes_sha256": {
+    "Assets/_Project/Scripts/World/VegetationChunkResidencyDirector.cs": "EB4286FBEB69A2A8CC329057043FF316BE8B880207B26F42C5EEA91C20017FDA",
+    "Assets/_Project/Scripts/World/VegetationFlowFieldIntegrator.cs": "BBFB5B4533AD8FC489B5F020F35C7C8F5DACAED4D46ED383B8D4F7B34C1BD6C2",
+    "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs": "C4A21741B3B96160DD17340B5DDE9676DD566556655D21E7DD208B423139DFE1",
+    "Assets/_Project/Scripts/World/GroundPenetratingRadarRuntime.cs": "383511C4888FA69BD3F5136916451455B86C86D78344028751F5FB94914E6C64",
+    "Assets/_Project/Scripts/World/VegetationNavGridSynchronizer.cs": "46BC451FBA753FFEC07213CFE75116C94F112731CD85D97372EE8FCA5A6E00F2",
+    "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs": "5C7D56DA9222C8E68B4832D0C97783A7237B2680DBF9E43912F9C2683811C758",
+    "Assets/_Project/Tests/Editor/VegetationAsyncJobFence1408EditTests.cs.meta": "F464826D1A9DC097662CDBFAF77F88BD9ED76A319EE4C105AE9D8B94274B71FF"
+  }
+}

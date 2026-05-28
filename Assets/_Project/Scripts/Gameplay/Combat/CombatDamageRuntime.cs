@@ -281,8 +281,6 @@ namespace Hecton8.Gameplay
         private const int MetaWeakspotTierShift = 18;
         private const int MetaDetailIndexShift = 19;
         private const int MetaDamageClassShift = 29;
-        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptOwnerIndexAllocator = Allocator.Persistent;
         private const uint MetaDamageTypeMask = 0xFFu;
         private const uint MetaStatusBitsMask = 0x3FFu;
         private const uint MetaWeakspotTierMask = 0x1u;
@@ -312,30 +310,6 @@ namespace Hecton8.Gameplay
         private static readonly int[] _poisonDiffusionTargetIds =
             new int[PoisonDiffusionBufferLength]; // COLD ALLOC: int[16] - poison spread duplicate-target filter - owner: CombatDamageRuntime
 
-        private static NativeQueue<CombatDamageRequest> _damageSignals;
-        private static NativeArray<CombatDamageSignalDetail> _signalDetails;
-        private static NativeParallelHashMap<int, int> _slotByTargetId;
-        private static NativeArray<int> _instanceIds;
-        private static NativeArray<float> _health;
-        private static NativeArray<float> _maxHealth;
-        private static NativeArray<float> _invMaxHealth;
-        private static NativeArray<int> _armorValues;
-        private static NativeArray<float> _shieldValues;
-        private static NativeArray<float> _minorDamageAccumulators;
-        private static NativeArray<float3> _targetForwardVectors;
-        private static NativeArray<float> _targetHeights;
-        private static NativeArray<uint> _targetFlags;
-        private static NativeArray<uint> _statusMasks;
-        private static NativeArray<float4> _statusDurations0123;
-        private static NativeArray<float4> _legacyStatusDurations4567;
-        private static NativeArray<float> _brittleDurations;
-        private static NativeArray<float> _damageArmorLut;
-        private static NativeArray<CombatDamageResult> _results;
-        private static NativeArray<CombatDamageResult> _statusResults;
-        private static NativeArray<byte> _statusResultActive;
-        private static NativeArray<int> _counters;
-        private static NativeArray<CombatTelemetryEntry> _telemetryRing;
-        private static NativeArray<uint> _telemetryState;
         private static IDamageReceiver[] _receivers;
         private static Transform[] _receiverTransforms;
         private static Rigidbody[] _targetBodies;
@@ -356,7 +330,7 @@ namespace Hecton8.Gameplay
         private static bool _combatDataVaultColdCacheAttempted;
         private static readonly CombatRegistryHotSwapBridge _combatHotSwapBridge = new CombatRegistryHotSwapBridge();
 
-        public static bool IsInitialized => _damageSignals.IsCreated;
+        public static bool IsInitialized => IsCombatDamageVaultInitialized();
         public static int PendingSignalCount => _queuedSignalCount;
 
         public static void SetCombatMathLod(CombatMathLod lod)
@@ -428,6 +402,9 @@ namespace Hecton8.Gameplay
 
         private static void ApplyCombatDataVaultRebind(IDataVault previousVault, IDataVault currentVault)
         {
+            if (previousVault != null && !ReferenceEquals(previousVault, currentVault))
+                ReleaseCombatDamageVaultBuffers(previousVault);
+
             _combatDataVault = currentVault;
             BallisticsRuntime.CacheDataVault(currentVault);
             RequestStatusEffectVaultRebind(previousVault, currentVault);
@@ -469,27 +446,29 @@ namespace Hecton8.Gameplay
             EnsureInitialized();
             if (!CanMutateTargets())
                 return false;
+            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+                return false;
 
             float safeMaxHealth = math.max(0.0001f, maximumHealth);
             float safeHealth = math.clamp(currentHealth, 0f, safeMaxHealth);
             float3 targetForward = ResolveReceiverForward(receiver);
             float targetHeight = ResolveReceiverHeight(receiver);
             int slot;
-            if (_slotByTargetId.TryGetValue(targetId, out slot))
+            if (TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out slot))
             {
-                if (!CanUseExistingTargetSlot(slot))
+                if (!CanUseExistingTargetSlot(slot, ref views))
                     return false;
 
                 CaptureReceiverManagedRefs(slot, receiver);
-                _health[slot] = safeHealth;
-                _maxHealth[slot] = safeMaxHealth;
-                _invMaxHealth[slot] = math.rcp(safeMaxHealth);
-                _armorValues[slot] = QuantizeArmorValue(armorValue);
-                _shieldValues[slot] = math.max(0f, shieldValue);
-                _targetForwardVectors[slot] = targetForward;
-                _targetHeights[slot] = targetHeight;
-                _targetFlags[slot] = PackTargetFlags(kind, armorClass);
-                SeedTargetArmorProfile(slot, targetId, kind, armorClass, safeMaxHealth, armorValue);
+                views.Health[slot] = safeHealth;
+                views.MaxHealth[slot] = safeMaxHealth;
+                views.InvMaxHealth[slot] = math.rcp(safeMaxHealth);
+                views.ArmorValues[slot] = QuantizeArmorValue(armorValue);
+                views.ShieldValues[slot] = math.max(0f, shieldValue);
+                views.TargetForwardVectors[slot] = targetForward;
+                views.TargetHeights[slot] = targetHeight;
+                views.TargetFlags[slot] = PackTargetFlags(kind, armorClass);
+                SeedTargetArmorProfile(slot, targetId, kind, armorClass, safeMaxHealth, armorValue, targetHeight);
                 RegisterBallisticRootPrimitive(targetId, receiver, targetHeight, armorClass);
                 return true;
             }
@@ -498,30 +477,30 @@ namespace Hecton8.Gameplay
                 return false;
 
             slot = _targetCount;
-            if (!CanUseRegistrationTargetSlot(slot))
+            if (!CanUseRegistrationTargetSlot(slot, ref views))
                 return false;
 
-            if (!_slotByTargetId.TryAdd(targetId, slot))
+            if (!TryAddTargetSlotToLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, slot))
                 return false;
 
             _targetCount++;
             CaptureReceiverManagedRefs(slot, receiver);
-            _instanceIds[slot] = targetId;
-            _health[slot] = safeHealth;
-            _maxHealth[slot] = safeMaxHealth;
-            _invMaxHealth[slot] = math.rcp(safeMaxHealth);
-            _armorValues[slot] = QuantizeArmorValue(armorValue);
-            _shieldValues[slot] = math.max(0f, shieldValue);
-            _targetForwardVectors[slot] = targetForward;
-            _targetHeights[slot] = targetHeight;
-            _targetFlags[slot] = PackTargetFlags(kind, armorClass);
-            SeedTargetArmorProfile(slot, targetId, kind, armorClass, safeMaxHealth, armorValue);
-            _statusMasks[slot] = 0u;
-            _statusDurations0123[slot] = float4.zero;
-            _legacyStatusDurations4567[slot] = float4.zero;
-            _brittleDurations[slot] = 0f;
-            _statusResults[slot] = default;
-            _statusResultActive[slot] = 0;
+            views.InstanceIds[slot] = targetId;
+            views.Health[slot] = safeHealth;
+            views.MaxHealth[slot] = safeMaxHealth;
+            views.InvMaxHealth[slot] = math.rcp(safeMaxHealth);
+            views.ArmorValues[slot] = QuantizeArmorValue(armorValue);
+            views.ShieldValues[slot] = math.max(0f, shieldValue);
+            views.TargetForwardVectors[slot] = targetForward;
+            views.TargetHeights[slot] = targetHeight;
+            views.TargetFlags[slot] = PackTargetFlags(kind, armorClass);
+            SeedTargetArmorProfile(slot, targetId, kind, armorClass, safeMaxHealth, armorValue, targetHeight);
+            views.StatusMasks[slot] = 0u;
+            views.StatusDurations0123[slot] = float4.zero;
+            views.LegacyStatusDurations4567[slot] = float4.zero;
+            views.BrittleDurations[slot] = 0f;
+            views.StatusResults[slot] = default;
+            views.StatusResultActive[slot] = 0;
             ResetStatusEffectSlot(slot);
             RegisterBallisticRootPrimitive(targetId, receiver, targetHeight, armorClass);
             return true;
@@ -529,17 +508,20 @@ namespace Hecton8.Gameplay
 
         public static bool UnregisterTarget(int targetId, IDamageReceiver receiver)
         {
-            if (!_slotByTargetId.IsCreated || targetId == 0)
+            if (targetId == 0)
                 return false;
 
             if (!CanMutateTargets())
                 return false;
 
-            int slot;
-            if (!_slotByTargetId.TryGetValue(targetId, out slot))
+            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
                 return false;
 
-            if (!CanUseExistingTargetSlot(slot))
+            int slot;
+            if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out slot))
+                return false;
+
+            if (!CanUseExistingTargetSlot(slot, ref views))
                 return false;
 
             if (receiver != null && !ReferenceEquals(_receivers[slot], receiver))
@@ -547,118 +529,122 @@ namespace Hecton8.Gameplay
 
             BallisticsRuntime.TombstonePrimitivesForTarget(unchecked((uint)targetId));
             int lastSlot = _targetCount - 1;
-            if (!CanUseExistingTargetSlot(lastSlot))
+            if (!CanUseExistingTargetSlot(lastSlot, ref views))
                 return false;
 
-            if (slot != lastSlot && _instanceIds[lastSlot] == 0)
+            if (slot != lastSlot && views.InstanceIds[lastSlot] == 0)
                 return false;
 
-            _slotByTargetId.Remove(targetId);
             if (slot != lastSlot)
             {
-                int movedId = _instanceIds[lastSlot];
-                _instanceIds[slot] = movedId;
-                _health[slot] = _health[lastSlot];
-                _maxHealth[slot] = _maxHealth[lastSlot];
-                _invMaxHealth[slot] = _invMaxHealth[lastSlot];
-                _armorValues[slot] = _armorValues[lastSlot];
-                _shieldValues[slot] = _shieldValues[lastSlot];
-                _minorDamageAccumulators[slot] = _minorDamageAccumulators[lastSlot];
-                _targetForwardVectors[slot] = _targetForwardVectors[lastSlot];
-                _targetHeights[slot] = _targetHeights[lastSlot];
-                _targetFlags[slot] = _targetFlags[lastSlot];
+                int movedId = views.InstanceIds[lastSlot];
+                views.InstanceIds[slot] = movedId;
+                views.Health[slot] = views.Health[lastSlot];
+                views.MaxHealth[slot] = views.MaxHealth[lastSlot];
+                views.InvMaxHealth[slot] = views.InvMaxHealth[lastSlot];
+                views.ArmorValues[slot] = views.ArmorValues[lastSlot];
+                views.ShieldValues[slot] = views.ShieldValues[lastSlot];
+                views.MinorDamageAccumulators[slot] = views.MinorDamageAccumulators[lastSlot];
+                views.TargetForwardVectors[slot] = views.TargetForwardVectors[lastSlot];
+                views.TargetHeights[slot] = views.TargetHeights[lastSlot];
+                views.TargetFlags[slot] = views.TargetFlags[lastSlot];
                 MoveTargetArmorState(lastSlot, slot);
-                _statusMasks[slot] = _statusMasks[lastSlot];
-                _statusDurations0123[slot] = _statusDurations0123[lastSlot];
-                _legacyStatusDurations4567[slot] = _legacyStatusDurations4567[lastSlot];
-                _brittleDurations[slot] = _brittleDurations[lastSlot];
-                _statusResults[slot] = _statusResults[lastSlot];
-                _statusResultActive[slot] = _statusResultActive[lastSlot];
+                views.StatusMasks[slot] = views.StatusMasks[lastSlot];
+                views.StatusDurations0123[slot] = views.StatusDurations0123[lastSlot];
+                views.LegacyStatusDurations4567[slot] = views.LegacyStatusDurations4567[lastSlot];
+                views.BrittleDurations[slot] = views.BrittleDurations[lastSlot];
+                views.StatusResults[slot] = views.StatusResults[lastSlot];
+                views.StatusResultActive[slot] = views.StatusResultActive[lastSlot];
                 CopyStatusEffectSlot(slot, lastSlot);
                 _receivers[slot] = _receivers[lastSlot];
                 _receiverTransforms[slot] = _receiverTransforms[lastSlot];
                 _targetBodies[slot] = _targetBodies[lastSlot];
-                _slotByTargetId[movedId] = slot;
             }
 
-            ClearSlot(lastSlot);
+            ClearSlot(lastSlot, ref views);
             _targetCount = lastSlot;
-            return true;
+            return RebuildTargetLookup(ref views, _targetCount);
         }
 
         public static bool IsTargetRegistered(int targetId)
         {
-            return _slotByTargetId.IsCreated && _slotByTargetId.ContainsKey(targetId);
+            return TryResolveCombatDamageReadOnlyViews(out CombatDamageReadOnlyVaultViews views) &&
+                   TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out _);
         }
 
         public static bool SyncTargetHealth(int targetId, float currentHealth, float maximumHealth)
         {
-            if (!_slotByTargetId.IsCreated || !CanMutateTargets())
+            if (!CanMutateTargets() ||
+                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
                 return false;
 
             int slot;
-            if (!_slotByTargetId.TryGetValue(targetId, out slot))
+            if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out slot))
                 return false;
 
-            if (!CanUseExistingTargetSlot(slot))
+            if (!CanUseExistingTargetSlot(slot, ref views))
                 return false;
 
             float safeMaxHealth = math.max(0.0001f, maximumHealth);
-            _health[slot] = math.clamp(currentHealth, 0f, safeMaxHealth);
-            _maxHealth[slot] = safeMaxHealth;
-            _invMaxHealth[slot] = math.rcp(safeMaxHealth);
+            views.Health[slot] = math.clamp(currentHealth, 0f, safeMaxHealth);
+            views.MaxHealth[slot] = safeMaxHealth;
+            views.InvMaxHealth[slot] = math.rcp(safeMaxHealth);
             return true;
         }
 
         public static bool SyncTargetProtection(int targetId, float armorValue, float shieldValue)
         {
-            if (!_slotByTargetId.IsCreated || !CanMutateTargets())
+            if (!CanMutateTargets() ||
+                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
                 return false;
 
-            if (!_slotByTargetId.TryGetValue(targetId, out int slot))
+            if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out int slot))
                 return false;
 
-            if (!CanUseExistingTargetSlot(slot))
+            if (!CanUseExistingTargetSlot(slot, ref views))
                 return false;
 
-            _armorValues[slot] = QuantizeArmorValue(armorValue);
-            _shieldValues[slot] = math.max(0f, shieldValue);
+            views.ArmorValues[slot] = QuantizeArmorValue(armorValue);
+            views.ShieldValues[slot] = math.max(0f, shieldValue);
             RefreshTargetArmorBase(slot, armorValue);
             return true;
         }
 
         public static bool SyncTargetHitProfile(int targetId, Vector3 targetForward, float targetHeight)
         {
-            if (!_slotByTargetId.IsCreated || !CanMutateTargets())
+            if (!CanMutateTargets() ||
+                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
                 return false;
 
-            if (!_slotByTargetId.TryGetValue(targetId, out int slot))
+            if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out int slot))
                 return false;
 
-            if (!CanUseExistingTargetSlot(slot))
+            if (!CanUseExistingTargetSlot(slot, ref views))
                 return false;
 
-            _targetForwardVectors[slot] = NormalizeOrDefault(
+            views.TargetForwardVectors[slot] = NormalizeOrDefault(
                 new float3(targetForward.x, targetForward.y, targetForward.z),
                 new float3(0f, 0f, 1f));
-            _targetHeights[slot] = math.max(0.0001f, targetHeight);
+            views.TargetHeights[slot] = math.max(0.0001f, targetHeight);
             return true;
         }
 
         public static bool TryGetTargetHealthFraction(int targetId, out float health01)
         {
             health01 = 0f;
-            if (!_slotByTargetId.IsCreated || !_health.IsCreated || !_invMaxHealth.IsCreated)
+            if (!TryResolveCombatDamageReadOnlyViews(out CombatDamageReadOnlyVaultViews views) ||
+                !views.Health.IsCreated ||
+                !views.InvMaxHealth.IsCreated)
                 return false;
 
-            if (!_slotByTargetId.TryGetValue(targetId, out int slot))
+            if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, targetId, out int slot))
                 return false;
 
-            if ((uint)slot >= (uint)_health.Length ||
-                (uint)slot >= (uint)_invMaxHealth.Length)
+            if ((uint)slot >= (uint)views.Health.Length ||
+                (uint)slot >= (uint)views.InvMaxHealth.Length)
                 return false;
 
-            health01 = math.saturate(_health[slot] * _invMaxHealth[slot]);
+            health01 = math.saturate(views.Health[slot] * views.InvMaxHealth[slot]);
             return true;
         }
 
@@ -680,7 +666,8 @@ namespace Hecton8.Gameplay
             if (signal.TargetId == 0)
                 return false;
 
-            if (!_damageSignals.IsCreated)
+            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
+                !views.DamageSignals.IsCreated)
                 return false;
 
             if (_damageJobScheduled)
@@ -696,41 +683,137 @@ namespace Hecton8.Gameplay
             }
 
             int detailIndex = _queuedSignalCount;
-            if (!CanUseDamageIngressSlot(detailIndex))
+            if (!CanUseDamageIngressSlot(detailIndex, ref views))
             {
                 PublishQueueRejectAnomaly(TelemetryAnomalyQueueStorage, signal.Amount);
                 return false;
             }
 
-            if (_slotByTargetId.TryGetValue(signal.TargetId, out int targetSlot))
-                RefreshTargetHitProfile(targetSlot);
+            if (TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, signal.TargetId, out int targetSlot))
+                RefreshTargetHitProfile(targetSlot, ref views);
 
             SanitizeQueuedSignal(in signal, in detail, out CombatDamageRequest queuedSignal, out CombatDamageSignalDetail queuedDetail, out uint ingressAnomalyHash);
             uint packedMeta = PackDamageClassMetaFast(queuedSignal.PackedMeta);
             queuedSignal.PackedMeta = (packedMeta & MetaDetailIndexClearMask) |
                                       ((uint)detailIndex << MetaDetailIndexShift);
-            _signalDetails[detailIndex] = queuedDetail;
-            WriteSignalImpactAup(detailIndex, impactAup);
-            _damageSignals.Enqueue(queuedSignal);
-            _queuedSignalCount++;
+            if (!TryAcquireDamageIngressWriteLocks(
+                    out NativeArray<CombatDamageRequest> damageSignals,
+                    out NativeArray<CombatDamageSignalDetail> signalDetails,
+                    out NativeArray<double3> signalImpactAups,
+                    out int ingressLockCount))
+            {
+                PublishQueueRejectAnomaly(TelemetryAnomalyQueueStorage, signal.Amount);
+                return false;
+            }
+
+            try
+            {
+                if ((uint)detailIndex >= (uint)damageSignals.Length ||
+                    (uint)detailIndex >= (uint)signalDetails.Length ||
+                    (uint)detailIndex >= (uint)signalImpactAups.Length)
+                {
+                    PublishQueueRejectAnomaly(TelemetryAnomalyQueueStorage, signal.Amount);
+                    return false;
+                }
+
+                signalDetails[detailIndex] = queuedDetail;
+                signalImpactAups[detailIndex] = math.select(double3.zero, impactAup, new bool3(IsFinite(impactAup)));
+                damageSignals[detailIndex] = queuedSignal;
+                _queuedSignalCount++;
+            }
+            finally
+            {
+                ReleaseDamageIngressWriteLocks(ingressLockCount);
+            }
+
             if (ingressAnomalyHash != 0u)
                 PublishCombatTelemetryAnomaly(ingressAnomalyHash, queuedSignal.Amount, TelemetrySeverityWarning, TelemetryFlagIngressSanitized);
             return true;
         }
 
-        private static bool CanUseDamageIngressSlot(int detailIndex)
+        private static bool TryAcquireDamageIngressWriteLocks(
+            out NativeArray<CombatDamageRequest> damageSignals,
+            out NativeArray<CombatDamageSignalDetail> signalDetails,
+            out NativeArray<double3> signalImpactAups,
+            out int lockedCount)
         {
-            if (!_damageSignals.IsCreated ||
-                !_signalDetails.IsCreated ||
-                (uint)detailIndex >= (uint)MaxQueuedSignals ||
-                (uint)detailIndex >= (uint)_signalDetails.Length)
+            damageSignals = default;
+            signalDetails = default;
+            signalImpactAups = default;
+            lockedCount = 0;
+
+            IDataVault damageVault = ResolveCombatDataVault(allowColdBootstrap: false);
+            IDataVault armorVault = _armorDataVault;
+            if (damageVault == null ||
+                armorVault == null ||
+                damageVault.IsCompactionFenceActive ||
+                armorVault.IsCompactionFenceActive ||
+                !IsCombatDamageVaultHandleCreated(in _damageSignalsHandle, CombatDamageSignalsBufferId) ||
+                !IsCombatDamageVaultHandleCreated(in _signalDetailsHandle, CombatDamageSignalDetailsBufferId) ||
+                !IsArmorVaultHandleCreated(in _signalImpactAupsHandle, ArmorPenetrationVaultBufferIds.SignalImpactAups))
             {
                 return false;
             }
 
-            return TryResolveArmorPenetrationVaultViews(out ArmorPenetrationVaultViews views, ensure: false) &&
-                   views.SignalImpactAups.IsCreated &&
-                   (uint)detailIndex < (uint)views.SignalImpactAups.Length;
+            if (!damageVault.TryAcquireWriteLock(in _damageSignalsHandle, CombatDamageMemoryOwner, out damageSignals))
+                return false;
+            lockedCount = 1;
+
+            if (!damageVault.TryAcquireWriteLock(in _signalDetailsHandle, CombatDamageMemoryOwner, out signalDetails))
+            {
+                ReleaseDamageIngressWriteLocks(lockedCount);
+                return false;
+            }
+            lockedCount = 2;
+
+            if (!armorVault.TryAcquireWriteLock(in _signalImpactAupsHandle, ArmorMemoryOwner, out signalImpactAups))
+            {
+                ReleaseDamageIngressWriteLocks(lockedCount);
+                return false;
+            }
+
+            lockedCount = 3;
+            return true;
+        }
+
+        private static void ReleaseDamageIngressWriteLocks(int lockedCount)
+        {
+            IDataVault armorVault = _armorDataVault;
+            if (lockedCount >= 3 && armorVault != null)
+                armorVault.ReleaseWriteLock(in _signalImpactAupsHandle, ArmorMemoryOwner);
+
+            IDataVault damageVault = ResolveCombatDataVault(allowColdBootstrap: false);
+            if (damageVault == null)
+                return;
+
+            if (lockedCount >= 2)
+                damageVault.ReleaseWriteLock(in _signalDetailsHandle, CombatDamageMemoryOwner);
+            if (lockedCount >= 1)
+                damageVault.ReleaseWriteLock(in _damageSignalsHandle, CombatDamageMemoryOwner);
+        }
+
+        private static bool CanUseDamageIngressSlot(int detailIndex)
+        {
+            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+                return false;
+
+            return CanUseDamageIngressSlot(detailIndex, ref views);
+        }
+
+        private static bool CanUseDamageIngressSlot(int detailIndex, ref CombatDamageVaultViews views)
+        {
+            if (!views.DamageSignals.IsCreated ||
+                !views.SignalDetails.IsCreated ||
+                (uint)detailIndex >= (uint)MaxQueuedSignals ||
+                (uint)detailIndex >= (uint)views.DamageSignals.Length ||
+                (uint)detailIndex >= (uint)views.SignalDetails.Length)
+            {
+                return false;
+            }
+
+            return TryResolveArmorPenetrationVaultViews(out ArmorPenetrationVaultViews armorViews, ensure: false) &&
+                   armorViews.SignalImpactAups.IsCreated &&
+                   (uint)detailIndex < (uint)armorViews.SignalImpactAups.Length;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -752,62 +835,80 @@ namespace Hecton8.Gameplay
             TryApplyPendingStatusEffectVaultRebind();
             DrainGlobalDamageSignals(MaxGlobalDamageSignalsPerFrame);
 
-            if (!_damageSignals.IsCreated || _queuedSignalCount <= 0 || _damageJobScheduled || _statusJobScheduled)
+            if (!IsCombatDamageVaultInitialized() || _queuedSignalCount <= 0 || _damageJobScheduled || _statusJobScheduled)
                 return;
 
             using (_scheduleMarker.Auto())
             {
-                if (!_statusEffectStates.IsCreated && !EnsureStatusEffectStorage())
+                if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews damageViews, ensure: false))
+                    return;
+                if (!EnsureStatusEffectStorage() ||
+                    !TryResolveStatusEffectVaultViews(out CombatStatusEffectVaultViews statusViews, ensure: false))
                     return;
                 if (!TryResolveArmorPenetrationVaultViews(out ArmorPenetrationVaultViews armorViews, ensure: false))
                     return;
-                if (!CanUseDamageJobBuffers(in armorViews))
+                if (!CanUseDamageJobBuffers(ref damageViews, ref statusViews, in armorViews))
                     return;
 
                 RefreshArmorTargetSnapshots(ref armorViews);
-                if (!TryLockArmorVaultBuffersForJobs())
+                if (!TryLockCombatDamageVaultBuffersForJobs(out int damageLockedCount))
                     return;
+                if (!TryLockArmorVaultBuffersForJobs())
+                {
+                    UnlockCombatDamageVaultBuffersForJobs(damageLockedCount);
+                    return;
+                }
 
                 bool armorVaultLockOwnedByScheduledJob = false;
+                bool damageVaultLockOwnedByScheduledJob = false;
                 try
                 {
+                    if (!TryResolveCombatDamageVaultViews(out damageViews, ensure: false) ||
+                        !TryResolveStatusEffectVaultViews(out statusViews, ensure: false) ||
+                        !TryResolveArmorPenetrationVaultViews(out armorViews, ensure: false) ||
+                        !CanUseDamageJobBuffers(ref damageViews, ref statusViews, in armorViews))
+                    {
+                        return;
+                    }
+
                     RefreshRuntimePolicy();
-                    ClearCounters();
+                    ClearCounters(ref damageViews);
                     ProcessDamageQueueJob job = new ProcessDamageQueueJob
                     {
-                        Signals = _damageSignals,
-                        SignalDetails = _signalDetails,
+                        Signals = damageViews.DamageSignals,
+                        SignalDetails = damageViews.SignalDetails,
                         SignalImpactAups = armorViews.SignalImpactAups,
-                        SlotByTargetId = _slotByTargetId,
-                        InstanceIds = _instanceIds,
-                        Health = _health,
-                        MaxHealth = _maxHealth,
-                        InvMaxHealth = _invMaxHealth,
-                        ArmorValues = _armorValues,
-                        ShieldValues = _shieldValues,
-                        MinorDamageAccumulators = _minorDamageAccumulators,
-                        TargetForwardVectors = _targetForwardVectors,
-                        TargetHeights = _targetHeights,
-                        TargetFlags = _targetFlags,
+                        TargetLookupKeys = damageViews.TargetLookupKeys,
+                        TargetLookupSlots = damageViews.TargetLookupSlots,
+                        InstanceIds = damageViews.InstanceIds,
+                        Health = damageViews.Health,
+                        MaxHealth = damageViews.MaxHealth,
+                        InvMaxHealth = damageViews.InvMaxHealth,
+                        ArmorValues = damageViews.ArmorValues,
+                        ShieldValues = damageViews.ShieldValues,
+                        MinorDamageAccumulators = damageViews.MinorDamageAccumulators,
+                        TargetForwardVectors = damageViews.TargetForwardVectors,
+                        TargetHeights = damageViews.TargetHeights,
+                        TargetFlags = damageViews.TargetFlags,
                         TargetRootAups = armorViews.TargetRootAups,
                         TargetRotations = armorViews.TargetRotations,
                         TargetHalfExtents = armorViews.TargetHalfExtents,
                         TargetArmorProfiles = armorViews.TargetArmorProfiles,
-                        StatusEffectStates = _statusEffectStates,
-                        StatusMasks = _statusMasks,
-                        StatusDurations0123 = _statusDurations0123,
-                        LegacyStatusDurations4567 = _legacyStatusDurations4567,
-                        BrittleDurations = _brittleDurations,
-                        DamageArmorLut = _damageArmorLut,
+                        StatusEffectStates = statusViews.States,
+                        StatusMasks = damageViews.StatusMasks,
+                        StatusDurations0123 = damageViews.StatusDurations0123,
+                        LegacyStatusDurations4567 = damageViews.LegacyStatusDurations4567,
+                        BrittleDurations = damageViews.BrittleDurations,
+                        DamageArmorLut = damageViews.DamageArmorLut,
                         ArmorTelemetryRing = armorViews.TelemetryRing,
                         ArmorDebugHits = armorViews.DebugHits,
-                        Results = _results,
-                        Counters = _counters,
+                        Results = damageViews.Results,
+                        Counters = damageViews.Counters,
                         DeflectSignalWriter = SignalBus<DeflectSignal>.ParallelWriter,
                         DeflectSignalWriterBudget = SignalBus<DeflectSignal>.ParallelWriterBudget,
                         ImpactSignalWriter = SignalBus<ImpactSignal>.ParallelWriter,
                         ImpactSignalWriterBudget = SignalBus<ImpactSignal>.ParallelWriterBudget,
-                        SignalBudget = MaxQueuedSignals,
+                        SignalBudget = math.min(_queuedSignalCount, MaxQueuedSignals),
                         VisualQualityWeight01 = _visualQualityWeight01,
                         ArmorTuning = PrepareArmorTuningForJob(ref armorViews),
                         ArmorTelemetryIndex = BeginArmorPenetrationSchedule(),
@@ -816,6 +917,8 @@ namespace Hecton8.Gameplay
                     _damageJobHandle = job.Schedule();
                     _damageJobScheduled = true;
                     armorVaultLockOwnedByScheduledJob = true;
+                    damageVaultLockOwnedByScheduledJob = true;
+                    H8Memory.RegisterActiveJob(CombatDamageMemoryOwner, _damageJobHandle);
                     H8Memory.RegisterActiveJob(ArmorMemoryOwner, _damageJobHandle);
                     JobHandle.ScheduleBatchedJobs();
                 }
@@ -823,39 +926,48 @@ namespace Hecton8.Gameplay
                 {
                     if (!armorVaultLockOwnedByScheduledJob)
                         UnlockArmorVaultBuffersForJobs();
+                    if (!damageVaultLockOwnedByScheduledJob)
+                        UnlockCombatDamageVaultBuffersForJobs(damageLockedCount);
                 }
             }
         }
 
-        private static bool CanUseDamageJobBuffers(in ArmorPenetrationVaultViews armorViews)
+        private static bool CanUseDamageJobBuffers(
+            ref CombatDamageVaultViews damageViews,
+            ref CombatStatusEffectVaultViews statusViews,
+            in ArmorPenetrationVaultViews armorViews)
         {
             int targetCount = math.max(0, _targetCount);
-            return _damageSignals.IsCreated &&
-                   _signalDetails.IsCreated &&
-                   _signalDetails.Length >= MaxQueuedSignals &&
+            return damageViews.DamageSignals.IsCreated &&
+                   damageViews.DamageSignals.Length >= MaxQueuedSignals &&
+                   damageViews.SignalDetails.IsCreated &&
+                   damageViews.SignalDetails.Length >= MaxQueuedSignals &&
                    armorViews.SignalImpactAups.IsCreated &&
                    armorViews.SignalImpactAups.Length >= MaxQueuedSignals &&
-                   _slotByTargetId.IsCreated &&
-                   _instanceIds.IsCreated &&
-                   (uint)targetCount <= (uint)_instanceIds.Length &&
-                   _health.IsCreated &&
-                   (uint)targetCount <= (uint)_health.Length &&
-                   _maxHealth.IsCreated &&
-                   (uint)targetCount <= (uint)_maxHealth.Length &&
-                   _invMaxHealth.IsCreated &&
-                   (uint)targetCount <= (uint)_invMaxHealth.Length &&
-                   _armorValues.IsCreated &&
-                   (uint)targetCount <= (uint)_armorValues.Length &&
-                   _shieldValues.IsCreated &&
-                   (uint)targetCount <= (uint)_shieldValues.Length &&
-                   _minorDamageAccumulators.IsCreated &&
-                   (uint)targetCount <= (uint)_minorDamageAccumulators.Length &&
-                   _targetForwardVectors.IsCreated &&
-                   (uint)targetCount <= (uint)_targetForwardVectors.Length &&
-                   _targetHeights.IsCreated &&
-                   (uint)targetCount <= (uint)_targetHeights.Length &&
-                   _targetFlags.IsCreated &&
-                   (uint)targetCount <= (uint)_targetFlags.Length &&
+                   damageViews.TargetLookupKeys.IsCreated &&
+                   damageViews.TargetLookupKeys.Length >= CombatTargetLookupCapacity &&
+                   damageViews.TargetLookupSlots.IsCreated &&
+                   damageViews.TargetLookupSlots.Length >= CombatTargetLookupCapacity &&
+                   damageViews.InstanceIds.IsCreated &&
+                   (uint)targetCount <= (uint)damageViews.InstanceIds.Length &&
+                   damageViews.Health.IsCreated &&
+                   (uint)targetCount <= (uint)damageViews.Health.Length &&
+                   damageViews.MaxHealth.IsCreated &&
+                   (uint)targetCount <= (uint)damageViews.MaxHealth.Length &&
+                   damageViews.InvMaxHealth.IsCreated &&
+                   (uint)targetCount <= (uint)damageViews.InvMaxHealth.Length &&
+                   damageViews.ArmorValues.IsCreated &&
+                   (uint)targetCount <= (uint)damageViews.ArmorValues.Length &&
+                   damageViews.ShieldValues.IsCreated &&
+                   (uint)targetCount <= (uint)damageViews.ShieldValues.Length &&
+                   damageViews.MinorDamageAccumulators.IsCreated &&
+                   (uint)targetCount <= (uint)damageViews.MinorDamageAccumulators.Length &&
+                   damageViews.TargetForwardVectors.IsCreated &&
+                   (uint)targetCount <= (uint)damageViews.TargetForwardVectors.Length &&
+                   damageViews.TargetHeights.IsCreated &&
+                   (uint)targetCount <= (uint)damageViews.TargetHeights.Length &&
+                   damageViews.TargetFlags.IsCreated &&
+                   (uint)targetCount <= (uint)damageViews.TargetFlags.Length &&
                    armorViews.TargetRootAups.IsCreated &&
                    (uint)targetCount <= (uint)armorViews.TargetRootAups.Length &&
                    armorViews.TargetRotations.IsCreated &&
@@ -864,24 +976,24 @@ namespace Hecton8.Gameplay
                    (uint)targetCount <= (uint)armorViews.TargetHalfExtents.Length &&
                    armorViews.TargetArmorProfiles.IsCreated &&
                    (uint)targetCount <= (uint)armorViews.TargetArmorProfiles.Length &&
-                   _statusEffectStates.IsCreated &&
-                   (uint)targetCount <= (uint)_statusEffectStates.Length &&
-                   _statusMasks.IsCreated &&
-                   (uint)targetCount <= (uint)_statusMasks.Length &&
-                   _statusDurations0123.IsCreated &&
-                   (uint)targetCount <= (uint)_statusDurations0123.Length &&
-                   _legacyStatusDurations4567.IsCreated &&
-                   (uint)targetCount <= (uint)_legacyStatusDurations4567.Length &&
-                   _brittleDurations.IsCreated &&
-                   (uint)targetCount <= (uint)_brittleDurations.Length &&
-                   _damageArmorLut.IsCreated &&
-                   _damageArmorLut.Length >= DamageArmorLutLength &&
+                   statusViews.States.IsCreated &&
+                   (uint)targetCount <= (uint)statusViews.States.Length &&
+                   damageViews.StatusMasks.IsCreated &&
+                   (uint)targetCount <= (uint)damageViews.StatusMasks.Length &&
+                   damageViews.StatusDurations0123.IsCreated &&
+                   (uint)targetCount <= (uint)damageViews.StatusDurations0123.Length &&
+                   damageViews.LegacyStatusDurations4567.IsCreated &&
+                   (uint)targetCount <= (uint)damageViews.LegacyStatusDurations4567.Length &&
+                   damageViews.BrittleDurations.IsCreated &&
+                   (uint)targetCount <= (uint)damageViews.BrittleDurations.Length &&
+                   damageViews.DamageArmorLut.IsCreated &&
+                   damageViews.DamageArmorLut.Length >= DamageArmorLutLength &&
                    armorViews.TelemetryRing.IsCreated &&
                    armorViews.TelemetryRing.Length > 0 &&
-                   _results.IsCreated &&
-                   _results.Length >= MaxResults &&
-                   _counters.IsCreated &&
-                   _counters.Length >= CounterLength;
+                   damageViews.Results.IsCreated &&
+                   damageViews.Results.Length >= MaxResults &&
+                   damageViews.Counters.IsCreated &&
+                   damageViews.Counters.Length >= CounterLength;
         }
 
         private static void DrainGlobalDamageSignals(int maxSignals)
@@ -1001,13 +1113,96 @@ namespace Hecton8.Gameplay
 
         public static void SlowTick(float deltaTime)
         {
-            if (!_health.IsCreated || _targetCount <= 0 || _damageJobScheduled || _statusJobScheduled)
+            if (_targetCount <= 0 ||
+                _damageJobScheduled ||
+                _statusJobScheduled ||
+                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
+                !views.Health.IsCreated)
+            {
                 return;
+            }
 
             using (_slowTickMarker.Auto())
             {
                 TryScheduleStatusEffectJobs(deltaTime);
             }
+        }
+
+        public static bool ValidateCombatDamageLayout(out string failure)
+        {
+            if (UnsafeUtility.SizeOf<CombatDamageRequest>() != 32)
+            {
+                failure = "CombatDamageRequest size mismatch.";
+                return false;
+            }
+
+            if ((int)Marshal.OffsetOf(typeof(CombatDamageRequest), nameof(CombatDamageRequest.TargetId)) != 0 ||
+                (int)Marshal.OffsetOf(typeof(CombatDamageRequest), nameof(CombatDamageRequest.SourceId)) != 4 ||
+                (int)Marshal.OffsetOf(typeof(CombatDamageRequest), nameof(CombatDamageRequest.Amount)) != 8 ||
+                (int)Marshal.OffsetOf(typeof(CombatDamageRequest), nameof(CombatDamageRequest.ImpulseMagnitude)) != 12 ||
+                (int)Marshal.OffsetOf(typeof(CombatDamageRequest), nameof(CombatDamageRequest.Direction)) != 16 ||
+                (int)Marshal.OffsetOf(typeof(CombatDamageRequest), nameof(CombatDamageRequest.PackedMeta)) != 28)
+            {
+                failure = "CombatDamageRequest offset mismatch.";
+                return false;
+            }
+
+            if (UnsafeUtility.SizeOf<CombatDamageSignalDetail>() != 32)
+            {
+                failure = "CombatDamageSignalDetail size mismatch.";
+                return false;
+            }
+
+            if ((int)Marshal.OffsetOf(typeof(CombatDamageSignalDetail), nameof(CombatDamageSignalDetail.LocalPoint)) != 0 ||
+                (int)Marshal.OffsetOf(typeof(CombatDamageSignalDetail), nameof(CombatDamageSignalDetail.ArmorNormal)) != 12 ||
+                (int)Marshal.OffsetOf(typeof(CombatDamageSignalDetail), nameof(CombatDamageSignalDetail.LocalTemperatureCelsius)) != 24 ||
+                (int)Marshal.OffsetOf(typeof(CombatDamageSignalDetail), nameof(CombatDamageSignalDetail.StatusDurationSeconds)) != 28)
+            {
+                failure = "CombatDamageSignalDetail offset mismatch.";
+                return false;
+            }
+
+            if (UnsafeUtility.SizeOf<CombatDamageResult>() != 128)
+            {
+                failure = "CombatDamageResult size mismatch.";
+                return false;
+            }
+
+            if ((int)Marshal.OffsetOf(typeof(CombatDamageResult), nameof(CombatDamageResult.TargetId)) != 0 ||
+                (int)Marshal.OffsetOf(typeof(CombatDamageResult), nameof(CombatDamageResult.SourceId)) != 4 ||
+                (int)Marshal.OffsetOf(typeof(CombatDamageResult), nameof(CombatDamageResult.DamageType)) != 8 ||
+                (int)Marshal.OffsetOf(typeof(CombatDamageResult), nameof(CombatDamageResult.StatusBits)) != 12 ||
+                (int)Marshal.OffsetOf(typeof(CombatDamageResult), nameof(CombatDamageResult.Direction)) != 32 ||
+                (int)Marshal.OffsetOf(typeof(CombatDamageResult), "_pad0") != 45 ||
+                (int)Marshal.OffsetOf(typeof(CombatDamageResult), nameof(CombatDamageResult.Flags)) != 46 ||
+                (int)Marshal.OffsetOf(typeof(CombatDamageResult), "_pad1") != 50 ||
+                (int)Marshal.OffsetOf(typeof(CombatDamageResult), nameof(CombatDamageResult.LocalPoint)) != 52 ||
+                (int)Marshal.OffsetOf(typeof(CombatDamageResult), nameof(CombatDamageResult.SurfaceNormal)) != 64 ||
+                (int)Marshal.OffsetOf(typeof(CombatDamageResult), "_pad2") != 80 ||
+                (int)Marshal.OffsetOf(typeof(CombatDamageResult), "_pad7") != 120)
+            {
+                failure = "CombatDamageResult offset mismatch.";
+                return false;
+            }
+
+            if (UnsafeUtility.SizeOf<CombatTelemetryEntry>() != CombatTelemetryEntrySizeBytes)
+            {
+                failure = "CombatTelemetryEntry size mismatch.";
+                return false;
+            }
+
+            if ((int)Marshal.OffsetOf(typeof(CombatTelemetryEntry), nameof(CombatTelemetryEntry.FrameIndex)) != 0 ||
+                (int)Marshal.OffsetOf(typeof(CombatTelemetryEntry), nameof(CombatTelemetryEntry.Sequence)) != 4 ||
+                (int)Marshal.OffsetOf(typeof(CombatTelemetryEntry), nameof(CombatTelemetryEntry.LocalPoint)) != 44 ||
+                (int)Marshal.OffsetOf(typeof(CombatTelemetryEntry), nameof(CombatTelemetryEntry.Flags)) != 56 ||
+                (int)Marshal.OffsetOf(typeof(CombatTelemetryEntry), nameof(CombatTelemetryEntry.Reserved)) != 60)
+            {
+                failure = "CombatTelemetryEntry offset mismatch.";
+                return false;
+            }
+
+            failure = string.Empty;
+            return true;
         }
 
         public static void LateFrameTick()
@@ -1066,44 +1261,9 @@ namespace Hecton8.Gameplay
                 CompleteStatusEffectFrame();
             }
 
-            if (_damageSignals.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(CombatDamageRuntime), nameof(_damageSignals));
-                _damageSignals.Dispose();
-                _damageSignals = default;
-            }
-
-            DisposeNativeArray(ref _signalDetails);
             DisposeArmorPenetrationNativeState();
-            if (_slotByTargetId.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelHashMap(nameof(CombatDamageRuntime), nameof(_slotByTargetId));
-                _slotByTargetId.Dispose();
-                _slotByTargetId = default;
-            }
-
-            DisposeNativeArray(ref _instanceIds);
-            DisposeNativeArray(ref _health);
-            DisposeNativeArray(ref _maxHealth);
-            DisposeNativeArray(ref _invMaxHealth);
-            DisposeNativeArray(ref _armorValues);
-            DisposeNativeArray(ref _shieldValues);
-            DisposeNativeArray(ref _minorDamageAccumulators);
-            DisposeNativeArray(ref _targetForwardVectors);
-            DisposeNativeArray(ref _targetHeights);
-            DisposeNativeArray(ref _targetFlags);
-            DisposeNativeArray(ref _statusMasks);
-            DisposeNativeArray(ref _statusDurations0123);
-            DisposeNativeArray(ref _legacyStatusDurations4567);
-            DisposeNativeArray(ref _brittleDurations);
-            DisposeNativeArray(ref _damageArmorLut);
-            DisposeNativeArray(ref _results);
-            DisposeNativeArray(ref _statusResults);
-            DisposeNativeArray(ref _statusResultActive);
-            DisposeNativeArray(ref _counters);
-            DisposeNativeArray(ref _telemetryRing);
-            DisposeNativeArray(ref _telemetryState);
             ShutdownStatusEffectStorage();
+            ReleaseCombatDamageVaultBuffers();
             if (_receivers != null)
                 System.Array.Clear(_receivers, 0, _receivers.Length);
             if (_receiverTransforms != null)
@@ -1127,87 +1287,69 @@ namespace Hecton8.Gameplay
         {
             RegisterCombatRegistryHotSwapBridge();
 
-            if (_damageSignals.IsCreated)
+            if (IsCombatDamageVaultInitialized() && _receivers != null)
                 return;
 
-            _damageSignals = new NativeQueue<CombatDamageRequest>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<CombatDamageRequest>[1024] - combat damage ingress lane - owner: CombatDamageRuntime
-            NativeMemorySentinel.RegisterNativeQueue(
-                _damageSignals,
-                MaxQueuedSignals,
-                nameof(CombatDamageRuntime),
-                nameof(_damageSignals),
-                NativeAllocationLifetime.Session);
-            PrewarmQueue(ref _damageSignals, MaxQueuedSignals);
-            _signalDetails = AllocateArray<CombatDamageSignalDetail>(MaxQueuedSignals, nameof(_signalDetails));
+            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: true))
+                return;
 
-            _slotByTargetId = new NativeParallelHashMap<int, int>(MaxTargets, DataVaultExemptOwnerIndexAllocator); // COLD ALLOC: NativeParallelHashMap<int,int>[2048] - target id to health slot map - owner: CombatDamageRuntime
-            NativeMemorySentinel.RegisterNativeParallelHashMap(
-                _slotByTargetId,
-                nameof(CombatDamageRuntime),
-                nameof(_slotByTargetId),
-                NativeAllocationLifetime.Session);
+            if (_targetCount <= 0)
+                ClearTargetLookup(views.TargetLookupKeys, views.TargetLookupSlots);
 
-            _instanceIds = AllocateArray<int>(MaxTargets, nameof(_instanceIds));
-            _health = AllocateArray<float>(MaxTargets, nameof(_health));
-            _maxHealth = AllocateArray<float>(MaxTargets, nameof(_maxHealth));
-            _invMaxHealth = AllocateArray<float>(MaxTargets, nameof(_invMaxHealth));
-            _armorValues = AllocateArray<int>(MaxTargets, nameof(_armorValues));
-            _shieldValues = AllocateArray<float>(MaxTargets, nameof(_shieldValues));
-            _minorDamageAccumulators = AllocateArray<float>(MaxTargets, nameof(_minorDamageAccumulators));
-            _targetForwardVectors = AllocateArray<float3>(MaxTargets, nameof(_targetForwardVectors));
-            _targetHeights = AllocateArray<float>(MaxTargets, nameof(_targetHeights));
-            _targetFlags = AllocateArray<uint>(MaxTargets, nameof(_targetFlags));
-            _statusMasks = AllocateArray<uint>(MaxTargets, nameof(_statusMasks));
-            _statusDurations0123 = AllocateArray<float4>(MaxTargets, nameof(_statusDurations0123));
-            _legacyStatusDurations4567 = AllocateArray<float4>(MaxTargets, nameof(_legacyStatusDurations4567));
-            _brittleDurations = AllocateArray<float>(MaxTargets, nameof(_brittleDurations));
-            _damageArmorLut = AllocateArray<float>(DamageArmorLutLength, nameof(_damageArmorLut));
-            _results = AllocateArray<CombatDamageResult>(MaxResults, nameof(_results));
-            _statusResults = AllocateArray<CombatDamageResult>(MaxTargets, nameof(_statusResults));
-            _statusResultActive = AllocateArray<byte>(MaxTargets, nameof(_statusResultActive));
-            _counters = AllocateArray<int>(CounterLength, nameof(_counters));
-            _telemetryRing = AllocateArray<CombatTelemetryEntry>(TelemetryFrameCapacity, nameof(_telemetryRing));
-            _telemetryState = AllocateArray<uint>(TelemetryStateLength, nameof(_telemetryState));
+            if (!TryInitializeDamageArmorLutLocked())
+                return;
+
             EnsureStatusEffectStorage();
-            _receivers = new IDamageReceiver[MaxTargets]; // COLD ALLOC: IDamageReceiver[2048] - managed fanout mirror for native target slots - owner: CombatDamageRuntime
-            _receiverTransforms = new Transform[MaxTargets]; // COLD ALLOC: Transform[2048] - world/local conversion mirror for combat receivers - owner: CombatDamageRuntime
-            _targetBodies = new Rigidbody[MaxTargets]; // COLD ALLOC: Rigidbody[2048] - cached pushback bodies for combat receivers - owner: CombatDamageRuntime
+            if (_receivers == null || _receivers.Length != MaxTargets)
+                _receivers = new IDamageReceiver[MaxTargets]; // COLD ALLOC: IDamageReceiver[2048] - managed fanout mirror for native target slots - owner: CombatDamageRuntime
+            if (_receiverTransforms == null || _receiverTransforms.Length != MaxTargets)
+                _receiverTransforms = new Transform[MaxTargets]; // COLD ALLOC: Transform[2048] - world/local conversion mirror for combat receivers - owner: CombatDamageRuntime
+            if (_targetBodies == null || _targetBodies.Length != MaxTargets)
+                _targetBodies = new Rigidbody[MaxTargets]; // COLD ALLOC: Rigidbody[2048] - cached pushback bodies for combat receivers - owner: CombatDamageRuntime
             EnsureArmorPenetrationNativeState();
-            InitializeDamageArmorLut();
             RefreshRuntimePolicy();
         }
 
-        private static NativeArray<T> AllocateArray<T>(int length, string label)
-            where T : struct
+        private static bool TryInitializeDamageArmorLutLocked()
         {
-            NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                array,
-                nameof(CombatDamageRuntime),
-                label,
-                NativeAllocationLifetime.Session);
-            return array;
+            IDataVault vault = ResolveCombatDataVault(allowColdBootstrap: false);
+            if (vault == null ||
+                !IsCombatDamageVaultHandleCreated(in _damageArmorLutHandle, CombatDamageArmorLutBufferId) ||
+                !vault.TryAcquireWriteLock(in _damageArmorLutHandle, CombatDamageMemoryOwner, out NativeArray<float> lut))
+            {
+                return false;
+            }
+
+            try
+            {
+                InitializeDamageArmorLut(lut);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _damageArmorLutHandle, CombatDamageMemoryOwner);
+            }
         }
 
-        private static void InitializeDamageArmorLut()
+        private static void InitializeDamageArmorLut(NativeArray<float> lut)
         {
             for (int i = 0; i < DamageArmorLutLength; i++)
-                _damageArmorLut[i] = 1f;
+                lut[i] = 1f;
 
-            SetLut(ResolveDamageClass(CombatDamageTypes.Impact), CombatArmorClass.Structure, 0.75f);
-            SetLut(ResolveDamageClass(CombatDamageTypes.Impact), CombatArmorClass.OrganicHeavy, 0.65f);
-            SetLut(ResolveDamageClass(CombatDamageTypes.Impact), CombatArmorClass.Brittle, 1.35f);
-            SetLut(ResolveDamageClass(CombatDamageTypes.Thermal), CombatArmorClass.Shell, 0.8f);
-            SetLut(ResolveDamageClass(CombatDamageTypes.Thermal), CombatArmorClass.Brittle, 1.2f);
-            SetLut(ResolveDamageClass(CombatDamageTypes.Toxic), CombatArmorClass.Structure, 0.2f);
-            SetLut(ResolveDamageClass(CombatDamageTypes.Emp), CombatArmorClass.Shielded, 1.35f);
-            SetLut(ResolveDamageClass(CombatDamageTypes.Pressure), CombatArmorClass.Suit, 0.85f);
+            SetLut(lut, ResolveDamageClass(CombatDamageTypes.Impact), CombatArmorClass.Structure, 0.75f);
+            SetLut(lut, ResolveDamageClass(CombatDamageTypes.Impact), CombatArmorClass.OrganicHeavy, 0.65f);
+            SetLut(lut, ResolveDamageClass(CombatDamageTypes.Impact), CombatArmorClass.Brittle, 1.35f);
+            SetLut(lut, ResolveDamageClass(CombatDamageTypes.Thermal), CombatArmorClass.Shell, 0.8f);
+            SetLut(lut, ResolveDamageClass(CombatDamageTypes.Thermal), CombatArmorClass.Brittle, 1.2f);
+            SetLut(lut, ResolveDamageClass(CombatDamageTypes.Toxic), CombatArmorClass.Structure, 0.2f);
+            SetLut(lut, ResolveDamageClass(CombatDamageTypes.Emp), CombatArmorClass.Shielded, 1.35f);
+            SetLut(lut, ResolveDamageClass(CombatDamageTypes.Pressure), CombatArmorClass.Suit, 0.85f);
         }
 
-        private static void SetLut(int damageClass, CombatArmorClass armorClass, float value)
+        private static void SetLut(NativeArray<float> lut, int damageClass, CombatArmorClass armorClass, float value)
         {
             int index = (damageClass * ArmorClassCount) + ((int)armorClass & 7);
-            _damageArmorLut[index] = value;
+            lut[index] = value;
         }
 
         private static bool CanMutateTargets()
@@ -1217,73 +1359,100 @@ namespace Hecton8.Gameplay
 
         private static bool CanUseExistingTargetSlot(int slot)
         {
+            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+                return false;
+
+            return CanUseExistingTargetSlot(slot, ref views);
+        }
+
+        private static bool CanUseExistingTargetSlot(int slot, ref CombatDamageVaultViews views)
+        {
             return _targetCount > 0 &&
                    (uint)slot < (uint)_targetCount &&
-                   CanUseTargetStorageSlot(slot);
+                   CanUseTargetStorageSlot(slot, ref views);
         }
 
         private static bool CanUseRegistrationTargetSlot(int slot)
         {
+            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+                return false;
+
+            return CanUseRegistrationTargetSlot(slot, ref views);
+        }
+
+        private static bool CanUseRegistrationTargetSlot(int slot, ref CombatDamageVaultViews views)
+        {
             return (uint)slot < (uint)MaxTargets &&
-                   CanUseTargetStorageSlot(slot);
+                   CanUseTargetStorageSlot(slot, ref views);
         }
 
         private static bool CanUseTargetStorageSlot(int slot)
         {
-            return _slotByTargetId.IsCreated &&
-                   _instanceIds.IsCreated &&
-                   (uint)slot < (uint)_instanceIds.Length &&
-                   _health.IsCreated &&
-                   (uint)slot < (uint)_health.Length &&
-                   _maxHealth.IsCreated &&
-                   (uint)slot < (uint)_maxHealth.Length &&
-                   _invMaxHealth.IsCreated &&
-                   (uint)slot < (uint)_invMaxHealth.Length &&
-                   _armorValues.IsCreated &&
-                   (uint)slot < (uint)_armorValues.Length &&
-                   _shieldValues.IsCreated &&
-                   (uint)slot < (uint)_shieldValues.Length &&
-                   _minorDamageAccumulators.IsCreated &&
-                   (uint)slot < (uint)_minorDamageAccumulators.Length &&
-                   _targetForwardVectors.IsCreated &&
-                   (uint)slot < (uint)_targetForwardVectors.Length &&
-                   _targetHeights.IsCreated &&
-                   (uint)slot < (uint)_targetHeights.Length &&
-                   _targetFlags.IsCreated &&
-                   (uint)slot < (uint)_targetFlags.Length &&
-                   _statusMasks.IsCreated &&
-                   (uint)slot < (uint)_statusMasks.Length &&
-                   _statusDurations0123.IsCreated &&
-                   (uint)slot < (uint)_statusDurations0123.Length &&
-                   _legacyStatusDurations4567.IsCreated &&
-                   (uint)slot < (uint)_legacyStatusDurations4567.Length &&
-                   _brittleDurations.IsCreated &&
-                   (uint)slot < (uint)_brittleDurations.Length &&
-                   _statusResults.IsCreated &&
-                   (uint)slot < (uint)_statusResults.Length &&
-                   _statusResultActive.IsCreated &&
-                   (uint)slot < (uint)_statusResultActive.Length &&
-                   _statusEffectStates.IsCreated &&
-                   (uint)slot < (uint)_statusEffectStates.Length &&
+            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+                return false;
+
+            return CanUseTargetStorageSlot(slot, ref views);
+        }
+
+        private static bool CanUseTargetStorageSlot(int slot, ref CombatDamageVaultViews views)
+        {
+            return TryResolveStatusEffectVaultViews(out CombatStatusEffectVaultViews statusViews, ensure: false) &&
+                   views.TargetLookupKeys.IsCreated &&
+                   views.TargetLookupSlots.IsCreated &&
+                   views.InstanceIds.IsCreated &&
+                   (uint)slot < (uint)views.InstanceIds.Length &&
+                   views.Health.IsCreated &&
+                   (uint)slot < (uint)views.Health.Length &&
+                   views.MaxHealth.IsCreated &&
+                   (uint)slot < (uint)views.MaxHealth.Length &&
+                   views.InvMaxHealth.IsCreated &&
+                   (uint)slot < (uint)views.InvMaxHealth.Length &&
+                   views.ArmorValues.IsCreated &&
+                   (uint)slot < (uint)views.ArmorValues.Length &&
+                   views.ShieldValues.IsCreated &&
+                   (uint)slot < (uint)views.ShieldValues.Length &&
+                   views.MinorDamageAccumulators.IsCreated &&
+                   (uint)slot < (uint)views.MinorDamageAccumulators.Length &&
+                   views.TargetForwardVectors.IsCreated &&
+                   (uint)slot < (uint)views.TargetForwardVectors.Length &&
+                   views.TargetHeights.IsCreated &&
+                   (uint)slot < (uint)views.TargetHeights.Length &&
+                   views.TargetFlags.IsCreated &&
+                   (uint)slot < (uint)views.TargetFlags.Length &&
+                   views.StatusMasks.IsCreated &&
+                   (uint)slot < (uint)views.StatusMasks.Length &&
+                   views.StatusDurations0123.IsCreated &&
+                   (uint)slot < (uint)views.StatusDurations0123.Length &&
+                   views.LegacyStatusDurations4567.IsCreated &&
+                   (uint)slot < (uint)views.LegacyStatusDurations4567.Length &&
+                   views.BrittleDurations.IsCreated &&
+                   (uint)slot < (uint)views.BrittleDurations.Length &&
+                   views.StatusResults.IsCreated &&
+                   (uint)slot < (uint)views.StatusResults.Length &&
+                   views.StatusResultActive.IsCreated &&
+                   (uint)slot < (uint)views.StatusResultActive.Length &&
+                   statusViews.States.IsCreated &&
+                   (uint)slot < (uint)statusViews.States.Length &&
                    IsManagedMirrorSlotReadable(slot);
         }
 
         private static void DispatchResults()
         {
-            if (!_counters.IsCreated ||
-                (uint)CounterResultCount >= (uint)_counters.Length ||
-                !_results.IsCreated)
+            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
+                !views.Counters.IsCreated ||
+                (uint)CounterResultCount >= (uint)views.Counters.Length ||
+                !views.Results.IsCreated)
             {
                 return;
             }
 
-            int resultCount = math.min(math.max(0, _counters[CounterResultCount]), math.min(MaxResults, _results.Length));
+            int resultCount = math.min(math.max(0, views.Counters[CounterResultCount]), math.min(MaxResults, views.Results.Length));
             for (int resultIndex = 0; resultIndex < resultCount; resultIndex++)
             {
-                CombatDamageResult result = _results[resultIndex];
+                CombatDamageResult result = views.Results[resultIndex];
                 RecordTelemetry(in result, resultIndex, CombatTelemetryPhaseDamage);
                 int slot;
-                if (!_slotByTargetId.TryGetValue(result.TargetId, out slot))
+                if (!TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, result.TargetId, out slot))
                     continue;
                 if (!IsManagedMirrorSlotReadable(slot))
                     continue;
@@ -1309,7 +1478,7 @@ namespace Hecton8.Gameplay
                 DispatchManagedSideEffects(in result, receiver, slot);
             }
 
-            _counters[CounterResultCount] = 0;
+            views.Counters[CounterResultCount] = 0;
         }
 
         private static bool IsManagedMirrorSlotReadable(int slot)
@@ -1324,35 +1493,39 @@ namespace Hecton8.Gameplay
 
         private static void DispatchStatusResults()
         {
+            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+                return;
+
             int targetCount = math.min(
                 math.max(0, _targetCount),
-                math.min(_statusResultActive.IsCreated ? _statusResultActive.Length : 0, _statusResults.IsCreated ? _statusResults.Length : 0));
+                math.min(views.StatusResultActive.IsCreated ? views.StatusResultActive.Length : 0, views.StatusResults.IsCreated ? views.StatusResults.Length : 0));
             for (int slot = 0; slot < targetCount; slot++)
             {
-                if (_statusResultActive[slot] == 0)
+                if (views.StatusResultActive[slot] == 0)
                     continue;
 
-                _statusResultActive[slot] = 0;
-                CombatDamageResult result = _statusResults[slot];
+                views.StatusResultActive[slot] = 0;
+                CombatDamageResult result = views.StatusResults[slot];
                 RecordTelemetry(in result, slot, CombatTelemetryPhaseStatus);
             }
         }
 
         private static void RecordTelemetry(in CombatDamageResult result, int sequence, uint phaseHash)
         {
-            if (!_telemetryRing.IsCreated ||
-                !_telemetryState.IsCreated ||
-                _telemetryRing.Length <= 0 ||
-                _telemetryState.Length < TelemetryStateLength)
+            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
+                !views.TelemetryRing.IsCreated ||
+                !views.TelemetryState.IsCreated ||
+                views.TelemetryRing.Length <= 0 ||
+                views.TelemetryState.Length < TelemetryStateLength)
             {
                 return;
             }
 
-            int ringLength = math.min(TelemetryFrameCapacity, _telemetryRing.Length);
-            uint writeCursor = _telemetryState[TelemetryWriteCursorIndex];
+            int ringLength = math.min(TelemetryFrameCapacity, views.TelemetryRing.Length);
+            uint writeCursor = views.TelemetryState[TelemetryWriteCursorIndex];
             int writeIndex = (int)(writeCursor % (uint)ringLength);
             uint anomalyHash = ResolveTelemetryAnomalyHash(in result);
-            _telemetryRing[writeIndex] = new CombatTelemetryEntry
+            views.TelemetryRing[writeIndex] = new CombatTelemetryEntry
             {
                 FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Sequence = unchecked((uint)math.max(0, sequence)),
@@ -1375,12 +1548,12 @@ namespace Hecton8.Gameplay
                 DirectionOctant = result.DirectionOctant,
                 Reserved = 0u
             };
-            _telemetryState[TelemetryWriteCursorIndex] = writeCursor + 1u;
+            views.TelemetryState[TelemetryWriteCursorIndex] = writeCursor + 1u;
 
             if (anomalyHash == 0u)
                 return;
 
-            _telemetryState[TelemetryLastAnomalyIndex] = anomalyHash;
+            views.TelemetryState[TelemetryLastAnomalyIndex] = anomalyHash;
             PublishCombatTelemetryAnomaly(anomalyHash, result.AppliedDamage, TelemetrySeverityCritical, TelemetryFlagResultAnomaly);
             TryDumpCombatTelemetry(anomalyHash);
         }
@@ -1442,19 +1615,20 @@ namespace Hecton8.Gameplay
         private static void TryDumpCombatTelemetry(uint anomalyHash)
         {
             if (_telemetryDumpedThisSession ||
-                !_telemetryRing.IsCreated ||
-                _telemetryRing.Length <= 0)
+                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
+                !views.TelemetryRing.IsCreated ||
+                views.TelemetryRing.Length <= 0)
             {
                 return;
             }
 
-            int count = math.min(_telemetryRing.Length, TelemetryFrameCapacity);
+            int count = math.min(views.TelemetryRing.Length, TelemetryFrameCapacity);
             if (count <= 0)
                 return;
 
-            bool stateReadable = _telemetryState.IsCreated &&
-                (uint)TelemetryWriteCursorIndex < (uint)_telemetryState.Length;
-            uint cursor = stateReadable ? _telemetryState[TelemetryWriteCursorIndex] : 0u;
+            bool stateReadable = views.TelemetryState.IsCreated &&
+                (uint)TelemetryWriteCursorIndex < (uint)views.TelemetryState.Length;
+            uint cursor = stateReadable ? views.TelemetryState[TelemetryWriteCursorIndex] : 0u;
 
             try
             {
@@ -1463,7 +1637,7 @@ namespace Hecton8.Gameplay
                     "..",
                     "Docs",
                     "AgentLogs",
-                    "Dump_SHINOBU_318_Combat.bin");
+                    "Dump_1417_CombatDamage.bin");
                 string directory = Path.GetDirectoryName(dumpPath);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
@@ -1484,7 +1658,7 @@ namespace Hecton8.Gameplay
                     for (int i = 0; i < count; i++)
                     {
                         int index = (start + i) % count;
-                        WriteTelemetryEntry(writer, _telemetryRing[index]);
+                        WriteTelemetryEntry(writer, views.TelemetryRing[index]);
                     }
                 }
 
@@ -1703,12 +1877,15 @@ namespace Hecton8.Gameplay
         {
             targetId = 0;
             receiverTransform = null;
+            if (!TryResolveCombatDamageReadOnlyViews(out CombatDamageReadOnlyVaultViews views))
+                return false;
+
             Transform current = candidate;
             for (int depth = 0; depth < 6 && current != null; depth++)
             {
                 int candidateId = ResolveTargetId(current.gameObject);
                 if (candidateId != 0 &&
-                    _slotByTargetId.TryGetValue(candidateId, out int slot))
+                    TryFindTargetSlotInLookup(views.TargetLookupKeys, views.TargetLookupSlots, candidateId, out int slot))
                 {
                     if (_receiverTransforms == null || (uint)slot >= (uint)_receiverTransforms.Length)
                         return false;
@@ -1770,34 +1947,50 @@ namespace Hecton8.Gameplay
 
         private static void ClearCounters()
         {
-            if (!_counters.IsCreated)
+            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
                 return;
 
-            int count = math.min(CounterLength, _counters.Length);
+            ClearCounters(ref views);
+        }
+
+        private static void ClearCounters(ref CombatDamageVaultViews views)
+        {
+            if (!views.Counters.IsCreated)
+                return;
+
+            int count = math.min(CounterLength, views.Counters.Length);
             for (int i = 0; i < count; i++)
-                _counters[i] = 0;
+                views.Counters[i] = 0;
         }
 
         private static void ClearSlot(int slot)
         {
-            _instanceIds[slot] = 0;
-            _health[slot] = 0f;
-            _maxHealth[slot] = 0f;
-            _invMaxHealth[slot] = 0f;
-            _armorValues[slot] = 0;
-            _shieldValues[slot] = 0f;
-            _minorDamageAccumulators[slot] = 0f;
-            _targetForwardVectors[slot] = float3.zero;
-            _targetHeights[slot] = 0f;
-            _targetFlags[slot] = 0u;
+            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+                return;
+
+            ClearSlot(slot, ref views);
+        }
+
+        private static void ClearSlot(int slot, ref CombatDamageVaultViews views)
+        {
+            views.InstanceIds[slot] = 0;
+            views.Health[slot] = 0f;
+            views.MaxHealth[slot] = 0f;
+            views.InvMaxHealth[slot] = 0f;
+            views.ArmorValues[slot] = 0;
+            views.ShieldValues[slot] = 0f;
+            views.MinorDamageAccumulators[slot] = 0f;
+            views.TargetForwardVectors[slot] = float3.zero;
+            views.TargetHeights[slot] = 0f;
+            views.TargetFlags[slot] = 0u;
             ClearTargetArmorState(slot);
-            _statusMasks[slot] = 0u;
-            _statusDurations0123[slot] = float4.zero;
-            _legacyStatusDurations4567[slot] = float4.zero;
-            _brittleDurations[slot] = 0f;
+            views.StatusMasks[slot] = 0u;
+            views.StatusDurations0123[slot] = float4.zero;
+            views.LegacyStatusDurations4567[slot] = float4.zero;
+            views.BrittleDurations[slot] = 0f;
             ResetStatusEffectSlot(slot);
-            _statusResults[slot] = default;
-            _statusResultActive[slot] = 0;
+            views.StatusResults[slot] = default;
+            views.StatusResultActive[slot] = 0;
             _receivers[slot] = null;
             _receiverTransforms[slot] = null;
             _targetBodies[slot] = null;
@@ -1827,25 +2020,26 @@ namespace Hecton8.Gameplay
         {
             if (_targetCount <= 0 ||
                 _receiverTransforms == null ||
-                !_instanceIds.IsCreated ||
-                !_targetFlags.IsCreated ||
-                !_targetHeights.IsCreated)
+                !TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false) ||
+                !views.InstanceIds.IsCreated ||
+                !views.TargetFlags.IsCreated ||
+                !views.TargetHeights.IsCreated)
             {
                 return;
             }
 
             int count = math.min(
                 math.max(0, _targetCount),
-                math.min(_receiverTransforms.Length, math.min(_instanceIds.Length, math.min(_targetFlags.Length, _targetHeights.Length))));
+                math.min(_receiverTransforms.Length, math.min(views.InstanceIds.Length, math.min(views.TargetFlags.Length, views.TargetHeights.Length))));
             for (int i = 0; i < count; i++)
             {
                 Transform receiverTransform = _receiverTransforms[i];
-                int targetId = _instanceIds[i];
+                int targetId = views.InstanceIds[i];
                 if (receiverTransform == null || targetId == 0)
                     continue;
 
-                CombatArmorClass armorClass = (CombatArmorClass)(_targetFlags[i] & TargetFlagArmorMask);
-                BallisticsRuntime.RegisterCombatTargetAabb(targetId, receiverTransform, _targetHeights[i], armorClass);
+                CombatArmorClass armorClass = (CombatArmorClass)(views.TargetFlags[i] & TargetFlagArmorMask);
+                BallisticsRuntime.RegisterCombatTargetAabb(targetId, receiverTransform, views.TargetHeights[i], armorClass);
             }
         }
 
@@ -1868,31 +2062,6 @@ namespace Hecton8.Gameplay
                 return body;
 
             return null;
-        }
-
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array)
-            where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
-        }
-
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
-        {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
-
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
-            {
-            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1936,12 +2105,20 @@ namespace Hecton8.Gameplay
 
         private static void RefreshTargetHitProfile(int slot)
         {
+            if (!TryResolveCombatDamageVaultViews(out CombatDamageVaultViews views, ensure: false))
+                return;
+
+            RefreshTargetHitProfile(slot, ref views);
+        }
+
+        private static void RefreshTargetHitProfile(int slot, ref CombatDamageVaultViews views)
+        {
             if (_receivers == null ||
                 (uint)slot >= (uint)_receivers.Length ||
-                !_targetForwardVectors.IsCreated ||
-                (uint)slot >= (uint)_targetForwardVectors.Length ||
-                !_targetHeights.IsCreated ||
-                (uint)slot >= (uint)_targetHeights.Length)
+                !views.TargetForwardVectors.IsCreated ||
+                (uint)slot >= (uint)views.TargetForwardVectors.Length ||
+                !views.TargetHeights.IsCreated ||
+                (uint)slot >= (uint)views.TargetHeights.Length)
             {
                 return;
             }
@@ -1950,8 +2127,8 @@ namespace Hecton8.Gameplay
             if (receiver == null)
                 return;
 
-            _targetForwardVectors[slot] = ResolveReceiverForward(receiver);
-            _targetHeights[slot] = ResolveReceiverHeight(receiver);
+            views.TargetForwardVectors[slot] = ResolveReceiverForward(receiver);
+            views.TargetHeights[slot] = ResolveReceiverHeight(receiver);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2021,11 +2198,11 @@ namespace Hecton8.Gameplay
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct ProcessDamageQueueJob : IJob
         {
-            [NoAlias]
-            public NativeQueue<CombatDamageRequest> Signals;
+            [ReadOnly, NoAlias] public NativeArray<CombatDamageRequest> Signals;
             [ReadOnly, NoAlias] public NativeArray<CombatDamageSignalDetail> SignalDetails;
             [ReadOnly, NoAlias] public NativeArray<double3> SignalImpactAups;
-            [ReadOnly, NoAlias] public NativeParallelHashMap<int, int> SlotByTargetId;
+            [ReadOnly, NoAlias] public NativeArray<int> TargetLookupKeys;
+            [ReadOnly, NoAlias] public NativeArray<int> TargetLookupSlots;
             [ReadOnly, NoAlias] public NativeArray<int> InstanceIds;
             [NoAlias]
             public NativeArray<float> Health;
@@ -2076,10 +2253,12 @@ namespace Hecton8.Gameplay
                 uint armorDeflectCount = 0u;
                 uint armorWeakPointHits = 0u;
                 float armorMitigatedSum = 0f;
-                while (processed < SignalBudget && Signals.TryDequeue(out CombatDamageRequest signal))
+                int signalCount = math.min(SignalBudget, Signals.Length);
+                for (int signalIndex = 0; signalIndex < signalCount; signalIndex++)
                 {
+                    CombatDamageRequest signal = Signals[signalIndex];
                     processed++;
-                    if (!SlotByTargetId.TryGetValue(signal.TargetId, out int slot))
+                    if (!TryFindTargetSlotInLookup(TargetLookupKeys, TargetLookupSlots, signal.TargetId, out int slot))
                     {
                         Counters[CounterMissingTargets] = Counters[CounterMissingTargets] + 1;
                         continue;

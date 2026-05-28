@@ -395,7 +395,7 @@ namespace Hecton8.VFX.PlasmaBeam
         private void Initialize()
         {
             _shutdown = false;
-            _vault = GlobalRegistry.DataVault;
+            RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
             TryRegisterHotSwapListener();
             SignalBus<PlasmaBeamAcousticEchoTap>.Configure(MaxBeamCount, maxFrameSignals: MaxBeamCount, lowTierFrameSignals: MaxBeamCount, laneHash: 0x504C4153u);
             SignalBus<PlasmaBeamAcousticEchoTap>.EnsureInitialized();
@@ -416,13 +416,10 @@ namespace Hecton8.VFX.PlasmaBeam
             UnlockJobBuffers();
             TryUnregisterHotSwapListener();
             UnregisterDispatcherPhases();
+            ReleaseVaultHandles(_vault);
             ReleaseGraphicsResources();
             _vault = null;
-            _vaultInitialized = false;
-            _defaultsInitialized = false;
-            _layoutChecked = false;
-            _layoutValid = false;
-            _simulationScheduled = false;
+            ResetVaultEpochState();
             if (ReferenceEquals(s_active, this))
                 s_active = null;
         }
@@ -480,14 +477,56 @@ namespace Hecton8.VFX.PlasmaBeam
                 return;
 
             IDataVault nextVault = currentService as IDataVault;
-            if (ReferenceEquals(_vault, nextVault))
+            RebindDataVaultForLifecycle(nextVault);
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault vault)
+        {
+            if (ReferenceEquals(_vault, vault))
                 return;
 
             CompleteSimulationForLifecycle();
             UnlockJobBuffers();
-            _vault = nextVault;
+            ReleaseVaultHandles(_vault);
+            _vault = vault;
+            ResetVaultEpochState();
+        }
+
+        private void ResetVaultEpochState()
+        {
             _vaultInitialized = false;
             _defaultsInitialized = false;
+            _layoutChecked = false;
+            _layoutValid = false;
+            _simulationScheduled = false;
+            _dumpedNonFinite = false;
+            _lockedBufferMask = 0;
+            _lastVertexCount = 0;
+            _lastActiveBeamCount = 0;
+        }
+
+        private void ReleaseVaultHandles(IDataVault vault)
+        {
+            ReleaseVaultHandle(vault, ref _statesHandle, BufferID.ShinobuPlasmaBeamStates);
+            ReleaseVaultHandle(vault, ref _verticesHandle, BufferID.ShinobuPlasmaBeamVertices);
+            ReleaseVaultHandle(vault, ref _trigHandle, BufferID.ShinobuPlasmaBeamTrigLut);
+            ReleaseVaultHandle(vault, ref _scalarsHandle, BufferID.ShinobuPlasmaBeamRuntimeScalars);
+            ReleaseVaultHandle(vault, ref _argsHandle, BufferID.ShinobuPlasmaBeamIndirectArgs);
+            ReleaseVaultHandle(vault, ref _telemetryHandle, BufferID.ShinobuPlasmaBeamTelemetryRing);
+            ReleaseVaultHandle(vault, ref _mockSignalsHandle, BufferID.ShinobuPlasmaBeamMockSignals);
+            ReleaseVaultHandle(vault, ref _acousticTapsHandle, BufferID.ShinobuPlasmaBeamAcousticTaps);
+            ReleaseVaultHandle(vault, ref _csvScratchHandle, BufferID.ShinobuPlasmaBeamCsvScratch);
+        }
+
+        private static void ReleaseVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId) where T : struct
+        {
+            if (vault != null && IsOwnedHandle(in handle, bufferId))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private void TryRegisterHotSwapListener()
@@ -776,10 +815,17 @@ namespace Hecton8.VFX.PlasmaBeam
         {
             buffer = default;
             return vault != null &&
-                   handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   IsOwnedHandle(in handle, expectedBufferId) &&
                    vault.TryResolveHandle(in handle, out buffer) &&
                    buffer.IsCreated &&
                    buffer.Length >= requiredLength;
+        }
+
+        private static bool IsOwnedHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)OwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private void GenerateEmergencyMockBeams(IDataVault vault)

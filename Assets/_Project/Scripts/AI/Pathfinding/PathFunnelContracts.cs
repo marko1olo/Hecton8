@@ -159,21 +159,66 @@ namespace Hecton8.AI.Pathfinding
     /// <summary>
     /// Fixed black-box entry. The runtime writes one entry per late-frame flush.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = PathFunnelContractLayout.TelemetryEntryStrideBytes)]
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
     public struct PathFunnelTelemetryEntry
     {
-        [FieldOffset(0)] public uint Frame;
-        [FieldOffset(4)] public uint PathInvalidationCount;
-        [FieldOffset(8)] public ulong LastSectorHash;
-        [FieldOffset(16)] public uint LastPathId;
-        [FieldOffset(20)] public uint LastCorridorHash;
-        [FieldOffset(24)] public ushort LastCellIndex;
-        [FieldOffset(26)] public ushort ActivePathCount;
-        [FieldOffset(28)] public ushort InvalidatedPathCount;
-        [FieldOffset(30)] public ushort Flags;
-        [FieldOffset(32)] public float Stress01;
-        [FieldOffset(36)] public uint Reserved0;
-        [FieldOffset(40)] public ulong Reserved1;
+        [System.Runtime.InteropServices.FieldOffset(0)]
+        public ulong LastSectorHash;
+        [System.Runtime.InteropServices.FieldOffset(8)]
+        public ulong Reserved1;
+        [System.Runtime.InteropServices.FieldOffset(16)]
+        public uint Frame;
+        [System.Runtime.InteropServices.FieldOffset(20)]
+        public uint PathInvalidationCount;
+        [System.Runtime.InteropServices.FieldOffset(24)]
+        public uint LastPathId;
+        [System.Runtime.InteropServices.FieldOffset(28)]
+        public uint LastCorridorHash;
+        [System.Runtime.InteropServices.FieldOffset(32)]
+        public float Stress01;
+        [System.Runtime.InteropServices.FieldOffset(36)]
+        public uint Reserved0;
+        [System.Runtime.InteropServices.FieldOffset(40)]
+        public ushort LastCellIndex;
+        [System.Runtime.InteropServices.FieldOffset(42)]
+        public ushort ActivePathCount;
+        [System.Runtime.InteropServices.FieldOffset(44)]
+        public ushort InvalidatedPathCount;
+        [System.Runtime.InteropServices.FieldOffset(46)]
+        public ushort Flags;
+        [System.Runtime.InteropServices.FieldOffset(48)]
+        private byte _pad0;
+        [System.Runtime.InteropServices.FieldOffset(49)]
+        private byte _pad1;
+        [System.Runtime.InteropServices.FieldOffset(50)]
+        private byte _pad2;
+        [System.Runtime.InteropServices.FieldOffset(51)]
+        private byte _pad3;
+        [System.Runtime.InteropServices.FieldOffset(52)]
+        private byte _pad4;
+        [System.Runtime.InteropServices.FieldOffset(53)]
+        private byte _pad5;
+        [System.Runtime.InteropServices.FieldOffset(54)]
+        private byte _pad6;
+        [System.Runtime.InteropServices.FieldOffset(55)]
+        private byte _pad7;
+        [System.Runtime.InteropServices.FieldOffset(56)]
+        private byte _pad8;
+        [System.Runtime.InteropServices.FieldOffset(57)]
+        private byte _pad9;
+        [System.Runtime.InteropServices.FieldOffset(58)]
+        private byte _pad10;
+        [System.Runtime.InteropServices.FieldOffset(59)]
+        private byte _pad11;
+        [System.Runtime.InteropServices.FieldOffset(60)]
+        private byte _pad12;
+        [System.Runtime.InteropServices.FieldOffset(61)]
+        private byte _pad13;
+        [System.Runtime.InteropServices.FieldOffset(62)]
+        private byte _pad14;
+        [System.Runtime.InteropServices.FieldOffset(63)]
+        private byte _pad15;
     }
 
     /// <summary>

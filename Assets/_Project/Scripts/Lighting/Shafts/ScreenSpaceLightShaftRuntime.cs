@@ -282,6 +282,7 @@ namespace Hecton8.Lighting.Shafts
 
             if (IsVaultHandleCreated(in handle) &&
                 handle.BufferID == unchecked((uint)(int)bufferId) &&
+                handle.SystemID == (uint)SystemID.Vfx &&
                 vault.TryResolveHandle(in handle, out NativeArray<T> current) &&
                 current.IsCreated &&
                 current.Length >= requiredLength)
@@ -293,6 +294,7 @@ namespace Hecton8.Lighting.Shafts
             ownsHandle = false;
 
             if (vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> existing) &&
+                IsOwnedVaultHandle(in existing, bufferId) &&
                 vault.TryResolveHandle(in existing, out NativeArray<T> existingBuffer) &&
                 existingBuffer.IsCreated &&
                 existingBuffer.Length >= requiredLength)
@@ -422,8 +424,10 @@ namespace Hecton8.Lighting.Shafts
             if (vault == null ||
                 !ownsHandle ||
                 !IsVaultHandleCreated(in handle) ||
+                handle.SystemID != (uint)SystemID.Vfx ||
                 vault.IsCompactionFenceActive ||
                 !vault.TryGetGenerationHandle(bufferId, out VaultGenerationHandle<T> current) ||
+                current.SystemID != (uint)SystemID.Vfx ||
                 current.Generation != handle.Generation)
             {
                 handle = default;
@@ -434,6 +438,13 @@ namespace Hecton8.Lighting.Shafts
             vault.ReleaseBuffer(in handle);
             handle = default;
             ownsHandle = false;
+        }
+
+        private static bool IsOwnedVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return IsVaultHandleCreated(in handle) &&
+                handle.BufferID == unchecked((uint)(int)bufferId) &&
+                handle.SystemID == (uint)SystemID.Vfx;
         }
 
         private void CacheDataVaultCold(IDataVault vault)

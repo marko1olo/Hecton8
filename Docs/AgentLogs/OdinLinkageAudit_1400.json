@@ -1,0 +1,102 @@
+﻿{
+    "generatedAt":  "2026-05-28T02:55:44.0466307+04:00",
+    "root":  "C:\\hades\\Hecton8",
+    "sourceUsageCount":  8,
+    "sourceFiles":  [
+                        "Assets/_Project/Scripts\\BuoyancyObject.cs",
+                        "Assets/_Project/Scripts\\Gameplay\\PlayerTransportPreset.cs",
+                        "Assets/_Project/Scripts\\Gameplay\\HectonPlayerHealth.cs",
+                        "Assets/_Project/Scripts\\BuoyancyProfile.cs",
+                        "Assets/_Project/Scripts\\HectonNarrativeDirector.cs",
+                        "Assets/_Project/Scripts\\Editor\\SystemDiagnosticsBoard.cs"
+                    ],
+    "dlls":  [
+                 {
+                     "path":  "Assets\\Plugins\\Sirenix\\Assemblies\\Sirenix.OdinInspector.Attributes.dll",
+                     "Length":  105472
+                 },
+                 {
+                     "path":  "Assets\\Plugins\\Sirenix\\Assemblies\\Sirenix.OdinInspector.Editor.dll",
+                     "Length":  3166208
+                 },
+                 {
+                     "path":  "Assets\\Plugins\\Sirenix\\Assemblies\\Sirenix.Reflection.Editor.dll",
+                     "Length":  34816
+                 },
+                 {
+                     "path":  "Assets\\Plugins\\Sirenix\\Assemblies\\Sirenix.Serialization.Config.dll",
+                     "Length":  17920
+                 },
+                 {
+                     "path":  "Assets\\Plugins\\Sirenix\\Assemblies\\Sirenix.Serialization.dll",
+                     "Length":  413696
+                 },
+                 {
+                     "path":  "Assets\\Plugins\\Sirenix\\Assemblies\\Sirenix.Utilities.dll",
+                     "Length":  168448
+                 },
+                 {
+                     "path":  "Assets\\Plugins\\Sirenix\\Assemblies\\Sirenix.Utilities.Editor.dll",
+                     "Length":  1253376
+                 },
+                 {
+                     "path":  "Assets\\Plugins\\Sirenix\\Assemblies\\NoEditor\\Sirenix.Serialization.dll",
+                     "Length":  365056
+                 },
+                 {
+                     "path":  "Assets\\Plugins\\Sirenix\\Assemblies\\NoEditor\\Sirenix.Utilities.dll",
+                     "Length":  158720
+                 },
+                 {
+                     "path":  "Assets\\Plugins\\Sirenix\\Assemblies\\NoEmitAndNoEditor\\Sirenix.Serialization.dll",
+                     "Length":  348160
+                 },
+                 {
+                     "path":  "Assets\\Plugins\\Sirenix\\Assemblies\\NoEmitAndNoEditor\\Sirenix.Utilities.dll",
+                     "Length":  149504
+                 }
+             ],
+    "currentDirectoryBuildTargetsReference":  "Assets\\Plugins\\Sirenix\\Assemblies\\Sirenix.OdinInspector.Attributes.dll",
+    "sourceUsages":  [
+                         {
+                             "file":  "Assets/_Project/Scripts\\BuoyancyObject.cs",
+                             "line":  37,
+                             "text":  "using Sirenix.OdinInspector;"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts\\Gameplay\\PlayerTransportPreset.cs",
+                             "line":  3,
+                             "text":  "using Sirenix.OdinInspector;"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts\\Gameplay\\HectonPlayerHealth.cs",
+                             "line":  14,
+                             "text":  "using Sirenix.OdinInspector;"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts\\BuoyancyProfile.cs",
+                             "line":  3,
+                             "text":  "using Sirenix.OdinInspector;"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts\\HectonNarrativeDirector.cs",
+                             "line":  34,
+                             "text":  "[SerializeField, Sirenix.OdinInspector.ReadOnly] private List\u003cstring\u003e discoveredIds = new List\u003cstring\u003e(SaveData.MaxNarrativeDiscoveries); // COLD ALLOC: bounded save discovery ids - owner: HectonNarrativeDirector"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts\\HectonNarrativeDirector.cs",
+                             "line":  35,
+                             "text":  "[SerializeField, Sirenix.OdinInspector.ReadOnly] private int currentDepthTier;"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts\\HectonNarrativeDirector.cs",
+                             "line":  36,
+                             "text":  "[SerializeField, Sirenix.OdinInspector.ReadOnly] private ulong narrativeAupTriggeredMask;"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts\\Editor\\SystemDiagnosticsBoard.cs",
+                             "line":  5,
+                             "text":  "using Sirenix.OdinInspector;"
+                         }
+                     ]
+}

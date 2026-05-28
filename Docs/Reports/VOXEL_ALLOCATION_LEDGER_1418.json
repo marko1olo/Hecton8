@@ -1,0 +1,97 @@
+{
+  "agentId": 1418,
+  "status": "STATIC_SOURCE_PASSED_RUNTIME_PENDING",
+  "scope": [
+    "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+    "Assets/_Project/Scripts/VoxelDeltaProcessor.cs"
+  ],
+  "parser": {
+    "type": "PowerShell regex line scanner",
+    "patterns": [
+      "Allocator\\.TempJob",
+      "new\\s+NativeArray\\s*<"
+    ]
+  },
+  "matches": [],
+  "counts": {
+    "allocatorTempJob": 0,
+    "newNativeArray": 0,
+    "targetFileMatches": 0
+  },
+  "lifecycleFacts": [
+    {
+      "name": "Modified cell transfer",
+      "producer": "VoxelDeltaProcessor.TryFillDeltaArrayForVolume",
+      "producerLine": 2108,
+      "consumer": "HectonVoxelEngine.TryPrepareModifiedCellsForPipeline",
+      "consumerLine": 8539,
+      "storage": "GlobalDataVault streaming scratch lanes 40, 41, 51, 52",
+      "bufferIdRoute": "StreamingScratchVaultBufferBase 76500 + slotIndex * 60 + lane",
+      "ownerSystem": "WorldStreaming",
+      "release": "TryLockStreamingScratchJobLifetime / UnlockStreamingScratchJobLifetime in finally",
+      "status": "Vault-backed, no TempJob transfer allocation found"
+    },
+    {
+      "name": "Marching Cubes raw/intermediate buffers",
+      "producer": "HectonVoxelEngine.ExecuteVoxelPipelineAsync",
+      "producerLine": 8648,
+      "consumer": "VoxelMCCountJob / VoxelMCExtractJob / VoxelWeldJob",
+      "consumerLines": [2121, 2205, 8989],
+      "storage": "GlobalDataVault streaming scratch lanes 10-25 plus edge lanes 15-18",
+      "bufferIdRoute": "StreamingScratchVaultBufferBase 76500 + slotIndex * 60 + lane",
+      "ownerSystem": "WorldStreaming",
+      "release": "Scratch lease Dispose unlocks vault buffers and releases slot",
+      "status": "Vault-backed, no TempJob intermediate allocation found"
+    },
+    {
+      "name": "Voxel delta carve queue",
+      "producer": "VoxelDeltaProcessor.TryAcquireQueuedCarveEventBuffer",
+      "producerLine": 1304,
+      "consumer": "VoxelDeltaProcessor queued carve drain and scheduled carve commit",
+      "consumerLines": [1417, 4057, 4293],
+      "storage": "BufferID.ShinobuDeltaCrusherCarveEventQueue",
+      "ownerSystem": "TerrainSeams",
+      "release": "ReleaseQueuedCarveEventBuffer / ReleaseWriteLock",
+      "status": "Vault-backed, no TempJob overflow fallback found"
+    }
+  ],
+  "dtoLayouts": [
+    {
+      "struct": "VoxelModifiedCell",
+      "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+      "line": 21,
+      "sizeBytes": 8,
+      "alignment": "multiple-of-8",
+      "status": "explicit layout"
+    },
+    {
+      "struct": "VoxelModifiedCellEntry",
+      "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 695,
+      "sizeBytes": 24,
+      "alignment": "multiple-of-8",
+      "status": "explicit layout"
+    },
+    {
+      "struct": "MCRawVertex",
+      "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 682,
+      "sizeBytes": 24,
+      "alignment": "multiple-of-8",
+      "status": "explicit layout"
+    },
+    {
+      "struct": "VoxelMeshPipelineTelemetryEntry",
+      "file": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 3585,
+      "sizeBytes": 64,
+      "alignment": "multiple-of-8",
+      "status": "explicit layout"
+    }
+  ],
+  "notes": [
+    "No target TempJob allocation calls existed at inspection time; agent 1418 did not delete allocation calls because source was already purged.",
+    "Agent 1418 added Dump_1418_VoxelCompaction.bin to the existing mesh pipeline blackbox dump fanout.",
+    "Agent 1418 moved computed WorldStreaming scratch IDs from 74500..74979 to 76500..76979 after static collision with declared registry/vegetation IDs was found."
+  ]
+}

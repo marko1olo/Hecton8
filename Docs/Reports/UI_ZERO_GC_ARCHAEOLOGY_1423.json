@@ -1,0 +1,127 @@
+{
+  "agent_id": "1423",
+  "role": "ZERO_GC_SUBTITLES_AND_BABEL_LOCALIZATION_COMPILER",
+  "status": "static_archaeology_complete_for_tasks_02_to_05",
+  "generated_utc": "2026-05-28T01:00:00Z",
+  "task_02_localization_database_analysis": {
+    "authoritative_runtime_owner": "LocRegistry plus BabelDictionaryStore",
+    "database_storage": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Data/BabelDictionaryStore.cs",
+        "line_evidence": [24, 236, 244, 254, 260, 298],
+        "fact": "Runtime dictionary fetch returns ReadOnlySpan<byte> slices over mapped/native bytes; no managed string materialization is required for the hot route."
+      },
+      {
+        "file": "Assets/_Project/Scripts/LocRegistry.cs",
+        "line_evidence": [881, 1039, 1073, 1080, 1081, 1160],
+        "fact": "LocRegistry exposes UTF-8 span lookup and decodes into caller-owned Span<char> through TryWriteVisualSpanFromUtf8."
+      },
+      {
+        "file": "Assets/_Project/Scripts/LocalizationManager.cs",
+        "line_evidence": [262, 278, 290, 2483],
+        "fact": "LocalizationManager has zero-GC span/buffer APIs and legacy string APIs; legacy FormatLocalized is cold compatibility and must not become the VWS/subtitle route."
+      }
+    ],
+    "string_policy": "Hot consumers must request UTF-8 spans or write directly into caller-owned char buffers. Legacy string accessors remain compatibility-only unless a future AST/profiler proof marks them hot.",
+    "gaps_found": [
+      "ZeroGCFormatter and LocNumericArg numeric TryFormat calls do not explicitly pass CultureInfo.InvariantCulture in the current source snapshot.",
+      "LocRegistry brace/caret placeholder overflow returns false from helper methods, allowing the caller to fall back to literal token copying instead of immediately forcing a truncation path."
+    ]
+  },
+  "task_03_vws_and_subtitle_pipeline_mapping": {
+    "route": [
+      "VocalWarningSystem.TryQueueWarning(byte warningId, float severity01, float cooldownSeconds, byte flags, uint sourceId)",
+      "VWS priority/data-vault state update",
+      "VocalWarningSystem.PublishDispatchIfNeeded",
+      "SignalBus<VocalCueSignal>.TryPushTracked",
+      "SignalBus<SubtitleCueSignal>.TryPushTracked",
+      "BabelSubtitleSyncRuntime.PreparePresentationFrame",
+      "BabelSubtitleSyncRuntime.DrainCueSignals",
+      "BabelSubtitleSyncRuntime.TryConsumeReadyCue",
+      "SubtitleManager.DisplaySubtitle(in SubtitleCommandDTO)",
+      "LocRegistry.TryWriteVisualSpanFromUtf8",
+      "SubtitleManager.FlushPendingSubtitleSwap",
+      "TMP_Text.SetCharArray(char[], int, int)"
+    ],
+    "source_evidence": [
+      {
+        "file": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line_evidence": [430, 1179, 1192, 1206, 1211, 1218],
+        "fact": "VWS queues warning IDs and publishes typed vocal/subtitle signals; no subtitle string is constructed in the observed dispatch route."
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+        "line_evidence": [21, 220, 288, 301, 309, 370, 716, 718],
+        "fact": "SubtitleCueSignal is the hot typed lane. Sync runtime drains SignalBus snapshots into fixed DTO buffers and records decode telemetry."
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+        "line_evidence": [466, 481, 500, 776, 825, 1667, 1675],
+        "fact": "SubtitleManager decodes token hashes into leased char buffers, queues bounded buffers, then applies TMP SetCharArray in the pending swap flush."
+      }
+    ],
+    "phase_note": "Presentation frame prep currently occurs through BabelSubtitleSyncRuntime, while the final TMP mutation is guarded in SubtitleManager.FlushPendingSubtitleSwap. Any source edit must preserve owner-phase publication and avoid hot GlobalRegistry polling."
+  },
+  "task_04_char_buffer_pool_architecture_planning": {
+    "existing_owner": "Assets/_Project/Scripts/UI/CharBufferPool.cs",
+    "observed_design": [
+      "Fixed slot count and bit-mask allocation prevent runtime collection growth.",
+      "BabelLease exposes a Span<char> over native vault-backed storage when available and a preallocated tmp bridge for TMP SetCharArray.",
+      "TmpTextNoAlloc already routes ReadOnlySpan<char> into CharBufferPool/SetCharArray instead of assigning TMP_Text.text.",
+      "SubtitleManager owns additional preallocated pending/queue buffers for subtitle swap safety."
+    ],
+    "source_evidence": [
+      {
+        "file": "Assets/_Project/Scripts/UI/CharBufferPool.cs",
+        "line_evidence": [63, 78, 112, 154, 195, 403, 436],
+        "fact": "Babel leases are fixed-capacity and release-tracked."
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/TmpTextNoAlloc.cs",
+        "line_evidence": [14, 19, 26, 34, 43, 51, 56],
+        "fact": "TMP writes use SetCharArray from leased buffers or empty static buffer."
+      }
+    ],
+    "planned_edits": [
+      "Do not replace the existing pool with a new allocator.",
+      "Harden formatter/decode cursor behavior centrally so all downstream UI/VWS text routes inherit fail-closed semantics.",
+      "Keep buffer overflow handling truncating and non-throwing; preserve fixed capacities and no resizing in gameplay."
+    ],
+    "rejected_architecture": [
+      "Per-subtitle StringBuilder cache: still managed and expands under pressure.",
+      "Allocating new char[] per caption: deterministic GC spikes.",
+      "Direct TMP_Text.text writes: managed string route violates domain mandate.",
+      "New jobs for single subtitle formatting: tiny job and same-frame readback would be slower and less predictable."
+    ],
+    "scalability_ladder": {
+      "low": "Fixed 512-char Babel lease, truncate with ellipsis, skip optional styling.",
+      "middle": "Same buffer path, full localized warning text, bounded queue.",
+      "high": "Same truth route, richer VisualSync styling sourced from telemetry.",
+      "ultra": "Same DTO/layout authority, optional visual overkill only after SetCharArray-safe text is produced."
+    }
+  },
+  "task_05_telemetry_and_reporting_planning": {
+    "planned_final_report": "Docs/Reports/UI_ZERO_GC_OPTIMIZATION_REPORT_1423.json",
+    "minimum_fields": [
+      "agent_id",
+      "source_files_changed",
+      "static_scan_inputs",
+      "hitlist_summary",
+      "hot_path_string_hits_before_after",
+      "formatter_cursor_proof",
+      "truncation_proof",
+      "telemetry_ring_evidence",
+      "gc_monitor_or_profiler_status",
+      "compilation_status",
+      "build_throttle_proof",
+      "known_unverified_claims"
+    ],
+    "black_box_policy": "If Task 14 adds a subtitle/localization telemetry ring, it must use a fixed-size 300-frame buffer and dump to Docs/AgentLogs/Dump_1423.bin on NaN/crash-equivalent text corruption or explicit dump trigger.",
+    "truthfulness_policy": "No zero-GC runtime claim may be recorded as measured unless profiler/GCMonitor or an explicit allocation test produced proof. Static audits are labelled static."
+  },
+  "next_loop_candidates": [
+    "Harden LocRegistry placeholder overflow to force truncation instead of literal fallback.",
+    "Add invariant culture provider to numeric formatter paths where Unity API compatibility allows it.",
+    "Add focused truncation/fuzzer tests without launching a full build unless required by source complexity."
+  ]
+}

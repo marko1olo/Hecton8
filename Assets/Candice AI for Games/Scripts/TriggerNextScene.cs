@@ -22,10 +22,14 @@ public class TriggerNextScene : MonoBehaviour
     public GameObject Loading;
     public GameObject TimeObject;
     public Text TimeText;
+    private string[] countdownLabels;
+    private int lastDisplayedSeconds = int.MinValue;
 
     // Start is called before the first frame update
     void Start()
-    {        
+    {
+        BuildCountdownLabels();
+
         if (TimeObject != null) {            
             timer = timeToNextScene;
             TimeObject.SetActive(false);
@@ -44,13 +48,29 @@ public class TriggerNextScene : MonoBehaviour
     {
         if (TimeText != null && timerOn) {
             timer -= Time.deltaTime;
-            TimeText.text = Mathf.RoundToInt(timer).ToString();
+            int seconds = Mathf.Clamp(Mathf.RoundToInt(timer), 0, countdownLabels.Length - 1);
+            if (seconds != lastDisplayedSeconds)
+            {
+                lastDisplayedSeconds = seconds;
+                TimeText.text = countdownLabels[seconds];
+            }
+        }
+    }
+
+    private void BuildCountdownLabels()
+    {
+        int maxSeconds = Mathf.Max(0, Mathf.CeilToInt(timeToNextScene));
+        // COLD ALLOC: string[maxSeconds + 1] - scene-transition countdown labels - owner: TriggerNextScene
+        countdownLabels = new string[maxSeconds + 1];
+        for (int i = 0; i < countdownLabels.Length; i++)
+        {
+            countdownLabels[i] = i.ToString();
         }
     }
 
     void OnTriggerEnter(Collider collider)
     {
-        if (collider.gameObject.tag == "Player" || collider.gameObject.tag == "Projectile" || collider.gameObject.tag == "CandiceShockwaveCollider")
+        if (collider.gameObject.CompareTag("Player") || collider.gameObject.CompareTag("Projectile") || collider.gameObject.CompareTag("CandiceShockwaveCollider"))
         {
             if (!isIntro)
             {
@@ -62,7 +82,7 @@ public class TriggerNextScene : MonoBehaviour
     }
 
     void OnCollisionEnter(Collision collision) {
-        if (collision.gameObject.tag == "CandiceShockwaveCollider") {
+        if (collision.gameObject.CompareTag("CandiceShockwaveCollider")) {
             if (!isIntro)
             {
                 StartCoroutine(myWaitCoroutine());

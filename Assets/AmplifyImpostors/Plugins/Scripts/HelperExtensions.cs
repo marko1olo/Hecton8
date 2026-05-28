@@ -2,6 +2,7 @@
 // Copyright (c) Amplify Creations, Lda <info@amplify.pt>
 
 using UnityEngine;
+using UnityEngine.Rendering;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -34,26 +35,27 @@ namespace AmplifyImpostors
 	{
 		public static void CopyPropertiesFrom( this Material to, Material from )
 		{
-			int count = ShaderUtil.GetPropertyCount( from.shader );
+			Shader shader = from.shader;
+			int count = shader.GetPropertyCount();
 			for( int i = 0; i < count; i++ )
 			{
-				var ty = ShaderUtil.GetPropertyType( from.shader, i );
-				var name = ShaderUtil.GetPropertyName( from.shader, i );
+				ShaderPropertyType ty = shader.GetPropertyType( i );
+				string name = shader.GetPropertyName( i );
 				switch( ty )
 				{
-					case ShaderUtil.ShaderPropertyType.Color:
+					case ShaderPropertyType.Color:
 					to.SetColor( name, from.GetColor( name ) );
 					break;
-					case ShaderUtil.ShaderPropertyType.Vector:
+					case ShaderPropertyType.Vector:
 					to.SetVector( name, from.GetVector( name ) );
 					break;
-					case ShaderUtil.ShaderPropertyType.Float:
+					case ShaderPropertyType.Float:
 					to.SetFloat( name, from.GetFloat( name ) );
 					break;
-					case ShaderUtil.ShaderPropertyType.Range:
+					case ShaderPropertyType.Range:
 					to.SetFloat( name, from.GetFloat( name ) );
 					break;
-					case ShaderUtil.ShaderPropertyType.TexEnv:
+					case ShaderPropertyType.Texture:
 					to.SetTexture( name, from.GetTexture( name ) );
 					to.SetTextureOffset( name, from.GetTextureOffset( name ) );
 					to.SetTextureScale( name, from.GetTextureScale( name ) );
@@ -193,16 +195,25 @@ namespace AmplifyImpostors
 
 	public static class SpriteUtilityEx
 	{
+#if UNITY_EDITOR
 		private static System.Type type = null;
 		public static System.Type Type { get { return ( type == null ) ? type = System.Type.GetType( "UnityEditor.Sprites.SpriteUtility, UnityEditor" ) : type; } }
+#else
+		// COLD ALLOC: Vector2[][0] - non-editor automatic outline fallback - owner: SpriteUtilityEx
+		private static readonly Vector2[][] EmptyPaths = new Vector2[ 0 ][];
+#endif
 
 		public static void GenerateOutline( Texture2D texture, Rect rect, float detail, byte alphaTolerance, bool holeDetection, out Vector2[][] paths )
 		{
+#if UNITY_EDITOR
 			Vector2[][] opaths = new Vector2[ 0 ][];
 			object[] parameters = new object[] { texture, rect, detail, alphaTolerance, holeDetection, opaths };
 			MethodInfo method = Type.GetMethod( "GenerateOutline", BindingFlags.Static | BindingFlags.NonPublic );
 			method.Invoke( null, parameters );
 			paths = (Vector2[][])parameters[ 5 ];
+#else
+			paths = EmptyPaths;
+#endif
 		}
 	}
 

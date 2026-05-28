@@ -1,0 +1,133 @@
+{
+  "agent": "1419",
+  "role": "ECOSYSTEM_SPATIAL_GRID_AND_SWARM_AUDITOR",
+  "generatedLocal": "2026-05-28T05:16:39.0081102+04:00",
+  "domain": "Echelon 3 / Ecosystem spatial hash + GPU swarm data exchange",
+  "status": "STATIC_PASS_BUILD_BLOCKED_BY_CONTENTION",
+  "requestedPathResolution": {
+    "EcosystemDirector.cs": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+    "FaunaSpatialHashGrid.cs": "Assets/_Project/Scripts/World/FaunaSpatialHashRegistry.cs",
+    "SwarmComputeDirector.cs": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs plus Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs"
+  },
+  "persistentNativeAliasPurge": {
+    "deletedForbiddenPersistentFields": 0,
+    "postPatchForbiddenPersistentFieldCount": 0,
+    "evidence": [
+      "Docs/Reports/ECOSYSTEM_ALIAS_LEDGER_1419.json: forbiddenPersistentFieldCount=0",
+      "Remaining NativeArray declarations in scoped files are method-local views, VaultBufferView accessors, or Burst/job struct fields with [NoAlias]/[ReadOnly]."
+    ],
+    "rejectedAlternative": "No fake deletion was performed because the strict access-modifier parser found no persistent forbidden owner fields."
+  },
+  "vaultDescriptorRoutes": {
+    "primaryRuntime": "ShinobuEcosystemBalancer stores VaultGenerationHandle descriptors for entity/AUP/boid/flocking/spatial/render/telemetry/dump lanes.",
+    "newBufferId": {
+      "name": "BufferID.ShinobuEcosystemDumpSnapshot",
+      "value": 70476,
+      "owner": "SystemID.AIEcology",
+      "purpose": "Unmanaged byte snapshot for background serialization of the 300-frame EcosystemTelemetryEntry blackbox."
+    },
+    "dumpPaths": [
+      "Docs/AgentLogs/Dump_SHINOBU_105.bin",
+      "Docs/AgentLogs/Dump_SHINOBU_105.h8dump",
+      "Docs/AgentLogs/Dump_1419_EcosystemSwarm.bin"
+    ]
+  },
+  "tryFinallyLockingProof": {
+    "frameJobPins": "ShinobuEcosystemBalancer.Tick pins Vault buffers before resolving phase-local views and releases via finally unless a scheduled job owns the locks.",
+    "writeLocks": [
+      "ShinobuSpatialGridSolver.RecordQueryFailure wraps telemetry and cursor TryAcquireWriteLock calls with finally ReleaseWriteLock.",
+      "ShinobuSpatialGridForensics queues spatial dumps through a Vault byte snapshot with finally ReleaseWriteLock.",
+      "ShinobuEcosystemTelemetryForensics queues ecosystem dumps through a Vault byte snapshot with finally ReleaseWriteLock.",
+      "SargassumMicroFaunaBoids.UploadSingleBoidToBuffer uses LockBufferForWrite with finally UnlockBufferAfterWrite."
+    ],
+    "preScheduleEarlyReturnLeak": "Closed: Tick no longer returns between job-buffer pin and schedule without passing through finally UnlockJobBuffers."
+  },
+  "gpuUploadProof": {
+    "bulkMatrixUpload": "ShinobuBoidGpuUploadDispatcher.UploadFromVault maps GraphicsBuffer with LockBufferForWrite and copies BoidMatrixDTO/BoidCustomDataDTO using UnsafeUtility.MemCpy.",
+    "singleBoidUpload": "SargassumMicroFaunaBoids.UploadSingleBoidToBuffer writes through mapped NativeArray<BoidData> and unlocks in finally.",
+    "spawnSyncUpload": "SargassumMicroFaunaBoids.UploadSpawnDataToBoidBuffersVisualSync uses GraphicsBufferUploadUtility.UploadNativeArray, which maps and MemCpy's NativeArray data.",
+    "forbiddenCallsScan": "No SetData or UploadNativeArraySetData found in scoped swarm upload files after the patch.",
+    "staticMicrosecondsSaved": {
+      "bulkUpload_i3_mx350_estimate": "35-120 us per 5000-boid upload event",
+      "singleBoid_i3_mx350_estimate": "2-8 us per event",
+      "normalTelemetryPath": "0 us; dump writer only wakes on fault"
+    }
+  },
+  "arm64LayoutProof": {
+    "runtimeManifest": "ShinobuEcosystemLayoutManifest now asserts size and offsets for BoidCustomDataDTO, FlockingThreatDTO, FlockingTelemetryEntry, all FlockingCounter64 padding lanes, AmbientEntityAupDTO, ShinobuEcosystemTuning, and every EcosystemTelemetryEntry field.",
+    "sargassumGpuGuard": "SargassumMicroFaunaBoids.ValidateGpuStructLayouts asserts BoidData stride, alignment, and HLSL field offsets.",
+    "editorHarness": "Assets/_Project/Tests/Editor/EcosystemSwarmVault1419EditTests.cs asserts explicit 8-byte layouts for EcosystemTelemetryEntry, SpatialGridTelemetryEntry, SpatialGridEntryDTO, and SpatialGridBucketRangeDTO."
+  },
+  "stressHarness": {
+    "file": "Assets/_Project/Tests/Editor/EcosystemSwarmVault1419EditTests.cs",
+    "entityCount": 5000,
+    "queryCount": 500,
+    "resultCapacity": 64,
+    "gcAssertion": "Uses GC.GetAllocatedBytesForCurrentThread around warmed spatial query and write-lock contention loops; expected delta is 0 bytes.",
+    "determinismProof": "FNV-1a style hash mixes 500 query hit counts and first/last result IDs."
+  },
+  "zeroGcHotPathAudit": {
+    "scannedRanges": [
+      "ShinobuEcosystemBalancer.Tick and scheduled job setup",
+      "ShinobuBoidGpuUploadDispatcher.UploadFromVault",
+      "SargassumMicroFaunaBoids predator fallback/single-boid/indirect-args upload ranges",
+      "EcosystemDirector public read/copy accessors converted to TryResolveReadOnly"
+    ],
+    "managedAllocatorsFound": 0,
+    "allowedValueTypeNews": [
+      "LocalShiftAndSpatialHashJob, QuantizeEntityCoordinatesJob, SortSpatialGridJob, BuildSpatialGridRangesJob, BuildSpatialGridDebugCellsJob",
+      "int2/int3/float4 and GraphicsBuffer.IndirectDrawIndexedArgs value construction"
+    ],
+    "coldReferenceAllocatorsExcluded": [
+      "GraphicsBuffer creation in cold resource setup",
+      "FileStream creation in background crash dump writer",
+      "Thread/AutoResetEvent creation in cold dump-worker setup"
+    ]
+  },
+  "buildGate": {
+    "dotnetBuildExecuted": false,
+    "reason": "Blocked by resource decree: Get-Process showed dotnet running and CPU sample was 100, above the 50 percent threshold.",
+    "compilerProcesses": [
+      {
+        "processName": "dotnet",
+        "id": 55080,
+        "sampledCpuLoadPercent": 100
+      }
+    ],
+    "staticChecks": [
+      "git diff --check passed for modified C# files; only CRLF normalization warnings.",
+      "rg scan confirmed no ShinobuTelemetryEntry references remain.",
+      "rg scan confirmed scoped swarm upload files no longer contain SetData or UploadNativeArraySetData."
+    ]
+  },
+  "modifiedFileHashes": [
+    {
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "sha256": "39fb26e987ecdf7c89c56166d7e9a520139a48a86db5a3f35296091e46420374"
+    },
+    {
+      "path": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
+      "sha256": "41d217a5e24dec785c0c7e5da0f74eb198be6923eabd44ee3204ac82ceb40040"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "sha256": "e91a7a35b34f9fb101d301ced844f88754112e47c77d5ed0e99fe780facfdc12"
+    },
+    {
+      "path": "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+      "sha256": "b6daa5731312a722eb8aca135f8513004f2f67e2291c69b35928ef3a96dd712d"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Editor/AbyssalSwarmTunerWindow.cs",
+      "sha256": "ceeac3630ad4aba660fe5b052d8f8713916c0ec25c6590e71a46be5ac5f70fb3"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "sha256": "5244a1a957fc131c908190f6734a54ad2a17a186901d62306faa44384d083657"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/EcosystemSwarmVault1419EditTests.cs",
+      "sha256": "19a465d6b9afca631f4601ae571d8f76d9667e86afaf0bb6ba9d16213edf4744"
+    }
+  ]
+}

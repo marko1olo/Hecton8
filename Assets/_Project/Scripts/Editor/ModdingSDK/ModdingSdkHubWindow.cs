@@ -14,7 +14,9 @@ namespace Hecton8.Editor.ModdingSDK
     public sealed class ModdingSdkHubWindow : EditorWindow
     {
         private const string RuntimeBoundary =
-            "Runtime API: envelope-only. Managed DLL entries are legacy/internal and disabled by the loader.";
+            "Runtime API: envelope-only. Public authors start from External Starter Kit; Managed DLL entries are legacy/internal and disabled by the loader.";
+        private const string LegacyBuilderWarning =
+            "Internal legacy package builder. Public authors should use External Starter Kit; managed DLL and loose AssetBundle paths are disabled by envelope-only runtime policy.";
         private const string ReadmePath = "Docs/Modding/README.md";
         private const string ApiSpecPath = "Docs/Modding/Mod_API_Specification.md";
         private const string AuthoringPlanPath = "Docs/Modding/SDK_Authoring_Interface_Plan.md";
@@ -62,19 +64,40 @@ namespace Hecton8.Editor.ModdingSDK
 
         private void DrawPrimaryActions()
         {
-            EditorGUILayout.LabelField("Authoring", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Public Authoring", EditorStyles.boldLabel);
 
-            if (GUILayout.Button("Open Mod Builder", GUILayout.Height(30f)))
-                ModBuilderWindow.ShowWindow();
-
-            if (GUILayout.Button("Create External Starter Kit", GUILayout.Height(24f)))
+            if (GUILayout.Button("Create External Starter Kit", GUILayout.Height(30f)))
                 CreateExternalStarterKit();
+
+            if (GUILayout.Button("Open Starter Kit Workbench", GUILayout.Height(28f)))
+                ExternalStarterKitWorkbenchWindow.ShowWindow();
 
             if (GUILayout.Button("Open External Starter Kit", GUILayout.Height(24f)))
                 RevealRelativePath(ExternalStarterKitRoot);
 
             if (GUILayout.Button("Open Local Mods Folder", GUILayout.Height(24f)))
                 RevealRelativePath("Mods");
+
+            EditorGUILayout.Space(8f);
+            EditorGUILayout.LabelField("Internal Legacy", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox(LegacyBuilderWarning, MessageType.Warning);
+
+            if (GUILayout.Button("Open Internal Legacy Mod Builder", GUILayout.Height(24f)))
+                OpenLegacyModBuilder();
+        }
+
+        private static void OpenLegacyModBuilder()
+        {
+            if (!EditorUtility.DisplayDialog(
+                    "Internal Legacy Mod Builder",
+                    LegacyBuilderWarning,
+                    "Open Legacy Builder",
+                    "Cancel"))
+            {
+                return;
+            }
+
+            ModBuilderWindow.ShowWindow();
         }
 
         private void DrawDocumentationActions()
@@ -170,7 +193,7 @@ namespace Hecton8.Editor.ModdingSDK
             Repaint();
         }
 
-        private void CreateExternalStarterKit()
+        internal static void CreateExternalStarterKit()
         {
             string rootPath = ResolveProjectPath(ExternalStarterKitRoot);
 
@@ -277,16 +300,21 @@ namespace Hecton8.Editor.ModdingSDK
                 global::System.Environment.NewLine +
                 "This folder is for public mod authors working outside the HECTON-8 Unity project." + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
-                "Fast path:" + global::System.Environment.NewLine +
+                "First setup:" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
                 "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1 -Id com.yourname.mod -DisplayName \"Your Mod\" -Author \"YourName\" -Version 0.1.0" + global::System.Environment.NewLine +
+                global::System.Environment.NewLine +
+                "After edits:" + global::System.Environment.NewLine +
+                global::System.Environment.NewLine +
+                "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
                 "Use pwsh instead of powershell on macOS/Linux with PowerShell 7. The tools normalize child paths internally; do not rewrite the folder layout per platform." + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
                 "Do you need Unity?" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
                 "- No Unity project is required for manifest, graph, table, locale, and validation authoring." + global::System.Environment.NewLine +
-                "- Unity is only useful for advanced asset preview before a standalone Workbench or CLI exists." + global::System.Environment.NewLine +
+                "- If you do use the HECTON-8 Unity project, open Hecton/Modding/External Starter Kit Workbench; it can create/refresh missing starter files, runs these same tools, and shows the review summary without changing the file contract." + global::System.Environment.NewLine +
+                "- Unity is also useful for advanced asset preview." + global::System.Environment.NewLine +
                 "- Do not ship Harmony, BepInEx, or gameplay DLL patches. Current runtime UGC ingress is envelope-only." + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
                 "Current runtime boundary:" + global::System.Environment.NewLine +
@@ -309,10 +337,10 @@ namespace Hecton8.Editor.ModdingSDK
                 "- Reference/: copied opcode and tuning CSV references from the project docs." + global::System.Environment.NewLine +
                 "- Schemas/: JSON Schemas for editor autocomplete and schema-aware validation." + global::System.Environment.NewLine +
                 "- .vscode/settings.json: optional VS Code JSON schema mapping for the starter files. The local validator checks the expected schema URL/fileMatch pairs." + global::System.Environment.NewLine +
-                "- Tools/prepare_mod.ps1: one-command no-Unity setup that writes identity, validates, and builds the review manifest." + global::System.Environment.NewLine +
+                "- Tools/prepare_mod.ps1: one-command no-Unity setup/review loop. With -Id it writes identity, validates, and builds the review manifest; without -Id it validates existing manifests and rebuilds the review manifest." + global::System.Environment.NewLine +
                 "- Tools/list_allowed_opcodes.ps1: local no-Unity graph helper that prints the allowed opcode aliases and hex tokens accepted by Graphs/main.h8graph.json." + global::System.Environment.NewLine +
                 "- Tools/validate_structure.ps1: local no-Unity structure validator for required files, canonical IDs, manifest parity, graph opcode allowlist checks, graph budget parity, envelope-only flags, and managed-entry disablement." + global::System.Environment.NewLine +
-                "- Tools/build_review_manifest.ps1: local no-Unity review manifest builder that validates first, then writes Reports/review_manifest.json with sorted file paths, byte counts, total bytes, explicit source limits, and SHA-256 hashes for submission/review. It rejects more than 256 source files, any source file over 4194304 bytes, or more than 33554432 total source bytes before hashing." + global::System.Environment.NewLine +
+                "- Tools/build_review_manifest.ps1: local no-Unity review manifest builder that validates first, then writes Reports/review_manifest.json with package identity, sorted file paths, byte counts, total bytes, explicit source limits, and SHA-256 hashes for submission/review. It rejects more than 256 source files, any source file over 4194304 bytes, or more than 33554432 total source bytes before hashing." + global::System.Environment.NewLine +
                 "- Tools/set_mod_identity.ps1: local no-Unity identity helper that safely writes matching mod id/name/author/version values into both manifests, then validates the folder." + global::System.Environment.NewLine;
         }
 
@@ -620,16 +648,20 @@ namespace Hecton8.Editor.ModdingSDK
                 global::System.Environment.NewLine +
                 "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1 -Id com.yourname.mod -DisplayName \"Your Mod\" -Author \"YourName\" -Version 0.1.0" + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
+                "Normal edit-review loop:" + global::System.Environment.NewLine +
+                global::System.Environment.NewLine +
+                "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1" + global::System.Environment.NewLine +
+                global::System.Environment.NewLine +
                 "Use pwsh instead of powershell on macOS/Linux with PowerShell 7. The scripts normalize child paths internally; do not rewrite Tools/, Reports/, or .vscode/ paths per platform." + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
-                "prepare_mod.ps1 runs identity setup, structure validation, and review manifest generation in the correct order." + global::System.Environment.NewLine +
+                "prepare_mod.ps1 runs identity setup only when -Id is provided. Without -Id it validates the existing manifests and rebuilds Reports/review_manifest.json for the normal edit-review loop." + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
                 "Run list_allowed_opcodes.ps1 when editing Graphs/main.h8graph.json. It prints every currently allowed graph opcode alias and hex token from Reference/allowed_opcodes.csv; use either value in Nodes[].Opcode." + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
                 "Run validate_structure.ps1 before sending this folder to another tool or author." + global::System.Environment.NewLine +
                 "This local validator checks only starter-kit structure, canonical IDs, manifest parity, graph opcode allowlist, graph budget parity, exact editor schema mappings, and envelope-only safety. It is not runtime verification." + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
-                "Run build_review_manifest.ps1 before submitting a starter folder for review. It runs the structure validator first, then writes Reports/review_manifest.json with sorted file paths, byte counts, total bytes, explicit limits, and SHA-256 hashes. Generated/ and Reports/ are excluded from the hash list so reports do not hash themselves. The source side is bounded at 256 files, 4194304 bytes per file, and 33554432 total bytes; oversized source files fail before hashing." + global::System.Environment.NewLine +
+                "Run build_review_manifest.ps1 before submitting a starter folder for review. It runs the structure validator first, then writes Reports/review_manifest.json with package identity, sorted file paths, byte counts, total bytes, explicit limits, and SHA-256 hashes. Generated/ and Reports/ are excluded from the hash list so reports do not hash themselves. The source side is bounded at 256 files, 4194304 bytes per file, and 33554432 total bytes; oversized source files fail before hashing." + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
                 "Run set_mod_identity.ps1 once when you copy the starter kit. It writes the same canonical mod id, display name, author, and version into mod.h8manifest.json and mod.json, then runs the structure validator." + global::System.Environment.NewLine +
                 global::System.Environment.NewLine +
@@ -640,7 +672,8 @@ namespace Hecton8.Editor.ModdingSDK
                 "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/list_allowed_opcodes.ps1 -Json" + global::System.Environment.NewLine +
                 "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/build_review_manifest.ps1" + global::System.Environment.NewLine +
                 "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/set_mod_identity.ps1 -Id com.yourname.mod -DisplayName \"Your Mod\" -Author \"YourName\" -Version 0.1.0" + global::System.Environment.NewLine +
-                "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1 -Id com.yourname.mod -DisplayName \"Your Mod\" -Author \"YourName\" -Version 0.1.0" + global::System.Environment.NewLine;
+                "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1 -Id com.yourname.mod -DisplayName \"Your Mod\" -Author \"YourName\" -Version 0.1.0" + global::System.Environment.NewLine +
+                "powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1" + global::System.Environment.NewLine;
         }
 
         private static string BuildStarterKitAllowedOpcodesScript()
@@ -838,11 +871,20 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine("}");
             builder.AppendLine();
             builder.AppendLine("$orderedFiles = @($files | Sort-Object -Property Path)");
+            builder.AppendLine("$authoring = Get-Content -Raw -LiteralPath (Join-StarterPath $rootFull 'mod.h8manifest.json') | ConvertFrom-Json");
             builder.AppendLine("$runtime = Get-Content -Raw -LiteralPath (Join-StarterPath $rootFull 'mod.json') | ConvertFrom-Json");
             builder.AppendLine("$manifest = [pscustomobject][ordered]@{");
             builder.AppendLine("    Schema = 'hecton8.external_review_manifest.v1'");
             builder.AppendLine("    Runtime = 'envelope-only'");
             builder.AppendLine("    RootId = [string]$runtime.Id");
+            builder.AppendLine("    Identity = [pscustomobject][ordered]@{");
+            builder.AppendLine("        Id = [string]$runtime.Id");
+            builder.AppendLine("        DisplayName = [string]$authoring.DisplayName");
+            builder.AppendLine("        Author = [string]$runtime.Author");
+            builder.AppendLine("        Version = [string]$runtime.Version");
+            builder.AppendLine("        RequiredAPIVersion = [int]$runtime.RequiredAPIVersion");
+            builder.AppendLine("        ModPriority = [int]$runtime.ModPriority");
+            builder.AppendLine("    }");
             builder.AppendLine("    FileCount = $orderedFiles.Count");
             builder.AppendLine("    TotalBytes = $totalBytes");
             builder.AppendLine("    Limits = [pscustomobject][ordered]@{");
@@ -896,27 +938,52 @@ namespace Hecton8.Editor.ModdingSDK
             builder.AppendLine("    return $current");
             builder.AppendLine("}");
             builder.AppendLine();
-            builder.AppendLine("if ([string]::IsNullOrWhiteSpace($Id)) {");
-            builder.AppendLine("    Fail 'Usage: powershell -NoProfile -ExecutionPolicy Bypass -File Tools/prepare_mod.ps1 -Id com.yourname.mod -DisplayName \"Your Mod\" -Author \"YourName\" -Version 0.1.0'");
-            builder.AppendLine("}");
-            builder.AppendLine();
             builder.AppendLine("$rootFull = (Resolve-Path -LiteralPath $Root).Path");
             builder.AppendLine("$identityTool = Join-StarterPath $rootFull 'Tools/set_mod_identity.ps1'");
             builder.AppendLine("$reviewTool = Join-StarterPath $rootFull 'Tools/build_review_manifest.ps1'");
+            builder.AppendLine("$hasIdentityEdits = -not [string]::IsNullOrWhiteSpace($Id)");
             builder.AppendLine();
-            builder.AppendLine("if (-not (Test-Path -LiteralPath $identityTool -PathType Leaf)) {");
-            builder.AppendLine("    Fail 'Missing Tools/set_mod_identity.ps1.'");
+            builder.AppendLine("if ((-not $hasIdentityEdits) -and");
+            builder.AppendLine("    ((-not [string]::IsNullOrWhiteSpace($DisplayName)) -or");
+            builder.AppendLine("     (-not [string]::IsNullOrWhiteSpace($Author)) -or");
+            builder.AppendLine("     (-not [string]::IsNullOrWhiteSpace($Version)))) {");
+            builder.AppendLine("    Fail 'Id is required when changing identity fields. Omit all identity arguments to validate the existing manifests.'");
             builder.AppendLine("}");
             builder.AppendLine();
             builder.AppendLine("if (-not (Test-Path -LiteralPath $reviewTool -PathType Leaf)) {");
             builder.AppendLine("    Fail 'Missing Tools/build_review_manifest.ps1.'");
             builder.AppendLine("}");
             builder.AppendLine();
-            builder.AppendLine("& $identityTool -Root $rootFull -Id $Id -DisplayName $DisplayName -Author $Author -Version $Version | Out-Host");
+            builder.AppendLine("if ($hasIdentityEdits) {");
+            builder.AppendLine("    if (-not (Test-Path -LiteralPath $identityTool -PathType Leaf)) {");
+            builder.AppendLine("        Fail 'Missing Tools/set_mod_identity.ps1.'");
+            builder.AppendLine("    }");
+            builder.AppendLine();
+            builder.AppendLine("    & $identityTool -Root $rootFull -Id $Id -DisplayName $DisplayName -Author $Author -Version $Version | Out-Host");
+            builder.AppendLine("}");
             builder.AppendLine();
             builder.AppendLine("& $reviewTool -Root $rootFull -Output $ReviewOutput | Out-Host");
             builder.AppendLine();
-            builder.AppendLine("Write-Host ('PASS HECTON-8 starter prepared: ' + $Id)");
+            builder.AppendLine("$reviewOutputPath = if ([System.IO.Path]::IsPathRooted($ReviewOutput)) {");
+            builder.AppendLine("    $ReviewOutput");
+            builder.AppendLine("} else {");
+            builder.AppendLine("    Join-StarterPath $rootFull $ReviewOutput");
+            builder.AppendLine("}");
+            builder.AppendLine();
+            builder.AppendLine("if (-not (Test-Path -LiteralPath $reviewOutputPath -PathType Leaf)) {");
+            builder.AppendLine("    Fail 'Review manifest was not written.'");
+            builder.AppendLine("}");
+            builder.AppendLine();
+            builder.AppendLine("$review = Get-Content -Raw -LiteralPath $reviewOutputPath | ConvertFrom-Json");
+            builder.AppendLine("$preparedId = [string]$review.Identity.Id");
+            builder.AppendLine("if ([string]::IsNullOrWhiteSpace($preparedId)) {");
+            builder.AppendLine("    $preparedId = [string]$review.RootId");
+            builder.AppendLine("}");
+            builder.AppendLine("if ([string]::IsNullOrWhiteSpace($preparedId)) {");
+            builder.AppendLine("    Fail 'Review manifest did not report package identity.'");
+            builder.AppendLine("}");
+            builder.AppendLine();
+            builder.AppendLine("Write-Host ('PASS HECTON-8 starter prepared: ' + $preparedId)");
             return builder.ToString();
         }
 

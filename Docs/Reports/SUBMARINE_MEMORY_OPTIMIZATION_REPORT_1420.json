@@ -1,0 +1,111 @@
+{
+  "agentId": 1420,
+  "role": "SUBMARINE_NAVIGATION_AND_BALLAST_PHYSICS_PURGER",
+  "date": "2026-05-28",
+  "domain": "ECHELON 6 HABITAT & VEHICLES / Submarine Navigation (Auto-Level)",
+  "requestedTarget": "Assets/_Project/Scripts/Vehicles/SubmarineNavigationRuntime.cs",
+  "requestedTargetExists": false,
+  "canonicalRuntime": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+  "persistentNativeFieldsDeleted": 0,
+  "forbiddenClassScopeAliasesRemaining": 0,
+  "aliasLedger": "Docs/AgentLogs/SubmarineNavigationRuntime_AliasLedger_1420.json",
+  "vaultMigration": {
+    "ownerSystemId": "SystemID.VehiclesPhysics",
+    "descriptorPattern": "VaultGenerationHandle<T>",
+    "writeLockHelper": "TryAcquireVaultWrite",
+    "failClosedFaultFields": [
+      "LastVaultFaultCode",
+      "LastVaultFaultBufferId",
+      "LastVaultFaultFrame"
+    ],
+    "tryAcquireWriteLockStaticSites": 19,
+    "finallyStaticSites": 20,
+    "readOnlyAccessorsUseTryReadOnlyHandle": true
+  },
+  "dtoLayoutProof": {
+    "BallastTankDTO": 32,
+    "BallastTankCommandDTO": 32,
+    "SubmarineBallastFluidSampleDTO": 160,
+    "SubmarineBallastForcePacketDTO": 128,
+    "SubmarineBallastTelemetryEntry": 64,
+    "SubmarineBallastTuningDTO": 64,
+    "SubmarineBallastProfileDTO": 64,
+    "SubmarinePidTelemetryEntry": 128,
+    "validator": "Assets/_Project/Scripts/Physics/Vehicles/Editor/SubmarineNavigationLayoutValidator1420.cs"
+  },
+  "lineProof": {
+    "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs": {
+      "pidFaultOffsets": [74, 76, 77],
+      "pidDumpPath": 357,
+      "tryAcquireVaultWriteHelper": [3185, 3209, 3230, 3234],
+      "releaseVaultWriteHelper": [3240, 3250],
+      "ballastSolverPartialAcquireFinally": [3081, 3094, 3099, 3130, 3132],
+      "readOnlyHelpers": [2991, 3030, 3039, 3048, 3072, 3370],
+      "mutableLockedHelpers": [3000, 3015, 3057, 3351],
+      "jobCompletionFinallyBlocks": [1651, 1684, 2382, 2433, 2563, 2587]
+    },
+    "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs": {
+      "globalQualityWeightOffsets": [114, 162, 178],
+      "activeSampleBudgetOffset": 120,
+      "layoutValidatorOffsetCheck": 243,
+      "activeSampleBudgetConsumption": [589, 591, 594, 600, 608, 616, 683, 708]
+    },
+    "Assets/_Project/Scripts/Core/Memory/H8Memory.cs": {
+      "submarineBufferIds": [143, 144, 145, 146, 2109, 2110, 2111, 2112, 2113, 2114, 2115, 2116]
+    }
+  },
+  "blackBox": {
+    "pidRingFrames": 300,
+    "ballastRingFrames": 300,
+    "pidDumpPath": "Docs/AgentLogs/Dump_1420_SubmarineNavigation.bin",
+    "ballastDumpPath": "Docs/AgentLogs/Dump_SHINOBU_333.bin"
+  },
+  "stressHarness": {
+    "path": "Assets/_Project/Scripts/Physics/Vehicles/Editor/SubmarineNavigationStressHarness1420.cs",
+    "mode": "UNITY_EDITOR && HECTON8_ENABLE_EDITMODE_TESTS",
+    "iterations": 1000,
+    "claims": [
+      "write-lock contention fails closed",
+      "ballast Burst jobs integrate extreme commands",
+      "managed allocation delta asserted as zero after warmup"
+    ]
+  },
+  "continuousScalabilityProof": {
+    "qualitySource": "HomeostasisBrain.GlobalQualityWeight",
+    "qualityCache": "SubmarineAutoLevelBallastController.ReadCachedGlobalQualityWeight",
+    "mathLodRoute": "ResolveBallastActiveSampleBudget(float quality) maps continuous 0..1 quality to a maximum 1..4 analytic buoyancy sample budget",
+    "jobConsumption": "CalculateBuoyancyForceJob consumes SubmarineBallastFluidSampleDTO.ActiveSampleBudget, skips unavailable bow/stern/beam sample math, and fractionally weights the next sample from GlobalQualityWeight",
+    "binaryDeviceSwitchesIntroduced": 0
+  },
+  "readAccessorPurityProof": {
+    "externalReadbacks": [
+      "BallastFill01",
+      "SHINOBU_332 gyro suppression"
+    ],
+    "readOnlyRoutes": [
+      "TryReadBallastFillReadOnly",
+      "TryReadBallastTanksReadOnly",
+      "TryReadTankLocalPositionsReadOnly",
+      "TryReadTelemetryReadOnly",
+      "TryReadBallastTelemetryReadOnly"
+    ],
+    "mutableResolveRoutes": [
+      "TryResolvePidOutputLocked",
+      "TryResolveFloodMassOutputLocked",
+      "TryResolveBallastForcePacketsLocked"
+    ],
+    "mutableResolveRequiresHeldLock": true
+  },
+  "verification": {
+    "gitDiffCheck": "clean except repository LF-to-CRLF warning",
+    "braceBalance": "balanced for modified C# files",
+    "hotPathForbiddenPatternScan": "case-sensitive scan found 0 new Native*, Allocator.Persistent, LINQ .Where/.Select/.ToList/.ToArray, foreach, string.Format, .ToString, interpolated strings, or literal string concatenation matches in modified hot files; reference-type new sites are cold CSV/dump paths only",
+    "fullBuild": "not run: final CPU gate sampled 74.16 percent with active dotnet PID 20440; CPU >50 percent and active dotnet blocked compilation"
+  },
+  "modifiedCSharpSha256": {
+    "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs": "C82ABFD25DBB62D3029D330BEB14C242642DCB61280EF9724ACEE0FA3E6B514B",
+    "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs": "3E2EF0153F09656ACA4C33BB09DB54FD12240AADC3679E4BCCE03A61FCDF3FB9",
+    "Assets/_Project/Scripts/Physics/Vehicles/Editor/SubmarineNavigationLayoutValidator1420.cs": "2B068D232589D8648075C8AD00B242C64A0780323FB0BD1B658BA53DDDE5CABA",
+    "Assets/_Project/Scripts/Physics/Vehicles/Editor/SubmarineNavigationStressHarness1420.cs": "95F9611B94FCC49DDD6223764B68543449FEA04B85D374782E90913A992D4D22"
+  }
+}

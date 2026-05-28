@@ -1,0 +1,304 @@
+{
+  "agentId": "1403",
+  "role": "MONOBEHAVIOUR_RESIDUAL_NATIVE_FIELD_PURGER",
+  "domain": "ECHELON 1 CORE MEMORY AND LIFECYCLE",
+  "generatedAt": "2026-05-28T05:10:02.0245437+04:00",
+  "status": "PENDING_VERIFICATION",
+  "reasonStatusIsPending": "No dotnet build or Unity Test Runner execution was launched. Latest APEX build gate sample was CPU 100%, dotnet=1, csc=0, so compilation was forbidden by the project resource rule.",
+  "assignmentForbiddenFieldCount": 36,
+  "currentMonoBehaviourForbiddenFieldCount": 0,
+  "targetFiles": [
+    "Assets/_Project/Scripts/SaveManager.cs",
+    "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+    "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
+    "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs"
+  ],
+  "modifiedFiles": [
+    "Assets/_Project/Scripts/SaveManager.cs",
+    "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+    "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
+    "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+    "Assets/_Project/Tests/Editor/MonoBehaviourResidualNativePurge1403EditTests.cs",
+    "Assets/_Project/Tests/Editor/MonoBehaviourResidualNativePurge1403EditTests.cs.meta",
+    "Docs/Tasks/Status_1403.md",
+    "Docs/AgentLogs/Rationale_1403.md",
+    "Docs/AgentLogs/LOG_1403.md",
+    "Docs/Reports/MONOBEHAVIOUR_RESIDUAL_PURGE_1403.json"
+  ],
+  "sourceSha256": [
+    {
+      "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+      "hash": "D73756479DE173EBA82E508CCB3B4B484B9A6FFA316B9825F4E249C64E20271C"
+    },
+    {
+      "path": "Assets/_Project/Scripts/SaveManager.cs",
+      "hash": "B4EC768331E2F9FCD5FA3C588484F92732138AD30ACDB3656CB267D523EFA9F6"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
+      "hash": "008C1A07DDF001E876D6A4D49F6CE5DF4E9E6CBAAFAA8E937E5586FD652CC410"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+      "hash": "6F4C17AF1A5FDF8DD5A1FA3EDB752E944B96E9C786F53FF848A69FDB59A40DF6"
+    },
+    {
+      "path": "Assets/_Project/Tests/Editor/MonoBehaviourResidualNativePurge1403EditTests.cs",
+      "hash": "CAFF5F07ADA3E7B8886F6F9B4B38D55256A801628D519CC014C20D1AA7D19B35"
+    }
+  ],
+  "ownerSummary": [
+    {
+      "owner": "SaveManagerNativeBufferSet",
+      "file": "Assets/_Project/Scripts/SaveManager.cs",
+      "line": 194,
+      "isMonoBehaviour": false,
+      "implementsIDisposable": true,
+      "nativeFieldDeclarations": 12,
+      "disposeEvidenceLine": 326
+    },
+    {
+      "owner": "StaticNativeBuffers",
+      "file": "Assets/_Project/Scripts/SaveManager.cs",
+      "line": 342,
+      "isMonoBehaviour": false,
+      "nativeFieldDeclarations": 3,
+      "disposeEvidenceLine": 480
+    },
+    {
+      "owner": "RigNativeBufferSet",
+      "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
+      "line": 2906,
+      "isMonoBehaviour": false,
+      "implementsIDisposable": true,
+      "nativeFieldDeclarations": 12,
+      "readOnlyNativeViews": 1,
+      "disposeEvidenceLine": 3018
+    },
+    {
+      "owner": "RuntimeNativeBufferSet",
+      "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+      "line": 1657,
+      "isMonoBehaviour": false,
+      "implementsIDisposable": true,
+      "nativeFieldDeclarations": 10,
+      "disposeEvidenceLine": 1763
+    }
+  ],
+  "apexFinalVerification": {
+    "monoBehaviourForbiddenNativeFieldScanner": {
+      "status": "PASS_STATIC_SOURCE_SCAN",
+      "count": 0,
+      "scannerOutput": "TOTAL_MB_FORBIDDEN=0"
+    },
+    "hotPathForbiddenPatternScanner": {
+      "status": "PASS_STATIC_SOURCE_SCAN",
+      "methodsScanned": [
+        "Tick",
+        "FastTick",
+        "LateFrameTick",
+        "FixedUpdate",
+        "Update"
+      ],
+      "patternsScanned": [
+        "new reference type",
+        "string.Format",
+        ".ToString()",
+        "LINQ query/member calls",
+        "foreach"
+      ],
+      "hits": 0,
+      "scannerOutput": "TOTAL_HOT_PATH_FORBIDDEN_PATTERN_HITS=0"
+    },
+    "backgroundPersistenceForbiddenPatternScanner": {
+      "status": "PASS_STATIC_SOURCE_SCAN",
+      "methodsScanned": [
+        "TryExecuteVerifiedSavePipeline",
+        "TryCommitTempSaveToPrimary",
+        "GetPersistentFileSize",
+        "TryLoadCandidate",
+        "TryReadCandidateMetadata",
+        "RepairPrimaryArtifacts",
+        "SaveBinaryStorage.AsyncWriteManager.TryGetFileLength",
+        "SaveBinaryStorage.AsyncWriteManager.TryGetFileLengthWindows",
+        "SaveBinaryStorage.AsyncWriteManager.TryGetFileLengthUnix",
+        "SaveBinaryStorage.AsyncWriteManager.TryEncodePathUtf8"
+      ],
+      "patternsScanned": [
+        "new FileInfo",
+        "new reference type",
+        "string.Format",
+        ".ToString()",
+        "LINQ query/member calls",
+        "foreach",
+        "interpolated-string markers"
+      ],
+      "hits": 0,
+      "scannerOutput": "TOTAL_BACKGROUND_FORBIDDEN_PATTERN_HITS=0"
+    },
+    "saveFileInfoScanner": {
+      "status": "PASS_STATIC_SOURCE_SCAN_FOR_TARGET_FILES",
+      "targets": [
+        "Assets/_Project/Scripts/SaveManager.cs",
+        "Assets/_Project/Scripts/SaveBinaryStorage.cs"
+      ],
+      "hits": 0,
+      "scannerCommand": "rg -n \"new FileInfo|FileInfo\" Assets/_Project/Scripts/SaveBinaryStorage.cs Assets/_Project/Scripts/SaveManager.cs",
+      "previousRiskRemoved": "Assets/_Project/Scripts/SaveBinaryStorage.cs:1056 no longer contains new FileInfo inside AsyncWriteManager.TryGetFileLength."
+    },
+    "braceAndEncoding": {
+      "utf8BomPresent": false,
+      "braceBalanceAfterLiteralStrip": "PASS"
+    },
+    "structOffsetProof": {
+      "structLayoutOrFieldOffsetDiffTouched": true,
+      "proof": "STATIC_SOURCE_ONLY: AsyncPersistenceTelemetryEntry in Assets/_Project/Scripts/SaveManager.cs uses explicit Size=64 at line 568. Field offsets: Frame uint offset 0, OperationId uint offset 4, SaveDurationMs uint offset 8, CompressedSizeBytes uint offset 12, RawPayloadBytes uint offset 16, Flags uint offset 20, SlotHash uint offset 24, Reserved uint offset 28. Explicit byte padding _pad0.._pad31 occupies offsets 32..63. Total size 64 bytes; 64 % 8 = 0. The struct contains only uint and byte fields, no managed references, strings, bools, arrays, UnityEngine.Object refs, or non-explicit enum fields.",
+      "runtimeUnsafeSizeOfExecuted": false,
+      "runtimeUnsafeSizeOfReason": "Unity compiler/player execution was not launched under the resource throttle rule, so UnsafeUtility.SizeOf<AsyncPersistenceTelemetryEntry>() remains pending runtime proof."
+    }
+  },
+  "dataSovereignty": {
+    "newGlobalDataVaultMigrationPerformed": false,
+    "reason": "The task relocated owner-local SaveManager and IK native collections into non-MonoBehaviour BufferSet owners instead of creating new GlobalDataVault routes. No save identity, DTO layout, or cross-domain authority route was changed.",
+    "newBufferIDConstantsSecured": [],
+    "newTryAcquireWriteLockRoutes": [],
+    "tryFinallyLockReleaseProof": "Not applicable: no new GlobalDataVault writer locks were introduced by Agent 1403.",
+    "existingDataVaultAliasObserved": [
+      {
+        "bufferId": "BufferID.WfcOutpostGrid",
+        "file": "Assets/_Project/Scripts/SaveManager.cs",
+        "lines": [
+          1465,
+          1466,
+          1470,
+          1471
+        ],
+        "note": "Existing WFC grid alias is resolved through GlobalDataVault. The wrapper clears its local view; it does not own or dispose the vault memory."
+      }
+    ]
+  },
+  "cinematicCheatAndScalability": {
+    "newSimulationAdded": false,
+    "newPhysicalSimulationRejected": true,
+    "reason": "This task changed native memory ownership only. No water, light, deformation, IK math, save math, or physics simulation was expanded.",
+    "globalQualityWeightRoutesPreserved": [
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
+        "line": 3538,
+        "symbol": "ResolveIkQualityWeight01"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
+        "line": 3544,
+        "symbol": "ResolveFootIkQualityWeight01"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
+        "line": 3549,
+        "symbol": "ResolveWallTouchQualityWeight01"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRuntime.cs",
+        "line": 2482,
+        "symbol": "ResolveIkSdfStepMeters"
+      }
+    ],
+    "binaryQualitySwitchesAddedByThisTask": 0,
+    "knownPreExistingAuthoringGate": "ContextualPhysicalIkRig has a serialized disableWallTouchOnLowTier gate in the wall-touch route. Agent 1403 did not introduce it."
+  },
+  "disposalHardening": {
+    "bestEffortDisposeAdded": true,
+    "saveManagerHelperLine": 3012,
+    "rigHelperLine": 3123,
+    "runtimeHelperLine": 1800,
+    "runtimeDisposeFinallyLine": 1462,
+    "saveManagerShutdownFirstExceptionLine": 978,
+    "saveManagerShutdownFinalThrowLine": 1031,
+    "runtimeOnDestroyFinallyClearLine": 1466,
+    "failureModeHandled": "First disposal exception is retained while every remaining native array is still attempted and aliases are cleared. SaveManager shutdown now attempts world pager, instance native buffers, static native buffers, state reset, and integrity reset before surfacing the first disposal exception. IK runtime OnDestroy now clears cached context and GlobalRegistry even when disposal faults."
+  },
+    "staticBufferIsolation": {
+      "status": "IMPLEMENTED_STATIC_SOURCE",
+      "owner": "StaticNativeBuffers",
+      "line": 342,
+      "result": "Static raw/compressed save buffer pairs and candidate scratch are isolated from instance save payload and compression buffers. Binary read paths intentionally reuse the raw/compressed pair because metadata/load reads require both raw and compressed arenas. The unused standalone read-buffer API was removed during the final APEX sweep. Contended calls receive owned fallback buffer pairs."
+    },
+  "staticFallbackAcquireHardening": {
+    "file": "Assets/_Project/Scripts/SaveManager.cs",
+    "acquireWriteBuffersLine": 364,
+    "cleanupHelperLine": 496,
+    "result": "Contended raw/compressed fallback allocation now cleans up any partially allocated NativeArray if the second allocation or sentinel registration fails before ownership reaches the caller."
+  },
+  "storageDependencyHardening": {
+    "file": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+    "tryGetFileLengthLine": 1059,
+    "windowsNativePathLine": 1080,
+    "unixNativePathLine": 1119,
+    "utf8PathEncoderLine": 1159,
+    "windowsNativeApiDeclarationsLine": 1286,
+    "unixNativeApiDeclarationsLine": 1308,
+    "change": "Removed FileInfo object construction from AsyncWriteManager.TryGetFileLength. Windows now uses CreateFileW/GetFileSizeEx/CloseHandle. Linux/macOS/Android now use a preallocated UTF-8 path buffer plus libc open/lseek(SEEK_END)/close. File-length failure strings are static literals.",
+    "asyncReadManagerRejected": "Unity Issue UUM-100207 reports AsyncReadManager.GetFileInfo can mark runtime-created files as absent in Unity 6000.x, so it is unsafe for save files created during play.",
+    "portableFallbackStatus": "REMOVED_FOR_ACTIVE_UNIX_TARGETS. Unsupported non-Windows/non-Unix platforms now fail closed with a static error instead of allocating a FileStream fallback. Runtime platform proof remains pending."
+  },
+  "buildGate": {
+    "latestCpuLoadPercent": 100,
+    "dotnetProcesses": 1,
+    "cscProcesses": 0,
+    "vbcsCompilerProcesses": 0,
+    "buildLaunched": false,
+    "reason": "CPU load exceeded 50%. Compilation Resource Throttling forbids dotnet build under this condition.",
+    "previousSample": {
+      "cpuLoadPercent": 18,
+      "dotnetProcesses": 0,
+      "cscProcesses": 0,
+      "buildLaunched": false,
+      "reason": "Static checks did not justify a nonessential build under the user decree."
+    }
+  },
+  "tests": [
+    {
+      "name": "LifecycleLeakFuzzer_SaveManagerAndIkRigReturnSentinelToBaseline",
+      "file": "Assets/_Project/Tests/Editor/MonoBehaviourResidualNativePurge1403EditTests.cs",
+      "line": 22,
+      "type": "Editor NUnit Explicit",
+      "intent": "10000 SaveManager and ContextualPhysicalIkRig create/destroy cycles with NativeMemorySentinel baseline assertion.",
+      "execution": "NOT_RUN"
+    },
+    {
+      "name": "StaticRaceCondition_StaticWriteBufferPairsDoNotAliasUnderContention",
+      "file": "Assets/_Project/Tests/Editor/MonoBehaviourResidualNativePurge1403EditTests.cs",
+      "line": 49,
+      "type": "Editor NUnit Explicit",
+      "intent": "Private SaveManager static raw/compressed buffer acquire/release race probe with separate pointer checks under contention.",
+      "execution": "NOT_RUN"
+    },
+    {
+      "name": "IkMatrixIntegrity_JobPayloadsUseNativeFacadeArrays",
+      "file": "Assets/_Project/Tests/Editor/MonoBehaviourResidualNativePurge1403EditTests.cs",
+      "line": 143,
+      "type": "Editor NUnit",
+      "intent": "Static job payload route check proving IK jobs consume facade NativeArray values and not BufferSet wrappers.",
+      "execution": "NOT_RUN"
+    }
+  ],
+  "knownRemainingRisks": [
+    "Unity Test Runner was not executed.",
+    "dotnet build was not executed.",
+    "No Unity Profiler or GCMonitor 300-frame runtime capture was produced.",
+    "Unix-like SaveBinaryStorage.TryGetFileLengthUnix remains PENDING runtime/platform verification because no Linux/macOS/Android player build was executed.",
+    "iOS/WebGL/other unsupported SaveBinaryStorage.TryGetFileLength targets fail closed with a static error until a platform-specific native route is supplied.",
+    "No Docs/AgentLogs/Dump_1403.bin was produced because no crash, NaN detection, or failing test run occurred in this verification pass."
+  ],
+  "selfAudit": {
+    "all36AssignmentFieldsDetachedFromMonoBehaviourClassDepth": true,
+    "bufferSetOwnersImplementIDisposable": true,
+    "disposeChainsBestEffort": true,
+    "staticSaveBuffersIsolatedFromInstanceBuffers": true,
+    "hotPathForbiddenPatternHits": 0,
+    "backgroundForbiddenPatternHits": 0,
+    "dotnetBuildAvoidedUnderResourceDecree": true,
+    "fakeSuccessClaimsAvoided": true,
+    "finalStatus": "PENDING_VERIFICATION"
+  }
+}

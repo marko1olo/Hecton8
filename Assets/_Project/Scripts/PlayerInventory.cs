@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // HECTON-8 - PlayerInventory.cs
 // Native SOA-backed inventory owner. Managed ItemData resolution is seam-only.
 // ============================================================================
@@ -72,7 +72,7 @@ namespace Hecton8.Inventory
         private const float SalinityCorrosionDegradationRatePerFrostTick = 0.00325f;
         private const float EquipmentFailingThreshold01 = 0.2f;
         private const float EquipmentFailingResetThreshold01 = 0.25f;
-        private const int SalinityCorrosionBlackBoxEntrySizeBytes = 32;
+        private const int SalinityCorrosionBlackBoxEntrySizeBytes = 64;
         private const string SalinityCorrosionBlackBoxDumpRelativePath = "Docs/AgentLogs/Dump_SALINITY_CORROSION_SYSTEM.bin";
         private const string NativeMemoryOwner = nameof(PlayerInventory);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
@@ -145,17 +145,89 @@ namespace Hecton8.Inventory
             [FieldOffset(60)] public int DefragTimeMicroseconds;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = SalinityCorrosionBlackBoxEntrySizeBytes)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
         private struct SalinityCorrosionTelemetryEntry
         {
-            [FieldOffset(0)] public uint Frame;
-            [FieldOffset(4)] public uint InventoryVersion;
-            [FieldOffset(8)] public float AverageEquipmentDurability01;
-            [FieldOffset(12)] public float RustScalar01;
-            [FieldOffset(16)] public float SalinityFactor;
-            [FieldOffset(20)] public uint CurrentBiomeHash;
-            [FieldOffset(24)] public uint InventoryMaskLow;
-            [FieldOffset(28)] public int Flags;
+            [System.Runtime.InteropServices.FieldOffset(0)]
+            public uint Frame;
+            [System.Runtime.InteropServices.FieldOffset(4)]
+            public uint InventoryVersion;
+            [System.Runtime.InteropServices.FieldOffset(8)]
+            public float AverageEquipmentDurability01;
+            [System.Runtime.InteropServices.FieldOffset(12)]
+            public float RustScalar01;
+            [System.Runtime.InteropServices.FieldOffset(16)]
+            public float SalinityFactor;
+            [System.Runtime.InteropServices.FieldOffset(20)]
+            public uint CurrentBiomeHash;
+            [System.Runtime.InteropServices.FieldOffset(24)]
+            public uint InventoryMaskLow;
+            [System.Runtime.InteropServices.FieldOffset(28)]
+            public int Flags;
+            [System.Runtime.InteropServices.FieldOffset(32)]
+            private byte _pad0;
+            [System.Runtime.InteropServices.FieldOffset(33)]
+            private byte _pad1;
+            [System.Runtime.InteropServices.FieldOffset(34)]
+            private byte _pad2;
+            [System.Runtime.InteropServices.FieldOffset(35)]
+            private byte _pad3;
+            [System.Runtime.InteropServices.FieldOffset(36)]
+            private byte _pad4;
+            [System.Runtime.InteropServices.FieldOffset(37)]
+            private byte _pad5;
+            [System.Runtime.InteropServices.FieldOffset(38)]
+            private byte _pad6;
+            [System.Runtime.InteropServices.FieldOffset(39)]
+            private byte _pad7;
+            [System.Runtime.InteropServices.FieldOffset(40)]
+            private byte _pad8;
+            [System.Runtime.InteropServices.FieldOffset(41)]
+            private byte _pad9;
+            [System.Runtime.InteropServices.FieldOffset(42)]
+            private byte _pad10;
+            [System.Runtime.InteropServices.FieldOffset(43)]
+            private byte _pad11;
+            [System.Runtime.InteropServices.FieldOffset(44)]
+            private byte _pad12;
+            [System.Runtime.InteropServices.FieldOffset(45)]
+            private byte _pad13;
+            [System.Runtime.InteropServices.FieldOffset(46)]
+            private byte _pad14;
+            [System.Runtime.InteropServices.FieldOffset(47)]
+            private byte _pad15;
+            [System.Runtime.InteropServices.FieldOffset(48)]
+            private byte _pad16;
+            [System.Runtime.InteropServices.FieldOffset(49)]
+            private byte _pad17;
+            [System.Runtime.InteropServices.FieldOffset(50)]
+            private byte _pad18;
+            [System.Runtime.InteropServices.FieldOffset(51)]
+            private byte _pad19;
+            [System.Runtime.InteropServices.FieldOffset(52)]
+            private byte _pad20;
+            [System.Runtime.InteropServices.FieldOffset(53)]
+            private byte _pad21;
+            [System.Runtime.InteropServices.FieldOffset(54)]
+            private byte _pad22;
+            [System.Runtime.InteropServices.FieldOffset(55)]
+            private byte _pad23;
+            [System.Runtime.InteropServices.FieldOffset(56)]
+            private byte _pad24;
+            [System.Runtime.InteropServices.FieldOffset(57)]
+            private byte _pad25;
+            [System.Runtime.InteropServices.FieldOffset(58)]
+            private byte _pad26;
+            [System.Runtime.InteropServices.FieldOffset(59)]
+            private byte _pad27;
+            [System.Runtime.InteropServices.FieldOffset(60)]
+            private byte _pad28;
+            [System.Runtime.InteropServices.FieldOffset(61)]
+            private byte _pad29;
+            [System.Runtime.InteropServices.FieldOffset(62)]
+            private byte _pad30;
+            [System.Runtime.InteropServices.FieldOffset(63)]
+            private byte _pad31;
         }
 
         private ref struct InventoryMassVolumeKernel
@@ -5139,21 +5211,27 @@ namespace Hecton8.Inventory
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            using (BinaryWriter writer = new BinaryWriter(File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read)))
+            using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))
             {
-                writer.Write(_salinityCorrosionBlackBox.Length);
-                writer.Write(SalinityCorrosionBlackBoxEntrySizeBytes);
+                Span<byte> header = stackalloc byte[8];
+                System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(header.Slice(0, 4), _salinityCorrosionBlackBox.Length);
+                System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(header.Slice(4, 4), SalinityCorrosionBlackBoxEntrySizeBytes);
+                stream.Write(header);
+
+                Span<byte> row = stackalloc byte[SalinityCorrosionBlackBoxEntrySizeBytes];
                 for (int i = 0; i < _salinityCorrosionBlackBox.Length; i++)
                 {
                     SalinityCorrosionTelemetryEntry entry = _salinityCorrosionBlackBox[i];
-                    writer.Write(entry.Frame);
-                    writer.Write(entry.InventoryVersion);
-                    writer.Write(entry.AverageEquipmentDurability01);
-                    writer.Write(entry.RustScalar01);
-                    writer.Write(entry.SalinityFactor);
-                    writer.Write(entry.CurrentBiomeHash);
-                    writer.Write(entry.InventoryMaskLow);
-                    writer.Write(entry.Flags);
+                    row.Clear();
+                    System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(row.Slice(0, 4), entry.Frame);
+                    System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(row.Slice(4, 4), entry.InventoryVersion);
+                    System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(row.Slice(8, 4), math.asuint(entry.AverageEquipmentDurability01));
+                    System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(row.Slice(12, 4), math.asuint(entry.RustScalar01));
+                    System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(row.Slice(16, 4), math.asuint(entry.SalinityFactor));
+                    System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(row.Slice(20, 4), entry.CurrentBiomeHash);
+                    System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(row.Slice(24, 4), entry.InventoryMaskLow);
+                    System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(row.Slice(28, 4), entry.Flags);
+                    stream.Write(row);
                 }
             }
         }

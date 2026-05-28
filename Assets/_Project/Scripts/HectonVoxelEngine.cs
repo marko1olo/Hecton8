@@ -3250,6 +3250,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     private const uint VoxelMeshPipelineBlackBoxDumpMagic = 0x564D5042u; // VMPB
     private const string VoxelMeshPipelineBlackBoxPrimaryDumpRelativePath = "Docs/AgentLogs/Dump_VOXEL_MESH_PIPELINE.bin";
     private const string VoxelMeshPipelineBlackBoxAgentDumpRelativePath = "Docs/AgentLogs/Dump_1315_VoxelEngine.bin";
+    private const string VoxelMeshPipelineBlackBoxCompactionDumpRelativePath = "Docs/AgentLogs/Dump_1418_VoxelCompaction.bin";
     private const int BiomeHeatmapResolution = 256;
     private const int BiomeHeatmapMaxIndex = BiomeHeatmapResolution - 1;
     private const float VoxelChunkSkirtDepthMeters = 0.5f;
@@ -3378,7 +3379,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     const int StreamingNodeSpatialReferenceScratchCapacity = StreamingCaveGraphNodeScratchCapacity * StreamingSpatialBucketScratchCapacity;
     const int StreamingTunnelSpatialReferenceScratchCapacity = StreamingCaveGraphTunnelScratchCapacity * StreamingSpatialBucketScratchCapacity;
     const int StreamingColliderChunkScratchCapacity = 8;
-    const int StreamingScratchVaultBufferBase = 74500;
+    const int StreamingScratchVaultBufferBase = 76500;
     const int StreamingScratchVaultBufferStride = 60;
     const int ScratchLaneTerrainHeights = 0;
     const int ScratchLaneGridBiome = 1;
@@ -5994,11 +5995,11 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 volume == null ||
                 !volume.HasRuntimeData ||
                 !volume.TryAcquirePublishedSonarSdfPayloadReadLease(
-                    out NativeArray<byte>.ReadOnly _,
+                    out NativeArray<byte>.ReadOnly candidateSdf,
                     out Vector3Int dimensions,
                     out Vector3 payloadOrigin,
                     out Vector3 payloadCellSize,
-                    out float _,
+                    out float candidateRange,
                     out int _,
                     out HectonVoxelVolume.PublishedSonarSdfReadLease candidateLease))
             {
@@ -6007,12 +6008,26 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
             try
             {
-                if (!volume.TrySampleSonarSdf(runtimePosition, out float candidateDensity, out float candidateDensity01))
-                    continue;
-
                 float boundsDistanceSq = ResolveSdfPayloadBoundsDistanceSq(position, payloadOrigin, dimensions, payloadCellSize);
                 if (boundsDistanceSq >= bestBoundsDistanceSq)
                     continue;
+
+                int3 candidateGridDimensions = new int3(dimensions.x, dimensions.y, dimensions.z);
+                float3 candidateVolumeOrigin = new float3(payloadOrigin.x, payloadOrigin.y, payloadOrigin.z);
+                float3 candidateVoxelCellSize = new float3(payloadCellSize.x, payloadCellSize.y, payloadCellSize.z);
+                if (!VoxelSonarSdfMath.TrySampleEncodedSdfTrilinear(
+                        candidateSdf,
+                        candidateGridDimensions,
+                        candidateVolumeOrigin,
+                        candidateVoxelCellSize,
+                        candidateRange,
+                        runtimePosition,
+                        out float candidateDensity))
+                {
+                    continue;
+                }
+
+                float candidateDensity01 = math.saturate(math.max(0f, candidateDensity) * math.rcp(math.max(0.0001f, candidateRange)));
 
                 bestBoundsDistanceSq = boundsDistanceSq;
                 density = candidateDensity;
@@ -7716,6 +7731,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         {
             WriteVoxelMeshPipelineBlackBoxFile(VoxelMeshPipelineBlackBoxPrimaryDumpRelativePath, blackBox, reasonFlags);
             WriteVoxelMeshPipelineBlackBoxFile(VoxelMeshPipelineBlackBoxAgentDumpRelativePath, blackBox, reasonFlags);
+            WriteVoxelMeshPipelineBlackBoxFile(VoxelMeshPipelineBlackBoxCompactionDumpRelativePath, blackBox, reasonFlags);
         }
         catch
         {

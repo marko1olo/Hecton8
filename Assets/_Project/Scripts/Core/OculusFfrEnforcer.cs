@@ -22,41 +22,19 @@ namespace Hecton8.Core
         private static bool _questDeviceSignature;
         private static int _systemMemoryMegabytes;
 
-        public static int SystemMemoryMegabytes
-        {
-            get
-            {
-                EnsureInitialized();
-                return _systemMemoryMegabytes;
-            }
-        }
+        public static int SystemMemoryMegabytes => _systemMemoryMegabytes;
 
-        public static bool IsQuestMemoryGate
-        {
-            get
-            {
-                EnsureInitialized();
-                return _questMemoryGate;
-            }
-        }
+        public static bool IsQuestMemoryGate => _questMemoryGate;
 
-        public static bool IsQuestVulkanCandidate
-        {
-            get
-            {
-                EnsureInitialized();
-                return _isAndroid && _isVulkan && (_questMemoryGate || _questFamilyMemoryGate || _questDeviceSignature);
-            }
-        }
+        public static bool IsQuestVulkanCandidate =>
+            _initialized &&
+            _isAndroid &&
+            _isVulkan &&
+            (_questMemoryGate || _questFamilyMemoryGate || _questDeviceSignature);
 
-        public static bool IsQuestRuntimeActive
-        {
-            get
-            {
-                EnsureInitialized();
-                return IsQuestVulkanCandidate && (HectonXRRuntimeState.IsXRActive || XRSettings.enabled || XRSettings.isDeviceActive);
-            }
-        }
+        public static bool IsQuestRuntimeActive =>
+            IsQuestVulkanCandidate &&
+            (HectonXRRuntimeState.IsXRActive || XRSettings.enabled || XRSettings.isDeviceActive);
 
         public static bool UseDepthlessTBDRPath => IsQuestRuntimeActive;
 

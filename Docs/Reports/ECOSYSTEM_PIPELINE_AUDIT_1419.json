@@ -1,0 +1,157 @@
+﻿{
+    "agent":  "1419",
+    "generatedUtc":  "2026-05-28T00:33:31.0056046Z",
+    "scope":  "Ecosystem CPU spatial grid + SHINOBU/Sargassum GPU swarm data exchange",
+    "tasksCovered":  [
+                         "02_DATA_EXCHANGE_LIFECYCLE_MAPPING",
+                         "03_DEPENDENCY_GRAPH_IMPACT_ANALYSIS",
+                         "04_DTO_LAYOUT_EXTRACTION_AND_VERIFICATION",
+                         "05_TELEMETRY_RING_INTEGRATION_PLANNING"
+                     ],
+    "lifecycle":  [
+                      {
+                          "route":  "Cold boot descriptor registration",
+                          "evidence":  [
+                                           "ShinobuEcosystemBalancer.cs:949-1108 ClaimVaultHandle for AmbientEntityDTO/AUP/BoidState/FlockingThreat/SpatialGrid/Render payload/Telemetry/DumpSnapshot BufferID lanes",
+                                           "World/EcosystemDirector.cs:3745-3810 macro ecosystem vault handles and lock-capable GPU predator-AUP buffers"
+                                       ],
+                          "finding":  "Physical arrays are DataVault-owned; runtime classes store VaultGenerationHandle or private VaultBufferView descriptors, not persistent NativeArray fields."
+                      },
+                      {
+                          "route":  "CPU boid position update and spatial grid build",
+                          "evidence":  [
+                                           "ShinobuEcosystemBalancer.cs:364-418 now pins all job buffers before resolving local NativeArray views",
+                                           "ShinobuEcosystemBalancer.cs:469-529 schedules LocalShiftAndSpatialHashJob -\u003e QuantizeEntityCoordinatesJob -\u003e SortSpatialGridJob -\u003e BuildSpatialGridRangesJob",
+                                           "ShinobuSpatialGridSolver.cs:784-894 job structs accept NativeArray views, not VaultGenerationHandle descriptors"
+                                       ],
+                          "finding":  "Data is resolved once per owner phase, passed into Burst jobs as views, and discarded after frame completion."
+                      },
+                      {
+                          "route":  "Predator/threat matrix to flock",
+                          "evidence":  [
+                                           "ShinobuEcosystemBalancer.FlockingAvoidance.cs:55-96 captures MovementAcousticSignal, HighSpeedImpactSignal, CombatDamageSignal snapshots into FlockingThreatDTO",
+                                           "ShinobuEcosystemBalancer.cs:549-581 passes Threats/ThreatCount plus SpatialGridEntries/BucketRanges to BoidFlockingJob",
+                                           "ShinobuEcosystemBalancer.FlockingAvoidance.cs:103-106 scales threat budget 4..32 by continuous GlobalQualityWeight"
+                                       ],
+                          "finding":  "Threats are first-party SignalBus snapshots converted into vault-backed DTOs before the flocking job; no managed threat array allocation in the hot job path."
+                      },
+                      {
+                          "route":  "GPU render/swarm upload",
+                          "evidence":  [
+                                           "ShinobuEcosystemBalancer.cs:1832-1850 uploads completed vault render matrices/custom data/args while job locks are still held",
+                                           "ShinobuEcosystemBalancer.cs:3503-3541 maps GraphicsBuffers with LockBufferForWrite and copies with UnsafeUtility.MemCpy or direct mapped writes",
+                                           "SargassumMicroFaunaBoids.cs:2846-2847 now uses GraphicsBufferUploadUtility.UploadNativeArray instead of UploadNativeArraySetData",
+                                           "SargassumMicroFaunaBoids.cs:6111-6121 now writes single boid updates through LockBufferForWrite instead of GraphicsBuffer.SetData"
+                                       ],
+                          "finding":  "Bulk path is mapped GPU memory from NativeArray; remaining single-element path is mapped write, no managed array SetData copy."
+                      }
+                  ],
+    "dependencyGraph":  [
+                            {
+                                "api":  "ShinobuEcosystemBalancer.TryGetUploadedSwarmBuffers",
+                                "readers":  [
+                                                "render dispatcher / procedural draw users"
+                                            ],
+                                "contract":  "returns GraphicsBuffer references and active count only; no CPU NativeArray exposure"
+                            },
+                            {
+                                "api":  "SpatialHashQuery.CollectEntitiesInRadius",
+                                "readers":  [
+                                                "AI/ecology query callers and editor x-ray tools"
+                                            ],
+                                "contract":  "resolves via TryReadOnlyHandle and returns 0 on invalid/locked/fence paths; records telemetry fault"
+                            },
+                            {
+                                "api":  "WorldSpatialHashGrid.CollectContactsNonAlloc / FaunaSpatialHashRegistry.CollectContactsNonAlloc",
+                                "readers":  [
+                                                "scanner minimap/HUD, combat, flora, submarine systems"
+                                            ],
+                                "contract":  "legacy non-alloc managed scratch facade over native AUP spatial hash; no direct access to SHINOBU vault arrays"
+                            },
+                            {
+                                "api":  "Editor SpatialGridXRayWindow / AbyssalSwarmTunerWindow",
+                                "readers":  [
+                                                "editor diagnostics"
+                                            ],
+                                "contract":  "read vault BufferID lanes directly for diagnostics; outside runtime hot path"
+                            }
+                        ],
+    "dtoLayouts":  [
+                       {
+                           "dto":  "BoidStateDTO",
+                           "file":  "ShinobuEcosystemBalancer.cs:4002-4008",
+                           "size":  32,
+                           "offsets":  "LocalPosition=0, Velocity=12, FlockHashID=24, PanicScalar=28",
+                           "aligned8":  true
+                       },
+                       {
+                           "dto":  "FlockingThreatDTO",
+                           "file":  "ShinobuEcosystemBalancer.FlockingAvoidance.cs:468-476",
+                           "size":  32,
+                           "offsets":  "LocalPosition=0, Radius=12, Intensity=16, SourceId=20, TypeHash=24, DirectionalBias=28",
+                           "aligned8":  true
+                       },
+                       {
+                           "dto":  "SpatialGridEntryDTO",
+                           "file":  "ShinobuSpatialGridSolver.cs:45-52",
+                           "size":  16,
+                           "offsets":  "EntityHashID/EntityRowIndex union=0, CellHash=4, LocalCellOffset/CellFingerprint union=8",
+                           "aligned8":  true
+                       },
+                       {
+                           "dto":  "SpatialGridBucketRangeDTO",
+                           "file":  "ShinobuSpatialGridSolver.cs:55-65",
+                           "size":  32,
+                           "offsets":  "CellHash=0, FingerprintX=4, FingerprintY=8, Start=12, Count=16, Flags=20, Pads=24/28",
+                           "aligned8":  true
+                       },
+                       {
+                           "dto":  "FlockingTelemetryEntry",
+                           "file":  "ShinobuEcosystemBalancer.FlockingAvoidance.cs:479-497",
+                           "size":  64,
+                           "offsets":  "Frame=0 through Pad0=60",
+                           "aligned8":  true
+                       },
+                       {
+                           "dto":  "SpatialGridTelemetryEntry",
+                           "file":  "ShinobuSpatialGridSolver.cs:68-86",
+                           "size":  64,
+                           "offsets":  "Frame=0 through Pad1=60",
+                           "aligned8":  true
+                       },
+                       {
+                           "dto":  "BoidData",
+                           "file":  "SargassumMicroFaunaBoids.cs:82-97 + SargassumMicroFaunaBoids.compute:11-22",
+                           "size":  32,
+                           "offsets":  "Position=0, Velocity=12, Panic=24, StateFlags=28",
+                           "aligned8":  true
+                       },
+                       {
+                           "dto":  "BoidMatrixDTO",
+                           "file":  "ShinobuEcosystemBalancer.cs:4020-4026 + Hecton_AbyssalSwarmCull.compute:9-15",
+                           "size":  64,
+                           "offsets":  "C0=0, C1=16, C2=32, C3=48",
+                           "aligned8":  true
+                       }
+                   ],
+    "telemetryPlan":  {
+                          "existingRings":  [
+                                                "EcosystemTelemetryEntry 64B",
+                                                "FlockingTelemetryEntry 64B",
+                                                "SpatialGridTelemetryEntry 64B"
+                                            ],
+                          "capacityFrames":  300,
+                          "dumpRoute":  "Docs/AgentLogs/Dump_1419_EcosystemSwarm.bin",
+                          "implementation":  "ShinobuSpatialGridForensics now mirrors spatial-grid dump snapshots to Agent1419DumpRelativePath while preserving owner and Agent1301 dump paths.",
+                          "failClosedSignals":  [
+                                                    "SpatialHashQuery returns 0 on invalid vault/locked reads",
+                                                    "Flocking telemetry dumps on invalid math, overflow, or solve over-budget",
+                                                    "GPU upload catches InvalidOperationException/ArgumentException and publishes numeric warning 0x47505555"
+                                                ]
+                      },
+    "zeroGcProofNotes":  [
+                             "No persistent forbidden NativeArray/List/Queue/HashMap fields in scoped runtime classes after post-patch ledger scan",
+                             "Bulk GPU path uses LockBufferForWrite + UnsafeUtility.MemCpy through GraphicsBufferUploadUtility or ShinobuBoidGpuUploadDispatcher",
+                             "Single boid live update now writes into mapped GPU memory and removed managed-array SetData use"
+                         ]
+}

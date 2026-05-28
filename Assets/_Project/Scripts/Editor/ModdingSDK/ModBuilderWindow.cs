@@ -8,8 +8,8 @@ using UnityEngine;
 namespace Hecton8.Editor.ModdingSDK
 {
     /// <summary>
-    /// Editor-side SDK window for packaging a supported HECTON-8 mod folder.
-    /// This tool builds an optional AssetBundle, emits <c>mod.json</c>, and copies managed assemblies into the runtime Mods directory.
+    /// Internal legacy editor window for packaging a HECTON-8 mod folder.
+    /// Public UGC authoring starts from the external starter kit and remains envelope-only.
     /// </summary>
     public sealed class ModBuilderWindow : EditorWindow
     {
@@ -19,6 +19,8 @@ namespace Hecton8.Editor.ModdingSDK
         private const int DefaultModPriority = 0;
         private const string EnvelopeOnlyRuntimeWarning =
             "Public runtime UGC is envelope-only. Managed DLL entries are legacy/internal and will be disabled by the loader.";
+        private const string LegacyBuilderWarning =
+            "Internal legacy package builder. Public authors should use SDK Hub -> Create External Starter Kit.";
         private const string ReservedAssemblyNamePrefix = "Hecton8.";
         private const string ReservedUnityAssemblyNamePrefix = "Unity";
         private const string ReservedAssemblyNameAssemblyCSharp = "Assembly-CSharp";
@@ -59,12 +61,12 @@ namespace Hecton8.Editor.ModdingSDK
         private readonly List<string> _dependencyIds = new List<string>(4);
 
         /// <summary>
-        /// Opens the HECTON mod builder window.
+        /// Opens the internal legacy HECTON mod builder window.
         /// </summary>
-        [MenuItem("Hecton/Modding/Mod Builder")]
+        [MenuItem("Hecton/Modding/Internal/Legacy Mod Builder")]
         public static void ShowWindow()
         {
-            ModBuilderWindow window = GetWindow<ModBuilderWindow>("Hecton Mod Builder");
+            ModBuilderWindow window = GetWindow<ModBuilderWindow>("Hecton Legacy Mod Builder");
             window.minSize = new Vector2(620f, 540f);
         }
 
@@ -85,9 +87,9 @@ namespace Hecton8.Editor.ModdingSDK
 
             using (EditorGUILayout.VerticalScope _ = new EditorGUILayout.VerticalScope())
             {
-                EditorGUILayout.LabelField("HECTON-8 Mod Builder", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField("HECTON-8 Legacy Mod Builder", EditorStyles.boldLabel);
                 EditorGUILayout.HelpBox(
-                    "Builds a supported mod package into ProjectRoot/Mods/[ModId]. " +
+                    LegacyBuilderWarning + " Builds an internal/legacy package into ProjectRoot/Mods/[ModId]. " +
                     "Package manifests are validated against the current loader contract. " +
                     EnvelopeOnlyRuntimeWarning,
                     MessageType.Info);
@@ -133,7 +135,8 @@ namespace Hecton8.Editor.ModdingSDK
 
             EditorGUILayout.HelpBox(
                 "Leave Asset Folder empty for manifest-only or managed-legacy packages. " +
-                "When a folder is supplied, every buildable asset under that folder is packed into [ModId].bundle.",
+                "When a folder is supplied, every buildable asset under that folder is packed into [ModId].bundle. " +
+                "This is not public runtime content ingress.",
                 MessageType.None);
         }
 
@@ -205,7 +208,7 @@ namespace Hecton8.Editor.ModdingSDK
                 EditorGUILayout.HelpBox(validationError, MessageType.Error);
             else
                 EditorGUILayout.HelpBox(
-                    "Manifest and file paths are valid. Build Mod performs the deep asset and DLL identity scan.",
+                    "Manifest and file paths are valid. Build Internal Legacy Package performs the deep asset and DLL identity scan.",
                     MessageType.Info);
         }
 
@@ -213,7 +216,7 @@ namespace Hecton8.Editor.ModdingSDK
         {
             using (new EditorGUI.DisabledScope(!TryValidateConfiguration(false, out _)))
             {
-                if (GUILayout.Button("Build Mod", GUILayout.Height(34f)))
+                if (GUILayout.Button("Build Internal Legacy Package", GUILayout.Height(34f)))
                     BuildModPackage();
             }
         }
@@ -293,7 +296,7 @@ namespace Hecton8.Editor.ModdingSDK
                 AssetDatabase.Refresh();
 
                 Debug.Log(
-                    $"[ModBuilderWindow] Built mod '{manifest.Id}' into '{outputDirectory}'. " +
+                    $"[ModBuilderWindow] Built internal legacy mod '{manifest.Id}' into '{outputDirectory}'. " +
                     $"Bundle={(string.IsNullOrWhiteSpace(bundleOutputPath) ? "none" : "present")} Assemblies={copiedAssemblies.Length}");
             }
             catch (Exception ex)

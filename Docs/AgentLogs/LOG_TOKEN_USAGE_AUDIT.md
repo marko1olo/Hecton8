@@ -215,3 +215,60 @@ Cinematic Cheats used:
 
 Exact Microseconds saved:
 - 0 runtime microseconds. Engineering audit work only; no game-frame path touched.
+
+## 2026-05-28 05:38 Europe/Samara - Project metrics dashboard
+
+What was wrong:
+- The full all-time token replay exceeded the 20-minute command window after the overnight workspace surge.
+- The existing token report had tables but no persistent visual dashboard.
+- Project metrics were token-heavy and did not visualize git churn, file-type load, docs artifacts, or current source density.
+
+What was done:
+- Stopped only orphan PID `58052` running `Tools\CodexTokenUsageAudit_20260525.py`.
+- Added fast incremental refresh: `Tools/CodexTokenUsageFastRefresh_20260528.py`.
+- Added dashboard generator: `Tools/ProjectMetricsDashboard_20260528.py`.
+- Generated `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-28.json` and `.md`.
+- Refreshed `Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_LEDGER.md`.
+- Generated `Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-28.md` and `.json`.
+- Generated 29 PNG charts in `Docs/Reports/MetricCharts/2026-05-28/`.
+
+Current token snapshot:
+- Total tokens: 110,159,445,798.
+- Input tokens: 109,776,871,191.
+- Cached input tokens: 105,482,603,520.
+- Output tokens: 381,541,007.
+- Reasoning output tokens: 119,780,195.
+- Usage sessions: 2,856.
+- GPT-5.5 standard API-equivalent: $85,658.87.
+
+Delta since previous snapshot:
+- +1,915,058,255 total tokens.
+- +1,908,042,979 input tokens.
+- +1,839,065,920 cached input tokens.
+- +7,015,276 output tokens.
+- +2,081,319 reasoning output tokens.
+- Fast refresh scanned 62 changed JSONL files and found 52 post-cutoff usage sessions.
+
+Velocity:
+- 297,297,721.33 tokens/hour.
+- 82,582.70 tokens/second.
+- $228.26/hour GPT-5.5 standard API-equivalent.
+- 2,975.37 primary C# lines/hour.
+
+Charts generated:
+- Hourly token, cost, I/O stack, output/reasoning, and ratio charts.
+- Daily token, cost, I/O stack, output/reasoning, and ratio charts.
+- Weekly token, cost, and I/O charts.
+- Model-effort token/cost charts.
+- Top sessions and CWD token charts.
+- Source scope line and token-density charts.
+- File extension count/byte charts.
+- Docs artifact count chart.
+- Git commit/churn/day/week and weekday-hour heatmap charts.
+
+Cinematic Cheats used:
+- Fast incremental telemetry refresh instead of repeated full JSONL replay under active parallel-agent churn.
+
+Exact Microseconds saved:
+- 0 runtime microseconds. Audit-only tooling and documentation.
+- Audit wall time avoided: full replay was still running after 20 minutes; fast token refresh completed in about 186 seconds.

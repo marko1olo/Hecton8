@@ -1,0 +1,653 @@
+﻿{
+    "agentId":  1418,
+    "role":  "VOXEL_TERRAIN_AND_MARCHING_CUBES_COMPACTOR",
+    "status":  "STATIC_APEX_PLUS_VOLUME_LEASE_VERIFIED_BUILD_BLOCKED_BY_CONTENTION",
+    "domain":  "Echelon 2 World Generation and Terrain - Voxel SDF, Marching Cubes, Voxel Carving",
+    "prompt":  {
+                   "source":  "Docs/Tasks/CURRENT_BATCH.md",
+                   "tag":  "AGENT_PROMPT id=\"1418\"",
+                   "taskCount":  20,
+                   "lastExtracted":  "2026-05-28T05:26:51+04:00"
+               },
+    "modifiedFiles":  [
+                          {
+                              "path":  "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+                              "sha256":  "4A385333AC48B3B89BE3B1FC84DBE818B410632FB1E0491598B61F27837D9882",
+                              "modifiedLines":  [
+                                                    3253,
+                                                    3382,
+                                                    5998,
+                                                    6002,
+                                                    6011,
+                                                    6018,
+                                                    6030,
+                                                    7734
+                                                ],
+                              "changes":  [
+                                              "Added VoxelMeshPipelineBlackBoxCompactionDumpRelativePath = Docs/AgentLogs/Dump_1418_VoxelCompaction.bin.",
+                                              "Moved StreamingScratchVaultBufferBase from 74500 to 76500.",
+                                              "Removed redundant nested volume.TrySampleSonarSdf read path from TrySampleNearestSonarSdf; the method now samples the already leased published SDF payload through VoxelSonarSdfMath.TrySampleEncodedSdfTrilinear.",
+                                              "Moved ResolveSdfPayloadBoundsDistanceSq before the trilinear SDF sample so losing candidate volumes are skipped before SDF decode work.",
+                                              "Added compaction dump fanout to DumpVoxelMeshPipelineBlackBox."
+                                          ]
+                          },
+                          {
+                              "path":  "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+                              "sha256":  "15C454D9CA319785C5B69FE52049607E3765FDBFB0E2E3C16CE74BE4D955A02A",
+                              "modifiedLines":  [
+                                                    1309,
+                                                    1323,
+                                                    1338,
+                                                    1357,
+                                                    1375,
+                                                    2917,
+                                                    2931,
+                                                    2952,
+                                                    2976,
+                                                    4483,
+                                                    4500,
+                                                    4532,
+                                                    4536,
+                                                    4557,
+                                                    4584,
+                                                    4604,
+                                                    4624,
+                                                    4643,
+                                                    4661
+                                                ],
+                              "changes":  [
+                                              "Converted TryResolveBurrowAmbushRoute to acquire one published sonar SDF read lease and pass the leased payload through all internal density scans.",
+                                              "Converted ResolveOrganicRootMoundWeldRadius to acquire one published sonar SDF read lease for root and seabed-probe samples.",
+                                              "Converted TryResolveSeismicCollapseAnchor to acquire one published sonar SDF read lease for the vertical sample loop.",
+                                              "Converted TryResolveTopSolidAnchor, TryResolveNearestSolidDistance, and HasSolidDensityPath to consume already leased SDF payloads through TrySamplePublishedDensity instead of re-entering TrySampleDensity."
+                                          ]
+                          },
+                          {
+                              "path":  "Assets/_Project/Tests/Editor/VoxelCompaction1418EditTests.cs",
+                              "sha256":  "D00B687C3227CC0C46C72AA957C59EF9F7B0E8304E5ED9720321B1ABFAA988BB",
+                              "modifiedLines":  [
+                                                    12,
+                                                    55,
+                                                    63,
+                                                    66,
+                                                    75,
+                                                    78,
+                                                    85,
+                                                    86,
+                                                    91,
+                                                    102,
+                                                    135,
+                                                    149,
+                                                    175,
+                                                    178,
+                                                    191
+                                                ],
+                              "changes":  [
+                                              "Added editor static guard for target TempJob and new NativeArray absence.",
+                                              "Added guard for scratch route 76500 and 1418 dump path.",
+                                              "Added guard for public accessor scratch non-exposure.",
+                                              "Added guard that TrySampleNearestSonarSdf consumes its already leased published SDF payload and does not re-enter volume.TrySampleSonarSdf.",
+                                              "Added guard that candidate bounds rejection happens before VoxelSonarSdfMath.TrySampleEncodedSdfTrilinear.",
+                                              "Added guard that HectonVoxelVolume bulk density scans acquire one published SDF lease and sample through TrySamplePublishedDensity.",
+                                              "Added guard for scratch lock/finally release patterns.",
+                                              "Added guard for continuous GlobalQualityWeight use.",
+                                              "Added DTO layout validator bridge.",
+                                              "Added bounded 50000-hit mock fuzzer proof over overflow routes.",
+                                              "Strengthened the HectonVoxelVolume bulk density guard to assert exactly one TryAcquirePublishedSonarSdfPayloadReadLease per owning scan block."
+                                          ]
+                          }
+                      ],
+    "auditedUnmodifiedTargetFiles":  [
+                                         {
+                                             "path":  "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+                                             "sha256":  "329BF9F5B25CDFC32DAD978323E3B828028FFF329ADD29D96F631DAE7304B7B3",
+                                             "reason":  "Primary delta producer target audited but not modified; existing DataVault route already satisfied the TempJob purge."
+                                         }
+                                     ],
+    "allocationPurge":  {
+                            "deletedAllocatorTempJobCalls":  0,
+                            "deletedNewNativeArrayCalls":  0,
+                            "reason":  "Static source scan found no existing target-file Allocator.TempJob or new NativeArray transfer calls at agent 1418 start.",
+                            "targetScanCounts":  {
+                                                     "Allocator.TempJob":  0,
+                                                     "new NativeArray\u003c":  0,
+                                                     "new NativeList\u003c":  0,
+                                                     "string.Format":  0,
+                                                     ".ToString(":  0,
+                                                     "LINQ Where/Select/ToList/ToArray":  0,
+                                                     "foreach(":  0
+                                                 },
+                            "sourceLedger":  "Docs/Reports/VOXEL_ALLOCATION_LEDGER_1418.json",
+                            "sourceLedgerSha256":  "BF5B601CA74502196C1F0446C9262FBD247E9C4FCA8B225DFCFFED3484B78F52"
+                        },
+    "hotPathZeroGcAudit":  [
+                               {
+                                   "block":  "HectonVoxelEngine.TrySampleNearestSonarSdf",
+                                   "line":  5976,
+                                   "newNativeArray":  0,
+                                   "allocatorTempJob":  0,
+                                   "stringFormat":  0,
+                                   "toString":  0,
+                                   "linq":  0,
+                                   "foreach":  0,
+                                   "referenceNew":  0,
+                                   "newTokens":  4,
+                                   "newTokenClassification":  "Value-type Vector3, int3, and float3 construction only; no reference-type allocation. The method rejects farther candidate volumes before trilinear SDF sampling and no longer calls volume.TrySampleSonarSdf inside an existing published SDF lease."
+                               },
+                               {
+                                   "block":  "HectonVoxelEngine.TryPrepareModifiedCellsForPipeline",
+                                   "line":  8539,
+                                   "newNativeArray":  0,
+                                   "allocatorTempJob":  0,
+                                   "stringFormat":  0,
+                                   "toString":  0,
+                                   "linq":  0,
+                                   "foreach":  0,
+                                   "referenceNew":  0,
+                                   "newTokens":  0
+                               },
+                               {
+                                   "block":  "HectonVoxelEngine.WriteVoxelMeshPipelineBlackBoxSample",
+                                   "line":  7586,
+                                   "newNativeArray":  0,
+                                   "allocatorTempJob":  0,
+                                   "stringFormat":  0,
+                                   "toString":  0,
+                                   "linq":  0,
+                                   "foreach":  0,
+                                   "referenceNew":  0,
+                                   "newTokens":  1,
+                                   "newTokenClassification":  "Value-type VoxelMeshPipelineTelemetryEntry assignment only; no reference-type allocation."
+                               },
+                               {
+                                   "block":  "HectonVoxelEngine.TryEnsureStreamingScratchArray",
+                                   "line":  9793,
+                                   "newNativeArray":  0,
+                                   "allocatorTempJob":  0,
+                                   "stringFormat":  0,
+                                   "toString":  0,
+                                   "linq":  0,
+                                   "foreach":  0,
+                                   "referenceNew":  0,
+                                   "newTokens":  0
+                               },
+                               {
+                                   "block":  "HectonVoxelEngine.TryLockStreamingScratchJobLifetime",
+                                   "line":  9968,
+                                   "newNativeArray":  0,
+                                   "allocatorTempJob":  0,
+                                   "stringFormat":  0,
+                                   "toString":  0,
+                                   "linq":  0,
+                                   "foreach":  0,
+                                   "referenceNew":  0,
+                                   "newTokens":  0
+                               },
+                               {
+                                   "block":  "HectonVoxelEngine.ResolveStreamingMeshRawScratchQualityCapacity",
+                                   "line":  10217,
+                                   "newNativeArray":  0,
+                                   "allocatorTempJob":  0,
+                                   "stringFormat":  0,
+                                   "toString":  0,
+                                   "linq":  0,
+                                   "foreach":  0,
+                                   "referenceNew":  0,
+                                   "newTokens":  0
+                               },
+                               {
+                                   "block":  "HectonVoxelVolume.TryResolveBurrowAmbushRoute",
+                                   "line":  1289,
+                                   "newNativeArray":  0,
+                                   "allocatorTempJob":  0,
+                                   "stringFormat":  0,
+                                   "toString":  0,
+                                   "linq":  0,
+                                   "foreach":  0,
+                                   "referenceNew":  0,
+                                   "newTokens":  1,
+                                   "newTokenClassification":  "Value-type Vector3 construction only; no reference-type allocation. One published SDF read lease spans nearest-solid, top-anchor, and density-path scans."
+                               },
+                               {
+                                   "block":  "HectonVoxelVolume.ResolveOrganicRootMoundWeldRadius",
+                                   "line":  2914,
+                                   "newNativeArray":  0,
+                                   "allocatorTempJob":  0,
+                                   "stringFormat":  0,
+                                   "toString":  0,
+                                   "linq":  0,
+                                   "foreach":  0,
+                                   "referenceNew":  0,
+                                   "newTokens":  0,
+                                   "newTokenClassification":  "No new tokens; one published SDF read lease spans root and seabed-probe samples."
+                               },
+                               {
+                                   "block":  "HectonVoxelVolume.TryResolveSeismicCollapseAnchor",
+                                   "line":  4467,
+                                   "newNativeArray":  0,
+                                   "allocatorTempJob":  0,
+                                   "stringFormat":  0,
+                                   "toString":  0,
+                                   "linq":  0,
+                                   "foreach":  0,
+                                   "referenceNew":  0,
+                                   "newTokens":  0,
+                                   "newTokenClassification":  "No new tokens; one published SDF read lease spans the vertical collapse-anchor scan."
+                               },
+                               {
+                                   "block":  "HectonVoxelVolume.TryResolveTopSolidAnchor",
+                                   "line":  4536,
+                                   "newNativeArray":  0,
+                                   "allocatorTempJob":  0,
+                                   "stringFormat":  0,
+                                   "toString":  0,
+                                   "linq":  0,
+                                   "foreach":  0,
+                                   "referenceNew":  0,
+                                   "newTokens":  0,
+                                   "newTokenClassification":  "No new tokens; helper consumes caller-owned leased payload."
+                               },
+                               {
+                                   "block":  "HectonVoxelVolume.TryResolveNearestSolidDistance",
+                                   "line":  4584,
+                                   "newNativeArray":  0,
+                                   "allocatorTempJob":  0,
+                                   "stringFormat":  0,
+                                   "toString":  0,
+                                   "linq":  0,
+                                   "foreach":  0,
+                                   "referenceNew":  0,
+                                   "newTokens":  0,
+                                   "newTokenClassification":  "No new tokens; helper consumes caller-owned leased payload."
+                               },
+                               {
+                                   "block":  "HectonVoxelVolume.HasSolidDensityPath",
+                                   "line":  4643,
+                                   "newNativeArray":  0,
+                                   "allocatorTempJob":  0,
+                                   "stringFormat":  0,
+                                   "toString":  0,
+                                   "linq":  0,
+                                   "foreach":  0,
+                                   "referenceNew":  0,
+                                   "newTokens":  0,
+                                   "newTokenClassification":  "No new tokens; helper consumes caller-owned leased payload."
+                               }
+                           ],
+    "dataSovereignty":  {
+                            "systemIds":  [
+                                              {
+                                                  "name":  "WorldStreaming",
+                                                  "value":  128,
+                                                  "source":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:39"
+                                              },
+                                              {
+                                                  "name":  "TerrainSeams",
+                                                  "value":  129,
+                                                  "source":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:40"
+                                              }
+                                          ],
+                            "securedRoutes":  [
+                                                  {
+                                                      "name":  "WorldStreaming computed voxel scratch",
+                                                      "range":  "76500..76979",
+                                                      "formula":  "StreamingScratchVaultBufferBase + slotIndex * StreamingScratchVaultBufferStride + lane",
+                                                      "source":  "Assets/_Project/Scripts/HectonVoxelEngine.cs:3382,3383,9790",
+                                                      "slots":  8,
+                                                      "stride":  60,
+                                                      "lanes":  {
+                                                                    "modifiedCells":  40,
+                                                                    "modifiedCellCount":  41,
+                                                                    "modifiedCellBucketHeads":  51,
+                                                                    "modifiedCellNext":  52,
+                                                                    "meshRawVertices":  12,
+                                                                    "cellVertexCounts":  10,
+                                                                    "cellVertexOffsets":  11
+                                                                },
+                                                      "collisionScan":  "Only matching source integer is HectonVoxelEngine.cs:3382; H8Hashes.cs:2446 is a hash literal, not a BufferID."
+                                                  },
+                                                  {
+                                                      "name":  "Voxel mesh pipeline blackbox",
+                                                      "bufferId":  "BufferID.VoxelMeshPipelineBlackBox",
+                                                      "value":  74316,
+                                                      "systemId":  "WorldStreaming",
+                                                      "source":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:1320, Assets/_Project/Scripts/HectonVoxelEngine.cs:3240,3241"
+                                                  },
+                                                  {
+                                                      "name":  "Marching Cubes edge table",
+                                                      "bufferId":  "BufferID.VoxelMarchingCubesEdgeTable",
+                                                      "value":  644,
+                                                      "systemId":  "TerrainSeams",
+                                                      "source":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:814, Assets/_Project/Scripts/HectonVoxelEngine.cs:42"
+                                                  },
+                                                  {
+                                                      "name":  "Marching Cubes triangle table",
+                                                      "bufferId":  "BufferID.VoxelMarchingCubesTriTable",
+                                                      "value":  645,
+                                                      "systemId":  "TerrainSeams",
+                                                      "source":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:815, Assets/_Project/Scripts/HectonVoxelEngine.cs:43"
+                                                  },
+                                                  {
+                                                      "name":  "Delta carve event queue",
+                                                      "bufferId":  "BufferID.ShinobuDeltaCrusherCarveEventQueue",
+                                                      "systemId":  "TerrainSeams",
+                                                      "source":  "Assets/_Project/Scripts/VoxelDeltaProcessor.cs:1315",
+                                                      "status":  "Audited unchanged existing route."
+                                                  },
+                                                  {
+                                                      "name":  "Published sonar SDF direct sample lease",
+                                                      "bufferId":  "BufferID.VoxelSdfTexture3D",
+                                                      "systemId":  "TerrainSeams",
+                                                      "source":  "Assets/_Project/Scripts/HectonVoxelEngine.cs:5997-6026, Assets/_Project/Scripts/HectonVoxelVolume.cs:2738-2742",
+                                                      "status":  "TrySampleNearestSonarSdf now samples the leased NativeArray\u003cbyte\u003e.ReadOnly directly and releases through ReleasePublishedSonarSdfPayloadReadLease in finally."
+                                                  },
+                                                  {
+                                                      "name":  "Published sonar SDF bulk volume scans",
+                                                      "bufferId":  "BufferID.VoxelSdfTexture3D",
+                                                      "systemId":  "TerrainSeams",
+                                                      "source":  "Assets/_Project/Scripts/HectonVoxelVolume.cs:1309-1375,2917-2976,4483-4532",
+                                                      "status":  "Internal repeated SDF scan loops now acquire one published NativeArray\u003cbyte\u003e.ReadOnly lease per method and release via ReleasePublishedSonarSdfPayloadReadLease in finally."
+                                                  }
+                                              ],
+                            "readLeaseChecks":  [
+                                                    {
+                                                        "source":  "Assets/_Project/Scripts/HectonVoxelEngine.cs:5997",
+                                                        "operation":  "TryAcquirePublishedSonarSdfPayloadReadLease on published sonar SDF payload",
+                                                        "use":  "Assets/_Project/Scripts/HectonVoxelEngine.cs:6014 samples candidateSdf through VoxelSonarSdfMath.TrySampleEncodedSdfTrilinear",
+                                                        "release":  "ReleasePublishedSonarSdfPayloadReadLease in finally immediately after candidate evaluation"
+                                                    },
+                                                    {
+                                                        "source":  "Assets/_Project/Scripts/HectonVoxelVolume.cs:1309,2917,4483",
+                                                        "operation":  "TryAcquirePublishedSonarSdfPayloadReadLease on published sonar SDF payload for bulk internal density scans",
+                                                        "use":  "Assets/_Project/Scripts/HectonVoxelVolume.cs:4557,4604,4624,4661 sample the leased NativeArray\u003cbyte\u003e.ReadOnly through TrySamplePublishedDensity",
+                                                        "release":  "ReleasePublishedSonarSdfPayloadReadLease in finally at HectonVoxelVolume.cs:1375,2976,4532"
+                                                    }
+                                                ],
+                            "writeLockChecks":  [
+                                                    {
+                                                        "source":  "Assets/_Project/Scripts/HectonVoxelEngine.cs:538",
+                                                        "operation":  "TryAcquireWriteLock on Marching Cubes table handle via TryAcquireWritableVaultTable",
+                                                        "release":  "Caller releases EdgeTableBufferId at Assets/_Project/Scripts/HectonVoxelEngine.cs:224 and TriTableBufferId at Assets/_Project/Scripts/HectonVoxelEngine.cs:504 in finally paths; local failure branches release at 545 and 553."
+                                                    },
+                                                    {
+                                                        "source":  "Assets/_Project/Scripts/HectonVoxelEngine.cs:7614",
+                                                        "operation":  "TryAcquireWriteLock on mesh blackbox ring",
+                                                        "release":  "Assets/_Project/Scripts/HectonVoxelEngine.cs:7668 ReleaseWriteLock in finally"
+                                                    },
+                                                    {
+                                                        "source":  "Assets/_Project/Scripts/HectonVoxelEngine.cs:9867",
+                                                        "operation":  "TryAcquireWriteLock for first-value scratch clear",
+                                                        "release":  "Assets/_Project/Scripts/HectonVoxelEngine.cs:9883 ReleaseWriteLock in finally"
+                                                    },
+                                                    {
+                                                        "source":  "Assets/_Project/Scripts/VoxelDeltaProcessor.cs:1256",
+                                                        "operation":  "TryAcquireWriteLock on delta blackbox buffer",
+                                                        "release":  "WriteBlackBoxSample releases through ReleaseBlackBoxBuffer in finally at Assets/_Project/Scripts/VoxelDeltaProcessor.cs:6426"
+                                                    },
+                                                    {
+                                                        "source":  "Assets/_Project/Scripts/VoxelDeltaProcessor.cs:1315",
+                                                        "operation":  "TryAcquireWriteLock on queued carve event buffer",
+                                                        "release":  "ReleaseQueuedCarveEventBuffer calls ReleaseWriteLock; caller-owned lease path audited unchanged."
+                                                    }
+                                                ],
+                            "scratchJobLifetimeLockProof":  {
+                                                                "lockSites":  21,
+                                                                "allSitesHadFinallyAndUnlockWithin500Lines":  true,
+                                                                "method":  "PowerShell line-window scan for TryLockStreamingScratchJobLifetime(ref data.ScratchLease), finally, and UnlockStreamingScratchJobLifetime(ref data.ScratchLease)."
+                                                            }
+                        },
+    "dtoLayoutProof":  [
+                           {
+                               "struct":  "VoxelModifiedCell",
+                               "file":  "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+                               "line":  21,
+                               "sizeBytes":  8,
+                               "offsets":  {
+                                               "Density":  0,
+                                               "Reserved":  2,
+                                               "Reserved1":  4,
+                                               "MaterialId":  6,
+                                               "Flags":  7
+                                           },
+                               "validator":  "VoxelDeltaProcessor.ValidateAgent1304PrivateLayouts"
+                           },
+                           {
+                               "struct":  "VoxelModifiedCellEntry",
+                               "file":  "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+                               "line":  695,
+                               "sizeBytes":  24,
+                               "offsets":  {
+                                               "AbsoluteCell":  0,
+                                               "Cell":  12,
+                                               "_pad0":  20
+                                           },
+                               "validator":  "HectonVoxelEngine.ValidateAgent1315EnginePrivateLayouts"
+                           },
+                           {
+                               "struct":  "MCRawVertex",
+                               "file":  "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+                               "line":  682,
+                               "sizeBytes":  24,
+                               "offsets":  {
+                                               "edgeId":  0,
+                                               "localPosition":  8,
+                                               "_pad0":  20
+                                           },
+                               "validator":  "HectonVoxelEngine.ValidateAgent1315EnginePrivateLayouts"
+                           },
+                           {
+                               "struct":  "VoxelMeshPipelineTelemetryEntry",
+                               "file":  "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+                               "line":  3585,
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "TimestampTicks":  0,
+                                               "Frame":  8,
+                                               "Flags":  12,
+                                               "BufferId":  16,
+                                               "SystemId":  20,
+                                               "Generation":  24,
+                                               "StateHash":  28,
+                                               "VaultGenerationId":  32,
+                                               "ChunksMeshedThisFrame":  36,
+                                               "BakeQueueLength":  38,
+                                               "ColliderUploadQueueLength":  40,
+                                               "ActiveGenerationOperations":  42,
+                                               "SurfacePoolInUse":  44,
+                                               "PhysicsPoolInUse":  46,
+                                               "Padding0":  48,
+                                               "Padding1":  52,
+                                               "Padding2":  56,
+                                               "Padding3":  60
+                                           },
+                               "validator":  "HectonVoxelEngine.ValidateAgent1315EnginePrivateLayouts"
+                           },
+                           {
+                               "struct":  "VoxelCarveTelemetryEntry",
+                               "file":  "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+                               "line":  6717,
+                               "sizeBytes":  80,
+                               "offsets":  {
+                                               "LastHitAup":  0,
+                                               "FocusVolumeId":  24,
+                                               "Frame":  32,
+                                               "Flags":  36,
+                                               "TouchedMinX":  40,
+                                               "TouchedMinY":  44,
+                                               "TouchedMinZ":  48,
+                                               "TouchedMaxX":  52,
+                                               "TouchedMaxY":  56,
+                                               "TouchedMaxZ":  60,
+                                               "_pad0":  64,
+                                               "QueuedCarves":  68,
+                                               "PendingCarves":  70,
+                                               "ScheduledWrites":  72,
+                                               "DirtyChunks":  74,
+                                               "StateHash16":  76,
+                                               "ScheduledState":  78,
+                                               "DrainBudget":  79
+                                           },
+                               "validator":  "VoxelDeltaProcessor.ValidateAgent1304PrivateLayouts"
+                           }
+                       ],
+    "continuousScalability":  {
+                                  "carveDrain":  {
+                                                     "source":  "Assets/_Project/Scripts/VoxelDeltaProcessor.cs:613",
+                                                     "function":  "ResolveQueuedCarveDrainBudgetPerFrame",
+                                                     "input":  "HomeostasisBrain.GlobalQualityWeight via ResolveGlobalQualityWeight01",
+                                                     "curve":  "smoothstep q*q*(3-2*q) then math.lerp(MinQueuedCarveDrainBudgetPerFrame, MaxQueuedCarveDrainBudgetPerFrame, smooth)",
+                                                     "binaryTierSwitchFound":  false
+                                                 },
+                                  "meshRawScratchCapacity":  {
+                                                                 "source":  "Assets/_Project/Scripts/HectonVoxelEngine.cs:10217",
+                                                                 "function":  "ResolveStreamingMeshRawScratchQualityCapacity",
+                                                                 "input":  "HomeostasisBrain.GlobalQualityWeight",
+                                                                 "curve":  "smoothstep then math.lerp(StreamingMeshRawVertexScratchLowTierCapacity, StreamingMeshRawVertexScratchVisualOverkillCapacity, smooth)",
+                                                                 "binaryTierSwitchFound":  false
+                                                             },
+                                  "tierBehavior":  {
+                                                       "weak":  "Lower drain and raw scratch capacity bound work; overflow paths fail closed and queue/coalesce.",
+                                                       "middle":  "Smooth capacity and drain interpolation, no authority layout change.",
+                                                       "high":  "More scratch capacity buys faster visible mesh extraction.",
+                                                       "ultra":  "Visual overkill capacity increases MC scratch headroom without changing topology truth ownership."
+                                                   }
+                              },
+    "cinematicCheatProtocol":  {
+                                   "assessment":  "No physical simulation was added. Marching Cubes topology remains exact; the change only repairs memory identity and forensic dump routing.",
+                                   "cheatUsed":  "Operational cheat only: bounded scratch and deferred/coalesced carve overflow instead of dynamic catch-up allocation.",
+                                   "rejectedOverengineering":  "No proton-scale simulation, no new per-hit physics, no new high-fidelity physical deformation solver."
+                               },
+    "telemetryAndDumpProof":  {
+                                  "dumpPath":  "Docs/AgentLogs/Dump_1418_VoxelCompaction.bin",
+                                  "source":  "Assets/_Project/Scripts/HectonVoxelEngine.cs:3253,7720",
+                                  "ring":  {
+                                               "name":  "VoxelMeshPipelineTelemetryEntry",
+                                               "entries":  300,
+                                               "entryBytes":  64,
+                                               "bufferId":  "VoxelMeshPipelineBlackBox",
+                                               "ownerSystem":  "WorldStreaming"
+                                           },
+                                  "faultFlags":  [
+                                                     "VoxelMeshPipelineInvalidStateFlag",
+                                                     "VoxelMeshPipelineInvalidMeshDataFlag",
+                                                     "VoxelMeshPipelineScratchCapacityOverflowFlag",
+                                                     "VoxelMeshPipelineEmergencyBakeTeardownFlag",
+                                                     "VoxelMeshPipelineVolumeSpawnPoolMissFlag",
+                                                     "VoxelMeshPipelineNullVolumeColliderFallbackFlag",
+                                                     "VoxelMeshPipelineRegistryCorruptionFlag",
+                                                     "VoxelMeshPipelineRebuildFailClosedFlag"
+                                                 ]
+                              },
+    "compilationThrottle":  {
+                                "dotnetBuildInvokedByAgent1418":  false,
+                                "cpuLoadSamplePercent":  90,
+                                "activeProcesses":  [
+                                                        {
+                                                            "name":  "dotnet",
+                                                            "pid":  20440,
+                                                            "cpuSecondsAtSample":  51.109375,
+                                                            "startTime":  "2026-05-28T05:38:48+04:00"
+                                                        }
+                                                    ],
+                                "result":  "BLOCKED_BY_CONTENTION",
+                                "reason":  "CPU exceeded 50 percent and dotnet PID 20440 was active at the final 2026-05-28T05:38:xx+04:00 gate sample."
+                            },
+    "editorGuard":  {
+                        "path":  "Assets/_Project/Tests/Editor/VoxelCompaction1418EditTests.cs",
+                        "testsAdded":  [
+                                           "TargetVoxelSources_HaveNoTempJobOrNativeArrayExchangeAllocations",
+                                           "StreamingScratchRoute_UsesCollisionFree1418RangeAndDumpPath",
+                                           "PublicVoxelReadAccessors_DoNotExposeIntermediateScratch",
+                                           "NearestSonarSample_UsesAlreadyLeasedPublishedSdfPayload",
+                                           "ScratchLeaseWindows_ArePinnedAndReleasedInFinally",
+                                           "VoxelQualityWeight_RemainsContinuousAcrossDrainAndScratchCapacity",
+                                           "VoxelDtoLayouts_AreExplicitAndRuntimeGuarded",
+                                           "MockVoxelSpamFuzzer_UsesBoundedOverflowRoutes",
+                                           "VoxelVolumeBulkDensityScans_UseSinglePublishedSdfLease"
+                                       ],
+                        "notExecuted":  "Build/test execution blocked by CPU and dotnet contention."
+                    },
+    "adjacentDomainTempJobScan":  {
+                                      "scope":  "rg Allocator.TempJob/new NativeArray/new NativeList over voxel/marching/sdf/terrain-named scripts outside the two 1418 target files",
+                                      "totalMatches":  74,
+                                      "targetFilesMatches":  0,
+                                      "groupedMatches":  [
+                                                             {
+                                                                 "path":  "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs",
+                                                                 "matches":  14,
+                                                                 "classification":  "editor/tooling-adjacent VFX window; not modified by 1418"
+                                                             },
+                                                             {
+                                                                 "path":  "Assets/_Project/Scripts/World/VoxelTerrainSeamBinder/Editor/VoxelTerrainSeamBinderPipeline.cs",
+                                                                 "matches":  13,
+                                                                 "classification":  "editor seam binder bake pipeline; not runtime 1418 MC exchange"
+                                                             },
+                                                             {
+                                                                 "path":  "Assets/_Project/Scripts/World/StaticCaveSdfBaker/Editor/StaticCaveSdfBakePipeline.cs",
+                                                                 "matches":  12,
+                                                                 "classification":  "editor static SDF bake pipeline; not runtime 1418 MC exchange"
+                                                             },
+                                                             {
+                                                                 "path":  "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+                                                                 "matches":  11,
+                                                                 "classification":  "smoke tester/dev proof harness; not runtime pipeline"
+                                                             },
+                                                             {
+                                                                 "path":  "Assets/_Project/Scripts/World/VoxelDynamicNavGridRuntime.cs",
+                                                                 "matches":  7,
+                                                                 "classification":  "runtime nav-grid/pathfinding external consumer; real residual owner-domain risk, not edited because it belongs to Echelon 3 funnel/pathfinding ownership"
+                                                             },
+                                                             {
+                                                                 "path":  "Assets/_Project/Scripts/Dev/SpaceEngine098/SpaceEngine098TerrainSmokeTester.cs",
+                                                                 "matches":  6,
+                                                                 "classification":  "dev terrain smoke tester"
+                                                             },
+                                                             {
+                                                                 "path":  "Assets/_Project/Scripts/Plugins/MapMagic/HectonTerrainSplatmapMapMagicNode.cs",
+                                                                 "matches":  4,
+                                                                 "classification":  "MapMagic bridge/plugin domain; not edited under third-party integrity rule"
+                                                             },
+                                                             {
+                                                                 "path":  "Assets/_Project/Scripts/Dev/BiomeBoundarySdfSmokeTester.cs",
+                                                                 "matches":  3,
+                                                                 "classification":  "dev SDF smoke tester"
+                                                             },
+                                                             {
+                                                                 "path":  "Assets/_Project/Scripts/World/VoxelTerrainSeamBinder/Editor/VoxelTerrainSeamPreviewGizmo.cs",
+                                                                 "matches":  2,
+                                                                 "classification":  "editor gizmo uses Allocator.Temp, not 1418 runtime path"
+                                                             },
+                                                             {
+                                                                 "path":  "Assets/_Project/Scripts/World/VoxelTerrainSeamBinder/Editor/VoxelTerrainSeamBinderWindow.cs",
+                                                                 "matches":  1,
+                                                                 "classification":  "editor window"
+                                                             },
+                                                             {
+                                                                 "path":  "Assets/_Project/Scripts/World/VegetationTerrainHoleSynchronizer.cs",
+                                                                 "matches":  1,
+                                                                 "classification":  "runtime vegetation/BRG scatter external consumer; real residual owner-domain risk, not edited because it belongs to Echelon 2 BRG scatter/vegetation ownership rather than 1418 voxel MC exchange"
+                                                             }
+                                                         ]
+                                  },
+    "remainingFaults":  [
+                            {
+                                "severity":  "medium",
+                                "fault":  "No runtime profiler proof for 0B GC or zero TempJob allocations under live 50000-hit carve spam.",
+                                "reason":  "Compilation/test execution blocked by host contention.",
+                                "requiredNextProof":  "Run Unity edit tests and profiler allocation capture when CPU \u003c 50% and no compiler/dotnet process is active."
+                            },
+                            {
+                                "severity":  "low",
+                                "fault":  "VoxelDeltaProcessor blackbox still writes its historical Dump_1304_Voxel.bin, not the 1418 dump path.",
+                                "reason":  "It owns carve telemetry under TerrainSeams; writing the same 1418 path with a different 80-byte record format would corrupt forensic semantics.",
+                                "requiredNextProof":  "If a unified 1418 dump is required, define a shared header with stream type tags before merging files."
+                            },
+                            {
+                                "severity":  "medium",
+                                "fault":  "Adjacent voxel-named runtime systems still contain TempJob/native staging outside the two 1418 target files, especially VoxelDynamicNavGridRuntime and VegetationTerrainHoleSynchronizer.",
+                                "reason":  "These files are external consumer/vegetation/pathfinding ownership and were not edited under the domain-boundary rule. They are not evidence against the HectonVoxelEngine/VoxelDeltaProcessor MC exchange purge.",
+                                "requiredNextProof":  "Assign owner-domain follow-up or route-card migration before replacing their staging with Vault-owned snapshots."
+                            }
+                        ],
+    "reportHashArtifact":  "Docs/Reports/VOXEL_COMPACTION_OPTIMIZATION_REPORT_1418.json.sha256"
+}

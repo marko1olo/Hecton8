@@ -1,0 +1,774 @@
+﻿{
+    "agent":  "1405",
+    "role":  "MOBILE_GPU_COMPUTE_SHADER_THREAD_GROUP_SIZER",
+    "status":  "PENDING VERIFICATION",
+    "generatedUtc":  "2026-05-28T01:33:28.0578841Z",
+    "taskCount":  20,
+    "targetDirectories":  [
+                              "Assets/Crest/Crest/Shaders",
+                              "Assets/GPUInstancer/Resources/Compute",
+                              "Assets/GPUInstancer/Scripts"
+                          ],
+    "staticScan":  {
+                       "vendorShaderAndIncludeFileCount":  86,
+                       "oversizedThreadGroupViolations":  0,
+                       "literalViolationMatches":  [
+
+                                                   ],
+                       "resolvedThreadGroupEntries":  59,
+                       "maxResolvedThreadGroupProduct":  256,
+                       "unknownTokenCount":  0,
+                       "unknownTokens":  [
+
+                                         ],
+                       "topResolvedThreadGroups":  [
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedCameraCalculationKernelVR.compute",
+                                                           "line":  11,
+                                                           "source":  "numthreads",
+                                                           "x":  256,
+                                                           "y":  1,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedCameraCalculationKernel.compute",
+                                                           "line":  31,
+                                                           "source":  "numthreads",
+                                                           "x":  256,
+                                                           "y":  1,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedCameraCalculationKernel.compute",
+                                                           "line":  11,
+                                                           "source":  "numthreads",
+                                                           "x":  256,
+                                                           "y":  1,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedCameraCalculationKernelVR.compute",
+                                                           "line":  31,
+                                                           "source":  "numthreads",
+                                                           "x":  256,
+                                                           "y":  1,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedRenderingVisibilityKernel.compute",
+                                                           "line":  17,
+                                                           "source":  "numthreads",
+                                                           "x":  256,
+                                                           "y":  1,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedRenderingGrassInstantiationKernel.compute",
+                                                           "line":  40,
+                                                           "source":  "numthreads",
+                                                           "x":  16,
+                                                           "y":  1,
+                                                           "z":  16,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS_2D, 1, GPUI_THREADS_2D)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedComputeBufferSetDataPartialKernel.compute",
+                                                           "line":  16,
+                                                           "source":  "numthreads",
+                                                           "x":  256,
+                                                           "y":  1,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/Crest/Crest/Shaders/Resources/FFT/FFTCompute.compute",
+                                                           "line":  176,
+                                                           "source":  "numthreads",
+                                                           "x":  256,
+                                                           "y":  1,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(TX,TY,1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedBufferToTexture.compute",
+                                                           "line":  18,
+                                                           "source":  "numthreads",
+                                                           "x":  256,
+                                                           "y":  1,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSBillboard.compute",
+                                                           "line":  34,
+                                                           "source":  "numthreads",
+                                                           "x":  16,
+                                                           "y":  16,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS_2D, GPUI_THREADS_2D, 1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSArgsBuffer.compute",
+                                                           "line":  9,
+                                                           "source":  "numthreads",
+                                                           "x":  256,
+                                                           "y":  1,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedBufferToTexture.compute",
+                                                           "line":  37,
+                                                           "source":  "numthreads",
+                                                           "x":  256,
+                                                           "y":  1,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/Crest/Crest/Shaders/Resources/FFT/FFTCompute.compute",
+                                                           "line":  176,
+                                                           "source":  "numthreads",
+                                                           "x":  1,
+                                                           "y":  256,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(TX,TY,1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/Crest/Crest/Shaders/Resources/FFT/FFTCompute.compute",
+                                                           "line":  176,
+                                                           "source":  "numthreads",
+                                                           "x":  256,
+                                                           "y":  1,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(TX,TY,1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/Crest/Crest/Shaders/Resources/FFT/FFTCompute.compute",
+                                                           "line":  176,
+                                                           "source":  "numthreads",
+                                                           "x":  1,
+                                                           "y":  256,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(TX,TY,1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedRenderingVisibilityKernel.compute",
+                                                           "line":  29,
+                                                           "source":  "numthreads",
+                                                           "x":  256,
+                                                           "y":  1,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSRuntimeModification.compute",
+                                                           "line":  59,
+                                                           "source":  "numthreads",
+                                                           "x":  256,
+                                                           "y":  1,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSRuntimeModification.compute",
+                                                           "line":  49,
+                                                           "source":  "numthreads",
+                                                           "x":  256,
+                                                           "y":  1,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSTreeInstantiationKernel.compute",
+                                                           "line":  27,
+                                                           "source":  "numthreads",
+                                                           "x":  256,
+                                                           "y":  1,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSRuntimeModification.compute",
+                                                           "line":  69,
+                                                           "source":  "numthreads",
+                                                           "x":  256,
+                                                           "y":  1,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSTextureUtils.compute",
+                                                           "line":  62,
+                                                           "source":  "numthreads",
+                                                           "x":  16,
+                                                           "y":  16,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS_2D, GPUI_THREADS_2D, 1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSTextureUtils.compute",
+                                                           "line":  42,
+                                                           "source":  "numthreads",
+                                                           "x":  16,
+                                                           "y":  16,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS_2D, GPUI_THREADS_2D, 1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSTextureUtils.compute",
+                                                           "line":  21,
+                                                           "source":  "numthreads",
+                                                           "x":  16,
+                                                           "y":  16,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS_2D, GPUI_THREADS_2D, 1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedRenderingVisibilityKernelVulkan.compute",
+                                                           "line":  29,
+                                                           "source":  "numthreads",
+                                                           "x":  256,
+                                                           "y":  1,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
+                                                       },
+                                                       {
+                                                           "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedRenderingVisibilityKernelVulkan.compute",
+                                                           "line":  17,
+                                                           "source":  "numthreads",
+                                                           "x":  256,
+                                                           "y":  1,
+                                                           "z":  1,
+                                                           "product":  256,
+                                                           "raw":  "[numthreads(GPUI_THREADS, 1, 1)]"
+                                                       }
+                                                   ]
+                   },
+    "modifiedShaders":  [
+                            {
+                                "file":  "Assets/Crest/Crest/Shaders/Resources/FFT/FFTCompute.compute",
+                                "change":  "512 FFT variants dispatch 256 GPU threads and process coord/threadId plus coord+256 per group thread",
+                                "keyLines":  [
+                                                 20,
+                                                 21,
+                                                 140,
+                                                 156,
+                                                 176,
+                                                 183,
+                                                 190,
+                                                 193,
+                                                 197,
+                                                 200,
+                                                 202
+                                             ],
+                                "reductions":  [
+                                                   "TX=512 -\u003e TX=256",
+                                                   "TY=512 -\u003e TY=256"
+                                               ],
+                                "groupshared":  "SIZE remains 512; every participating thread loads/writes both coordinates before the next barrier."
+                            },
+                            {
+                                "file":  "Assets/GPUInstancer/Resources/Compute/Include/PlatformDefines.hlsl",
+                                "change":  "PS4 and fallback GPUI_THREADS clamped to 256; GLES3/Vulkan remain 128.",
+                                "keyLines":  [
+                                                 5,
+                                                 8,
+                                                 11,
+                                                 14,
+                                                 17,
+                                                 20
+                                             ]
+                            },
+                            {
+                                "file":  "Assets/GPUInstancer/Resources/Compute/CSBillboard.compute",
+                                "change":  "Billboard dilation bounds hardened: x tail uses \u003e= frameWidth, y tail checks billboardSize.y, and neighbour y wrap/out-of-range is skipped before Texture2D.Load.",
+                                "keyLines":  [
+                                                 36,
+                                                 38,
+                                                 59
+                                             ],
+                                "groupshared":  "None"
+                            },
+                            {
+                                "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedRenderingGrassInstantiationKernel.compute",
+                                "change":  "Grass detail height-map sampling hardened: map dimensions are cast once to uint, zero height-map dimensions return before buffer reads, base height index is fail-closed, and right/top neighbour samples use FixBounds.",
+                                "keyLines":  [
+                                                 42,
+                                                 43,
+                                                 44,
+                                                 45,
+                                                 48,
+                                                 50,
+                                                 52,
+                                                 66,
+                                                 99,
+                                                 100,
+                                                 101,
+                                                 102,
+                                                 103,
+                                                 104
+                                             ],
+                                "groupshared":  "None"
+                            },
+                            {
+                                "file":  "Assets/GPUInstancer/Resources/Compute/CSTreeInstantiationKernel.compute",
+                                "change":  "Tree instantiation bounds hardened: treeDataLength guards paired float4 reads before treeData[index+1], and instanceCapacity guards gpuiInstanceData writes after InterlockedAdd.",
+                                "keyLines":  [
+                                                 14,
+                                                 15,
+                                                 16,
+                                                 32,
+                                                 33,
+                                                 34,
+                                                 50,
+                                                 51,
+                                                 52,
+                                                 53,
+                                                 56
+                                             ],
+                                "groupshared":  "None"
+                            },
+                            {
+                                "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedComputeBufferSetDataPartialKernel.compute",
+                                "change":  "Partial buffer copy now receives destination/source capacities and rejects overflow before RWStructuredBuffer read/write.",
+                                "keyLines":  [
+                                                 12,
+                                                 13,
+                                                 19,
+                                                 23,
+                                                 26,
+                                                 32
+                                             ],
+                                "groupshared":  "None"
+                            },
+                            {
+                                "file":  "Assets/GPUInstancer/Resources/Compute/CSInstancedBufferToTexture.compute",
+                                "change":  "Buffer-to-texture bridge now clamps args-buffer drift against bufferSize, rejects maxTextureSize zero, uses integer division, and rejects consumed instance IDs beyond matrix buffer capacity.",
+                                "keyLines":  [
+                                                 21,
+                                                 24,
+                                                 27,
+                                                 39,
+                                                 43
+                                             ],
+                                "groupshared":  "None"
+                            }
+                        ],
+    "modifiedCSharp":  [
+                           {
+                               "file":  "Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerConstants.cs",
+                               "keyLines":  [
+                                                36,
+                                                37,
+                                                39,
+                                                40,
+                                                42,
+                                                47,
+                                                52,
+                                                55,
+                                                59,
+                                                67,
+                                                72,
+                                                73,
+                                                274,
+                                                275
+                                            ],
+                               "change":  "Central max constants and integer ceil helpers; 2D frame-count denominator uses long math; tree instantiation property ids added for treeDataLength and instanceCapacity guards."
+                           },
+                           {
+                               "file":  "Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerSettings.cs",
+                               "keyLines":  [
+                                                130,
+                                                135,
+                                                136,
+                                                339
+                                            ],
+                               "change":  "Default/PS4/Xbox/fallback presets route to x256."
+                           },
+                           {
+                               "file":  "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs",
+                               "keyLines":  [
+                                                21,
+                                                22,
+                                                576,
+                                                614,
+                                                625,
+                                                626,
+                                                627,
+                                                696,
+                                                697,
+                                                698,
+                                                712,
+                                                723,
+                                                733,
+                                                2076,
+                                                2087,
+                                                2088,
+                                                2089,
+                                                2090,
+                                                2095,
+                                                2096,
+                                                3359,
+                                                3371,
+                                                3384,
+                                                3391,
+                                                3408,
+                                                3409,
+                                                3436,
+                                                3446,
+                                                3447,
+                                                3474,
+                                                3495,
+                                                3521,
+                                                3541,
+                                                3582,
+                                                3717,
+                                                3733,
+                                                3763,
+                                                4032,
+                                                4036,
+                                                4040,
+                                                4084
+                                            ],
+                               "change":  "Dispatch math routed through integer helpers; billboard dilation per-call SetInts array allocation removed; frameCount sanitized before shader uniform and z dispatch; x512/x1024 custom settings clamp to 256; runtimeDataList foreach loops in touched draw/upload/offset submit methods replaced with index for loops."
+                           },
+                           {
+                               "file":  "Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs",
+                               "keyLines":  [
+                                                637
+                                            ],
+                               "change":  "Args buffer dispatch uses integer helper."
+                           },
+                           {
+                               "file":  "Assets/GPUInstancer/Scripts/GPUInstancerTreeManager.cs",
+                               "keyLines":  [
+                                                253,
+                                                254,
+                                                255,
+                                                256,
+                                                268,
+                                                269
+                                            ],
+                               "change":  "Tree instantiation dispatch uses integer helper and now binds treeDataLength plus per-prototype instanceCapacity before dispatch."
+                           },
+                           {
+                               "file":  "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs",
+                               "keyLines":  [
+                                                379,
+                                                450,
+                                                451,
+                                                452,
+                                                453,
+                                                454,
+                                                465,
+                                                584,
+                                                585,
+                                                586,
+                                                588,
+                                                591,
+                                                592,
+                                                595
+                                            ],
+                               "change":  "Detail/runtime modification dispatches use integer helpers and integer-clamped grass dispatch dimensions; CPU detail fallback now fail-closes height-map base/right neighbour indices and uses R.y for rightBottomH normal parity with HLSL ComputeNormals."
+                           }
+                       ],
+    "algorithmProof":  {
+                           "crestFft512":  "Thread t owns coord=t and coord2=t+256. For horizontal variants CHANNEL=x maps threadId.x/id.x; for vertical variants CHANNEL=y maps threadId.y/id.y. LoadInputs and StoreOutputs rewrite only the channel component, leaving row/cascade coordinates unchanged.",
+                           "barrierProof":  "Both coordinates are loaded before pass 0. Each pass begins with GroupMemoryBarrierWithGroupSync, then every thread writes both coord outputs before any thread can pass the next barrier. Final barrier precedes output reads. No early return exists in ComputeFFT.",
+                           "thread0":  "threadId 0 processes indices 0 and 256.",
+                           "thread255":  "threadId 255 processes indices 255 and 511; no index above 511 is generated for SIZE=512/ELEMENTS_PER_THREAD=2."
+                       },
+    "zeroGcProof":  {
+                        "mandate":  "APEX10 scan over modified production C# added lines. Hot surface excludes cold serialized GPUInstancerSettings preset construction; shader files have no managed allocation semantics.",
+                        "hotDispatchHelperAddedLineScan":  {
+                                                               "productionAddedLines":  147,
+                                                               "newHits":  0,
+                                                               "stringFormatHits":  0,
+                                                               "toStringHits":  0,
+                                                               "foreachHits":  0,
+                                                               "linqHits":  0,
+                                                               "setNewArrayHits":  0
+                                                           },
+                        "allModifiedProductionCSharpAddedLineScan":  {
+                                                                         "productionAddedLines":  193,
+                                                                         "newHits":  3,
+                                                                         "newLines":  [
+                                                                                          "new GPUIRenderingSettings(){ platform = GPUIPlatform.Default, matrixHandlingType = GPUIMatrixHandlingType.Default, computeThreadCount = GPUIComputeThreadCount.x256 }",
+                                                                                          "new GPUIRenderingSettings(){ platform = GPUIPlatform.PS4, matrixHandlingType = GPUIMatrixHandlingType.Default, computeThreadCount = GPUIComputeThreadCount.x256 }",
+                                                                                          "new GPUIRenderingSettings(){ platform = GPUIPlatform.XBoxOne, matrixHandlingType = GPUIMatrixHandlingType.Default, computeThreadCount = GPUIComputeThreadCount.x256 }"
+                                                                                      ],
+                                                                         "stringFormatHits":  0,
+                                                                         "toStringHits":  0,
+                                                                         "foreachHits":  0,
+                                                                         "linqHits":  0,
+                                                                         "setNewArrayHits":  0
+                                                                     },
+                        "shaderAddedLineScan":  {
+                                                    "addedLines":  124,
+                                                    "newReferenceTypeOrArray":  0,
+                                                    "stringFormat":  0,
+                                                    "toString":  0,
+                                                    "foreach":  0,
+                                                    "linq":  0,
+                                                    "setDataSetIntsSetFloatsNewCallsites":  0,
+                                                    "hits":  [
+
+                                                             ]
+                                                },
+                        "classification":  "Hot production C# diff in GPUInstancerUtility.cs/GPUInstancerConstants.cs: 147 added lines, 0 reference/array new, 0 string.Format, 0 .ToString(), 0 foreach, 0 LINQ, 0 SetData/SetInts/SetFloats new-array callsites. All modified production C# diff: 193 added lines, 3 new hits only in cold GPUIRenderingSettings preset initializers.",
+                        "measuredGc":  "PENDING VERIFICATION: no Unity Profiler or GCMonitor capture was produced."
+                    },
+    "dataSovereignty":  {
+                            "migratedToGlobalDataVault":  false,
+                            "bufferIdConstantsSecured":  [
+
+                                                         ],
+                            "tryAcquireWriteLockOccurrences":  0,
+                            "releaseWriteLockOccurrences":  0,
+                            "finallyOccurrences":  0,
+                            "governancePatternHitsInModifiedVendorSurface":  [
+
+                                                                             ],
+                            "proof":  "No DataVault/native ownership surface was introduced or migrated in this vendor compute sizing/bounds pass. BufferID constants=0; TryAcquireWriteLock=0; ReleaseWriteLock=0; lock/finally proof is N/A because no lock is acquired. Governance keyword hits in modified vendor production surface=0."
+                        },
+    "cinematicCheatAndScalability":  {
+                                         "physicalSimulationAdded":  false,
+                                         "cheatUsed":  "Occupancy-width reduction, scalar uniform binding, and fail-closed bounds guards only. Crest keeps FFT and underwater visual output; GPUInstancer keeps culling/tree/grass/texture-copy visuals while preventing oversized groups and OOB tails.",
+                                         "globalQualityWeightIntegration":  "PENDING / NOT ADDED: modified Crest/GPUInstancer vendor files contain no HomeostasisBrain.GlobalQualityWeight references. Reason: shader numthreads and dispatch group math are static contract values; a continuous quality scalar may scale workload/cadence/density from a first-party owner route, but must not desynchronize CPU dispatch dimensions from HLSL numthreads.",
+                                         "binaryLowEndSwitchesIntroduced":  false,
+                                         "lowMiddleHighUltra":  "Low: legal 128/256 caps, scalar uniforms, fail-closed tails. Middle: preserved output with safer occupancy. High: preserved density/resolution. Ultra: first-party quality owners can spend saved stability budget on density/cadence; no illegal group width is reintroduced."
+                                     },
+    "compilation":  {
+                        "dotnetBuild":  "BLOCKED_BY_CONTENTION",
+                        "prePatchAttempt":  {
+                                                "preflightPath":  "Docs/AgentLogs/Build_1405_Preflight.json",
+                                                "summaryPath":  "Docs/AgentLogs/Build_1405_Final.summary.json",
+                                                "launched":  false,
+                                                "observedCpuLoadPercent":  58,
+                                                "blockingProcess":  "dotnet pid 66860"
+                                            },
+                        "postFixAttempt":  {
+                                               "preflightPath":  "Docs/AgentLogs/Build_1405_PostFix_Preflight.json",
+                                               "summaryPath":  "Docs/AgentLogs/Build_1405_PostFix.summary.json",
+                                               "launched":  false,
+                                               "observedCpuLoadPercent":  49,
+                                               "compilerProcessCount":  0
+                                           },
+                        "rule":  "No dotnet build launched in APEX11 because CPU/compiler gate failed; latest sample is recorded in Docs/AgentLogs/Build_1405_Apex11.summary.json.",
+                        "actualBuildAttempt":  {
+                                                   "launched":  false,
+                                                   "reason":  "BLOCKED_BY_CONTENTION",
+                                                   "cpuLoadPercent":  71,
+                                                   "compilerProcessCount":  0,
+                                                   "preflightPath":  "Docs/AgentLogs/Build_1405_Actual_Preflight.json"
+                                               },
+                        "apex2Preflight":  {
+                                               "launched":  false,
+                                               "reason":  "BLOCKED_BY_CONTENTION",
+                                               "cpuLoadPercent":  100,
+                                               "compilerProcessCount":  0,
+                                               "preflightPath":  "Docs/AgentLogs/Build_1405_Apex2_Preflight.json"
+                                           },
+                        "apex3Preflight":  {
+                                               "launched":  false,
+                                               "reason":  "BLOCKED_BY_CONTENTION",
+                                               "cpuLoadPercent":  100,
+                                               "compilerProcessCount":  1,
+                                               "preflightPath":  "Docs/AgentLogs/Build_1405_Apex3_Preflight.json"
+                                           },
+                        "apex5Preflight":  {
+                                               "launched":  false,
+                                               "reason":  "BLOCKED_BY_CONTENTION",
+                                               "cpuLoadPercent":  100,
+                                               "compilerProcessCount":  1,
+                                               "preflightPath":  "Docs/AgentLogs/Build_1405_Apex5.summary.json"
+                                           },
+                        "apex6Preflight":  {
+                                               "launched":  false,
+                                               "reason":  "BLOCKED_BY_CONTENTION",
+                                               "cpuLoadSamplesPercent":  [
+                                                                             100,
+                                                                             100,
+                                                                             100
+                                                                         ],
+                                               "cpuLoadMaxPercent":  100,
+                                               "compilerProcessCount":  2,
+                                               "compilerProcesses":  [
+                                                                         "csc pid 34456 CPU 1.4375",
+                                                                         "dotnet pid 40436 CPU 146.328125"
+                                                                     ],
+                                               "summaryPath":  "Docs/AgentLogs/Build_1405_Apex6.summary.json"
+                                           },
+                        "apex7Preflight":  {
+                                               "launched":  false,
+                                               "reason":  "BLOCKED_BY_CONTENTION",
+                                               "cpuLoadSamplesPercent":  [
+                                                                             100,
+                                                                             100,
+                                                                             100
+                                                                         ],
+                                               "cpuLoadMaxPercent":  100,
+                                               "compilerProcessCount":  1,
+                                               "compilerProcesses":  [
+                                                                         "dotnet pid 40436 CPU 440.484375"
+                                                                     ],
+                                               "summaryPath":  "Docs/AgentLogs/Build_1405_Apex7.summary.json"
+                                           },
+                        "apex8Preflight":  {
+                                               "launched":  false,
+                                               "reason":  "BLOCKED_BY_CONTENTION",
+                                               "cpuLoadSamplesPercent":  [
+                                                                             100,
+                                                                             100,
+                                                                             100
+                                                                         ],
+                                               "cpuLoadMaxPercent":  100,
+                                               "compilerProcessCount":  1,
+                                               "compilerProcesses":  [
+                                                                         "dotnet pid 40436 CPU 681.5"
+                                                                     ],
+                                               "summaryPath":  "Docs/AgentLogs/Build_1405_Apex8.summary.json"
+                                           },
+                        "apex10Preflight":  {
+                                                "launched":  false,
+                                                "reason":  "BLOCKED_BY_CONTENTION",
+                                                "cpuLoadSamplesPercent":  [
+                                                                              100,
+                                                                              100,
+                                                                              100
+                                                                          ],
+                                                "cpuLoadMaxPercent":  100,
+                                                "compilerProcessCount":  1,
+                                                "compilerProcesses":  [
+                                                                          "dotnet pid 46580 CPU 21.21875"
+                                                                      ],
+                                                "summaryPath":  "Docs/AgentLogs/Build_1405_Apex10.summary.json"
+                                            },
+                        "apex11Preflight":  {
+                                                "timestampUtc":  "2026-05-28T01:28:34.5676458Z",
+                                                "cpuLoadSamplesPercent":  [
+                                                                              100,
+                                                                              100,
+                                                                              100
+                                                                          ],
+                                                "cpuLoadMaxPercent":  100,
+                                                "compilerProcessCount":  1,
+                                                "compilerProcesses":  [
+                                                                          {
+                                                                              "ProcessName":  "dotnet",
+                                                                              "Id":  55080,
+                                                                              "CPU":  673.46875
+                                                                          }
+                                                                      ],
+                                                "launched":  false,
+                                                "reason":  "BLOCKED_BY_CONTENTION",
+                                                "rule":  "Build not launched because max CPU \u003e 50 and compiler process count \u003e 0."
+                                            }
+                    },
+    "tests":  {
+                  "file":  "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs",
+                  "added":  "Crest512FftTwoElementsPerThread_MatchesSingleElementReference; TwoDimensionalFrameCountMultiplier_UsesLongDenominator; SetDataPartialKernel_UsesExplicitSourceAndDestinationCapacityGuards; BufferToTextureKernel_UsesCapacityAndIntegerIndexGuards",
+                  "execution":  "PENDING VERIFICATION: Unity EditMode tests were not executed."
+              },
+    "verificationLimits":  [
+                               "No Unity shader import run",
+                               "No RenderDoc/GPU capture",
+                               "No PlayMode/profiler/GCMonitor",
+                               "No dotnet build because compilation resource throttle blocked it in APEX11: CPU samples [100,100,100], active dotnet pid 55080 CPU 673.46875",
+                               "No online research used; all defects and contracts were local vendor source/mandate issues."
+                           ],
+    "fileHashesSha256":  {
+                             "Assets/Crest/Crest/Scripts/Collision/QueryBase.cs":  "2772955e66a8868aeb604c20746d55ecc22a49da3127922bf298184fcb58a51c",
+                             "Assets/Crest/Crest/Scripts/Underwater/UnderwaterRenderer.Mask.cs":  "4c8b9dd9c06c724210d0538e819d4d42902f8958573f2459006e26eb4b1d086a",
+                             "Assets/Crest/Crest/Shaders/Resources/FFT/FFTCompute.compute":  "2c90669f8629118559fb79206444baa0b3b2e8eaca8a9bc290ce1b5cf50504e8",
+                             "Assets/Crest/Crest/Shaders/Resources/QueryDisplacements.compute":  "8534d53e0d777430fc1bbcc5b452344f6965be6498afeb17ed49dd3c1ce9cf41",
+                             "Assets/Crest/Crest/Shaders/Resources/QueryFlow.compute":  "253e539980a4275c595445208d1107b753bf5e3c87bf7e0d0f8b4964629516c6",
+                             "Assets/Crest/Crest/Shaders/Underwater/Resources/CrestFillMaskArtefacts.compute":  "2f0f085cf81d3caa6f8743ce1f14aae5dc6e69e72dc66d3abc3b3231689fda94",
+                             "Assets/GPUInstancer/Resources/Compute/CSBillboard.compute":  "caf79f964c481faf80a64e545503636045a568821b282856934e52fa7a25de2d",
+                             "Assets/GPUInstancer/Resources/Compute/CSInstancedRenderingGrassInstantiationKernel.compute":  "d5be3abe3a4306d3cd0ec3130b8b20f1ea1d7677b8df8957a28ea974913aa635",
+                             "Assets/GPUInstancer/Resources/Compute/CSTextureUtils.compute":  "329d6b5773f42a1a4ffcc7cc5a58227b806b3c32a776cac66658d089111688a3",
+                             "Assets/GPUInstancer/Resources/Compute/CSTreeInstantiationKernel.compute":  "a558d8474d8793c4b5049cb10fc6ac5deece2b207597c5051bb643df2d5bffaa",
+                             "Assets/GPUInstancer/Resources/Compute/Include/PlatformDefines.hlsl":  "18754e645a39c6f8493853a801560eba356501bccb5f664bf8adeffc00caae55",
+                             "Assets/GPUInstancer/Scripts/Core/Contract/GPUInstancerManager.cs":  "9245084f86949d964e1dbee3c09a25036753062814664b7aa9fd54c7b12d10d5",
+                             "Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerConstants.cs":  "2fb7dfa631b7b3a9ffdd3244c597184152dd1804e75380988b4215d4af828b21",
+                             "Assets/GPUInstancer/Scripts/Core/DataModel/GPUInstancerSettings.cs":  "b3e1221cd96b89909bf9031b0b47697752a00f3e103bd99adf7ff02cacf92024",
+                             "Assets/GPUInstancer/Scripts/Core/Static/GPUInstancerUtility.cs":  "5202c5ae3e942b27bfae62b5fa3dbd24e20099840751641a9ad2cda1370c2247",
+                             "Assets/GPUInstancer/Scripts/GPUInstancerDetailManager.cs":  "88ae502d5b946e2fbb77eac967dc5116f47dcd06226f361eeacff37e0e0a0c1a",
+                             "Assets/GPUInstancer/Scripts/GPUInstancerTreeManager.cs":  "c4ae148901bce94a771bd6fef508716d4bffc003d78f1af833632daa48246956",
+                             "Assets/_Project/Tests/Editor/ComputeDispatchSizingEditTests.cs":  "6403258ca1258d172dfe204f7f157565b699befb71beadaeaad5a1ab345985ca",
+                             "Assets/GPUInstancer/Resources/Compute/CSInstancedBufferToTexture.compute":  "2078cbc0bec4908d6f6f14456b49906504e3582cd226da3dbd34c0523f213863",
+                             "Assets/GPUInstancer/Resources/Compute/CSInstancedComputeBufferSetDataPartialKernel.compute":  "4757f59a4d37f1f32e31d20e5717c06a96be1649f9777bb86be498992439ec6a"
+                         },
+    "apex6PolishFindings":  {
+                                "grassHeightMapBounds":  "FIXED: CSInstancedRenderingGrassInstantiationKernel.compute no longer contains raw heightMapData[heightIndex + 1]; base/right/top/rightTop height-map reads are fail-closed via FixBounds after dimension casts.",
+                                "cpuFallbackNormalParity":  "FIXED: GPUInstancerDetailManager.cs CPU fallback now writes rightBottomH into R.y, matching GPUInstancerUtility.ComputeTerrainNormal and Terrain.hlsl ComputeNormals.",
+                                "evidence":  "rg count for heightMapData[heightIndex + 1], P.y = rightBottomH, uint(detailAndHeightMapSize), and uint(floor) is 0 after patch."
+                            },
+    "apex7PolishFindings":  {
+                                "treeInstantiationBounds":  "FIXED: CSTreeInstantiationKernel.compute now receives treeDataLength and instanceCapacity, rejects paired float4 reads when index+1 exceeds treeDataLength, and rejects gpuiInstanceData writes when InterlockedAdd returns instanceIndex \u003e= instanceCapacity.",
+                                "csharpBinding":  "FIXED: GPUInstancerTreeManager.cs binds treeDataList.Count and instanceCount before dispatch through property IDs in GPUInstancerConstants.TreeKernelProperties.",
+                                "evidence":  "Line proof: CSTreeInstantiationKernel.compute:15-16, 32-34, 50-53; GPUInstancerTreeManager.cs:253-256; GPUInstancerConstants.cs:274-275."
+                            },
+    "apex8PolishFindings":  {
+                                "treeSourceLengthAfterNullBug":  "FIXED: GPUInstancerTreeManager.cs stores treeDataLength and treeScalesLength at lines 222-223 before nulling treeDataList/treeScales at lines 224-225, removing the previous after-null compile blocker.",
+                                "treeScaleBounds":  "FIXED: CSTreeInstantiationKernel.compute receives treeScalesLength at line 16 and rejects prototypeIndex \u003e= treeScalesLength at line 42 before reading treeScales[prototypeIndex].",
+                                "treeOutputCapacity":  "RETAINED: instanceIndex \u003e= instanceCapacity guard remains at CSTreeInstantiationKernel.compute:55, with C# binding at GPUInstancerTreeManager.cs:260.",
+                                "evidence":  "Line proof: CSTreeInstantiationKernel.compute:15-16,34,42,55; GPUInstancerTreeManager.cs:222-225,256,258,260; GPUInstancerConstants.cs:274-276."
+                            },
+    "apex9PolishFindings":  {
+                                "crestQueryCapacityAndTail":  "FIXED: QueryBase.cs counts query points plus 3 normals per normal, checks countTotal against _maxQueryCount and backing arrays, and binds _QueryCount before dispatch. QueryDisplacements.compute and QueryFlow.compute reject id.x \u003e= _QueryCount before reading query buffers.",
+                                "crestUnderwaterMaskBounds":  "FIXED: UnderwaterRenderer.Mask.cs binds _CrestOceanMaskWidth/_CrestOceanMaskHeight. CrestFillMaskArtefacts.compute rejects dispatch tail and edge pixels before all neighbor mask reads.",
+                                "gpuInstancerGrassCapacity":  "FIXED: CSInstancedRenderingGrassInstantiationKernel.compute receives instanceCapacity and rejects InterlockedAdd output indices \u003e= capacity before writing gpuiInstanceData; GPUInstancerDetailManager.cs binds visibilityBuffer.count.",
+                                "gpuInstancerTextureCopyBounds":  "FIXED: CSTextureUtils.compute rejects destination tail writes in copy/copy-array/reduce kernels; GPUInstancerUtility.cs computes source/destination mip dimensions and dispatches copy workloads by source mip dimensions.",
+                                "evidence":  "Line proof: QueryBase.cs:43/256/258/313/492; QueryDisplacements.compute:12/51; QueryFlow.compute:12/43; UnderwaterRenderer.Mask.cs:43-44/348-349; CrestFillMaskArtefacts.compute:17-18/25/30; CSInstancedRenderingGrassInstantiationKernel.compute:26/82; GPUInstancerDetailManager.cs:583; CSTextureUtils.compute:28/46/69; GPUInstancerUtility.cs:3697/3716-3719/3734-3736/3752-3755/3762-3764."
+                            },
+    "apex10PolishFindings":  {
+                                 "billboardScalarUniforms":  "FIXED: removed the cold static int[] scratch and SetInts path from billboard dilation. CSBillboard.compute now consumes scalar billboardWidth/billboardHeight uniforms; GPUInstancerUtility.cs binds them with SetInt.",
+                                 "zeroGcEvidence":  "Hot production C# added-line scan now reports new reference/array=0, string.Format=0, .ToString=0, foreach=0, LINQ=0, SetData/SetInts/SetFloats new-array callsites=0.",
+                                 "evidence":  "Line proof: CSBillboard.compute:8-9/37/39/60; GPUInstancerUtility.cs:21-22/2087-2088. rg billboardSize/SetInts/new int[2] over these two files returns no live hits."
+                             },
+    "promptExtraction":  {
+                             "path":  "Docs/AgentLogs/Prompt_1405_EXTRACTED.md",
+                             "sha256":  "f5eab5ac3e77ed5be238d74cf70025a807d037d3aa9e9f10ff3f487defb0af2d",
+                             "source":  "Docs/Tasks/CURRENT_BATCH.md",
+                             "startLine":  454,
+                             "endLine":  542,
+                             "taskCount":  20
+                         },
+    "apex11PolishFindings":  {
+                                 "partialBufferCopyCapacity":  "FIXED: CSInstancedComputeBufferSetDataPartialKernel.compute receives computeBufferCapacity and managedBufferCapacity, rejects source lanes id.x \u003e= managedBufferCapacity, rejects uint overflow and destinationIndex \u003e= computeBufferCapacity before write, and guards single write by computeBufferCapacity.",
+                                 "billboardInvalidFrameContract":  "FIXED: GPUInstancerUtility.cs clamps safeFrameCount to [1,billboardTexture.width], and CSBillboard.compute rejects frameCount=0, frameCount\u003ebillboardWidth, or zero height before division.",
+                                 "bufferToTextureCapacity":  "FIXED: CSInstancedBufferToTexture.compute rejects args-buffer drift with id.x \u003e= bufferSize, rejects maxTextureSize=0, uses integer division for texture row calculation, and rejects consumed instanceId \u003e= bufferSize before matrix-buffer read; GPUInstancerUtility.cs binds bufferSize on normal and shadow transform texture dispatches.",
+                                 "evidence":  "Line proof: CSInstancedComputeBufferSetDataPartialKernel.compute:12-13/19/23/26/32; CSBillboard.compute:37; GPUInstancerUtility.cs:711/723/2079-2081; CSInstancedBufferToTexture.compute:21/24/27/39/43; ComputeDispatchSizingEditTests.cs:85/97."
+                             }
+}

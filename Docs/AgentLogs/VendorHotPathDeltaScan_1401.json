@@ -1,0 +1,99 @@
+﻿{
+    "agent":  "1401",
+    "generatedAt":  "2026-05-28T05:30:06.9788765+04:00",
+    "evidenceClass":  "STATIC_SOURCE",
+    "note":  "Counts active patched runtime/hot-path ranges only. Cold initializers, editor tests, and feature-gated field declarations are reported separately from per-frame hot paths.",
+    "ranges":  [
+                   {
+                       "name":  "CandiceSQLiteDisabledHotMethods",
+                       "file":  "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Save System\\Overrides\\CandiceSQLiteProvider.cs",
+                       "startLine":  544,
+                       "endLine":  614,
+                       "hotPathNewReferenceTypeCount":  0,
+                       "coldStaticNewReferenceTypeCount":  3,
+                       "stringFormatCount":  0,
+                       "toStringCount":  0,
+                       "linqCount":  0,
+                       "foreachCount":  0,
+                       "note":  "Default disabled provider methods only; cold static caches and development log guard excluded."
+                   },
+                   {
+                       "name":  "TriggerNextSceneUpdate",
+                       "file":  "Assets\\Candice AI for Games\\Scripts\\TriggerNextScene.cs",
+                       "startLine":  47,
+                       "endLine":  59,
+                       "hotPathNewReferenceTypeCount":  0,
+                       "coldStaticNewReferenceTypeCount":  0,
+                       "stringFormatCount":  0,
+                       "toStringCount":  0,
+                       "linqCount":  0,
+                       "foreachCount":  0,
+                       "note":  "Per-frame countdown path only; cold label cache excluded and documented at line 63."
+                   },
+                   {
+                       "name":  "TechnieInflationCompatibility",
+                       "file":  "Assets\\Technie\\PhysicsCreator\\Scripts\\Rigid\\RigidColliderCreator.cs",
+                       "startLine":  1038,
+                       "endLine":  1049,
+                       "hotPathNewReferenceTypeCount":  0,
+                       "coldStaticNewReferenceTypeCount":  0,
+                       "stringFormatCount":  0,
+                       "toStringCount":  0,
+                       "linqCount":  0,
+                       "foreachCount":  0,
+                       "note":  "Collider materialization helper, not per-frame."
+                   },
+                   {
+                       "name":  "AmplifySpriteUtilityNonEditorFallback",
+                       "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\HelperExtensions.cs",
+                       "startLine":  201,
+                       "endLine":  203,
+                       "hotPathNewReferenceTypeCount":  0,
+                       "coldStaticNewReferenceTypeCount":  1,
+                       "stringFormatCount":  0,
+                       "toStringCount":  0,
+                       "linqCount":  0,
+                       "foreachCount":  0,
+                       "note":  "Non-editor fallback assignment only; cold static empty array reported separately and documented with COLD ALLOC comment."
+                   },
+                   {
+                       "name":  "GPUInstancerDetailDispatchPatch",
+                       "file":  "Assets\\GPUInstancer\\Scripts\\GPUInstancerDetailManager.cs",
+                       "startLine":  584,
+                       "endLine":  597,
+                       "hotPathNewReferenceTypeCount":  0,
+                       "coldStaticNewReferenceTypeCount":  0,
+                       "stringFormatCount":  0,
+                       "toStringCount":  0,
+                       "linqCount":  0,
+                       "foreachCount":  0,
+                       "note":  "Dispatch sizing conversion patch only."
+                   },
+                   {
+                       "name":  "MasterAudioSingletonScriptableEditorGuard",
+                       "file":  "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Singleton\\SingletonScriptable.cs",
+                       "startLine":  1,
+                       "endLine":  17,
+                       "hotPathNewReferenceTypeCount":  0,
+                       "coldStaticNewReferenceTypeCount":  1,
+                       "stringFormatCount":  0,
+                       "toStringCount":  0,
+                       "linqCount":  0,
+                       "foreachCount":  0,
+                       "note":  "Runtime-path file import guard; UnityEditor/List/IO usage and singleton folder list are inside UNITY_EDITOR. Cold static List has explicit [0] capacity."
+                   },
+                   {
+                       "name":  "MasterAudioSettingsEditorStaticCtorGuard",
+                       "file":  "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Settings\\MasterAudioSettings.cs",
+                       "startLine":  20,
+                       "endLine":  31,
+                       "hotPathNewReferenceTypeCount":  0,
+                       "coldStaticNewReferenceTypeCount":  1,
+                       "stringFormatCount":  0,
+                       "toStringCount":  0,
+                       "linqCount":  0,
+                       "foreachCount":  0,
+                       "note":  "Editor-only static constructor; removed string.Format and moved folder-list allocation behind UNITY_EDITOR."
+                   }
+               ]
+}

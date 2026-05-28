@@ -74,12 +74,13 @@ namespace Hecton8.Physics.Vehicles
         public static float SampleDensityKgPerM3(float depthMeters, float baseDensityKgPerM3, uint frame, float globalQualityWeight)
         {
             float depth = math.isfinite(depthMeters) ? math.clamp(depthMeters, 0f, 1200f) : 0f;
+            float quality = math.saturate(math.select(SubmarineDynamicsConstants.AuthoritativeQualityWeight, globalQualityWeight, math.isfinite(globalQualityWeight)));
             float baseDensity = math.isfinite(baseDensityKgPerM3)
                 ? math.clamp(baseDensityKgPerM3, MinDensityKgPerM3, MaxDensityKgPerM3)
                 : DefaultSeawaterDensityKgPerM3;
             float compressionBias = depth * 0.0042f;
             uint phase = (frame * 1103515245u) + 12345u;
-            float microLayerWeight = SubmarineDynamicsConstants.AuthoritativeQualityWeight;
+            float microLayerWeight = quality;
             float microLayerBias = (((phase >> 8) & 1023u) * (1f / 1023f) - 0.5f) * 0.55f * microLayerWeight;
             return math.clamp(baseDensity + compressionBias + microLayerBias, MinDensityKgPerM3, MaxDensityKgPerM3);
         }
@@ -621,8 +622,9 @@ namespace Hecton8.Physics.Vehicles
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveTensorBlend(float globalQualityWeight, float lowLodHoldSeconds, float matrixBlendBias)
         {
+            float quality = math.saturate(math.select(SubmarineDynamicsConstants.AuthoritativeQualityWeight, globalQualityWeight, math.isfinite(globalQualityWeight)));
             float bias = math.clamp(math.isfinite(matrixBlendBias) ? matrixBlendBias : 0f, -0.5f, 0.5f);
-            float baseBlend = math.saturate((SubmarineDynamicsConstants.AuthoritativeQualityWeight * 1.08f) + bias - 0.18f);
+            float baseBlend = math.saturate((quality * 1.08f) + bias - 0.18f);
             float lodSuppression = math.saturate(1f - (SafeNonNegative(lowLodHoldSeconds) * 0.5f));
             float blended = math.saturate(baseBlend * lodSuppression);
             return blended * blended * (3f - (2f * blended));
@@ -818,12 +820,13 @@ namespace Hecton8.Physics.Vehicles
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveRotationalDamping(in AddedMassProfileDTO profile, float totalMassKg, float globalQualityWeight, float dampingScalar)
         {
+            float quality = math.saturate(math.select(SubmarineDynamicsConstants.AuthoritativeQualityWeight, globalQualityWeight, math.isfinite(globalQualityWeight)));
             float3 angularDiag = ExtractDiagonal(in profile.AngularAddedMass);
             float trace = angularDiag.x + angularDiag.y + angularDiag.z;
             float scalar = math.clamp(SafePositive(dampingScalar, 1f), 0.1f, 6f);
             float scale = math.saturate(trace / math.max(1f, SafePositive(totalMassKg, 1f) * 42f));
             return math.lerp(0.04f, 0.18f, scale) *
-                   math.lerp(0.65f, 1f, SubmarineDynamicsConstants.AuthoritativeQualityWeight) *
+                   math.lerp(0.65f, 1f, quality) *
                    scalar;
         }
 
@@ -1261,7 +1264,10 @@ namespace Hecton8.Physics.Vehicles
             entry.Flags = flags;
             entry.StateHash = hash;
             entry.MaxErrorMagnitude = maxError;
-            entry.GlobalQualityWeight = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
+            entry.GlobalQualityWeight = math.saturate(math.select(
+                SubmarineDynamicsConstants.AuthoritativeQualityWeight,
+                GlobalQualityWeight,
+                math.isfinite(GlobalQualityWeight)));
             entry.NonFiniteCount = (uint)math.max(0, nonFinite);
             entry.LastTargetEntityHash = lastTarget;
 
@@ -1626,6 +1632,7 @@ namespace Hecton8.Physics.Vehicles
             SubmarineAddedMassTuningDTO tuning = ResolveTuning(in Tuning);
 
             float dt = math.clamp(FixedDeltaTime, 0.001f, 0.05f);
+            float quality = math.saturate(math.select(SubmarineDynamicsConstants.AuthoritativeQualityWeight, GlobalQualityWeight, math.isfinite(GlobalQualityWeight)));
             bool thermalDilation = (config.Flags & SubmarineDynamicsConstants.ConfigFlagThermalDilation) != 0;
             float updateFraction = ResolveAuthorityUpdateFraction();
             if (thermalDilation)
@@ -1731,7 +1738,10 @@ namespace Hecton8.Physics.Vehicles
             }
 
             float dragCoefficient = SampleDragLut(speedSq, in DragLut) * SafePositive(config.DragScale, 0.01f);
-            float3 dragWorld = -SubmarineDynamicsSimdMath.NormalizeOrFallback(state.LinearVelocity, float3.zero) * speedSq * dragCoefficient;
+            float3 dragDirection = -SubmarineDynamicsSimdMath.NormalizeOrFallback(state.LinearVelocity, float3.zero);
+            float3 cheapLinearDrag = -state.LinearVelocity * dragCoefficient * math.max(0.25f, totalMass * 0.015f);
+            float3 polynomialDrag = dragDirection * speedSq * dragCoefficient;
+            float3 dragWorld = math.lerp(cheapLinearDrag, polynomialDrag, quality);
 
             float targetDepth = math.max(1f, control.TargetDepthMeters);
             float depthRatio = math.saturate((depthMeters + 1f) / (targetDepth + 1f));

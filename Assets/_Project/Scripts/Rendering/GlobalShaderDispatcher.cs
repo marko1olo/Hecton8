@@ -281,7 +281,7 @@ namespace Hecton8.Core
             TryUnregisterHotSwapListener();
             ReleaseGraphicsBuffer(ref _thermalAnomalyBuffer);
             ReleaseGraphicsBuffer(ref _emptyFloat4Buffer);
-            _vault = null;
+            RebindDataVaultForLifecycle(null);
             _resolutionScaler = null;
             _dispatchTelemetryFrame = 0u;
         }
@@ -305,10 +305,12 @@ namespace Hecton8.Core
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.DataVault:
-                    _vault = currentService as IDataVault;
-                    InvalidateShaderGlobalSlotCache();
-                    if (isActiveAndEnabled)
-                        EnsureShaderGlobalSlotsRuntime(out _, allowAllocation: true);
+                    RebindDataVaultForLifecycle(currentService as IDataVault);
+                    if (isActiveAndEnabled &&
+                        EnsureShaderGlobalSlotsRuntime(out IDataVault vault, allowAllocation: true))
+                    {
+                        RunBinaryGraveyardProbeCold(vault);
+                    }
                     break;
                 case GlobalRegistryServiceSlot.ResolutionScalerService:
                     _resolutionScaler = currentService as IResolutionScalerService;
@@ -560,10 +562,24 @@ namespace Hecton8.Core
         private void CacheRegistryServicesCold(bool forceRefresh)
         {
             if (forceRefresh || _vault == null)
-                _vault = GlobalRegistry.DataVault;
+                RebindDataVaultForLifecycle(GlobalRegistry.DataVault);
 
             if (forceRefresh || _resolutionScaler == null)
                 _resolutionScaler = GlobalRegistry.ResolutionScaler;
+        }
+
+        private void RebindDataVaultForLifecycle(IDataVault vault)
+        {
+            if (ReferenceEquals(_vault, vault))
+                return;
+
+            _vault = vault;
+            InvalidateShaderGlobalSlotCache();
+            _telemetryCursor = 0;
+            _dispatchTelemetryFrame = 0u;
+            _binaryProbeCompleted = false;
+            _generatedEmergencyGlobals = false;
+            _dumpedOverBudget = false;
         }
 
         private bool EnsureShaderGlobalSlotsRuntime(out IDataVault vault, bool allowAllocation)

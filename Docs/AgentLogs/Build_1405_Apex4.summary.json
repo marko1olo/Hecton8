@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-05-28T03:46:53.4209978+04:00",
+  "cpuLoadPercent": 100,
+  "sample1": 100,
+  "sample2": 100,
+  "compilerProcessCount": 1,
+  "compilerProcesses": [
+    {
+      "processName": "dotnet",
+      "id": 36612,
+      "cpu": 16.515625
+    }
+  ],
+  "launched": false,
+  "reason": "BLOCKED_BY_CONTENTION"
+}

@@ -131,7 +131,7 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 
 ## 2026-05-27 Runtime Allocation Route Pass
 
-| Area | Current fact | Proof |
+| Area | Fact | Proof |
 |---|---|---|
 | Clean runtime files patched | Eight allocation-route call sites were removed; `WorldSliceAnchor` and `H8DataBaker` remain dirty-file residuals | `../Reports/UNITY_RUNTIME_ALLOC_ROUTE_PASS_UNKNOWN_20260527.md` |
 | Release shader lookup | First-party `Shader.Find(...)` sites remain editor/development guarded in the local static scan | `../Reports/UNITY_RUNTIME_ALLOC_ROUTE_PASS_UNKNOWN_20260527.md` |
@@ -140,7 +140,7 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 
 ## 2026-05-27 Read Accessor Purity Pass
 
-| Area | Current fact | Proof |
+| Area | Fact | Proof |
 |---|---|---|
 | Read-shaped allocation route | `PerformanceBudgetController.GetBudgetStatus()` now reuses an owner snapshot; `RTLProcessor` lazy buffer route is named `EnsureBuffer()` | `../Reports/UNITY_READ_ACCESSOR_PURITY_PASS_UNKNOWN_20260527.md` |
 | Read/create split | `WorldShippingContentFilter` now uses pure `TryGetSuppressedHierarchyIds()` and explicit `EnsureSuppressedHierarchyIds()` | `../Reports/UNITY_READ_ACCESSOR_PURITY_PASS_UNKNOWN_20260527.md` |
@@ -148,7 +148,7 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 
 ## 2026-05-27 Signal Contract Pass
 
-| Area | Current fact | Proof |
+| Area | Fact | Proof |
 |---|---|---|
 | Runtime signal names | Confirmed duplicate `ToolDepletedSignal` contract errors are fixed; gameplay local event is now `PlayerToolDepletedSignal` | `../Reports/UNITY_SIGNAL_CONTRACT_PASS_UNKNOWN_20260527.md` |
 | Plugin asmdef route | `Hecton8.Plugins` now directly references `Hecton8.Core.Contracts` for signal-contract usage | `../Reports/UNITY_SIGNAL_CONTRACT_PASS_UNKNOWN_20260527.md` |
@@ -157,7 +157,7 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 
 ## 2026-05-27 Signal Queue Diagnostics Pass
 
-| Area | Current fact | Proof |
+| Area | Fact | Proof |
 |---|---|---|
 | Queue ownership scanner | NativeQueue helper ownership is now detected; `POSSIBLE_ORPHANED_SIGNAL_QUEUE=0` in the recheck | `../Reports/UNITY_SIGNAL_QUEUE_DIAGNOSTICS_PASS_UNKNOWN_20260527.md` |
 | Toolchain target | `SignalBusContractAuditCli` now targets `net10.0`; tool restore/build succeeded with `0` warnings and `0` errors | `../Reports/UNITY_SIGNAL_QUEUE_DIAGNOSTICS_PASS_UNKNOWN_20260527.md` |
@@ -167,7 +167,7 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 
 ## 2026-05-27 Signal Audit Classifier And Seam MPB Pass
 
-| Area | Current fact | Proof |
+| Area | Fact | Proof |
 |---|---|---|
 | Signal audit classifier | Constructor/editor-only/MPB/ComputeShader/owner-local telemetry/cold allocation/multiline method/layout cases are separated from hard warnings in the CLI source | `../Reports/UNITY_SIGNAL_AUDIT_CLASSIFIER_AND_SEAM_MPB_PASS_UNKNOWN_20260527.md` |
 | Seam dither draw parameters | `SeamGapDitherRenderer` now sends per-draw buffers/camera/distance through a cached `MaterialPropertyBlock` instead of mutating the material | `../Reports/UNITY_SIGNAL_AUDIT_CLASSIFIER_AND_SEAM_MPB_PASS_UNKNOWN_20260527.md` |
@@ -177,7 +177,7 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 
 ## 2026-05-27 Signal Telemetry Ownership Recheck
 
-| Area | Current fact | Proof |
+| Area | Fact | Proof |
 |---|---|---|
 | TMP font swap route | `FontStreamingManager.ProcessSwapBatch()` no longer resolves `_targetFont.material`; the material is cached at queue start | `../Reports/UNITY_SIGNAL_TELEMETRY_OWNERSHIP_RECHECK_UNKNOWN_20260527.md` |
 | NativeArray ownership audit | `SignalBusContractAuditCli` recognizes `VaultGenerationHandle`, `ref _fieldHandle`, and helper-owned `AllocateArray<T>` telemetry routes | `../Reports/UNITY_SIGNAL_TELEMETRY_OWNERSHIP_RECHECK_UNKNOWN_20260527.md` |
@@ -187,7 +187,7 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 
 ## 2026-05-27 Signal Layout/Alias Classifier Pass
 
-| Area | Current fact | Proof |
+| Area | Fact | Proof |
 |---|---|---|
 | Cache-line classifier | `ProgressionEventSignal` and `VocalCueSignal` false stride debt is removed by global struct-layout indexing | `../Reports/UNITY_SIGNAL_LAYOUT_ALIAS_CLASSIFIER_UNKNOWN_20260527.md` |
 | Native telemetry aliases | Expression-bodied Vault accessors, private-ref nested buffers, H8Memory release helpers, and DataVault allocator aliases are classified separately | `../Reports/UNITY_SIGNAL_LAYOUT_ALIAS_CLASSIFIER_UNKNOWN_20260527.md` |
@@ -199,7 +199,7 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 
 ## 2026-05-27 Signal Residual Contract Cleanup
 
-| Area | Current fact | Proof |
+| Area | Fact | Proof |
 |---|---|---|
 | Sector override commit route | `PersistentWorldRegistry` no longer snapshots due commit work with `List<T>.ToArray()`; the route uses a cold-owned bounded `SectorOverrideCommitWork[16]` buffer | `../Reports/UNITY_SIGNAL_RESIDUAL_CONTRACT_CLEANUP_UNKNOWN_20260527.md` |
 | Tether tension lane | `TetherTensionSignal` is no longer declared cache-line-critical while carrying a 192-byte endpoint telemetry payload | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260527_TBDR_UI_SANDBOX_TETHER_SECTOR_RECHECK.json` |
@@ -209,7 +209,7 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 
 ## 2026-05-27 Core Memory Signal Domain Deep Pass
 
-| Area | Current fact | Proof |
+| Area | Fact | Proof |
 |---|---|---|
 | Mod projection cull telemetry | Production ownership moved from local persistent ring to `GlobalDataVault` generation handle, with local fallback only when the Vault is unavailable | `../Reports/UNITY_CORE_MEMORY_SIGNAL_DOMAIN_DEEP_PASS_UNKNOWN_20260527.md` |
 | TBDR Vault lifetime | Runtime and vertex-budget Vault buffers now release their `VaultGenerationHandle` routes on dispose | `../Reports/UNITY_CORE_MEMORY_SIGNAL_DOMAIN_DEEP_PASS_UNKNOWN_20260527.md` |
@@ -218,7 +218,7 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 
 ## 2026-05-27 Global Route Cache Pass
 
-| Area | Current fact | Proof |
+| Area | Fact | Proof |
 |---|---|---|
 | Dispatcher lane registration | `ConnectionSplineBatchRenderer` and `SceneRuntimeService` use cached dispatcher availability plus direct `SystemDispatcher` lanes instead of registry wrappers in live helpers | `../Reports/UNITY_GLOBAL_ROUTE_CACHE_PASS_UNKNOWN_20260527.md` |
 | Object-pool command route | `ThreadSafeCommandQueue` and `ModWorldPersistenceManager` use cached object-pool dependencies for command drain, mod spawn, despawn, and restore routes | `../Reports/UNITY_GLOBAL_ROUTE_CACHE_PASS_UNKNOWN_20260527.md` |
@@ -228,7 +228,7 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 
 ## 2026-05-27 Mod Registry Cache Pass
 
-| Area | Current fact | Proof |
+| Area | Fact | Proof |
 |---|---|---|
 | Mod settings route | `ModSettingsRegistry` caches `UserOptionsPersistence` and storage keys; apply routes no longer read `GlobalRegistry.UserOptions` or rebuild the key string | `../Reports/UNITY_MOD_REGISTRY_CACHE_PASS_UNKNOWN_20260527.md` |
 | Mod slider persistence | Mod slider rows apply live callbacks in memory and persist once on commit/disable instead of saving options on every value event | `../Reports/UNITY_MOD_REGISTRY_CACHE_PASS_UNKNOWN_20260527.md` |
@@ -238,7 +238,7 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 
 ## 2026-05-27 Vault Rebind Release Pass
 
-| Area | Current fact | Proof |
+| Area | Fact | Proof |
 |---|---|---|
 | Future command Vault lifetime | `FutureCommandSandboxValidator` releases all `20/20` sandbox `VaultLane<T>` handles through cached `IDataVault` on shutdown and DataVault rebind | `../Reports/UNITY_VAULT_REBIND_RELEASE_PASS_UNKNOWN_20260527.md` |
 | Projected mod cull telemetry | `ModEventProjectionBridge` releases and reopens cull telemetry storage on DataVault hot-swap, with Vault-backed storage preferred and fallback only when Vault is unavailable | `../Reports/UNITY_VAULT_REBIND_RELEASE_PASS_UNKNOWN_20260527.md` |
@@ -246,7 +246,7 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 
 ## 2026-05-28 Core Vault Release Pass
 
-| Area | Current fact | Proof |
+| Area | Fact | Proof |
 |---|---|---|
 | StaticData/Babel telemetry ownership | Babel telemetry and BTree telemetry now use Babel-specific DataVault buffer IDs instead of sharing StaticData/BTree telemetry IDs | `../Reports/UNITY_CORE_VAULT_RELEASE_PASS_UNKNOWN_20260528.md` |
 | Core Vault release routes | StaticData, Babel, SignalWarden tuning/telemetry/scratchpad, and MacroDatabase shutdown/rebind paths release Vault handles before clearing descriptors | `../Reports/UNITY_CORE_VAULT_RELEASE_PASS_UNKNOWN_20260528.md` |
@@ -254,7 +254,7 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 
 ## 2026-05-28 Core Sync IO And Accessor Pass
 
-| Area | Current fact | Proof |
+| Area | Fact | Proof |
 |---|---|---|
 | Lockstep replay writer route | Replay writer setup moved to `OnEnable()` cold lifecycle; post-fixed replay write no longer opens/creates file state | `../Reports/UNITY_CORE_SYNC_IO_ACCESSOR_PASS_UNKNOWN_20260528.md` |
 | Cold Core IO contracts | Input replay setup, binding override deletion, and parent-directory creation now expose cold/persistence names | `../Reports/UNITY_CORE_SYNC_IO_ACCESSOR_PASS_UNKNOWN_20260528.md` |
@@ -263,18 +263,90 @@ No C# source was edited by `DOCS_ACTUALIZATION`.
 
 ## 2026-05-28 Global Signal Name Pass
 
-| Area | Current fact | Proof |
+| Area | Fact | Proof |
 |---|---|---|
 | Global telemetry DTO names | Duplicate signal-like DTO names were removed by renaming local/narrow structs; runtime layout and BufferID/SystemID ownership were not changed | `../Reports/UNITY_GLOBAL_SIGNAL_NAME_PASS_UNKNOWN_20260528.md` |
 | Editor diagnostics rows | `SystemDiagnosticsBoard` crash table row no longer uses a runtime signal-like DTO name | `../Reports/UNITY_GLOBAL_SIGNAL_NAME_PASS_UNKNOWN_20260528.md` |
 | Static audit | SignalBus recheck reports `errors=0`, `confirmedErrors=0`, `warnings=57`, `infos=1024`; duplicate/editor signal-like warning categories are `0` | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260528_GLOBAL_SIGNAL_NAME_RECHECK.json` |
 
+## 2026-05-28 Global Stability Sync IO Pass
+
+| Area | Fact | Proof |
+|---|---|---|
+| Meta profile persistence | `GlobalProfileManager.SlowTick()` no longer writes `profile.json`; profile file IO is lifecycle-cold only | `../Reports/UNITY_GLOBAL_STABILITY_SYNC_IO_PASS_UNKNOWN_20260528.md` |
+| Cold/background IO contracts | Babel background readers, input override persistence, QA endurance artifacts, and LUT boot streaming expose `BackgroundCold` or `Cold` helper names | `../Reports/UNITY_GLOBAL_STABILITY_SYNC_IO_PASS_UNKNOWN_20260528.md` |
+| Static audit | SignalBus recheck reports `errors=0`, `confirmedErrors=0`, `warnings=40`, `infos=1041`; sync-IO warnings reduced by `17` | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260528_GLOBAL_STABILITY_IO_FINAL.json` |
+
+## 2026-05-28 Global Route Signal/Babel Pass
+
+| Area | Fact | Proof |
+|---|---|---|
+| Babel Vault route | `LocRegistry.TryResolveBabelVault()` no longer polls `GlobalRegistry`; `LocalizationManager` binds Babel Vault cold and on hot-swap | `../Reports/UNITY_GLOBAL_ROUTE_SIGNAL_BABEL_PASS_UNKNOWN_20260528.md` |
+| SignalBus lane snapshot route | `SignalBus<T>` frame snapshots use cached `SignalBusRegistry` Vault, not lazy first-publish registry reads | `../Reports/UNITY_GLOBAL_ROUTE_SIGNAL_BABEL_PASS_UNKNOWN_20260528.md` |
+| Static audit | SignalBus recheck reports `errors=0`, `confirmedErrors=0`, `warnings=110`, `infos=1195`; touched-file warnings are `0` | `../Reports/SIGNAL_BUS_CONTRACT_AUDIT_UNKNOWN_20260528_GLOBAL_ROUTE_SIGNAL_BABEL_RECHECK.json` |
+
+## 2026-05-28 Hardware Thermal Blackbox ABI Pass
+
+| Area | Fact | Proof |
+|---|---|---|
+| Thermal blackbox ABI | `HardwareThermalTelemetryEntry` dump stride now follows the 64-byte native record width instead of writing 24-byte entries | `../Reports/UNITY_HARDWARE_THERMAL_BLACKBOX_ABI_PASS_UNKNOWN_20260528.md` |
+| Thermal write route | Severity and blackbox writes use DataVault write locks with `finally` release instead of mutable `TryResolve*` helpers | `../Reports/UNITY_HARDWARE_THERMAL_BLACKBOX_ABI_PASS_UNKNOWN_20260528.md` |
+| Build boundary | Full build was not launched because a foreign `dotnet.exe` build was active and CPU was `100%`; current compile wall remains outside this pass | `../Reports/UNITY_HARDWARE_THERMAL_BLACKBOX_ABI_PASS_UNKNOWN_20260528.json` |
+
+## 2026-05-28 Global Telemetry Blackbox Accessor Pass
+
+| Area | Fact | Proof |
+|---|---|---|
+| Blackbox read route | `TryGetBlackboxRingBuffer()` was removed; the pure route is `TryResolveBlackboxRingBufferView()` and it does not initialize DataVault storage | `../Reports/UNITY_GLOBAL_TELEMETRY_BLACKBOX_ACCESSOR_PASS_UNKNOWN_20260528.md` |
+| Blackbox open route | The only ring-view API that may initialize is now named `OpenOrInitializeBlackboxRingBufferView()` and is owner-thread gated | `../Reports/UNITY_GLOBAL_TELEMETRY_BLACKBOX_ACCESSOR_PASS_UNKNOWN_20260528.md` |
+| Static proof | Scoped source check reports old active source call sites `0`, brace delta `0`, and `git diff --check` exit `0` with line-ending warning only | `../Reports/UNITY_GLOBAL_TELEMETRY_BLACKBOX_ACCESSOR_PASS_UNKNOWN_20260528.json` |
+
+## 2026-05-28 Hardware Tier Read Accessor Pass
+
+| Area | Fact | Proof |
+|---|---|---|
+| Hardware tier getters | `HardwareTierDetector` read properties no longer call `EnsureInitialized()`; boot/explicit owners initialize the snapshot | `../Reports/UNITY_HARDWARE_TIER_READ_ACCESSOR_PASS_UNKNOWN_20260528.md` |
+| Quest policy getters | Quest Vulkan policy read properties no longer initialize from getters; Quest candidate fails closed until initialized | `../Reports/UNITY_HARDWARE_TIER_READ_ACCESSOR_PASS_UNKNOWN_20260528.md` |
+| Static proof | `EnsureInitialized()` remains only in BeforeSceneLoad calls and method declarations in touched files; brace delta `0`; scoped diff check exit `0` | `../Reports/UNITY_HARDWARE_TIER_READ_ACCESSOR_PASS_UNKNOWN_20260528.json` |
+
+## 2026-05-28 Global Telemetry DataVault Binding Pass
+
+| Area | Fact | Proof |
+|---|---|---|
+| Blackbox Vault route | `GlobalTelemetryBus` blackbox storage now consumes a cold-bound `_blackboxBoundVault` instead of reading `GlobalRegistry.DataVault` from its bind helper | `../Reports/UNITY_GLOBAL_TELEMETRY_DATAVAULT_BINDING_PASS_UNKNOWN_20260528.md` |
+| Registry bind/unbind | `GlobalRegistry.RegisterDataVault()` binds the blackbox route and `UnregisterDataVault()` clears it with the authoritative Vault | `../Reports/UNITY_GLOBAL_TELEMETRY_DATAVAULT_BINDING_PASS_UNKNOWN_20260528.md` |
+| Static proof | Direct `GlobalRegistry.DataVault` reads in `GlobalTelemetryBus.cs` and `GlobalTelemetryBus.Blackbox.cs` are `0`; brace delta `0`; scoped diff check exit `0` | `../Reports/UNITY_GLOBAL_TELEMETRY_DATAVAULT_BINDING_PASS_UNKNOWN_20260528.json` |
+
+## 2026-05-28 Memory Sentinel Vault Lifecycle Pass
+
+| Area | Fact | Proof |
+|---|---|---|
+| MemorySentinel Vault route | `MemorySentinelRuntime` now subscribes to `GlobalRegistry` DataVault hot-swap and rebinds from a cold owner route | `../Reports/UNITY_MEMORY_SENTINEL_VAULT_LIFECYCLE_PASS_UNKNOWN_20260528.md` |
+| Frame-phase buffer access | `VisualSyncTick()` and `PublishHashDelta()` now resolve existing Vault buffers through `TryResolveVaultBuffers()` instead of opening them | `../Reports/UNITY_MEMORY_SENTINEL_VAULT_LIFECYCLE_PASS_UNKNOWN_20260528.md` |
+| Static proof | Touched source brace delta is `0`; scoped diff check exit `0`; `TryResolveVaultBuffers` active references are `4` | `../Reports/UNITY_MEMORY_SENTINEL_VAULT_LIFECYCLE_PASS_UNKNOWN_20260528.json` |
+
+## 2026-05-28 MathGuard DataVault Binding Pass
+
+| Area | Fact | Proof |
+|---|---|---|
+| MathGuard Vault route | `MathGuard` no longer reads `GlobalRegistry.DataVault`; it consumes a Vault bound by `GlobalRegistry.RegisterDataVault()` | `../Reports/UNITY_MATHGUARD_DATAVAULT_BINDING_PASS_UNKNOWN_20260528.md` |
+| Owner unbind route | `GlobalRegistry.UnregisterDataVault()` clears MathGuard invalid-number handles when the authoritative Vault is removed | `../Reports/UNITY_MATHGUARD_DATAVAULT_BINDING_PASS_UNKNOWN_20260528.md` |
+| Static proof | `MathGuard.cs` direct `GlobalRegistry.DataVault` reads are `0`; `CacheDataVaultCold` references are `0`; touched source brace delta is `0` | `../Reports/UNITY_MATHGUARD_DATAVAULT_BINDING_PASS_UNKNOWN_20260528.json` |
+
+## 2026-05-28 Homeostasis DataVault Rebind Pass
+
+| Area | Fact | Proof |
+|---|---|---|
+| Homeostasis Vault rebind | `HomeostasisBrain` reopens runtime buffers from the DataVault hot-swap route before pre-simulation frame code resumes | `../Reports/UNITY_HOMEOSTASIS_DATAVAULT_REBIND_PASS_UNKNOWN_20260528.md` |
+| Frame-phase resolver | `PreSimulationTick()` uses a pure `TryResolveRuntimeBuffers()` route; buffer open/acquire is isolated to `OpenOrAcquireRuntimeBuffers()` | `../Reports/UNITY_HOMEOSTASIS_DATAVAULT_REBIND_PASS_UNKNOWN_20260528.md` |
+| Static proof | `OpenOrAcquireRuntimeBuffers` refs `3`; `TryResolveRuntimeBuffers` refs `4`; `TryResolveHardwareMetrics` refs `0`; touched source brace delta `0` | `../Reports/UNITY_HOMEOSTASIS_DATAVAULT_REBIND_PASS_UNKNOWN_20260528.json` |
+
 ## Validation
 
 | Validator | Required state |
 |---|---|
-| Current `Tools/OOP_Doc_Scanner.py` | 2026-05-28 `finalPass=true`; activeFileCount `705`; sourceSyncPass `true`; active stale parameter files `0`; wordReductionPercent `31.17003909081188` |
-| Current `Tools/VerifyDocStructure.py` | 2026-05-28 `pass=true`; activeDocCount `705`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0`; encodingWithoutUtf8Sig `0` |
+| Current `Tools/OOP_Doc_Scanner.py` | 2026-05-28 `finalPass=true`; activeFileCount `708`; sourceSyncPass `true`; active stale parameter files `0`; wordReductionPercent `30.358189496725423` |
+| Current `Tools/VerifyDocStructure.py` | 2026-05-28 `pass=true`; activeDocCount `708`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0`; encodingWithoutUtf8Sig `0` |
 | `Tools/OOP_Doc_Scanner.py` | `finalPass=true`; source sync; reduction `>=30%`; markers `0`; stale parameter files `0` |
 | `Tools/VerifyDocStructure.py` | `pass=true`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0` |
 | 1334 final scan | `DOCUMENTATION_OPTIMIZATION_REPORT_1334_FINAL_SCAN.json`: `finalPass=true`; active docs `693`; stale parameter files `0`; reduction `48.0975%` |

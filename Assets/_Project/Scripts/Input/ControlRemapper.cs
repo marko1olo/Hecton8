@@ -256,7 +256,7 @@ namespace Hecton8.Input
                     return true;
                 }
 
-                if (!TryWriteAtomic(path, tempPath, ptr, index, ref result))
+                if (!TryWriteAtomicCold(path, tempPath, ptr, index, ref result))
                     return false;
 
                 result.ResultCode = InputBindingTelemetryResult.Success;
@@ -326,7 +326,7 @@ namespace Hecton8.Input
 
                 fileBytes = new NativeArray<byte>(MaxControlsJsonBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
                 byte* bytesPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(fileBytes);
-                int byteCount = TryReadAll(path, bytesPtr, fileBytes.Length, ref result);
+                int byteCount = TryReadAllCold(path, bytesPtr, fileBytes.Length, ref result);
                 if (byteCount <= 0)
                 {
                     result.ResultCode = result.ResultCode == 0u ? InputBindingTelemetryResult.InvalidJson : result.ResultCode;
@@ -589,7 +589,7 @@ namespace Hecton8.Input
                    WriteLiteral(buffer, capacity, ref index, "\"}");
         }
 
-        private static int TryReadAll(string path, byte* destination, int capacity, ref ControlRemapIoResult result)
+        private static int TryReadAllCold(string path, byte* destination, int capacity, ref ControlRemapIoResult result)
         {
             using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileStreamBufferBytes, FileOptions.SequentialScan))
             {
@@ -623,7 +623,7 @@ namespace Hecton8.Input
             }
         }
 
-        private static bool TryWriteAtomic(string path, string tempPath, byte* source, int byteCount, ref ControlRemapIoResult result)
+        private static bool TryWriteAtomicCold(string path, string tempPath, byte* source, int byteCount, ref ControlRemapIoResult result)
         {
             try
             {
@@ -656,30 +656,30 @@ namespace Hecton8.Input
             catch (UnauthorizedAccessException)
             {
                 MarkIoFailureNoTelemetry(ref result);
-                TryDeleteTempAfterIoFailure(tempPath, ref result);
+                TryDeleteTempAfterIoFailureCold(tempPath, ref result);
                 return false;
             }
             catch (IOException)
             {
                 MarkIoFailureNoTelemetry(ref result);
-                TryDeleteTempAfterIoFailure(tempPath, ref result);
+                TryDeleteTempAfterIoFailureCold(tempPath, ref result);
                 return false;
             }
             catch (ArgumentException)
             {
                 MarkIoFailureNoTelemetry(ref result);
-                TryDeleteTempAfterIoFailure(tempPath, ref result);
+                TryDeleteTempAfterIoFailureCold(tempPath, ref result);
                 return false;
             }
             catch (NotSupportedException)
             {
                 MarkIoFailureNoTelemetry(ref result);
-                TryDeleteTempAfterIoFailure(tempPath, ref result);
+                TryDeleteTempAfterIoFailureCold(tempPath, ref result);
                 return false;
             }
         }
 
-        private static void TryDeleteTempAfterIoFailure(string tempPath, ref ControlRemapIoResult result)
+        private static void TryDeleteTempAfterIoFailureCold(string tempPath, ref ControlRemapIoResult result)
         {
             try
             {

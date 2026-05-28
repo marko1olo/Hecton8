@@ -227,7 +227,7 @@ namespace Hecton8.Meta
         /// <param name="profile">Loaded profile or a repaired empty profile when the file is absent.</param>
         public static bool TryLoadSnapshot(out GlobalProfileData profile)
         {
-            profile = LoadProfileFromDisk();
+            profile = LoadProfileFromDiskCold();
             return profile != null;
         }
 
@@ -267,7 +267,7 @@ namespace Hecton8.Meta
         private void OnDisable()
         {
             FlushCurrentRunRecords();
-            FlushIfDirty();
+            FlushIfDirtyCold();
             UnbindOwnerSubscriptions();
             UnregisterFromUpdateDispatcher();
             UnregisterFromTickManager();
@@ -278,7 +278,7 @@ namespace Hecton8.Meta
         private void OnDestroy()
         {
             FlushCurrentRunRecords();
-            FlushIfDirty();
+            FlushIfDirtyCold();
             UnbindOwnerSubscriptions();
             UnregisterFromUpdateDispatcher();
             UnregisterFromTickManager();
@@ -289,7 +289,25 @@ namespace Hecton8.Meta
         private void OnApplicationQuit()
         {
             FlushCurrentRunRecords();
-            FlushIfDirty();
+            FlushIfDirtyCold();
+        }
+
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            if (!pauseStatus)
+                return;
+
+            FlushCurrentRunRecords();
+            FlushIfDirtyCold();
+        }
+
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (hasFocus)
+                return;
+
+            FlushCurrentRunRecords();
+            FlushIfDirtyCold();
         }
 
         /// <inheritdoc />
@@ -302,9 +320,8 @@ namespace Hecton8.Meta
 
             TrackCurrentRunRecords();
 
-            _flushTimer += 0.5f;
-            if (_dirty && _flushTimer >= FlushIntervalSeconds)
-                FlushIfDirty();
+            if (_dirty)
+                _flushTimer = Mathf.Min(_flushTimer + 0.5f, FlushIntervalSeconds);
         }
 
         public void Tick(float deltaTime)
@@ -599,7 +616,7 @@ namespace Hecton8.Meta
 
         private void LoadProfile()
         {
-            _profile = LoadProfileFromDisk();
+            _profile = LoadProfileFromDiskCold();
             if (_profile == null)
                 _profile = new GlobalProfileData();
 
@@ -985,12 +1002,12 @@ namespace Hecton8.Meta
             ProfileChanged?.Invoke();
         }
 
-        private void FlushIfDirty()
+        private void FlushIfDirtyCold()
         {
             if (!_dirty || _profile == null)
                 return;
 
-            if (TryWriteProfile(_profile))
+            if (TryWriteProfileCold(_profile))
             {
                 _dirty = false;
                 _flushTimer = 0f;
@@ -1002,7 +1019,7 @@ namespace Hecton8.Meta
 #endif
         }
 
-        private static bool TryWriteProfile(GlobalProfileData profile)
+        private static bool TryWriteProfileCold(GlobalProfileData profile)
         {
             if (profile == null)
                 return false;
@@ -1048,7 +1065,7 @@ namespace Hecton8.Meta
             }
         }
 
-        private static GlobalProfileData LoadProfileFromDisk()
+        private static GlobalProfileData LoadProfileFromDiskCold()
         {
             string path = GetProfileFilePath();
             if (string.IsNullOrEmpty(path) || !File.Exists(path))

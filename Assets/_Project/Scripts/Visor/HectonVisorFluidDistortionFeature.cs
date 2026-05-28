@@ -36,7 +36,7 @@ namespace Hecton8.Visor
         private const float QuaternionMinimumLengthSq = 0.000001f;
         private const float QuaternionUnitLengthSqEpsilon = 0.015625f;
         private const int BlackBoxFrameCount = 300;
-        private const int BlackBoxEntrySizeBytes = 48;
+        private const int BlackBoxEntrySizeBytes = 64;
         private const int VisorFluidGlobalsStrideBytes = 128;
         private const int LensComputeGlobalsStrideBytes = 80;
         private const uint BlackBoxMagic = 0x56535246u;
@@ -179,22 +179,67 @@ namespace Hecton8.Visor
             public readonly uint TelemetryFlags;
         }
 
-        [StructLayout(LayoutKind.Explicit, Size = BlackBoxEntrySizeBytes)]
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
         private struct VisorRefractionTelemetryEntry
         {
-            [FieldOffset(0)] public uint FrameIndex;
-            [FieldOffset(4)] public uint Flags;
-            [FieldOffset(8)] public float EffectIntensity01;
-            [FieldOffset(12)] public float Wetness01;
-            [FieldOffset(16)] public float HullStress01;
-            [FieldOffset(20)] public float WaterDensitySignal01;
-            [FieldOffset(24)] public float HomeostasisFallback01;
-            [FieldOffset(28)] public float LocalVelocitySq;
-            [FieldOffset(32)] public uint StateHash;
-            [FieldOffset(36)] public ushort CameraPixelWidth;
-            [FieldOffset(38)] public ushort CameraPixelHeight;
-            [FieldOffset(40)] public uint VaultGeneration;
-            [FieldOffset(44)] public uint QualityWeightQ16;
+            [System.Runtime.InteropServices.FieldOffset(0)]
+            public uint FrameIndex;
+            [System.Runtime.InteropServices.FieldOffset(4)]
+            public uint Flags;
+            [System.Runtime.InteropServices.FieldOffset(8)]
+            public float EffectIntensity01;
+            [System.Runtime.InteropServices.FieldOffset(12)]
+            public float Wetness01;
+            [System.Runtime.InteropServices.FieldOffset(16)]
+            public float HullStress01;
+            [System.Runtime.InteropServices.FieldOffset(20)]
+            public float WaterDensitySignal01;
+            [System.Runtime.InteropServices.FieldOffset(24)]
+            public float HomeostasisFallback01;
+            [System.Runtime.InteropServices.FieldOffset(28)]
+            public float LocalVelocitySq;
+            [System.Runtime.InteropServices.FieldOffset(32)]
+            public uint StateHash;
+            [System.Runtime.InteropServices.FieldOffset(36)]
+            public uint VaultGeneration;
+            [System.Runtime.InteropServices.FieldOffset(40)]
+            public uint QualityWeightQ16;
+            [System.Runtime.InteropServices.FieldOffset(44)]
+            public ushort CameraPixelWidth;
+            [System.Runtime.InteropServices.FieldOffset(46)]
+            public ushort CameraPixelHeight;
+            [System.Runtime.InteropServices.FieldOffset(48)]
+            private byte _pad0;
+            [System.Runtime.InteropServices.FieldOffset(49)]
+            private byte _pad1;
+            [System.Runtime.InteropServices.FieldOffset(50)]
+            private byte _pad2;
+            [System.Runtime.InteropServices.FieldOffset(51)]
+            private byte _pad3;
+            [System.Runtime.InteropServices.FieldOffset(52)]
+            private byte _pad4;
+            [System.Runtime.InteropServices.FieldOffset(53)]
+            private byte _pad5;
+            [System.Runtime.InteropServices.FieldOffset(54)]
+            private byte _pad6;
+            [System.Runtime.InteropServices.FieldOffset(55)]
+            private byte _pad7;
+            [System.Runtime.InteropServices.FieldOffset(56)]
+            private byte _pad8;
+            [System.Runtime.InteropServices.FieldOffset(57)]
+            private byte _pad9;
+            [System.Runtime.InteropServices.FieldOffset(58)]
+            private byte _pad10;
+            [System.Runtime.InteropServices.FieldOffset(59)]
+            private byte _pad11;
+            [System.Runtime.InteropServices.FieldOffset(60)]
+            private byte _pad12;
+            [System.Runtime.InteropServices.FieldOffset(61)]
+            private byte _pad13;
+            [System.Runtime.InteropServices.FieldOffset(62)]
+            private byte _pad14;
+            [System.Runtime.InteropServices.FieldOffset(63)]
+            private byte _pad15;
         }
 
         private sealed class VisorFluidPass : ScriptableRenderPass
@@ -1295,22 +1340,20 @@ namespace Hecton8.Visor
             if (runtimeState.VisualOverkill01 > 0.001f)
                 flags |= BlackBoxFlagVisualOverkill;
 
-            VisorRefractionTelemetryEntry entry = new VisorRefractionTelemetryEntry
-            {
-                FrameIndex = frame >= 0 ? (uint)frame : 0u,
-                Flags = flags,
-                EffectIntensity01 = Sanitize01(runtimeState.EffectIntensity),
-                Wetness01 = Sanitize01(runtimeState.Wetness),
-                HullStress01 = Sanitize01(runtimeState.HullStress),
-                WaterDensitySignal01 = Sanitize01(runtimeState.WaterDensitySignal01),
-                HomeostasisFallback01 = Sanitize01(runtimeState.HomeostasisFallback01),
-                LocalVelocitySq = SanitizeNonNegative(localVelocitySq),
-                StateHash = BuildBlackBoxHash(in runtimeState, flags),
-                CameraPixelWidth = ClampUShort(renderCamera != null ? renderCamera.pixelWidth : 0),
-                CameraPixelHeight = ClampUShort(renderCamera != null ? renderCamera.pixelHeight : 0),
-                VaultGeneration = _blackBoxVaultGeneration,
-                QualityWeightQ16 = EncodeQualityQ16(runtimeState.QualityWeight01)
-            };
+            VisorRefractionTelemetryEntry entry = default;
+            entry.FrameIndex = frame >= 0 ? (uint)frame : 0u;
+            entry.Flags = flags;
+            entry.EffectIntensity01 = Sanitize01(runtimeState.EffectIntensity);
+            entry.Wetness01 = Sanitize01(runtimeState.Wetness);
+            entry.HullStress01 = Sanitize01(runtimeState.HullStress);
+            entry.WaterDensitySignal01 = Sanitize01(runtimeState.WaterDensitySignal01);
+            entry.HomeostasisFallback01 = Sanitize01(runtimeState.HomeostasisFallback01);
+            entry.LocalVelocitySq = SanitizeNonNegative(localVelocitySq);
+            entry.StateHash = BuildBlackBoxHash(in runtimeState, flags);
+            entry.CameraPixelWidth = ClampUShort(renderCamera != null ? renderCamera.pixelWidth : 0);
+            entry.CameraPixelHeight = ClampUShort(renderCamera != null ? renderCamera.pixelHeight : 0);
+            entry.VaultGeneration = _blackBoxVaultGeneration;
+            entry.QualityWeightQ16 = EncodeQualityQ16(runtimeState.QualityWeight01);
 
             if (!TryWriteBlackBoxEntry(frame, in entry, out int blackBoxLength))
                 return;
@@ -1642,6 +1685,7 @@ namespace Hecton8.Visor
 
         private static void WriteTelemetryEntry(Span<byte> destination, in VisorRefractionTelemetryEntry entry)
         {
+            destination.Clear();
             BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(0, 4), entry.FrameIndex);
             BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(4, 4), entry.Flags);
             WriteFloatLittleEndian(destination.Slice(8, 4), entry.EffectIntensity01);
@@ -1651,10 +1695,10 @@ namespace Hecton8.Visor
             WriteFloatLittleEndian(destination.Slice(24, 4), entry.HomeostasisFallback01);
             WriteFloatLittleEndian(destination.Slice(28, 4), entry.LocalVelocitySq);
             BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(32, 4), entry.StateHash);
-            BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(36, 2), entry.CameraPixelWidth);
-            BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(38, 2), entry.CameraPixelHeight);
-            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(40, 4), entry.VaultGeneration);
-            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(44, 4), entry.QualityWeightQ16);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(36, 4), entry.VaultGeneration);
+            BinaryPrimitives.WriteUInt32LittleEndian(destination.Slice(40, 4), entry.QualityWeightQ16);
+            BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(44, 2), entry.CameraPixelWidth);
+            BinaryPrimitives.WriteUInt16LittleEndian(destination.Slice(46, 2), entry.CameraPixelHeight);
         }
 
         private static void WriteFloatLittleEndian(Span<byte> destination, float value)

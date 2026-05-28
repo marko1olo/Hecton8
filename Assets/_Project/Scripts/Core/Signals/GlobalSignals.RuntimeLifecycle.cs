@@ -23,6 +23,7 @@ namespace Hecton8.Core
 
             float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
             IDataVault dataVault = GlobalRegistry.DataVault;
+            SignalBusRegistry.BindDataVaultCold(dataVault);
             SignalBusRegistry.SetGlobalQualityWeight01(qualityWeight);
             SignalBusRegistry.ClearSimulationHalt();
             SignalPriorityTable.InitializeFromDisk();
@@ -30,7 +31,7 @@ namespace Hecton8.Core
 #if UNITY_EDITOR
             SignalTuningCsvHotSwap.TryLoadDefault();
 #endif
-            SignalTelemetryRingBuffer.Initialize();
+            SignalTelemetryRingBuffer.Initialize(dataVault);
             SignalThreadLocalScratchpad.Initialize(
                 dataVault,
                 qualityWeight,

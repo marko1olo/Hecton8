@@ -436,8 +436,23 @@ namespace Hecton8.Physics.KCC
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveIterationCount(float globalQualityWeight)
         {
-            float quality = AuthoritativeQualityWeight;
+            float quality = ResolveQuality01(globalQualityWeight);
             return math.clamp((int)math.round(math.lerp(3f, 8f, quality)), 3, 8);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveQuality01(float globalQualityWeight)
+        {
+            return math.saturate(math.select(AuthoritativeQualityWeight, globalQualityWeight, math.isfinite(globalQualityWeight)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float ResolveDynamicPenetrationEpsilon(float globalQualityWeight, float skinWidth)
+        {
+            float quality = ResolveQuality01(globalQualityWeight);
+            float baseEpsilon = math.max(0.0005f, skinWidth * 0.02f);
+            float maxAllowedEpsilon = math.max(baseEpsilon, skinWidth * 0.75f);
+            return math.lerp(baseEpsilon, maxAllowedEpsilon, 1f - quality);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -449,7 +464,7 @@ namespace Hecton8.Physics.KCC
             int maxStride)
         {
             int stride = math.clamp(maxStride, 1, 8);
-            float quality = AuthoritativeQualityWeight;
+            float quality = ResolveQuality01(globalQualityWeight);
             int qualitySteps = math.clamp((int)math.round(math.lerp(3f, (float)stride, quality)), 1, stride);
             float safeCastDistance = math.max(0f, math.isfinite(castDistance) ? castDistance : 0f);
             float radius = math.max(0.05f, math.isfinite(capsuleRadius) ? capsuleRadius : 0.35f);
@@ -628,7 +643,7 @@ namespace Hecton8.Physics.KCC
             uint seed = HydrodynamicKccMath.SeedNonZero(sectorHash ^ (uint)(index * 0x9E3779B9) ^ (frame * 0x85EBCA6Bu));
             Unity.Mathematics.Random rng = new Unity.Mathematics.Random(seed);
             float safeDt = math.max(HydrodynamicKccMath.MinDenominator, math.isfinite(dt) ? dt : 0.016666667f);
-            float quality = HydrodynamicKccMath.AuthoritativeQualityWeight;
+            float quality = HydrodynamicKccMath.ResolveQuality01(tuning.GlobalQualityWeight);
             float frequency = math.max(0.01f, math.isfinite(tuning.MockInputFrequency) ? tuning.MockInputFrequency : 0.35f);
             float amplitude = math.max(0f, math.isfinite(tuning.MockInputAmplitude) ? tuning.MockInputAmplitude : 1f);
             float phase = rng.NextFloat(0f, 6.2831855f);
@@ -855,7 +870,7 @@ namespace Hecton8.Physics.KCC
                 math.max(1, Grid.Dimensions.y),
                 math.max(1, Grid.Dimensions.z));
             float cellSize = math.max(0.25f, math.isfinite(Grid.CellSizeMeters) ? Grid.CellSizeMeters : 2f);
-            float quality = HydrodynamicKccMath.AuthoritativeQualityWeight;
+            float quality = HydrodynamicKccMath.ResolveQuality01(Tuning.GlobalQualityWeight);
             float dt = math.max(HydrodynamicKccMath.MinDenominator, math.isfinite(SimulationTickDelta) ? SimulationTickDelta : 0.016666667f);
             float t = (float)SimulationFrame * dt;
 
@@ -960,8 +975,8 @@ namespace Hecton8.Physics.KCC
             ref KinematicStateDTO state = ref UnsafeUtility.AsRef<KinematicStateDTO>(statePtr);
 
             float dt = math.max(HydrodynamicKccMath.MinDenominator, math.isfinite(SimulationTickDelta) ? SimulationTickDelta : 0.016666667f);
-            float quality = HydrodynamicKccMath.AuthoritativeQualityWeight;
-            float visualQuality = math.saturate(math.isfinite(Tuning.GlobalQualityWeight) ? Tuning.GlobalQualityWeight : 1f);
+            float quality = HydrodynamicKccMath.ResolveQuality01(Tuning.GlobalQualityWeight);
+            float visualQuality = quality;
             HydrodynamicKccInputDTO input = Inputs.IsCreated && index < Inputs.Length ? Inputs[index] : default;
             KccEnvironmentProfileDTO environmentProfile = ResolveEnvironmentProfile();
             KccEnvironmentGridDTO environmentGrid = ResolveEnvironmentGrid();
@@ -1480,7 +1495,7 @@ namespace Hecton8.Physics.KCC
 
             KinematicStateDTO state = States[index];
             float dt = math.max(HydrodynamicKccMath.MinDenominator, math.isfinite(SimulationTickDelta) ? SimulationTickDelta : 0.016666667f);
-            float quality = HydrodynamicKccMath.AuthoritativeQualityWeight;
+            float quality = HydrodynamicKccMath.ResolveQuality01(Tuning.GlobalQualityWeight);
             float3 velocity = HydrodynamicKccMath.Sanitize(ProposedVelocities[index], float3.zero);
             float3 delta = velocity * dt;
             double3 deltaAup = new double3(delta.x, delta.y, delta.z);
@@ -1490,7 +1505,7 @@ namespace Hecton8.Physics.KCC
             float height = math.max(radius * 2f, math.isfinite(Tuning.CapsuleHeight) ? Tuning.CapsuleHeight : 1.8f);
             float halfSegment = math.max(0f, (height * 0.5f) - radius);
             int sampleSteps = HydrodynamicKccMath.ResolveSpeculativeSampleCount(
-                HydrodynamicKccMath.AuthoritativeQualityWeight,
+                quality,
                 castDistance,
                 radius,
                 skin,
@@ -1722,7 +1737,7 @@ namespace Hecton8.Physics.KCC
                 return;
 
             float dt = math.max(HydrodynamicKccMath.MinDenominator, math.isfinite(SimulationTickDelta) ? SimulationTickDelta : 0.016666667f);
-            float quality = HydrodynamicKccMath.AuthoritativeQualityWeight;
+            float quality = HydrodynamicKccMath.ResolveQuality01(Tuning.GlobalQualityWeight);
             KccEnvironmentProfileDTO profile = EnvironmentProfiles.IsCreated && EnvironmentProfiles.Length > 0
                 ? SanitizeEnvironmentProfile(EnvironmentProfiles[0])
                 : DefaultEnvironmentProfile();
@@ -1892,6 +1907,7 @@ namespace Hecton8.Physics.KCC
             float castDistance = HydrodynamicKccMath.LengthSafe(displacement);
             float3 direction = HydrodynamicKccMath.NormalizeSafe(displacement, new float3(0f, 0f, 1f));
             float skin = math.max(0.001f, math.isfinite(Tuning.SkinWidth) ? Tuning.SkinWidth : 0.02f);
+            float dynamicEpsilon = HydrodynamicKccMath.ResolveDynamicPenetrationEpsilon(Tuning.GlobalQualityWeight, skin);
             bool collisionBypassed = CollisionBypass != 0;
             uint flags = math.select(0u, HydrodynamicKccMath.FlagRespawnCollisionBypass, collisionBypassed);
             int scheduledHitStride = math.clamp(MaxHitsPerCommand, 1, 8);
@@ -1916,7 +1932,7 @@ namespace Hecton8.Physics.KCC
                     HydrodynamicKccCollisionHitDTO hit = CollisionHits[hitIndex];
                     bool validHit = (hit.Flags & HydrodynamicKccMath.HitFlagValid) != 0u &&
                                     hit.Distance >= 0f &&
-                                    hit.Distance <= castDistance + skin + 0.001f &&
+                                    hit.Distance <= castDistance + skin + dynamicEpsilon &&
                                     HydrodynamicKccMath.IsFinite(hit.Normal) &&
                                     math.lengthsq(hit.Normal) > 0.0001f;
                     if (!validHit)
@@ -1948,7 +1964,7 @@ namespace Hecton8.Physics.KCC
                     {
                         float3 normal = contactNormals[contactIndex];
                         float intoNormal = math.dot(velocity, normal);
-                        if (intoNormal >= 0f)
+                        if (intoNormal >= -dynamicEpsilon)
                             continue;
 
                         velocity -= normal * intoNormal;
@@ -1965,7 +1981,7 @@ namespace Hecton8.Physics.KCC
                 float allowedDistance = math.max(0f, nearestDistance - skin);
                 float consumedFraction = math.saturate(allowedDistance * math.rcp(math.max(castDistance, HydrodynamicKccMath.MinDenominator)));
                 float remainingDt = dt * (1f - consumedFraction);
-                float depenetrationCap = math.min(math.max(0.05f, Tuning.CapsuleRadius), maxPenetration + skin);
+                float depenetrationCap = math.min(math.max(0.05f, Tuning.CapsuleRadius), math.max(0f, maxPenetration - dynamicEpsilon) + skin);
                 float3 depenetration = nearestNormal * math.max(0f, depenetrationCap);
                 displacement = direction * allowedDistance + velocity * remainingDt + depenetration;
             }
@@ -2060,7 +2076,7 @@ namespace Hecton8.Physics.KCC
             float computeUs = 0f;
             uint flags = 0u;
             uint hash = 2166136261u;
-            float quality = HydrodynamicKccMath.AuthoritativeQualityWeight;
+            float quality = HydrodynamicKccMath.ResolveQuality01(Tuning.GlobalQualityWeight);
             float maxConfiguredSpeed = math.max(0.1f, math.isfinite(Tuning.MaxSpeed) ? Tuning.MaxSpeed : 6f);
             uint executedIterations = (uint)math.max(0, ExecutedIterations);
 
@@ -2194,7 +2210,7 @@ namespace Hecton8.Physics.KCC
             double3 previous = index < PreviousAup.Length ? PreviousAup[index] : state.AUP_Position;
             float dt = math.max(HydrodynamicKccMath.MinDenominator, math.isfinite(VisualDeltaTime) ? VisualDeltaTime : 0.016666667f);
             float sharpness = math.max(0.01f, math.isfinite(Tuning.VisualSyncSharpness) ? Tuning.VisualSyncSharpness : 18f);
-            float quality = math.saturate(math.isfinite(Tuning.GlobalQualityWeight) ? Tuning.GlobalQualityWeight : 1f);
+            float quality = HydrodynamicKccMath.ResolveQuality01(Tuning.GlobalQualityWeight);
             float alpha = 1f - HydrodynamicKccMath.ExpNegRational(sharpness * dt);
             alpha = math.saturate(alpha * math.lerp(0.35f, 1f, quality));
             alpha = math.select(alpha, 1f, BypassVisualSync != 0);
@@ -4055,7 +4071,7 @@ namespace Hecton8.Physics.KCC
             tuning.CapsuleRadius = math.max(0.05f, math.isfinite(tuning.CapsuleRadius) ? tuning.CapsuleRadius : 0.35f);
             tuning.CapsuleHeight = math.max(tuning.CapsuleRadius * 2f, math.isfinite(tuning.CapsuleHeight) ? tuning.CapsuleHeight : 1.8f);
             tuning.SkinWidth = math.max(0.001f, math.isfinite(tuning.SkinWidth) ? tuning.SkinWidth : 0.025f);
-            tuning.GlobalQualityWeight = math.saturate(math.isfinite(tuning.GlobalQualityWeight) ? tuning.GlobalQualityWeight : 1f);
+            tuning.GlobalQualityWeight = HydrodynamicKccMath.ResolveQuality01(tuning.GlobalQualityWeight);
             tuning.WaterSurfaceY = math.isfinite(tuning.WaterSurfaceY) ? tuning.WaterSurfaceY : 0f;
             tuning.MockInputFrequency = math.max(0.01f, math.isfinite(tuning.MockInputFrequency) ? tuning.MockInputFrequency : 0.35f);
             tuning.MockInputAmplitude = math.max(0f, math.isfinite(tuning.MockInputAmplitude) ? tuning.MockInputAmplitude : 1f);
