@@ -2141,9 +2141,9 @@ namespace Hecton8.Core.Database
                 if (!blackBox.IsCreated || blackBox.Length <= 0)
                     return;
 
-            MacroDatabaseNativeCacheStats cacheStats = _cacheOwner != null
-                ? _cacheOwner.GetMacroDatabaseCacheStats()
-                : default;
+                MacroDatabaseNativeCacheStats cacheStats = _cacheOwner != null
+                    ? _cacheOwner.GetMacroDatabaseCacheStats()
+                    : default;
 
                 MacroDatabaseTelemetryEntry entry = default;
                 entry.PlayerSectorHash = playerSectorHash;

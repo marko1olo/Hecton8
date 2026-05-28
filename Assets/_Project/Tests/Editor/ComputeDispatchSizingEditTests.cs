@@ -205,7 +205,11 @@ namespace Hecton8.Tests.Editor
             Assert.That(shader, Does.Not.Contain("argsBuffer[id.x * 5 + 1] *= 2;"));
             Assert.GreaterOrEqual(countGuardIndex, 0);
             Assert.Greater(argsIndexIndex, countGuardIndex);
-            Assert.That(source, Does.Contain("if (count <= 0)"));
+            Assert.That(source, Does.Contain("_argsBufferComputeShader == null || runtimeData == null || runtimeData.argsBuffer == null || runtimeData.argsBuffer.count <= 0"));
+            Assert.That(source, Does.Contain("int safeArgsEntryCount = runtimeData.argsBuffer.count / 5;"));
+            Assert.That(source, Does.Contain("if (safeArgsEntryCount <= 0)"));
+            Assert.That(source, Does.Contain("GetComputeThreadGroupCount(safeArgsEntryCount)"));
+            Assert.That(source, Does.Not.Contain("GetComputeThreadGroupCount(count), 1, 1);"));
             Assert.That(source, Does.Contain("ARGS_BUFFER_LENGTH, runtimeData.argsBuffer.count"));
         }
 

@@ -231,7 +231,7 @@ namespace GPUInstancer
                         int instanceCount = instanceCounts[i];
                         runtimeData.bufferSize = instanceCount;
                         runtimeData.instanceCount = instanceCount;
-                        if (instanceCount == 0)
+                        if (instanceCount <= 0)
                         {
                             GPUInstancerUtility.ReleaseInstanceBuffers(runtimeData);
                             continue;

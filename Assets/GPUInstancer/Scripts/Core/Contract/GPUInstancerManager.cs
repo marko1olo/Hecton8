@@ -628,17 +628,17 @@ namespace GPUInstancer
                     {
                         GPUInstancerRuntimeData runtimeData = runtimeDataList[i];
 
-                        if (runtimeData == null || runtimeData.argsBuffer == null || runtimeData.argsBuffer.count == 0)
+                        if (_argsBufferComputeShader == null || runtimeData == null || runtimeData.argsBuffer == null || runtimeData.argsBuffer.count <= 0)
                             continue;
 
-                        int count = runtimeData.argsBuffer.count / 5;
-                        if (count <= 0)
+                        int safeArgsEntryCount = runtimeData.argsBuffer.count / 5;
+                        if (safeArgsEntryCount <= 0)
                             continue;
 
                         _argsBufferComputeShader.SetBuffer(_argsBufferDoubleInstanceCountComputeKernelID, GPUInstancerConstants.VisibilityKernelPoperties.ARGS_BUFFER, runtimeData.argsBuffer);
-                        _argsBufferComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.COUNT, count);
+                        _argsBufferComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.COUNT, safeArgsEntryCount);
                         _argsBufferComputeShader.SetInt(GPUInstancerConstants.VisibilityKernelPoperties.ARGS_BUFFER_LENGTH, runtimeData.argsBuffer.count);
-                        _argsBufferComputeShader.Dispatch(_argsBufferDoubleInstanceCountComputeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(count), 1, 1);
+                        _argsBufferComputeShader.Dispatch(_argsBufferDoubleInstanceCountComputeKernelID, GPUInstancerConstants.GetComputeThreadGroupCount(safeArgsEntryCount), 1, 1);
                     }
                 }
 #endif
@@ -710,7 +710,7 @@ namespace GPUInstancer
                 foreach (GPUInstancerRuntimeData runtimeData in runtimeDataList)
                 {
                     // Do not set append buffers if there is no instance of this tree prototype on the terrain
-                    if (runtimeData.bufferSize == 0)
+                    if (runtimeData.bufferSize <= 0)
                         continue;
 
                     if (runtimeData.prototype.treeType != GPUInstancerTreeType.SpeedTree && runtimeData.prototype.treeType != GPUInstancerTreeType.SpeedTree8)
