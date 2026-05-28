@@ -133,6 +133,25 @@ namespace Hecton8.Tests.Editor
         }
 
         [Test]
+        public void SettingsQualityLevel_RoutesToContinuousHomeostasisWeight()
+        {
+            string manager = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "SettingsManager.cs");
+            string panel = ReadProjectFile("Assets", "_Project", "Scripts", "UI", "SettingsPanel.cs");
+            string homeostasis = ReadProjectFile("Assets", "_Project", "Scripts", "Core", "HomeostasisBrain.ScalabilityDictator.cs");
+
+            Assert.That(manager, Does.Contain("MaxContinuousQualityLevel"));
+            Assert.That(manager, Does.Contain("ResolveQualityWeightFromLevel"));
+            Assert.That(manager, Does.Contain("normalized * normalized * (3f - 2f * normalized)"));
+            Assert.That(manager, Does.Contain("HomeostasisBrain.SetUserGlobalQualityWeightPreference(qualityWeight01, true)"));
+            Assert.That(manager, Does.Not.Contain("QualitySettings.SetQualityLevel"));
+            Assert.That(manager, Does.Not.Contain("QualitySettings.names"));
+            Assert.That(panel, Does.Contain("SettingsManager.MaxContinuousQualityLevel"));
+            Assert.That(panel, Does.Contain("ResolveLocalizedQualityName(int qualityIndex)"));
+            Assert.That(panel, Does.Not.Contain("QualitySettings.names"));
+            Assert.That(homeostasis, Does.Contain("SetUserGlobalQualityWeightPreference(float qualityWeight, bool enabled)"));
+        }
+
+        [Test]
         public void FaunaAndGeologyTierNames_DoNotEncodeHardwareQualityForks()
         {
             string cognition = ReadProjectFile("Assets", "_Project", "Scripts", "Fauna", "PredatorCognitionDomain.cs");
