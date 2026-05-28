@@ -173,13 +173,13 @@ Scalability potential: No runtime tier impact; keeps compile surface tighter acr
 Hardware Impact: No runtime cost; reduces C# dependency noise only.
 
 Problem: Final report hashes were invalid after the Quest repair and namespace cleanup.
-Solution: Regenerated `Docs/Reports/APEX_ZERO_GC_SCAN_1407.json`, `Docs/Reports/APEX_FINAL_VERIFICATION_1407.json`, and `Docs/Reports/UNIVERSAL_COMFORT_INTEGRATION_REPORT_1407.json`. Current hashes: APEX final `4D5B62C58F4DA54C10F340DD2890BCFEF8661D215D996BA3C2D8A1BCEB00ABD0`; universal mirror same; zero-GC scan `A6B714E4C8825C0EED7D26BF6D13EDD22C2BAF0B98DD79B4A95539AE6ADA31EB`.
+Solution: Regenerated `Docs/Reports/APEX_ZERO_GC_SCAN_1407.json`, `Docs/Reports/APEX_FINAL_VERIFICATION_1407.json`, and `Docs/Reports/UNIVERSAL_COMFORT_INTEGRATION_REPORT_1407.json`. Current hashes: APEX final `AC465BF33B378206155AD6A842547485C573EA43C4901A14E21197169D50A10A`; universal mirror same; zero-GC scan `A6B714E4C8825C0EED7D26BF6D13EDD22C2BAF0B98DD79B4A95539AE6ADA31EB`.
 Rejected Alternatives: Leaving old JSON in place. It falsely claimed Quest order was correct before the fresh repair.
 Scalability potential: Cold proof artifact only.
 Hardware Impact: No runtime cost.
 
 Problem: Legal compilation gate remained closed after final report regeneration.
-Solution: Sampled CPU at 100 percent and found active `dotnet` PID 32028. `dotnet build` was not launched.
+Solution: Final preflight artifact `Docs/AgentLogs/Build_1407_FinalPreflight.json` sampled CPU at 82 percent and found active `csc` PID 36844 plus active `dotnet` PIDs 32028 and 33780. `dotnet build` was not launched.
 Rejected Alternatives: Running `dotnet build` under CPU >50 percent or active compiler/process contention.
 Scalability potential: Keeps host available for parallel agents.
 Hardware Impact: Avoided additional CPU contention.
