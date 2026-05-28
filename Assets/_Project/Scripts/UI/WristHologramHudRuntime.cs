@@ -725,14 +725,26 @@ namespace Hecton8.UI
 
         private void ReleaseNativeStateHandles()
         {
-            _stateHandle = default;
-            _quadHandle = default;
-            _fontAtlasHandle = default;
-            _telemetryHandle = default;
-            _counterHandle = default;
-            _acousticTapHandle = default;
+            IDataVault vault = _vault;
+            ReleaseWristHudVaultHandle(vault, ref _stateHandle, BufferID.WristHudState);
+            ReleaseWristHudVaultHandle(vault, ref _quadHandle, BufferID.WristHudQuads);
+            ReleaseWristHudVaultHandle(vault, ref _fontAtlasHandle, BufferID.WristHudFontAtlas);
+            ReleaseWristHudVaultHandle(vault, ref _telemetryHandle, BufferID.WristHudTelemetryRing);
+            ReleaseWristHudVaultHandle(vault, ref _counterHandle, BufferID.WristHudCounters);
+            ReleaseWristHudVaultHandle(vault, ref _acousticTapHandle, BufferID.WristHudAcousticTaps);
             _quadBufferCapacity = 0;
             _vault = null;
+        }
+
+        private static void ReleaseWristHudVaultHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID expectedBufferId) where T : unmanaged
+        {
+            if (vault != null && IsExactVaultHandle(in handle, expectedBufferId))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private void ClearSignalBuffers()
@@ -918,7 +930,9 @@ namespace Hecton8.UI
 
         private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : unmanaged
         {
-            return handle.BufferID == unchecked((uint)(int)expectedBufferId) && handle.Generation != 0u;
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+                   handle.SystemID == (uint)SystemID.UI &&
+                   handle.Generation != 0u;
         }
 
         private void EnsureGraphicsResources()
@@ -2334,7 +2348,7 @@ namespace Hecton8.UI
             if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                 return;
 
-            _cachedDataVault = currentService as IDataVault;
+            _cachedDataVault = currentService is IDataVault currentVault ? currentVault : null;
             if (!ReferenceEquals(_vault, _cachedDataVault))
             {
                 PdaProjectorReleaseNativeStateHandles();
@@ -2346,8 +2360,13 @@ namespace Hecton8.UI
 
         private void RefreshCachedRegistryServices()
         {
-            _cachedDataVault = GlobalRegistry.DataVault;
+            CacheDataVaultCold(GlobalRegistry.DataVault);
             RefreshQualityPolicy();
+        }
+
+        private void CacheDataVaultCold(IDataVault vault)
+        {
+            _cachedDataVault = vault;
         }
 
         private void TryRegisterHotSwapListener()

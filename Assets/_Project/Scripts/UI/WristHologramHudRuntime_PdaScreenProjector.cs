@@ -444,14 +444,15 @@ namespace Hecton8.UI
 
         private void PdaProjectorReleaseNativeStateHandles()
         {
-            _pdaProjectionStateHandle = default;
-            _pdaProjectionInputHandle = default;
-            _pdaProjectionTelemetryHandle = default;
-            _pdaProjectionTelemetryCursorHandle = default;
-            _pdaProjectionTuningHandle = default;
-            _pdaProjectionProfileHandle = default;
+            IDataVault vault = _vault;
+            ReleaseWristHudVaultHandle(vault, ref _pdaProjectionStateHandle, PdaProjectionStateBufferId);
+            ReleaseWristHudVaultHandle(vault, ref _pdaProjectionInputHandle, PdaProjectionInputBufferId);
+            ReleaseWristHudVaultHandle(vault, ref _pdaProjectionTelemetryHandle, PdaProjectionTelemetryBufferId);
+            ReleaseWristHudVaultHandle(vault, ref _pdaProjectionTelemetryCursorHandle, PdaProjectionTelemetryCursorBufferId);
+            ReleaseWristHudVaultHandle(vault, ref _pdaProjectionTuningHandle, PdaProjectionTuningBufferId);
+            ReleaseWristHudVaultHandle(vault, ref _pdaProjectionProfileHandle, PdaProjectionProfilesBufferId);
 #if UNITY_EDITOR
-            _pdaProjectionCsvScratchHandle = default;
+            ReleaseWristHudVaultHandle(vault, ref _pdaProjectionCsvScratchHandle, PdaProjectionCsvScratchBufferId);
 #endif
             _pdaProjectionTuningSeeded = false;
             _pdaProjectionDefaultProfilesSeeded = false;
