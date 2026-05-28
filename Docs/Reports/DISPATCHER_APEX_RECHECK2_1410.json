@@ -11,6 +11,46 @@
       "text": "ambientSource.Play();"
     },
     {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "line": 4078,
+      "method": "PublishBuffers",
+      "methodLine": 4061,
+      "text": "Shader.SetGlobalBuffer(_ShinobuBoidMatricesId, matrixBuffer);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "line": 4079,
+      "method": "PublishBuffers",
+      "methodLine": 4061,
+      "text": "Shader.SetGlobalBuffer(_ShinobuBoidCustomDataId, customDataBuffer);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "line": 4081,
+      "method": "PublishBuffers",
+      "methodLine": 4061,
+      "text": "Shader.SetGlobalBuffer(_ShinobuBoidVisibleIndicesId, visibleIndexBuffer);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "line": 4082,
+      "method": "PublishBuffers",
+      "methodLine": 4061,
+      "text": "Shader.SetGlobalInt(_ShinobuBoidActiveCountId, safeActiveCount);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "line": 4083,
+      "method": "PublishBuffers",
+      "methodLine": 4061,
+      "text": "Shader.SetGlobalInt(_ShinobuBoidUseVisibleIndicesId, useVisibleIndices ? 1 : 0);"
+    },
+    {
       "classification": "COLD_OR_LIFECYCLE_NAME",
       "file": "Assets/_Project/Scripts/BaseModule.cs",
       "line": 139,
@@ -140,46 +180,6 @@
     },
     {
       "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
-      "line": 4078,
-      "method": "PublishBuffers",
-      "methodLine": 4061,
-      "text": "Shader.SetGlobalBuffer(_ShinobuBoidMatricesId, matrixBuffer);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
-      "line": 4079,
-      "method": "PublishBuffers",
-      "methodLine": 4061,
-      "text": "Shader.SetGlobalBuffer(_ShinobuBoidCustomDataId, customDataBuffer);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
-      "line": 4081,
-      "method": "PublishBuffers",
-      "methodLine": 4061,
-      "text": "Shader.SetGlobalBuffer(_ShinobuBoidVisibleIndicesId, visibleIndexBuffer);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
-      "line": 4082,
-      "method": "PublishBuffers",
-      "methodLine": 4061,
-      "text": "Shader.SetGlobalInt(_ShinobuBoidActiveCountId, safeActiveCount);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
-      "line": 4083,
-      "method": "PublishBuffers",
-      "methodLine": 4061,
-      "text": "Shader.SetGlobalInt(_ShinobuBoidUseVisibleIndicesId, useVisibleIndices ? 1 : 0);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
       "file": "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorRuntime.cs",
       "line": 1225,
       "method": "PublishGpuSkinningBinding",
@@ -251,6 +251,14 @@
       "text": "Shader.SetGlobalFloat(KineticGpuSkinningId, 0f);"
     },
     {
+      "classification": "COLD_OR_LIFECYCLE_NAME",
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
+      "line": 1104,
+      "method": "ConfigureAudioHostCold",
+      "methodLine": 1082,
+      "text": "_hostSource.Play();"
+    },
+    {
       "classification": "REVIEW_NON_VISUAL_NAME",
       "file": "Assets/_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderRuntime.cs",
       "line": 1027,
@@ -267,12 +275,332 @@
       "text": "Shader.SetGlobalConstantBuffer(ProceduralBoneGlobalsId, _activeShaderGlobalsBuffer, 0, ProceduralBoneShaderGlobalsBytes);"
     },
     {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
+      "line": 1354,
+      "method": "EnsurePlaying",
+      "methodLine": 1349,
+      "text": "source.Play();"
+    },
+    {
+      "classification": "COLD_OR_LIFECYCLE_NAME",
+      "file": "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+      "line": 2049,
+      "method": "ConfigureVoice",
+      "methodLine": 2036,
+      "text": "source.Play();"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+      "line": 2575,
+      "method": "TryPlayStinger",
+      "methodLine": 2539,
+      "text": "_stingerSource.Play();"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/SurfaceWeatherVfxRig.cs",
+      "line": 178,
+      "method": "TriggerSurfaceSplashBurst",
+      "methodLine": 163,
+      "text": "Shader.SetGlobalVector(_SurfaceSplashImpulseId, impulse);"
+    },
+    {
+      "classification": "UNKNOWN_CONTEXT",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 110,
+      "method": "<unknown>",
+      "methodLine": 0,
+      "text": "private AsyncGPUReadbackRequest _readbackRequest0;"
+    },
+    {
+      "classification": "UNKNOWN_CONTEXT",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 111,
+      "method": "<unknown>",
+      "methodLine": 0,
+      "text": "private AsyncGPUReadbackRequest _readbackRequest1;"
+    },
+    {
+      "classification": "UNKNOWN_CONTEXT",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 112,
+      "method": "<unknown>",
+      "methodLine": 0,
+      "text": "private AsyncGPUReadbackRequest _readbackRequest2;"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1284,
+      "method": "ConsumeWaveHeightReadbacks",
+      "methodLine": 1277,
+      "text": "ref AsyncGPUReadbackRequest request = ref ResolveReadbackRequest(slot);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1393,
+      "method": "DispatchWaveHeightReadback",
+      "methodLine": 1316,
+      "text": "ref AsyncGPUReadbackRequest request = ref ResolveReadbackRequest(slot);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1394,
+      "method": "DispatchWaveHeightReadback",
+      "methodLine": 1316,
+      "text": "request = AsyncGPUReadback.Request(resultBuffer, readbackBytes, 0, null);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1558,
+      "method": "HasPendingReadbackRequest",
+      "methodLine": 1551,
+      "text": "ref AsyncGPUReadbackRequest request = ref ResolveReadbackRequest(slot);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1628,
+      "method": "ResolveReadbackRequest",
+      "methodLine": 1628,
+      "text": "private ref AsyncGPUReadbackRequest ResolveReadbackRequest(int slot)"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1917,
+      "method": "PublishShaderGlobals",
+      "methodLine": 1871,
+      "text": "Shader.SetGlobalFloat(OceanTimeId, _timeSeconds);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1918,
+      "method": "PublishShaderGlobals",
+      "methodLine": 1871,
+      "text": "Shader.SetGlobalFloat(OceanQualityId, _globalQualityWeight);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1919,
+      "method": "PublishShaderGlobals",
+      "methodLine": 1871,
+      "text": "Shader.SetGlobalInt(OceanWaveCountId, activeWaveCount);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1920,
+      "method": "PublishShaderGlobals",
+      "methodLine": 1871,
+      "text": "Shader.SetGlobalVector(OceanWeatherId, weatherVector);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1921,
+      "method": "PublishShaderGlobals",
+      "methodLine": 1871,
+      "text": "Shader.SetGlobalVector(OceanRainDisturbanceId, new Vector4(weather.SurfaceScalars.w, weather.SkyTintAndSurge.w, weather.SurfaceScalars.z, 0f));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1922,
+      "method": "PublishShaderGlobals",
+      "methodLine": 1871,
+      "text": "Shader.SetGlobalVector(OceanRayleighId, ToVector4(atmosphere.RayleighBeta));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1923,
+      "method": "PublishShaderGlobals",
+      "methodLine": 1871,
+      "text": "Shader.SetGlobalVector(OceanMieId, ToVector4(atmosphere.MieBeta));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1924,
+      "method": "PublishShaderGlobals",
+      "methodLine": 1871,
+      "text": "Shader.SetGlobalVector(OceanScatteringId, ToVector4(atmosphere.ScatteringParams));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1925,
+      "method": "PublishShaderGlobals",
+      "methodLine": 1871,
+      "text": "Shader.SetGlobalVector(OceanPlanetId, ToVector4(atmosphere.PlanetParams));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1926,
+      "method": "PublishShaderGlobals",
+      "methodLine": 1871,
+      "text": "Shader.SetGlobalVector(OceanLodId, ToVector4(lod.GridParams));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1927,
+      "method": "PublishShaderGlobals",
+      "methodLine": 1871,
+      "text": "Shader.SetGlobalVector(OceanLocalProjectionId, ToVector4(lod.CameraAupLocalXZ));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1928,
+      "method": "PublishShaderGlobals",
+      "methodLine": 1871,
+      "text": "Shader.SetGlobalVector(OceanWavePhaseBase0Id, ToVector4(phase.PhaseBase0));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1929,
+      "method": "PublishShaderGlobals",
+      "methodLine": 1871,
+      "text": "Shader.SetGlobalVector(OceanWavePhaseBase1Id, ToVector4(phase.PhaseBase1));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1930,
+      "method": "PublishShaderGlobals",
+      "methodLine": 1871,
+      "text": "Shader.SetGlobalVector(GlobalFlowVectorId, flowVector);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 1931,
+      "method": "PublishShaderGlobals",
+      "methodLine": 1871,
+      "text": "Shader.SetGlobalVector(H8GlobalFlowId, flowVector);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+      "line": 2011,
+      "method": "BindWaveBufferShaderGlobal",
+      "methodLine": 2008,
+      "text": "Shader.SetGlobalBuffer(OceanWaveBufferId, _activeWaveGraphicsBuffer);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuAtmosphereWaveTunerWindow.cs",
+      "line": 150,
+      "method": "UpdateStatusLabel",
+      "methodLine": 145,
+      "text": "_statusLabel.text = ShinobuOceanSurfaceAtmosphereRuntime.TryGetVaultSnapshot(out _, out _, out _)"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "line": 1879,
+      "method": "PublishWeatherShaderGlobals",
+      "methodLine": 1866,
+      "text": "Shader.SetGlobalFloat(_RainIntensityId, rainIntensity);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "line": 1880,
+      "method": "PublishWeatherShaderGlobals",
+      "methodLine": 1866,
+      "text": "Shader.SetGlobalFloat(_CurrentWaterLevelYId, surfaceY);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "line": 1881,
+      "method": "PublishWeatherShaderGlobals",
+      "methodLine": 1866,
+      "text": "Shader.SetGlobalVector(_GlobalWindId, new Vector4(windDirection.x * windSpeedMps, 0f, windDirection.y * windSpeedMps, windSpeedMps));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "line": 1882,
+      "method": "PublishWeatherShaderGlobals",
+      "methodLine": 1866,
+      "text": "Shader.SetGlobalFloat(_ScreenSpaceRainEnabledId, rainIntensity > 0.0001f ? 1f : 0f);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "line": 1883,
+      "method": "PublishWeatherShaderGlobals",
+      "methodLine": 1866,
+      "text": "Shader.SetGlobalVector("
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "line": 1891,
+      "method": "PublishWeatherShaderGlobals",
+      "methodLine": 1866,
+      "text": "Shader.SetGlobalFloat(_LightningFlashId, math.saturate(_lightningFlashStrength));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "line": 1897,
+      "method": "PublishClearedWeatherShaderGlobals",
+      "methodLine": 1895,
+      "text": "Shader.SetGlobalFloat(_RainIntensityId, 0f);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "line": 1899,
+      "method": "PublishClearedWeatherShaderGlobals",
+      "methodLine": 1895,
+      "text": "Shader.SetGlobalFloat(_LightningFlashId, 0f);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "line": 1900,
+      "method": "PublishClearedWeatherShaderGlobals",
+      "methodLine": 1895,
+      "text": "Shader.SetGlobalFloat(_ScreenSpaceRainEnabledId, 0f);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "line": 1901,
+      "method": "PublishClearedWeatherShaderGlobals",
+      "methodLine": 1895,
+      "text": "Shader.SetGlobalVector(_ScreenSpaceRainParamsId, Vector4.zero);"
+    },
+    {
       "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalSystem.cs",
-      "line": 389,
-      "method": "LateFrameTick",
-      "methodLine": 383,
-      "text": "Shader.SetGlobalFloat(_ShaderSignalStrength, _pendingShaderStrength);"
+      "file": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs",
+      "line": 781,
+      "method": "VisualSyncTick",
+      "methodLine": 776,
+      "text": "Shader.SetGlobalVector(_GasScalarsShaderId, new Vector4(scalar.Oxygen01, scalar.CarbonDioxide01, scalar.Toxin01, scalar.Flow01));"
+    },
+    {
+      "classification": "VISUAL_OR_RENDER_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs",
+      "line": 782,
+      "method": "VisualSyncTick",
+      "methodLine": 776,
+      "text": "Shader.SetGlobalFloat(_GasQualityShaderId, _smoothedQualityWeight01);"
     },
     {
       "classification": "VISUAL_OR_RENDER_NAME",
@@ -308,6 +636,86 @@
     },
     {
       "classification": "VISUAL_OR_RENDER_NAME",
+      "file": "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
+      "line": 1317,
+      "method": "UploadStructuredFlowBuffer",
+      "methodLine": 1292,
+      "text": "Shader.SetGlobalBuffer(s_DrainagePipeEdgeFlowId, target);"
+    },
+    {
+      "classification": "VISUAL_OR_RENDER_NAME",
+      "file": "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
+      "line": 1318,
+      "method": "UploadStructuredFlowBuffer",
+      "methodLine": 1292,
+      "text": "Shader.SetGlobalInt(s_DrainagePipeEdgeCountId, safeCount);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsEditor.cs",
+      "line": 146,
+      "method": "RefreshStatus",
+      "methodLine": 139,
+      "text": "_status.text ="
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsEditor.cs",
+      "line": 156,
+      "method": "RefreshStatus",
+      "methodLine": 139,
+      "text": "_status.text = \"No atmosphere telemetry yet.\";"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereEngine.cs",
+      "line": 320,
+      "method": "RunAirlockEqualizationFakeAsync",
+      "methodLine": 317,
+      "text": "hissAudio.Play();"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs",
+      "line": 278,
+      "method": "PublishDominantStaticToShaderValue",
+      "methodLine": 270,
+      "text": "Shader.SetGlobalFloat(_ShaderSignalStatic, shaderStatic);"
+    },
+    {
+      "classification": "VISUAL_OR_RENDER_NAME",
+      "file": "Assets/_Project/Scripts/AtlasSignal/AtlasSignalSystem.cs",
+      "line": 389,
+      "method": "LateFrameTick",
+      "methodLine": 383,
+      "text": "Shader.SetGlobalFloat(_ShaderSignalStrength, _pendingShaderStrength);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+      "line": 1003,
+      "method": "PublishDensityShaderGlobals",
+      "methodLine": 999,
+      "text": "Shader.SetGlobalTexture(DensityTextureShaderId, _densityTexture);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+      "line": 1009,
+      "method": "PublishDensityShaderGlobals",
+      "methodLine": 999,
+      "text": "Shader.SetGlobalVector(DensityParamsShaderId, densityParams);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+      "line": 1015,
+      "method": "PublishDensityShaderGlobals",
+      "methodLine": 999,
+      "text": "Shader.SetGlobalVector(DensityOriginShaderId, densityOrigin);"
+    },
+    {
+      "classification": "VISUAL_OR_RENDER_NAME",
       "file": "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
       "line": 2034,
       "method": "UploadBonesToGpu",
@@ -321,6 +729,62 @@
       "method": "PublishLeviathanIkGlobals",
       "methodLine": 2117,
       "text": "Shader.SetGlobalConstantBuffer(_LeviathanIkGlobalsId, _activeIkGlobalsBuffer, 0, LeviathanIkGlobalsBytes);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 878,
+      "method": "FlushHabitatVibrationShader",
+      "methodLine": 872,
+      "text": "Shader.SetGlobalFloat(HabitatVibrationId, _pendingHabitatVibrationShader01);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 1150,
+      "method": "FlushBaseEmergencyShader",
+      "methodLine": 1144,
+      "text": "Shader.SetGlobalInt(BaseEmergencyStateId, _pendingBaseEmergencyShaderState);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 1206,
+      "method": "FlushAnalyticalStressShader",
+      "methodLine": 1199,
+      "text": "Shader.SetGlobalVector("
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 1209,
+      "method": "FlushAnalyticalStressShader",
+      "methodLine": 1199,
+      "text": "Shader.SetGlobalVector("
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 1898,
+      "method": "FlushModuleStressShader",
+      "methodLine": 1869,
+      "text": "Shader.SetGlobalBuffer(HabitatModuleStressBufferId, _activeModuleStressBuffer);"
+    },
+    {
+      "classification": "VISUAL_OR_RENDER_NAME",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 1927,
+      "method": "PublishModuleStressShaderVisualSync",
+      "methodLine": 1918,
+      "text": "Shader.SetGlobalVector("
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 6714,
+      "method": "ReleaseModuleStressBuffer",
+      "methodLine": 6696,
+      "text": "Shader.SetGlobalVector(HabitatModuleStressParamsId, Vector4.zero);"
     },
     {
       "classification": "REVIEW_NON_VISUAL_NAME",
@@ -387,6 +851,14 @@
       "text": "renderer.SetPropertyBlock(_errorFeedbackBlock);"
     },
     {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/CaveWallGrowthRuntimeBuilder.cs",
+      "line": 121,
+      "method": "ApplyGrowthVisuals",
+      "methodLine": 108,
+      "text": "renderer.SetPropertyBlock(propertyBlock);"
+    },
+    {
       "classification": "COLD_OR_LIFECYCLE_NAME",
       "file": "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs",
       "line": 749,
@@ -428,67 +900,107 @@
     },
     {
       "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/WorldProceduralScatterDirectorSamplingPipeline.cs",
-      "line": 882,
-      "method": "PublishBiomeInfluenceGrid",
-      "methodLine": 870,
-      "text": "Shader.SetGlobalInt(_ScatterBiomeInfluenceGridCountId, 0);"
+      "file": "Assets/_Project/Scripts/CaveServiceRemnantRuntimeBuilder.cs",
+      "line": 126,
+      "method": "ApplyRemnantVisuals",
+      "methodLine": 112,
+      "text": "renderer.SetPropertyBlock(propertyBlock);"
     },
     {
       "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/WorldProceduralScatterDirectorSamplingPipeline.cs",
-      "line": 890,
-      "method": "PublishBiomeInfluenceGrid",
-      "methodLine": 870,
-      "text": "Shader.SetGlobalBuffer(_ScatterBiomeInfluenceGridId, biomeInfluenceBuffer);"
+      "file": "Assets/_Project/Scripts/CaveSedimentShelfRuntimeBuilder.cs",
+      "line": 127,
+      "method": "ApplyShelfVisuals",
+      "methodLine": 115,
+      "text": "renderer.SetPropertyBlock(propertyBlock);"
     },
     {
       "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/WorldProceduralScatterDirectorSamplingPipeline.cs",
-      "line": 891,
-      "method": "PublishBiomeInfluenceGrid",
-      "methodLine": 870,
-      "text": "Shader.SetGlobalInt(_ScatterBiomeInfluenceGridCountId, totalCells);"
+      "file": "Assets/_Project/Scripts/CaveGlowingTissueRuntimeBuilder.cs",
+      "line": 123,
+      "method": "ApplyTissueVisuals",
+      "methodLine": 108,
+      "text": "renderer.SetPropertyBlock(propertyBlock);"
     },
     {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/WorldProceduralScatterDirectorSamplingPipeline.cs",
-      "line": 892,
-      "method": "PublishBiomeInfluenceGrid",
-      "methodLine": 870,
+      "classification": "VISUAL_OR_RENDER_NAME",
+      "file": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime_HatchLocks.cs",
+      "line": 671,
+      "method": "VisualSyncHatchLocks",
+      "methodLine": 605,
+      "text": "Shader.SetGlobalBuffer(GlobalHatchLockStatesId, readBuffer);"
+    },
+    {
+      "classification": "VISUAL_OR_RENDER_NAME",
+      "file": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime_HatchLocks.cs",
+      "line": 672,
+      "method": "VisualSyncHatchLocks",
+      "methodLine": 605,
       "text": "Shader.SetGlobalVector("
     },
     {
       "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/WorldProceduralScatterDirectorSamplingPipeline.cs",
-      "line": 895,
-      "method": "PublishBiomeInfluenceGrid",
-      "methodLine": 870,
-      "text": "Shader.SetGlobalVector("
+      "file": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime_HatchLocks.cs",
+      "line": 724,
+      "method": "DisableHatchShaderGlobals",
+      "methodLine": 719,
+      "text": "Shader.SetGlobalVector(GlobalHatchLockParamsId, Vector4.zero);"
     },
     {
-      "classification": "COLD_OR_LIFECYCLE_NAME",
-      "file": "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs",
-      "line": 1104,
-      "method": "ConfigureAudioHostCold",
-      "methodLine": 1082,
-      "text": "_hostSource.Play();"
+      "classification": "VISUAL_OR_RENDER_NAME",
+      "file": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime.cs",
+      "line": 1733,
+      "method": "VisualSyncTick",
+      "methodLine": 1645,
+      "text": "Shader.SetGlobalBuffer(GlobalBulkheadStatesId, readBuffer);"
     },
     {
-      "classification": "COLD_OR_LIFECYCLE_NAME",
-      "file": "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
-      "line": 2049,
-      "method": "ConfigureVoice",
-      "methodLine": 2036,
-      "text": "source.Play();"
+      "classification": "VISUAL_OR_RENDER_NAME",
+      "file": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime.cs",
+      "line": 1735,
+      "method": "VisualSyncTick",
+      "methodLine": 1645,
+      "text": "Shader.SetGlobalVector(GlobalBulkheadParamsId, new Vector4(uploadCount, uploadShaderBuffer ? 1f : 0f, _lastFrame, q));"
     },
     {
       "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
-      "line": 2575,
-      "method": "TryPlayStinger",
-      "methodLine": 2539,
-      "text": "_stingerSource.Play();"
+      "file": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime.cs",
+      "line": 1943,
+      "method": "DisableShaderGlobals",
+      "methodLine": 1938,
+      "text": "Shader.SetGlobalVector(GlobalBulkheadParamsId, Vector4.zero);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/BuilderTool.cs",
+      "line": 570,
+      "method": "UpdateScreen",
+      "methodLine": 513,
+      "text": "screenRenderer.SetPropertyBlock(_screenPropBlock, screenMaterialIndex);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Core/DistanceMath.cs",
+      "line": 318,
+      "method": "PushShaderMathLod",
+      "methodLine": 307,
+      "text": "Shader.SetGlobalFloat(_mathLodModePropertyId, high ? 1f : 0f);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Core/DistanceMath.cs",
+      "line": 319,
+      "method": "PushShaderMathLod",
+      "methodLine": 307,
+      "text": "Shader.SetGlobalFloat(_mathLodWeightPropertyId, quality);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Core/DistanceMath.cs",
+      "line": 320,
+      "method": "PushShaderMathLod",
+      "methodLine": 307,
+      "text": "Shader.SetGlobalFloat(_mathLodDistanceSqPropertyId, HighQualityDistanceSq);"
     },
     {
       "classification": "COLD_OR_LIFECYCLE_NAME",
@@ -547,20 +1059,20 @@
       "text": "_statusLabel.text = \"Vault live. Layout: CelestialStateDTO 64B, EnvironmentStateDTO 64B, CelestialTelemetryEntry 64B.\";"
     },
     {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
-      "line": 1317,
-      "method": "UploadStructuredFlowBuffer",
-      "methodLine": 1292,
-      "text": "Shader.SetGlobalBuffer(s_DrainagePipeEdgeFlowId, target);"
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 6995,
+      "method": "PlayOneShot",
+      "methodLine": 6995,
+      "text": "public void PlayOneShot(AudioClip clip)"
     },
     {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
-      "line": 1318,
-      "method": "UploadStructuredFlowBuffer",
-      "methodLine": 1292,
-      "text": "Shader.SetGlobalInt(s_DrainagePipeEdgeCountId, safeCount);"
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 7002,
+      "method": "PlayOneShot",
+      "methodLine": 7002,
+      "text": "public void PlayOneShot(AudioClip clip, float volume)"
     },
     {
       "classification": "COLD_OR_LIFECYCLE_NAME",
@@ -899,60 +1411,12 @@
       "text": "Shader.SetGlobalVector(_GlobalWindDirectionId, Vector4.zero);"
     },
     {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
-      "line": 1352,
-      "method": "UploadVoxelBlendMaskTexture",
-      "methodLine": 1311,
-      "text": "Shader.SetGlobalTexture(HectonVoxelBlendMaskId, _voxelBlendMaskTexture);"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
-      "line": 1353,
-      "method": "UploadVoxelBlendMaskTexture",
-      "methodLine": 1311,
-      "text": "Shader.SetGlobalVector(HectonVoxelBlendMaskRectId, new Vector4(worldMinX, worldMinZ, 1f / worldSizeX, 1f / worldSizeZ));"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
-      "line": 1355,
-      "method": "UploadVoxelBlendMaskTexture",
-      "methodLine": 1311,
-      "text": "Shader.SetGlobalVector(HectonVoxelBlendMaskParamsId, new Vector4(1f, Mathf.Lerp(0.82f, 1f, expensiveWeight), 1f - expensiveWeight, expensiveWeight));"
-    },
-    {
       "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
-      "line": 2074,
-      "method": "ClearVoxelBlendMaskGlobal",
-      "methodLine": 2072,
-      "text": "Shader.SetGlobalVector(HectonVoxelBlendMaskParamsId, Vector4.zero);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
-      "line": 2075,
-      "method": "ClearVoxelBlendMaskGlobal",
-      "methodLine": 2072,
-      "text": "Shader.SetGlobalVector(HectonVoxelBlendMaskRectId, Vector4.zero);"
-    },
-    {
-      "classification": "COLD_OR_LIFECYCLE_NAME",
-      "file": "Assets/_Project/Scripts/WorldGenerativeGeologySeamExecutionDirector.cs",
-      "line": 535,
-      "method": "ConfigureGapDitherVfx",
-      "methodLine": 480,
-      "text": "system.Play(true);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
-      "line": 1354,
-      "method": "EnsurePlaying",
-      "methodLine": 1349,
-      "text": "source.Play();"
+      "file": "Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs",
+      "line": 137,
+      "method": "SetLogisticsPathHighlightActive",
+      "methodLine": 135,
+      "text": "Shader.SetGlobalFloat(s_LogisticsPathHighlightId, active ? 1f : 0f);"
     },
     {
       "classification": "VISUAL_OR_RENDER_NAME",
@@ -1009,862 +1473,6 @@
       "method": "FlushPlayerPredatorAupSlot",
       "methodLine": 1520,
       "text": "Shader.SetGlobalInt(_PredatorAUPCountId, uploadCount);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/WorldCaveDirector.cs",
-      "line": 1188,
-      "method": "ApplyMineralCrustToVolume",
-      "methodLine": 1175,
-      "text": "meshRenderer.SetPropertyBlock(_CaveSurfacePropertyBlock);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs",
-      "line": 278,
-      "method": "PublishDominantStaticToShaderValue",
-      "methodLine": 270,
-      "text": "Shader.SetGlobalFloat(_ShaderSignalStatic, shaderStatic);"
-    },
-    {
-      "classification": "COLD_OR_LIFECYCLE_NAME",
-      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
-      "line": 408,
-      "method": "InitializeScalabilityDictator",
-      "methodLine": 315,
-      "text": "Shader.SetGlobalFloat(_cullingMultiplierId, 1f);"
-    },
-    {
-      "classification": "COLD_OR_LIFECYCLE_NAME",
-      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
-      "line": 436,
-      "method": "ShutdownScalabilityDictator",
-      "methodLine": 414,
-      "text": "Shader.SetGlobalFloat(_globalQualityWeightId, 1f);"
-    },
-    {
-      "classification": "COLD_OR_LIFECYCLE_NAME",
-      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
-      "line": 437,
-      "method": "ShutdownScalabilityDictator",
-      "methodLine": 414,
-      "text": "Shader.SetGlobalFloat(_h8GlobalQualityWeightId, 1f);"
-    },
-    {
-      "classification": "COLD_OR_LIFECYCLE_NAME",
-      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
-      "line": 438,
-      "method": "ShutdownScalabilityDictator",
-      "methodLine": 414,
-      "text": "Shader.SetGlobalFloat(_mathLodLowScalarId, 0f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
-      "line": 1073,
-      "method": "PublishQualityShaderGlobalsImmediate",
-      "methodLine": 1067,
-      "text": "Shader.SetGlobalFloat(_globalQualityWeightId, qualityWeight);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
-      "line": 1074,
-      "method": "PublishQualityShaderGlobalsImmediate",
-      "methodLine": 1067,
-      "text": "Shader.SetGlobalFloat(_h8GlobalQualityWeightId, qualityWeight);"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
-      "line": 1086,
-      "method": "FlushVisualSyncShaderState",
-      "methodLine": 1078,
-      "text": "Shader.SetGlobalFloat(_mathLodLowScalarId, _pendingMathLodLowScalar);"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
-      "line": 1092,
-      "method": "FlushVisualSyncShaderState",
-      "methodLine": 1078,
-      "text": "Shader.SetGlobalFloat(_cullingMultiplierId, _pendingCullingMultiplier);"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
-      "line": 1096,
-      "method": "FlushVisualSyncShaderState",
-      "methodLine": 1078,
-      "text": "Shader.SetGlobalFloat(_globalQualityWeightId, _pendingGlobalQualityWeight);"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
-      "line": 1097,
-      "method": "FlushVisualSyncShaderState",
-      "methodLine": 1078,
-      "text": "Shader.SetGlobalFloat(_h8GlobalQualityWeightId, _pendingGlobalQualityWeight);"
-    },
-    {
-      "classification": "COLD_OR_LIFECYCLE_NAME",
-      "file": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
-      "line": 506,
-      "method": "ResetShaderGlobals",
-      "methodLine": 502,
-      "text": "Shader.SetGlobalVector(_HectonXRFoveatedParamsId, Vector4.zero);"
-    },
-    {
-      "classification": "COLD_OR_LIFECYCLE_NAME",
-      "file": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
-      "line": 507,
-      "method": "ResetShaderGlobals",
-      "methodLine": 502,
-      "text": "Shader.SetGlobalVector(_HectonXRFoveatedCenterRadiusId, Vector4.zero);"
-    },
-    {
-      "classification": "COLD_OR_LIFECYCLE_NAME",
-      "file": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
-      "line": 508,
-      "method": "ResetShaderGlobals",
-      "methodLine": 502,
-      "text": "Shader.SetGlobalVector(_HectonXRNearClipDitherParamsId, Vector4.zero);"
-    },
-    {
-      "classification": "COLD_OR_LIFECYCLE_NAME",
-      "file": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
-      "line": 509,
-      "method": "ResetShaderGlobals",
-      "methodLine": 502,
-      "text": "Shader.SetGlobalVector(_HectonXROriginShiftStateId, Vector4.zero);"
-    },
-    {
-      "classification": "COLD_OR_LIFECYCLE_NAME",
-      "file": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
-      "line": 510,
-      "method": "ResetShaderGlobals",
-      "methodLine": 502,
-      "text": "Shader.SetGlobalVector(_HectonXRCadenceStateId, Vector4.zero);"
-    },
-    {
-      "classification": "COLD_OR_LIFECYCLE_NAME",
-      "file": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
-      "line": 511,
-      "method": "ResetShaderGlobals",
-      "methodLine": 502,
-      "text": "Shader.SetGlobalVector(_HectonXRPoseSyncStateId, Vector4.zero);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
-      "line": 725,
-      "method": "FlushQueuedIfDirty",
-      "methodLine": 716,
-      "text": "Shader.SetGlobalVector(propertyId, pending);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
-      "line": 878,
-      "method": "FlushHabitatVibrationShader",
-      "methodLine": 872,
-      "text": "Shader.SetGlobalFloat(HabitatVibrationId, _pendingHabitatVibrationShader01);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
-      "line": 1150,
-      "method": "FlushBaseEmergencyShader",
-      "methodLine": 1144,
-      "text": "Shader.SetGlobalInt(BaseEmergencyStateId, _pendingBaseEmergencyShaderState);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
-      "line": 1206,
-      "method": "FlushAnalyticalStressShader",
-      "methodLine": 1199,
-      "text": "Shader.SetGlobalVector("
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
-      "line": 1209,
-      "method": "FlushAnalyticalStressShader",
-      "methodLine": 1199,
-      "text": "Shader.SetGlobalVector("
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
-      "line": 1898,
-      "method": "FlushModuleStressShader",
-      "methodLine": 1869,
-      "text": "Shader.SetGlobalBuffer(HabitatModuleStressBufferId, _activeModuleStressBuffer);"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
-      "line": 1927,
-      "method": "PublishModuleStressShaderVisualSync",
-      "methodLine": 1918,
-      "text": "Shader.SetGlobalVector("
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
-      "line": 6714,
-      "method": "ReleaseModuleStressBuffer",
-      "methodLine": 6696,
-      "text": "Shader.SetGlobalVector(HabitatModuleStressParamsId, Vector4.zero);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/SurfaceWeatherVfxRig.cs",
-      "line": 178,
-      "method": "TriggerSurfaceSplashBurst",
-      "methodLine": 163,
-      "text": "Shader.SetGlobalVector(_SurfaceSplashImpulseId, impulse);"
-    },
-    {
-      "classification": "UNKNOWN_CONTEXT",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 110,
-      "method": "<unknown>",
-      "methodLine": 0,
-      "text": "private AsyncGPUReadbackRequest _readbackRequest0;"
-    },
-    {
-      "classification": "UNKNOWN_CONTEXT",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 111,
-      "method": "<unknown>",
-      "methodLine": 0,
-      "text": "private AsyncGPUReadbackRequest _readbackRequest1;"
-    },
-    {
-      "classification": "UNKNOWN_CONTEXT",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 112,
-      "method": "<unknown>",
-      "methodLine": 0,
-      "text": "private AsyncGPUReadbackRequest _readbackRequest2;"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1284,
-      "method": "ConsumeWaveHeightReadbacks",
-      "methodLine": 1277,
-      "text": "ref AsyncGPUReadbackRequest request = ref ResolveReadbackRequest(slot);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1393,
-      "method": "DispatchWaveHeightReadback",
-      "methodLine": 1316,
-      "text": "ref AsyncGPUReadbackRequest request = ref ResolveReadbackRequest(slot);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1394,
-      "method": "DispatchWaveHeightReadback",
-      "methodLine": 1316,
-      "text": "request = AsyncGPUReadback.Request(resultBuffer, readbackBytes, 0, null);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1558,
-      "method": "HasPendingReadbackRequest",
-      "methodLine": 1551,
-      "text": "ref AsyncGPUReadbackRequest request = ref ResolveReadbackRequest(slot);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1628,
-      "method": "ResolveReadbackRequest",
-      "methodLine": 1628,
-      "text": "private ref AsyncGPUReadbackRequest ResolveReadbackRequest(int slot)"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1917,
-      "method": "PublishShaderGlobals",
-      "methodLine": 1871,
-      "text": "Shader.SetGlobalFloat(OceanTimeId, _timeSeconds);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1918,
-      "method": "PublishShaderGlobals",
-      "methodLine": 1871,
-      "text": "Shader.SetGlobalFloat(OceanQualityId, _globalQualityWeight);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1919,
-      "method": "PublishShaderGlobals",
-      "methodLine": 1871,
-      "text": "Shader.SetGlobalInt(OceanWaveCountId, activeWaveCount);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1920,
-      "method": "PublishShaderGlobals",
-      "methodLine": 1871,
-      "text": "Shader.SetGlobalVector(OceanWeatherId, weatherVector);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1921,
-      "method": "PublishShaderGlobals",
-      "methodLine": 1871,
-      "text": "Shader.SetGlobalVector(OceanRainDisturbanceId, new Vector4(weather.SurfaceScalars.w, weather.SkyTintAndSurge.w, weather.SurfaceScalars.z, 0f));"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1922,
-      "method": "PublishShaderGlobals",
-      "methodLine": 1871,
-      "text": "Shader.SetGlobalVector(OceanRayleighId, ToVector4(atmosphere.RayleighBeta));"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1923,
-      "method": "PublishShaderGlobals",
-      "methodLine": 1871,
-      "text": "Shader.SetGlobalVector(OceanMieId, ToVector4(atmosphere.MieBeta));"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1924,
-      "method": "PublishShaderGlobals",
-      "methodLine": 1871,
-      "text": "Shader.SetGlobalVector(OceanScatteringId, ToVector4(atmosphere.ScatteringParams));"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1925,
-      "method": "PublishShaderGlobals",
-      "methodLine": 1871,
-      "text": "Shader.SetGlobalVector(OceanPlanetId, ToVector4(atmosphere.PlanetParams));"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1926,
-      "method": "PublishShaderGlobals",
-      "methodLine": 1871,
-      "text": "Shader.SetGlobalVector(OceanLodId, ToVector4(lod.GridParams));"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1927,
-      "method": "PublishShaderGlobals",
-      "methodLine": 1871,
-      "text": "Shader.SetGlobalVector(OceanLocalProjectionId, ToVector4(lod.CameraAupLocalXZ));"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1928,
-      "method": "PublishShaderGlobals",
-      "methodLine": 1871,
-      "text": "Shader.SetGlobalVector(OceanWavePhaseBase0Id, ToVector4(phase.PhaseBase0));"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1929,
-      "method": "PublishShaderGlobals",
-      "methodLine": 1871,
-      "text": "Shader.SetGlobalVector(OceanWavePhaseBase1Id, ToVector4(phase.PhaseBase1));"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1930,
-      "method": "PublishShaderGlobals",
-      "methodLine": 1871,
-      "text": "Shader.SetGlobalVector(GlobalFlowVectorId, flowVector);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 1931,
-      "method": "PublishShaderGlobals",
-      "methodLine": 1871,
-      "text": "Shader.SetGlobalVector(H8GlobalFlowId, flowVector);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
-      "line": 2011,
-      "method": "BindWaveBufferShaderGlobal",
-      "methodLine": 2008,
-      "text": "Shader.SetGlobalBuffer(OceanWaveBufferId, _activeWaveGraphicsBuffer);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
-      "line": 2408,
-      "method": "ApplyMathPrecisionShaderState",
-      "methodLine": 2402,
-      "text": "Shader.SetGlobalFloat(_mathLodLowBlendId, clampedBlendMilli * 0.001f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
-      "line": 2972,
-      "method": "TickMathPrecisionTransition",
-      "methodLine": 2951,
-      "text": "Shader.SetGlobalFloat(_mathLodLowBlendId, blendMilli * 0.001f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/ShinobuAtmosphereWaveTunerWindow.cs",
-      "line": 150,
-      "method": "UpdateStatusLabel",
-      "methodLine": 145,
-      "text": "_statusLabel.text = ShinobuOceanSurfaceAtmosphereRuntime.TryGetVaultSnapshot(out _, out _, out _)"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
-      "line": 1879,
-      "method": "PublishWeatherShaderGlobals",
-      "methodLine": 1866,
-      "text": "Shader.SetGlobalFloat(_RainIntensityId, rainIntensity);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
-      "line": 1880,
-      "method": "PublishWeatherShaderGlobals",
-      "methodLine": 1866,
-      "text": "Shader.SetGlobalFloat(_CurrentWaterLevelYId, surfaceY);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
-      "line": 1881,
-      "method": "PublishWeatherShaderGlobals",
-      "methodLine": 1866,
-      "text": "Shader.SetGlobalVector(_GlobalWindId, new Vector4(windDirection.x * windSpeedMps, 0f, windDirection.y * windSpeedMps, windSpeedMps));"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
-      "line": 1882,
-      "method": "PublishWeatherShaderGlobals",
-      "methodLine": 1866,
-      "text": "Shader.SetGlobalFloat(_ScreenSpaceRainEnabledId, rainIntensity > 0.0001f ? 1f : 0f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
-      "line": 1883,
-      "method": "PublishWeatherShaderGlobals",
-      "methodLine": 1866,
-      "text": "Shader.SetGlobalVector("
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
-      "line": 1891,
-      "method": "PublishWeatherShaderGlobals",
-      "methodLine": 1866,
-      "text": "Shader.SetGlobalFloat(_LightningFlashId, math.saturate(_lightningFlashStrength));"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
-      "line": 1897,
-      "method": "PublishClearedWeatherShaderGlobals",
-      "methodLine": 1895,
-      "text": "Shader.SetGlobalFloat(_RainIntensityId, 0f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
-      "line": 1899,
-      "method": "PublishClearedWeatherShaderGlobals",
-      "methodLine": 1895,
-      "text": "Shader.SetGlobalFloat(_LightningFlashId, 0f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
-      "line": 1900,
-      "method": "PublishClearedWeatherShaderGlobals",
-      "methodLine": 1895,
-      "text": "Shader.SetGlobalFloat(_ScreenSpaceRainEnabledId, 0f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
-      "line": 1901,
-      "method": "PublishClearedWeatherShaderGlobals",
-      "methodLine": 1895,
-      "text": "Shader.SetGlobalVector(_ScreenSpaceRainParamsId, Vector4.zero);"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime_HatchLocks.cs",
-      "line": 671,
-      "method": "VisualSyncHatchLocks",
-      "methodLine": 605,
-      "text": "Shader.SetGlobalBuffer(GlobalHatchLockStatesId, readBuffer);"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime_HatchLocks.cs",
-      "line": 672,
-      "method": "VisualSyncHatchLocks",
-      "methodLine": 605,
-      "text": "Shader.SetGlobalVector("
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime_HatchLocks.cs",
-      "line": 724,
-      "method": "DisableHatchShaderGlobals",
-      "methodLine": 719,
-      "text": "Shader.SetGlobalVector(GlobalHatchLockParamsId, Vector4.zero);"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs",
-      "line": 781,
-      "method": "VisualSyncTick",
-      "methodLine": 776,
-      "text": "Shader.SetGlobalVector(_GasScalarsShaderId, new Vector4(scalar.Oxygen01, scalar.CarbonDioxide01, scalar.Toxin01, scalar.Flow01));"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsRuntime.cs",
-      "line": 782,
-      "method": "VisualSyncTick",
-      "methodLine": 776,
-      "text": "Shader.SetGlobalFloat(_GasQualityShaderId, _smoothedQualityWeight01);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
-      "line": 1003,
-      "method": "PublishDensityShaderGlobals",
-      "methodLine": 999,
-      "text": "Shader.SetGlobalTexture(DensityTextureShaderId, _densityTexture);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
-      "line": 1009,
-      "method": "PublishDensityShaderGlobals",
-      "methodLine": 999,
-      "text": "Shader.SetGlobalVector(DensityParamsShaderId, densityParams);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
-      "line": 1015,
-      "method": "PublishDensityShaderGlobals",
-      "methodLine": 999,
-      "text": "Shader.SetGlobalVector(DensityOriginShaderId, densityOrigin);"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime.cs",
-      "line": 1733,
-      "method": "VisualSyncTick",
-      "methodLine": 1645,
-      "text": "Shader.SetGlobalBuffer(GlobalBulkheadStatesId, readBuffer);"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime.cs",
-      "line": 1735,
-      "method": "VisualSyncTick",
-      "methodLine": 1645,
-      "text": "Shader.SetGlobalVector(GlobalBulkheadParamsId, new Vector4(uploadCount, uploadShaderBuffer ? 1f : 0f, _lastFrame, q));"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime.cs",
-      "line": 1943,
-      "method": "DisableShaderGlobals",
-      "methodLine": 1938,
-      "text": "Shader.SetGlobalVector(GlobalBulkheadParamsId, Vector4.zero);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsEditor.cs",
-      "line": 146,
-      "method": "RefreshStatus",
-      "methodLine": 139,
-      "text": "_status.text ="
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsEditor.cs",
-      "line": 156,
-      "method": "RefreshStatus",
-      "methodLine": 139,
-      "text": "_status.text = \"No atmosphere telemetry yet.\";"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereEngine.cs",
-      "line": 320,
-      "method": "RunAirlockEqualizationFakeAsync",
-      "methodLine": 317,
-      "text": "hissAudio.Play();"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/CaveGlowingTissueRuntimeBuilder.cs",
-      "line": 123,
-      "method": "ApplyTissueVisuals",
-      "methodLine": 108,
-      "text": "renderer.SetPropertyBlock(propertyBlock);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/DistanceMath.cs",
-      "line": 318,
-      "method": "PushShaderMathLod",
-      "methodLine": 307,
-      "text": "Shader.SetGlobalFloat(_mathLodModePropertyId, high ? 1f : 0f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/DistanceMath.cs",
-      "line": 319,
-      "method": "PushShaderMathLod",
-      "methodLine": 307,
-      "text": "Shader.SetGlobalFloat(_mathLodWeightPropertyId, quality);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/DistanceMath.cs",
-      "line": 320,
-      "method": "PushShaderMathLod",
-      "methodLine": 307,
-      "text": "Shader.SetGlobalFloat(_mathLodDistanceSqPropertyId, HighQualityDistanceSq);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/BuilderTool.cs",
-      "line": 570,
-      "method": "UpdateScreen",
-      "methodLine": 513,
-      "text": "screenRenderer.SetPropertyBlock(_screenPropBlock, screenMaterialIndex);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/CaveWallGrowthRuntimeBuilder.cs",
-      "line": 121,
-      "method": "ApplyGrowthVisuals",
-      "methodLine": 108,
-      "text": "renderer.SetPropertyBlock(propertyBlock);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/CaveServiceRemnantRuntimeBuilder.cs",
-      "line": 126,
-      "method": "ApplyRemnantVisuals",
-      "methodLine": 112,
-      "text": "renderer.SetPropertyBlock(propertyBlock);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/CaveSedimentShelfRuntimeBuilder.cs",
-      "line": 127,
-      "method": "ApplyShelfVisuals",
-      "methodLine": 115,
-      "text": "renderer.SetPropertyBlock(propertyBlock);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
-      "line": 6995,
-      "method": "PlayOneShot",
-      "methodLine": 6995,
-      "text": "public void PlayOneShot(AudioClip clip)"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
-      "line": 7002,
-      "method": "PlayOneShot",
-      "methodLine": 7002,
-      "text": "public void PlayOneShot(AudioClip clip, float volume)"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Dev/HabitatStressSmokeTester.cs",
-      "line": 405,
-      "method": "UploadShaderPayload",
-      "methodLine": 394,
-      "text": "s_shaderAmbiencePayloadBuffer.SetData(s_shaderAmbiencePayload);"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Dev/HabitatStressSmokeTester.cs",
-      "line": 406,
-      "method": "UploadShaderPayload",
-      "methodLine": 394,
-      "text": "s_shaderPayloadBuffer.SetData(s_shaderPayload);"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Dev/HabitatStressSmokeTester.cs",
-      "line": 407,
-      "method": "UploadShaderPayload",
-      "methodLine": 394,
-      "text": "Shader.SetGlobalBuffer(s_ModuleAmbienceDataId, s_shaderAmbiencePayloadBuffer);"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Dev/HabitatStressSmokeTester.cs",
-      "line": 408,
-      "method": "UploadShaderPayload",
-      "methodLine": 394,
-      "text": "Shader.SetGlobalBuffer(s_ModuleWaterLevelsId, s_shaderPayloadBuffer);"
-    },
-    {
-      "classification": "COLD_OR_LIFECYCLE_NAME",
-      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-      "line": 741,
-      "method": "ResetStaticState",
-      "methodLine": 697,
-      "text": "Shader.SetGlobalFloat(_HectonFreezeFrameDitherId, 0f);"
-    },
-    {
-      "classification": "COLD_OR_LIFECYCLE_NAME",
-      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-      "line": 742,
-      "method": "ResetStaticState",
-      "methodLine": 697,
-      "text": "Shader.SetGlobalFloat(_GamePausedId, 0f);"
-    },
-    {
-      "classification": "COLD_OR_LIFECYCLE_NAME",
-      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-      "line": 743,
-      "method": "ResetStaticState",
-      "methodLine": 697,
-      "text": "Shader.SetGlobalFloat(_HectonVisualStaticGlitchId, 0f);"
-    },
-    {
-      "classification": "COLD_OR_LIFECYCLE_NAME",
-      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-      "line": 744,
-      "method": "ResetStaticState",
-      "methodLine": 697,
-      "text": "Shader.SetGlobalFloat(_HectonVisualStaticGlitchSeedId, 0f);"
-    },
-    {
-      "classification": "COLD_OR_LIFECYCLE_NAME",
-      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-      "line": 745,
-      "method": "ResetStaticState",
-      "methodLine": 697,
-      "text": "Shader.SetGlobalFloat(_SimulationBucketInterpolationAlphaId, 0f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-      "line": 1770,
-      "method": "IsAsyncReadbackReadyNoWait",
-      "methodLine": 1770,
-      "text": "public static bool IsAsyncReadbackReadyNoWait(AsyncGPUReadbackRequest request, out byte statusFlags)"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-      "line": 5261,
-      "method": "FlushSimulationBucketVisualSync",
-      "methodLine": 5255,
-      "text": "Shader.SetGlobalFloat(_SimulationBucketInterpolationAlphaId, _pendingSimulationBucketInterpolationAlpha);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-      "line": 5905,
-      "method": "UpdatePauseFreezeFrameDitherState",
-      "methodLine": 5897,
-      "text": "Shader.SetGlobalFloat(_HectonFreezeFrameDitherId, paused ? 1f : 0f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-      "line": 5906,
-      "method": "UpdatePauseFreezeFrameDitherState",
-      "methodLine": 5897,
-      "text": "Shader.SetGlobalFloat(_GamePausedId, paused ? 1f : 0f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-      "line": 5931,
-      "method": "UpdateVisualStaticGlitchState",
-      "methodLine": 5924,
-      "text": "Shader.SetGlobalFloat(_HectonVisualStaticGlitchSeedId, CurrentFrameIndex & 1023);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-      "line": 5937,
-      "method": "UpdateVisualStaticGlitchState",
-      "methodLine": 5924,
-      "text": "Shader.SetGlobalFloat(_HectonVisualStaticGlitchId, 0f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-      "line": 5938,
-      "method": "UpdateVisualStaticGlitchState",
-      "methodLine": 5924,
-      "text": "Shader.SetGlobalFloat(_HectonVisualStaticGlitchSeedId, 0f);"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-      "line": 7172,
-      "method": "RestorePendingRenderSettings",
-      "methodLine": 7054,
-      "text": "destination.SetData(source, 0, 0, safeCount);"
-    },
-    {
-      "classification": "VISUAL_OR_RENDER_NAME",
-      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-      "line": 7184,
-      "method": "RestorePendingRenderSettings",
-      "methodLine": 7054,
-      "text": "destination.SetData(source, 0, 0, safeCount);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/ConnectionSplineBatchRenderer.cs",
-      "line": 137,
-      "method": "SetLogisticsPathHighlightActive",
-      "methodLine": 135,
-      "text": "Shader.SetGlobalFloat(s_LogisticsPathHighlightId, active ? 1f : 0f);"
     },
     {
       "classification": "REVIEW_NON_VISUAL_NAME",
@@ -2401,27 +2009,420 @@
       "method": "UpdateGlobalShaderData",
       "methodLine": 6164,
       "text": "Shader.SetGlobalFloat(_ID_CelestialAtmosphereLutReady, _celestialAtmosphereLutTexture != null ? 1f : 0f);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6200,
+      "method": "UpdateGlobalShaderData",
+      "methodLine": 6164,
+      "text": "Shader.SetGlobalFloat(_ID_AtmosphereExposure, _currentAtmosphereExposure);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6201,
+      "method": "UpdateGlobalShaderData",
+      "methodLine": 6164,
+      "text": "Shader.SetGlobalFloat(_ID_StarSeed, _resolvedStarMapSeed);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6202,
+      "method": "UpdateGlobalShaderData",
+      "methodLine": 6164,
+      "text": "Shader.SetGlobalFloat(_ID_CelestialHorizonDensity, horizonDensity);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6203,
+      "method": "UpdateGlobalShaderData",
+      "methodLine": 6164,
+      "text": "Shader.SetGlobalFloat(_ID_CelestialZenithTransparency, zenithTransparency);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6204,
+      "method": "UpdateGlobalShaderData",
+      "methodLine": 6164,
+      "text": "Shader.SetGlobalFloat(_ID_CelestialAtmosphereBlendPower, atmosphereBlendPower);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6205,
+      "method": "UpdateGlobalShaderData",
+      "methodLine": 6164,
+      "text": "Shader.SetGlobalFloat(_ID_GameTime, _gameTime);"
+    },
+    {
+      "classification": "VISUAL_OR_RENDER_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6260,
+      "method": "UploadStormCloudDensityShaderGlobal",
+      "methodLine": 6252,
+      "text": "Shader.SetGlobalFloat(_ID_HectonStormCloudDensity, safeStormCloudDensity01);"
+    },
+    {
+      "classification": "VISUAL_OR_RENDER_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6290,
+      "method": "UploadLightningFlashShaderGlobal",
+      "methodLine": 6282,
+      "text": "Shader.SetGlobalFloat(_ID_HectonLightningFlash, safeLightningFlash01);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6321,
+      "method": "PublishSkyRotationAndOccluders",
+      "methodLine": 6308,
+      "text": "Shader.SetGlobalMatrix(_ID_HectonSkyRotation, skyRotation);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6355,
+      "method": "PublishSkyRotationAndOccluders",
+      "methodLine": 6308,
+      "text": "Shader.SetGlobalInt(_ID_HectonSkyOccluderCount, occluderCount);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6356,
+      "method": "PublishSkyRotationAndOccluders",
+      "methodLine": 6308,
+      "text": "Shader.SetGlobalVectorArray(_ID_HectonSkyOccluders, _skyOccluders);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6373,
+      "method": "PublishOceanCelestialProjectionGlobals",
+      "methodLine": 6359,
+      "text": "Shader.SetGlobalVector("
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6376,
+      "method": "PublishOceanCelestialProjectionGlobals",
+      "methodLine": 6359,
+      "text": "Shader.SetGlobalVector("
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6383,
+      "method": "PublishOceanCelestialProjectionGlobals",
+      "methodLine": 6359,
+      "text": "Shader.SetGlobalVector("
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6390,
+      "method": "PublishOceanCelestialProjectionGlobals",
+      "methodLine": 6359,
+      "text": "Shader.SetGlobalVector("
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6563,
+      "method": "UpdateAegirMaterial",
+      "methodLine": 6525,
+      "text": "aegirRenderer.SetPropertyBlock(_aegirMPB);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6595,
+      "method": "UpdateMoonMaterialOverrides",
+      "methodLine": 6572,
+      "text": "moonRenderer.SetPropertyBlock(_moonMPB);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6621,
+      "method": "UpdatePlanetShine",
+      "methodLine": 6600,
+      "text": "Shader.SetGlobalVector("
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6624,
+      "method": "UpdatePlanetShine",
+      "methodLine": 6600,
+      "text": "Shader.SetGlobalFloat(_ID_HectonCelestialPlanetShineIntensity, intensity);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 6625,
+      "method": "UpdatePlanetShine",
+      "methodLine": 6600,
+      "text": "Shader.SetGlobalColor(_ID_HectonCelestialPlanetShineColor, planetShineColor);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "line": 1315,
+      "method": "SyncCycleFromEditorSunTransform",
+      "methodLine": 1285,
+      "text": "Shader.SetGlobalVector("
+    },
+    {
+      "classification": "COLD_OR_LIFECYCLE_NAME",
+      "file": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "line": 1637,
+      "method": "ResetCycleShaderGlobals",
+      "methodLine": 1626,
+      "text": "Shader.SetGlobalFloat(_shaderID_HectonTimeOfDay01, 0f);"
+    },
+    {
+      "classification": "COLD_OR_LIFECYCLE_NAME",
+      "file": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "line": 1638,
+      "method": "ResetCycleShaderGlobals",
+      "methodLine": 1626,
+      "text": "Shader.SetGlobalFloat(_shaderID_HectonNightFactor, 0f);"
+    },
+    {
+      "classification": "COLD_OR_LIFECYCLE_NAME",
+      "file": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "line": 1639,
+      "method": "ResetCycleShaderGlobals",
+      "methodLine": 1626,
+      "text": "Shader.SetGlobalFloat(_shaderID_SargassumBiolumPhaseMultiplier, HectonVegetationConstants.SargassumBiolumPhaseMultiplier);"
+    },
+    {
+      "classification": "COLD_OR_LIFECYCLE_NAME",
+      "file": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "line": 1640,
+      "method": "ResetCycleShaderGlobals",
+      "methodLine": 1626,
+      "text": "Shader.SetGlobalVector(_shaderID_FinalGiantAbyssLight, Vector4.zero);"
+    },
+    {
+      "classification": "COLD_OR_LIFECYCLE_NAME",
+      "file": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "line": 1641,
+      "method": "ResetCycleShaderGlobals",
+      "methodLine": 1626,
+      "text": "Shader.SetGlobalVector(_shaderID_AegirDirection, new Vector4(0f, 0f, 1f, 0f));"
+    },
+    {
+      "classification": "VISUAL_OR_RENDER_NAME",
+      "file": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "line": 1662,
+      "method": "FlushSunPresentation",
+      "methodLine": 1644,
+      "text": "Shader.SetGlobalVector(_shaderID_SunDirection, new Vector4(sunForward.x, sunForward.y, sunForward.z, 0f));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "line": 1675,
+      "method": "FlushCycleShaderGlobals",
+      "methodLine": 1665,
+      "text": "Shader.SetGlobalFloat(_shaderID_HectonTimeOfDay01, _pendingShaderTimeOfDay01);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "line": 1681,
+      "method": "FlushCycleShaderGlobals",
+      "methodLine": 1665,
+      "text": "Shader.SetGlobalFloat(_shaderID_HectonNightFactor, _pendingShaderNightFactor);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "line": 1688,
+      "method": "FlushCycleShaderGlobals",
+      "methodLine": 1665,
+      "text": "Shader.SetGlobalFloat(_shaderID_SargassumBiolumPhaseMultiplier, _pendingShaderSargassumBiolumPhaseMultiplier);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "line": 1907,
+      "method": "PublishGiantAbyssLight",
+      "methodLine": 1864,
+      "text": "Shader.SetGlobalVector(_shaderID_FinalGiantAbyssLight, new Vector4(finalPayload.x, finalPayload.y, finalPayload.z, finalPayload.w));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "line": 1915,
+      "method": "PublishGiantAbyssLight",
+      "methodLine": 1864,
+      "text": "Shader.SetGlobalVector(_shaderID_AegirDirection, new Vector4(directionPayload.x, directionPayload.y, directionPayload.z, directionPayload.w));"
+    },
+    {
+      "classification": "VISUAL_OR_RENDER_NAME",
+      "file": "Assets/_Project/Scripts/Dev/HabitatStressSmokeTester.cs",
+      "line": 405,
+      "method": "UploadShaderPayload",
+      "methodLine": 394,
+      "text": "s_shaderAmbiencePayloadBuffer.SetData(s_shaderAmbiencePayload);"
+    },
+    {
+      "classification": "VISUAL_OR_RENDER_NAME",
+      "file": "Assets/_Project/Scripts/Dev/HabitatStressSmokeTester.cs",
+      "line": 406,
+      "method": "UploadShaderPayload",
+      "methodLine": 394,
+      "text": "s_shaderPayloadBuffer.SetData(s_shaderPayload);"
+    },
+    {
+      "classification": "VISUAL_OR_RENDER_NAME",
+      "file": "Assets/_Project/Scripts/Dev/HabitatStressSmokeTester.cs",
+      "line": 407,
+      "method": "UploadShaderPayload",
+      "methodLine": 394,
+      "text": "Shader.SetGlobalBuffer(s_ModuleAmbienceDataId, s_shaderAmbiencePayloadBuffer);"
+    },
+    {
+      "classification": "VISUAL_OR_RENDER_NAME",
+      "file": "Assets/_Project/Scripts/Dev/HabitatStressSmokeTester.cs",
+      "line": 408,
+      "method": "UploadShaderPayload",
+      "methodLine": 394,
+      "text": "Shader.SetGlobalBuffer(s_ModuleWaterLevelsId, s_shaderPayloadBuffer);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/InteractionHighlighter.cs",
+      "line": 563,
+      "method": "ApplyImmediate",
+      "methodLine": 532,
+      "text": "rend.SetPropertyBlock(_block);"
+    },
+    {
+      "classification": "COLD_OR_LIFECYCLE_NAME",
+      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "line": 741,
+      "method": "ResetStaticState",
+      "methodLine": 697,
+      "text": "Shader.SetGlobalFloat(_HectonFreezeFrameDitherId, 0f);"
+    },
+    {
+      "classification": "COLD_OR_LIFECYCLE_NAME",
+      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "line": 742,
+      "method": "ResetStaticState",
+      "methodLine": 697,
+      "text": "Shader.SetGlobalFloat(_GamePausedId, 0f);"
+    },
+    {
+      "classification": "COLD_OR_LIFECYCLE_NAME",
+      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "line": 743,
+      "method": "ResetStaticState",
+      "methodLine": 697,
+      "text": "Shader.SetGlobalFloat(_HectonVisualStaticGlitchId, 0f);"
+    },
+    {
+      "classification": "COLD_OR_LIFECYCLE_NAME",
+      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "line": 744,
+      "method": "ResetStaticState",
+      "methodLine": 697,
+      "text": "Shader.SetGlobalFloat(_HectonVisualStaticGlitchSeedId, 0f);"
+    },
+    {
+      "classification": "COLD_OR_LIFECYCLE_NAME",
+      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "line": 745,
+      "method": "ResetStaticState",
+      "methodLine": 697,
+      "text": "Shader.SetGlobalFloat(_SimulationBucketInterpolationAlphaId, 0f);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "line": 1770,
+      "method": "IsAsyncReadbackReadyNoWait",
+      "methodLine": 1770,
+      "text": "public static bool IsAsyncReadbackReadyNoWait(AsyncGPUReadbackRequest request, out byte statusFlags)"
+    },
+    {
+      "classification": "VISUAL_OR_RENDER_NAME",
+      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "line": 5261,
+      "method": "FlushSimulationBucketVisualSync",
+      "methodLine": 5255,
+      "text": "Shader.SetGlobalFloat(_SimulationBucketInterpolationAlphaId, _pendingSimulationBucketInterpolationAlpha);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "line": 5906,
+      "method": "UpdatePauseFreezeFrameDitherState",
+      "methodLine": 5898,
+      "text": "Shader.SetGlobalFloat(_HectonFreezeFrameDitherId, paused ? 1f : 0f);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "line": 5907,
+      "method": "UpdatePauseFreezeFrameDitherState",
+      "methodLine": 5898,
+      "text": "Shader.SetGlobalFloat(_GamePausedId, paused ? 1f : 0f);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "line": 5932,
+      "method": "UpdateVisualStaticGlitchState",
+      "methodLine": 5925,
+      "text": "Shader.SetGlobalFloat(_HectonVisualStaticGlitchSeedId, CurrentFrameIndex & 1023);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "line": 5938,
+      "method": "UpdateVisualStaticGlitchState",
+      "methodLine": 5925,
+      "text": "Shader.SetGlobalFloat(_HectonVisualStaticGlitchId, 0f);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+      "line": 5939,
+      "method": "UpdateVisualStaticGlitchState",
+      "methodLine": 5925,
+      "text": "Shader.SetGlobalFloat(_HectonVisualStaticGlitchSeedId, 0f);"
     }
   ],
   "classificationCounts": {
     "COLD_OR_LIFECYCLE_NAME": 99,
-    "REVIEW_NON_VISUAL_NAME": 1004,
+    "REVIEW_NON_VISUAL_NAME": 1002,
     "UNKNOWN_CONTEXT": 13,
-    "VISUAL_OR_RENDER_NAME": 221
+    "VISUAL_OR_RENDER_NAME": 222
   },
   "directHotOrMagicTokenLineCount": 0,
   "directHotOrMagicTokenLines": [],
   "editorSuffixMagicMethodExclusionCount": 1,
-  "elapsedMicroseconds": 2348857,
+  "elapsedMicroseconds": 1200105,
   "generatedLocalDate": "2026-05-28",
   "manualTriageNotes": [
     "AnalyticalWaveTunerWindow.Editor.cs has Update() but is wrapped in #if UNITY_EDITOR and excluded from runtime count.",
+    "GlobalRegistry math-precision transition no longer writes Shader.SetGlobalFloat from TickMathPrecisionTransition; GlobalRegistry.FlushMathPrecisionShaderState is the visual-sync upload site.",
     "HectonSurfaceWeatherDirector.PublishWeatherShaderGlobals is drained by LateFrameTick via FlushWeatherShaderGlobals.",
     "ShinobuOceanSurfaceAtmosphereRuntime.PublishShaderGlobals/DispatchWaveHeightReadback are invoked from LateFrameTick after Tick sets dirty flags; OnEnable initial publish is cold lifecycle.",
     "BaseModule visual/audio shader calls are drained by LateFrameTick or lifecycle enable/disable, not by FixedTick/Tick direct token placement."
   ],
   "reportType": "APEX_RECHECK2_RG_FIRST_PRESENTATION_AUDIT",
-  "reviewNonVisualNameTokenLineCount": 1004,
+  "reviewNonVisualNameTokenLineCount": 1002,
   "reviewNonVisualNameTokenLinesCapped": [
     {
       "classification": "REVIEW_NON_VISUAL_NAME",
@@ -2430,6 +2431,46 @@
       "method": "FlushAmbientLoopState",
       "methodLine": 2642,
       "text": "ambientSource.Play();"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "line": 4078,
+      "method": "PublishBuffers",
+      "methodLine": 4061,
+      "text": "Shader.SetGlobalBuffer(_ShinobuBoidMatricesId, matrixBuffer);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "line": 4079,
+      "method": "PublishBuffers",
+      "methodLine": 4061,
+      "text": "Shader.SetGlobalBuffer(_ShinobuBoidCustomDataId, customDataBuffer);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "line": 4081,
+      "method": "PublishBuffers",
+      "methodLine": 4061,
+      "text": "Shader.SetGlobalBuffer(_ShinobuBoidVisibleIndicesId, visibleIndexBuffer);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "line": 4082,
+      "method": "PublishBuffers",
+      "methodLine": 4061,
+      "text": "Shader.SetGlobalInt(_ShinobuBoidActiveCountId, safeActiveCount);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+      "line": 4083,
+      "method": "PublishBuffers",
+      "methodLine": 4061,
+      "text": "Shader.SetGlobalInt(_ShinobuBoidUseVisibleIndicesId, useVisibleIndices ? 1 : 0);"
     },
     {
       "classification": "REVIEW_NON_VISUAL_NAME",
@@ -2502,46 +2543,6 @@
       "method": "FlushParasiteSporeVfxState",
       "methodLine": 5153,
       "text": "parasiteSporeVfx.Play(true);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
-      "line": 4078,
-      "method": "PublishBuffers",
-      "methodLine": 4061,
-      "text": "Shader.SetGlobalBuffer(_ShinobuBoidMatricesId, matrixBuffer);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
-      "line": 4079,
-      "method": "PublishBuffers",
-      "methodLine": 4061,
-      "text": "Shader.SetGlobalBuffer(_ShinobuBoidCustomDataId, customDataBuffer);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
-      "line": 4081,
-      "method": "PublishBuffers",
-      "methodLine": 4061,
-      "text": "Shader.SetGlobalBuffer(_ShinobuBoidVisibleIndicesId, visibleIndexBuffer);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
-      "line": 4082,
-      "method": "PublishBuffers",
-      "methodLine": 4061,
-      "text": "Shader.SetGlobalInt(_ShinobuBoidActiveCountId, safeActiveCount);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
-      "line": 4083,
-      "method": "PublishBuffers",
-      "methodLine": 4061,
-      "text": "Shader.SetGlobalInt(_ShinobuBoidUseVisibleIndicesId, useVisibleIndices ? 1 : 0);"
     },
     {
       "classification": "REVIEW_NON_VISUAL_NAME",
@@ -2633,430 +2634,6 @@
     },
     {
       "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Fauna/LeviathanTentacleVerletSolver.cs",
-      "line": 1359,
-      "method": "PublishTentacleShaderGlobals",
-      "methodLine": 1348,
-      "text": "Shader.SetGlobalBuffer(_AbyssalFlowFieldId, _gpuAbyssalFlowFieldBuffer);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Fauna/LeviathanTentacleVerletSolver.cs",
-      "line": 1396,
-      "method": "PublishTentacleGlobals",
-      "methodLine": 1376,
-      "text": "Shader.SetGlobalConstantBuffer(_TentacleGlobalsId, _activeTentacleGlobalsBuffer, 0, TentacleShaderGlobalsBytes);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
-      "line": 2137,
-      "method": "PublishLeviathanIkGlobals",
-      "methodLine": 2117,
-      "text": "Shader.SetGlobalConstantBuffer(_LeviathanIkGlobalsId, _activeIkGlobalsBuffer, 0, LeviathanIkGlobalsBytes);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Fauna/CreatureDamageManager.cs",
-      "line": 240,
-      "method": "PublishShaderGlobals",
-      "methodLine": 232,
-      "text": "Shader.SetGlobalFloat(WoundCountId, _woundCount);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Fauna/CreatureDamageManager.cs",
-      "line": 243,
-      "method": "PublishShaderGlobals",
-      "methodLine": 232,
-      "text": "Shader.SetGlobalVectorArray(WoundsId, _woundUpload);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Fauna/CreatureDamageManager.cs",
-      "line": 248,
-      "method": "PublishShaderGlobals",
-      "methodLine": 232,
-      "text": "Shader.SetGlobalMatrix(WoundOwnerWorldToLocalId, ownerTransform.worldToLocalMatrix);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Fauna/CreatureDamageManager.cs",
-      "line": 258,
-      "method": "PublishShaderGlobals",
-      "methodLine": 232,
-      "text": "Shader.SetGlobalVector(WoundOwnerSphereId, new Vector4(ownerCenterWS.x, ownerCenterWS.y, ownerCenterWS.z, ownerRadius));"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Fauna/CreatureDamageManager.cs",
-      "line": 277,
-      "method": "ClearShaderGlobals",
-      "methodLine": 275,
-      "text": "Shader.SetGlobalFloat(WoundCountId, 0f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Fauna/CreatureDamageManager.cs",
-      "line": 278,
-      "method": "ClearShaderGlobals",
-      "methodLine": 275,
-      "text": "Shader.SetGlobalVector(WoundOwnerSphereId, Vector4.zero);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Fabricator.cs",
-      "line": 3308,
-      "method": "UpdateWeldingAudioLoop",
-      "methodLine": 3274,
-      "text": "source.Play();"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Fabricator.cs",
-      "line": 3349,
-      "method": "FlushApplyErrorFeedback",
-      "methodLine": 3332,
-      "text": "renderer.SetPropertyBlock(_errorFeedbackBlock);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/WorldProceduralScatterDirectorSamplingPipeline.cs",
-      "line": 882,
-      "method": "PublishBiomeInfluenceGrid",
-      "methodLine": 870,
-      "text": "Shader.SetGlobalInt(_ScatterBiomeInfluenceGridCountId, 0);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/WorldProceduralScatterDirectorSamplingPipeline.cs",
-      "line": 890,
-      "method": "PublishBiomeInfluenceGrid",
-      "methodLine": 870,
-      "text": "Shader.SetGlobalBuffer(_ScatterBiomeInfluenceGridId, biomeInfluenceBuffer);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/WorldProceduralScatterDirectorSamplingPipeline.cs",
-      "line": 891,
-      "method": "PublishBiomeInfluenceGrid",
-      "methodLine": 870,
-      "text": "Shader.SetGlobalInt(_ScatterBiomeInfluenceGridCountId, totalCells);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/WorldProceduralScatterDirectorSamplingPipeline.cs",
-      "line": 892,
-      "method": "PublishBiomeInfluenceGrid",
-      "methodLine": 870,
-      "text": "Shader.SetGlobalVector("
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/WorldProceduralScatterDirectorSamplingPipeline.cs",
-      "line": 895,
-      "method": "PublishBiomeInfluenceGrid",
-      "methodLine": 870,
-      "text": "Shader.SetGlobalVector("
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
-      "line": 2575,
-      "method": "TryPlayStinger",
-      "methodLine": 2539,
-      "text": "_stingerSource.Play();"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
-      "line": 5273,
-      "method": "RefreshUi",
-      "methodLine": 5267,
-      "text": "_statusLabel.text = \"Play Mode and GlobalDataVault required.\";"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
-      "line": 5321,
-      "method": "RefreshUi",
-      "methodLine": 5267,
-      "text": "_statusLabel.text = \"Vault live. Layout: CelestialStateDTO 64B, EnvironmentStateDTO 64B, CelestialTelemetryEntry 64B.\";"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 767,
-      "method": "PublishWeatherShaderState",
-      "methodLine": 762,
-      "text": "Shader.SetGlobalVector(_GlobalCurrentVectorId, new Vector4(currentVectorManaged.x, currentVectorManaged.y, currentVectorManaged.z, 0f));"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 768,
-      "method": "PublishWeatherShaderState",
-      "methodLine": 762,
-      "text": "Shader.SetGlobalVector(_GlobalWindVectorId, new Vector4(windVectorManaged.x, windVectorManaged.y, windVectorManaged.z, 0f));"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 769,
-      "method": "PublishWeatherShaderState",
-      "methodLine": 762,
-      "text": "Shader.SetGlobalVector(_GlobalWindId, new Vector4(windVectorManaged.x, windVectorManaged.y, windVectorManaged.z, ApproximateMagnitude(_runtimeSnapshot.GlobalWindVector)));"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 770,
-      "method": "PublishWeatherShaderState",
-      "methodLine": 762,
-      "text": "Shader.SetGlobalFloat(_WeatherIntensityId, math.saturate(_runtimeSnapshot.WeatherIntensity));"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 771,
-      "method": "PublishWeatherShaderState",
-      "methodLine": 762,
-      "text": "Shader.SetGlobalInt(_WeatherStateMaskId, (int)_runtimeSnapshot.StateMask);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 994,
-      "method": "PublishNoirFogShaderState",
-      "methodLine": 992,
-      "text": "Shader.SetGlobalTexture(_NoirFogLutId, _noirFogLutTexture != null ? _noirFogLutTexture : Texture2D.blackTexture);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 995,
-      "method": "PublishNoirFogShaderState",
-      "methodLine": 992,
-      "text": "Shader.SetGlobalVector("
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1002,
-      "method": "PublishNoirFogShaderState",
-      "methodLine": 992,
-      "text": "Shader.SetGlobalFloat(_NoirFogLutBlendId, _biomeLutBlend);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1003,
-      "method": "PublishNoirFogShaderState",
-      "methodLine": 992,
-      "text": "Shader.SetGlobalVector("
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1010,
-      "method": "PublishNoirFogShaderState",
-      "methodLine": 992,
-      "text": "Shader.SetGlobalFloat(_BiolumeSurgeThresholdId, _publishedBiolumeSurgeThreshold);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1043,
-      "method": "PublishAtmosphericBridgeShaderState",
-      "methodLine": 1013,
-      "text": "Shader.SetGlobalFloat(_AbyssalFogDensityId, abyssalFogDensity);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1045,
-      "method": "PublishAtmosphericBridgeShaderState",
-      "methodLine": 1013,
-      "text": "Shader.SetGlobalFloat(_MarineSnowOpacityId, marineSnowOpacity);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1046,
-      "method": "PublishAtmosphericBridgeShaderState",
-      "methodLine": 1013,
-      "text": "Shader.SetGlobalFloat(_GlobalFlowMagnitudeMultiplierId, globalFlowMultiplier);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1047,
-      "method": "PublishAtmosphericBridgeShaderState",
-      "methodLine": 1013,
-      "text": "Shader.SetGlobalFloat(_GodRayIntensityId, godRayIntensity);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1048,
-      "method": "PublishAtmosphericBridgeShaderState",
-      "methodLine": 1013,
-      "text": "Shader.SetGlobalFloat(_ShadowCascadeFadeId, shadowCascadeFade);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1049,
-      "method": "PublishAtmosphericBridgeShaderState",
-      "methodLine": 1013,
-      "text": "Shader.SetGlobalFloat(_UnderwaterRainVolumeId, underwaterRainVolume);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1050,
-      "method": "PublishAtmosphericBridgeShaderState",
-      "methodLine": 1013,
-      "text": "Shader.SetGlobalFloat(_BiolumEmissionMultiplierId, biolumEmissionMultiplier);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1051,
-      "method": "PublishAtmosphericBridgeShaderState",
-      "methodLine": 1013,
-      "text": "Shader.SetGlobalFloat(_RadiationStormId, radiationStorm01);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1052,
-      "method": "PublishAtmosphericBridgeShaderState",
-      "methodLine": 1013,
-      "text": "Shader.SetGlobalVector("
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1055,
-      "method": "PublishAtmosphericBridgeShaderState",
-      "methodLine": 1013,
-      "text": "Shader.SetGlobalVector("
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1058,
-      "method": "PublishAtmosphericBridgeShaderState",
-      "methodLine": 1013,
-      "text": "Shader.SetGlobalVector("
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1071,
-      "method": "ClearAtmosphericBridgeShaderState",
-      "methodLine": 1069,
-      "text": "Shader.SetGlobalFloat(_AbyssalFogDensityId, 0f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1073,
-      "method": "ClearAtmosphericBridgeShaderState",
-      "methodLine": 1069,
-      "text": "Shader.SetGlobalFloat(_MarineSnowOpacityId, 0f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1074,
-      "method": "ClearAtmosphericBridgeShaderState",
-      "methodLine": 1069,
-      "text": "Shader.SetGlobalFloat(_GlobalFlowMagnitudeMultiplierId, 1f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1075,
-      "method": "ClearAtmosphericBridgeShaderState",
-      "methodLine": 1069,
-      "text": "Shader.SetGlobalFloat(_GodRayIntensityId, 0f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1076,
-      "method": "ClearAtmosphericBridgeShaderState",
-      "methodLine": 1069,
-      "text": "Shader.SetGlobalFloat(_ShadowCascadeFadeId, 0f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1077,
-      "method": "ClearAtmosphericBridgeShaderState",
-      "methodLine": 1069,
-      "text": "Shader.SetGlobalFloat(_UnderwaterRainVolumeId, 0f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1078,
-      "method": "ClearAtmosphericBridgeShaderState",
-      "methodLine": 1069,
-      "text": "Shader.SetGlobalFloat(_BiolumEmissionMultiplierId, 1f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1079,
-      "method": "ClearAtmosphericBridgeShaderState",
-      "methodLine": 1069,
-      "text": "Shader.SetGlobalFloat(_RadiationStormId, 0f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1080,
-      "method": "ClearAtmosphericBridgeShaderState",
-      "methodLine": 1069,
-      "text": "Shader.SetGlobalVector(_AtmosphericBridgeParamsId, new Vector4(0f, 0f, 0f, 1f));"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1081,
-      "method": "ClearAtmosphericBridgeShaderState",
-      "methodLine": 1069,
-      "text": "Shader.SetGlobalVector(_AtmosphericBridgeParams2Id, Vector4.zero);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
-      "line": 1082,
-      "method": "ClearAtmosphericBridgeShaderState",
-      "methodLine": 1069,
-      "text": "Shader.SetGlobalVector(_GlobalWindDirectionId, Vector4.zero);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
-      "line": 2074,
-      "method": "ClearVoxelBlendMaskGlobal",
-      "methodLine": 2072,
-      "text": "Shader.SetGlobalVector(HectonVoxelBlendMaskParamsId, Vector4.zero);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs",
-      "line": 2075,
-      "method": "ClearVoxelBlendMaskGlobal",
-      "methodLine": 2072,
-      "text": "Shader.SetGlobalVector(HectonVoxelBlendMaskRectId, Vector4.zero);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
       "file": "Assets/_Project/Scripts/Audio/AdaptiveStem/AdaptiveStemAudioMixer.cs",
       "line": 1354,
       "method": "EnsurePlaying",
@@ -3065,115 +2642,11 @@
     },
     {
       "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/EncounterDirector.cs",
-      "line": 1539,
-      "method": "FlushPlayerPredatorAupSlot",
-      "methodLine": 1520,
-      "text": "Shader.SetGlobalBuffer(_PredatorAUPBufferId, _predatorAupPublishedBuffer);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/EncounterDirector.cs",
-      "line": 1542,
-      "method": "FlushPlayerPredatorAupSlot",
-      "methodLine": 1520,
-      "text": "Shader.SetGlobalVector(_PredatorAUPParamsId, new Vector4(120f, 1f, 0f, 0f));"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/EncounterDirector.cs",
-      "line": 1551,
-      "method": "FlushPlayerPredatorAupSlot",
-      "methodLine": 1520,
-      "text": "Shader.SetGlobalInt(_PredatorAUPCountId, uploadCount);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/WorldCaveDirector.cs",
-      "line": 1188,
-      "method": "ApplyMineralCrustToVolume",
-      "methodLine": 1175,
-      "text": "meshRenderer.SetPropertyBlock(_CaveSurfacePropertyBlock);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs",
-      "line": 278,
-      "method": "PublishDominantStaticToShaderValue",
-      "methodLine": 270,
-      "text": "Shader.SetGlobalFloat(_ShaderSignalStatic, shaderStatic);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
-      "line": 1073,
-      "method": "PublishQualityShaderGlobalsImmediate",
-      "methodLine": 1067,
-      "text": "Shader.SetGlobalFloat(_globalQualityWeightId, qualityWeight);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs",
-      "line": 1074,
-      "method": "PublishQualityShaderGlobalsImmediate",
-      "methodLine": 1067,
-      "text": "Shader.SetGlobalFloat(_h8GlobalQualityWeightId, qualityWeight);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/HectonXRRuntimeState.cs",
-      "line": 725,
-      "method": "FlushQueuedIfDirty",
-      "methodLine": 716,
-      "text": "Shader.SetGlobalVector(propertyId, pending);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
-      "line": 878,
-      "method": "FlushHabitatVibrationShader",
-      "methodLine": 872,
-      "text": "Shader.SetGlobalFloat(HabitatVibrationId, _pendingHabitatVibrationShader01);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
-      "line": 1150,
-      "method": "FlushBaseEmergencyShader",
-      "methodLine": 1144,
-      "text": "Shader.SetGlobalInt(BaseEmergencyStateId, _pendingBaseEmergencyShaderState);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
-      "line": 1206,
-      "method": "FlushAnalyticalStressShader",
-      "methodLine": 1199,
-      "text": "Shader.SetGlobalVector("
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
-      "line": 1209,
-      "method": "FlushAnalyticalStressShader",
-      "methodLine": 1199,
-      "text": "Shader.SetGlobalVector("
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
-      "line": 1898,
-      "method": "FlushModuleStressShader",
-      "methodLine": 1869,
-      "text": "Shader.SetGlobalBuffer(HabitatModuleStressBufferId, _activeModuleStressBuffer);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
-      "line": 6714,
-      "method": "ReleaseModuleStressBuffer",
-      "methodLine": 6696,
-      "text": "Shader.SetGlobalVector(HabitatModuleStressParamsId, Vector4.zero);"
+      "file": "Assets/_Project/Scripts/Audio/HectonMusicDirector.cs",
+      "line": 2575,
+      "method": "TryPlayStinger",
+      "methodLine": 2539,
+      "text": "_stingerSource.Play();"
     },
     {
       "classification": "REVIEW_NON_VISUAL_NAME",
@@ -3353,22 +2826,6 @@
     },
     {
       "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
-      "line": 2408,
-      "method": "ApplyMathPrecisionShaderState",
-      "methodLine": 2402,
-      "text": "Shader.SetGlobalFloat(_mathLodLowBlendId, clampedBlendMilli * 0.001f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
-      "file": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
-      "line": 2972,
-      "method": "TickMathPrecisionTransition",
-      "methodLine": 2951,
-      "text": "Shader.SetGlobalFloat(_mathLodLowBlendId, blendMilli * 0.001f);"
-    },
-    {
-      "classification": "REVIEW_NON_VISUAL_NAME",
       "file": "Assets/_Project/Scripts/Atmosphere/ShinobuAtmosphereWaveTunerWindow.cs",
       "line": 150,
       "method": "UpdateStatusLabel",
@@ -3382,6 +2839,550 @@
       "method": "PublishWeatherShaderGlobals",
       "methodLine": 1866,
       "text": "Shader.SetGlobalFloat(_RainIntensityId, rainIntensity);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "line": 1880,
+      "method": "PublishWeatherShaderGlobals",
+      "methodLine": 1866,
+      "text": "Shader.SetGlobalFloat(_CurrentWaterLevelYId, surfaceY);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "line": 1881,
+      "method": "PublishWeatherShaderGlobals",
+      "methodLine": 1866,
+      "text": "Shader.SetGlobalVector(_GlobalWindId, new Vector4(windDirection.x * windSpeedMps, 0f, windDirection.y * windSpeedMps, windSpeedMps));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "line": 1882,
+      "method": "PublishWeatherShaderGlobals",
+      "methodLine": 1866,
+      "text": "Shader.SetGlobalFloat(_ScreenSpaceRainEnabledId, rainIntensity > 0.0001f ? 1f : 0f);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "line": 1883,
+      "method": "PublishWeatherShaderGlobals",
+      "methodLine": 1866,
+      "text": "Shader.SetGlobalVector("
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "line": 1891,
+      "method": "PublishWeatherShaderGlobals",
+      "methodLine": 1866,
+      "text": "Shader.SetGlobalFloat(_LightningFlashId, math.saturate(_lightningFlashStrength));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "line": 1897,
+      "method": "PublishClearedWeatherShaderGlobals",
+      "methodLine": 1895,
+      "text": "Shader.SetGlobalFloat(_RainIntensityId, 0f);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "line": 1899,
+      "method": "PublishClearedWeatherShaderGlobals",
+      "methodLine": 1895,
+      "text": "Shader.SetGlobalFloat(_LightningFlashId, 0f);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "line": 1900,
+      "method": "PublishClearedWeatherShaderGlobals",
+      "methodLine": 1895,
+      "text": "Shader.SetGlobalFloat(_ScreenSpaceRainEnabledId, 0f);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs",
+      "line": 1901,
+      "method": "PublishClearedWeatherShaderGlobals",
+      "methodLine": 1895,
+      "text": "Shader.SetGlobalVector(_ScreenSpaceRainParamsId, Vector4.zero);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Fauna/LeviathanTentacleVerletSolver.cs",
+      "line": 1359,
+      "method": "PublishTentacleShaderGlobals",
+      "methodLine": 1348,
+      "text": "Shader.SetGlobalBuffer(_AbyssalFlowFieldId, _gpuAbyssalFlowFieldBuffer);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Fauna/LeviathanTentacleVerletSolver.cs",
+      "line": 1396,
+      "method": "PublishTentacleGlobals",
+      "methodLine": 1376,
+      "text": "Shader.SetGlobalConstantBuffer(_TentacleGlobalsId, _activeTentacleGlobalsBuffer, 0, TentacleShaderGlobalsBytes);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsEditor.cs",
+      "line": 146,
+      "method": "RefreshStatus",
+      "methodLine": 139,
+      "text": "_status.text ="
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereLogisticsEditor.cs",
+      "line": 156,
+      "method": "RefreshStatus",
+      "methodLine": 139,
+      "text": "_status.text = \"No atmosphere telemetry yet.\";"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Atmosphere/BaseAtmosphereEngine.cs",
+      "line": 320,
+      "method": "RunAirlockEqualizationFakeAsync",
+      "methodLine": 317,
+      "text": "hissAudio.Play();"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/AtlasSignal/SignalBeacon.cs",
+      "line": 278,
+      "method": "PublishDominantStaticToShaderValue",
+      "methodLine": 270,
+      "text": "Shader.SetGlobalFloat(_ShaderSignalStatic, shaderStatic);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+      "line": 1003,
+      "method": "PublishDensityShaderGlobals",
+      "methodLine": 999,
+      "text": "Shader.SetGlobalTexture(DensityTextureShaderId, _densityTexture);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+      "line": 1009,
+      "method": "PublishDensityShaderGlobals",
+      "methodLine": 999,
+      "text": "Shader.SetGlobalVector(DensityParamsShaderId, densityParams);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+      "line": 1015,
+      "method": "PublishDensityShaderGlobals",
+      "methodLine": 999,
+      "text": "Shader.SetGlobalVector(DensityOriginShaderId, densityOrigin);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Fauna/FaunaKinematicsRuntime.cs",
+      "line": 2137,
+      "method": "PublishLeviathanIkGlobals",
+      "methodLine": 2117,
+      "text": "Shader.SetGlobalConstantBuffer(_LeviathanIkGlobalsId, _activeIkGlobalsBuffer, 0, LeviathanIkGlobalsBytes);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 878,
+      "method": "FlushHabitatVibrationShader",
+      "methodLine": 872,
+      "text": "Shader.SetGlobalFloat(HabitatVibrationId, _pendingHabitatVibrationShader01);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 1150,
+      "method": "FlushBaseEmergencyShader",
+      "methodLine": 1144,
+      "text": "Shader.SetGlobalInt(BaseEmergencyStateId, _pendingBaseEmergencyShaderState);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 1206,
+      "method": "FlushAnalyticalStressShader",
+      "methodLine": 1199,
+      "text": "Shader.SetGlobalVector("
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 1209,
+      "method": "FlushAnalyticalStressShader",
+      "methodLine": 1199,
+      "text": "Shader.SetGlobalVector("
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 1898,
+      "method": "FlushModuleStressShader",
+      "methodLine": 1869,
+      "text": "Shader.SetGlobalBuffer(HabitatModuleStressBufferId, _activeModuleStressBuffer);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Construction/HabitatGraphManager.cs",
+      "line": 6714,
+      "method": "ReleaseModuleStressBuffer",
+      "methodLine": 6696,
+      "text": "Shader.SetGlobalVector(HabitatModuleStressParamsId, Vector4.zero);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Fauna/CreatureDamageManager.cs",
+      "line": 240,
+      "method": "PublishShaderGlobals",
+      "methodLine": 232,
+      "text": "Shader.SetGlobalFloat(WoundCountId, _woundCount);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Fauna/CreatureDamageManager.cs",
+      "line": 243,
+      "method": "PublishShaderGlobals",
+      "methodLine": 232,
+      "text": "Shader.SetGlobalVectorArray(WoundsId, _woundUpload);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Fauna/CreatureDamageManager.cs",
+      "line": 248,
+      "method": "PublishShaderGlobals",
+      "methodLine": 232,
+      "text": "Shader.SetGlobalMatrix(WoundOwnerWorldToLocalId, ownerTransform.worldToLocalMatrix);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Fauna/CreatureDamageManager.cs",
+      "line": 258,
+      "method": "PublishShaderGlobals",
+      "methodLine": 232,
+      "text": "Shader.SetGlobalVector(WoundOwnerSphereId, new Vector4(ownerCenterWS.x, ownerCenterWS.y, ownerCenterWS.z, ownerRadius));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Fauna/CreatureDamageManager.cs",
+      "line": 277,
+      "method": "ClearShaderGlobals",
+      "methodLine": 275,
+      "text": "Shader.SetGlobalFloat(WoundCountId, 0f);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Fauna/CreatureDamageManager.cs",
+      "line": 278,
+      "method": "ClearShaderGlobals",
+      "methodLine": 275,
+      "text": "Shader.SetGlobalVector(WoundOwnerSphereId, Vector4.zero);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 3308,
+      "method": "UpdateWeldingAudioLoop",
+      "methodLine": 3274,
+      "text": "source.Play();"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Fabricator.cs",
+      "line": 3349,
+      "method": "FlushApplyErrorFeedback",
+      "methodLine": 3332,
+      "text": "renderer.SetPropertyBlock(_errorFeedbackBlock);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/CaveWallGrowthRuntimeBuilder.cs",
+      "line": 121,
+      "method": "ApplyGrowthVisuals",
+      "methodLine": 108,
+      "text": "renderer.SetPropertyBlock(propertyBlock);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/CaveServiceRemnantRuntimeBuilder.cs",
+      "line": 126,
+      "method": "ApplyRemnantVisuals",
+      "methodLine": 112,
+      "text": "renderer.SetPropertyBlock(propertyBlock);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/CaveSedimentShelfRuntimeBuilder.cs",
+      "line": 127,
+      "method": "ApplyShelfVisuals",
+      "methodLine": 115,
+      "text": "renderer.SetPropertyBlock(propertyBlock);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/CaveGlowingTissueRuntimeBuilder.cs",
+      "line": 123,
+      "method": "ApplyTissueVisuals",
+      "methodLine": 108,
+      "text": "renderer.SetPropertyBlock(propertyBlock);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime_HatchLocks.cs",
+      "line": 724,
+      "method": "DisableHatchShaderGlobals",
+      "methodLine": 719,
+      "text": "Shader.SetGlobalVector(GlobalHatchLockParamsId, Vector4.zero);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime.cs",
+      "line": 1943,
+      "method": "DisableShaderGlobals",
+      "methodLine": 1938,
+      "text": "Shader.SetGlobalVector(GlobalBulkheadParamsId, Vector4.zero);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/BuilderTool.cs",
+      "line": 570,
+      "method": "UpdateScreen",
+      "methodLine": 513,
+      "text": "screenRenderer.SetPropertyBlock(_screenPropBlock, screenMaterialIndex);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Core/DistanceMath.cs",
+      "line": 318,
+      "method": "PushShaderMathLod",
+      "methodLine": 307,
+      "text": "Shader.SetGlobalFloat(_mathLodModePropertyId, high ? 1f : 0f);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Core/DistanceMath.cs",
+      "line": 319,
+      "method": "PushShaderMathLod",
+      "methodLine": 307,
+      "text": "Shader.SetGlobalFloat(_mathLodWeightPropertyId, quality);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Core/DistanceMath.cs",
+      "line": 320,
+      "method": "PushShaderMathLod",
+      "methodLine": 307,
+      "text": "Shader.SetGlobalFloat(_mathLodDistanceSqPropertyId, HighQualityDistanceSq);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+      "line": 5273,
+      "method": "RefreshUi",
+      "methodLine": 5267,
+      "text": "_statusLabel.text = \"Play Mode and GlobalDataVault required.\";"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+      "line": 5321,
+      "method": "RefreshUi",
+      "methodLine": 5267,
+      "text": "_statusLabel.text = \"Vault live. Layout: CelestialStateDTO 64B, EnvironmentStateDTO 64B, CelestialTelemetryEntry 64B.\";"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 6995,
+      "method": "PlayOneShot",
+      "methodLine": 6995,
+      "text": "public void PlayOneShot(AudioClip clip)"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 7002,
+      "method": "PlayOneShot",
+      "methodLine": 7002,
+      "text": "public void PlayOneShot(AudioClip clip, float volume)"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 767,
+      "method": "PublishWeatherShaderState",
+      "methodLine": 762,
+      "text": "Shader.SetGlobalVector(_GlobalCurrentVectorId, new Vector4(currentVectorManaged.x, currentVectorManaged.y, currentVectorManaged.z, 0f));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 768,
+      "method": "PublishWeatherShaderState",
+      "methodLine": 762,
+      "text": "Shader.SetGlobalVector(_GlobalWindVectorId, new Vector4(windVectorManaged.x, windVectorManaged.y, windVectorManaged.z, 0f));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 769,
+      "method": "PublishWeatherShaderState",
+      "methodLine": 762,
+      "text": "Shader.SetGlobalVector(_GlobalWindId, new Vector4(windVectorManaged.x, windVectorManaged.y, windVectorManaged.z, ApproximateMagnitude(_runtimeSnapshot.GlobalWindVector)));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 770,
+      "method": "PublishWeatherShaderState",
+      "methodLine": 762,
+      "text": "Shader.SetGlobalFloat(_WeatherIntensityId, math.saturate(_runtimeSnapshot.WeatherIntensity));"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 771,
+      "method": "PublishWeatherShaderState",
+      "methodLine": 762,
+      "text": "Shader.SetGlobalInt(_WeatherStateMaskId, (int)_runtimeSnapshot.StateMask);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 994,
+      "method": "PublishNoirFogShaderState",
+      "methodLine": 992,
+      "text": "Shader.SetGlobalTexture(_NoirFogLutId, _noirFogLutTexture != null ? _noirFogLutTexture : Texture2D.blackTexture);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 995,
+      "method": "PublishNoirFogShaderState",
+      "methodLine": 992,
+      "text": "Shader.SetGlobalVector("
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 1002,
+      "method": "PublishNoirFogShaderState",
+      "methodLine": 992,
+      "text": "Shader.SetGlobalFloat(_NoirFogLutBlendId, _biomeLutBlend);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 1003,
+      "method": "PublishNoirFogShaderState",
+      "methodLine": 992,
+      "text": "Shader.SetGlobalVector("
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 1010,
+      "method": "PublishNoirFogShaderState",
+      "methodLine": 992,
+      "text": "Shader.SetGlobalFloat(_BiolumeSurgeThresholdId, _publishedBiolumeSurgeThreshold);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 1043,
+      "method": "PublishAtmosphericBridgeShaderState",
+      "methodLine": 1013,
+      "text": "Shader.SetGlobalFloat(_AbyssalFogDensityId, abyssalFogDensity);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 1045,
+      "method": "PublishAtmosphericBridgeShaderState",
+      "methodLine": 1013,
+      "text": "Shader.SetGlobalFloat(_MarineSnowOpacityId, marineSnowOpacity);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 1046,
+      "method": "PublishAtmosphericBridgeShaderState",
+      "methodLine": 1013,
+      "text": "Shader.SetGlobalFloat(_GlobalFlowMagnitudeMultiplierId, globalFlowMultiplier);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 1047,
+      "method": "PublishAtmosphericBridgeShaderState",
+      "methodLine": 1013,
+      "text": "Shader.SetGlobalFloat(_GodRayIntensityId, godRayIntensity);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 1048,
+      "method": "PublishAtmosphericBridgeShaderState",
+      "methodLine": 1013,
+      "text": "Shader.SetGlobalFloat(_ShadowCascadeFadeId, shadowCascadeFade);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 1049,
+      "method": "PublishAtmosphericBridgeShaderState",
+      "methodLine": 1013,
+      "text": "Shader.SetGlobalFloat(_UnderwaterRainVolumeId, underwaterRainVolume);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 1050,
+      "method": "PublishAtmosphericBridgeShaderState",
+      "methodLine": 1013,
+      "text": "Shader.SetGlobalFloat(_BiolumEmissionMultiplierId, biolumEmissionMultiplier);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 1051,
+      "method": "PublishAtmosphericBridgeShaderState",
+      "methodLine": 1013,
+      "text": "Shader.SetGlobalFloat(_RadiationStormId, radiationStorm01);"
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 1052,
+      "method": "PublishAtmosphericBridgeShaderState",
+      "methodLine": 1013,
+      "text": "Shader.SetGlobalVector("
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 1055,
+      "method": "PublishAtmosphericBridgeShaderState",
+      "methodLine": 1013,
+      "text": "Shader.SetGlobalVector("
+    },
+    {
+      "classification": "REVIEW_NON_VISUAL_NAME",
+      "file": "Assets/_Project/Scripts/Environment/GlobalWeatherDirector.cs",
+      "line": 1058,
+      "method": "PublishAtmosphericBridgeShaderState",
+      "methodLine": 1013,
+      "text": "Shader.SetGlobalVector("
     }
   ],
   "rgReturnCode": 0,
@@ -3393,7 +3394,7 @@
     "Runtime/profiler proof absent while CPU gate blocks build and Unity execution."
   ],
   "scope": "Runtime scripts under Assets/_Project/Scripts; Editor folders and *.Editor.cs excluded",
-  "totalPresentationOrReadbackTokenLines": 1337,
+  "totalPresentationOrReadbackTokenLines": 1336,
   "unknownContextTokenLineCount": 13,
   "unknownContextTokenLinesCapped": [
     {
@@ -3422,14 +3423,6 @@
     },
     {
       "classification": "UNKNOWN_CONTEXT",
-      "file": "Assets/_Project/Scripts/Graphics/Culling/InstanceCullingService.cs",
-      "line": 87,
-      "method": "<unknown>",
-      "methodLine": 0,
-      "text": "private Action<AsyncGPUReadbackRequest> _cachedReadbackCallback;"
-    },
-    {
-      "classification": "UNKNOWN_CONTEXT",
       "file": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
       "line": 733,
       "method": "<unknown>",
@@ -3438,43 +3431,11 @@
     },
     {
       "classification": "UNKNOWN_CONTEXT",
-      "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
-      "line": 1805,
+      "file": "Assets/_Project/Scripts/Graphics/Culling/InstanceCullingService.cs",
+      "line": 87,
       "method": "<unknown>",
       "methodLine": 0,
-      "text": "private AsyncGPUReadbackRequest _parasiteLatchReadbackRequest;"
-    },
-    {
-      "classification": "UNKNOWN_CONTEXT",
-      "file": "Assets/_Project/Scripts/SaveThumbnailSystem.cs",
-      "line": 130,
-      "method": "<unknown>",
-      "methodLine": 0,
-      "text": "private static readonly Action<AsyncGPUReadbackRequest> s_readbackCompleted = HandleReadbackCompleted;"
-    },
-    {
-      "classification": "UNKNOWN_CONTEXT",
-      "file": "Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs",
-      "line": 385,
-      "method": "<unknown>",
-      "methodLine": 0,
-      "text": "private AsyncGPUReadbackRequest _visibleCountReadbackRequest;"
-    },
-    {
-      "classification": "UNKNOWN_CONTEXT",
-      "file": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
-      "line": 531,
-      "method": "<unknown>",
-      "methodLine": 0,
-      "text": "private AsyncGPUReadbackRequest _cullTelemetryReadbackRequest;"
-    },
-    {
-      "classification": "UNKNOWN_CONTEXT",
-      "file": "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
-      "line": 332,
-      "method": "<unknown>",
-      "methodLine": 0,
-      "text": "private AsyncGPUReadbackRequest _visibleCountReadbackRequest;"
+      "text": "private Action<AsyncGPUReadbackRequest> _cachedReadbackCallback;"
     },
     {
       "classification": "UNKNOWN_CONTEXT",
@@ -3499,6 +3460,46 @@
       "method": "<unknown>",
       "methodLine": 0,
       "text": "private AsyncGPUReadbackRequest _readbackRequest2;"
+    },
+    {
+      "classification": "UNKNOWN_CONTEXT",
+      "file": "Assets/_Project/Scripts/Rendering/Scatter/GpuScatterLodManager.cs",
+      "line": 385,
+      "method": "<unknown>",
+      "methodLine": 0,
+      "text": "private AsyncGPUReadbackRequest _visibleCountReadbackRequest;"
+    },
+    {
+      "classification": "UNKNOWN_CONTEXT",
+      "file": "Assets/_Project/Scripts/SaveThumbnailSystem.cs",
+      "line": 130,
+      "method": "<unknown>",
+      "methodLine": 0,
+      "text": "private static readonly Action<AsyncGPUReadbackRequest> s_readbackCompleted = HandleReadbackCompleted;"
+    },
+    {
+      "classification": "UNKNOWN_CONTEXT",
+      "file": "Assets/_Project/Scripts/World/GPUScatterDirector.cs",
+      "line": 332,
+      "method": "<unknown>",
+      "methodLine": 0,
+      "text": "private AsyncGPUReadbackRequest _visibleCountReadbackRequest;"
+    },
+    {
+      "classification": "UNKNOWN_CONTEXT",
+      "file": "Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs",
+      "line": 531,
+      "method": "<unknown>",
+      "methodLine": 0,
+      "text": "private AsyncGPUReadbackRequest _cullTelemetryReadbackRequest;"
+    },
+    {
+      "classification": "UNKNOWN_CONTEXT",
+      "file": "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+      "line": 1805,
+      "method": "<unknown>",
+      "methodLine": 0,
+      "text": "private AsyncGPUReadbackRequest _parasiteLatchReadbackRequest;"
     }
   ]
 }
