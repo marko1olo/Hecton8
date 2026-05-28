@@ -89,3 +89,27 @@ Solution: Converted those paired writes to one explicit mutation guard per route
 Rejected Alternatives: Keeping paired `TryAcquireWriteLock` calls because they are short-lived; duration does not remove reverse-order deadlock risk. Global DataVault lock semantic rewrites were rejected because other domains currently acquire mutation guards before solver pins and require separate ownership work.
 Scalability potential: Low avoids deadlock and relocation stalls during construction/editor import. Middle keeps normal bulkhead cadence. High/Ultra can spend the protected frame budget on visual bulkhead shader payloads, not lock recovery.
 Hardware Impact: Removes 2 write-lock acquisitions from layout-fault telemetry, 2 from file import, and 2 from intent ring/control paired access. Expected low-end saving is 5-40 us per cold event; the real gain is eliminating the deadlock vector.
+
+## Decision 11 - Content Authority Multi-Buffer Writers
+
+Problem: Content bundle reference state/count, content telemetry ring/cursor, and pending-load state/count used paired mutable DataVault accessors. Those are cold-to-warm content routes, but a corrupt or contended frame could still hold two writer lanes in one call path.
+Solution: Converted each route to one explicit mutation guard and transient handle resolution: `BundleRefMutationGuardMask`, `ContentTelemetryMutationGuardMask`, and `ContentPendingLoadMutationGuardMask`. Release paths are strict `finally` blocks; corrupted counters are normalized while the guard is held and then released by the caller-owned finally.
+Rejected Alternatives: Leaving paired locks because the methods are short; reverse-order risk is independent of average duration. Copying content rings to managed arrays was rejected because it adds GC and violates DataVault ownership.
+Scalability potential: Low devices avoid content-streaming lock stalls; Middle keeps normal addressable cadence; High/Ultra can increase visual content payloads through continuous budget weights without adding lock topology risk.
+Hardware Impact: Removes paired write-lock windows from three content authority routes. Expected low-end saving is 5-60 us per content event; main value is deadlock elimination under async streaming churn.
+
+## Decision 12 - Low-Bit Mutation Guard Semantics
+
+Problem: A high-bit mutation guard blocks compaction after the earlier `HasActiveBurstLocks` patch, but it does not by itself prevent another caller from taking a per-buffer `TryAcquireWriteLock` or `TryLockBuffer`. Replacing job pins with a high-bit guard alone would permit data races.
+Solution: `GlobalDataVault` now treats low-bit mutation guards as conflicts with the matching `ResolveActiveLockBit` lane. `TryAcquireWriteLock` and `TryLockBuffer` reject an overlapping low-bit guard; `TryAcquireMutationGuard` rejects an overlapping active lock before and after acquisition.
+Rejected Alternatives: A single global guard that blocks every write lock; too blunt and would serialize unrelated owner routes. Keeping four rebalance `TryLockBuffer` pins; it preserves per-buffer safety but keeps the multi-lock topology.
+Scalability potential: Low keeps compaction/write contention fail-closed. Middle/High/Ultra can protect multi-buffer job views with one guard while still allowing unrelated high-bit route guards.
+Hardware Impact: Adds two volatile reads on lock acquisition paths. Cost is below 1 us per acquisition; it removes four rebalance pin calls and the reverse-order deadlock surface.
+
+## Decision 13 - Simulation Bucketer Rebalance Guard
+
+Problem: `ModuloSimulationBucketer.TryPinRebalanceBuffers` held four DataVault buffer pins across the rebalance job lifetime. `ClearEntityState` also used multiple writer locks across bucketer state buffers. This is exactly the multi-lock class the assignment forbids.
+Solution: Rebalance now acquires one low-bit `RebalanceVaultMutationGuardMask` covering cost/work/rebalance-load/result active lock lanes. `ClearEntityState` acquires one `EntityStateVaultMutationGuardMask` and writes transient resolved views under a single `try/finally`.
+Rejected Alternatives: Scheduling tiny split jobs per buffer; that would increase job overhead and same-frame readback pressure. Retaining sequential write-lock groups in ClearEntityState; it is cold but still unnecessary after low-bit guard semantics exist.
+Scalability potential: Low gets deterministic fail-closed rebalance under memory pressure. Middle keeps amortized rebalance cadence. High/Ultra spend saved lock overhead on finer bucket load smoothing, not synchronization recovery.
+Hardware Impact: Rebalance job setup removes four pin/unpin paths and replaces them with one guard release. Expected low-end saving is 10-80 us per rebalance schedule/finalize window; deadlock vector is the larger win.

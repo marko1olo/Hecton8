@@ -40,11 +40,6 @@ namespace Hecton8.Atmosphere
         private const uint JobLockWriteState = 1u << 4;
         private const uint JobLockTelemetry = 1u << 5;
         private const uint JobLockTelemetryCursor = 1u << 6;
-        private const uint ScalarPublicationLockFlow = 1u << 0;
-        private const uint ScalarPublicationLockAudio = 1u << 1;
-        private const uint ScalarPublicationLockBiolum = 1u << 2;
-        private const uint ScalarPublicationLockFog = 1u << 3;
-
         private static int s_runtimeClaimed;
 
         [SerializeField] private bool autoGenerateEmergencyMockHurricane;
@@ -837,43 +832,17 @@ namespace Hecton8.Atmosphere
                 }
 
                 StormPropagationWriteSnapshotDTO snapshot = ShinobuStormPropagationNative.ReadElement(writeSnapshot, 0);
-                uint scalarLockMask = TryLockScalarPublicationBuffers();
-                if (scalarLockMask == 0u)
+                if (!TryPublishCompletedStateRow(in snapshot.State))
                     return;
 
-                try
-                {
-                    if (!_vault.TryLockBuffer(BufferID.ShinobuStormPropagationState, OwnerSystem))
-                        return;
-
-                    try
-                    {
-                        if (!Resolve(in _publishedStateHandle, out NativeArray<StormPropagationDTO> readState) ||
-                            readState.Length <= 0 ||
-                            !TryResolveScalarPublicationRows(
-                                out NativeArray<float4> flowScalar,
-                                out NativeArray<float4> audioScalar,
-                                out NativeArray<float4> biolumScalar,
-                                out NativeArray<float4> fogScalar))
-                        {
-                            return;
-                        }
-
-                        StormPropagationDTO state = snapshot.State;
-                        void* src = UnsafeUtility.AddressOf(ref state);
-                        void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(readState);
-                        UnsafeUtility.MemCpy(dst, src, ShinobuStormPropagationConstants.StormPropagationStrideBytes);
-                        publishedFlags = WriteCompletedScalarRows(in snapshot, flowScalar, audioScalar, biolumScalar, fogScalar);
-                    }
-                    finally
-                    {
-                        _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationState, OwnerSystem);
-                    }
-                }
-                finally
-                {
-                    UnlockScalarPublicationBuffers(scalarLockMask);
-                }
+                if (TryPublishScalarRow(BufferID.ShinobuStormPropagationFlowScalar, in _flowScalarHandle, snapshot.FlowScalar))
+                    publishedFlags |= ShinobuStormPropagationConstants.TelemetryFlagFlowPublished;
+                if (TryPublishScalarRow(BufferID.ShinobuStormPropagationAudioScalar, in _audioScalarHandle, snapshot.AudioScalar))
+                    publishedFlags |= ShinobuStormPropagationConstants.TelemetryFlagAudioPublished;
+                if (TryPublishScalarRow(BufferID.ShinobuStormPropagationBiolumScalar, in _biolumScalarHandle, snapshot.BiolumScalar))
+                    publishedFlags |= ShinobuStormPropagationConstants.TelemetryFlagBiolumPublished;
+                if (TryPublishScalarRow(BufferID.ShinobuStormPropagationFogScalar, in _fogScalarHandle, snapshot.FogScalar))
+                    publishedFlags |= ShinobuStormPropagationConstants.TelemetryFlagFogPublished;
             }
             finally
             {
@@ -881,81 +850,48 @@ namespace Hecton8.Atmosphere
             }
         }
 
-        private static uint WriteCompletedScalarRows(
-            in StormPropagationWriteSnapshotDTO snapshot,
-            NativeArray<float4> flowScalar,
-            NativeArray<float4> audioScalar,
-            NativeArray<float4> biolumScalar,
-            NativeArray<float4> fogScalar)
+        private bool TryPublishCompletedStateRow(in StormPropagationDTO state)
         {
-            ShinobuStormPropagationNative.ElementAt(flowScalar, 0) = snapshot.FlowScalar;
-            ShinobuStormPropagationNative.ElementAt(audioScalar, 0) = snapshot.AudioScalar;
-            ShinobuStormPropagationNative.ElementAt(biolumScalar, 0) = snapshot.BiolumScalar;
-            ShinobuStormPropagationNative.ElementAt(fogScalar, 0) = snapshot.FogScalar;
+            if (_vault == null || !_vault.TryLockBuffer(BufferID.ShinobuStormPropagationState, OwnerSystem))
+                return false;
 
-            return ShinobuStormPropagationConstants.TelemetryFlagFlowPublished |
-                   ShinobuStormPropagationConstants.TelemetryFlagAudioPublished |
-                   ShinobuStormPropagationConstants.TelemetryFlagBiolumPublished |
-                   ShinobuStormPropagationConstants.TelemetryFlagFogPublished;
-        }
-
-        private bool TryResolveScalarPublicationRows(
-            out NativeArray<float4> flowScalar,
-            out NativeArray<float4> audioScalar,
-            out NativeArray<float4> biolumScalar,
-            out NativeArray<float4> fogScalar)
-        {
-            flowScalar = default;
-            audioScalar = default;
-            biolumScalar = default;
-            fogScalar = default;
-
-            return Resolve(in _flowScalarHandle, out flowScalar) && flowScalar.Length > 0 &&
-                   Resolve(in _audioScalarHandle, out audioScalar) && audioScalar.Length > 0 &&
-                   Resolve(in _biolumScalarHandle, out biolumScalar) && biolumScalar.Length > 0 &&
-                   Resolve(in _fogScalarHandle, out fogScalar) && fogScalar.Length > 0;
-        }
-
-        private uint TryLockScalarPublicationBuffers()
-        {
-            if (_vault == null)
-                return 0u;
-
-            uint mask = 0u;
-            if (!TryLockScalarPublicationBuffer(BufferID.ShinobuStormPropagationFlowScalar, ScalarPublicationLockFlow, ref mask))
-                return 0u;
-            if (!TryLockScalarPublicationBuffer(BufferID.ShinobuStormPropagationAudioScalar, ScalarPublicationLockAudio, ref mask))
-                return 0u;
-            if (!TryLockScalarPublicationBuffer(BufferID.ShinobuStormPropagationBiolumScalar, ScalarPublicationLockBiolum, ref mask))
-                return 0u;
-            if (!TryLockScalarPublicationBuffer(BufferID.ShinobuStormPropagationFogScalar, ScalarPublicationLockFog, ref mask))
-                return 0u;
-
-            return mask;
-        }
-
-        private bool TryLockScalarPublicationBuffer(BufferID bufferId, uint bit, ref uint mask)
-        {
-            if (_vault != null && _vault.TryLockBuffer(bufferId, OwnerSystem))
+            try
             {
-                mask |= bit;
+                if (!Resolve(in _publishedStateHandle, out NativeArray<StormPropagationDTO> readState) ||
+                    readState.Length <= 0)
+                {
+                    return false;
+                }
+
+                StormPropagationDTO localState = state;
+                void* src = UnsafeUtility.AddressOf(ref localState);
+                void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(readState);
+                UnsafeUtility.MemCpy(dst, src, ShinobuStormPropagationConstants.StormPropagationStrideBytes);
                 return true;
             }
-
-            UnlockScalarPublicationBuffers(mask);
-            mask = 0u;
-            return false;
+            finally
+            {
+                _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationState, OwnerSystem);
+            }
         }
 
-        private void UnlockScalarPublicationBuffers(uint mask)
+        private bool TryPublishScalarRow(BufferID bufferId, in VaultGenerationHandle<float4> handle, in float4 value)
         {
-            if (_vault == null)
-                return;
+            if (_vault == null || !_vault.TryLockBuffer(bufferId, OwnerSystem))
+                return false;
 
-            if ((mask & ScalarPublicationLockFog) != 0u) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationFogScalar, OwnerSystem);
-            if ((mask & ScalarPublicationLockBiolum) != 0u) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationBiolumScalar, OwnerSystem);
-            if ((mask & ScalarPublicationLockAudio) != 0u) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationAudioScalar, OwnerSystem);
-            if ((mask & ScalarPublicationLockFlow) != 0u) _vault.TryUnlockBuffer(BufferID.ShinobuStormPropagationFlowScalar, OwnerSystem);
+            try
+            {
+                if (!Resolve(in handle, out NativeArray<float4> row) || row.Length <= 0)
+                    return false;
+
+                ShinobuStormPropagationNative.ElementAt(row, 0) = value;
+                return true;
+            }
+            finally
+            {
+                _vault.TryUnlockBuffer(bufferId, OwnerSystem);
+            }
         }
 
         private bool TryLockOwnedJobBuffers()

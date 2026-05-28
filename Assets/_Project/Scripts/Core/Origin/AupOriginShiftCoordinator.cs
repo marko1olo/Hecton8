@@ -1033,72 +1033,73 @@ namespace Hecton8.Core
             double3 totalUniverseOffset)
         {
             if (!TryResolveRuntimeState(vault, out _) ||
-                !TryAcquireWriteView(vault, in _runtimeStateHandle, RuntimeStateCount, out NativeArray<AupOriginShiftRuntimeState> runtimeState))
+                !TryReadRuntimeState(vault, out AupOriginShiftRuntimeState runtime))
                 return;
 
-            NativeArray<AupOriginShiftTelemetryEntry> telemetryRing = default;
-            NativeArray<AupOriginShiftTelemetryDetailEntry> telemetryDetailRing = default;
-            try
+            int nonFiniteCount = TryResolveCounter(vault, out NativeArray<AupPaddedAtomicCounter> counters) ? counters[0].NonFiniteCount : 0;
+            runtime.RebaseCount++;
+            runtime.LastShiftSequence = info.ShiftSequence;
+            runtime.LastComputeTimeMs = math.isfinite((float)elapsedMilliseconds) ? (float)elapsedMilliseconds : float.MaxValue;
+            runtime.LastNonFiniteCount = nonFiniteCount;
+            WriteRuntimeState(vault, in runtime);
+
+            int cursor = SystemDispatcher.CurrentFrameIndex % TelemetryCapacity;
+            uint flags = TelemetryFlagShiftCommit | (info.TimeSliced != 0 ? TelemetryFlagTimeSliced : 0u);
+            if (nonFiniteCount > 0)
+                flags |= TelemetryFlagNaN;
+            if (elapsedMilliseconds > RebaseWatchdogMs)
+                flags |= TelemetryFlagWatchdog;
+            float3 shiftLocal = default;
+            shiftLocal.x = (float)info.Signal.ShiftDelta.x;
+            shiftLocal.y = (float)info.Signal.ShiftDelta.y;
+            shiftLocal.z = (float)info.Signal.ShiftDelta.z;
+
+            AupOriginShiftTelemetryEntry entry = default;
+            entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+            entry.RebaseCount = runtime.RebaseCount;
+            entry.ShiftSequence = info.ShiftSequence;
+            entry.SectorHash = info.Signal.NewSectorHash;
+            entry.EntitiesShifted = info.EntitiesScheduled;
+            entry.HistoricalPointsShifted = info.HistoricalPointsScheduled;
+            entry.BatchStartIndex = info.BatchStartIndex;
+            entry.BatchCount = info.BatchCount;
+            entry.NonFiniteCount = nonFiniteCount;
+            entry.Flags = flags;
+            entry.ShiftDelta = info.Signal.ShiftDelta;
+            if (TryAcquireWriteView(vault, in _telemetryHandle, TelemetryCapacity, out NativeArray<AupOriginShiftTelemetryEntry> telemetryRing))
             {
-                if (!TryAcquireWriteView(vault, in _telemetryHandle, TelemetryCapacity, out telemetryRing) ||
-                    !TryAcquireWriteView(vault, in _telemetryDetailHandle, TelemetryCapacity, out telemetryDetailRing))
-                    return;
-
-                int nonFiniteCount = TryResolveCounter(vault, out NativeArray<AupPaddedAtomicCounter> counters) ? counters[0].NonFiniteCount : 0;
-                AupOriginShiftRuntimeState runtime = runtimeState[0];
-                runtime.RebaseCount++;
-                runtime.LastShiftSequence = info.ShiftSequence;
-                runtime.LastComputeTimeMs = math.isfinite((float)elapsedMilliseconds) ? (float)elapsedMilliseconds : float.MaxValue;
-                runtime.LastNonFiniteCount = nonFiniteCount;
-                runtimeState[0] = runtime;
-
-                int cursor = SystemDispatcher.CurrentFrameIndex % TelemetryCapacity;
-                uint flags = TelemetryFlagShiftCommit | (info.TimeSliced != 0 ? TelemetryFlagTimeSliced : 0u);
-                if (nonFiniteCount > 0)
-                    flags |= TelemetryFlagNaN;
-                if (elapsedMilliseconds > RebaseWatchdogMs)
-                    flags |= TelemetryFlagWatchdog;
-                float3 shiftLocal = default;
-                shiftLocal.x = (float)info.Signal.ShiftDelta.x;
-                shiftLocal.y = (float)info.Signal.ShiftDelta.y;
-                shiftLocal.z = (float)info.Signal.ShiftDelta.z;
-
-                AupOriginShiftTelemetryEntry entry = default;
-                entry.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
-                entry.RebaseCount = runtime.RebaseCount;
-                entry.ShiftSequence = info.ShiftSequence;
-                entry.SectorHash = info.Signal.NewSectorHash;
-                entry.EntitiesShifted = info.EntitiesScheduled;
-                entry.HistoricalPointsShifted = info.HistoricalPointsScheduled;
-                entry.BatchStartIndex = info.BatchStartIndex;
-                entry.BatchCount = info.BatchCount;
-                entry.NonFiniteCount = nonFiniteCount;
-                entry.Flags = flags;
-                entry.ShiftDelta = info.Signal.ShiftDelta;
-                telemetryRing[cursor] = entry;
-
-                AupOriginShiftTelemetryDetailEntry detail = default;
-                detail.TotalUniverseOffset = totalUniverseOffset;
-                detail.CameraLocalPosition = shiftLocal;
-                detail.RebaseComputeTimeMs = runtime.LastComputeTimeMs;
-                detail.SystemHealthIndex01 = math.saturate(HomeostasisBrain.SystemHealthIndex01);
-                detail.CameraSectorHash = info.Signal.NewSectorHash;
-                detail.PositionHash = math.hash(shiftLocal);
-                detail.HotEntitiesShifted = info.HotEntitiesScheduled;
-                telemetryDetailRing[cursor] = detail;
-
-                if ((flags & (TelemetryFlagNaN | TelemetryFlagWatchdog)) != 0u)
-                    DumpOriginShiftBlackBox(telemetryRing, telemetryDetailRing);
-            }
-            finally
-            {
-                if (telemetryDetailRing.IsCreated)
-                    vault.ReleaseWriteLock(in _telemetryDetailHandle, OwnerSystemId);
-                if (telemetryRing.IsCreated)
+                try
+                {
+                    telemetryRing[cursor] = entry;
+                }
+                finally
+                {
                     vault.ReleaseWriteLock(in _telemetryHandle, OwnerSystemId);
-                if (runtimeState.IsCreated)
-                    vault.ReleaseWriteLock(in _runtimeStateHandle, OwnerSystemId);
+                }
             }
+
+            AupOriginShiftTelemetryDetailEntry detail = default;
+            detail.TotalUniverseOffset = totalUniverseOffset;
+            detail.CameraLocalPosition = shiftLocal;
+            detail.RebaseComputeTimeMs = runtime.LastComputeTimeMs;
+            detail.SystemHealthIndex01 = math.saturate(HomeostasisBrain.SystemHealthIndex01);
+            detail.CameraSectorHash = info.Signal.NewSectorHash;
+            detail.PositionHash = math.hash(shiftLocal);
+            detail.HotEntitiesShifted = info.HotEntitiesScheduled;
+            if (TryAcquireWriteView(vault, in _telemetryDetailHandle, TelemetryCapacity, out NativeArray<AupOriginShiftTelemetryDetailEntry> telemetryDetailRing))
+            {
+                try
+                {
+                    telemetryDetailRing[cursor] = detail;
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _telemetryDetailHandle, OwnerSystemId);
+                }
+            }
+
+            if ((flags & (TelemetryFlagNaN | TelemetryFlagWatchdog)) != 0u)
+                DumpOriginShiftBlackBox(vault);
         }
 
         /// <summary>Requests a manual rebase from the editor facade.</summary>
