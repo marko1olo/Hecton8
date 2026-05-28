@@ -1,9 +1,14 @@
 {
   "schema": "hecton8.project_metrics_dashboard.v1",
-  "generated_at_samara": "2026-05-28T13:52:47.743310+04:00",
+  "generated_at_samara": "2026-05-28T14:52:02.112810+04:00",
   "token_report": "Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-28.json",
   "dashboard_markdown": "Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-28.md",
-  "chart_count": 29,
+  "chart_count": 41,
+  "long_range_windows_days": [
+    7,
+    30,
+    60
+  ],
   "charts": [
     {
       "name": "hourly_total_tokens_last_96h",
@@ -34,6 +39,78 @@
       "title": "Hourly cache/output/reasoning ratios - last 96h",
       "path": "MetricCharts/2026-05-28/hourly_ratios_last_96h.png",
       "description": ""
+    },
+    {
+      "name": "daily_total_tokens_last_7d",
+      "title": "Daily total tokens - last 7 days",
+      "path": "MetricCharts/2026-05-28/daily_total_tokens_last_7d.png",
+      "description": "Long-range token consumption window covering the last 7 calendar days with start/end/peak labels."
+    },
+    {
+      "name": "daily_cost_last_7d",
+      "title": "Daily GPT-5.5 standard cost - last 7 days",
+      "path": "MetricCharts/2026-05-28/daily_cost_last_7d.png",
+      "description": "Long-range GPT-5.5 API-equivalent cost window covering the last 7 calendar days with start/end/peak labels."
+    },
+    {
+      "name": "daily_io_stack_last_7d",
+      "title": "Daily input/output stack - last 7 days",
+      "path": "MetricCharts/2026-05-28/daily_io_stack_last_7d.png",
+      "description": "Long-range daily token composition window covering the last 7 calendar days."
+    },
+    {
+      "name": "daily_ratios_last_7d",
+      "title": "Daily cache/output/reasoning ratios - last 7 days",
+      "path": "MetricCharts/2026-05-28/daily_ratios_last_7d.png",
+      "description": "Long-range daily quality-of-usage ratios covering the last 7 calendar days."
+    },
+    {
+      "name": "daily_total_tokens_last_30d",
+      "title": "Daily total tokens - last 30 days",
+      "path": "MetricCharts/2026-05-28/daily_total_tokens_last_30d.png",
+      "description": "Long-range token consumption window covering the last 30 calendar days with start/end/peak labels."
+    },
+    {
+      "name": "daily_cost_last_30d",
+      "title": "Daily GPT-5.5 standard cost - last 30 days",
+      "path": "MetricCharts/2026-05-28/daily_cost_last_30d.png",
+      "description": "Long-range GPT-5.5 API-equivalent cost window covering the last 30 calendar days with start/end/peak labels."
+    },
+    {
+      "name": "daily_io_stack_last_30d",
+      "title": "Daily input/output stack - last 30 days",
+      "path": "MetricCharts/2026-05-28/daily_io_stack_last_30d.png",
+      "description": "Long-range daily token composition window covering the last 30 calendar days."
+    },
+    {
+      "name": "daily_ratios_last_30d",
+      "title": "Daily cache/output/reasoning ratios - last 30 days",
+      "path": "MetricCharts/2026-05-28/daily_ratios_last_30d.png",
+      "description": "Long-range daily quality-of-usage ratios covering the last 30 calendar days."
+    },
+    {
+      "name": "daily_total_tokens_last_60d",
+      "title": "Daily total tokens - last 60 days",
+      "path": "MetricCharts/2026-05-28/daily_total_tokens_last_60d.png",
+      "description": "Long-range token consumption window covering the last 60 calendar days with start/end/peak labels."
+    },
+    {
+      "name": "daily_cost_last_60d",
+      "title": "Daily GPT-5.5 standard cost - last 60 days",
+      "path": "MetricCharts/2026-05-28/daily_cost_last_60d.png",
+      "description": "Long-range GPT-5.5 API-equivalent cost window covering the last 60 calendar days with start/end/peak labels."
+    },
+    {
+      "name": "daily_io_stack_last_60d",
+      "title": "Daily input/output stack - last 60 days",
+      "path": "MetricCharts/2026-05-28/daily_io_stack_last_60d.png",
+      "description": "Long-range daily token composition window covering the last 60 calendar days."
+    },
+    {
+      "name": "daily_ratios_last_60d",
+      "title": "Daily cache/output/reasoning ratios - last 60 days",
+      "path": "MetricCharts/2026-05-28/daily_ratios_last_60d.png",
+      "description": "Long-range daily quality-of-usage ratios covering the last 60 calendar days."
     },
     {
       "name": "daily_total_tokens",
@@ -249,8 +326,8 @@
       {
         "extension": ".cs",
         "files": 6437,
-        "bytes": 132110975,
-        "lines": 3061756
+        "bytes": 132233709,
+        "lines": 3064474
       },
       {
         "extension": ".asset",
@@ -260,14 +337,14 @@
       },
       {
         "extension": ".json",
-        "files": 2220,
-        "bytes": 656301101,
-        "lines": 17166106
+        "files": 2229,
+        "bytes": 656475442,
+        "lines": 17168561
       },
       {
         "extension": ".png",
         "files": 1450,
-        "bytes": 1208491130,
+        "bytes": 1208491907,
         "lines": 0
       },
       {
@@ -284,9 +361,9 @@
       },
       {
         "extension": ".md",
-        "files": 935,
-        "bytes": 30383084,
-        "lines": 310180
+        "files": 937,
+        "bytes": 30630826,
+        "lines": 312363
       },
       {
         "extension": ".mat",
@@ -303,7 +380,7 @@
       {
         "extension": ".txt",
         "files": 814,
-        "bytes": 6295333,
+        "bytes": 6295327,
         "lines": 65435
       },
       {
@@ -314,8 +391,8 @@
       },
       {
         "extension": ".log",
-        "files": 642,
-        "bytes": 80308045,
+        "files": 653,
+        "bytes": 80469837,
         "lines": 0
       },
       {
@@ -339,8 +416,8 @@
       {
         "extension": ".py",
         "files": 234,
-        "bytes": 5180085,
-        "lines": 113554
+        "bytes": 5185376,
+        "lines": 113677
       },
       {
         "extension": ".asmdef",
@@ -439,6 +516,12 @@
         "lines": 0
       },
       {
+        "extension": ".sha256",
+        "files": 45,
+        "bytes": 4231,
+        "lines": 0
+      },
+      {
         "extension": ".unitypackage",
         "files": 44,
         "bytes": 44805027,
@@ -454,12 +537,6 @@
         "extension": ".jpg",
         "files": 37,
         "bytes": 105632787,
-        "lines": 0
-      },
-      {
-        "extension": ".sha256",
-        "files": 37,
-        "bytes": 3574,
         "lines": 0
       },
       {
@@ -501,8 +578,8 @@
       {
         "extension": ".ps1",
         "files": 30,
-        "bytes": 739324,
-        "lines": 13399
+        "bytes": 742877,
+        "lines": 13455
       },
       {
         "extension": ".h8bin",
@@ -1079,7 +1156,7 @@
       {
         "extension": ".png",
         "files": 1450,
-        "bytes": 1208491130,
+        "bytes": 1208491907,
         "lines": 0
       },
       {
@@ -1096,9 +1173,9 @@
       },
       {
         "extension": ".json",
-        "files": 2220,
-        "bytes": 656301101,
-        "lines": 17166106
+        "files": 2229,
+        "bytes": 656475442,
+        "lines": 17168561
       },
       {
         "extension": ".wav",
@@ -1121,8 +1198,8 @@
       {
         "extension": ".cs",
         "files": 6437,
-        "bytes": 132110975,
-        "lines": 3061756
+        "bytes": 132233709,
+        "lines": 3064474
       },
       {
         "extension": ".jpg",
@@ -1150,8 +1227,8 @@
       },
       {
         "extension": ".log",
-        "files": 642,
-        "bytes": 80308045,
+        "files": 653,
+        "bytes": 80469837,
         "lines": 0
       },
       {
@@ -1204,9 +1281,9 @@
       },
       {
         "extension": ".md",
-        "files": 935,
-        "bytes": 30383084,
-        "lines": 310180
+        "files": 937,
+        "bytes": 30630826,
+        "lines": 312363
       },
       {
         "extension": ".fbx",
@@ -1259,7 +1336,7 @@
       {
         "extension": ".txt",
         "files": 814,
-        "bytes": 6295333,
+        "bytes": 6295327,
         "lines": 65435
       },
       {
@@ -1289,8 +1366,8 @@
       {
         "extension": ".py",
         "files": 234,
-        "bytes": 5180085,
-        "lines": 113554
+        "bytes": 5185376,
+        "lines": 113677
       },
       {
         "extension": ".ptx",
@@ -1433,8 +1510,8 @@
       {
         "extension": ".ps1",
         "files": 30,
-        "bytes": 739324,
-        "lines": 13399
+        "bytes": 742877,
+        "lines": 13455
       },
       {
         "extension": ".backup",
@@ -1749,6 +1826,12 @@
         "lines": 0
       },
       {
+        "extension": ".sha256",
+        "files": 45,
+        "bytes": 4231,
+        "lines": 0
+      },
+      {
         "extension": ".bat",
         "files": 3,
         "bytes": 4073,
@@ -1770,12 +1853,6 @@
         "extension": ".lz4",
         "files": 3,
         "bytes": 3671,
-        "lines": 0
-      },
-      {
-        "extension": ".sha256",
-        "files": 37,
-        "bytes": 3574,
         "lines": 0
       },
       {
@@ -1922,7 +1999,7 @@
       },
       {
         "label": "Docs",
-        "files": 3346
+        "files": 3376
       },
       {
         "label": "Packages",
@@ -2542,11 +2619,11 @@
     "doc_artifacts": [
       {
         "label": "Docs reports json",
-        "count": 1508
+        "count": 1515
       },
       {
         "label": "Docs reports md",
-        "count": 163
+        "count": 165
       },
       {
         "label": "Agent logs md",
@@ -2554,7 +2631,7 @@
       },
       {
         "label": "Agent logs json",
-        "count": 126
+        "count": 128
       },
       {
         "label": "Task status md",
@@ -2986,11 +3063,11 @@
       },
       {
         "period": "2026-05-28",
-        "commits": 43,
-        "insertions": 1129241,
-        "deletions": 16925,
-        "files_changed": 1516,
-        "churn": 1146166
+        "commits": 55,
+        "insertions": 1159657,
+        "deletions": 26514,
+        "files_changed": 1964,
+        "churn": 1186171
       }
     ],
     "weekly": [
@@ -3060,11 +3137,11 @@
       },
       {
         "period": "2026-W22",
-        "commits": 141,
-        "insertions": 18338943,
-        "deletions": 568824,
-        "files_changed": 12519,
-        "churn": 18907767
+        "commits": 153,
+        "insertions": 18369359,
+        "deletions": 578413,
+        "files_changed": 12967,
+        "churn": 18947772
       }
     ],
     "weekday_hour_commit_heatmap": [
@@ -3160,8 +3237,8 @@
         0,
         1,
         4,
-        5,
-        8,
+        6,
+        19,
         3,
         1,
         5,

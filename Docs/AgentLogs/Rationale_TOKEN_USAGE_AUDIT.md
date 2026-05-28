@@ -188,3 +188,11 @@ Solution: Downgrade long-context detection to `LOCAL_JSONL_DELTA_LOWER_BOUND_NOT
 Rejected Alternatives: Claiming exact provider-side long-context billing was rejected because local JSONL lacks invoice classification. Count-only chart validation was rejected because 29 files on disk can still be the wrong 29 files. Running compile checks under active csc/dotnet contention was rejected by the compilation throttling rule.
 Scalability potential: Future report refreshes can detect stale/missing chart assets and keep pricing claims inside their evidence class without slowing Unity runtime.
 Hardware Impact: 0 us runtime gain. Audit quality gain: false certainty around pricing and chart integrity is reduced; compile contention is recorded instead of hidden.
+
+## Decision 32 - 2026-05-28 long-range chart windows
+
+Problem: The dashboard contained 96-hour hourly charts plus broad daily/weekly charts, but the operator wanted explicit week/month/two-month token-consumption views with readable labels.
+Solution: Add generated 7d, 30d, and 60d daily chart windows for total tokens, GPT-5.5 cost, I/O stack, and cache/output/reasoning ratios. Annotate long-range line charts with start/end/peak/min labels so the PNGs are readable without opening the JSON.
+Rejected Alternatives: Keeping only `last_96h` was rejected because it hides monthly burn shape. Adding manual screenshots was rejected because regenerated evidence must come from the Python dashboard pipeline.
+Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected; this is offline reporting. Audit scalability improves because future refreshes produce the same long-range chart set from source telemetry.
+Hardware Impact: 0 us runtime gain. Reporting gain: chart count increased from 29 to 41 with 12 explicit long-range PNG artifacts.

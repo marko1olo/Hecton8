@@ -476,3 +476,39 @@ Compilation/resource throttling:
 
 Cinematic Cheats used -> None; offline telemetry/reporting only. No runtime simulation or visual system touched.
 Exact Microseconds saved -> 0 us game runtime. Audit correctness only.
+
+## 2026-05-28 15:05 Europe/Samara - Long-range chart polish
+
+What was wrong:
+- The chart directory existed, but the most explicit hourly token views were capped at `last_96h`.
+- Daily/weekly charts existed but did not provide explicit week/month/two-month windows with readable annotations.
+
+What was done:
+- Updated `Tools/ProjectMetricsDashboard_20260528.py`.
+- Added generated daily windows: `7d`, `30d`, `60d`.
+- Added 12 new PNG chart artifacts:
+  - `daily_total_tokens_last_7d.png`, `daily_cost_last_7d.png`, `daily_io_stack_last_7d.png`, `daily_ratios_last_7d.png`.
+  - `daily_total_tokens_last_30d.png`, `daily_cost_last_30d.png`, `daily_io_stack_last_30d.png`, `daily_ratios_last_30d.png`.
+  - `daily_total_tokens_last_60d.png`, `daily_cost_last_60d.png`, `daily_io_stack_last_60d.png`, `daily_ratios_last_60d.png`.
+- Added start/end/peak/min annotations for long-range line charts.
+- Regenerated `Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-28.json` and `.md`.
+
+Evidence:
+- Chart directory: `Docs/Reports/MetricCharts/2026-05-28/`.
+- Dashboard Markdown: `Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-28.md`.
+- Dashboard JSON: `Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-28.json`.
+- Chart count: `41`.
+- Long-range windows: `[7, 30, 60]`.
+- Long-range chart count: `12`.
+- Missing long-range PNGs: `0`.
+- Bad PNG signatures: `0`.
+
+Verification:
+- `python Tools\ProjectMetricsDashboard_20260528.py` passed.
+- `python -m py_compile Tools\ProjectMetricsDashboard_20260528.py` passed.
+- JSON parse and long-range chart manifest check passed.
+- `dotnet build`: not invoked.
+- Unity build/import/playmode: not invoked.
+
+Cinematic Cheats used -> None; offline reporting only.
+Exact Microseconds saved -> 0 us game runtime. Reporting readability improved.

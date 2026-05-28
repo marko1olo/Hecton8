@@ -1,6 +1,6 @@
 ﻿# Project Metrics Dashboard 2026-05-28
 
-Generated Samara: `2026-05-28T13:52:47.746319+04:00`
+Generated Samara: `2026-05-28T14:52:02.117883+04:00`
 Evidence class: static local Codex JSONL, git history, and filesystem scan. Token cost is API-equivalent, not invoice proof.
 
 ## Headline
@@ -23,7 +23,8 @@ Evidence class: static local Codex JSONL, git history, and filesystem scan. Toke
 | Tokens/hour since previous snapshot | 282,851,878 |
 | GPT-5.5 standard USD/hour since previous snapshot | $220.95 |
 | Primary C# LOC/hour since previous snapshot | 1,792.16 |
-| Chart count | 29 |
+| Long-range chart windows | 7d, 30d, 60d |
+| Chart count | 41 |
 
 ## Chart Index
 
@@ -32,6 +33,18 @@ Evidence class: static local Codex JSONL, git history, and filesystem scan. Toke
 - [Hourly input/output stack - last 96h](#hourly_io_stack_last_96h)
 - [Hourly output and reasoning output - last 96h](#hourly_output_reasoning_last_96h)
 - [Hourly cache/output/reasoning ratios - last 96h](#hourly_ratios_last_96h)
+- [Daily total tokens - last 7 days](#daily_total_tokens_last_7d)
+- [Daily GPT-5.5 standard cost - last 7 days](#daily_cost_last_7d)
+- [Daily input/output stack - last 7 days](#daily_io_stack_last_7d)
+- [Daily cache/output/reasoning ratios - last 7 days](#daily_ratios_last_7d)
+- [Daily total tokens - last 30 days](#daily_total_tokens_last_30d)
+- [Daily GPT-5.5 standard cost - last 30 days](#daily_cost_last_30d)
+- [Daily input/output stack - last 30 days](#daily_io_stack_last_30d)
+- [Daily cache/output/reasoning ratios - last 30 days](#daily_ratios_last_30d)
+- [Daily total tokens - last 60 days](#daily_total_tokens_last_60d)
+- [Daily GPT-5.5 standard cost - last 60 days](#daily_cost_last_60d)
+- [Daily input/output stack - last 60 days](#daily_io_stack_last_60d)
+- [Daily cache/output/reasoning ratios - last 60 days](#daily_ratios_last_60d)
 - [Daily total tokens](#daily_total_tokens)
 - [Daily GPT-5.5 standard cost](#daily_cost)
 - [Daily input/output stack](#daily_io_stack)
@@ -78,6 +91,78 @@ Evidence class: static local Codex JSONL, git history, and filesystem scan. Toke
 ### hourly_ratios_last_96h
 
 ![Hourly cache/output/reasoning ratios - last 96h](MetricCharts/2026-05-28/hourly_ratios_last_96h.png)
+
+### daily_total_tokens_last_7d
+
+![Daily total tokens - last 7 days](MetricCharts/2026-05-28/daily_total_tokens_last_7d.png)
+
+Evidence note: Long-range token consumption window covering the last 7 calendar days with start/end/peak labels.
+
+### daily_cost_last_7d
+
+![Daily GPT-5.5 standard cost - last 7 days](MetricCharts/2026-05-28/daily_cost_last_7d.png)
+
+Evidence note: Long-range GPT-5.5 API-equivalent cost window covering the last 7 calendar days with start/end/peak labels.
+
+### daily_io_stack_last_7d
+
+![Daily input/output stack - last 7 days](MetricCharts/2026-05-28/daily_io_stack_last_7d.png)
+
+Evidence note: Long-range daily token composition window covering the last 7 calendar days.
+
+### daily_ratios_last_7d
+
+![Daily cache/output/reasoning ratios - last 7 days](MetricCharts/2026-05-28/daily_ratios_last_7d.png)
+
+Evidence note: Long-range daily quality-of-usage ratios covering the last 7 calendar days.
+
+### daily_total_tokens_last_30d
+
+![Daily total tokens - last 30 days](MetricCharts/2026-05-28/daily_total_tokens_last_30d.png)
+
+Evidence note: Long-range token consumption window covering the last 30 calendar days with start/end/peak labels.
+
+### daily_cost_last_30d
+
+![Daily GPT-5.5 standard cost - last 30 days](MetricCharts/2026-05-28/daily_cost_last_30d.png)
+
+Evidence note: Long-range GPT-5.5 API-equivalent cost window covering the last 30 calendar days with start/end/peak labels.
+
+### daily_io_stack_last_30d
+
+![Daily input/output stack - last 30 days](MetricCharts/2026-05-28/daily_io_stack_last_30d.png)
+
+Evidence note: Long-range daily token composition window covering the last 30 calendar days.
+
+### daily_ratios_last_30d
+
+![Daily cache/output/reasoning ratios - last 30 days](MetricCharts/2026-05-28/daily_ratios_last_30d.png)
+
+Evidence note: Long-range daily quality-of-usage ratios covering the last 30 calendar days.
+
+### daily_total_tokens_last_60d
+
+![Daily total tokens - last 60 days](MetricCharts/2026-05-28/daily_total_tokens_last_60d.png)
+
+Evidence note: Long-range token consumption window covering the last 60 calendar days with start/end/peak labels.
+
+### daily_cost_last_60d
+
+![Daily GPT-5.5 standard cost - last 60 days](MetricCharts/2026-05-28/daily_cost_last_60d.png)
+
+Evidence note: Long-range GPT-5.5 API-equivalent cost window covering the last 60 calendar days with start/end/peak labels.
+
+### daily_io_stack_last_60d
+
+![Daily input/output stack - last 60 days](MetricCharts/2026-05-28/daily_io_stack_last_60d.png)
+
+Evidence note: Long-range daily token composition window covering the last 60 calendar days.
+
+### daily_ratios_last_60d
+
+![Daily cache/output/reasoning ratios - last 60 days](MetricCharts/2026-05-28/daily_ratios_last_60d.png)
+
+Evidence note: Long-range daily quality-of-usage ratios covering the last 60 calendar days.
 
 ### daily_total_tokens
 

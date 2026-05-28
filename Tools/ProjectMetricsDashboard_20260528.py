@@ -112,6 +112,10 @@ def parse_hour(period):
     return datetime.datetime.strptime(period, "%Y-%m-%d %H:00").replace(tzinfo=SAMARA)
 
 
+def parse_day(period):
+    return datetime.datetime.strptime(period, "%Y-%m-%d").date()
+
+
 def fill_recent_hours(rows, count=96):
     by_period = {row["period"]: row for row in rows}
     if rows:
@@ -123,6 +127,24 @@ def fill_recent_hours(rows, count=96):
     for index in range(count):
         dt = start + datetime.timedelta(hours=index)
         key = dt.strftime("%Y-%m-%d %H:00")
+        row = by_period.get(key)
+        if row is None:
+            row = {"period": key, **{usage_key: 0 for usage_key in USAGE_KEYS}, "uncached_input_tokens": 0, "cost_usd": 0.0, "cache_ratio": 0.0, "output_ratio": 0.0, "reasoning_ratio": 0.0}
+        filled.append(row)
+    return filled
+
+
+def fill_recent_days(rows, count):
+    by_period = {row["period"]: row for row in rows}
+    if rows:
+        end = parse_day(rows[-1]["period"])
+    else:
+        end = datetime.datetime.now(SAMARA).date()
+    start = end - datetime.timedelta(days=count - 1)
+    filled = []
+    for index in range(count):
+        dt = start + datetime.timedelta(days=index)
+        key = dt.isoformat()
         row = by_period.get(key)
         if row is None:
             row = {"period": key, **{usage_key: 0 for usage_key in USAGE_KEYS}, "uncached_input_tokens": 0, "cost_usd": 0.0, "cache_ratio": 0.0, "output_ratio": 0.0, "reasoning_ratio": 0.0}
@@ -155,6 +177,32 @@ def save_current_figure(name):
     return path
 
 
+def annotate_extremes(ax, rows, y_key, scale=1.0, label="value"):
+    if not rows:
+        return
+    values = [row[y_key] / scale for row in rows]
+    if not values:
+        return
+    candidates = {0, len(values) - 1, max(range(len(values)), key=lambda index: values[index])}
+    low = min(range(len(values)), key=lambda index: values[index])
+    if values[low] > 0:
+        candidates.add(low)
+    for index in sorted(candidates):
+        value = values[index]
+        if not math.isfinite(value):
+            continue
+        ax.annotate(
+            f"{label}: {value:,.2f}\n{rows[index]['period']}",
+            xy=(index, value),
+            xytext=(0, 14),
+            textcoords="offset points",
+            ha="center",
+            fontsize=8,
+            bbox={"boxstyle": "round,pad=0.28", "facecolor": "white", "edgecolor": "#94a3b8", "alpha": 0.88},
+            arrowprops={"arrowstyle": "-", "color": "#64748b", "lw": 0.8},
+        )
+
+
 def add_line_chart(charts, rows, name, title, y_key, scale=1.0, ylabel=None, color="#3b82f6", description=""):
     fig, ax = plt.subplots(figsize=(14, 6))
     xs = list(range(len(rows)))
@@ -162,6 +210,19 @@ def add_line_chart(charts, rows, name, title, y_key, scale=1.0, ylabel=None, col
     ax.plot(xs, ys, color=color, linewidth=2)
     configure_axes(ax, title, ylabel)
     label_period_axis(ax, rows)
+    path = save_current_figure(name)
+    charts.append({"name": name, "title": title, "path": str(path.relative_to(REPORT_DIR)).replace("\\", "/"), "description": description})
+
+
+def add_annotated_line_chart(charts, rows, name, title, y_key, scale=1.0, ylabel=None, color="#3b82f6", value_label="value", description=""):
+    fig, ax = plt.subplots(figsize=(15, 7))
+    xs = list(range(len(rows)))
+    ys = [row[y_key] / scale for row in rows]
+    ax.plot(xs, ys, color=color, linewidth=2.4)
+    ax.fill_between(xs, ys, color=color, alpha=0.12)
+    configure_axes(ax, title, ylabel)
+    label_period_axis(ax, rows, max_labels=14)
+    annotate_extremes(ax, rows, y_key, scale, value_label)
     path = save_current_figure(name)
     charts.append({"name": name, "title": title, "path": str(path.relative_to(REPORT_DIR)).replace("\\", "/"), "description": description})
 
@@ -345,12 +406,64 @@ def generate_charts(report, project_metrics, git_metrics):
     hourly = fill_recent_hours(period_rows(report, "hourly", "hourly_gpt_5_5_standard_costs_usd"), 96)
     daily = period_rows(report, "daily", "daily_gpt_5_5_standard_costs_usd")
     weekly = period_rows(report, "weekly", "weekly_gpt_5_5_standard_costs_usd")
+    long_windows = {
+        7: fill_recent_days(daily, 7),
+        30: fill_recent_days(daily, 30),
+        60: fill_recent_days(daily, 60),
+    }
 
     add_line_chart(charts, hourly, "hourly_total_tokens_last_96h", "Hourly total tokens - last 96h", "total_tokens", 1_000_000, "million tokens", "#2563eb")
     add_line_chart(charts, hourly, "hourly_cost_last_96h", "Hourly GPT-5.5 standard cost - last 96h", "cost_usd", 1, "USD", "#16a34a")
     add_stack_chart(charts, hourly, "hourly_io_stack_last_96h", "Hourly input/output stack - last 96h", (("uncached_input_tokens", "uncached input", "#f97316"), ("cached_input_tokens", "cached input", "#22c55e"), ("output_tokens", "output", "#3b82f6")), 1_000_000, "million tokens")
     add_multi_line_chart(charts, hourly, "hourly_output_reasoning_last_96h", "Hourly output and reasoning output - last 96h", (("output_tokens", "output", "#2563eb"), ("reasoning_output_tokens", "reasoning output", "#9333ea")), 1_000, "thousand tokens")
     add_multi_line_chart(charts, hourly, "hourly_ratios_last_96h", "Hourly cache/output/reasoning ratios - last 96h", (("cache_ratio", "cache ratio", "#16a34a"), ("output_ratio", "output/total", "#2563eb"), ("reasoning_ratio", "reasoning/output", "#9333ea")), 0.01, "percent")
+
+    for days, rows in long_windows.items():
+        suffix = f"last_{days}d"
+        add_annotated_line_chart(
+            charts,
+            rows,
+            f"daily_total_tokens_{suffix}",
+            f"Daily total tokens - last {days} days",
+            "total_tokens",
+            1_000_000_000,
+            "billion tokens",
+            "#1d4ed8",
+            "B tokens",
+            f"Long-range token consumption window covering the last {days} calendar days with start/end/peak labels.",
+        )
+        add_annotated_line_chart(
+            charts,
+            rows,
+            f"daily_cost_{suffix}",
+            f"Daily GPT-5.5 standard cost - last {days} days",
+            "cost_usd",
+            1,
+            "USD",
+            "#15803d",
+            "USD",
+            f"Long-range GPT-5.5 API-equivalent cost window covering the last {days} calendar days with start/end/peak labels.",
+        )
+        add_stack_chart(
+            charts,
+            rows,
+            f"daily_io_stack_{suffix}",
+            f"Daily input/output stack - last {days} days",
+            (("uncached_input_tokens", "uncached input", "#f97316"), ("cached_input_tokens", "cached input", "#22c55e"), ("output_tokens", "output", "#3b82f6")),
+            1_000_000_000,
+            "billion tokens",
+            f"Long-range daily token composition window covering the last {days} calendar days.",
+        )
+        add_multi_line_chart(
+            charts,
+            rows,
+            f"daily_ratios_{suffix}",
+            f"Daily cache/output/reasoning ratios - last {days} days",
+            (("cache_ratio", "cache ratio", "#16a34a"), ("output_ratio", "output/total", "#2563eb"), ("reasoning_ratio", "reasoning/output", "#9333ea")),
+            0.01,
+            "percent",
+            f"Long-range daily quality-of-usage ratios covering the last {days} calendar days.",
+        )
 
     add_line_chart(charts, daily, "daily_total_tokens", "Daily total tokens", "total_tokens", 1_000_000_000, "billion tokens", "#2563eb")
     add_line_chart(charts, daily, "daily_cost", "Daily GPT-5.5 standard cost", "cost_usd", 1, "USD", "#16a34a")
@@ -422,6 +535,7 @@ def markdown_report(report, project_metrics, git_metrics, charts):
         f"| Tokens/hour since previous snapshot | {fmt_int(velocity.get('total_tokens_per_hour', 0))} |",
         f"| GPT-5.5 standard USD/hour since previous snapshot | {fmt_money(velocity.get('gpt_5_5_standard_usd_per_hour', 0))} |",
         f"| Primary C# LOC/hour since previous snapshot | {velocity.get('primary_code_lines_per_hour', 0):,.2f} |",
+        "| Long-range chart windows | 7d, 30d, 60d |",
         f"| Chart count | {len(charts)} |",
         "",
         "## Chart Index",
@@ -437,6 +551,8 @@ def markdown_report(report, project_metrics, git_metrics, charts):
             f"![{chart['title']}]({chart['path']})",
             "",
         ]
+        if chart.get("description"):
+            lines += [f"Evidence note: {chart['description']}", ""]
     lines += [
         "## Supporting Data",
         "",
@@ -470,6 +586,7 @@ def main():
         "token_report": str(TOKEN_JSON.relative_to(PROJECT)).replace("\\", "/"),
         "dashboard_markdown": str(DASHBOARD_MD.relative_to(PROJECT)).replace("\\", "/"),
         "chart_count": len(charts),
+        "long_range_windows_days": [7, 30, 60],
         "charts": charts,
         "token_headline": {
             "total_tokens": report["totals"]["total_tokens"],
