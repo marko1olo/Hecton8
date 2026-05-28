@@ -146,6 +146,7 @@ namespace Hecton8.VFX
         private const int CAMERA_JUICE_TELEMETRY_CAPACITY = 300;
         private const int CameraJuiceTelemetryEntrySizeBytes = 64;
         private const int CameraJuiceTelemetryDumpHeaderSizeBytes = 32;
+        private const SystemID CameraJuiceOwnerSystemId = SystemID.Vfx;
         private const uint CameraJuiceTelemetryDumpMagic = 0x354A4353u; // SCJ5
         private const uint CameraJuiceTelemetryDumpVersion = 4u;
         private const uint CAMERA_JUICE_HIT_STOP_REASON_HASH = 0xC45A1CEu;
@@ -709,7 +710,7 @@ namespace Hecton8.VFX
             ReleaseCameraJuiceTelemetryBuffer(_dataVault);
             ReleaseProceduralCameraJuiceBuffers();
             _dataVault = vault;
-            _cameraJuiceTelemetryCursor = 0;
+            ResetCameraJuiceTelemetryEpochState();
             RefreshCameraJuiceColdVaultHandles();
             EnsureCameraJuiceTelemetry();
             EnsureProceduralCameraJuiceBuffers();
@@ -1349,8 +1350,8 @@ namespace Hecton8.VFX
                 return false;
             }
 
-            if (IsVaultHandleCreated(in _cameraJuiceTelemetryHandle) &&
-                vault.TryResolveHandle(in _cameraJuiceTelemetryHandle, out NativeArray<CameraJuiceTelemetryEntry> existingTelemetry) &&
+            if (IsCameraJuiceTelemetryHandle(in _cameraJuiceTelemetryHandle) &&
+                vault.TryReadOnlyHandle(in _cameraJuiceTelemetryHandle, out NativeArray<CameraJuiceTelemetryEntry>.ReadOnly existingTelemetry) &&
                 existingTelemetry.IsCreated &&
                 existingTelemetry.Length >= CAMERA_JUICE_TELEMETRY_CAPACITY)
             {
@@ -1361,7 +1362,8 @@ namespace Hecton8.VFX
             if (vault.TryGetGenerationHandle<CameraJuiceTelemetryEntry>(
                     BufferID.CameraJuiceTelemetryRing,
                     out VaultGenerationHandle<CameraJuiceTelemetryEntry> borrowedHandle) &&
-                vault.TryResolveHandle(in borrowedHandle, out existingTelemetry) &&
+                IsCameraJuiceTelemetryHandle(in borrowedHandle) &&
+                vault.TryReadOnlyHandle(in borrowedHandle, out existingTelemetry) &&
                 existingTelemetry.IsCreated &&
                 existingTelemetry.Length >= CAMERA_JUICE_TELEMETRY_CAPACITY)
             {
@@ -1380,39 +1382,55 @@ namespace Hecton8.VFX
             VaultGenerationHandle<CameraJuiceTelemetryEntry> acquiredHandle = vault.EnsureGenerationHandle<CameraJuiceTelemetryEntry>(
                 BufferID.CameraJuiceTelemetryRing,
                 CAMERA_JUICE_TELEMETRY_CAPACITY,
-                SystemID.Vfx,
+                CameraJuiceOwnerSystemId,
                 NativeArrayOptions.UninitializedMemory);
             bool ownsAcquiredHandle = true;
 
-            if (!IsVaultHandleCreated(in acquiredHandle) ||
-                !vault.TryResolveHandle(in acquiredHandle, out existingTelemetry) ||
-                !existingTelemetry.IsCreated ||
-                existingTelemetry.Length < CAMERA_JUICE_TELEMETRY_CAPACITY)
+            if (!IsCameraJuiceTelemetryHandle(in acquiredHandle) ||
+                !TryAcquireCameraJuiceTelemetryWriteBuffer(vault, in acquiredHandle, out NativeArray<CameraJuiceTelemetryEntry> telemetry))
             {
-                if (IsVaultHandleCreated(in acquiredHandle) && ownsAcquiredHandle)
+                if (IsCameraJuiceTelemetryHandle(in acquiredHandle) && ownsAcquiredHandle)
                     vault.ReleaseBuffer(in acquiredHandle);
 
                 ClearCameraJuiceTelemetryDescriptor();
                 return false;
             }
 
+            try
+            {
+                InitializeCameraJuiceTelemetryRing(telemetry);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in acquiredHandle, CameraJuiceOwnerSystemId);
+            }
+
             _cameraJuiceTelemetryHandle = acquiredHandle;
             _ownsCameraJuiceTelemetryBuffer = ownsAcquiredHandle;
             _cameraJuiceTelemetryReady = true;
-            InitializeCameraJuiceTelemetryRing(existingTelemetry);
             return true;
         }
 
-        private bool OpenCameraJuiceTelemetryForWrite(out NativeArray<CameraJuiceTelemetryEntry> telemetry)
+        private static bool TryAcquireCameraJuiceTelemetryWriteBuffer(
+            IDataVault vault,
+            in VaultGenerationHandle<CameraJuiceTelemetryEntry> handle,
+            out NativeArray<CameraJuiceTelemetryEntry> telemetry)
         {
             telemetry = default;
-            IDataVault vault = _dataVault;
             if (vault == null ||
-                !IsVaultHandleCreated(in _cameraJuiceTelemetryHandle) ||
-                !vault.TryResolveHandle(in _cameraJuiceTelemetryHandle, out telemetry) ||
+                vault.IsCompactionFenceActive ||
+                !IsCameraJuiceTelemetryHandle(in handle) ||
+                !vault.TryAcquireWriteLock(in handle, CameraJuiceOwnerSystemId, out telemetry))
+            {
+                return false;
+            }
+
+            if (vault.IsCompactionFenceActive ||
                 !telemetry.IsCreated ||
                 telemetry.Length < CAMERA_JUICE_TELEMETRY_CAPACITY)
             {
+                vault.ReleaseWriteLock(in handle, CameraJuiceOwnerSystemId);
+                telemetry = default;
                 return false;
             }
 
@@ -1424,8 +1442,10 @@ namespace Hecton8.VFX
             telemetry = default;
             IDataVault vault = _dataVault;
             if (vault == null ||
-                !IsVaultHandleCreated(in _cameraJuiceTelemetryHandle) ||
+                vault.IsCompactionFenceActive ||
+                !IsCameraJuiceTelemetryHandle(in _cameraJuiceTelemetryHandle) ||
                 !vault.TryReadOnlyHandle(in _cameraJuiceTelemetryHandle, out telemetry) ||
+                vault.IsCompactionFenceActive ||
                 !telemetry.IsCreated ||
                 telemetry.Length < CAMERA_JUICE_TELEMETRY_CAPACITY)
             {
@@ -1439,14 +1459,14 @@ namespace Hecton8.VFX
         {
             ReleaseCameraJuiceTelemetryBuffer(_dataVault);
             _dataVault = null;
-            _cameraJuiceTelemetryCursor = 0;
+            ResetCameraJuiceTelemetryEpochState();
         }
 
         private void ReleaseCameraJuiceTelemetryBuffer(IDataVault vault)
         {
             if (_ownsCameraJuiceTelemetryBuffer &&
                 vault != null &&
-                IsVaultHandleCreated(in _cameraJuiceTelemetryHandle))
+                IsCameraJuiceTelemetryHandle(in _cameraJuiceTelemetryHandle))
             {
                 vault.ReleaseBuffer(in _cameraJuiceTelemetryHandle);
             }
@@ -1462,9 +1482,18 @@ namespace Hecton8.VFX
             _cameraJuiceTelemetryDumpRequested = false;
         }
 
-        private static bool IsVaultHandleCreated(in VaultGenerationHandle<CameraJuiceTelemetryEntry> handle)
+        private void ResetCameraJuiceTelemetryEpochState()
         {
-            return handle.BufferID != 0u && handle.Generation != 0u;
+            _cameraJuiceTelemetryCursor = 0;
+            _cameraJuiceTelemetryDumped = false;
+            _cameraJuiceTelemetryDumpRequested = false;
+        }
+
+        private static bool IsCameraJuiceTelemetryHandle(in VaultGenerationHandle<CameraJuiceTelemetryEntry> handle)
+        {
+            return handle.BufferID == unchecked((uint)(int)BufferID.CameraJuiceTelemetryRing) &&
+                   handle.SystemID == (uint)CameraJuiceOwnerSystemId &&
+                   handle.Generation != 0u;
         }
 
         private static bool ValidateCameraJuiceTelemetryLayout()

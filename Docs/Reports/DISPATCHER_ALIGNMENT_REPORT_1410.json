@@ -3,7 +3,7 @@
   "role": "DISPATCHER_PHASE_ALIGNMENT_AND_LATEFRAME_SYNC_VALIDATOR",
   "domain": "Echelon 1 Core Infrastructure / Tick Dispatcher & Time Dilation",
   "taskCount": 20,
-  "generatedAtUtc": "2026-05-28T01:26:27.651767+00:00",
+  "generatedAtUtc": "2026-05-28T01:51:45.891209+00:00",
   "status": "STATIC_PROOF_COMPLETE_BUILD_BLOCKED_BY_CONTENTION",
   "truthBoundary": "Unity import, Play Mode, profiler, GCMonitor, player build, and device runtime proof are absent; only static proof and text scan evidence are claimed.",
   "phaseDependencyScan": {
@@ -229,14 +229,70 @@
       {
         "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
         "method": "RunDispatcherLateFrame",
-        "line": 5391,
+        "line": 5390,
         "counts": {
           "newReferenceCandidateCount": 0,
-          "newReferenceCandidates": [],
           "stringFormatCount": 0,
           "toStringCount": 0,
           "linqCount": 0,
           "foreachCount": 0,
+          "newReferenceCandidates": [],
+          "totalForbiddenCount": 0
+        }
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+        "method": "ApplyMathPrecisionShaderState",
+        "line": 2404,
+        "counts": {
+          "newReferenceCandidateCount": 0,
+          "stringFormatCount": 0,
+          "toStringCount": 0,
+          "linqCount": 0,
+          "foreachCount": 0,
+          "newReferenceCandidates": [],
+          "totalForbiddenCount": 0
+        }
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+        "method": "QueueMathPrecisionShaderState",
+        "line": 2413,
+        "counts": {
+          "newReferenceCandidateCount": 0,
+          "stringFormatCount": 0,
+          "toStringCount": 0,
+          "linqCount": 0,
+          "foreachCount": 0,
+          "newReferenceCandidates": [],
+          "totalForbiddenCount": 0
+        }
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+        "method": "TickMathPrecisionTransition",
+        "line": 2978,
+        "counts": {
+          "newReferenceCandidateCount": 0,
+          "stringFormatCount": 0,
+          "toStringCount": 0,
+          "linqCount": 0,
+          "foreachCount": 0,
+          "newReferenceCandidates": [],
+          "totalForbiddenCount": 0
+        }
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
+        "method": "FlushMathPrecisionShaderState",
+        "line": 2423,
+        "counts": {
+          "newReferenceCandidateCount": 0,
+          "stringFormatCount": 0,
+          "toStringCount": 0,
+          "linqCount": 0,
+          "foreachCount": 0,
+          "newReferenceCandidates": [],
           "totalForbiddenCount": 0
         }
       }
@@ -310,19 +366,64 @@
   "modifiedFileSha256": {
     "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs": "5329b6e2976bbeb30aee316d8b2718b28928fe26eb0655a6092c147ccd536fdc",
     "Assets/_Project/Scripts/Core/HomeostasisBrain.ScalabilityDictator.cs": "c2237f1181f931f7e274448d7b1fbd278cb157a504dfb04ff3889b23dd0c4841",
-    "Assets/_Project/Scripts/Core/SystemDispatcher.cs": "885450a5163a4b9b603ae6d83589b0cc5fdb4b25640668f62226756cb9402961",
-    "Assets/_Project/Tests/Editor/DispatcherPhaseAlignment1410EditTests.cs": "beefcaa001c6beba3adc1a87350aeab655e906c00b38831052dd0d315c6046d3"
+    "Assets/_Project/Scripts/Core/SystemDispatcher.cs": "48df633baecc68e5201750c5b7795562216629110c8e62cb2673eeeeb76e6371",
+    "Assets/_Project/Scripts/Core/GlobalRegistry.cs": "457175909766566b827840239e3ed87675dc9f1da67d09ae7aaf16e25995d9d1",
+    "Assets/_Project/Tests/Editor/DispatcherPhaseAlignment1410EditTests.cs": "2666d660b1e688a813e3b906e7244a6c79753d318c0158e356a1995e6e4e05cb"
   },
   "reports": {
     "phaseDependency": "Docs/Reports/DISPATCHER_PHASE_DEPENDENCY_SCAN_1410.json",
     "phaseDependencyStrictMirror": "Docs/Reports/DISPATCHER_PHASE_DEPENDENCY_SCAN_1410_STRICT.json",
     "apexPresentation": "Docs/Reports/DISPATCHER_APEX_PRESENTATION_SCAN_1410.json",
     "buildGate": "Docs/Reports/DISPATCHER_BUILD_GATE_1410.json",
-    "final": "Docs/Reports/DISPATCHER_ALIGNMENT_REPORT_1410.json"
+    "final": "Docs/Reports/DISPATCHER_ALIGNMENT_REPORT_1410.json",
+    "apexRecheck2": "Docs/Reports/DISPATCHER_APEX_RECHECK2_1410.json"
   },
   "knownFaultsAndLimits": [
     "No dotnet build was run because CPU gate is 100% and active dotnet process exists.",
     "No Unity Play Mode, Profiler, GCMonitor, RenderDoc, or player/device proof was generated in this turn.",
-    "SystemDispatcher.cs and HomeostasisBrain.ScalabilityDictator.cs contain concurrent non-1410 edits in git diff; 1410 only claims the line-scoped phase deferral listed above."
-  ]
+    "SystemDispatcher.cs and HomeostasisBrain.ScalabilityDictator.cs contain concurrent non-1410 edits in git diff; 1410 only claims the line-scoped phase deferral listed above.",
+    "APEX recheck2 is a bounded rg-first static audit, not a Roslyn semantic proof.",
+    "Two attempted broad Python call-graph classifiers timed out and were terminated; the final bounded scanner avoided the O(n^2) proof path."
+  ],
+  "apexRecheck2": {
+    "path": "Docs/Reports/DISPATCHER_APEX_RECHECK2_1410.json",
+    "elapsedMicroseconds": 1200105,
+    "totalPresentationOrReadbackTokenLines": 1336,
+    "directHotOrMagicTokenLineCount": 0,
+    "runtimeUnityMagicMethodCount": 0,
+    "editorSuffixMagicMethodExclusionCount": 1,
+    "classificationCounts": {
+      "COLD_OR_LIFECYCLE_NAME": 99,
+      "REVIEW_NON_VISUAL_NAME": 1002,
+      "UNKNOWN_CONTEXT": 13,
+      "VISUAL_OR_RENDER_NAME": 222
+    },
+    "manualTriageNotes": [
+      "AnalyticalWaveTunerWindow.Editor.cs has Update() but is wrapped in #if UNITY_EDITOR and excluded from runtime count.",
+      "GlobalRegistry math-precision transition no longer writes Shader.SetGlobalFloat from TickMathPrecisionTransition; GlobalRegistry.FlushMathPrecisionShaderState is the visual-sync upload site.",
+      "HectonSurfaceWeatherDirector.PublishWeatherShaderGlobals is drained by LateFrameTick via FlushWeatherShaderGlobals.",
+      "ShinobuOceanSurfaceAtmosphereRuntime.PublishShaderGlobals/DispatchWaveHeightReadback are invoked from LateFrameTick after Tick sets dirty flags; OnEnable initial publish is cold lifecycle.",
+      "BaseModule visual/audio shader calls are drained by LateFrameTick or lifecycle enable/disable, not by FixedTick/Tick direct token placement."
+    ]
+  },
+  "globalRegistryMathPrecisionDeferral": {
+    "residualDefectFound": "SystemDispatcher.RunDispatcherUpdate calls FrameTimeWatchdog.TickMathPrecisionTransition before simulation; the old direct Shader.SetGlobalFloat route would have uploaded presentation state before visual sync.",
+    "currentRoute": [
+      "SystemDispatcher.RunDispatcherUpdate:5053 updates primitive transition state only",
+      "FrameTimeWatchdog.TickMathPrecisionTransition:68 delegates to GlobalRegistry.TickMathPrecisionTransition",
+      "GlobalRegistry.TickMathPrecisionTransition:2978 writes _mathPrecisionLowBlendMilli and queues shader state at 2999",
+      "SystemDispatcher.RunDispatcherLateFrame:5425 calls GlobalRegistry.FlushMathPrecisionShaderState",
+      "GlobalRegistry.FlushMathPrecisionShaderState:2424 uploads Shader.SetGlobalFloat at 2431 and keyword state at 2437-2443"
+    ],
+    "primitiveStateLines": {
+      "pendingMathPrecisionShaderLevel": 337,
+      "pendingMathPrecisionShaderLowBlendMilli": 338,
+      "mathPrecisionShaderDirty": 339,
+      "queueMethod": 2414,
+      "tickQueueCall": 2999,
+      "visualSyncFlushCall": "SystemDispatcher.cs:5425"
+    },
+    "zeroGcTransfer": "int fields only; no managed queue, delegate, list, array, closure, or string conversion is introduced in the transition path.",
+    "shaderWritePlacementProof": "rg finds Shader.SetGlobalFloat(_mathLodLowBlendId) only in GlobalRegistry.FlushMathPrecisionShaderState at line 2431."
+  }
 }

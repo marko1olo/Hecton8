@@ -113,7 +113,7 @@ Scalability potential: Low keeps old coherent front GPU data bound while chunk-r
 Hardware Impact: No runtime measurement. Static prevention: an aggregate chunk range now transfers only marked 16 KiB matrix/metadata pages instead of forcing `instanceCount * 128B`; the BufferID resolver prevents front/back DataVault aliasing after swaps, which is correctness-critical on every hardware tier.
 
 Problem: Updated build gate still showed host contention.
-Solution: Sampled CPU/csc/dotnet before any compile command. Latest gate: CPU 100 percent, csc count 0, dotnet count 1, VBCSCompiler count 0. Build intentionally not launched.
+Solution: Sampled CPU/csc/dotnet before any compile command. Latest gate: CPU 82 percent, csc count 1, dotnet count 1, VBCSCompiler count 0. Build intentionally not launched.
 Rejected Alternatives: Running `dotnet build` with CPU above 50 percent or an active dotnet process was rejected by the compilation resource rule.
 Scalability potential: Static proof and scanner coverage continue; full compile remains pending until the workstation is below the explicit contention threshold.
 Hardware Impact: Avoided adding compiler load to an already saturated multi-agent workstation.

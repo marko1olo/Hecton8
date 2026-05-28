@@ -1,477 +1,489 @@
-﻿{
-    "agent":  "1401",
-    "role":  "THIRD_PARTY_API_ALIGNMENT_AND_SQLITE_BRIDGE_REPAIRER",
-    "generatedAt":  "2026-05-28T05:30:06.9788765+04:00",
-    "status":  "PENDING_VERIFICATION",
-    "taskCount":  20,
-    "evidenceClass":  "STATIC_SOURCE_PLUS_EXTERNAL_CLI_LOG",
-    "ownCompileStatus":  "BLOCKED_BY_CONTENTION_NO_DOTNET_BUILD_LAUNCHED_BY_1401",
-    "latestExternalFullLog":  {
-                                  "path":  "Docs\\Reports\\BUILD_COMPILE_MEDIC_FULL_WARNINGS_20260528_4.log",
-                                  "errorCount":  2,
-                                  "warningCount":  34,
-                                  "vendorWarningCount":  4,
-                                  "msb3277Count":  28
-                              },
-    "sourceLevelFixes":  {
-                             "vendorBridgeTest":  {
-                                                      "file":  "Assets\\VendorCompatibilityTests\\Editor\\VendorBridgeEditModeTests.cs",
-                                                      "bareObjectDestroyImmediateCount":  0,
-                                                      "qualifiedDestroyImmediateCount":  2,
-                                                      "assertIsNullRowCount":  0,
-                                                      "assertAreSameOriginalRowLine":  32
-                                                  },
-                             "candiceDisabledLogGuard":  {
-                                                             "file":  "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Save System\\Overrides\\CandiceSQLiteProvider.cs",
-                                                             "fieldLine":  528,
-                                                             "declarationGuardLine":  526,
-                                                             "useGuardLine":  617,
-                                                             "warningFromExternalLogLine":  40
-                                                         },
-                             "masterAudioFeatureFieldGuards":  [
-                                                                   {
-                                                                       "file":  "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Events\\EventSounds.cs",
-                                                                       "field":  "_triggerEnterTime",
-                                                                       "fieldLine":  256,
-                                                                       "guardLine":  255,
-                                                                       "warningFromExternalLogLine":  34
-                                                                   },
-                                                                   {
-                                                                       "file":  "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Events\\EventSounds.cs",
-                                                                       "field":  "_triggerEnter2dTime",
-                                                                       "fieldLine":  259,
-                                                                       "guardLine":  258,
-                                                                       "warningFromExternalLogLine":  35
-                                                                   },
-                                                                   {
-                                                                       "file":  "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Settings\\SoundGroupVariation.cs",
-                                                                       "field":  "_loadAddressableCoroutine",
-                                                                       "fieldLine":  135,
-                                                                       "guardLine":  7,
-                                                                       "warningFromExternalLogLine":  36
-                                                                   }
-                                                               ],
-                             "triggerNextSceneColdAllocAndTagCompare":  {
-                                                                            "file":  "Assets\\Candice AI for Games\\Scripts\\TriggerNextScene.cs",
-                                                                            "coldAllocCommentLine":  63,
-                                                                            "compareTagLines":  [
-                                                                                                    73,
-                                                                                                    85
-                                                                                                ],
-                                                                            "tagEqualityCount":  0,
-                                                                            "updateToStringCalls":  0
-                                                                        },
-                             "masterAudioRuntimeEditorGuard":  {
-                                                                   "file":  "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Singleton\\SingletonScriptable.cs",
-                                                                   "usingUnityEditorGuardLine":  3,
-                                                                   "usingUnityEditorLine":  4,
-                                                                   "coldAllocCommentLine":  16,
-                                                                   "coldListLine":  17,
-                                                                   "runtimeUnguardedEditorSymbolsAfterPatch":  0
-                                                               },
-                             "masterAudioAsmdefQuarantine":  {
-                                                                 "runtimeAsmdef":  "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\DarkTonic.MasterAudio.Runtime.asmdef",
-                                                                 "runtimeAutoReferenced":  false,
-                                                                 "editorAsmdef":  "Assets\\Plugins\\Editor\\DarkTonic\\MasterAudio\\DarkTonic.MasterAudio.Editor.asmdef",
-                                                                 "editorAutoReferenced":  false,
-                                                                 "relationsInspectorAsmdef":  "Assets\\Plugins\\Editor\\RelationsInspector\\RelationsInspector.Editor.asmdef",
-                                                                 "relationsInspectorAutoReferenced":  false,
-                                                                 "relationsInspectorMasterAudioBackend":  "Assets\\Plugins\\Editor\\RelationsInspector\\Backends\\MasterAudioEventBackend.cs",
-                                                                 "firstPartyProjectHardReferences":  0,
-                                                                 "leakageAudit":  "Docs\\AgentLogs\\AsmdefLeakage_1401.json",
-                                                                 "leakageStatus":  "PASS",
-                                                                 "generatedProjectState":  {
-                                                                                               "checked":  [
-                                                                                                               "Assembly-CSharp-firstpass.csproj",
-                                                                                                               "Assembly-CSharp-Editor-firstpass.csproj"
-                                                                                                           ],
-                                                                                               "assemblyCSharpFirstpassPluginWildcard":  true,
-                                                                                               "assemblyCSharpEditorFirstpassPluginEditorWildcard":  true,
-                                                                                               "dedicatedMasterAudioRuntimeProjectExists":  false,
-                                                                                               "dedicatedMasterAudioExamplesProjectExists":  false,
-                                                                                               "dedicatedMasterAudioEditorProjectExists":  false,
-                                                                                               "dedicatedRelationsInspectorEditorProjectExists":  false,
-                                                                                               "unityRegenerationRequired":  true,
-                                                                                               "note":  "Generated csproj files are Unity-owned and can remain stale until the Editor imports newly added asmdefs."
-                                                                                           },
-                                                                 "examplesAsmdef":  "Assets\\Plugins\\DarkTonic\\MasterAudio\\ExampleScenes\\Scripts\\DarkTonic.MasterAudio.Examples.asmdef",
-                                                                 "examplesAutoReferenced":  false,
-                                                                 "masterAudioCSharpUncoveredBySourceAsmdef":  0
-                                                             },
-                             "candicePluginImporterQuarantine":  {
-                                                                     "audit":  "Docs\\AgentLogs\\CandicePluginImporterAudit_1401.json",
-                                                                     "monoDataSqliteMeta":  "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Save System\\Plugins\\Mono.Data.Sqlite.dll.meta",
-                                                                     "monoDataSqliteEnabledOneCount":  0,
-                                                                     "monoDataSqliteEnabledZeroLines":  [
-                                                                                                            17,
-                                                                                                            22,
-                                                                                                            28
-                                                                                                        ],
-                                                                     "sqlite3Meta":  "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Save System\\Plugins\\sqlite3.dll.meta",
-                                                                     "sqlite3EnabledOneCount":  0,
-                                                                     "sqlite3EnabledZeroLines":  [
-                                                                                                     17,
-                                                                                                     22
-                                                                                                 ],
-                                                                     "sourceLegacyDefineLine":  1,
-                                                                     "defaultBranchMonoDataCompileReferences":  0
-                                                                 },
-                             "masterAudioSettingsEditorStaticCtorGuard":  {
-                                                                              "file":  "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Settings\\MasterAudioSettings.cs",
-                                                                              "editorGuardLine":  20,
-                                                                              "assetNameAssignmentLine":  23,
-                                                                              "coldAllocCommentLine":  25,
-                                                                              "coldListLine":  26,
-                                                                              "stringFormatCountAfterPatch":  0
-                                                                          }
-                         },
-    "sourceOffenderScan":  {
-                               "monoDataSqliteRawTextCount":  2,
-                               "monoDataSqliteDefaultBranchCompileReferences":  0,
-                               "sqliteDataReaderRawTextCount":  7,
-                               "sqliteDataReaderDefaultBranchCompileReferences":  0,
-                               "shaderUtilGetPropertyReferences":  0,
-                               "meshOptimizeReferences":  0,
-                               "technieRemovedMeshColliderDefaultBranchReferences":  0,
-                               "triggerNextSceneUpdateToStringCalls":  0,
-                               "runtimeUnguardedUnityEditorSymbols":  0,
-                               "triggerNextSceneTagEqualityCount":  0,
-                               "triggerNextSceneCompareTagCount":  3,
-                               "triggerNextSceneColdAllocCommentLine":  63,
-                               "masterAudioFirstPartyHardReferences":  0,
-                               "masterAudioRuntimeUnguardedUnityEditorSymbols":  0,
-                               "masterAudioQuarantineFindings":  0,
-                               "masterAudioCSharpUncoveredBySourceAsmdef":  0,
-                               "candiceLegacyPluginImporterEnabledEntries":  0,
-                               "masterAudioSettingsStringFormatCount":  0,
-                               "masterAudioSettingsEditorGuardLine":  20
-                           },
-    "zeroGcStaticEvidence":  {
-                                 "agent":  "1401",
-                                 "generatedAt":  "2026-05-28T05:30:06.9788765+04:00",
-                                 "evidenceClass":  "STATIC_SOURCE",
-                                 "note":  "Counts active patched runtime/hot-path ranges only. Cold initializers, editor tests, and feature-gated field declarations are reported separately from per-frame hot paths.",
-                                 "ranges":  [
-                                                {
-                                                    "name":  "CandiceSQLiteDisabledHotMethods",
-                                                    "file":  "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Save System\\Overrides\\CandiceSQLiteProvider.cs",
-                                                    "startLine":  544,
-                                                    "endLine":  614,
-                                                    "hotPathNewReferenceTypeCount":  0,
-                                                    "coldStaticNewReferenceTypeCount":  3,
-                                                    "stringFormatCount":  0,
-                                                    "toStringCount":  0,
-                                                    "linqCount":  0,
-                                                    "foreachCount":  0,
-                                                    "note":  "Default disabled provider methods only; cold static caches and development log guard excluded."
-                                                },
-                                                {
-                                                    "name":  "TriggerNextSceneUpdate",
-                                                    "file":  "Assets\\Candice AI for Games\\Scripts\\TriggerNextScene.cs",
-                                                    "startLine":  47,
-                                                    "endLine":  59,
-                                                    "hotPathNewReferenceTypeCount":  0,
-                                                    "coldStaticNewReferenceTypeCount":  0,
-                                                    "stringFormatCount":  0,
-                                                    "toStringCount":  0,
-                                                    "linqCount":  0,
-                                                    "foreachCount":  0,
-                                                    "note":  "Per-frame countdown path only; cold label cache excluded and documented at line 63."
-                                                },
-                                                {
-                                                    "name":  "TechnieInflationCompatibility",
-                                                    "file":  "Assets\\Technie\\PhysicsCreator\\Scripts\\Rigid\\RigidColliderCreator.cs",
-                                                    "startLine":  1038,
-                                                    "endLine":  1049,
-                                                    "hotPathNewReferenceTypeCount":  0,
-                                                    "coldStaticNewReferenceTypeCount":  0,
-                                                    "stringFormatCount":  0,
-                                                    "toStringCount":  0,
-                                                    "linqCount":  0,
-                                                    "foreachCount":  0,
-                                                    "note":  "Collider materialization helper, not per-frame."
-                                                },
-                                                {
-                                                    "name":  "AmplifySpriteUtilityNonEditorFallback",
-                                                    "file":  "Assets\\AmplifyImpostors\\Plugins\\Scripts\\HelperExtensions.cs",
-                                                    "startLine":  201,
-                                                    "endLine":  203,
-                                                    "hotPathNewReferenceTypeCount":  0,
-                                                    "coldStaticNewReferenceTypeCount":  1,
-                                                    "stringFormatCount":  0,
-                                                    "toStringCount":  0,
-                                                    "linqCount":  0,
-                                                    "foreachCount":  0,
-                                                    "note":  "Non-editor fallback assignment only; cold static empty array reported separately and documented with COLD ALLOC comment."
-                                                },
-                                                {
-                                                    "name":  "GPUInstancerDetailDispatchPatch",
-                                                    "file":  "Assets\\GPUInstancer\\Scripts\\GPUInstancerDetailManager.cs",
-                                                    "startLine":  584,
-                                                    "endLine":  597,
-                                                    "hotPathNewReferenceTypeCount":  0,
-                                                    "coldStaticNewReferenceTypeCount":  0,
-                                                    "stringFormatCount":  0,
-                                                    "toStringCount":  0,
-                                                    "linqCount":  0,
-                                                    "foreachCount":  0,
-                                                    "note":  "Dispatch sizing conversion patch only."
-                                                },
-                                                {
-                                                    "name":  "MasterAudioSingletonScriptableEditorGuard",
-                                                    "file":  "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Singleton\\SingletonScriptable.cs",
-                                                    "startLine":  1,
-                                                    "endLine":  17,
-                                                    "hotPathNewReferenceTypeCount":  0,
-                                                    "coldStaticNewReferenceTypeCount":  1,
-                                                    "stringFormatCount":  0,
-                                                    "toStringCount":  0,
-                                                    "linqCount":  0,
-                                                    "foreachCount":  0,
-                                                    "note":  "Runtime-path file import guard; UnityEditor/List/IO usage and singleton folder list are inside UNITY_EDITOR. Cold static List has explicit [0] capacity."
-                                                },
-                                                {
-                                                    "name":  "MasterAudioSettingsEditorStaticCtorGuard",
-                                                    "file":  "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Settings\\MasterAudioSettings.cs",
-                                                    "startLine":  20,
-                                                    "endLine":  31,
-                                                    "hotPathNewReferenceTypeCount":  0,
-                                                    "coldStaticNewReferenceTypeCount":  1,
-                                                    "stringFormatCount":  0,
-                                                    "toStringCount":  0,
-                                                    "linqCount":  0,
-                                                    "foreachCount":  0,
-                                                    "note":  "Editor-only static constructor; removed string.Format and moved folder-list allocation behind UNITY_EDITOR."
-                                                }
-                                            ]
-                             },
-    "dataSovereignty":  {
-                            "migratedToGlobalDataVault":  false,
-                            "bufferIds":  [
-
-                                          ],
-                            "tryAcquireWriteLockSites":  [
-
-                                                         ],
-                            "finallyReleaseSites":  [
-
-                                                    ],
-                            "reason":  "No native state, persistent NativeArray, SignalBus payload, runtime DTO, or GlobalDataVault buffer was introduced or migrated by agent 1401."
-                        },
-    "structLayoutAudit":  {
-                              "modifiedRuntimeDtos":  [
-
-                                                      ],
-                              "unmanagedStructOffsetsRequired":  false,
-                              "reason":  "No unmanaged runtime struct, save DTO, SignalBus payload, telemetry entry, NativeArray element, or GPU upload record was created or modified."
-                          },
-    "cinematicCheatAndScalability":  {
-                                         "globalQualityWeightTouched":  false,
-                                         "binaryQualitySwitchesIntroduced":  0,
-                                         "physicalSimulationIntroduced":  false,
-                                         "cheapFallbacks":  [
-                                                                "Candice fail-closed SQLite provider",
-                                                                "Technie contactOffset compatibility approximation instead of mesh inflation recook"
-                                                            ],
-                                         "continuousScalabilityImpact":  "No visual simulation, gameplay truth route, quality tier branch, or GlobalQualityWeight route was added. Existing GPUInstancer route preserved."
-                                     },
-    "residualRisks":  [
-                          "Own guarded vendor compile not executed: latest real attempt was blocked before dotnet build by CPU 100 percent and active dotnet PID 40436.",
-                          "Fresh external full build log contains stale 1401 CS0104/CS0169 line numbers from before source-level fixes; current source-level scans show those exact offenders removed, but compile proof is pending.",
-                          "MSB3277 System.Net.Http conflict remains in generated Assembly-CSharp-Editor and Assembly-CSharp-Editor-firstpass external log; not fixed because it is build graph/reference unification debt outside the vendor source patch.",
-                          "Unity import, Unity Console, PlayMode, ProfilerRecorder, GCMonitor, and player-build proof are absent.",
-                          "Candice Runtime/Editor csproj files remain absent until Unity regenerates project files after asmdef import.",
-                          "MasterAudio/RelationsInspector asmdefs are source-present and statically valid, but generated csproj files remain stale until Unity imports/regenerates them; compile safety is PENDING Unity Console proof.",
-                          "MasterAudio optional ADDRESSABLES_ENABLED/physics define package coupling was not compiled; no package-reference proof exists for those optional branches.",
-                          "Candice disabled provider returns shared cached empty List\u003cT\u003e instances to avoid per-call allocation; current shipped Candice caller enumerates only, but external mutation remains an API-level residual.",
-                          "Latest real guarded compile attempt 2026-05-28 04:57:42+04 blocked before dotnet build: CPU 100 percent, active dotnet PID 59296, attempts array empty.",
-                          "DarkTonic.MasterAudio.Examples source asmdef exists and covers all MasterAudio example C# files, but generated project file is absent until Unity import/regeneration.",
-                          "Candice legacy SQLite PluginImporter quarantine is STATIC_SOURCE only; Unity import/Console proof is still absent.",
-                          "Latest real guarded compile attempt 2026-05-28 05:23:48+04 blocked before dotnet build: CPU 100 percent, active dotnet PID 55080, attempts array empty.",
-                          "Candice legacy SQLite PluginImporter quarantine is STATIC_SOURCE only; Unity import/Console proof is still absent."
-                      ],
-    "modifiedFileHashes":  {
-                               "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Save System\\Overrides\\CandiceSQLiteProvider.cs":  "f60bd7d9097f74c6028bf5d1b4313e63e4f2518db7ae5b399aa192dc39f288d4",
-                               "Assets\\Technie\\PhysicsCreator\\Scripts\\Rigid\\RigidColliderCreator.cs":  "b8906d13840bed1f517ec6cbaa28b01486c7679bf561f1aa3b57385a909d6efa",
-                               "Assets\\AmplifyImpostors\\Plugins\\Scripts\\HelperExtensions.cs":  "e9ffe989aa30bd2341785cfedd655ed3f2d67fb2fcc579cf427e4da28ca8bb3c",
-                               "Assets\\AmplifyImpostors\\Plugins\\Scripts\\Preferences.cs":  "dcbab75851a91fccfdc6270597274c454e1a3c5e3aa5b2c1e669fcaff63d2d8b",
-                               "Assets\\GPUInstancer\\Scripts\\GPUInstancerDetailManager.cs":  "88ae502d5b946e2fbb77eac967dc5116f47dcd06226f361eeacff37e0e0a0c1a",
-                               "Assets\\Candice AI for Games\\Scripts\\CandiceAIforGames.Runtime.asmdef":  "c1d72eed1fb488f01275b7b6efd8f3c142d718f13a387a5ed4deead0c4655218",
-                               "Assets\\Candice AI for Games\\Scripts\\Editor\\CandiceAIforGames.Editor.asmdef":  "c09789d77e0895ccb52f7c5f7a8bf891b9a74d9bbee45686dcecb161842c62df",
-                               "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostors.Runtime.asmdef":  "a581cbf08fc7848ef9519d9f86458ea320780b6c0e50dfab6640412e37a55ad2",
-                               "Assets\\AmplifyImpostors\\Plugins\\Editor\\AmplifyImpostors.Editor.asmdef":  "87d63fce5586ab9c684069a97ad3d1aebf75c5df4111f3142007083c6ebbc8f0",
-                               "Assets\\Technie\\PhysicsCreator\\Scripts\\TechniePhysicsCreator.asmdef":  "259cfed441de8c00dd8bc2061718f78aee015bb25e690e3a0ab01a2f38a6dbcb",
-                               "Tools\\Run_Guarded_Vendor_Compile_1401.ps1":  "9d85d54fef435971ab08ee257ba3f20b7a95c945cc86a01f9666ab9256487164",
-                               "Tools\\Assert_Asmdef_Leakage_1401.py":  "13e7d576d5180d27e59ea2871c4adeb01f5c2b7283d63f637ff5dd70925f5572",
-                               "Assets\\VendorCompatibilityTests\\Editor\\VendorBridgeEditModeTests.cs":  "2008f7b077e1a1f585b718e942425ad9af7da042cea76d7c079e85fdd665442d",
-                               "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Events\\EventSounds.cs":  "3f5ad825eae13217f513cfeb87661b6d8d784b0b69ed40df5ed8850ac50afed3",
-                               "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Settings\\SoundGroupVariation.cs":  "86f32ab664272abac6c200b099988b1c8b55a8dc042b4501d688306763ec1c61",
-                               "Directory.Build.targets":  "3dda3ab34fdfe25aa220ff18e94530872d2ae635c7c7ab8e731bc40a24a3a222",
-                               "Assets\\Candice AI for Games\\Scripts\\TriggerNextScene.cs":  "e16f37ca835740bd537c46b4305d1a145682e7d076d14fa1f21c68441c415aa3",
-                               "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Singleton\\SingletonScriptable.cs":  "7f425a1bdbb3ec21f78a2edf9adee291d65051a5282dd20d8d7b745937713a68",
-                               "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\DarkTonic.MasterAudio.Runtime.asmdef":  "e3115de00763e2d4360a84ad526e560c1525414e375ba350a30e0f4d43b455e7",
-                               "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\DarkTonic.MasterAudio.Runtime.asmdef.meta":  "8bd12524d676f7c11b4c7d6115e0d31e1048c86ea223eb01e160dab31a4e4916",
-                               "Assets\\Plugins\\Editor\\DarkTonic\\MasterAudio\\DarkTonic.MasterAudio.Editor.asmdef":  "a043eb72554540044af63be1f31d7e00ec904986f7e98cfbb99e3ccbe502a804",
-                               "Assets\\Plugins\\Editor\\DarkTonic\\MasterAudio\\DarkTonic.MasterAudio.Editor.asmdef.meta":  "95e5d9ffa1e280884bee924ef57a32c27bbf623549970d22db298c39389780d2",
-                               "Assets\\Plugins\\Editor\\RelationsInspector\\RelationsInspector.Editor.asmdef":  "1d181594895b7e15bfe1c3926197f8078acc3aa8ece3e954c955918b541cf2c5",
-                               "Assets\\Plugins\\Editor\\RelationsInspector\\RelationsInspector.Editor.asmdef.meta":  "507b6d633ef8acd786f27fa7a72424038fce6e0d94c7cfaaebb99a803d8e1aba",
-                               "Assets\\Plugins\\DarkTonic\\MasterAudio\\ExampleScenes\\Scripts\\DarkTonic.MasterAudio.Examples.asmdef":  "fa754d488ad0ca7df051ae2664c65284abc96899be8cfea0b2ae37dc5292c856",
-                               "Assets\\Plugins\\DarkTonic\\MasterAudio\\ExampleScenes\\Scripts\\DarkTonic.MasterAudio.Examples.asmdef.meta":  "a0afb1d0809cac9621da9b9ea191a435a40a245dc9278611b54b6c4e894696f9",
-                               "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Settings\\MasterAudioSettings.cs":  "ed35993cbbf727824542753598460db78070a5d41fbe9ae41faf2fdd9352dc79",
-                               "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Save System\\Plugins\\Mono.Data.Sqlite.dll.meta":  "e957d69cb21b64e1c8e9c7bd2d8693f6c2ffc84a54aea776e1b5ca25d760af3b",
-                               "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Save System\\Plugins\\sqlite3.dll.meta":  "4de9c8df3c0a4b70b820e7df1fa2afcaa84f42688f631f9f3a97564bf8fabe8d",
-                               "Docs\\AgentLogs\\CandicePluginImporterAudit_1401.json":  "5dfcdb1280776620bbdcded99842deb4bfdaf7dbda999cc9322db2da45ee8c8b"
-                           },
-    "proofArtifacts":  {
-                           "hotPathDeltaScan":  "Docs/AgentLogs/VendorHotPathDeltaScan_1401.json",
-                           "staticAudit":  "Docs/AgentLogs/VendorStaticAudit_1401.json",
-                           "asmdefLeakage":  "Docs/AgentLogs/AsmdefLeakage_1401.json",
-                           "externalFullLog":  "Docs\\Reports\\BUILD_COMPILE_MEDIC_FULL_WARNINGS_20260528_4.log",
-                           "latestOwnCompileGate":  "Docs\\AgentLogs\\Build_1401_Attempt_20260528_052348_BLOCKED_BY_CONTENTION.json",
-                           "candicePluginImporterAudit":  "Docs\\AgentLogs\\CandicePluginImporterAudit_1401.json"
-                       },
-    "compileLaunchedBy1401":  false,
-    "latestOwnCompileGate":  "Docs\\AgentLogs\\Build_1401_Attempt_20260528_052348_BLOCKED_BY_CONTENTION.json",
-    "latestOwnCompileGateData":  {
-                                     "agent":  "1401",
-                                     "timestamp":  "20260528_052348",
-                                     "dryRun":  false,
-                                     "maxCpuPercent":  50,
-                                     "cpuLoadPercent":  100,
-                                     "compilerProcesses":  [
-                                                               {
-                                                                   "name":  "dotnet",
-                                                                   "id":  55080,
-                                                                   "cpu":  560.0625
-                                                               }
-                                                           ],
-                                     "blockedByContention":  true,
-                                     "projects":  [
-                                                      {
-                                                          "name":  "CandiceAIforGames.Runtime",
-                                                          "path":  null,
-                                                          "exists":  false
-                                                      },
-                                                      {
-                                                          "name":  "CandiceAIforGames.Editor",
-                                                          "path":  null,
-                                                          "exists":  false
-                                                      },
-                                                      {
-                                                          "name":  "AmplifyImpostors.Runtime",
-                                                          "path":  "C:\\hades\\Hecton8\\AmplifyImpostors.Runtime.csproj",
-                                                          "exists":  true
-                                                      },
-                                                      {
-                                                          "name":  "AmplifyImpostors.Editor",
-                                                          "path":  "C:\\hades\\Hecton8\\AmplifyImpostors.Editor.csproj",
-                                                          "exists":  true
-                                                      },
-                                                      {
-                                                          "name":  "TechniePhysicsCreator",
-                                                          "path":  "C:\\hades\\Hecton8\\TechniePhysicsCreator.csproj",
-                                                          "exists":  true
-                                                      },
-                                                      {
-                                                          "name":  "Technie.PhysicsCreator.Updater",
-                                                          "path":  "C:\\hades\\Hecton8\\Technie.PhysicsCreator.Updater.csproj",
-                                                          "exists":  true
-                                                      },
-                                                      {
-                                                          "name":  "DarkTonic.MasterAudio.Runtime",
-                                                          "path":  null,
-                                                          "exists":  false
-                                                      },
-                                                      {
-                                                          "name":  "DarkTonic.MasterAudio.Examples",
-                                                          "path":  null,
-                                                          "exists":  false
-                                                      },
-                                                      {
-                                                          "name":  "DarkTonic.MasterAudio.Editor",
-                                                          "path":  null,
-                                                          "exists":  false
-                                                      },
-                                                      {
-                                                          "name":  "RelationsInspector.Editor",
-                                                          "path":  null,
-                                                          "exists":  false
-                                                      }
-                                                  ],
-                                     "attempts":  [
-
-                                                  ]
-                                 },
-    "latestGuardedDryRun":  null,
-    "latestGateData":  {
-                           "agent":  "1401",
-                           "timestamp":  "20260528_052348",
-                           "dryRun":  false,
-                           "maxCpuPercent":  50,
-                           "cpuLoadPercent":  100,
-                           "compilerProcesses":  [
-                                                     {
-                                                         "name":  "dotnet",
-                                                         "id":  55080,
-                                                         "cpu":  560.0625
-                                                     }
-                                                 ],
-                           "blockedByContention":  true,
-                           "projects":  [
-                                            {
-                                                "name":  "CandiceAIforGames.Runtime",
-                                                "path":  null,
-                                                "exists":  false
-                                            },
-                                            {
-                                                "name":  "CandiceAIforGames.Editor",
-                                                "path":  null,
-                                                "exists":  false
-                                            },
-                                            {
-                                                "name":  "AmplifyImpostors.Runtime",
-                                                "path":  "C:\\hades\\Hecton8\\AmplifyImpostors.Runtime.csproj",
-                                                "exists":  true
-                                            },
-                                            {
-                                                "name":  "AmplifyImpostors.Editor",
-                                                "path":  "C:\\hades\\Hecton8\\AmplifyImpostors.Editor.csproj",
-                                                "exists":  true
-                                            },
-                                            {
-                                                "name":  "TechniePhysicsCreator",
-                                                "path":  "C:\\hades\\Hecton8\\TechniePhysicsCreator.csproj",
-                                                "exists":  true
-                                            },
-                                            {
-                                                "name":  "Technie.PhysicsCreator.Updater",
-                                                "path":  "C:\\hades\\Hecton8\\Technie.PhysicsCreator.Updater.csproj",
-                                                "exists":  true
-                                            },
-                                            {
-                                                "name":  "DarkTonic.MasterAudio.Runtime",
-                                                "path":  null,
-                                                "exists":  false
-                                            },
-                                            {
-                                                "name":  "DarkTonic.MasterAudio.Examples",
-                                                "path":  null,
-                                                "exists":  false
-                                            },
-                                            {
-                                                "name":  "DarkTonic.MasterAudio.Editor",
-                                                "path":  null,
-                                                "exists":  false
-                                            },
-                                            {
-                                                "name":  "RelationsInspector.Editor",
-                                                "path":  null,
-                                                "exists":  false
-                                            }
-                                        ],
-                           "attempts":  [
-
-                                        ]
-                       },
-    "latestGuardedAttempt":  "Docs\\AgentLogs\\Build_1401_Attempt_20260528_052348_BLOCKED_BY_CONTENTION.json"
+{
+  "agent": "1401",
+  "role": "THIRD_PARTY_API_ALIGNMENT_AND_SQLITE_BRIDGE_REPAIRER",
+  "domain": "Echelon 9 Meta / Polish / Integration - vendor dependency quarantine",
+  "generatedAt": "2026-05-28T05:51:49.623014+04:00",
+  "status": "PENDING_VERIFICATION",
+  "taskCount": 20,
+  "evidenceClass": "STATIC_SOURCE_PLUS_EXTERNAL_CLI_LOG",
+  "compileLaunchedBy1401": false,
+  "latestOwnCompileGate": "Docs/AgentLogs/Build_1401_Attempt_20260528_054921_BLOCKED_BY_CONTENTION.json",
+  "latestOwnCompileGateData": {
+    "agent": "1401",
+    "timestamp": "20260528_054921",
+    "dryRun": false,
+    "maxCpuPercent": 50,
+    "cpuLoadPercent": 100,
+    "compilerProcesses": [
+      {
+        "name": "dotnet",
+        "id": 66408,
+        "cpu": 57.375
+      }
+    ],
+    "blockedByContention": true,
+    "projects": [
+      {
+        "name": "CandiceAIforGames.Runtime",
+        "path": null,
+        "exists": false
+      },
+      {
+        "name": "CandiceAIforGames.Editor",
+        "path": null,
+        "exists": false
+      },
+      {
+        "name": "AmplifyImpostors.Runtime",
+        "path": "C:\\hades\\Hecton8\\AmplifyImpostors.Runtime.csproj",
+        "exists": true
+      },
+      {
+        "name": "AmplifyImpostors.Editor",
+        "path": "C:\\hades\\Hecton8\\AmplifyImpostors.Editor.csproj",
+        "exists": true
+      },
+      {
+        "name": "TechniePhysicsCreator",
+        "path": "C:\\hades\\Hecton8\\TechniePhysicsCreator.csproj",
+        "exists": true
+      },
+      {
+        "name": "Technie.PhysicsCreator.Updater",
+        "path": "C:\\hades\\Hecton8\\Technie.PhysicsCreator.Updater.csproj",
+        "exists": true
+      },
+      {
+        "name": "DarkTonic.MasterAudio.Runtime",
+        "path": null,
+        "exists": false
+      },
+      {
+        "name": "DarkTonic.MasterAudio.Examples",
+        "path": null,
+        "exists": false
+      },
+      {
+        "name": "DarkTonic.MasterAudio.Editor",
+        "path": null,
+        "exists": false
+      },
+      {
+        "name": "RelationsInspector.Editor",
+        "path": null,
+        "exists": false
+      }
+    ],
+    "attempts": []
+  },
+  "proofArtifacts": {
+    "hotPathDeltaScan": "Docs/AgentLogs/VendorHotPathDeltaScan_1401.json",
+    "staticAudit": "Docs/AgentLogs/VendorStaticAudit_1401.json",
+    "boundaryAudit": "Docs/AgentLogs/VendorBoundaryAudit_1401.json",
+    "asmdefLeakage": "Docs/AgentLogs/AsmdefLeakage_1401.json",
+    "candicePluginImporterAudit": "Docs/AgentLogs/CandicePluginImporterAudit_1401.json",
+    "latestOwnCompileGate": "Docs/AgentLogs/Build_1401_Attempt_20260528_054921_BLOCKED_BY_CONTENTION.json"
+  },
+  "sourceLevelFixes": {
+    "candicePossessorHotPathPatch": {
+      "file": "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Animations Management\\Possessor\\Possessor.cs",
+      "updateLine": 45,
+      "findGameObjectsWithTagCountAfterPatch": 0,
+      "gameObjectFindCountAfterPatch": 0,
+      "foreachCountAfterPatchInUpdateRange": 0,
+      "tagEqualityCountAfterPatch": 0,
+      "getComponentCountAfterPatchInUpdateRange": 0,
+      "residual": "GameObject.FindWithTag plus Array.Resize/Instantiate remain event-gated possession behavior, not per-frame continuous work."
+    },
+    "candiceTilePathfindingPatch": {
+      "file": "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Pathfinding\\CandiceTile.cs",
+      "updateLine": 42,
+      "rendererMaterialPerFrameAccessAfterPatch": 0,
+      "overlapBoxAllocatingCallsAfterPatch": 0,
+      "overlapBoxNonAllocLine": 93,
+      "neighborBufferCapacity": 16,
+      "residual": "Synchronous Physics.Raycast remains in CheckTile; not solved by 1401 because replacing Candice pathfinding truth would exceed vendor bridge scope."
+    },
+    "gpuInstancerHotLoopPatch": {
+      "floatingOriginUpdateForLines": [
+        33,
+        45
+      ],
+      "prefabManagerUpdateForLine": 51,
+      "prefabManagerLateUpdateForLine": 71,
+      "modificationColliderCachedRigidbodyLine": 43,
+      "modificationColliderCachedColliderLine": 83,
+      "prefabCachedColliderLine": 60,
+      "prefabCachedRigidbodyLine": 71,
+      "guiInfoDevelopmentGuardLine": 14,
+      "residual": "GPUInstancer dependentJob.Complete, coroutine tree replacement, and debug OnGUI string concatenation remain vendor residuals pending profiler/route review."
+    },
+    "technieAndAmplifyCleanup": {
+      "technieStringFormatRemovedLine": 1021,
+      "technieChildMarkerCapacityLine": 1027,
+      "amplifyVersionStringFormatCountAfterPatch": 0,
+      "vhacdEnabledOneLinesAfterPatch": []
+    }
+  },
+  "zeroGcStaticEvidence": {
+    "agent": "1401",
+    "generatedAt": "2026-05-28T05:51:49.623014+04:00",
+    "evidenceClass": "STATIC_SOURCE",
+    "status": "PENDING_VERIFICATION",
+    "note": "Static source counts only. Not Unity Console, not PlayMode, not profiler proof.",
+    "ranges": [
+      {
+        "file": "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Save System\\Overrides\\CandiceSQLiteProvider.cs",
+        "startLine": 544,
+        "endLine": 614,
+        "newReferenceLikeCount": 0,
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 0,
+        "foreachCount": 0,
+        "sceneSearchCount": 0,
+        "getComponentCount": 0,
+        "startCoroutineCount": 0,
+        "syncRaycastCount": 0,
+        "notes": [],
+        "name": "CandiceSQLiteDisabledHotMethods"
+      },
+      {
+        "file": "Assets\\Candice AI for Games\\Scripts\\TriggerNextScene.cs",
+        "startLine": 47,
+        "endLine": 59,
+        "newReferenceLikeCount": 0,
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 0,
+        "foreachCount": 0,
+        "sceneSearchCount": 0,
+        "getComponentCount": 0,
+        "startCoroutineCount": 0,
+        "syncRaycastCount": 0,
+        "notes": [],
+        "name": "TriggerNextSceneUpdate"
+      },
+      {
+        "file": "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Animations Management\\Possessor\\Possessor.cs",
+        "startLine": 45,
+        "endLine": 114,
+        "newReferenceLikeCount": 0,
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 0,
+        "foreachCount": 0,
+        "sceneSearchCount": 1,
+        "getComponentCount": 0,
+        "startCoroutineCount": 0,
+        "syncRaycastCount": 0,
+        "notes": [
+          "FindWithTag and Array.Resize/Instantiate remain event-gated possession behavior; FindGameObjectsWithTag, foreach, tag equality, GetComponent, and dead GameObject.Find UI check were removed."
+        ],
+        "name": "CandicePossessorUpdate"
+      },
+      {
+        "file": "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Pathfinding\\CandiceTile.cs",
+        "startLine": 42,
+        "endLine": 70,
+        "newReferenceLikeCount": 0,
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 0,
+        "foreachCount": 0,
+        "sceneSearchCount": 0,
+        "getComponentCount": 0,
+        "startCoroutineCount": 0,
+        "syncRaycastCount": 0,
+        "notes": [],
+        "name": "CandiceTileUpdate"
+      },
+      {
+        "file": "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Pathfinding\\CandiceTile.cs",
+        "startLine": 90,
+        "endLine": 117,
+        "newReferenceLikeCount": 1,
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 0,
+        "foreachCount": 0,
+        "sceneSearchCount": 0,
+        "getComponentCount": 0,
+        "startCoroutineCount": 0,
+        "syncRaycastCount": 1,
+        "notes": [
+          "OverlapBox allocation replaced by OverlapBoxNonAlloc fixed buffer; synchronous Physics.Raycast remains vendor pathfinding correctness residual."
+        ],
+        "name": "CandiceTileCheckTile"
+      },
+      {
+        "file": "Assets\\GPUInstancer\\Scripts\\GPUInstancerFloatingOriginHandler.cs",
+        "startLine": 24,
+        "endLine": 53,
+        "newReferenceLikeCount": 0,
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 0,
+        "foreachCount": 0,
+        "sceneSearchCount": 0,
+        "getComponentCount": 0,
+        "startCoroutineCount": 0,
+        "syncRaycastCount": 0,
+        "notes": [],
+        "name": "GPUInstancerFloatingOriginUpdate"
+      },
+      {
+        "file": "Assets\\GPUInstancer\\Scripts\\GPUInstancerPrefabManager.cs",
+        "startLine": 45,
+        "endLine": 64,
+        "newReferenceLikeCount": 1,
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 0,
+        "foreachCount": 0,
+        "sceneSearchCount": 0,
+        "getComponentCount": 0,
+        "startCoroutineCount": 0,
+        "syncRaycastCount": 0,
+        "notes": [
+          "foreach removed; existing dependentJob.Complete remains GPUI vendor synchronization residual pending profiler proof."
+        ],
+        "name": "GPUInstancerPrefabManagerUpdate"
+      },
+      {
+        "file": "Assets\\GPUInstancer\\Scripts\\GPUInstancerPrefabManager.cs",
+        "startLine": 66,
+        "endLine": 82,
+        "newReferenceLikeCount": 0,
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 0,
+        "foreachCount": 0,
+        "sceneSearchCount": 0,
+        "getComponentCount": 0,
+        "startCoroutineCount": 0,
+        "syncRaycastCount": 0,
+        "notes": [
+          "foreach removed; existing dependentJob.Complete and ComputeBuffer.SetData remain GPUI vendor synchronization/upload residual pending profiler proof."
+        ],
+        "name": "GPUInstancerPrefabManagerLateUpdate"
+      },
+      {
+        "file": "Assets\\GPUInstancer\\Scripts\\GPUInstancerModificationCollider.cs",
+        "startLine": 27,
+        "endLine": 54,
+        "newReferenceLikeCount": 0,
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 0,
+        "foreachCount": 0,
+        "sceneSearchCount": 0,
+        "getComponentCount": 0,
+        "startCoroutineCount": 0,
+        "syncRaycastCount": 0,
+        "notes": [],
+        "name": "GPUInstancerModificationColliderUpdate"
+      },
+      {
+        "file": "Assets\\GPUInstancer\\Scripts\\GPUInstancerGUIInfo.cs",
+        "startLine": 14,
+        "endLine": 164,
+        "newReferenceLikeCount": 9,
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 0,
+        "foreachCount": 0,
+        "sceneSearchCount": 0,
+        "getComponentCount": 0,
+        "startCoroutineCount": 0,
+        "syncRaycastCount": 0,
+        "notes": [
+          "Debug OnGUI is compiled only for UNITY_EDITOR or DEVELOPMENT_BUILD after patch; string concatenation remains development UI only."
+        ],
+        "name": "GPUInstancerGUIInfoDevOnGUI"
+      },
+      {
+        "file": "Assets\\Technie\\PhysicsCreator\\Scripts\\Rigid\\RigidColliderCreator.cs",
+        "startLine": 1038,
+        "endLine": 1049,
+        "newReferenceLikeCount": 0,
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 0,
+        "foreachCount": 0,
+        "sceneSearchCount": 0,
+        "getComponentCount": 0,
+        "startCoroutineCount": 0,
+        "syncRaycastCount": 0,
+        "notes": [],
+        "name": "TechnieInflationCompatibility"
+      },
+      {
+        "file": "Assets\\Technie\\PhysicsCreator\\Scripts\\Rigid\\RigidColliderCreator.cs",
+        "startLine": 1016,
+        "endLine": 1035,
+        "newReferenceLikeCount": 1,
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 2,
+        "foreachCount": 0,
+        "sceneSearchCount": 0,
+        "getComponentCount": 1,
+        "startCoroutineCount": 0,
+        "syncRaycastCount": 0,
+        "notes": [],
+        "name": "TechnieAutoColliderChildMarkerRebuild"
+      },
+      {
+        "file": "Assets\\AmplifyImpostors\\Plugins\\Scripts\\VersionInfo.cs",
+        "startLine": 18,
+        "endLine": 21,
+        "newReferenceLikeCount": 0,
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 0,
+        "foreachCount": 0,
+        "sceneSearchCount": 0,
+        "getComponentCount": 0,
+        "startCoroutineCount": 0,
+        "syncRaycastCount": 0,
+        "notes": [],
+        "name": "AmplifyVersionInfoStaticToString"
+      },
+      {
+        "file": "Assets\\AmplifyImpostors\\Plugins\\Scripts\\HelperExtensions.cs",
+        "startLine": 201,
+        "endLine": 203,
+        "newReferenceLikeCount": 1,
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 0,
+        "foreachCount": 0,
+        "sceneSearchCount": 0,
+        "getComponentCount": 0,
+        "startCoroutineCount": 0,
+        "syncRaycastCount": 0,
+        "notes": [],
+        "name": "AmplifySpriteUtilityNonEditorFallback"
+      },
+      {
+        "file": "Assets\\GPUInstancer\\Scripts\\GPUInstancerDetailManager.cs",
+        "startLine": 584,
+        "endLine": 597,
+        "newReferenceLikeCount": 0,
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 0,
+        "foreachCount": 0,
+        "sceneSearchCount": 0,
+        "getComponentCount": 0,
+        "startCoroutineCount": 0,
+        "syncRaycastCount": 0,
+        "notes": [],
+        "name": "GPUInstancerDetailDispatchPatch"
+      },
+      {
+        "file": "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Singleton\\SingletonScriptable.cs",
+        "startLine": 1,
+        "endLine": 17,
+        "newReferenceLikeCount": 1,
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 0,
+        "foreachCount": 0,
+        "sceneSearchCount": 0,
+        "getComponentCount": 0,
+        "startCoroutineCount": 0,
+        "syncRaycastCount": 0,
+        "notes": [],
+        "name": "MasterAudioSingletonScriptableEditorGuard"
+      },
+      {
+        "file": "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Settings\\MasterAudioSettings.cs",
+        "startLine": 20,
+        "endLine": 31,
+        "newReferenceLikeCount": 1,
+        "stringFormatCount": 0,
+        "toStringCount": 0,
+        "linqCount": 0,
+        "foreachCount": 0,
+        "sceneSearchCount": 0,
+        "getComponentCount": 0,
+        "startCoroutineCount": 0,
+        "syncRaycastCount": 0,
+        "notes": [],
+        "name": "MasterAudioSettingsEditorStaticCtorGuard"
+      }
+    ]
+  },
+  "dataSovereignty": {
+    "globalDataVaultFieldsMigrated": false,
+    "bufferIdConstantsSecured": [],
+    "tryAcquireWriteLockSites": [],
+    "finallyReleaseSites": [],
+    "reason": "1401 changed vendor managed compatibility and import boundaries only; no GlobalDataVault buffers, native containers, unmanaged DTOs, or SignalBus payloads were introduced."
+  },
+  "structLayoutAudit": {
+    "modifiedRuntimeDtos": [],
+    "unmanagedStructOffsetsRequired": false,
+    "reason": "No unmanaged runtime struct, save DTO, SignalBus payload, telemetry entry, NativeArray element, or GPU upload record was created or modified."
+  },
+  "cinematicCheatAndScalability": {
+    "globalQualityWeightTouched": false,
+    "binaryQualitySwitchesIntroduced": 0,
+    "physicalSimulationIntroduced": false,
+    "cheapFallbacks": [
+      "Candice fail-closed SQLite provider",
+      "Technie contactOffset compatibility approximation instead of mesh inflation recook",
+      "Candice tile overlap allocation replaced with fixed NonAlloc buffer"
+    ],
+    "continuousScalabilityImpact": "No visual simulation, gameplay truth route, quality tier branch, DTO layout, save identity, or GlobalQualityWeight route was changed."
+  },
+  "residualRisks": [
+    "Own guarded vendor compile still not executed: latest wrapper gate blocked before dotnet build with CPU 100 percent and active dotnet PID 66408.",
+    "Unity import/regeneration is pending; generated Candice and MasterAudio csproj files are absent until Editor import.",
+    "Runtime Unity Console, PlayMode, ProfilerRecorder, GCMonitor, player-build, and device proof are absent.",
+    "GPUInstancer tree replacement still uses coroutine and managed buffers; left as vendor residual because it is not a compile/API bridge blocker and needs profiler/route review.",
+    "GPUInstancer PrefabManager still has existing same-frame JobHandle.Complete/SetData behavior; not claimed fixed.",
+    "Candice Possessor still uses event-gated FindWithTag, Array.Resize, and Instantiate; continuous per-frame array search and foreach/tag/GetComponent were removed.",
+    "CandiceTile CheckTile still uses synchronous Physics.Raycast; OverlapBox allocation was removed but pathfinding architecture remains vendor/demo residual.",
+    "MSB3277 System.Net.Http conflict from external full log remains outside 1401 vendor source patch."
+  ],
+  "modifiedFileHashes": {
+    "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Save System\\Overrides\\CandiceSQLiteProvider.cs": "f60bd7d9097f74c6028bf5d1b4313e63e4f2518db7ae5b399aa192dc39f288d4",
+    "Assets\\Candice AI for Games\\Scripts\\TriggerNextScene.cs": "e16f37ca835740bd537c46b4305d1a145682e7d076d14fa1f21c68441c415aa3",
+    "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Animations Management\\Possessor\\Possessor.cs": "fe14dadb56b08c5d4a015eb6ba2b7f74e00cf657bbf05cc0623cb7e07967f7fd",
+    "Assets\\Candice AI for Games\\Scripts\\Libs\\Candice Pathfinding\\CandiceTile.cs": "52716435fcb67a7d44340933a82c674d6612d5e714cc6b606333f6acfc21de3c",
+    "Assets\\Technie\\PhysicsCreator\\Scripts\\Rigid\\RigidColliderCreator.cs": "111c1ff7f3546d9d8da45c553a924b42bc3534d64f58a9b168a98600cc561923",
+    "Assets\\Technie\\PhysicsCreator\\Plugins\\VHACD\\libvhacd.dll.meta": "fafd72b094951b450ff0505e2d4248fca6f5e809f76057bcc71e259709a73d6d",
+    "Assets\\AmplifyImpostors\\Plugins\\Scripts\\HelperExtensions.cs": "e9ffe989aa30bd2341785cfedd655ed3f2d67fb2fcc579cf427e4da28ca8bb3c",
+    "Assets\\AmplifyImpostors\\Plugins\\Scripts\\Preferences.cs": "dcbab75851a91fccfdc6270597274c454e1a3c5e3aa5b2c1e669fcaff63d2d8b",
+    "Assets\\AmplifyImpostors\\Plugins\\Scripts\\VersionInfo.cs": "8b55809626e9d87363f9b303e032565b0537da09e87f9339b945c75a6720cf73",
+    "Assets\\GPUInstancer\\Scripts\\GPUInstancerDetailManager.cs": "88ae502d5b946e2fbb77eac967dc5116f47dcd06226f361eeacff37e0e0a0c1a",
+    "Assets\\GPUInstancer\\Scripts\\GPUInstancerFloatingOriginHandler.cs": "f6bba6f35806311db64a0eab7aca68adce4ba12596ef0d846ff3fb55aa25ae7a",
+    "Assets\\GPUInstancer\\Scripts\\GPUInstancerPrefabManager.cs": "9277ca90047f433058ef0ac652c65ac93555ca62f053aaf71ef890d0bb5fe04b",
+    "Assets\\GPUInstancer\\Scripts\\GPUInstancerPrefab.cs": "9f76c6a38ff4db64334a7aef93d5036cf2cc1d5db064d07b7ade678d9f277c87",
+    "Assets\\GPUInstancer\\Scripts\\GPUInstancerModificationCollider.cs": "c105083b85f3a1fbd4a30d0eeb383e793e0da4cba64752e1e33b6c3e677216d5",
+    "Assets\\GPUInstancer\\Scripts\\GPUInstancerGUIInfo.cs": "7c8eeaa5fd8256fb3f2111b8f797722bfcce578a97dd0372d9dd96db1b3bc390",
+    "Assets\\Candice AI for Games\\Scripts\\CandiceAIforGames.Runtime.asmdef": "c1d72eed1fb488f01275b7b6efd8f3c142d718f13a387a5ed4deead0c4655218",
+    "Assets\\Candice AI for Games\\Scripts\\Editor\\CandiceAIforGames.Editor.asmdef": "c09789d77e0895ccb52f7c5f7a8bf891b9a74d9bbee45686dcecb161842c62df",
+    "Assets\\AmplifyImpostors\\Plugins\\Scripts\\AmplifyImpostors.Runtime.asmdef": "a581cbf08fc7848ef9519d9f86458ea320780b6c0e50dfab6640412e37a55ad2",
+    "Assets\\AmplifyImpostors\\Plugins\\Editor\\AmplifyImpostors.Editor.asmdef": "87d63fce5586ab9c684069a97ad3d1aebf75c5df4111f3142007083c6ebbc8f0",
+    "Assets\\Technie\\PhysicsCreator\\Scripts\\TechniePhysicsCreator.asmdef": "259cfed441de8c00dd8bc2061718f78aee015bb25e690e3a0ab01a2f38a6dbcb",
+    "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\DarkTonic.MasterAudio.Runtime.asmdef": "e3115de00763e2d4360a84ad526e560c1525414e375ba350a30e0f4d43b455e7",
+    "Assets\\Plugins\\DarkTonic\\MasterAudio\\ExampleScenes\\Scripts\\DarkTonic.MasterAudio.Examples.asmdef": "fa754d488ad0ca7df051ae2664c65284abc96899be8cfea0b2ae37dc5292c856",
+    "Assets\\Plugins\\Editor\\DarkTonic\\MasterAudio\\DarkTonic.MasterAudio.Editor.asmdef": "a043eb72554540044af63be1f31d7e00ec904986f7e98cfbb99e3ccbe502a804",
+    "Assets\\Plugins\\Editor\\RelationsInspector\\RelationsInspector.Editor.asmdef": "1d181594895b7e15bfe1c3926197f8078acc3aa8ece3e954c955918b541cf2c5",
+    "Assets\\VendorCompatibilityTests\\Editor\\VendorBridgeEditModeTests.cs": "2008f7b077e1a1f585b718e942425ad9af7da042cea76d7c079e85fdd665442d",
+    "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Events\\EventSounds.cs": "3f5ad825eae13217f513cfeb87661b6d8d784b0b69ed40df5ed8850ac50afed3",
+    "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Settings\\SoundGroupVariation.cs": "86f32ab664272abac6c200b099988b1c8b55a8dc042b4501d688306763ec1c61",
+    "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Singleton\\SingletonScriptable.cs": "7f425a1bdbb3ec21f78a2edf9adee291d65051a5282dd20d8d7b745937713a68",
+    "Assets\\Plugins\\DarkTonic\\MasterAudio\\Scripts\\Settings\\MasterAudioSettings.cs": "ed35993cbbf727824542753598460db78070a5d41fbe9ae41faf2fdd9352dc79",
+    "Tools\\Run_Guarded_Vendor_Compile_1401.ps1": "9d85d54fef435971ab08ee257ba3f20b7a95c945cc86a01f9666ab9256487164",
+    "Tools\\Assert_Asmdef_Leakage_1401.py": "13e7d576d5180d27e59ea2871c4adeb01f5c2b7283d63f637ff5dd70925f5572",
+    "Docs\\AgentLogs\\CandicePluginImporterAudit_1401.json": "5dfcdb1280776620bbdcded99842deb4bfdaf7dbda999cc9322db2da45ee8c8b",
+    "Docs\\AgentLogs\\VendorBoundaryAudit_1401.json": "29df322fc3067e5572a3ddc03ad6dfff6abcb004a92ec8acd1cd9d1f30900c44",
+    "Docs\\AgentLogs\\VendorHotPathDeltaScan_1401.json": "25f0f7b2d9279c544cfac2cf6d693a657b0a3430a38f8605fbc10c485cbea4ee",
+    "Docs\\AgentLogs\\AsmdefLeakage_1401.json": "6c316efc0d67cc71610e62c2bdc368107da33903aa6508e07d993199551ed99f"
+  }
 }
