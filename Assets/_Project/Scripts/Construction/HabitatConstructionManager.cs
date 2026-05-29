@@ -331,7 +331,7 @@ namespace Hecton8.Construction
                 out IntegrityGraphBuffers graphBuffers);
             if (nodeCount <= 0)
             {
-                UnlockValidationBuffers();
+                ReleaseValidationBufferGuard();
                 _lastPlacementAllowed = false;
                 _lastIntegrityScore = -1f;
                 _lastBlockReason = UnsupportedReason;
@@ -367,7 +367,7 @@ namespace Hecton8.Construction
             finally
             {
                 if (!scheduled)
-                    UnlockValidationBuffers();
+                    ReleaseValidationBufferGuard();
             }
         }
 
@@ -385,7 +385,7 @@ namespace Hecton8.Construction
 
             if (!TryResolveResultBuffer(out NativeArray<IntegrityValidationResult> resultBuffer))
             {
-                UnlockValidationBuffers();
+                ReleaseValidationBufferGuard();
                 if (discardResult)
                 {
                     _lastIntegrityScore = 0f;
@@ -403,7 +403,7 @@ namespace Hecton8.Construction
             }
 
             IntegrityValidationResult result = resultBuffer[0];
-            UnlockValidationBuffers();
+            ReleaseValidationBufferGuard();
             if (discardResult)
             {
                 _lastIntegrityScore = 0f;
@@ -1381,7 +1381,7 @@ namespace Hecton8.Construction
 
         private void ReleaseValidationVaultHandles()
         {
-            UnlockValidationBuffers();
+            ReleaseValidationBufferGuard();
             if (_catalogVault == null)
             {
                 _nodeBufferHandle = default;
@@ -1462,7 +1462,7 @@ namespace Hecton8.Construction
 
         private bool TryAcquireValidationBufferGuard()
         {
-            UnlockValidationBuffers();
+            ReleaseValidationBufferGuard();
 
             IDataVault vault = _catalogVault;
             if (vault == null || !vault.TryAcquireMutationGuard(ValidationMutationGuardMask))
@@ -1474,7 +1474,7 @@ namespace Hecton8.Construction
             if (TryResolveValidationGraphBuffers(out _))
                 return true;
 
-            UnlockValidationBuffers();
+            ReleaseValidationBufferGuard();
             return false;
         }
 
@@ -1497,7 +1497,7 @@ namespace Hecton8.Construction
             DispatcherJobSwap.TryComplete(ref _validationHandle, true);
             _validationPending = false;
             _discardValidationResult = false;
-            UnlockValidationBuffers();
+            ReleaseValidationBufferGuard();
         }
 
         private static int NextPowerOfTwo(int value)

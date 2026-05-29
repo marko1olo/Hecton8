@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Hecton8.Editor.ModdingSDK
 {
     /// <summary>
-    /// Editor-only source guard for APEX integration checks. It parses source in memory and writes no reports.
+    /// Editor-only source guard for APEX integration checks. It builds a static method AST in memory and writes no reports.
     /// </summary>
     internal static class ApexIntegratorSourceGuard
     {
@@ -46,12 +46,23 @@ namespace Hecton8.Editor.ModdingSDK
         private static readonly string[] HotLookupTokens =
         {
             "GlobalRegistry." + "Get<",
+            "GlobalRegistry." + "Get(",
             ".Get" + "Component<",
+            ".Get" + "Component(",
             ".Get" + "Components<",
+            ".Get" + "Components(",
             ".Get" + "ComponentInChildren<",
+            ".Get" + "ComponentInChildren(",
+            ".Get" + "ComponentsInChildren<",
+            ".Get" + "ComponentsInChildren(",
             ".Get" + "ComponentInParent<",
+            ".Get" + "ComponentInParent(",
+            ".Get" + "ComponentsInParent<",
+            ".Get" + "ComponentsInParent(",
             " Get" + "Component<",
-            "\tGet" + "Component<"
+            " Get" + "Component(",
+            "\tGet" + "Component<",
+            "\tGet" + "Component("
         };
 
         private static readonly string[] PresentationTokens =
@@ -107,33 +118,28 @@ namespace Hecton8.Editor.ModdingSDK
                 }
 
                 string source = File.ReadAllText(absolutePath);
-                string masked = MaskCommentsAndStrings(source);
-                if (!HasBalancedBraces(masked))
-                {
-                    AppendFailure(failures, relativePath, 0, "unbalanced braces in guarded source");
+                if (!TryBuildSyntaxTree(relativePath, source, failures, out SourceFileAst syntaxTree))
                     continue;
-                }
 
                 parsedFiles++;
                 bool editorOnlyFile = IsEditorOnlyPath(relativePath);
                 buildProcessTokens += CountLiteralBuildTokens(source);
-                int methodSearchIndex = 0;
+                parsedMethods += syntaxTree.Methods.Count;
 
-                while (TryReadNextMethod(masked, methodSearchIndex, out SourceMethod method))
+                for (int methodIndex = 0; methodIndex < syntaxTree.Methods.Count; methodIndex++)
                 {
-                    methodSearchIndex = method.BodyEndExclusive;
-                    parsedMethods++;
+                    SourceMethod method = syntaxTree.Methods[methodIndex];
 
                     bool hotMethod = HotMethodNames.Contains(method.Name);
                     if (hotMethod)
                     {
                         hotMethods++;
-                        ScanHotLookups(relativePath, masked, method, failures, ref hotLookupViolations);
+                        ScanHotLookups(relativePath, syntaxTree.MaskedSource, method, failures, ref hotLookupViolations);
                         if (!editorOnlyFile && !VisualPhaseMethodNames.Contains(method.Name))
-                            ScanPresentationWrites(relativePath, masked, method, failures, ref phaseViolations);
+                            ScanPresentationWrites(relativePath, syntaxTree.MaskedSource, method, failures, ref phaseViolations);
                     }
 
-                    ScanVaultWriteLocks(relativePath, masked, method, failures, ref vaultLockViolations);
+                    ScanVaultWriteLocks(relativePath, syntaxTree.MaskedSource, method, failures, ref vaultLockViolations);
                 }
             }
 
@@ -142,7 +148,7 @@ namespace Hecton8.Editor.ModdingSDK
 
             StringBuilder summary = new StringBuilder(1024);
             summary.AppendLine(failures.Count == 0 ? "APEX Source Guard PASS" : "APEX Source Guard FAIL");
-            summary.Append("Parser: in-memory C# method scanner, no external process, no disk reports. FilesParsed=")
+            summary.Append("Parser: in-memory static method AST, no external process, no disk reports. FilesParsed=")
                 .Append(parsedFiles)
                 .Append(", MethodsParsed=")
                 .Append(parsedMethods)
@@ -166,6 +172,32 @@ namespace Hecton8.Editor.ModdingSDK
                 summary.AppendLine(failures[i]);
 
             return new ApexIntegratorSourceGuardResult(failures.Count != 0, summary.ToString());
+        }
+
+        private static bool TryBuildSyntaxTree(
+            string relativePath,
+            string source,
+            List<string> failures,
+            out SourceFileAst syntaxTree)
+        {
+            string masked = MaskCommentsAndStrings(source);
+            if (!HasBalancedBraces(masked))
+            {
+                AppendFailure(failures, relativePath, 0, "unbalanced braces in guarded source");
+                syntaxTree = default(SourceFileAst);
+                return false;
+            }
+
+            List<SourceMethod> methods = new List<SourceMethod>(128);
+            int methodSearchIndex = 0;
+            while (TryReadNextMethod(masked, methodSearchIndex, out SourceMethod method))
+            {
+                methodSearchIndex = method.BodyEndExclusive;
+                methods.Add(method);
+            }
+
+            syntaxTree = new SourceFileAst(masked, methods);
+            return true;
         }
 
         private static void ScanHotLookups(
@@ -503,6 +535,19 @@ namespace Hecton8.Editor.ModdingSDK
             public int BodyStartInclusive { get; }
 
             public int BodyEndExclusive { get; }
+        }
+
+        private readonly struct SourceFileAst
+        {
+            public SourceFileAst(string maskedSource, List<SourceMethod> methods)
+            {
+                MaskedSource = maskedSource;
+                Methods = methods;
+            }
+
+            public string MaskedSource { get; }
+
+            public List<SourceMethod> Methods { get; }
         }
     }
 
