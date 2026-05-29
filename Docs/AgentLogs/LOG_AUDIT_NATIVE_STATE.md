@@ -4769,3 +4769,13 @@ What was done: replaced slot pins with mutation guard masks derived from `GridSl
 Cinematic cheats used: none added. The route remains a fixed native WFC grid handoff to logistics/power boot, not a new physical simulation or quality-tier split.
 
 Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is removal of legacy DataVault buffer pins from three WFC slot lease routes. Proof: source scan has no `TryLockBuffer/TryUnlockBuffer` in the file; mutation scan reports guarded acquire/release sites; hot dependency/GC scan returns no hits for `GlobalRegistry.Get<`, direct `GetComponent(`, formatting, LINQ, or `foreach`; scoped `git diff --check` exits 0 with LF/CRLF warning only. Compile/import/profiler proof not run.
+
+## 2026-05-29 - HabitatConstructionManager Validation Guard Flattening
+
+What was wrong: `Assets/_Project/Scripts/Construction/HabitatConstructionManager.cs` held construction integrity validation buffers through ten direct `TryLockBuffer/TryUnlockBuffer` pins and `_lockedValidationBufferMask` while a scheduled validation job was pending.
+
+What was done: replaced the per-buffer lock mask with one `ValidationMutationGuardMask`, stored the granting vault, added post-acquire graph-buffer validation with `finally` release on failure, and routed reset, failed schedule, result consume, vault release, and teardown through `ReleaseValidationBufferGuard`.
+
+Cinematic cheats used: none added. The existing deterministic structural score and socket-compatibility model stays intact; no physical construction simulation or binary quality switch was introduced.
+
+Exact microseconds saved: 0 us measured; expected steady-frame delta 0 us. Static value is removal of a ten-pin DataVault writer topology from construction validation. Proof: source scan has no `TryLockBuffer/TryUnlockBuffer` or stale validation lock helper names; mutation scan shows one acquire route and one release route; added diff Zero-GC/dependency scan returns no hits; scoped `git diff --check` exits 0 with LF/CRLF warning only. Compile/import/profiler proof not run.
