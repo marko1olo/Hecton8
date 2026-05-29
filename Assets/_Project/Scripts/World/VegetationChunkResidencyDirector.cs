@@ -1487,69 +1487,13 @@ namespace Hecton8.World
                 return false;
             }
 
-            bool matricesLocked = false;
-            bool metadataLocked = false;
-            bool typesLocked = false;
-            bool semanticTypesLocked = false;
-            bool biomeLayersLocked = false;
-            bool flowDirectionsLocked = false;
-            bool flowVectorsLocked = false;
-            IDataVault matricesVault = null;
-            IDataVault metadataVault = null;
-            IDataVault typesVault = null;
-            IDataVault semanticTypesVault = null;
-            IDataVault biomeLayersVault = null;
-            IDataVault flowDirectionsVault = null;
-            IDataVault flowVectorsVault = null;
-            try
-            {
-                if (!TryAcquireAggregateWriteBuffer(ref destinationBuffers.MatricesHandle, requiredCount, out matricesVault, out NativeArray<Matrix4x4> matrices))
-                    return false;
-                matricesLocked = true;
-                if (!TryAcquireAggregateWriteBuffer(ref destinationBuffers.MetadataHandle, requiredCount, out metadataVault, out NativeArray<HectonVegetationInstanceData> metadata))
-                    return false;
-                metadataLocked = true;
-                if (!TryAcquireAggregateWriteBuffer(ref destinationBuffers.TypesHandle, requiredCount, out typesVault, out NativeArray<int> types))
-                    return false;
-                typesLocked = true;
-                if (!TryAcquireAggregateWriteBuffer(ref destinationBuffers.SemanticTypesHandle, requiredCount, out semanticTypesVault, out NativeArray<int> semanticTypes))
-                    return false;
-                semanticTypesLocked = true;
-                if (!TryAcquireAggregateWriteBuffer(ref destinationBuffers.BiomeLayersHandle, requiredCount, out biomeLayersVault, out NativeArray<byte> biomeLayers))
-                    return false;
-                biomeLayersLocked = true;
-                if (!TryAcquireAggregateWriteBuffer(ref destinationBuffers.FlowDirectionsHandle, requiredCount, out flowDirectionsVault, out NativeArray<Vector2> flowDirections))
-                    return false;
-                flowDirectionsLocked = true;
-                if (!TryAcquireAggregateWriteBuffer(ref destinationBuffers.FlowVectorsHandle, requiredCount, out flowVectorsVault, out NativeArray<Vector3> flowVectors))
-                    return false;
-                flowVectorsLocked = true;
-                NativeArray<Matrix4x4>.Copy(poolView.Matrices, sourceOffset, matrices, destinationOffset, copyCount);
-                NativeArray<HectonVegetationInstanceData>.Copy(poolView.Metadata, sourceOffset, metadata, destinationOffset, copyCount);
-                NativeArray<int>.Copy(poolView.Types, sourceOffset, types, destinationOffset, copyCount);
-                NativeArray<int>.Copy(poolView.SemanticTypes, sourceOffset, semanticTypes, destinationOffset, copyCount);
-                NativeArray<byte>.Copy(poolView.BiomeLayers, sourceOffset, biomeLayers, destinationOffset, copyCount);
-                NativeArray<Vector2>.Copy(poolView.FlowDirections, sourceOffset, flowDirections, destinationOffset, copyCount);
-                NativeArray<Vector3>.Copy(poolView.FlowVectors, sourceOffset, flowVectors, destinationOffset, copyCount);
-                return true;
-            }
-            finally
-            {
-                if (flowVectorsLocked)
-                    flowVectorsVault.ReleaseWriteLock(in destinationBuffers.FlowVectorsHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                if (flowDirectionsLocked)
-                    flowDirectionsVault.ReleaseWriteLock(in destinationBuffers.FlowDirectionsHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                if (biomeLayersLocked)
-                    biomeLayersVault.ReleaseWriteLock(in destinationBuffers.BiomeLayersHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                if (semanticTypesLocked)
-                    semanticTypesVault.ReleaseWriteLock(in destinationBuffers.SemanticTypesHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                if (typesLocked)
-                    typesVault.ReleaseWriteLock(in destinationBuffers.TypesHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                if (metadataLocked)
-                    metadataVault.ReleaseWriteLock(in destinationBuffers.MetadataHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
-                if (matricesLocked)
-                    matricesVault.ReleaseWriteLock(in destinationBuffers.MatricesHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
-            }
+            return CopyChunkMatricesToAggregate(poolView.Matrices, sourceOffset, ref destinationBuffers.MatricesHandle, requiredCount, destinationOffset, copyCount) &&
+                   CopyChunkMetadataToAggregate(poolView.Metadata, sourceOffset, ref destinationBuffers.MetadataHandle, requiredCount, destinationOffset, copyCount) &&
+                   CopyChunkIntLaneToAggregate(poolView.Types, sourceOffset, ref destinationBuffers.TypesHandle, requiredCount, destinationOffset, copyCount) &&
+                   CopyChunkIntLaneToAggregate(poolView.SemanticTypes, sourceOffset, ref destinationBuffers.SemanticTypesHandle, requiredCount, destinationOffset, copyCount) &&
+                   CopyChunkBiomeLayersToAggregate(poolView.BiomeLayers, sourceOffset, ref destinationBuffers.BiomeLayersHandle, requiredCount, destinationOffset, copyCount) &&
+                   CopyChunkFlowDirectionsToAggregate(poolView.FlowDirections, sourceOffset, ref destinationBuffers.FlowDirectionsHandle, requiredCount, destinationOffset, copyCount) &&
+                   CopyChunkFlowVectorsToAggregate(poolView.FlowVectors, sourceOffset, ref destinationBuffers.FlowVectorsHandle, requiredCount, destinationOffset, copyCount);
         }
     }
 }
