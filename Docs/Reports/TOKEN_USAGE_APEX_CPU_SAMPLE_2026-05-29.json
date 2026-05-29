@@ -1,0 +1,10 @@
+﻿{
+    "sampled_at_samara":  "2026-05-29T14:33:16.9578901+04:00",
+    "cpu_total_percent":  83,
+    "cpu_total_percent_raw":  82.86,
+    "dotnet_or_csc_process_count":  0,
+    "processes":  [
+
+                  ],
+    "note":  "Python py_compile skipped by apex when CPU \u003e 50 or dotnet/csc/VBCSCompiler/MSBuild is active; no dotnet build invoked by TOKEN_USAGE_AUDIT."
+}

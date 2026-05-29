@@ -576,3 +576,38 @@ Evidence:
 
 Cinematic Cheats used -> None; checkpoint/accounting only.
 Exact Microseconds saved -> 0 us game runtime.
+
+## 2026-05-29 14:40 Europe/Samara - Token stats refresh
+
+What was wrong:
+- 2026-05-28 token/dashboard/apex artifacts were stale after new local Codex JSONL activity.
+- Pricing evidence needed a same-day official-source boundary before regenerating GPT-5.5 economics.
+
+What was done:
+- Checked official OpenAI GPT-5.5 model/pricing and prompt-caching pages.
+- Ran `python Tools\CodexTokenUsageFastRefresh_20260528.py`.
+- Ran `python Tools\ProjectMetricsDashboard_20260528.py`.
+- Wrote `Docs/Reports/TOKEN_USAGE_APEX_CPU_SAMPLE_2026-05-29.json`.
+- Ran `python Tools\TokenUsageApexVerification_20260528.py`.
+
+Evidence:
+- Token total: `116,242,717,214`.
+- Delta tokens since 2026-05-28 snapshot: `2,950,209,170`.
+- Tokens/hour: `177,387,252.92792442`.
+- GPT-5.5 base API-equivalent: `$90,317.418027`.
+- Dashboard chart count: `41`.
+- Long-range windows: `[7, 30, 60]`.
+- Apex JSON SHA-256: `13be1472ce6c092c8709b6118738b5140c67327b58a466f6cef16aab0d657211`.
+- PNG integrity: missing `0`, bad signatures `0`.
+- Apex static C# hot forbidden hits in owned tooling: `0`.
+
+Compilation/resource throttling:
+- CPU sample: `2026-05-29T14:33:16.9578901+04:00`.
+- CPU: `83%`.
+- Compiler processes: `0`.
+- `py_compile`: skipped by evidence rule because CPU was above 50 percent.
+- `dotnet build`: not invoked by TOKEN_USAGE_AUDIT.
+- Unity build/import/playmode: not invoked.
+
+Cinematic Cheats used -> None; offline telemetry/reporting only.
+Exact Microseconds saved -> 0 us game runtime.

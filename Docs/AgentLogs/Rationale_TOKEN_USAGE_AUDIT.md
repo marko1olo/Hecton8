@@ -212,3 +212,11 @@ Solution: Commit token evidence first, then stage the remaining workspace as a s
 Rejected Alternatives: Reverting unrelated staged changes was rejected because they are other agents' work. Pushing without a clean `git diff --cached --check` was rejected after whitespace errors were found. Running `dotnet build` was rejected because TOKEN_USAGE_AUDIT did not own runtime changes and compiler contention was already observed.
 Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected by this audit checkpoint. Repository evidence improves because token telemetry has isolated commits and broad agent work has a separate checkpoint boundary.
 Hardware Impact: 0 us runtime gain. Process gain: no protected `1334` path was staged, and whitespace gate was green before the broad commit.
+
+## Decision 35 - 2026-05-29 token stats refresh
+
+Problem: The operator requested a new token-stat update and full commit/push after another day boundary, while local Codex JSONL and the Unity workspace continued to change under parallel agents.
+Solution: Verify current official GPT-5.5 pricing/cache context, regenerate the 2026-05-29 token report, dashboard, chart set, CPU sample, and apex verification artifact before any broad workspace checkpoint.
+Rejected Alternatives: Reusing the 2026-05-28 report was rejected because the new report shows a 2,950,209,170-token delta. Running `dotnet build` was rejected because TOKEN_USAGE_AUDIT changed offline docs/tools only and CPU sample was 83 percent, above the mandated compile threshold.
+Scalability potential: Runtime Low/Middle/High/Ultra tiers unaffected; this is offline telemetry and evidence accounting. Reporting scalability improves because the same 41-chart pipeline now produces dated 2026-05-29 surfaces.
+Hardware Impact: 0 us runtime gain. Audit evidence gain: current total is 116,242,717,214 tokens, GPT-5.5 base API-equivalent cost is 90,317.418027 USD, and apex proof is hash-backed with no missing charts.

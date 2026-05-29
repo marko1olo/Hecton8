@@ -1,0 +1,1235 @@
+﻿{
+  "schema": "hecton8.token_usage_apex_verification.v1",
+  "generated_at_utc": "2026-05-29T10:33:22.553278+00:00",
+  "generated_at_samara": "2026-05-29T14:33:22.553293+04:00",
+  "agent_id": "TOKEN_USAGE_AUDIT",
+  "domain": "offline Codex token telemetry, pricing evidence, dashboards, and documentation artifacts",
+  "evidence_class": "STATIC_SOURCE_AND_STATIC_DOC_CPU_THROTTLE_NO_COMPILE",
+  "mandates_consulted": [
+    "OPT_Zero_GC_Policy_AllocFree_Mandate.txt",
+    "QA_Evidence_Text_Filter_Audit.txt",
+    "DBG_Telemetry_Crash_Reporting_PostMortem.txt",
+    "OPT_Cinematic_Cheat_Protocol_Visual_Fake_First.txt",
+    "OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt",
+    "ARCH_Global_Registry_ServiceLocator_DI_Init.txt",
+    "ARCH_Signal_Lane_Segregation.txt",
+    "DATA_Runtime_Struct_Layout_ARM64.txt"
+  ],
+  "owned_runtime_csharp_files": [],
+  "owned_executable_files": [
+    {
+      "path": "Tools/CodexTokenUsageAudit_20260525.py",
+      "sha256": "f333c8a0292ec5a9c6c6b1cace948f2d8c1804cacf68ddee3906fe7f7ca53f26",
+      "line_count": 1568,
+      "python_ast_counts": {
+        "For": 74,
+        "ListComp": 12,
+        "DictComp": 16,
+        "SetComp": 0,
+        "GeneratorExp": 16,
+        "Call": 1074,
+        "Lambda": 18,
+        "Await": 0,
+        "Yield": 1
+      },
+      "function_ranges": [
+        {
+          "name": "zero_usage",
+          "line": 56,
+          "end_line": 57
+        },
+        {
+          "name": "parse_ts",
+          "line": 60,
+          "end_line": 74
+        },
+        {
+          "name": "has_usage",
+          "line": 77,
+          "end_line": 78
+        },
+        {
+          "name": "add_usage",
+          "line": 81,
+          "end_line": 86
+        },
+        {
+          "name": "positive_delta",
+          "line": 89,
+          "end_line": 90
+        },
+        {
+          "name": "sub_usage",
+          "line": 93,
+          "end_line": 94
+        },
+        {
+          "name": "clone_usage",
+          "line": 97,
+          "end_line": 98
+        },
+        {
+          "name": "usage_cost",
+          "line": 101,
+          "end_line": 111
+        },
+        {
+          "name": "normalize_model",
+          "line": 114,
+          "end_line": 118
+        },
+        {
+          "name": "model_from_payload",
+          "line": 121,
+          "end_line": 128
+        },
+        {
+          "name": "effort_from_payload",
+          "line": 131,
+          "end_line": 139
+        },
+        {
+          "name": "percentile",
+          "line": 142,
+          "end_line": 147
+        },
+        {
+          "name": "gini",
+          "line": 150,
+          "end_line": 159
+        },
+        {
+          "name": "fmt_int",
+          "line": 162,
+          "end_line": 163
+        },
+        {
+          "name": "fmt_money",
+          "line": 166,
+          "end_line": 167
+        },
+        {
+          "name": "week_key",
+          "line": 170,
+          "end_line": 172
+        },
+        {
+          "name": "collect_jsonl_files",
+          "line": 175,
+          "end_line": 186
+        },
+        {
+          "name": "read_file_record",
+          "line": 189,
+          "end_line": 255
+        },
+        {
+          "name": "read_increment_events",
+          "line": 258,
+          "end_line": 300
+        },
+        {
+          "name": "iter_project_files",
+          "line": 303,
+          "end_line": 308
+        },
+        {
+          "name": "count_text_metrics",
+          "line": 311,
+          "end_line": 349
+        },
+        {
+          "name": "count_loc",
+          "line": 352,
+          "end_line": 387
+        },
+        {
+          "name": "usage_map_costs",
+          "line": 390,
+          "end_line": 391
+        },
+        {
+          "name": "observed_costs_by_period",
+          "line": 394,
+          "end_line": 415
+        },
+        {
+          "name": "freeze_nested_usage",
+          "line": 418,
+          "end_line": 422
+        },
+        {
+          "name": "top_usage_rows",
+          "line": 425,
+          "end_line": 429
+        },
+        {
+          "name": "find_previous_report_path",
+          "line": 432,
+          "end_line": 442
+        },
+        {
+          "name": "previous_snapshot_delta",
+          "line": 445,
+          "end_line": 550
+        },
+        {
+          "name": "price_delta",
+          "line": 458,
+          "end_line": 461
+        },
+        {
+          "name": "per_hour",
+          "line": 476,
+          "end_line": 479
+        },
+        {
+          "name": "per_day",
+          "line": 481,
+          "end_line": 483
+        },
+        {
+          "name": "per_minute",
+          "line": 485,
+          "end_line": 487
+        },
+        {
+          "name": "per_second",
+          "line": 489,
+          "end_line": 491
+        },
+        {
+          "name": "per_positive_unit",
+          "line": 493,
+          "end_line": 496
+        },
+        {
+          "name": "session_report_row",
+          "line": 553,
+          "end_line": 586
+        },
+        {
+          "name": "model_effort_cost_rows",
+          "line": 589,
+          "end_line": 625
+        },
+        {
+          "name": "build_report",
+          "line": 628,
+          "end_line": 1097
+        },
+        {
+          "name": "usage_rows",
+          "line": 1100,
+          "end_line": 1104
+        },
+        {
+          "name": "fmt_optional_number",
+          "line": 1107,
+          "end_line": 1110
+        },
+        {
+          "name": "fmt_optional_money",
+          "line": 1113,
+          "end_line": 1116
+        },
+        {
+          "name": "append_velocity_table",
+          "line": 1119,
+          "end_line": 1153
+        },
+        {
+          "name": "write_reports",
+          "line": 1156,
+          "end_line": 1477
+        },
+        {
+          "name": "append_audit_files",
+          "line": 1480,
+          "end_line": 1525
+        },
+        {
+          "name": "main",
+          "line": 1528,
+          "end_line": 1564
+        }
+      ],
+      "hot_path_symbol_hits": [],
+      "csharp_hot_forbidden_text_hits": [],
+      "global_authority_text_hits": [],
+      "evidence_note": "Offline Python tooling. Python AST allocations are not Unity runtime GC evidence."
+    },
+    {
+      "path": "Tools/CodexTokenUsageFastRefresh_20260528.py",
+      "sha256": "43acce49130ac370c429dfedc655e77bf67b53245ece8abef617e2522874e685",
+      "line_count": 501,
+      "python_ast_counts": {
+        "For": 9,
+        "ListComp": 0,
+        "DictComp": 10,
+        "SetComp": 1,
+        "GeneratorExp": 0,
+        "Call": 269,
+        "Lambda": 0,
+        "Await": 0,
+        "Yield": 0
+      },
+      "function_ranges": [
+        {
+          "name": "load_audit_module",
+          "line": 38,
+          "end_line": 42
+        },
+        {
+          "name": "zero_usage",
+          "line": 48,
+          "end_line": 49
+        },
+        {
+          "name": "clone_usage",
+          "line": 52,
+          "end_line": 53
+        },
+        {
+          "name": "add_usage",
+          "line": 56,
+          "end_line": 59
+        },
+        {
+          "name": "sub_usage",
+          "line": 62,
+          "end_line": 63
+        },
+        {
+          "name": "parse_ts",
+          "line": 66,
+          "end_line": 67
+        },
+        {
+          "name": "fmt_int",
+          "line": 70,
+          "end_line": 71
+        },
+        {
+          "name": "fmt_money",
+          "line": 74,
+          "end_line": 75
+        },
+        {
+          "name": "find_previous_report",
+          "line": 78,
+          "end_line": 86
+        },
+        {
+          "name": "read_previous",
+          "line": 89,
+          "end_line": 91
+        },
+        {
+          "name": "usage_cost",
+          "line": 94,
+          "end_line": 103
+        },
+        {
+          "name": "price_row",
+          "line": 106,
+          "end_line": 109
+        },
+        {
+          "name": "no_cache_cost",
+          "line": 112,
+          "end_line": 113
+        },
+        {
+          "name": "usage_map_costs",
+          "line": 116,
+          "end_line": 117
+        },
+        {
+          "name": "merge_period_map",
+          "line": 120,
+          "end_line": 124
+        },
+        {
+          "name": "week_key",
+          "line": 127,
+          "end_line": 129
+        },
+        {
+          "name": "update_scope_economics",
+          "line": 132,
+          "end_line": 155
+        },
+        {
+          "name": "per_hour",
+          "line": 158,
+          "end_line": 161
+        },
+        {
+          "name": "build_velocity",
+          "line": 164,
+          "end_line": 212
+        },
+        {
+          "name": "per_day",
+          "line": 167,
+          "end_line": 169
+        },
+        {
+          "name": "per_minute",
+          "line": 171,
+          "end_line": 173
+        },
+        {
+          "name": "per_second",
+          "line": 175,
+          "end_line": 177
+        },
+        {
+          "name": "per_unit",
+          "line": 179,
+          "end_line": 182
+        },
+        {
+          "name": "build_report",
+          "line": 215,
+          "end_line": 384
+        },
+        {
+          "name": "write_reports",
+          "line": 387,
+          "end_line": 480
+        },
+        {
+          "name": "main",
+          "line": 483,
+          "end_line": 497
+        }
+      ],
+      "hot_path_symbol_hits": [],
+      "csharp_hot_forbidden_text_hits": [],
+      "global_authority_text_hits": [],
+      "evidence_note": "Offline Python tooling. Python AST allocations are not Unity runtime GC evidence."
+    },
+    {
+      "path": "Tools/ProjectMetricsDashboard_20260528.py",
+      "sha256": "158320d8de281cc6973bbead5128120c5ce89d6177ec7f1a27f7cf45d81aedfe",
+      "line_count": 615,
+      "python_ast_counts": {
+        "For": 13,
+        "ListComp": 24,
+        "DictComp": 5,
+        "SetComp": 0,
+        "GeneratorExp": 0,
+        "Call": 378,
+        "Lambda": 10,
+        "Await": 0,
+        "Yield": 1
+      },
+      "function_ranges": [
+        {
+          "name": "read_json",
+          "line": 70,
+          "end_line": 71
+        },
+        {
+          "name": "write_bom",
+          "line": 74,
+          "end_line": 76
+        },
+        {
+          "name": "fmt_int",
+          "line": 79,
+          "end_line": 80
+        },
+        {
+          "name": "fmt_money",
+          "line": 83,
+          "end_line": 84
+        },
+        {
+          "name": "usage_cost",
+          "line": 87,
+          "end_line": 92
+        },
+        {
+          "name": "period_rows",
+          "line": 95,
+          "end_line": 108
+        },
+        {
+          "name": "parse_hour",
+          "line": 111,
+          "end_line": 112
+        },
+        {
+          "name": "parse_day",
+          "line": 115,
+          "end_line": 116
+        },
+        {
+          "name": "fill_recent_hours",
+          "line": 119,
+          "end_line": 134
+        },
+        {
+          "name": "fill_recent_days",
+          "line": 137,
+          "end_line": 152
+        },
+        {
+          "name": "configure_axes",
+          "line": 155,
+          "end_line": 159
+        },
+        {
+          "name": "label_period_axis",
+          "line": 162,
+          "end_line": 168
+        },
+        {
+          "name": "save_current_figure",
+          "line": 171,
+          "end_line": 177
+        },
+        {
+          "name": "annotate_extremes",
+          "line": 180,
+          "end_line": 203
+        },
+        {
+          "name": "add_line_chart",
+          "line": 206,
+          "end_line": 214
+        },
+        {
+          "name": "add_annotated_line_chart",
+          "line": 217,
+          "end_line": 227
+        },
+        {
+          "name": "add_multi_line_chart",
+          "line": 230,
+          "end_line": 239
+        },
+        {
+          "name": "add_stack_chart",
+          "line": 242,
+          "end_line": 253
+        },
+        {
+          "name": "add_bar_chart",
+          "line": 256,
+          "end_line": 266
+        },
+        {
+          "name": "add_heatmap",
+          "line": 269,
+          "end_line": 279
+        },
+        {
+          "name": "iter_project_files",
+          "line": 282,
+          "end_line": 287
+        },
+        {
+          "name": "text_line_count",
+          "line": 290,
+          "end_line": 295
+        },
+        {
+          "name": "collect_project_metrics",
+          "line": 298,
+          "end_line": 341
+        },
+        {
+          "name": "run_git_log",
+          "line": 344,
+          "end_line": 356
+        },
+        {
+          "name": "collect_git_metrics",
+          "line": 359,
+          "end_line": 400
+        },
+        {
+          "name": "generate_charts",
+          "line": 403,
+          "end_line": 503
+        },
+        {
+          "name": "markdown_report",
+          "line": 506,
+          "end_line": 573
+        },
+        {
+          "name": "main",
+          "line": 576,
+          "end_line": 611
+        }
+      ],
+      "hot_path_symbol_hits": [],
+      "csharp_hot_forbidden_text_hits": [],
+      "global_authority_text_hits": [],
+      "evidence_note": "Offline Python tooling. Python AST allocations are not Unity runtime GC evidence."
+    },
+    {
+      "path": "Tools/TokenUsageApexVerification_20260528.py",
+      "sha256": "32b853a1fd3383c7ac3d82715d4c97a324df366e4f173356b20e1324ac4450d8",
+      "line_count": 459,
+      "python_ast_counts": {
+        "For": 10,
+        "ListComp": 5,
+        "DictComp": 1,
+        "SetComp": 0,
+        "GeneratorExp": 5,
+        "Call": 176,
+        "Lambda": 2,
+        "Await": 0,
+        "Yield": 0
+      },
+      "function_ranges": [
+        {
+          "name": "rel",
+          "line": 63,
+          "end_line": 64
+        },
+        {
+          "name": "sha256",
+          "line": 67,
+          "end_line": 72
+        },
+        {
+          "name": "read_text",
+          "line": 75,
+          "end_line": 76
+        },
+        {
+          "name": "line_count",
+          "line": 79,
+          "end_line": 82
+        },
+        {
+          "name": "regex_hits",
+          "line": 85,
+          "end_line": 92
+        },
+        {
+          "name": "python_code_regex_hits",
+          "line": 95,
+          "end_line": 117
+        },
+        {
+          "name": "ast_counts",
+          "line": 120,
+          "end_line": 140
+        },
+        {
+          "name": "source_file_report",
+          "line": 143,
+          "end_line": 156
+        },
+        {
+          "name": "load_json",
+          "line": 159,
+          "end_line": 160
+        },
+        {
+          "name": "chart_report",
+          "line": 163,
+          "end_line": 176
+        },
+        {
+          "name": "chart_manifest_integrity",
+          "line": 179,
+          "end_line": 200
+        },
+        {
+          "name": "artifact_report",
+          "line": 203,
+          "end_line": 212
+        },
+        {
+          "name": "command_log_stub",
+          "line": 215,
+          "end_line": 234
+        },
+        {
+          "name": "build_report",
+          "line": 237,
+          "end_line": 336
+        },
+        {
+          "name": "write_bom",
+          "line": 339,
+          "end_line": 340
+        },
+        {
+          "name": "write_markdown",
+          "line": 343,
+          "end_line": 432
+        },
+        {
+          "name": "main",
+          "line": 435,
+          "end_line": 455
+        }
+      ],
+      "hot_path_symbol_hits": [],
+      "csharp_hot_forbidden_text_hits": [],
+      "global_authority_text_hits": [],
+      "evidence_note": "Offline Python tooling. Python AST allocations are not Unity runtime GC evidence."
+    }
+  ],
+  "owned_artifacts": [
+    {
+      "path": "Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-29.json",
+      "sha256": "0ad8e772f92469f0764308b9f3f4c1a55e3fd6b67343407ca12b9b80ac18001b",
+      "bytes": 565229,
+      "line_count": 9350
+    },
+    {
+      "path": "Docs/DEPRECATED/Root_Docs_Noise_2026-05-26/TOKEN_USAGE_AUDIT_2026-05-29.md",
+      "sha256": "f9944b83de7ad94ab8e34284383041b9353febe5e78aac2732333f312b75242f",
+      "bytes": 2374,
+      "line_count": 58
+    },
+    {
+      "path": "Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-29.json",
+      "sha256": "d736cf24b9e0dc783845399238b22b2398a580ec12295bc7b761976203f7eaf9",
+      "bytes": 76223,
+      "line_count": 3344
+    },
+    {
+      "path": "Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-29.md",
+      "sha256": "f937d6ba94a7757cae50b5f3bb89b5bc9d2feebb58b53bb5cc7c8e7c12197343",
+      "bytes": 11131,
+      "line_count": 277
+    }
+  ],
+  "chart_artifacts": [
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/bytes_by_extension.png",
+      "dashboard_path": "MetricCharts/2026-05-29/bytes_by_extension.png",
+      "sha256": "edffb9720b4e41b2d58d26c0f4a20850075328b5156267ea0fca81725bb6320b",
+      "bytes": 76376,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/daily_cost.png",
+      "dashboard_path": "MetricCharts/2026-05-29/daily_cost.png",
+      "sha256": "562357aa68dfcf82a1b0683d927436f54442da1ec9b2eaeb54572ab69b4a34b2",
+      "bytes": 96345,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/daily_cost_last_30d.png",
+      "dashboard_path": "MetricCharts/2026-05-29/daily_cost_last_30d.png",
+      "sha256": "e400d441e23579af227c154b5fd43e03065d29b1dbad7f70463661afa1371778",
+      "bytes": 141252,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/daily_cost_last_60d.png",
+      "dashboard_path": "MetricCharts/2026-05-29/daily_cost_last_60d.png",
+      "sha256": "6402ef6bc59b225bb64845657dbad9f176e5a3fa09466a609ccc1fba06d47d5c",
+      "bytes": 129450,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/daily_cost_last_7d.png",
+      "dashboard_path": "MetricCharts/2026-05-29/daily_cost_last_7d.png",
+      "sha256": "79274b1913517fecb3a195fd34d914817b21f67dacc892487e6505ba018bcfff",
+      "bytes": 98165,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/daily_io_stack.png",
+      "dashboard_path": "MetricCharts/2026-05-29/daily_io_stack.png",
+      "sha256": "8fdfeebe44bb1514241523ac5f569ab8f6c96e8ccaa1b87aa2ff6c64d276e473",
+      "bytes": 86177,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/daily_io_stack_last_30d.png",
+      "dashboard_path": "MetricCharts/2026-05-29/daily_io_stack_last_30d.png",
+      "sha256": "3b9609d57f7f7a7461267a2bf841b9f23f12bd3ada22cd90cbaf57e129d690e4",
+      "bytes": 96563,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/daily_io_stack_last_60d.png",
+      "dashboard_path": "MetricCharts/2026-05-29/daily_io_stack_last_60d.png",
+      "sha256": "5fc91718c7571e545d2cccfb983555090c671d4954ad7708e49b709ef6fe887c",
+      "bytes": 91821,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/daily_io_stack_last_7d.png",
+      "dashboard_path": "MetricCharts/2026-05-29/daily_io_stack_last_7d.png",
+      "sha256": "8c64b2c92a68f2a05c3e7f7e58aac1c5f7ab8191925a4ec1c9c2d6505ddeff14",
+      "bytes": 76131,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/daily_output_reasoning.png",
+      "dashboard_path": "MetricCharts/2026-05-29/daily_output_reasoning.png",
+      "sha256": "3849930b0ea1f9ac98af7063c823bc43d94eeed9a62f670105e2f39a6cdc9247",
+      "bytes": 122793,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/daily_ratios.png",
+      "dashboard_path": "MetricCharts/2026-05-29/daily_ratios.png",
+      "sha256": "45a46f0cc9b010d605c426e9a3d57666efbee93425dbc25903ccb096e85af382",
+      "bytes": 109790,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/daily_ratios_last_30d.png",
+      "dashboard_path": "MetricCharts/2026-05-29/daily_ratios_last_30d.png",
+      "sha256": "57846ac4ab379189aa4a410b97ed962e035684b5cbef03f5541f39b99022d0ca",
+      "bytes": 89074,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/daily_ratios_last_60d.png",
+      "dashboard_path": "MetricCharts/2026-05-29/daily_ratios_last_60d.png",
+      "sha256": "3171631d2cb67643fe9c6b32f9e10b6540029cdd7f8b1f5bdb34fe6c85dc3853",
+      "bytes": 121263,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/daily_ratios_last_7d.png",
+      "dashboard_path": "MetricCharts/2026-05-29/daily_ratios_last_7d.png",
+      "sha256": "9439a41f2dca052a89f6446cf5b4f14c49e7a0cf96c04154f05716d7d88f31d5",
+      "bytes": 65832,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/daily_total_tokens.png",
+      "dashboard_path": "MetricCharts/2026-05-29/daily_total_tokens.png",
+      "sha256": "43ad4688af943f6cacb9879a3cb45652bae7432e7722e140e213cb621dc9211f",
+      "bytes": 86317,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/daily_total_tokens_last_30d.png",
+      "dashboard_path": "MetricCharts/2026-05-29/daily_total_tokens_last_30d.png",
+      "sha256": "e0cd1059682a80fcc481482f8b78d1ea32fa1c3184b1b0ded71502ab19400def",
+      "bytes": 134013,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/daily_total_tokens_last_60d.png",
+      "dashboard_path": "MetricCharts/2026-05-29/daily_total_tokens_last_60d.png",
+      "sha256": "9ba3360be0e99643b58ff757916654689420419f47910eb938b2c23514eb3b5d",
+      "bytes": 124581,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/daily_total_tokens_last_7d.png",
+      "dashboard_path": "MetricCharts/2026-05-29/daily_total_tokens_last_7d.png",
+      "sha256": "3a6030dd2e1c5fb00e2f5de01aaa1982c5025a6337be745d9566569873a2e116",
+      "bytes": 94214,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/docs_artifact_counts.png",
+      "dashboard_path": "MetricCharts/2026-05-29/docs_artifact_counts.png",
+      "sha256": "19c6489698a79fa95b08e300c09c64ef6bf20998b8e1c67a047fc7f283e4e1c1",
+      "bytes": 83680,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/file_counts_by_extension.png",
+      "dashboard_path": "MetricCharts/2026-05-29/file_counts_by_extension.png",
+      "sha256": "29a9d20259393597a49030756c6f8bcbf3df8cef6148ed911bf7733b769b18ff",
+      "bytes": 90745,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/file_counts_by_root.png",
+      "dashboard_path": "MetricCharts/2026-05-29/file_counts_by_root.png",
+      "sha256": "4619a9d31d06e8c8876762ca555d1b2b15eb62027ffcf50fed78b22e1d883fb6",
+      "bytes": 112548,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/git_churn_by_day.png",
+      "dashboard_path": "MetricCharts/2026-05-29/git_churn_by_day.png",
+      "sha256": "ce07c26ac9495ec42c8ffa2570a26573169a28591bc1e46f9b72372dcb3b3d16",
+      "bytes": 92057,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/git_churn_by_week.png",
+      "dashboard_path": "MetricCharts/2026-05-29/git_churn_by_week.png",
+      "sha256": "a7641bb629b1f09f1fa0080d67d9ab836c597e1fade6dcaaaa83ce2350d6c174",
+      "bytes": 76952,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/git_commit_weekday_hour_heatmap.png",
+      "dashboard_path": "MetricCharts/2026-05-29/git_commit_weekday_hour_heatmap.png",
+      "sha256": "91b4877954a4e8755449f46553f7a16655427de4437cf218e56afe41b984dfbf",
+      "bytes": 54598,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/git_commits_by_day.png",
+      "dashboard_path": "MetricCharts/2026-05-29/git_commits_by_day.png",
+      "sha256": "7e898e1f3a50fcee0e5a2e2f2100bbd653bc0c28b507fe37c18007f716c84a31",
+      "bytes": 88661,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/git_commits_by_week.png",
+      "dashboard_path": "MetricCharts/2026-05-29/git_commits_by_week.png",
+      "sha256": "f4245add36f11fc6104413a39b301fa2cc5b91fec05e583ab8f4e79096ebfa65",
+      "bytes": 80302,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/git_insertions_deletions_by_day.png",
+      "dashboard_path": "MetricCharts/2026-05-29/git_insertions_deletions_by_day.png",
+      "sha256": "ca7ef42a428528c17fafca63149db344b3f686eee8e95bf785f220a519f10965",
+      "bytes": 97722,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/hourly_cost_last_96h.png",
+      "dashboard_path": "MetricCharts/2026-05-29/hourly_cost_last_96h.png",
+      "sha256": "00ddfbcb27108a41d7566fa6868c87a756006b2ba397cda50b2f41e1cf845cc6",
+      "bytes": 157129,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/hourly_io_stack_last_96h.png",
+      "dashboard_path": "MetricCharts/2026-05-29/hourly_io_stack_last_96h.png",
+      "sha256": "16f8912c08e83d3d821c6a7fcf3455f018706d71eee22bf8615f580d4e0cc7fe",
+      "bytes": 142418,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/hourly_output_reasoning_last_96h.png",
+      "dashboard_path": "MetricCharts/2026-05-29/hourly_output_reasoning_last_96h.png",
+      "sha256": "3e396ea435c1ae1e70fc087038a6241fccdebc5d7e84ce7f2d3363bfd238fd3e",
+      "bytes": 199340,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/hourly_ratios_last_96h.png",
+      "dashboard_path": "MetricCharts/2026-05-29/hourly_ratios_last_96h.png",
+      "sha256": "d05cea52f47b3ec5892b47b029904217e36276373c301d1c84d40fd457dd14b6",
+      "bytes": 164894,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/hourly_total_tokens_last_96h.png",
+      "dashboard_path": "MetricCharts/2026-05-29/hourly_total_tokens_last_96h.png",
+      "sha256": "7d769409d4d5ea1bdd49d62054e936fc9f40a08126866f7d855ec99e376a38cd",
+      "bytes": 155772,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/model_effort_cost_top20.png",
+      "dashboard_path": "MetricCharts/2026-05-29/model_effort_cost_top20.png",
+      "sha256": "e786dc82f0e19255cf289cd4d52967f3243351f8d4d1e802ddda1b07d67f2867",
+      "bytes": 91059,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/model_effort_tokens_top20.png",
+      "dashboard_path": "MetricCharts/2026-05-29/model_effort_tokens_top20.png",
+      "sha256": "3a688a4ff3942e51ed06a2b24d0903add597a63f862c42b56f07ed901904d59e",
+      "bytes": 91805,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/project_lines_by_scope.png",
+      "dashboard_path": "MetricCharts/2026-05-29/project_lines_by_scope.png",
+      "sha256": "5ef167074c6b510227cd4493474bdd41e29bf0f932d822209875ee91b4f037f9",
+      "bytes": 91727,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/token_density_by_scope.png",
+      "dashboard_path": "MetricCharts/2026-05-29/token_density_by_scope.png",
+      "sha256": "b0aee1e111c0dfa9a3ad5fddbfadb755b69ff90108f14fd8220e09c4001cc428",
+      "bytes": 86680,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/top_cwd_total_tokens.png",
+      "dashboard_path": "MetricCharts/2026-05-29/top_cwd_total_tokens.png",
+      "sha256": "56b69540d34e42da40a3c41911a9ae5bea4241806dfd9949ed065222c13e9b6e",
+      "bytes": 55149,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/top_sessions_total_tokens.png",
+      "dashboard_path": "MetricCharts/2026-05-29/top_sessions_total_tokens.png",
+      "sha256": "d69640f9f1548a1b2905376aba879452c864926df69ff2523ff5695d1b17277f",
+      "bytes": 79849,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/weekly_cost.png",
+      "dashboard_path": "MetricCharts/2026-05-29/weekly_cost.png",
+      "sha256": "df43100d09f4dbacbf61397c6605b319dd2a2e608d6c8444ebed601ad99e37e8",
+      "bytes": 83432,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/weekly_io_stack.png",
+      "dashboard_path": "MetricCharts/2026-05-29/weekly_io_stack.png",
+      "sha256": "bc9caed214cbed08517af74e10ae98c1a52fa2b7bf25885cb583700e88d828a9",
+      "bytes": 78635,
+      "png_signature_ok": true
+    },
+    {
+      "path": "Docs/Reports/MetricCharts/2026-05-29/weekly_total_tokens.png",
+      "dashboard_path": "MetricCharts/2026-05-29/weekly_total_tokens.png",
+      "sha256": "413266f46aeaacf06710365592bf74277f5150c7e2d9c77d320b09af43519eec",
+      "bytes": 68173,
+      "png_signature_ok": true
+    }
+  ],
+  "zero_gc_self_audit": {
+    "runtime_hot_path_changed": false,
+    "runtime_profiler_gc_proof": "ABSENT",
+    "status": "PENDING_RUNTIME_VERIFICATION_FOR_ANY_RUNTIME_CLAIM",
+    "static_hot_path_symbol_hits_in_owned_tooling": 0,
+    "static_csharp_hot_forbidden_hits_in_owned_tooling": 0,
+    "interpretation": "No owned Unity runtime C# hot path was edited by this domain. Static scan over owned tooling found no Unity hot-path methods or C# hot-path forbidden text. This does not prove runtime 0 B/frame."
+  },
+  "data_sovereignty_self_audit": {
+    "migrated_to_global_data_vault": false,
+    "buffer_id_constants_secured": [],
+    "try_acquire_write_lock_sites": [],
+    "release_write_lock_finally_sites": [],
+    "static_global_authority_hits_in_owned_tooling": 0,
+    "interpretation": "No GlobalDataVault, SignalBus, GlobalRegistry, BufferID, or HomeostasisBrain route was added by TOKEN_USAGE_AUDIT. Data sovereignty route proof is not applicable."
+  },
+  "cinematic_cheat_and_scalability_audit": {
+    "runtime_simulation_added": false,
+    "global_quality_weight_runtime_requirement_applicable": false,
+    "binary_quality_switches_in_owned_tooling": [],
+    "interpretation": "The work generated offline charts/reports. It did not add water/light/fog/physics/runtime visual systems, so fake-first and continuous GlobalQualityWeight scaling are not invoked."
+  },
+  "token_report_headline": {
+    "total_tokens": 116242717214,
+    "input_tokens": 115838396673,
+    "cached_input_tokens": 111327371904,
+    "output_tokens": 403286941,
+    "reasoning_output_tokens": 125822605,
+    "sessions_with_usage": 2944,
+    "gpt_5_5_standard_api_equivalent_usd": 90317.41802699999,
+    "delta_total_tokens": 2950209170,
+    "tokens_per_hour": 177387252.92792442,
+    "tokens_per_second": 49274.23692442345,
+    "gpt_5_5_standard_usd_per_hour": 132.47511662970234
+  },
+  "pricing_context_rules": {
+    "base_rate_note": "GPT-5.5 base API-equivalent uses input $5.00, cached input $0.50, output $30.00 per 1M tokens.",
+    "long_context_trigger_input_tokens": 272000,
+    "long_context_surcharge_note": "Official pricing applies 2x input and 1.5x output when prompts exceed 272K input tokens. Local Codex JSONL does not expose provider-side per-request context classification, so this report adds an upper-bound sensitivity instead of pretending exact surcharge billing.",
+    "regional_uplift_note": "Some regions can add about 10 percent. Local JSONL does not expose billing region, so this is a sensitivity row only.",
+    "gpt_5_5_long_context_upper_bound_usd": 174585.53193899998,
+    "gpt_5_5_long_context_upper_bound_delta_usd": 84268.11391199999,
+    "gpt_5_5_regional_10pct_usd": 99349.15982970002,
+    "gpt_5_5_regional_10pct_delta_usd": 9031.741802700024,
+    "gpt_5_5_long_context_regional_10pct_upper_bound_usd": 192044.08513289999,
+    "post_cutoff_long_context_event_rule": "Lower-bound detector for post-cutoff positive delta events whose delta input_tokens exceeds 272000. Provider-side exact long-context classification remains unavailable in local JSONL; zero detected events is not proof of zero all-time surcharge.",
+    "post_cutoff_long_context_event_evidence_class": "LOCAL_JSONL_DELTA_LOWER_BOUND_NOT_PROVIDER_INVOICE_CLASSIFICATION",
+    "post_cutoff_long_context_event_count": 0,
+    "post_cutoff_long_context_event_usage": {
+      "input_tokens": 0,
+      "cached_input_tokens": 0,
+      "output_tokens": 0,
+      "reasoning_output_tokens": 0,
+      "total_tokens": 0
+    },
+    "post_cutoff_long_context_event_base_usd": 0.0,
+    "post_cutoff_long_context_event_surcharge_delta_usd": 0.0,
+    "post_cutoff_base_delta_cost_usd": 2203.2547289999998
+  },
+  "official_pricing_sources_checked": [
+    {
+      "url": "https://developers.openai.com/api/docs/pricing",
+      "fact_used": "GPT-5.5 base public API-equivalent pricing used by the report: input $5.00, cached input $0.50, output $30.00 per 1M tokens."
+    },
+    {
+      "url": "https://developers.openai.com/api/docs/models/gpt-5.5",
+      "fact_used": "Prompts above 272K input tokens get a long-context surcharge. Report records this as a sensitivity because local JSONL does not expose exact provider-side billing classification."
+    },
+    {
+      "url": "https://developers.openai.com/api/docs/guides/prompt-caching",
+      "fact_used": "Cached token counters and prompt-cache behavior are treated as separate cached input accounting; report remains API-equivalent, not invoice proof."
+    }
+  ],
+  "dashboard_integrity": {
+    "dashboard_json": "Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-29.json",
+    "dashboard_markdown": "Docs/Reports/PROJECT_METRICS_DASHBOARD_2026-05-29.md",
+    "chart_count_reported": 41,
+    "chart_count_on_disk": 41,
+    "all_png_signatures_ok": true,
+    "all_png_non_empty": true,
+    "reported_chart_paths": [
+      "MetricCharts/2026-05-29/hourly_total_tokens_last_96h.png",
+      "MetricCharts/2026-05-29/hourly_cost_last_96h.png",
+      "MetricCharts/2026-05-29/hourly_io_stack_last_96h.png",
+      "MetricCharts/2026-05-29/hourly_output_reasoning_last_96h.png",
+      "MetricCharts/2026-05-29/hourly_ratios_last_96h.png",
+      "MetricCharts/2026-05-29/daily_total_tokens_last_7d.png",
+      "MetricCharts/2026-05-29/daily_cost_last_7d.png",
+      "MetricCharts/2026-05-29/daily_io_stack_last_7d.png",
+      "MetricCharts/2026-05-29/daily_ratios_last_7d.png",
+      "MetricCharts/2026-05-29/daily_total_tokens_last_30d.png",
+      "MetricCharts/2026-05-29/daily_cost_last_30d.png",
+      "MetricCharts/2026-05-29/daily_io_stack_last_30d.png",
+      "MetricCharts/2026-05-29/daily_ratios_last_30d.png",
+      "MetricCharts/2026-05-29/daily_total_tokens_last_60d.png",
+      "MetricCharts/2026-05-29/daily_cost_last_60d.png",
+      "MetricCharts/2026-05-29/daily_io_stack_last_60d.png",
+      "MetricCharts/2026-05-29/daily_ratios_last_60d.png",
+      "MetricCharts/2026-05-29/daily_total_tokens.png",
+      "MetricCharts/2026-05-29/daily_cost.png",
+      "MetricCharts/2026-05-29/daily_io_stack.png",
+      "MetricCharts/2026-05-29/daily_output_reasoning.png",
+      "MetricCharts/2026-05-29/daily_ratios.png",
+      "MetricCharts/2026-05-29/weekly_total_tokens.png",
+      "MetricCharts/2026-05-29/weekly_cost.png",
+      "MetricCharts/2026-05-29/weekly_io_stack.png",
+      "MetricCharts/2026-05-29/model_effort_tokens_top20.png",
+      "MetricCharts/2026-05-29/model_effort_cost_top20.png",
+      "MetricCharts/2026-05-29/top_sessions_total_tokens.png",
+      "MetricCharts/2026-05-29/top_cwd_total_tokens.png",
+      "MetricCharts/2026-05-29/project_lines_by_scope.png",
+      "MetricCharts/2026-05-29/token_density_by_scope.png",
+      "MetricCharts/2026-05-29/file_counts_by_extension.png",
+      "MetricCharts/2026-05-29/bytes_by_extension.png",
+      "MetricCharts/2026-05-29/file_counts_by_root.png",
+      "MetricCharts/2026-05-29/docs_artifact_counts.png",
+      "MetricCharts/2026-05-29/git_commits_by_day.png",
+      "MetricCharts/2026-05-29/git_churn_by_day.png",
+      "MetricCharts/2026-05-29/git_insertions_deletions_by_day.png",
+      "MetricCharts/2026-05-29/git_commits_by_week.png",
+      "MetricCharts/2026-05-29/git_churn_by_week.png",
+      "MetricCharts/2026-05-29/git_commit_weekday_hour_heatmap.png"
+    ],
+    "disk_chart_paths": [
+      "Docs/Reports/MetricCharts/2026-05-29/bytes_by_extension.png",
+      "Docs/Reports/MetricCharts/2026-05-29/daily_cost.png",
+      "Docs/Reports/MetricCharts/2026-05-29/daily_cost_last_30d.png",
+      "Docs/Reports/MetricCharts/2026-05-29/daily_cost_last_60d.png",
+      "Docs/Reports/MetricCharts/2026-05-29/daily_cost_last_7d.png",
+      "Docs/Reports/MetricCharts/2026-05-29/daily_io_stack.png",
+      "Docs/Reports/MetricCharts/2026-05-29/daily_io_stack_last_30d.png",
+      "Docs/Reports/MetricCharts/2026-05-29/daily_io_stack_last_60d.png",
+      "Docs/Reports/MetricCharts/2026-05-29/daily_io_stack_last_7d.png",
+      "Docs/Reports/MetricCharts/2026-05-29/daily_output_reasoning.png",
+      "Docs/Reports/MetricCharts/2026-05-29/daily_ratios.png",
+      "Docs/Reports/MetricCharts/2026-05-29/daily_ratios_last_30d.png",
+      "Docs/Reports/MetricCharts/2026-05-29/daily_ratios_last_60d.png",
+      "Docs/Reports/MetricCharts/2026-05-29/daily_ratios_last_7d.png",
+      "Docs/Reports/MetricCharts/2026-05-29/daily_total_tokens.png",
+      "Docs/Reports/MetricCharts/2026-05-29/daily_total_tokens_last_30d.png",
+      "Docs/Reports/MetricCharts/2026-05-29/daily_total_tokens_last_60d.png",
+      "Docs/Reports/MetricCharts/2026-05-29/daily_total_tokens_last_7d.png",
+      "Docs/Reports/MetricCharts/2026-05-29/docs_artifact_counts.png",
+      "Docs/Reports/MetricCharts/2026-05-29/file_counts_by_extension.png",
+      "Docs/Reports/MetricCharts/2026-05-29/file_counts_by_root.png",
+      "Docs/Reports/MetricCharts/2026-05-29/git_churn_by_day.png",
+      "Docs/Reports/MetricCharts/2026-05-29/git_churn_by_week.png",
+      "Docs/Reports/MetricCharts/2026-05-29/git_commit_weekday_hour_heatmap.png",
+      "Docs/Reports/MetricCharts/2026-05-29/git_commits_by_day.png",
+      "Docs/Reports/MetricCharts/2026-05-29/git_commits_by_week.png",
+      "Docs/Reports/MetricCharts/2026-05-29/git_insertions_deletions_by_day.png",
+      "Docs/Reports/MetricCharts/2026-05-29/hourly_cost_last_96h.png",
+      "Docs/Reports/MetricCharts/2026-05-29/hourly_io_stack_last_96h.png",
+      "Docs/Reports/MetricCharts/2026-05-29/hourly_output_reasoning_last_96h.png",
+      "Docs/Reports/MetricCharts/2026-05-29/hourly_ratios_last_96h.png",
+      "Docs/Reports/MetricCharts/2026-05-29/hourly_total_tokens_last_96h.png",
+      "Docs/Reports/MetricCharts/2026-05-29/model_effort_cost_top20.png",
+      "Docs/Reports/MetricCharts/2026-05-29/model_effort_tokens_top20.png",
+      "Docs/Reports/MetricCharts/2026-05-29/project_lines_by_scope.png",
+      "Docs/Reports/MetricCharts/2026-05-29/token_density_by_scope.png",
+      "Docs/Reports/MetricCharts/2026-05-29/top_cwd_total_tokens.png",
+      "Docs/Reports/MetricCharts/2026-05-29/top_sessions_total_tokens.png",
+      "Docs/Reports/MetricCharts/2026-05-29/weekly_cost.png",
+      "Docs/Reports/MetricCharts/2026-05-29/weekly_io_stack.png",
+      "Docs/Reports/MetricCharts/2026-05-29/weekly_total_tokens.png"
+    ],
+    "disk_dashboard_relative_chart_paths": [
+      "MetricCharts/2026-05-29/bytes_by_extension.png",
+      "MetricCharts/2026-05-29/daily_cost.png",
+      "MetricCharts/2026-05-29/daily_cost_last_30d.png",
+      "MetricCharts/2026-05-29/daily_cost_last_60d.png",
+      "MetricCharts/2026-05-29/daily_cost_last_7d.png",
+      "MetricCharts/2026-05-29/daily_io_stack.png",
+      "MetricCharts/2026-05-29/daily_io_stack_last_30d.png",
+      "MetricCharts/2026-05-29/daily_io_stack_last_60d.png",
+      "MetricCharts/2026-05-29/daily_io_stack_last_7d.png",
+      "MetricCharts/2026-05-29/daily_output_reasoning.png",
+      "MetricCharts/2026-05-29/daily_ratios.png",
+      "MetricCharts/2026-05-29/daily_ratios_last_30d.png",
+      "MetricCharts/2026-05-29/daily_ratios_last_60d.png",
+      "MetricCharts/2026-05-29/daily_ratios_last_7d.png",
+      "MetricCharts/2026-05-29/daily_total_tokens.png",
+      "MetricCharts/2026-05-29/daily_total_tokens_last_30d.png",
+      "MetricCharts/2026-05-29/daily_total_tokens_last_60d.png",
+      "MetricCharts/2026-05-29/daily_total_tokens_last_7d.png",
+      "MetricCharts/2026-05-29/docs_artifact_counts.png",
+      "MetricCharts/2026-05-29/file_counts_by_extension.png",
+      "MetricCharts/2026-05-29/file_counts_by_root.png",
+      "MetricCharts/2026-05-29/git_churn_by_day.png",
+      "MetricCharts/2026-05-29/git_churn_by_week.png",
+      "MetricCharts/2026-05-29/git_commit_weekday_hour_heatmap.png",
+      "MetricCharts/2026-05-29/git_commits_by_day.png",
+      "MetricCharts/2026-05-29/git_commits_by_week.png",
+      "MetricCharts/2026-05-29/git_insertions_deletions_by_day.png",
+      "MetricCharts/2026-05-29/hourly_cost_last_96h.png",
+      "MetricCharts/2026-05-29/hourly_io_stack_last_96h.png",
+      "MetricCharts/2026-05-29/hourly_output_reasoning_last_96h.png",
+      "MetricCharts/2026-05-29/hourly_ratios_last_96h.png",
+      "MetricCharts/2026-05-29/hourly_total_tokens_last_96h.png",
+      "MetricCharts/2026-05-29/model_effort_cost_top20.png",
+      "MetricCharts/2026-05-29/model_effort_tokens_top20.png",
+      "MetricCharts/2026-05-29/project_lines_by_scope.png",
+      "MetricCharts/2026-05-29/token_density_by_scope.png",
+      "MetricCharts/2026-05-29/top_cwd_total_tokens.png",
+      "MetricCharts/2026-05-29/top_sessions_total_tokens.png",
+      "MetricCharts/2026-05-29/weekly_cost.png",
+      "MetricCharts/2026-05-29/weekly_io_stack.png",
+      "MetricCharts/2026-05-29/weekly_total_tokens.png"
+    ],
+    "missing_reported_chart_files": [],
+    "unreported_disk_chart_files": [],
+    "reported_chart_duplicate_path_count": 0,
+    "chart_manifest_exact_match": true
+  },
+  "compilation_resource_throttling": {
+    "dotnet_build_invoked_by_token_usage_audit": false,
+    "unity_build_invoked_by_token_usage_audit": false,
+    "final_compile_check": "SKIPPED_BLOCKED_BY_COMPILER_CONTENTION",
+    "cpu_sample_before_final_compile": {
+      "sampled_at_samara": "2026-05-29T14:33:16.9578901+04:00",
+      "cpu_total_percent": 83,
+      "cpu_total_percent_raw": 82.86,
+      "dotnet_or_csc_process_count": 0,
+      "processes": [],
+      "note": "Python py_compile skipped by apex when CPU > 50 or dotnet/csc/VBCSCompiler/MSBuild is active; no dotnet build invoked by TOKEN_USAGE_AUDIT."
+    },
+    "blocked_reasons": [
+      "cpu_above_50_percent"
+    ],
+    "throttling_interpretation": "No dotnet build or Unity build was invoked. Python bytecode compile is skipped if CPU is above 50 percent or another compiler process remains active, to avoid ambiguous contention proof."
+  },
+  "known_faults": [
+    "No Unity Editor import, PlayMode, profiler, GCMonitor, player build, RenderDoc, or device capture was run by TOKEN_USAGE_AUDIT.",
+    "Full all-time token replay exceeded 20 minutes under live parallel-agent churn; 2026-05-29 report uses fast incremental evidence from the previous full snapshot plus post-cutoff JSONL deltas.",
+    "Workspace remains live-dirty from other agents after remote push; those changes are outside TOKEN_USAGE_AUDIT ownership."
+  ]
+}
