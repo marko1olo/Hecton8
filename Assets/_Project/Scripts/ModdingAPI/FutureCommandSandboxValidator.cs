@@ -928,8 +928,8 @@ namespace Hecton8.Modding
         {
             Initialize();
             AcquireVaultBuffers();
-            TryOpenVaultLaneRead(ref _telemetryRingHandle, out NativeArray<ModSandboxTelemetryEntry>.ReadOnly telemetryRing);
-            if (!destination.IsCreated || !telemetryRing.IsCreated)
+            if (!destination.IsCreated ||
+                !TryOpenVaultLaneRead(ref _telemetryRingHandle, out NativeArray<ModSandboxTelemetryEntry>.ReadOnly telemetryRing))
                 return 0;
 
             int count = math.min(destination.Length, telemetryRing.Length);
@@ -942,8 +942,8 @@ namespace Hecton8.Modding
         {
             Initialize();
             AcquireVaultBuffers();
-            TryOpenVaultLaneRead(ref _telemetryRingHandle, out NativeArray<ModSandboxTelemetryEntry>.ReadOnly telemetryRing);
-            if (!telemetryRing.IsCreated || (uint)index >= (uint)telemetryRing.Length)
+            if (!TryOpenVaultLaneRead(ref _telemetryRingHandle, out NativeArray<ModSandboxTelemetryEntry>.ReadOnly telemetryRing) ||
+                (uint)index >= (uint)telemetryRing.Length)
             {
                 entry = default;
                 return false;
@@ -2403,8 +2403,9 @@ namespace Hecton8.Modding
         internal static bool TryGetKernelTelemetryEntry(int index, out KernelExecutionTelemetryEntry entry)
         {
             entry = default;
-            TryOpenVaultLaneRead(ref _kernelTelemetryRingHandle, out NativeArray<KernelExecutionTelemetryEntry>.ReadOnly telemetryRing);
-            if (!telemetryRing.IsCreated || telemetryRing.Length == 0 || (uint)index >= (uint)telemetryRing.Length)
+            if (!TryOpenVaultLaneRead(ref _kernelTelemetryRingHandle, out NativeArray<KernelExecutionTelemetryEntry>.ReadOnly telemetryRing) ||
+                telemetryRing.Length == 0 ||
+                (uint)index >= (uint)telemetryRing.Length)
                 return false;
 
             entry = telemetryRing[index];
@@ -2481,7 +2482,7 @@ namespace Hecton8.Modding
         private static void DumpKernelTelemetry(uint faultHash)
         {
             int frame = SystemDispatcher.CurrentFrameIndex;
-            TryOpenVaultLaneRead(ref _kernelTelemetryRingHandle, out NativeArray<KernelExecutionTelemetryEntry>.ReadOnly telemetryRing);
+            bool hasTelemetryRing = TryOpenVaultLaneRead(ref _kernelTelemetryRingHandle, out NativeArray<KernelExecutionTelemetryEntry>.ReadOnly telemetryRing);
             try
             {
                 Directory.CreateDirectory("Docs/AgentLogs");
@@ -2491,10 +2492,10 @@ namespace Hecton8.Modding
                     writer.Write(0x4B464F52u);
                     writer.Write((uint)frame);
                     writer.Write(faultHash);
-                    writer.Write(telemetryRing.IsCreated ? (uint)telemetryRing.Length : 0u);
+                    writer.Write(hasTelemetryRing ? (uint)telemetryRing.Length : 0u);
                     writer.Write(0UL);
 
-                    if (!telemetryRing.IsCreated)
+                    if (!hasTelemetryRing)
                         return;
 
                     int byteLength = telemetryRing.Length * UnsafeUtility.SizeOf<KernelExecutionTelemetryEntry>();
@@ -2518,7 +2519,7 @@ namespace Hecton8.Modding
             state.LastDumpFrame = frame;
             TryWriteRingStateSnapshot(in state);
 
-            TryOpenVaultLaneRead(ref _telemetryRingHandle, out NativeArray<ModSandboxTelemetryEntry>.ReadOnly telemetryRing);
+            bool hasTelemetryRing = TryOpenVaultLaneRead(ref _telemetryRingHandle, out NativeArray<ModSandboxTelemetryEntry>.ReadOnly telemetryRing);
             try
             {
                 Directory.CreateDirectory("Docs/AgentLogs");
@@ -2528,12 +2529,12 @@ namespace Hecton8.Modding
                     writer.Write(0x514D4F44u);
                     writer.Write((uint)frame);
                     writer.Write(faultHash);
-                    writer.Write(telemetryRing.IsCreated ? (uint)telemetryRing.Length : 0u);
+                    writer.Write(hasTelemetryRing ? (uint)telemetryRing.Length : 0u);
                     writer.Write((uint)state.PendingCount);
                     writer.Write((uint)state.DevNullCount);
                     writer.Write(0UL);
 
-                    if (!telemetryRing.IsCreated)
+                    if (!hasTelemetryRing)
                         return;
 
                     int byteLength = telemetryRing.Length * UnsafeUtility.SizeOf<ModSandboxTelemetryEntry>();
@@ -2651,7 +2652,6 @@ namespace Hecton8.Modding
             if (vault == null ||
                 !IsLaneCreated(in lane) ||
                 !vault.TryReadOnlyHandle(in lane.Handle, out buffer) ||
-                !buffer.IsCreated ||
                 buffer.Length < lane.Length)
             {
                 buffer = default;

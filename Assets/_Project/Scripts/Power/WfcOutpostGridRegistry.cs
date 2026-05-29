@@ -106,7 +106,7 @@ namespace Hecton8.Power
 
             try
             {
-                if (!TryResolveSlot(slot, out destination))
+                if (!TryResolveSlot(vault, slot, out destination))
                     return false;
 
                 _handles[slot] = 0u;
@@ -182,7 +182,7 @@ namespace Hecton8.Power
                     !vault.TryAcquireMutationGuard(ResolveSlotMutationGuardMask(i)))
                     return false;
 
-                if (!TryResolveSlot(i, out NativeArray<byte> cells) ||
+                if (!TryResolveSlot(vault, i, out NativeArray<byte> cells) ||
                     _handles[i] != handle)
                 {
                     vault.ReleaseMutationGuard(ResolveSlotMutationGuardMask(i));
@@ -205,11 +205,14 @@ namespace Hecton8.Power
         {
             if (bufferId == BufferID.Unknown ||
                 systemId != LogisticsGridSystemId ||
-                !TryResolveSlotIndex(bufferId, out int slot) ||
-                !TryResolveVault(out IDataVault vault))
+                !TryResolveSlotIndex(bufferId, out int slot))
             {
                 return;
             }
+
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (vault == null)
+                return;
 
             vault.ReleaseMutationGuard(ResolveSlotMutationGuardMask(slot));
         }
@@ -232,7 +235,7 @@ namespace Hecton8.Power
                 {
                     _handles[i] = 0u;
                     _descriptors[i] = default;
-                    if (TryResolveSlot(i, out NativeArray<byte> slot))
+                    if (TryResolveSlot(vault, i, out NativeArray<byte> slot))
                     {
                         for (int cellIndex = 0; cellIndex < slot.Length; cellIndex++)
                             slot[cellIndex] = 0;
@@ -292,7 +295,7 @@ namespace Hecton8.Power
                 WfcOutpostGridConstants.MaxCellCount,
                 LogisticsGridSystemId,
                 NativeArrayOptions.ClearMemory);
-            return TryResolveSlot(slot, out cells);
+            return TryResolveSlot(vault, slot, out cells);
         }
 
         private static BufferID ResolveSlotBufferId(int slot)
@@ -312,10 +315,16 @@ namespace Hecton8.Power
 
         private static bool TryResolveSlot(int slot, out NativeArray<byte> cells)
         {
+            return TryResolveVault(out IDataVault vault) && TryResolveSlot(vault, slot, out cells);
+        }
+
+        private static bool TryResolveSlot(IDataVault vault, int slot, out NativeArray<byte> cells)
+        {
             cells = default;
             if ((uint)slot >= SlotCount ||
-                !IsSlotHandle(slot, in _gridSlots[slot]) ||
-                !TryResolveVault(out IDataVault vault))
+                vault == null ||
+                vault.IsCompactionFenceActive ||
+                !IsSlotHandle(slot, in _gridSlots[slot]))
             {
                 return false;
             }
