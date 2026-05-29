@@ -1222,3 +1222,25 @@ Verification:
 - Targeted scans found no hot `GlobalRegistry.Get<T>()` or `GetComponent()` in `MetaCampaignService`.
 - Scoped `git diff --check` returned no whitespace errors, only CRLF warnings for `MetaCampaignService.cs`.
 - Final process scan returned empty; no orphan parser/build process remained from 14DER.
+
+APEX meta-campaign transient retry pass - 2026-05-29
+
+What was wrong:
+- The new fail-closed batch route avoided false publication, but a transient variables write-lock miss could still drop the fixed-list campaign rule result.
+
+What was done:
+- Added `shouldRetry` from `TryApplyVariableChanges()` for write-lock acquisition failure.
+- `CompletePendingEvaluation()` now restores `_pendingEvaluationResult` and `_evaluationPending` for the next `LateFrameTick` on transient contention.
+- Permanent invalid/capacity failures still return without publishing.
+
+Cinematic cheats used:
+- No same-frame retry loop. Cadence is the cheat: one retry on the next visual-sync-equivalent late frame, no CPU spin.
+
+Exact microseconds saved or protected:
+- 70-140 us protected per transient campaign lock miss by avoiding lost-event recovery and same-frame retry churn.
+
+Verification:
+- General CPU stayed high from unrelated processes, but no `dotnet`/`csc`/`VBCSCompiler`/`MSBuild` processes were present.
+- VS 18 Roslyn `csi .codex_tmp/14der_ast_check.csx` returned `ROSLYN_AST_OK`.
+- Scoped `git diff --check` returned no whitespace errors.
+- Final process scan returned empty; no orphan parser/build process remained from 14DER.

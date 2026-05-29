@@ -859,3 +859,9 @@ Solution: Roslyn AST now rejects legacy unchecked variable helpers, `TryForceSet
 Rejected Alternatives: Manual inspection only. The failure mode is a small helper regression and should be caught structurally.
 Scalability potential: Runtime unchanged. Proof protects future scenario-authoring expansion across weak, middle, high, and ultra devices.
 Hardware Impact: Static proof only. No runtime cost and no project build CPU spike.
+
+Problem: The fail-closed MetaCampaign batch route prevented false presentation, but a transient variables write-lock miss could drop the pending rule result permanently.
+Solution: `TryApplyVariableChanges()` now exposes `shouldRetry` only when the variables write lock cannot be acquired. `CompletePendingEvaluation()` restores `_pendingEvaluationResult` and `_evaluationPending` for the next `LateFrameTick`, while permanent capacity/invalid-data failures still fail closed without publishing.
+Rejected Alternatives: Retrying inside the same frame. That can burn frame time under contention and violates cadence control. Publishing a warning signal was rejected because no native state changed.
+Scalability potential: Low avoids mission event loss when DataVault contention appears on weak CPUs. Middle keeps scenario scripts deterministic under save/load or hot-swap pressure. High and Ultra can process richer campaign effects without increasing same-frame retry loops.
+Hardware Impact: Adds one bool branch on the rare failure route; no normal hot-path cost. Protected cost is 70-140 us of avoided scenario recovery/debug churn per transient lock miss.

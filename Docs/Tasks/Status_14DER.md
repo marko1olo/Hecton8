@@ -382,3 +382,8 @@ APEX meta-campaign variable atomicity pass - 2026-05-29
 - [x] Loop 183 - Added MetaCampaign AST proof and throttle validation | DOD: `.codex_tmp/14der_ast_check.csx` now rejects legacy unchecked variable helpers, unchecked force-set results, save-load partial clear, and evaluation apply without `TryApplyVariableChanges()`; VS 18 Roslyn returned `ROSLYN_AST_OK` | Rejected: verbal proof that rule changes and presentation are phase-safe | Estimate: 190 us.
 
 Compile: not run. CPU LoadPercentage was 94 before parser validation, so 14DER waited 30 seconds; CPU then dropped to 7 and compiler process scan returned none. Validation was one VS 18 Roslyn AST pass, targeted source scans, process scan, and scoped `git diff --check`; no project build was launched by 14DER.
+
+APEX meta-campaign transient retry pass - 2026-05-29
+- [x] Loop 184 - Preserved pending campaign rule batches across transient DataVault contention | DOD: `TryApplyVariableChanges()` now reports `shouldRetry` on variables write-lock acquisition failure, and `CompletePendingEvaluation()` restores the fixed-list result for the next `LateFrameTick` instead of losing the scenario event | Rejected: fail-closed false publication with permanent event loss under temporary lock pressure | Estimate: 70 us.
+
+Compile: not run. General CPU stayed high from unrelated processes, but no `dotnet`/`csc`/`VBCSCompiler`/`MSBuild` processes were present. 14DER ran one targeted VS 18 Roslyn AST pass after this local change; it returned `ROSLYN_AST_OK`. Scoped `git diff --check` returned no whitespace errors. Final parser/build process scan returned empty.

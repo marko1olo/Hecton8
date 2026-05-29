@@ -141,105 +141,105 @@ namespace Hecton8.Physics
 
             try
             {
-            if (!TryOpenOrAcquireVaultView(
-                    vault,
-                    CablePhysics132BufferIds.BootstrapState,
-                    1,
-                    NativeArrayOptions.ClearMemory,
-                    out NativeArray<int> bootstrap))
-            {
-                return;
-            }
+                if (!TryOpenOrAcquireVaultView(
+                        vault,
+                        CablePhysics132BufferIds.BootstrapState,
+                        1,
+                        NativeArrayOptions.ClearMemory,
+                        out NativeArray<int> bootstrap))
+                {
+                    return;
+                }
 
-            if (bootstrap.IsCreated && bootstrap.Length > 0 && bootstrap[0] == CablePhysics132Constants.BootstrapMagic)
-                return;
+                if (bootstrap.IsCreated && bootstrap.Length > 0 && bootstrap[0] == CablePhysics132Constants.BootstrapMagic)
+                    return;
 
-            if (!TryOpenOrAcquireVaultView(
-                    vault,
-                    CablePhysics132BufferIds.CableNodes,
-                    CablePhysics132Constants.MockNodeCapacity,
-                    NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<CableNodeDTO> nodes) ||
-                !TryOpenOrAcquireVaultView(
-                    vault,
-                    CablePhysics132BufferIds.CableConstraints,
-                    CablePhysics132Constants.MockConstraintCapacity,
-                    NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<TetherConstraintDTO> constraints) ||
-                !TryOpenOrAcquireVaultView(
-                    vault,
-                    CablePhysics132BufferIds.Endpoints,
-                    CablePhysics132Constants.MockTetherCount,
-                    NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<TetherEndpointAupDTO> endpoints) ||
-                !TryOpenOrAcquireVaultView(
-                    vault,
-                    CablePhysics132BufferIds.SplineVertices,
-                    CablePhysics132Constants.MockSplineVertexCapacity,
-                    NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<TetherSplineVertexDTO> vertices) ||
-                !TryOpenOrAcquireVaultView(
-                    vault,
-                    CablePhysics132BufferIds.SegmentTensions,
-                    CablePhysics132Constants.MockConstraintCapacity,
-                    NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<float> tensions) ||
-                !TryOpenOrAcquireVaultView(
-                    vault,
-                    CablePhysics132BufferIds.PhysicsEvents,
-                    CablePhysics132Constants.PhysicsEventCapacity,
-                    NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<PhysicsEventPayload> events) ||
-                !TryOpenOrAcquireVaultView(
-                    vault,
-                    CablePhysics132BufferIds.TelemetryRing,
-                    CablePhysics132Constants.TelemetryCapacity,
-                    NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<TetherTelemetryEntry> telemetryRing) ||
-                !TryOpenOrAcquireVaultView(
-                    vault,
-                    CablePhysics132BufferIds.TelemetryHead,
-                    1,
-                    NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<int> telemetryHead) ||
-                !TryOpenOrAcquireVaultView(
-                    vault,
-                    CablePhysics132BufferIds.PinnedAups,
-                    CablePhysics132Constants.MockNodeCapacity,
-                    NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<double3> pinnedAups) ||
-                !TryOpenOrAcquireVaultView(
-                    vault,
-                    CablePhysics132BufferIds.PinnedMask,
-                    CablePhysics132Constants.MockNodeCapacity,
-                    NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<byte> pinnedMask) ||
-                !TryOpenOrAcquireVaultView(
-                    vault,
-                    CablePhysics132BufferIds.Tuning,
-                    1,
-                    NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<VerletCableTuningDTO> tuning) ||
-                !TryOpenOrAcquireVaultView(
-                    vault,
-                    CablePhysics132BufferIds.CableMaterials,
-                    CablePhysics132Constants.MaterialCapacity,
-                    NativeArrayOptions.UninitializedMemory,
-                    out NativeArray<CableMaterialDTO> materials))
-            {
-                return;
-            }
+                if (!TryOpenOrAcquireVaultView(
+                        vault,
+                        CablePhysics132BufferIds.CableNodes,
+                        CablePhysics132Constants.MockNodeCapacity,
+                        NativeArrayOptions.UninitializedMemory,
+                        out NativeArray<CableNodeDTO> nodes) ||
+                    !TryOpenOrAcquireVaultView(
+                        vault,
+                        CablePhysics132BufferIds.CableConstraints,
+                        CablePhysics132Constants.MockConstraintCapacity,
+                        NativeArrayOptions.UninitializedMemory,
+                        out NativeArray<TetherConstraintDTO> constraints) ||
+                    !TryOpenOrAcquireVaultView(
+                        vault,
+                        CablePhysics132BufferIds.Endpoints,
+                        CablePhysics132Constants.MockTetherCount,
+                        NativeArrayOptions.UninitializedMemory,
+                        out NativeArray<TetherEndpointAupDTO> endpoints) ||
+                    !TryOpenOrAcquireVaultView(
+                        vault,
+                        CablePhysics132BufferIds.SplineVertices,
+                        CablePhysics132Constants.MockSplineVertexCapacity,
+                        NativeArrayOptions.UninitializedMemory,
+                        out NativeArray<TetherSplineVertexDTO> vertices) ||
+                    !TryOpenOrAcquireVaultView(
+                        vault,
+                        CablePhysics132BufferIds.SegmentTensions,
+                        CablePhysics132Constants.MockConstraintCapacity,
+                        NativeArrayOptions.UninitializedMemory,
+                        out NativeArray<float> tensions) ||
+                    !TryOpenOrAcquireVaultView(
+                        vault,
+                        CablePhysics132BufferIds.PhysicsEvents,
+                        CablePhysics132Constants.PhysicsEventCapacity,
+                        NativeArrayOptions.UninitializedMemory,
+                        out NativeArray<PhysicsEventPayload> events) ||
+                    !TryOpenOrAcquireVaultView(
+                        vault,
+                        CablePhysics132BufferIds.TelemetryRing,
+                        CablePhysics132Constants.TelemetryCapacity,
+                        NativeArrayOptions.UninitializedMemory,
+                        out NativeArray<TetherTelemetryEntry> telemetryRing) ||
+                    !TryOpenOrAcquireVaultView(
+                        vault,
+                        CablePhysics132BufferIds.TelemetryHead,
+                        1,
+                        NativeArrayOptions.UninitializedMemory,
+                        out NativeArray<int> telemetryHead) ||
+                    !TryOpenOrAcquireVaultView(
+                        vault,
+                        CablePhysics132BufferIds.PinnedAups,
+                        CablePhysics132Constants.MockNodeCapacity,
+                        NativeArrayOptions.UninitializedMemory,
+                        out NativeArray<double3> pinnedAups) ||
+                    !TryOpenOrAcquireVaultView(
+                        vault,
+                        CablePhysics132BufferIds.PinnedMask,
+                        CablePhysics132Constants.MockNodeCapacity,
+                        NativeArrayOptions.UninitializedMemory,
+                        out NativeArray<byte> pinnedMask) ||
+                    !TryOpenOrAcquireVaultView(
+                        vault,
+                        CablePhysics132BufferIds.Tuning,
+                        1,
+                        NativeArrayOptions.UninitializedMemory,
+                        out NativeArray<VerletCableTuningDTO> tuning) ||
+                    !TryOpenOrAcquireVaultView(
+                        vault,
+                        CablePhysics132BufferIds.CableMaterials,
+                        CablePhysics132Constants.MaterialCapacity,
+                        NativeArrayOptions.UninitializedMemory,
+                        out NativeArray<CableMaterialDTO> materials))
+                {
+                    return;
+                }
 
-            ZeroInitCableBuffersDirect(vertices, tensions, events, telemetryRing, telemetryHead, tuning);
-            GenerateMockTethersDirect(
-                nodes,
-                constraints,
-                endpoints,
-                materials,
-                bootstrap,
-                pinnedAups,
-                pinnedMask,
-                globalQualityWeight);
+                ZeroInitCableBuffersDirect(vertices, tensions, events, telemetryRing, telemetryHead, tuning);
+                GenerateMockTethersDirect(
+                    nodes,
+                    constraints,
+                    endpoints,
+                    materials,
+                    bootstrap,
+                    pinnedAups,
+                    pinnedMask,
+                    globalQualityWeight);
             }
             finally
             {
