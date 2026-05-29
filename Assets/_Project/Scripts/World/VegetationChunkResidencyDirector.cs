@@ -981,21 +981,32 @@ namespace Hecton8.World
             {
                 if (TryAllocateChunkSliceForWrite(isSurface: true, surfaceCount, out int surfaceOffset, out bool useScratchPool))
                 {
-                    payload.SurfaceOffset = surfaceOffset;
-                    payload.SurfaceCount = surfaceCount;
-                    payload.SurfaceEdgeOffset = surfaceOffset;
-                    payload.SurfacePoolSet = useScratchPool ? (byte)1 : (byte)0;
                     int writeIndex = surfaceOffset;
+                    bool wroteSurface;
                     if (useScratchPool)
                     {
-                        WriteJobRecordsToPool(grassRecords, ref _surfaceDefragScratchPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
-                        WriteJobRecordsToPool(floatingRecords, ref _surfaceDefragScratchPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
+                        wroteSurface =
+                            WriteJobRecordsToPool(grassRecords, ref _surfaceDefragScratchPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors) &&
+                            WriteJobRecordsToPool(floatingRecords, ref _surfaceDefragScratchPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
                     }
                     else
                     {
-                        WriteJobRecordsToPool(grassRecords, ref _surfaceChunkPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
-                        WriteJobRecordsToPool(floatingRecords, ref _surfaceChunkPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
+                        wroteSurface =
+                            WriteJobRecordsToPool(grassRecords, ref _surfaceChunkPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors) &&
+                            WriteJobRecordsToPool(floatingRecords, ref _surfaceChunkPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
                     }
+
+                    if (wroteSurface && writeIndex == surfaceOffset + surfaceCount)
+                    {
+                        payload.SurfaceOffset = surfaceOffset;
+                        payload.SurfaceCount = surfaceCount;
+                        payload.SurfaceEdgeOffset = surfaceOffset;
+                        payload.SurfacePoolSet = useScratchPool ? (byte)1 : (byte)0;
+                    }
+                    else if (useScratchPool)
+                        FreeChunkSlice(ref _surfaceDefragScratchFreeBlocks, ref _surfaceDefragScratchFreeBlockCount, surfaceOffset, surfaceCount);
+                    else
+                        FreeChunkSlice(ref _surfacePoolFreeBlocks, ref _surfacePoolFreeBlockCount, surfaceOffset, surfaceCount);
                 }
             }
 
@@ -1003,15 +1014,22 @@ namespace Hecton8.World
             {
                 if (TryAllocateChunkSliceForWrite(isSurface: false, kelpCount, out int underwaterOffset, out bool useScratchPool))
                 {
-                    payload.UnderwaterOffset = underwaterOffset;
-                    payload.UnderwaterCount = kelpCount;
-                    payload.UnderwaterEdgeOffset = underwaterOffset;
-                    payload.UnderwaterPoolSet = useScratchPool ? (byte)1 : (byte)0;
                     int writeIndex = underwaterOffset;
-                    if (useScratchPool)
-                        WriteJobRecordsToPool(kelpRecords, ref _underwaterDefragScratchPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
+                    bool wroteUnderwater = useScratchPool
+                        ? WriteJobRecordsToPool(kelpRecords, ref _underwaterDefragScratchPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors)
+                        : WriteJobRecordsToPool(kelpRecords, ref _underwaterChunkPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
+
+                    if (wroteUnderwater && writeIndex == underwaterOffset + kelpCount)
+                    {
+                        payload.UnderwaterOffset = underwaterOffset;
+                        payload.UnderwaterCount = kelpCount;
+                        payload.UnderwaterEdgeOffset = underwaterOffset;
+                        payload.UnderwaterPoolSet = useScratchPool ? (byte)1 : (byte)0;
+                    }
+                    else if (useScratchPool)
+                        FreeChunkSlice(ref _underwaterDefragScratchFreeBlocks, ref _underwaterDefragScratchFreeBlockCount, underwaterOffset, kelpCount);
                     else
-                        WriteJobRecordsToPool(kelpRecords, ref _underwaterChunkPool, ref writeIndex, _totalUniverseOffsetDouble, floraTemplates, _floraTemplateRuntimeDescriptors);
+                        FreeChunkSlice(ref _underwaterPoolFreeBlocks, ref _underwaterPoolFreeBlockCount, underwaterOffset, kelpCount);
                 }
             }
 
@@ -1038,7 +1056,7 @@ namespace Hecton8.World
             return count;
         }
 
-        private void WriteJobRecordsToPool(
+        private bool WriteJobRecordsToPool(
             NativeArray<JobInstanceRecord> source,
             ref NativeChunkPool pool,
             ref int writeIndex,
@@ -1047,81 +1065,32 @@ namespace Hecton8.World
             FloraDataTemplate.RuntimeDescriptor[] floraTemplateRuntimeDescriptors)
         {
             if (!source.IsCreated)
-                return;
+                return true;
 
             int validCount = CountValidRecords(source);
             if (validCount <= 0)
-                return;
+                return true;
 
+            int startIndex = writeIndex;
             int requiredCount = writeIndex + validCount;
             if (writeIndex < 0 || requiredCount < writeIndex)
-                return;
+                return false;
 
-            if (!TryAcquireChunkPoolWriteView(ref pool, requiredCount, out NativeChunkPoolView poolView, out NativeChunkPoolWriteLocks locks))
-                return;
-
-            try
+            if (!TryReadChunkPoolView(in pool, requiredCount, out NativeChunkPoolView poolView) ||
+                !WriteJobRecordMatricesToPool(source, ref pool.MatricesHandle, requiredCount, startIndex, universeOffset) ||
+                !WriteJobRecordMetadataToPool(source, ref pool.MetadataHandle, requiredCount, startIndex, floraTemplates, floraTemplateRuntimeDescriptors) ||
+                !WriteJobRecordTypesToPool(source, ref pool.TypesHandle, requiredCount, startIndex) ||
+                !WriteJobRecordSemanticTypesToPool(source, ref pool.SemanticTypesHandle, requiredCount, startIndex) ||
+                !WriteJobRecordBiomeLayersToPool(source, ref pool.BiomeLayersHandle, requiredCount, startIndex) ||
+                !WriteJobRecordEdgeDistancesToPool(source, ref pool.EdgeDistancesHandle, requiredCount, startIndex) ||
+                !WriteJobRecordFlowDirectionsToPool(source, ref pool.FlowDirectionsHandle, requiredCount, startIndex) ||
+                !WriteJobRecordFlowVectorsToPool(source, ref pool.FlowVectorsHandle, requiredCount, startIndex))
             {
-                NativeArray<Matrix4x4> matrices = poolView.Matrices;
-                NativeArray<HectonVegetationInstanceData> metadata = poolView.Metadata;
-                NativeArray<int> types = poolView.Types;
-                NativeArray<int> semanticTypes = poolView.SemanticTypes;
-                NativeArray<byte> biomeLayers = poolView.BiomeLayers;
-                NativeArray<float> edgeDistances = poolView.EdgeDistances;
-                NativeArray<Vector2> flowDirections = poolView.FlowDirections;
-                NativeArray<Vector3> flowVectors = poolView.FlowVectors;
-
-                for (int i = 0; i < source.Length; i++)
-                {
-                    JobInstanceRecord record = source[i];
-                    if (record.IsValid == 0)
-                        continue;
-
-                    if ((uint)writeIndex >= (uint)poolView.Capacity)
-                        return;
-
-                    ResolveFloraDescriptor(
-                        floraTemplates,
-                        floraTemplateRuntimeDescriptors,
-                        record.Type,
-                        record.SemanticType,
-                        record.BiomeLayer,
-                        record.Variation,
-                        out int floraTemplateIndex,
-                        out FloraDataTemplate.RuntimeDescriptor floraDescriptor);
-                    byte geneticTraits = ResolveGeneticTraitByte(floraTemplates, floraTemplateIndex, floraDescriptor);
-                    matrices[writeIndex] = ConvertMatrixToStableUniverseSpace(ToMatrix4x4(record.Matrix), universeOffset);
-                    metadata[writeIndex] = new HectonVegetationInstanceData(
-                        (HectonVegetationInstanceType)record.Type,
-                        record.HeightScale,
-                        record.WidthScale,
-                        ResolveDeterministicVatPhase01(record.Variation, record.Type, record.SemanticType, record.BiomeLayer),
-                        floraTemplateIndex,
-                        HectonVegetationInstanceData.RuntimeStateIdle,
-                        HectonVegetationRuntimeFlagEncoding.Encode(record.BiomeLayer, 0, geneticTraits),
-                        floraDescriptor.PulseFrequency,
-                        new Vector4(
-                            floraDescriptor.BioluminescenceColor.x,
-                            floraDescriptor.BioluminescenceColor.y,
-                            floraDescriptor.BioluminescenceColor.z,
-                            floraDescriptor.BioluminescenceColor.w),
-                        floraDescriptor.SwaySpeed,
-                        floraDescriptor.BendAmplitude,
-                        1f,
-                        0f);
-                    types[writeIndex] = record.Type;
-                    semanticTypes[writeIndex] = record.SemanticType;
-                    biomeLayers[writeIndex] = record.BiomeLayer;
-                    edgeDistances[writeIndex] = record.EdgeDistance;
-                    flowDirections[writeIndex] = new Vector2(record.FlowDirection.x, record.FlowDirection.y);
-                    flowVectors[writeIndex] = new Vector3(record.FlowVector.x, record.FlowVector.y, record.FlowVector.z);
-                    writeIndex++;
-                }
+                return false;
             }
-            finally
-            {
-                ReleaseChunkPoolWriteLocks(in pool, ref locks);
-            }
+
+            writeIndex = startIndex + validCount;
+            return writeIndex <= poolView.Capacity;
         }
 
         private static float ResolveDeterministicVatPhase01(

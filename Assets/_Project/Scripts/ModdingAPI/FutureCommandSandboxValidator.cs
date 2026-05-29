@@ -1951,7 +1951,7 @@ namespace Hecton8.Modding
             tuning.CpuThermalPressure01 = 0f;
             tuning.Reserved = 0u;
 
-            if (tuningBuffer.Length > 0)
+            if (tuningBuffer.IsCreated && tuningBuffer.Length > 0)
             {
                 FutureCommandSandboxTuning stored = tuningBuffer[0];
                 if (stored.MaxCommandsPerFrame > 0)
@@ -1981,7 +1981,7 @@ namespace Hecton8.Modding
             tuning.CpuThermalPressure01 = 0f;
             tuning.Reserved = 0u;
 
-            if (tuningBuffer.IsCreated && tuningBuffer.Length > 0)
+            if (tuningBuffer.Length > 0)
             {
                 FutureCommandSandboxTuning stored = tuningBuffer[0];
                 if (stored.MaxCommandsPerFrame > 0)

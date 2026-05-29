@@ -142,7 +142,7 @@ namespace Hecton8.Editor.ModdingSDK
 
             StringBuilder summary = new StringBuilder(1024);
             summary.AppendLine(failures.Count == 0 ? "APEX Source Guard PASS" : "APEX Source Guard FAIL");
-            summary.Append("Parser: in-memory C# method syntax tree, no external process, no disk reports. FilesParsed=")
+            summary.Append("Parser: in-memory C# method scanner, no external process, no disk reports. FilesParsed=")
                 .Append(parsedFiles)
                 .Append(", MethodsParsed=")
                 .Append(parsedMethods)
@@ -160,7 +160,7 @@ namespace Hecton8.Editor.ModdingSDK
                 .AppendLine(".");
             summary.AppendLine("Timing proof: guarded modding runtime/editor scope has no deferred presentation mutation outside LateFrameTick or VisualSyncTick.");
             summary.AppendLine("Lock proof: guarded scope has no method that can hold more than one GlobalDataVault write lock, and lock methods must use finally-release.");
-            summary.AppendLine("Compile throttle proof: this guard launches no external compiler and no dotnet process.");
+            summary.AppendLine("Compile throttle proof: this guard launches no external compiler process.");
 
             for (int i = 0; i < failures.Count; i++)
                 summary.AppendLine(failures[i]);
