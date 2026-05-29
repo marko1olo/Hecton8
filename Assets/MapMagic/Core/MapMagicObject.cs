@@ -155,10 +155,6 @@ namespace MapMagic.Core
 
 		public void Update () 
 		{ 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-			Debug.developerConsoleVisible = true;
-#endif
-
 			tiles.Update((Vector3)tileSize, pinned:tiles.pinned, holder:this, distsOnly:!isPlaying); //distsOnly: only updating distance priority in editor
 			
 			Den.Tools.Tasks.CoroutineManager.Update();
