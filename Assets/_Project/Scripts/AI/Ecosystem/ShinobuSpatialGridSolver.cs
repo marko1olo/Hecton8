@@ -1055,7 +1055,7 @@ namespace Hecton8.AI.Ecosystem
         [ReadOnly, NoAlias] public NativeArray<SpatialGridEntryDTO> Entries;
         [ReadOnly, NoAlias] public NativeArray<AmbientEntityAupDTO> AupSnapshot;
         [NoAlias] public NativeArray<ShinobuSpatialHashDebugCell> DebugCells;
-        [NoAlias] public NativeArray<int> Counters;
+        [NoAlias] public NativeArray<int> DebugCellCount;
         public double3 CenterAbsolute;
         public uint Frame;
         public float CellSizeMeters;
@@ -1088,25 +1088,24 @@ namespace Hecton8.AI.Ecosystem
 
                 double3 absolute = ShinobuEcosystemBalancer.ToAbsoluteDouble3(in meta.PositionAup);
                 SpatialGridCell64 gridCell = ShinobuSpatialGridMath.QuantizeCell(absolute, cell);
-                double3 absoluteCenter = new double3(
+                double3 absoluteCenter = math.double3(
                     (gridCell.X + 0.5d) * cell,
                     (gridCell.Y + 0.5d) * cell,
                     (gridCell.Z + 0.5d) * cell);
                 if (!ShinobuEcosystemBalancer.TryToFiniteLocalFloat3(absoluteCenter - CenterAbsolute, out float3 centerLocal))
                     continue;
 
-                DebugCells[debugCount++] = new ShinobuSpatialHashDebugCell
-                {
-                    CenterLocal = centerLocal,
-                    CellHash = (int)range.CellHash,
-                    Occupancy = range.Count,
-                    CellSizeMeters = cell,
-                    Flags = 2u
-                };
+                ShinobuSpatialHashDebugCell debugCell = default;
+                debugCell.CenterLocal = centerLocal;
+                debugCell.CellHash = (int)range.CellHash;
+                debugCell.Occupancy = range.Count;
+                debugCell.CellSizeMeters = cell;
+                debugCell.Flags = 2u;
+                DebugCells[debugCount++] = debugCell;
             }
 
-            if (Counters.IsCreated && Counters.Length > 8)
-                Counters[8] = debugCount;
+            if (DebugCellCount.IsCreated && DebugCellCount.Length > 0)
+                DebugCellCount[0] = debugCount;
         }
     }
 

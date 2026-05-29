@@ -45,16 +45,17 @@ namespace Hecton8.Construction
         private const BufferID IntegrityWriteScratchBufferId = (BufferID)70956;
         private const BufferID IntegrityConnectionBufferId = (BufferID)70957;
         private const BufferID IntegritySocketLookupBufferId = (BufferID)70958;
-        private const uint IntegrityNodeLockBit = 1u << 0;
-        private const uint IntegrityRangeLockBit = 1u << 1;
-        private const uint IntegrityAdjacencyLockBit = 1u << 2;
-        private const uint IntegrityQueueLockBit = 1u << 3;
-        private const uint IntegrityDepthLockBit = 1u << 4;
-        private const uint IntegrityResultLockBit = 1u << 5;
-        private const uint IntegrityDegreeScratchLockBit = 1u << 6;
-        private const uint IntegrityWriteScratchLockBit = 1u << 7;
-        private const uint IntegrityConnectionLockBit = 1u << 8;
-        private const uint IntegritySocketLookupLockBit = 1u << 9;
+        private const ulong ValidationMutationGuardMask =
+            (1UL << ((int)IntegrityNodeBufferId & 31)) |
+            (1UL << ((int)IntegrityRangeBufferId & 31)) |
+            (1UL << ((int)IntegrityAdjacencyBufferId & 31)) |
+            (1UL << ((int)IntegrityQueueBufferId & 31)) |
+            (1UL << ((int)IntegrityDepthBufferId & 31)) |
+            (1UL << ((int)IntegrityResultBufferId & 31)) |
+            (1UL << ((int)IntegrityDegreeScratchBufferId & 31)) |
+            (1UL << ((int)IntegrityWriteScratchBufferId & 31)) |
+            (1UL << ((int)IntegrityConnectionBufferId & 31)) |
+            (1UL << ((int)IntegritySocketLookupBufferId & 31));
 
         private VaultGenerationHandle<IntegrityNodeRecord> _nodeBufferHandle;
         private VaultGenerationHandle<int2> _adjacencyRangesHandle;
@@ -75,7 +76,8 @@ namespace Hecton8.Construction
         private int _socketLookupCapacity;
         private int _connectionCount;
         private int _socketLookupCount;
-        private uint _lockedValidationBufferMask;
+        private IDataVault _validationGuardVault;
+        private bool _validationGuardHeld;
         private int _cachedExistingGraphSignature;
         private int _cachedExistingGraphGridSize;
         private int _cachedExistingGraphModuleListCount;
@@ -623,7 +625,7 @@ namespace Hecton8.Construction
             if (_catalogVault == null || !IsIntegrityVaultHandle(in _socketLookupHandle, IntegritySocketLookupBufferId))
                 return;
 
-            if ((_lockedValidationBufferMask & IntegritySocketLookupLockBit) != 0u)
+            if (_validationGuardHeld)
             {
                 if (TryResolveValidationVaultBuffer(in _socketLookupHandle, IntegritySocketLookupBufferId, out NativeArray<SocketLookupSlot> lockedLookup))
                     ClearSocketLookup(lockedLookup);
@@ -1461,51 +1463,30 @@ namespace Hecton8.Construction
         private bool TryLockValidationBuffers()
         {
             UnlockValidationBuffers();
-            return TryLockValidationBuffer(IntegrityNodeBufferId, IntegrityNodeLockBit) &&
-                   TryLockValidationBuffer(IntegrityRangeBufferId, IntegrityRangeLockBit) &&
-                   TryLockValidationBuffer(IntegrityAdjacencyBufferId, IntegrityAdjacencyLockBit) &&
-                   TryLockValidationBuffer(IntegrityQueueBufferId, IntegrityQueueLockBit) &&
-                   TryLockValidationBuffer(IntegrityDepthBufferId, IntegrityDepthLockBit) &&
-                   TryLockValidationBuffer(IntegrityResultBufferId, IntegrityResultLockBit) &&
-                   TryLockValidationBuffer(IntegrityDegreeScratchBufferId, IntegrityDegreeScratchLockBit) &&
-                   TryLockValidationBuffer(IntegrityWriteScratchBufferId, IntegrityWriteScratchLockBit) &&
-                   TryLockValidationBuffer(IntegrityConnectionBufferId, IntegrityConnectionLockBit) &&
-                   TryLockValidationBuffer(IntegritySocketLookupBufferId, IntegritySocketLookupLockBit);
-        }
 
-        private bool TryLockValidationBuffer(BufferID bufferId, uint bit)
-        {
-            if (_catalogVault == null || !_catalogVault.TryLockBuffer(bufferId, SystemID.Construction))
-            {
-                UnlockValidationBuffers();
+            IDataVault vault = _catalogVault;
+            if (vault == null || !vault.TryAcquireMutationGuard(ValidationMutationGuardMask))
                 return false;
-            }
 
-            _lockedValidationBufferMask |= bit;
-            return true;
+            _validationGuardVault = vault;
+            _validationGuardHeld = true;
+
+            if (TryResolveValidationGraphBuffers(out _))
+                return true;
+
+            UnlockValidationBuffers();
+            return false;
         }
 
         private void UnlockValidationBuffers()
         {
-            UnlockValidationBuffer(IntegritySocketLookupBufferId, IntegritySocketLookupLockBit);
-            UnlockValidationBuffer(IntegrityConnectionBufferId, IntegrityConnectionLockBit);
-            UnlockValidationBuffer(IntegrityWriteScratchBufferId, IntegrityWriteScratchLockBit);
-            UnlockValidationBuffer(IntegrityDegreeScratchBufferId, IntegrityDegreeScratchLockBit);
-            UnlockValidationBuffer(IntegrityResultBufferId, IntegrityResultLockBit);
-            UnlockValidationBuffer(IntegrityDepthBufferId, IntegrityDepthLockBit);
-            UnlockValidationBuffer(IntegrityQueueBufferId, IntegrityQueueLockBit);
-            UnlockValidationBuffer(IntegrityAdjacencyBufferId, IntegrityAdjacencyLockBit);
-            UnlockValidationBuffer(IntegrityRangeBufferId, IntegrityRangeLockBit);
-            UnlockValidationBuffer(IntegrityNodeBufferId, IntegrityNodeLockBit);
-        }
-
-        private void UnlockValidationBuffer(BufferID bufferId, uint bit)
-        {
-            if ((_lockedValidationBufferMask & bit) == 0u)
+            if (!_validationGuardHeld)
                 return;
 
-            _catalogVault?.TryUnlockBuffer(bufferId, SystemID.Construction);
-            _lockedValidationBufferMask &= ~bit;
+            IDataVault vault = _validationGuardVault;
+            _validationGuardVault = null;
+            _validationGuardHeld = false;
+            vault?.ReleaseMutationGuard(ValidationMutationGuardMask);
         }
 
         private void CompletePendingValidationForTeardown()

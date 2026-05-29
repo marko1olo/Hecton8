@@ -2446,7 +2446,6 @@ namespace Hecton8.AI.Ecosystem
         {
             byte pipelineKind = _scheduledPipelineKind;
             bool publishDebugCells = pipelineKind == ScheduledPipelineFrame && _debugCellPublishPending;
-            _debugCellPublishPending = false;
             _jobScheduled = false;
             _scheduledPipelineKind = ScheduledPipelineNone;
             long completeTicks = Stopwatch.GetTimestamp();
@@ -2496,6 +2495,8 @@ namespace Hecton8.AI.Ecosystem
             finally
             {
                 UnlockActiveJobBuffers(vault);
+                if (!publishDebugCells || vault == null)
+                    _debugCellPublishPending = false;
             }
 
             if (vault == null)
@@ -2512,6 +2513,7 @@ namespace Hecton8.AI.Ecosystem
                 WriteFlockingCountersAfterRelease(vault);
                 if (publishDebugCells && !WriteDebugCellsAfterRelease(vault) && hasEcosystemTelemetry)
                     ecosystemTelemetry.DebugCellCount = 0;
+                _debugCellPublishPending = false;
             }
 
             if (hasEcosystemTelemetry)
