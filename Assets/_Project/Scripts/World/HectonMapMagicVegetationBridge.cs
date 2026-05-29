@@ -8322,62 +8322,22 @@ namespace Hecton8.World
                 : state.SecondaryCacheBuffer;
             BufferID sandBufferId = unchecked((BufferID)(int)writeBuffer.SandMaskHandle.BufferID);
             BufferID rockBufferId = unchecked((BufferID)(int)writeBuffer.RockMaskHandle.BufferID);
-            if (!TryAcquireVegetationMemoryBuffer(
+            if (!WriteTileSandMask(
                     ref writeBuffer.SandMaskHandle,
                     sandBufferId,
                     sampleCount,
-                    NativeArrayOptions.UninitializedMemory,
-                    out IDataVault sandVault,
-                    out NativeArray<byte> sandMaskWrite))
-            {
+                    alphamapResolution,
+                    in sandSampler,
+                    in greenSandSampler))
                 return false;
-            }
 
-            bool rockLocked = false;
-            IDataVault rockVault = null;
-            try
-            {
-                if (!TryAcquireVegetationMemoryBuffer(
-                        ref writeBuffer.RockMaskHandle,
-                        rockBufferId,
-                        sampleCount,
-                        NativeArrayOptions.UninitializedMemory,
-                        out rockVault,
-                        out NativeArray<byte> rockMaskWrite))
-                {
-                    return false;
-                }
-
-                rockLocked = true;
-                int writeIndex = 0;
-                for (int z = 0; z < alphamapResolution; z++)
-                {
-                    for (int x = 0; x < alphamapResolution; x++)
-                    {
-                        float sandMask =
-                            SampleTerrainLayerMask(in sandSampler, writeIndex) +
-                            SampleTerrainLayerMask(in greenSandSampler, writeIndex);
-                        float rockMask = SampleTerrainLayerMask(in rockSampler, writeIndex);
-
-                        sandMaskWrite[writeIndex] = PackMask01(sandMask);
-                        rockMaskWrite[writeIndex] = PackMask01(rockMask);
-                        writeIndex++;
-                    }
-                }
-            }
-            finally
-            {
-                if (rockLocked && rockVault != null)
-                {
-                    rockVault.ReleaseWriteLock(
-                        in writeBuffer.RockMaskHandle,
-                        VegetationMemorySovereigntyConstants.OwnerSystemId);
-                }
-
-                sandVault.ReleaseWriteLock(
-                    in writeBuffer.SandMaskHandle,
-                    VegetationMemorySovereigntyConstants.OwnerSystemId);
-            }
+            if (!WriteTileRockMask(
+                    ref writeBuffer.RockMaskHandle,
+                    rockBufferId,
+                    sampleCount,
+                    alphamapResolution,
+                    in rockSampler))
+                return false;
 
             Texture heightTexture = state.HeightTextureCache;
             if (heightTexture == null)
@@ -8393,6 +8353,91 @@ namespace Hecton8.World
                 state.SecondaryCacheBuffer = writeBuffer;
 
             return false;
+        }
+
+        private bool WriteTileSandMask(
+            ref VaultGenerationHandle<byte> sandMaskHandle,
+            BufferID sandBufferId,
+            int sampleCount,
+            int alphamapResolution,
+            in TerrainLayerMaskSampler sandSampler,
+            in TerrainLayerMaskSampler greenSandSampler)
+        {
+            if (!TryAcquireVegetationMemoryBuffer(
+                    ref sandMaskHandle,
+                    sandBufferId,
+                    sampleCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out IDataVault vault,
+                    out NativeArray<byte> sandMaskWrite))
+            {
+                return false;
+            }
+
+            try
+            {
+                int writeIndex = 0;
+                for (int z = 0; z < alphamapResolution; z++)
+                {
+                    for (int x = 0; x < alphamapResolution; x++)
+                    {
+                        float sandMask =
+                            SampleTerrainLayerMask(in sandSampler, writeIndex) +
+                            SampleTerrainLayerMask(in greenSandSampler, writeIndex);
+                        sandMaskWrite[writeIndex] = PackMask01(sandMask);
+                        writeIndex++;
+                    }
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(
+                    in sandMaskHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool WriteTileRockMask(
+            ref VaultGenerationHandle<byte> rockMaskHandle,
+            BufferID rockBufferId,
+            int sampleCount,
+            int alphamapResolution,
+            in TerrainLayerMaskSampler rockSampler)
+        {
+            if (!TryAcquireVegetationMemoryBuffer(
+                    ref rockMaskHandle,
+                    rockBufferId,
+                    sampleCount,
+                    NativeArrayOptions.UninitializedMemory,
+                    out IDataVault vault,
+                    out NativeArray<byte> rockMaskWrite))
+            {
+                return false;
+            }
+
+            try
+            {
+                int writeIndex = 0;
+                for (int z = 0; z < alphamapResolution; z++)
+                {
+                    for (int x = 0; x < alphamapResolution; x++)
+                    {
+                        float rockMask = SampleTerrainLayerMask(in rockSampler, writeIndex);
+                        rockMaskWrite[writeIndex] = PackMask01(rockMask);
+                        writeIndex++;
+                    }
+                }
+
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(
+                    in rockMaskHandle,
+                    VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
         }
 
         private static TerrainLayerMaskSampler CreateTerrainLayerMaskSampler(Texture2D[] alphamapTextures, int layerIndex)

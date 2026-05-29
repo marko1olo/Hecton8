@@ -1470,12 +1470,18 @@ namespace Hecton8.Construction
 
             _validationGuardVault = vault;
             _validationGuardHeld = true;
-
-            if (TryResolveValidationGraphBuffers(out _))
-                return true;
-
-            ReleaseValidationBufferGuard();
-            return false;
+            bool keepGuard = false;
+            try
+            {
+                keepGuard = ReferenceEquals(_catalogVault, vault) &&
+                            TryResolveValidationGraphBuffers(out _);
+                return keepGuard;
+            }
+            finally
+            {
+                if (!keepGuard)
+                    ReleaseValidationBufferGuard();
+            }
         }
 
         private void ReleaseValidationBufferGuard()

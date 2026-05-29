@@ -24,7 +24,6 @@ namespace Hecton8.Core
         private const float VoxelAoPressureDisableThreshold01 = 0.6f;
         private const float ThermalParticleSpawnScale = 0.5f;
         private const float FullParticleSpawnScale = 1f;
-        private const float CriticalMathLodPressureFloor01 = 0.85f;
         private const float FramePressureReleasePerSecond = 0.5f;
         private const uint DefaultSubsystemHash = 0x46545744u;
         private const uint SustainedFrameOptimalHash = 0x46544F50u; // "FTOP"
@@ -331,12 +330,13 @@ namespace Hecton8.Core
             _mathLodMode = targetMode;
             _shaderLodPushed = true;
             _lastScalabilitySwitchTimeSeconds = now;
-            ApplyContinuousQualityState(ResolveGlobalQualityWeight01(), lowMode);
+            float qualityWeight01 = ResolveGlobalQualityWeight01();
+            ApplyContinuousQualityState(qualityWeight01);
             if (lowMode)
                 s_beginMathPrecisionDegradation(Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
             else
                 s_registerMathPrecisionLevel(MathPrecisionLevel.High);
-            float shaderQualityWeight01 = ResolveShaderQualityWeight01(ResolveGlobalQualityWeight01(), lowMode);
+            float shaderQualityWeight01 = ResolveShaderQualityWeight01(qualityWeight01);
             DistanceMath.PushShaderMathLod(shaderQualityWeight01);
             PerformanceEvents.TryRaiseSystemDegradation(
                 frameTimeMilliseconds,
@@ -354,19 +354,19 @@ namespace Hecton8.Core
             _mathLodMode = targetMode;
             _shaderLodPushed = true;
             _lastScalabilitySwitchTimeSeconds = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
-            ApplyContinuousQualityState(qualityWeight01, lowMode);
+            ApplyContinuousQualityState(qualityWeight01);
             s_registerMathPrecisionLevel(lowMode ? MathPrecisionLevel.Low : MathPrecisionLevel.High);
-            DistanceMath.PushShaderMathLod(ResolveShaderQualityWeight01(qualityWeight01, lowMode));
+            DistanceMath.PushShaderMathLod(ResolveShaderQualityWeight01(qualityWeight01));
         }
 
         private static void RefreshContinuousQualityOutputs()
         {
-            ApplyContinuousQualityState(ResolveGlobalQualityWeight01(), _mathLodMode == MathLodMode.Low);
+            ApplyContinuousQualityState(ResolveGlobalQualityWeight01());
         }
 
-        private static void ApplyContinuousQualityState(float qualityWeight01, bool forcedLowMathLod)
+        private static void ApplyContinuousQualityState(float qualityWeight01)
         {
-            float pressure01 = ResolveEffectiveFramePressure01(forcedLowMathLod);
+            float pressure01 = ResolveEffectiveFramePressure01();
             float safeQuality01 = math.saturate(math.select(1f, qualityWeight01, math.isfinite(qualityWeight01)));
             float pressureFloor01 = math.min(safeQuality01, 0.25f);
             float effectiveQuality01 = math.lerp(safeQuality01, pressureFloor01, pressure01);
@@ -381,10 +381,10 @@ namespace Hecton8.Core
                 curvedQuality01 >= VoxelAoEnableWeightThreshold01;
         }
 
-        private static float ResolveShaderQualityWeight01(float qualityWeight01, bool forcedLowMathLod)
+        private static float ResolveShaderQualityWeight01(float qualityWeight01)
         {
             float safeQuality = math.saturate(math.select(1f, qualityWeight01, math.isfinite(qualityWeight01)));
-            float pressure01 = ResolveEffectiveFramePressure01(forcedLowMathLod);
+            float pressure01 = ResolveEffectiveFramePressure01();
             return math.lerp(safeQuality, math.min(safeQuality, 0.25f), pressure01);
         }
 
@@ -401,12 +401,9 @@ namespace Hecton8.Core
             _framePressure01 = math.max(targetPressure01, _framePressure01 - release);
         }
 
-        private static float ResolveEffectiveFramePressure01(bool forcedLowMathLod)
+        private static float ResolveEffectiveFramePressure01()
         {
-            float pressure01 = math.saturate(_framePressure01);
-            return forcedLowMathLod
-                ? math.max(pressure01, CriticalMathLodPressureFloor01)
-                : pressure01;
+            return math.saturate(_framePressure01);
         }
 
         private static float ResolveFramePressure01(float averageFrameTimeSeconds)
