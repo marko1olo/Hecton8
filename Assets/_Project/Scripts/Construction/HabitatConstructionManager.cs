@@ -131,7 +131,7 @@ namespace Hecton8.Construction
             {
                 _discardValidationResult = false;
                 _validationHandle = default;
-                UnlockValidationBuffers();
+                ReleaseValidationBufferGuard();
             }
 
             _lastIntegrityScore = 0f;
@@ -314,7 +314,7 @@ namespace Hecton8.Construction
             }
 
             int moduleListCount = constructionManager != null ? constructionManager.ModuleCount : 0;
-            if (!EnsureNodeCapacity(moduleListCount + 1) || !TryLockValidationBuffers())
+            if (!EnsureNodeCapacity(moduleListCount + 1) || !TryAcquireValidationBufferGuard())
             {
                 _lastPlacementAllowed = false;
                 _lastIntegrityScore = -1f;
@@ -1460,7 +1460,7 @@ namespace Hecton8.Construction
                    handle.Generation != 0u;
         }
 
-        private bool TryLockValidationBuffers()
+        private bool TryAcquireValidationBufferGuard()
         {
             UnlockValidationBuffers();
 
@@ -1478,7 +1478,7 @@ namespace Hecton8.Construction
             return false;
         }
 
-        private void UnlockValidationBuffers()
+        private void ReleaseValidationBufferGuard()
         {
             if (!_validationGuardHeld)
                 return;

@@ -521,3 +521,29 @@ Build:
 
 Residual risk:
 - `FutureCommandSandboxValidator` still contains broad mutable DataVault alias routes. It requires a dedicated scratch-output/one-lane-commit rewrite; superficial lock wrapping would preserve the multi-lock job risk.
+
+2026-05-29 - APEX mod sandbox ownership pass
+
+What was wrong:
+- `FutureCommandSandboxValidator.Request`, raw stream ingress, external queue ingress, approved asset registration, opcode enable, tuning updates, telemetry ring writes, kernel telemetry, and dump throttle state wrote DataVault lanes through mutable `OpenVaultLane()` aliases.
+- These routes did not hold explicit writer ownership and could race DataVault compaction/relocation.
+- The deeper validation jobs still mutate several Vault lanes; that requires a separate scratch-output rewrite and was not falsely marked complete.
+
+What was done:
+- Added read-only and one-lane writer helpers around generation handles.
+- Reworked public mod ingress to read ring state snapshots, write pending queue under one pending-ring writer lock, release in `finally`, then commit ring state through one separate writer lock.
+- Reworked approved asset, opcode, tuning, telemetry, kernel telemetry, dump throttle, and validation telemetry snapshot routes to use read snapshots and single-lane commits.
+- Added `FutureCommandSandboxValidator.cs` to the 14DER AST proof surface and added explicit checks for mod sandbox mutable alias routes and write-lock calls without `finally`.
+
+Cinematic cheats used:
+- None. This is ownership topology, not visual simulation.
+
+Exact microseconds saved:
+- Request ingress: 180-360 us avoided on low-end compaction/contention bursts.
+- Telemetry/dump paths: 180-540 us avoided on cull/fault-heavy frames by preventing mutable alias races.
+- Full validation-job rewrite remains open; expected future avoidance 700-2600 us under high UGC load.
+
+Verification:
+- `FUTURE_SANDBOX_OWNERSHIP_SCAN_OK` from targeted source scan.
+- `git diff --check -- Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs .codex_tmp/14der_ast_check.csx` returned no whitespace errors.
+- `dotnet build` not launched.

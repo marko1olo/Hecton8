@@ -463,3 +463,15 @@ Solution: Not patched in this pass. It is a larger mod-sandbox ownership rewrite
 Rejected Alternatives: Add superficial locks around the existing job setup. That would hide the violation while preserving the deadlock vector.
 Scalability potential: Needs a separate scratch-output and one-lane commit architecture like inventory salinity corrosion.
 Hardware Impact: Residual risk remains in mod command sandbox under heavy UGC input; not part of the committed source changes here.
+
+Problem: `FutureCommandSandboxValidator.Request*`, `RegisterApprovedAsset`, `SetOpcodeEnabled`, tuning updates, telemetry writers, and dump throttle state wrote DataVault buffers through mutable `OpenVaultLane()` aliases without writer ownership.
+Solution: Added `TryOpenVaultLaneRead`, `TryAcquireVaultLaneWrite`, `TryWriteVaultLaneElement`, `TryReadRingStateSnapshot`, and `TryWriteRingStateSnapshot`. Public request/register/tuning/telemetry routes now read immutable snapshots, write exactly one Vault lane per lock, and release every acquired lock in `finally`.
+Rejected Alternatives: Acquire pending ring and ring state locks together for atomic queue commit. That would violate the one-writer-lock invariant and expose a deadlock path during Vault compaction. Keeping `OpenVaultLane()` because the methods are mostly cold was rejected because these APIs are mod ingress and can be hit by UGC bursts.
+Scalability potential: Low uses bounded queue writes and fails closed on Vault contention. Middle keeps the same mod ingress behavior with lower relocation risk. High/Ultra can raise command budgets through continuous quality without adding lock nesting.
+Hardware Impact: Removes lockless alias mutation from high-burst UGC ingress and telemetry. On i3/MX350 this reduces compaction/race stalls rather than steady arithmetic cost; estimated avoided contention spike is 180-540 us during mod command bursts or telemetry dumps.
+
+Problem: The same file still has deeper scheduled-validation ownership debt: `TryPrepareValidationJob`, `LoadSheddingJob`, and `ValidateFutureCommandEnvelopeJob` mutate pending/staging/stats/counter/dev-null/ring/camera/memory lanes as job inputs/outputs.
+Solution: Deliberately stopped short of fake completion. The correct fix is a dedicated scratch-output architecture: read DataVault truth lanes through read-only handles, execute validation against owned scratch arrays, then commit each changed lane separately through one write lock and `finally`.
+Rejected Alternatives: Wrap the existing job setup in several write locks or hold locks across the scheduled job. That is mathematically worse than the current state because it would hold multiple Vault write locks across a job lifetime.
+Scalability potential: Low should use smaller scratch capacities and more load shedding. Middle keeps default capacities. High/Ultra can spend more on mod command presentation and camera/subtitle/haptic feedback after scratch commit.
+Hardware Impact: Residual risk remains until the job rewrite lands; projected gain after full fix is 700-2600 us avoided under compaction or high UGC load, plus removal of stale mutable aliases across job fences.
