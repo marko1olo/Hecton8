@@ -5,7 +5,6 @@
 // Inspired by https://github.com/speps/GX-EncinoWaves
 
 using System.Collections.Generic;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;

@@ -4,7 +4,9 @@
 
 using UnityEngine;
 using UnityEngine.Rendering;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 
 namespace Crest
 {

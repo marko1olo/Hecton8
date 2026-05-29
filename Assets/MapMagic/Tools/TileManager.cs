@@ -195,8 +195,12 @@ namespace Den.Tools
 
 					if (camCoords == null || camsLength > camCoords.Length)
 					{
-						camCoords = camsLength == 0 ? emptyCamCoords : new Coord[camsLength];
+						camCoords = emptyCamCoords;
+						camCoordsCount = 0;
+						camCoordsStorageDirty = camsLength != 0;
 						coordsChanged = true;
+						if (camsLength != 0)
+							return true;
 					}
 
 					if (camCoordsCount != camsLength)

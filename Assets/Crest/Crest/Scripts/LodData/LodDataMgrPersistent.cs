@@ -55,8 +55,16 @@ namespace Crest
         {
             base.OnDisable();
 
-            _sources.Release();
-            Helpers.Destroy(_sources);
+            if (_sources != null)
+            {
+                _sources.Release();
+                Helpers.Destroy(_sources);
+                _sources = null;
+            }
+
+            _shader = null;
+            _krnlShaderSim = -1;
+            _renderSimProperties = null;
         }
 
         void CreateProperties()

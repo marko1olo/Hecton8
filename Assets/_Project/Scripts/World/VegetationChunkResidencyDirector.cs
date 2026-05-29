@@ -1495,5 +1495,167 @@ namespace Hecton8.World
                    CopyChunkFlowDirectionsToAggregate(poolView.FlowDirections, sourceOffset, ref destinationBuffers.FlowDirectionsHandle, requiredCount, destinationOffset, copyCount) &&
                    CopyChunkFlowVectorsToAggregate(poolView.FlowVectors, sourceOffset, ref destinationBuffers.FlowVectorsHandle, requiredCount, destinationOffset, copyCount);
         }
+
+        private bool CopyChunkMatricesToAggregate(
+            NativeArray<Matrix4x4> source,
+            int sourceOffset,
+            ref VaultGenerationHandle<Matrix4x4> destinationHandle,
+            int requiredCount,
+            int destinationOffset,
+            int copyCount)
+        {
+            if (!TryAcquireAggregateWriteBuffer(ref destinationHandle, requiredCount, out IDataVault vault, out NativeArray<Matrix4x4> destination))
+                return false;
+
+            try
+            {
+                NativeArray<Matrix4x4>.Copy(source, sourceOffset, destination, destinationOffset, copyCount);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in destinationHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool CopyChunkMetadataToAggregate(
+            NativeArray<HectonVegetationInstanceData> source,
+            int sourceOffset,
+            ref VaultGenerationHandle<HectonVegetationInstanceData> destinationHandle,
+            int requiredCount,
+            int destinationOffset,
+            int copyCount)
+        {
+            if (!TryAcquireAggregateWriteBuffer(ref destinationHandle, requiredCount, out IDataVault vault, out NativeArray<HectonVegetationInstanceData> destination))
+                return false;
+
+            try
+            {
+                NativeArray<HectonVegetationInstanceData>.Copy(source, sourceOffset, destination, destinationOffset, copyCount);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in destinationHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool CopyChunkIntLaneToAggregate(
+            NativeArray<int> source,
+            int sourceOffset,
+            ref VaultGenerationHandle<int> destinationHandle,
+            int requiredCount,
+            int destinationOffset,
+            int copyCount)
+        {
+            if (!TryAcquireAggregateWriteBuffer(ref destinationHandle, requiredCount, out IDataVault vault, out NativeArray<int> destination))
+                return false;
+
+            try
+            {
+                NativeArray<int>.Copy(source, sourceOffset, destination, destinationOffset, copyCount);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in destinationHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool CopyChunkBiomeLayersToAggregate(
+            NativeArray<byte> source,
+            int sourceOffset,
+            ref VaultGenerationHandle<byte> destinationHandle,
+            int requiredCount,
+            int destinationOffset,
+            int copyCount)
+        {
+            if (!TryAcquireAggregateWriteBuffer(ref destinationHandle, requiredCount, out IDataVault vault, out NativeArray<byte> destination))
+                return false;
+
+            try
+            {
+                NativeArray<byte>.Copy(source, sourceOffset, destination, destinationOffset, copyCount);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in destinationHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool CopyChunkFlowDirectionsToAggregate(
+            NativeArray<Vector2> source,
+            int sourceOffset,
+            ref VaultGenerationHandle<Vector2> destinationHandle,
+            int requiredCount,
+            int destinationOffset,
+            int copyCount)
+        {
+            if (!TryAcquireAggregateWriteBuffer(ref destinationHandle, requiredCount, out IDataVault vault, out NativeArray<Vector2> destination))
+                return false;
+
+            try
+            {
+                NativeArray<Vector2>.Copy(source, sourceOffset, destination, destinationOffset, copyCount);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in destinationHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool CopyChunkFlowVectorsToAggregate(
+            NativeArray<Vector3> source,
+            int sourceOffset,
+            ref VaultGenerationHandle<Vector3> destinationHandle,
+            int requiredCount,
+            int destinationOffset,
+            int copyCount)
+        {
+            if (!TryAcquireAggregateWriteBuffer(ref destinationHandle, requiredCount, out IDataVault vault, out NativeArray<Vector3> destination))
+                return false;
+
+            try
+            {
+                NativeArray<Vector3>.Copy(source, sourceOffset, destination, destinationOffset, copyCount);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in destinationHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
+
+        private bool MarkActiveAggregateDirtyPagesOneLock(
+            ref VaultGenerationHandle<byte> dirtyPagesHandle,
+            int elementCount)
+        {
+            int requiredPages = GraphicsBufferUploadUtility.ResolveDirtyPageCount(
+                elementCount,
+                ActiveAggregateDirtyPageSize);
+            if (requiredPages <= 0)
+                return false;
+
+            if (!TryAcquireAggregateWriteBuffer(ref dirtyPagesHandle, requiredPages, out IDataVault vault, out NativeArray<byte> dirtyPages))
+                return false;
+
+            try
+            {
+                GraphicsBufferUploadUtility.ClearDirtyPages(dirtyPages, elementCount, ActiveAggregateDirtyPageSize);
+                GraphicsBufferUploadUtility.MarkDirtyPageRange(
+                    dirtyPages,
+                    0,
+                    elementCount,
+                    elementCount,
+                    ActiveAggregateDirtyPageSize);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in dirtyPagesHandle, VegetationMemorySovereigntyConstants.OwnerSystemId);
+            }
+        }
     }
 }

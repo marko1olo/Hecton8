@@ -6,7 +6,6 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using Unity.Collections.LowLevel.Unsafe;
-using UnityEditor;
 
 namespace Crest
 {

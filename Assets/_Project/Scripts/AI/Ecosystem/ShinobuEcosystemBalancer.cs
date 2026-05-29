@@ -93,10 +93,6 @@ namespace Hecton8.AI.Ecosystem
             ShinobuMutationGuardBit(BufferID.ShinobuSpatialGridEntries) |
             ShinobuMutationGuardBit(BufferID.ShinobuSpatialGridBucketRanges);
 
-        private static readonly ulong FrameDebugMutationGuardMask =
-            FrameJobMutationGuardMask |
-            ShinobuMutationGuardBit(BufferID.ShinobuSpatialHashDebugCells);
-
         private static readonly ulong MacroJobMutationGuardMask =
             ShinobuMutationGuardBit(BufferID.ShinobuAmbientEntities) |
             ShinobuMutationGuardBit(BufferID.ShinobuAmbientAups) |
@@ -206,6 +202,8 @@ namespace Hecton8.AI.Ecosystem
         private NativeArray<int> _spatialHashBucketHeadJobScratch;
         private NativeArray<int> _spatialHashNextJobScratch;
         private NativeArray<SpatialGridEntryDTO> _spatialGridSortJobScratch;
+        private NativeArray<ShinobuSpatialHashDebugCell> _debugCellJobScratch;
+        private NativeArray<int> _debugCellCountJobScratch;
 
         private byte[] _ecosystemLegacyManagedScratch;
 #if UNITY_EDITOR
@@ -249,6 +247,7 @@ namespace Hecton8.AI.Ecosystem
         private bool _dumpedFlockingFault;
         private bool _dumpedSpatialGridFault;
         private bool _spatialGridTelemetryMirrorValid;
+        private bool _debugCellPublishPending;
         private bool _proceduralRenderEnabled;
         private byte _scheduledPipelineKind;
         private byte _jobLockPipelineKind;
@@ -450,7 +449,6 @@ namespace Hecton8.AI.Ecosystem
             {
                 if (!TryResolveFrameJobBuffers(
                         vault,
-                        frameDebugGridRequested,
                         out NativeArray<AmbientEntityDTO> entities,
                         out NativeArray<AmbientEntityAupDTO> aups,
                         out NativeArray<BoidStateDTO> boidStates,
@@ -458,7 +456,6 @@ namespace Hecton8.AI.Ecosystem
                         out NativeArray<AmbientEntityAupDTO> aupSnapshot,
                         out NativeArray<BoidStateDTO> boidStateSnapshot,
                         out NativeArray<int> counters,
-                        out NativeArray<ShinobuSpatialHashDebugCell> debugCells,
                         out NativeArray<int> spatialHashBucketHeads,
                         out NativeArray<int> spatialHashNext))
                 {
@@ -523,7 +520,12 @@ namespace Hecton8.AI.Ecosystem
                 CaptureFlockingThreatSignals(flockingThreats, flockingThreatCount, flockingCounters, spatialQualityWeight);
 
                 MockPredatorRuntime predator = ResolvePredatorRuntime();
-                bool debugGridEnabled = frameDebugGridRequested && debugCells.IsCreated;
+                bool debugGridEnabled = frameDebugGridRequested &&
+                                        _debugCellJobScratch.IsCreated &&
+                                        _debugCellCountJobScratch.IsCreated &&
+                                        _debugCellCountJobScratch.Length > 0;
+                if (debugGridEnabled)
+                    _debugCellCountJobScratch[0] = 0;
                 float resolvedSpatialCellSize = ShinobuSpatialGridMath.ResolveCellSizeMeters(in spatialGridTuning, spatialQualityWeight, systemStress01);
                 int maxNeighborSamples = math.min(ResolveNeighborSampleBudget(MaxNeighborSamples, spatialQualityWeight), ShinobuSpatialGridMath.ResolveMaxQueryResults(spatialGridTuning.MaxQueryResultsLimit, spatialQualityWeight));
                 SetFlockingCounter(flockingCounters, FlockingCounterMaxNeighbors, maxNeighborSamples);
@@ -594,13 +596,13 @@ namespace Hecton8.AI.Ecosystem
                     debugJob.BucketRanges = spatialGridBucketRanges;
                     debugJob.Entries = spatialGridEntries;
                     debugJob.AupSnapshot = aupSnapshot;
-                    debugJob.DebugCells = debugCells;
-                    debugJob.Counters = counters;
+                    debugJob.DebugCells = _debugCellJobScratch;
+                    debugJob.DebugCellCount = _debugCellCountJobScratch;
                     debugJob.CenterAbsolute = cameraAbsolute;
                     debugJob.Frame = spatialGridFrame;
                     debugJob.CellSizeMeters = resolvedSpatialCellSize;
                     debugJob.Count = count;
-                    debugJob.Capacity = math.min(DebugCellCapacity, debugCells.Length);
+                    debugJob.Capacity = math.min(DebugCellCapacity, _debugCellJobScratch.Length);
                     handle = debugJob.Schedule(handle);
                     scheduledHandle = handle;
                 }
@@ -666,6 +668,7 @@ namespace Hecton8.AI.Ecosystem
                 _lastMatrixUploadMs = 0f;
                 _runtimeFlags &= ~TelemetryFlagMacroPass;
                 _scheduledPipelineKind = ScheduledPipelineFrame;
+                _debugCellPublishPending = debugGridEnabled;
                 _jobScheduled = true;
                 H8Memory.RegisterActiveJob(SystemID.AIEcology, _activeJobHandle);
             }
@@ -1288,6 +1291,14 @@ namespace Hecton8.AI.Ecosystem
                     ref _spatialGridSortJobScratch,
                     entityCapacity,
                     nameof(_spatialGridSortJobScratch));
+                EnsureNativeMirrorArray(
+                    ref _debugCellJobScratch,
+                    DebugCellCapacity,
+                    nameof(_debugCellJobScratch));
+                EnsureNativeMirrorArray(
+                    ref _debugCellCountJobScratch,
+                    1,
+                    nameof(_debugCellCountJobScratch));
                 return true;
             }
             catch (ArgumentException)
@@ -1323,6 +1334,8 @@ namespace Hecton8.AI.Ecosystem
 
         private void DisposeTelemetryMirrorsCold()
         {
+            DisposeNativeMirrorArray(ref _debugCellCountJobScratch);
+            DisposeNativeMirrorArray(ref _debugCellJobScratch);
             DisposeNativeMirrorArray(ref _spatialGridSortJobScratch);
             DisposeNativeMirrorArray(ref _spatialHashNextJobScratch);
             DisposeNativeMirrorArray(ref _spatialHashBucketHeadJobScratch);
@@ -1750,7 +1763,6 @@ namespace Hecton8.AI.Ecosystem
 
         private bool TryResolveFrameJobBuffers(
             IDataVault vault,
-            bool debugGridRequested,
             out NativeArray<AmbientEntityDTO> entities,
             out NativeArray<AmbientEntityAupDTO> aups,
             out NativeArray<BoidStateDTO> boidStates,
@@ -1758,7 +1770,6 @@ namespace Hecton8.AI.Ecosystem
             out NativeArray<AmbientEntityAupDTO> aupSnapshot,
             out NativeArray<BoidStateDTO> boidStateSnapshot,
             out NativeArray<int> counters,
-            out NativeArray<ShinobuSpatialHashDebugCell> debugCells,
             out NativeArray<int> spatialHashBucketHeads,
             out NativeArray<int> spatialHashNext)
         {
@@ -1769,7 +1780,6 @@ namespace Hecton8.AI.Ecosystem
             aupSnapshot = default;
             boidStateSnapshot = default;
             counters = default;
-            debugCells = default;
             spatialHashBucketHeads = default;
             spatialHashNext = default;
 
@@ -1780,12 +1790,6 @@ namespace Hecton8.AI.Ecosystem
                 !TryOpenVaultView(vault, in _aupSnapshotHandle, BufferID.ShinobuAmbientAupSnapshot, entityCapacity, out aupSnapshot) ||
                 !TryOpenVaultView(vault, in _boidStateSnapshotHandle, BufferID.ShinobuBoidStateSnapshot, entityCapacity, out boidStateSnapshot) ||
                 !TryOpenVaultView(vault, in _counterHandle, BufferID.ShinobuEcosystemCounters, CounterCapacity, out counters))
-            {
-                return false;
-            }
-
-            if (debugGridRequested &&
-                !TryOpenVaultView(vault, in _debugCellHandle, BufferID.ShinobuSpatialHashDebugCells, DebugCellCapacity, out debugCells))
             {
                 return false;
             }
@@ -1955,7 +1959,7 @@ namespace Hecton8.AI.Ecosystem
             if (vault == null || _jobLocksHeld)
                 return false;
 
-            ulong guardMask = debugGridRequested ? FrameDebugMutationGuardMask : FrameJobMutationGuardMask;
+            ulong guardMask = FrameJobMutationGuardMask;
             if (!vault.TryAcquireMutationGuard(guardMask))
                 return false;
 
