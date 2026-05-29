@@ -627,34 +627,43 @@ namespace GPUInstancer
             if (detailPrototype == null || grassInstantiationComputeShader == null || !grassInstantiationComputeShader.HasKernel(GPUInstancerConstants.GRASS_INSTANTIATION_KERNEL) || counterBuffer == null || counterData == null || detailMap == null || heightMapData == null || detailMap.Length <= 0 || heightMapData.Length <= 0)
                 return result;
 
-            ComputeBuffer visibilityBuffer;
+            ComputeBuffer visibilityBuffer = null;
+            ComputeBuffer heightMapBuffer = null;
+            ComputeBuffer detailMapBuffer = null;
 
             // set compute shader
             int grassInstantiationComputeKernelId = grassInstantiationComputeShader.FindKernel(GPUInstancerConstants.GRASS_INSTANTIATION_KERNEL);
 
-            ComputeBuffer heightMapBuffer = new ComputeBuffer(heightMapData.Length, GPUInstancerConstants.STRIDE_SIZE_INT);
-            heightMapBuffer.SetData(heightMapData);
+            try
+            {
+                heightMapBuffer = new ComputeBuffer(heightMapData.Length, GPUInstancerConstants.STRIDE_SIZE_INT);
+                heightMapBuffer.SetData(heightMapData);
 
-            visibilityBuffer = new ComputeBuffer(instanceCount, GPUInstancerConstants.STRIDE_SIZE_MATRIX4X4);
+                visibilityBuffer = new ComputeBuffer(instanceCount, GPUInstancerConstants.STRIDE_SIZE_MATRIX4X4);
 
-            counterBuffer.SetData(counterData);
+                counterBuffer.SetData(counterData);
 
-            ComputeBuffer detailMapBuffer = new ComputeBuffer(detailMap.Length, GPUInstancerConstants.STRIDE_SIZE_INT);
-            detailMapBuffer.SetData(detailMap);
+                detailMapBuffer = new ComputeBuffer(detailMap.Length, GPUInstancerConstants.STRIDE_SIZE_INT);
+                detailMapBuffer.SetData(detailMap);
 
-            // dispatch compute shader
-            Texture healthyDryNoiseTexture = terrainSettings != null ? terrainSettings.GetHealthyDryNoiseTexture(detailPrototype) : null;
-            DispatchDetailComputeShader(grassInstantiationComputeShader, grassInstantiationComputeKernelId,
-                visibilityBuffer, detailMapBuffer, heightMapBuffer,
-                new Vector4(detailMapSize, detailMapSize, heightMapSize, heightMapSize), startPosition, terrainSize, detailResolution, heightResolution, detailPrototype.detailScale,
-                healthyDryNoiseTexture, detailPrototype.noiseSpread, GPUInstancerUtility.GetUnityObjectId(detailPrototype), detailPrototype.detailDensity, counterBuffer, detailPrototype.terrainNormalEffect);
+                // dispatch compute shader
+                Texture healthyDryNoiseTexture = terrainSettings != null ? terrainSettings.GetHealthyDryNoiseTexture(detailPrototype) : null;
+                DispatchDetailComputeShader(grassInstantiationComputeShader, grassInstantiationComputeKernelId,
+                    visibilityBuffer, detailMapBuffer, heightMapBuffer,
+                    new Vector4(detailMapSize, detailMapSize, heightMapSize, heightMapSize), startPosition, terrainSize, detailResolution, heightResolution, detailPrototype.detailScale,
+                    healthyDryNoiseTexture, detailPrototype.noiseSpread, GPUInstancerUtility.GetUnityObjectId(detailPrototype), detailPrototype.detailDensity, counterBuffer, detailPrototype.terrainNormalEffect);
 
-            detailMapBuffer.Release();
-
-            visibilityBuffer.GetData(result);
-            visibilityBuffer.Release();
-
-            heightMapBuffer.Release();
+                visibilityBuffer.GetData(result);
+            }
+            finally
+            {
+                if (detailMapBuffer != null)
+                    detailMapBuffer.Release();
+                if (visibilityBuffer != null)
+                    visibilityBuffer.Release();
+                if (heightMapBuffer != null)
+                    heightMapBuffer.Release();
+            }
 
             return result;
         }
@@ -673,23 +682,33 @@ namespace GPUInstancer
             if (heightMapBuffer.count <= 0 || detailMapBuffer.count <= 0)
                 return null;
 
-            ComputeBuffer visibilityBuffer;
+            ComputeBuffer visibilityBuffer = null;
 
             // set compute shader
             int grassInstantiationComputeKernelId = grassInstantiationComputeShader.FindKernel(GPUInstancerConstants.GRASS_INSTANTIATION_KERNEL);
 
-            visibilityBuffer = new ComputeBuffer(instanceCount, GPUInstancerConstants.STRIDE_SIZE_MATRIX4X4);
+            try
+            {
+                visibilityBuffer = new ComputeBuffer(instanceCount, GPUInstancerConstants.STRIDE_SIZE_MATRIX4X4);
 
-            counterBuffer.SetData(counterData);
+                counterBuffer.SetData(counterData);
 
-            // dispatch compute shader
-            Texture healthyDryNoiseTexture = terrainSettings != null ? terrainSettings.GetHealthyDryNoiseTexture(detailPrototype) : null;
-            DispatchDetailComputeShader(grassInstantiationComputeShader, grassInstantiationComputeKernelId,
-                visibilityBuffer, detailMapBuffer, heightMapBuffer,
-                new Vector4(detailMapSize, detailMapSize, heightMapSize, heightMapSize), startPosition, terrainSize, detailResolution, heightResolution, detailPrototype.detailScale,
-                healthyDryNoiseTexture, detailPrototype.noiseSpread, GPUInstancerUtility.GetUnityObjectId(detailPrototype), detailPrototype.detailDensity, counterBuffer, detailPrototype.terrainNormalEffect);
+                // dispatch compute shader
+                Texture healthyDryNoiseTexture = terrainSettings != null ? terrainSettings.GetHealthyDryNoiseTexture(detailPrototype) : null;
+                DispatchDetailComputeShader(grassInstantiationComputeShader, grassInstantiationComputeKernelId,
+                    visibilityBuffer, detailMapBuffer, heightMapBuffer,
+                    new Vector4(detailMapSize, detailMapSize, heightMapSize, heightMapSize), startPosition, terrainSize, detailResolution, heightResolution, detailPrototype.detailScale,
+                    healthyDryNoiseTexture, detailPrototype.noiseSpread, GPUInstancerUtility.GetUnityObjectId(detailPrototype), detailPrototype.detailDensity, counterBuffer, detailPrototype.terrainNormalEffect);
 
-            return visibilityBuffer;
+                ComputeBuffer result = visibilityBuffer;
+                visibilityBuffer = null;
+                return result;
+            }
+            finally
+            {
+                if (visibilityBuffer != null)
+                    visibilityBuffer.Release();
+            }
         }
 
         private static void DispatchDetailComputeShader(ComputeShader grassComputeShader, int grassInstantiationComputeKernelId, ComputeBuffer visibilityBuffer, ComputeBuffer detailMapBuffer, ComputeBuffer heightMapBuffer, Vector4 detailAndHeightMapSize, Vector3 startPosition, Vector3 terrainSize, int detailResolution, int heightResolution, Vector4 detailScale, Texture healthyDryNoiseTexture, float noiseSpread, int instanceID, float detailDensity, ComputeBuffer counterBuffer, float terrainNormalEffect)
